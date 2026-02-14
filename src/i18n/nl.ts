@@ -1,0 +1,140 @@
+export default {
+  // Begroetingen
+  greeting_morning: 'Goedemorgen 🌱',
+  greeting_afternoon: 'Goedemiddag ☀️',
+  greeting_evening: 'Goedenavond 🌙',
+
+  // Startscherm
+  goal_reached: 'Doel bereikt! Goed gedaan om vandaag naar buiten te gaan.',
+  outside_time_awaits: 'Nog {{amount}} buiten te gaan vandaag.',
+  remaining_for_goal: 'Nog {{amount}} om je dagdoel te halen.',
+  this_week: 'Deze week',
+  today: 'vandaag',
+  no_sessions_title: 'Nog geen buitentijd geregistreerd vandaag.',
+  no_sessions_sub: 'Ga naar buiten of log het handmatig!',
+
+  // Sessiebronnen
+  source_health_connect: 'Activiteit',
+  source_gps: 'GPS',
+  source_manual: 'Handmatig',
+  source_timeline: 'Tijdlijn',
+
+  // Sessiebeoordeling
+  review: 'beoordeel',
+
+  // Doelen
+  of: 'van',
+  daily_goal: 'Dagdoel',
+  weekly_goal: 'Weekdoel',
+
+  // Navigatie
+  nav_home: 'Home',
+  nav_history: 'Geschiedenis',
+  nav_events: 'Sessies',
+  nav_goals: 'Doelen',
+  nav_settings: 'Instellingen',
+
+  // Dagen van de week (kort, maandag eerst)
+  day_mon: 'M',
+  day_tue: 'D',
+  day_wed: 'W',
+  day_thu: 'D',
+  day_fri: 'V',
+  day_sat: 'Z',
+  day_sun: 'Z',
+
+  // Doelenscherm
+  goals_edit: 'Bewerken',
+  goals_cancel: 'Annuleren',
+  goals_save: 'Opslaan',
+  goals_quick_select: 'Snel kiezen',
+  goals_custom_minutes: 'Aangepast (minuten)',
+  goals_placeholder_daily: 'bijv. 40',
+  goals_placeholder_weekly: 'bijv. 200',
+  goals_invalid_title: 'Ongeldig doel',
+  goals_invalid_daily: 'Voer een waarde in tussen 1 en 720 minuten.',
+  goals_invalid_weekly: 'Voer een waarde in tussen 1 en 5040 minuten.',
+  goals_who_tip: 'De WHO beveelt minimaal 150 minuten matige buitenactiviteit per week aan — dat is ongeveer 30 minuten per dag op werkdagen.',
+
+  // Sessiescherm
+  events_tab_review: 'Te beoordelen',
+  events_tab_all: 'Alle sessies',
+  events_all_reviewed: 'Alle sessies beoordeeld!',
+  events_none_recorded: 'Nog geen sessies geregistreerd.',
+  events_confidence: 'Betrouwbaarheid',
+  events_not_outside: '✕ Niet buiten',
+  events_confirm: '✓ Bevestigen',
+  events_confirmed: '✓ Bevestigd',
+  events_rejected: '✕ Niet buiten',
+
+  // Geschiedenis scherm
+  history_period_week: 'Week',
+  history_period_month: 'Maand',
+  history_stat_total: 'Totaal',
+  history_stat_avg: 'Daggemiddelde',
+  history_stat_goals_met: 'Doelen gehaald',
+  history_no_data: 'Geen gegevens voor deze periode',
+  history_legend_goal_met: 'Doel gehaald',
+  history_legend_today: 'Vandaag',
+  history_legend_target: 'Doelstelling',
+
+  // Instellingenscherm
+  settings_section_detection: 'Detectie',
+  settings_section_locations: 'Bekende locaties',
+  settings_section_reminders: 'Herinneringen',
+  settings_section_language: 'Taal',
+  settings_section_about: 'Over',
+  settings_health_connect: 'Health Connect',
+  settings_health_connected: 'Verbonden',
+  settings_health_unavailable: 'Niet beschikbaar',
+  settings_gps: 'GPS-tracking',
+  settings_gps_active: 'Actief',
+  settings_gps_permission: 'Toestemming vereist',
+  settings_gps_warning: "⚠️ Achtergrondlocatietoestemming is vereist voor GPS-detectie. Ga naar Instellingen → Apps → TouchGrass → Machtigingen → Locatie → Altijd toestaan.",
+  settings_locations_empty: 'Nog geen locaties gedetecteerd. De app detecteert je thuis- en werklocatie automatisch na een paar dagen gebruik.',
+  settings_location_radius: '{{radius}}m straal · {{type}}',
+  settings_location_indoor: 'Binnen',
+  settings_location_outdoor: 'Buiten',
+  settings_location_edit: 'Bewerken',
+  settings_location_edit_title: 'Locatie bewerken',
+  settings_location_edit_soon: 'Locatie bewerken komt binnenkort.',
+  settings_reminders_label: 'Slimme herinneringen',
+  settings_reminders_sublabel: 'Leert je patronen over tijd',
+  settings_app_sublabel: 'Jouw buitentijd-assistent',
+  settings_privacy: 'Privacy',
+  settings_privacy_sublabel: 'Alle gegevens blijven op je apparaat',
+  settings_clear_data: 'Alle gegevens wissen',
+  settings_clear_data_sublabel: 'Verwijder alle sessies en instellingen permanent',
+  settings_clear_data_confirm_title: 'Alle gegevens wissen',
+  settings_clear_data_confirm_body: 'Dit verwijdert al je buitensessies, doelen en instellingen permanent. Dit kan niet ongedaan worden gemaakt.',
+  settings_clear_cancel: 'Annuleren',
+  settings_clear_delete: 'Verwijderen',
+  settings_coming_soon_title: 'Binnenkort',
+  settings_coming_soon_body: 'Gegevens wissen wordt in een toekomstige update toegevoegd.',
+  settings_language_changed_title: 'Taal gewijzigd',
+  settings_language_changed_body: 'Start de app opnieuw op om de taalwijziging volledig toe te passen.',
+
+  // Meldingstitels (willekeurig gekozen)
+  notif_title_1: '🌿 Tijd om buiten te zijn!',
+  notif_title_2: '☀️ Even naar buiten',
+  notif_title_3: '🌱 Frisse lucht wacht op je',
+  notif_title_4: '👟 Trek je schoenen aan',
+  notif_title_5: '🌳 De natuur roept',
+
+  // Meldingsteksten
+  notif_body_none: 'Je bent vandaag nog niet buiten geweest. Een korte wandeling telt ook!',
+  notif_body_halfway: 'Nog {{remaining}} minuten te gaan. Je kunt het!',
+  notif_body_almost: 'Bijna! Nog maar {{remaining}} minuten buiten.',
+  notif_body_done: 'Doel bereikt! Zin in een extra rondje? 🌿',
+
+  // Meldingsacties
+  notif_action_went_outside: '✅ Ik ben buiten geweest!',
+  notif_action_snooze: '⏰ Herinner me later',
+  notif_action_less_often: '🔕 Minder vaak',
+
+  // Meldingskanaal
+  notif_channel_name: 'Buitenherinneringen',
+
+  // Taal-/datumopmaak
+  locale_tag: 'nl-NL',
+};

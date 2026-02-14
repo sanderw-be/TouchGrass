@@ -1,0 +1,79 @@
+import React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { Text } from 'react-native';
+import HomeScreen from '../screens/HomeScreen';
+import HistoryScreen from '../screens/HistoryScreen';
+import EventsScreen from '../screens/EventsScreen';
+import GoalsScreen from '../screens/GoalsScreen';
+import SettingsScreen from '../screens/SettingsScreen';
+import { colors, spacing } from '../utils/theme';
+import { t } from '../i18n';
+
+const Tab = createBottomTabNavigator();
+
+const icons: Record<string, string> = {
+  Home: '🌿',
+  History: '📊',
+  Events: '📋',
+  Goals: '🎯',
+  Settings: '⚙️',
+};
+
+export default function AppNavigator() {
+  return (
+    <NavigationContainer>
+      <Tab.Navigator
+        screenOptions={({ route }) => ({
+          tabBarIcon: ({ focused }) => (
+            <Text style={{ fontSize: focused ? 22 : 20, opacity: focused ? 1 : 0.5 }}>
+              {icons[route.name]}
+            </Text>
+          ),
+          tabBarActiveTintColor: colors.grass,
+          tabBarInactiveTintColor: colors.inactive,
+          tabBarStyle: {
+            backgroundColor: '#FFFFFF',
+            borderTopColor: colors.fog,
+            borderTopWidth: 1,
+            paddingBottom: spacing.xs,
+            height: 60,
+          },
+          tabBarLabelStyle: {
+            fontSize: 11,
+            fontWeight: '600',
+          },
+          headerStyle: { backgroundColor: colors.mist },
+          headerTitleStyle: { color: colors.textPrimary, fontWeight: '700' },
+          headerShadowVisible: false,
+        })}
+      >
+        <Tab.Screen
+          name="Home"
+          component={HomeScreen}
+          options={{ title: t('nav_home'), headerTitle: '🌱 TouchGrass' }}
+        />
+        <Tab.Screen
+          name="History"
+          component={HistoryScreen}
+          options={{ title: t('nav_history') }}
+        />
+        <Tab.Screen
+          name="Events"
+          component={EventsScreen}
+          options={{ title: t('nav_events') }}
+        />
+        <Tab.Screen
+          name="Goals"
+          component={GoalsScreen}
+          options={{ title: t('nav_goals') }}
+        />
+        <Tab.Screen
+          name="Settings"
+          component={SettingsScreen}
+          options={{ title: t('nav_settings') }}
+        />
+      </Tab.Navigator>
+    </NavigationContainer>
+  );
+}

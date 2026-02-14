@@ -1,0 +1,229 @@
+import * as Notifications from 'expo-notifications';
+import { Platform } from 'react-native';
+import {
+  getTodayMinutes, getCurrentDailyGoal,
+  getSetting, setSetting, insertReminderFeedback,
+} from '../storage/database';
+import { shouldRemindNow, scoreReminderHours } from './reminderAlgorithm';
+import { t } from '../i18n';
+
+const NOTIF_TITLES = [
+  'notif_title_1',
+  'notif_title_2',
+  'notif_title_3',
+  'notif_title_4',
+  'notif_title_5',
+];
+
+// Notification action IDs
+export const ACTION_WENT_OUTSIDE = 'went_outside';
+export const ACTION_SNOOZE = 'snoozed';
+export const ACTION_LESS_OFTEN = 'less_often';
+
+const CHANNEL_ID = 'touchgrass_reminders';
+
+/**
+ * Set up notification channel and action buttons.
+ * Call once on app start.
+ */
+export async function setupNotifications(): Promise<void> {
+  // Request permission
+  const { status } = await Notifications.requestPermissionsAsync();
+  if (status !== 'granted') return;
+
+  // Android notification channel
+  if (Platform.OS === 'android') {
+    await Notifications.setNotificationChannelAsync(CHANNEL_ID, {
+      name: t('notif_channel_name'),
+      importance: Notifications.AndroidImportance.DEFAULT,
+      vibrationPattern: [0, 250, 250, 250],
+      lightColor: '#4A7C59',
+    });
+  }
+
+  // Register action categories (the quick-reply buttons)
+  await Notifications.setNotificationCategoryAsync('reminder', [
+    {
+      identifier: ACTION_WENT_OUTSIDE,
+      buttonTitle: t('notif_action_went_outside'),
+      options: { opensAppToForeground: false },
+    },
+    {
+      identifier: ACTION_SNOOZE,
+      buttonTitle: t('notif_action_snooze'),
+      options: { opensAppToForeground: false },
+    },
+    {
+      identifier: ACTION_LESS_OFTEN,
+      buttonTitle: t('notif_action_less_often'),
+      options: { opensAppToForeground: false },
+    },
+  ]);
+
+  // Handle notification responses (button taps)
+  Notifications.addNotificationResponseReceivedListener(handleNotificationResponse);
+
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowBanner: true,
+      shouldShowList: true,
+      shouldPlaySound: false,
+      shouldSetBadge: false,
+    }),
+  });
+}
+
+/**
+ * Schedule the next reminder based on the algorithm.
+ * Cancels any existing scheduled reminders first.
+ */
+export async function scheduleNextReminder(): Promise<void> {
+  const todayMinutes = getTodayMinutes();
+  const dailyTarget = getCurrentDailyGoal()?.targetMinutes ?? 30;
+  const lastReminderMs = parseInt(getSetting('last_reminder_ms', '0'), 10);
+  const isCurrentlyOutside = getSetting('currently_outside', '0') === '1';
+  const remindersEnabled = getSetting('reminders_enabled', '1') === '1';
+
+  if (!remindersEnabled) return;
+
+  const { should, reason } = shouldRemindNow(
+    todayMinutes,
+    dailyTarget,
+    lastReminderMs,
+    isCurrentlyOutside,
+  );
+
+  if (!should) {
+    console.log('TouchGrass: no reminder needed:', reason);
+    return;
+  }
+
+  // Cancel existing scheduled reminders
+  await Notifications.cancelAllScheduledNotificationsAsync();
+
+  // Build message based on progress
+  const { title, body } = buildReminderMessage(todayMinutes, dailyTarget);
+
+  await Notifications.scheduleNotificationAsync({
+    content: {
+      title,
+      body,
+      categoryIdentifier: 'reminder',
+      data: { scheduledAt: Date.now() },
+      color: '#4A7C59',
+    },
+    trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: 1 },
+  });
+
+  setSetting('last_reminder_ms', String(Date.now()));
+  console.log('TouchGrass: reminder sent, reason:', reason);
+}
+
+/**
+ * Schedule reminders for optimal times throughout the day.
+ * Call this once in the morning to plan the day's reminders.
+ */
+export async function scheduleDayReminders(): Promise<void> {
+  const todayMinutes = getTodayMinutes();
+  const dailyTarget = getCurrentDailyGoal()?.targetMinutes ?? 30;
+  const remindersEnabled = getSetting('reminders_enabled', '1') === '1';
+
+  if (!remindersEnabled) return;
+
+  await Notifications.cancelAllScheduledNotificationsAsync();
+
+  const currentHour = new Date().getHours();
+  const scores = scoreReminderHours(todayMinutes, dailyTarget, currentHour);
+
+  // Pick the top 2 scoring hours for the day
+  const topHours = scores
+    .filter((s) => s.score >= 0.4 && s.hour > currentHour)
+    .slice(0, 2);
+
+  for (const slot of topHours) {
+    const triggerDate = new Date();
+    triggerDate.setHours(slot.hour, 0, 0, 0);
+
+    const { title, body } = buildReminderMessage(todayMinutes, dailyTarget);
+
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title,
+        body,
+        categoryIdentifier: 'reminder',
+        data: { scheduledAt: Date.now(), plannedHour: slot.hour },
+        color: '#4A7C59',
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DATE,
+        date: triggerDate,
+        channelId: CHANNEL_ID,
+      },
+    });
+  }
+}
+
+/**
+ * Handle user tapping a notification action button.
+ */
+function handleNotificationResponse(response: Notifications.NotificationResponse): void {
+  const actionId = response.actionIdentifier;
+  const now = Date.now();
+  const d = new Date(now);
+
+  const action = actionId === ACTION_WENT_OUTSIDE ? 'went_outside'
+    : actionId === ACTION_SNOOZE ? 'snoozed'
+    : actionId === ACTION_LESS_OFTEN ? 'less_often'
+    : 'dismissed';
+
+  insertReminderFeedback({
+    timestamp: now,
+    action,
+    scheduledHour: d.getHours(),
+    dayOfWeek: d.getDay(),
+  });
+
+  if (action === 'snoozed') {
+    // Reschedule for 45 minutes later
+    const snoozeDate = new Date(now + 45 * 60 * 1000);
+    const { title, body } = buildReminderMessage(
+      getTodayMinutes(),
+      getCurrentDailyGoal()?.targetMinutes ?? 30,
+    );
+    Notifications.scheduleNotificationAsync({
+      content: { title, body, categoryIdentifier: 'reminder', color: '#4A7C59' },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds: 45 * 60,
+        channelId: CHANNEL_ID,
+      },
+    });
+  }
+}
+
+/**
+ * Build a friendly reminder message based on current progress.
+ */
+function buildReminderMessage(
+  todayMinutes: number,
+  dailyTarget: number,
+): { title: string; body: string } {
+  const remaining = Math.max(0, Math.round(dailyTarget - todayMinutes));
+  const percent = todayMinutes / dailyTarget;
+
+  const titleKey = NOTIF_TITLES[Math.floor(Math.random() * NOTIF_TITLES.length)];
+  const title = t(titleKey);
+
+  let body: string;
+  if (todayMinutes === 0) {
+    body = t('notif_body_none');
+  } else if (percent < 0.5) {
+    body = t('notif_body_halfway', { remaining });
+  } else if (percent < 1) {
+    body = t('notif_body_almost', { remaining });
+  } else {
+    body = t('notif_body_done');
+  }
+
+  return { title, body };
+}
