@@ -37,17 +37,21 @@ export default function SettingsScreen() {
 
     // Re-check Health Connect and GPS when screen comes into focus
     // (user may have granted permissions in Android Settings)
-    recheckHealthConnect();
-    checkGPSPermissions().then(() => {
-      // Reload status after GPS permissions check completes
+    Promise.all([
+      recheckHealthConnect(),
+      checkGPSPermissions(),
+    ]).then(() => {
+      // Reload status after permission checks complete
       setDetectionStatus(getDetectionStatus());
     });
 
     // Also re-check when app comes back to foreground
     const sub = AppState.addEventListener('change', (state: AppStateStatus) => {
       if (state === 'active') {
-        recheckHealthConnect();
-        checkGPSPermissions().then(() => {
+        Promise.all([
+          recheckHealthConnect(),
+          checkGPSPermissions(),
+        ]).then(() => {
           // Reload status after permission checks complete
           setDetectionStatus(getDetectionStatus());
         });
