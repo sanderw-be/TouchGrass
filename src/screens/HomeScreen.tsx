@@ -1,9 +1,9 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
   TouchableOpacity, RefreshControl, StatusBar,
 } from 'react-native';
-import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useFocusEffect } from '@react-navigation/native';
 import ManualSessionSheet from '../components/ManualSessionSheet';
 import ProgressRing from '../components/ProgressRing';
 import {
@@ -11,7 +11,8 @@ import {
   getCurrentDailyGoal, getCurrentWeeklyGoal,
   getSessionsForDay,
 } from '../storage/database';
-import { colors, spacing, radius, shadows, formatMinutes } from '../utils/theme';
+import { colors, spacing, radius, shadows, formatMinutes, formatTime } from '../utils/theme';
+import { t, formatLocalDate } from '../i18n';
 
 export default function HomeScreen() {
   const [todayMinutes, setTodayMinutes] = useState(0);
@@ -43,16 +44,16 @@ export default function HomeScreen() {
 
   const greeting = () => {
     const h = new Date().getHours();
-    if (h < 12) return 'Good morning 🌱';
-    if (h < 17) return 'Good afternoon ☀️';
-    return 'Good evening 🌙';
+    if (h < 12) return t('greeting_morning');
+    if (h < 17) return t('greeting_afternoon');
+    return t('greeting_evening');
   };
 
   const motivationText = () => {
-    if (dailyPercent >= 1) return "Goal reached! Nice work getting outside today.";
+    if (dailyPercent >= 1) return t('goal_reached');
     const remaining = dailyTarget - todayMinutes;
-    if (dailyPercent === 0) return `${formatMinutes(dailyTarget)} of outside time awaits today.`;
-    return `${formatMinutes(remaining)} more to hit your daily goal.`;
+    if (dailyPercent === 0) return t('outside_time_awaits', { amount: formatMinutes(dailyTarget) });
+    return t('remaining_for_goal', { amount: formatMinutes(remaining) });
   };
 
   return (
@@ -74,7 +75,7 @@ export default function HomeScreen() {
         <View>
           <Text style={styles.greeting}>{greeting()}</Text>
           <Text style={styles.date}>
-            {new Date().toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' })}
+            {formatLocalDate(Date.now(), { weekday: 'long', month: 'long', day: 'numeric' })}
           </Text>
         </View>
         <TouchableOpacity style={styles.addBtn} onPress={() => setSheetVisible(true)}>
@@ -89,7 +90,7 @@ export default function HomeScreen() {
           target={dailyTarget}
           size={200}
           strokeWidth={16}
-          label="today"
+          label={t('today')}
         />
         <Text style={styles.motivation}>{motivationText()}</Text>
       </View>
@@ -97,9 +98,10 @@ export default function HomeScreen() {
       {/* Weekly strip */}
       <View style={styles.weekCard}>
         <View style={styles.weekHeader}>
-          <Text style={styles.weekTitle}>This week</Text>
+          <Text style={styles.weekTitle}>{t('this_week')}</Text>
           <Text style={styles.weekValue}>
-            {formatMinutes(weekMinutes)} <Text style={styles.weekOf}>/ {formatMinutes(weeklyTarget)}</Text>
+            {formatMinutes(weekMinutes)}{' '}
+            <Text style={styles.weekOf}>{t('of')} {formatMinutes(weeklyTarget)}</Text>
           </Text>
         </View>
         <View style={styles.weekBar}>
@@ -111,7 +113,7 @@ export default function HomeScreen() {
       {/* Today's sessions */}
       {todaySessions.length > 0 && (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Today's sessions</Text>
+          <Text style={styles.sectionTitle}>{t('todays_sessions')}</Text>
           {todaySessions.map((session) => (
             <SessionRow key={session.id} session={session} />
           ))}
@@ -121,8 +123,8 @@ export default function HomeScreen() {
       {todaySessions.length === 0 && (
         <View style={styles.emptyState}>
           <Text style={styles.emptyIcon}>🌿</Text>
-          <Text style={styles.emptyText}>No outside time recorded yet today.</Text>
-          <Text style={styles.emptySubtext}>Head out or log it manually!</Text>
+          <Text style={styles.emptyText}>{t('no_sessions_title')}</Text>
+          <Text style={styles.emptySubtext}>{t('no_sessions_sub')}</Text>
         </View>
       )}
     </ScrollView>
@@ -131,8 +133,10 @@ export default function HomeScreen() {
 
 function WeekDots() {
   const today = new Date().getDay();
-  const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-  // Monday-first index
+  const days = [
+    t('day_mon'), t('day_tue'), t('day_wed'), t('day_thu'),
+    t('day_fri'), t('day_sat'), t('day_sun'),
+  ];
   const todayMon = (today + 6) % 7;
 
   return (
@@ -170,7 +174,7 @@ function SessionRow({ session }: { session: any }) {
       </View>
       {session.userConfirmed === null && (
         <View style={styles.reviewBadge}>
-          <Text style={styles.reviewText}>review</Text>
+          <Text style={styles.reviewText}>{t('review')}</Text>
         </View>
       )}
     </View>
@@ -181,7 +185,13 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.mist },
   content: { padding: spacing.md, paddingBottom: spacing.xxl },
 
-  header: { marginBottom: spacing.lg, marginTop: spacing.md, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+  header: {
+    marginBottom: spacing.lg,
+    marginTop: spacing.md,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
   greeting: { fontSize: 26, fontWeight: '700', color: colors.textPrimary, letterSpacing: -0.5 },
   date: { fontSize: 14, color: colors.textSecondary, marginTop: 2 },
   addBtn: {
@@ -219,7 +229,12 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
     ...shadows.soft,
   },
-  weekHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: spacing.sm },
+  weekHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'baseline',
+    marginBottom: spacing.sm,
+  },
   weekTitle: { fontSize: 16, fontWeight: '600', color: colors.textPrimary },
   weekValue: { fontSize: 18, fontWeight: '700', color: colors.grass },
   weekOf: { fontSize: 13, fontWeight: '400', color: colors.textMuted },
