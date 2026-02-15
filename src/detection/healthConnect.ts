@@ -106,6 +106,9 @@ export async function syncHealthConnect(): Promise<void> {
 
 /**
  * Exercise types that are very likely to be outdoors.
+ * Criteria: Activities that primarily or commonly occur outdoors.
+ * Excludes indoor-specific activities (treadmill, stationary bike, gym equipment)
+ * and ambiguous activities (yoga, stretching, strength training).
  * https://developer.android.com/reference/kotlin/androidx/health/connect/client/records/ExerciseSessionRecord
  */
 function isOutdoorExerciseType(type: number): boolean {
@@ -144,7 +147,7 @@ function isOutdoorExerciseType(type: number): boolean {
     78,  // VOLLEYBALL
     79,  // WALKING
     80,  // WATER_POLO
-    82,  // WHEELCHAIR (outdoor possible)
+    82,  // WHEELCHAIR
   ];
   return OUTDOOR_TYPES.includes(type);
 }
