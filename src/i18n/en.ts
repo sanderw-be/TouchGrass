@@ -100,6 +100,8 @@ export default {
   settings_location_edit_soon: 'Location editing coming soon.',
   settings_reminders_label: 'Smart reminders',
   settings_reminders_sublabel: 'Learns your patterns over time',
+  settings_background_tracking_label: 'Background tracking notification',
+  settings_background_tracking_sublabel: "The persistent notification showing while GPS is active. Disable it via Android Settings → Apps → TouchGrass → Notifications → Background tracking.",
   settings_app_sublabel: 'Your outdoor time companion',
   settings_privacy: 'Privacy',
   settings_privacy_sublabel: 'All data stays on your device',
@@ -113,6 +115,26 @@ export default {
   settings_coming_soon_body: 'Data clearing will be implemented in a future update.',
   settings_language_changed_title: 'Language changed',
   settings_language_changed_body: 'Restart the app to apply the language change fully.',
+
+  // Manual session entry
+  manual_title: 'Log outside time',
+  manual_tab_log: '📝 Log past session',
+  manual_tab_timer: '⏱ Start timer',
+  manual_duration: 'Duration',
+  manual_when: 'When did you go out?',
+  manual_just_now: 'Just now',
+  manual_hours_ago: '{{hours}}h ago',
+  manual_custom_placeholder: 'e.g. 40',
+  manual_minutes: 'min',
+  manual_preview: 'Session preview',
+  manual_log_btn: '✓ Log session',
+  manual_timer_ready: 'Tap start when you head outside',
+  manual_timer_running: 'Timer running — go enjoy the outdoors! 🌿',
+  manual_timer_start: "🌿 I'm heading outside",
+  manual_timer_stop: "✓ I'm back",
+  manual_timer_cancel: 'Cancel',
+  manual_invalid_title: 'Invalid duration',
+  manual_invalid_body: 'Please enter a duration between 1 and 720 minutes.',
 
   // Notification titles (randomly picked)
   notif_title_1: '🌿 Time to touch grass!',
@@ -134,6 +156,8 @@ export default {
 
   // Notification channel
   notif_channel_name: 'Outside reminders',
+  notif_channel_background_name: 'Background tracking',
+  notif_channel_background_desc: 'Shows while TouchGrass is tracking your outside time. Can be disabled without affecting reminders.',
 
   // Time/date formatting locale tag
   locale_tag: 'en-GB',

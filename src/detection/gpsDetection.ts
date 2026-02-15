@@ -46,6 +46,7 @@ export async function startLocationTracking(): Promise<void> {
       notificationTitle: 'TouchGrass',
       notificationBody: 'Tracking outside time in the background',
       notificationColor: '#4A7C59',
+      notificationChannelId: 'touchgrass_background',
     },
     pausesUpdatesAutomatically: true,
   });

@@ -100,6 +100,8 @@ export default {
   settings_location_edit_soon: 'Locatie bewerken komt binnenkort.',
   settings_reminders_label: 'Slimme herinneringen',
   settings_reminders_sublabel: 'Leert je patronen over tijd',
+  settings_background_tracking_label: 'Achtergrondtracking melding',
+  settings_background_tracking_sublabel: 'De permanente melding die zichtbaar is terwijl GPS actief is. Uitschakelen via Android Instellingen → Apps → TouchGrass → Meldingen → Achtergrondtracking.',
   settings_app_sublabel: 'Jouw buitentijd-assistent',
   settings_privacy: 'Privacy',
   settings_privacy_sublabel: 'Alle gegevens blijven op je apparaat',
@@ -113,6 +115,26 @@ export default {
   settings_coming_soon_body: 'Gegevens wissen wordt in een toekomstige update toegevoegd.',
   settings_language_changed_title: 'Taal gewijzigd',
   settings_language_changed_body: 'Start de app opnieuw op om de taalwijziging volledig toe te passen.',
+
+  // Handmatige sessie invoer
+  manual_title: 'Buitentijd registreren',
+  manual_tab_log: '📝 Sessie achteraf invoeren',
+  manual_tab_timer: '⏱ Timer starten',
+  manual_duration: 'Duur',
+  manual_when: 'Wanneer ben je buiten geweest?',
+  manual_just_now: 'Net nu',
+  manual_hours_ago: '{{hours}}u geleden',
+  manual_custom_placeholder: 'bijv. 40',
+  manual_minutes: 'min',
+  manual_preview: 'Sessieoverzicht',
+  manual_log_btn: '✓ Sessie opslaan',
+  manual_timer_ready: 'Tik op start als je naar buiten gaat',
+  manual_timer_running: 'Timer loopt — geniet van de buitenlucht! 🌿',
+  manual_timer_start: '🌿 Ik ga naar buiten',
+  manual_timer_stop: '✓ Ik ben terug',
+  manual_timer_cancel: 'Annuleren',
+  manual_invalid_title: 'Ongeldige duur',
+  manual_invalid_body: 'Voer een duur in tussen 1 en 720 minuten.',
 
   // Meldingstitels (willekeurig gekozen)
   notif_title_1: '🌿 Tijd om buiten te zijn!',
@@ -134,6 +156,8 @@ export default {
 
   // Meldingskanaal
   notif_channel_name: 'Buitenherinneringen',
+  notif_channel_background_name: 'Achtergrondtracking',
+  notif_channel_background_desc: 'Zichtbaar terwijl TouchGrass je buitentijd bijhoudt. Kan worden uitgeschakeld zonder invloed op herinneringen.',
 
   // Taal-/datumopmaak
   locale_tag: 'nl-NL',

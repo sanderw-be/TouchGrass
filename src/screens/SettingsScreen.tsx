@@ -113,6 +113,12 @@ export default function SettingsScreen() {
             />
           }
         />
+        <Divider />
+        <SettingRow
+          icon="📡"
+          label={t('settings_background_tracking_label')}
+          sublabel={t('settings_background_tracking_sublabel')}
+        />
       </View>
 
       <Text style={styles.sectionHeader}>{t('settings_section_language')}</Text>

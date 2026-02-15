@@ -31,13 +31,23 @@ export async function setupNotifications(): Promise<void> {
   const { status } = await Notifications.requestPermissionsAsync();
   if (status !== 'granted') return;
 
-  // Android notification channel
+  // Android notification channel for reminders
   if (Platform.OS === 'android') {
     await Notifications.setNotificationChannelAsync(CHANNEL_ID, {
       name: t('notif_channel_name'),
       importance: Notifications.AndroidImportance.DEFAULT,
       vibrationPattern: [0, 250, 250, 250],
       lightColor: '#4A7C59',
+    });
+
+    // Separate low-priority channel for the background tracking notification
+    // Users can disable this independently without affecting reminders
+    await Notifications.setNotificationChannelAsync('touchgrass_background', {
+      name: t('notif_channel_background_name'),
+      description: t('notif_channel_background_desc'),
+      importance: Notifications.AndroidImportance.MIN, // no sound, no peek, no badge
+      showBadge: false,
+      enableVibrate: false,
     });
   }
 
@@ -63,10 +73,10 @@ export async function setupNotifications(): Promise<void> {
   // Handle notification responses (button taps)
   Notifications.addNotificationResponseReceivedListener(handleNotificationResponse);
 
+  // Set handler for foreground notifications
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
-      shouldShowBanner: true,
-      shouldShowList: true,
+      shouldShowAlert: true,
       shouldPlaySound: false,
       shouldSetBadge: false,
     }),

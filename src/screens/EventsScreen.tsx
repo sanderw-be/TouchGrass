@@ -6,10 +6,11 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import {
   getUnreviewedSessions, getSessionsForRange,
-  confirmSession, startOfDay, OutsideSession,
+  confirmSession, OutsideSession,
 } from '../storage/database';
 import { colors, spacing, radius, shadows, formatMinutes } from '../utils/theme';
 import { t, formatLocalDate, formatLocalTime } from '../i18n';
+import ManualSessionSheet from '../components/ManualSessionSheet';
 
 type Tab = 'review' | 'all';
 
@@ -18,6 +19,7 @@ export default function EventsScreen() {
   const [unreviewed, setUnreviewed] = useState<OutsideSession[]>([]);
   const [allSessions, setAllSessions] = useState<OutsideSession[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [sheetVisible, setSheetVisible] = useState(false);
 
   const loadData = useCallback(() => {
     setUnreviewed(getUnreviewedSessions());
@@ -42,6 +44,11 @@ export default function EventsScreen() {
 
   return (
     <View style={styles.container}>
+      <ManualSessionSheet
+        visible={sheetVisible}
+        onClose={() => setSheetVisible(false)}
+        onSessionLogged={loadData}
+      />
       {/* Tab switcher */}
       <View style={styles.tabs}>
         <TouchableOpacity
@@ -57,6 +64,9 @@ export default function EventsScreen() {
           onPress={() => setTab('all')}
         >
           <Text style={[styles.tabText, tab === 'all' && styles.tabTextActive]}>{t('events_tab_all')}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.addBtn} onPress={() => setSheetVisible(true)}>
+          <Text style={styles.addBtnText}>+</Text>
         </TouchableOpacity>
       </View>
 
@@ -186,6 +196,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.textInverse,
     borderBottomWidth: 1,
     borderBottomColor: colors.fog,
+    alignItems: 'center',
   },
   tab: {
     flex: 1,
@@ -197,6 +208,17 @@ const styles = StyleSheet.create({
   tabActive: { borderBottomColor: colors.grass },
   tabText: { fontSize: 14, color: colors.textMuted, fontWeight: '500' },
   tabTextActive: { color: colors.grass, fontWeight: '700' },
+  addBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.grass,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.md,
+    ...shadows.soft,
+  },
+  addBtnText: { fontSize: 22, color: colors.textInverse, lineHeight: 28, fontWeight: '300' },
 
   scroll: { flex: 1 },
   content: { padding: spacing.md, paddingBottom: spacing.xxl },
