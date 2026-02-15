@@ -19,6 +19,7 @@ export default {
   source_gps: 'GPS',
   source_manual: 'Handmatig',
   source_timeline: 'Tijdlijn',
+  manually_logged: 'handmatig toegevoegd',
 
   // Sessiebeoordeling
   review: 'beoordeel',

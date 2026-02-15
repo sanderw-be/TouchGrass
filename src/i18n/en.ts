@@ -19,6 +19,7 @@ export default {
   source_gps: 'GPS',
   source_manual: 'Manual',
   source_timeline: 'Timeline',
+  manually_logged: 'manually logged',
 
   // Session review
   review: 'review',

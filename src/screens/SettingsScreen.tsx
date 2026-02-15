@@ -394,7 +394,7 @@ const styles = StyleSheet.create({
   },
   dangerBtnText: { fontSize: 12, color: colors.error, fontWeight: '600' },
 
-  checkmark: { fontSize: 18, color: colors.grass, fontWeight: '700' },
+  checkmark: { fontSize: 18, color: colors.grass, fontWeight: '700', marginLeft: spacing.md },
 
   permissionWarning: {
     backgroundColor: '#FEF3C7',
