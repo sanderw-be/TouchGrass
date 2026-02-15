@@ -12,6 +12,8 @@ export default {
   today: 'vandaag',
   no_sessions_title: 'Nog geen buitentijd geregistreerd vandaag.',
   no_sessions_sub: 'Ga naar buiten of log het handmatig!',
+  todays_sessions: "Sessies vandaag",
+
 
   // Sessiebronnen
   source_health_connect: 'Activiteit',
