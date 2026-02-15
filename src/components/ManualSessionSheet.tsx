@@ -4,7 +4,8 @@ import {
   ScrollView, TextInput, Platform, Alert,
 } from 'react-native';
 import { logManualSession, startManualSession } from '../detection/manualCheckin';
-import { colors, spacing, radius, shadows, formatMinutes } from '../utils/theme';
+import { colors, spacing, radius, shadows } from '../utils/theme';
+import { formatMinutes } from '../utils/helpers';
 import { t, formatLocalDate, formatLocalTime } from '../i18n';
 
 interface Props {

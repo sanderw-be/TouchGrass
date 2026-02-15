@@ -8,7 +8,8 @@ import {
   getDailyTotalsForMonth, getSessionsForRange,
   getCurrentDailyGoal, startOfDay, startOfWeek,
 } from '../storage/database';
-import { colors, spacing, radius, shadows, formatMinutes } from '../utils/theme';
+import { colors, spacing, radius, shadows } from '../utils/theme';
+import { formatMinutes } from '../utils/helpers';
 import { formatLocalDate } from '../i18n';
 import { t } from '../i18n';
 
