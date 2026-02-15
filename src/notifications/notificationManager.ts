@@ -177,6 +177,7 @@ export async function scheduleDayReminders(): Promise<void> {
  * Handle user tapping a notification action button.
  */
 function handleNotificationResponse(response: Notifications.NotificationResponse): void {
+  const notificationId = response.notification.request.identifier;
   const actionId = response.actionIdentifier;
   const now = Date.now();
   const d = new Date(now);
@@ -192,6 +193,9 @@ function handleNotificationResponse(response: Notifications.NotificationResponse
     scheduledHour: d.getHours(),
     dayOfWeek: d.getDay(),
   });
+
+  // Dismiss the notification
+  Notifications.dismissNotificationAsync(notificationId);
 
   if (action === 'snoozed') {
     // Reschedule for 45 minutes later
