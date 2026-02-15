@@ -16,6 +16,7 @@ import {
 
 const OPEN_METEO_API = 'https://api.open-meteo.com/v1/forecast';
 const CACHE_DURATION_MS = 30 * 60 * 1000; // 30 minutes
+const DEFAULT_TEMPERATURE_CELSIUS = 15; // Fallback when API doesn't provide data
 
 export interface WeatherFetchResult {
   success: boolean;
@@ -159,7 +160,7 @@ function parseWeatherData(data: any, fetchTime: number): WeatherCondition[] {
       timestamp: fetchTime,
       forecastHour,
       forecastDate,
-      temperature: hourly.temperature_2m?.[i] ?? 15,
+      temperature: hourly.temperature_2m?.[i] ?? DEFAULT_TEMPERATURE_CELSIUS,
       precipitationProbability: hourly.precipitation_probability?.[i] ?? 0,
       cloudCover: hourly.cloud_cover?.[i] ?? 0,
       uvIndex: hourly.uv_index?.[i] ?? 0,

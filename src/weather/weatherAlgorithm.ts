@@ -69,6 +69,9 @@ export function scoreWeatherCondition(
     } else if (temp > 10 && temp <= 20) {
       score += 0.10;
       reasons.push('mild');
+    } else if (temp > 20 && temp <= 25) {
+      // Neutral zone - no penalty or bonus
+      reasons.push('mild temp');
     } else if (temp > 25) {
       score -= 0.15;
       reasons.push('too warm');
@@ -81,6 +84,10 @@ export function scoreWeatherCondition(
     } else if (temp > 10 && temp < 20) {
       score += 0.10;
       reasons.push('mild');
+    } else if (temp > 5 && temp <= 10) {
+      // Neutral-cool zone - slight preference still
+      score += 0.05;
+      reasons.push('cool');
     } else if (temp <= 5) {
       score -= 0.15;
       reasons.push('too cold');

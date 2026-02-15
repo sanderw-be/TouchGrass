@@ -660,8 +660,9 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   tempOptions: {
-    flexDirection: 'column',
+    flexDirection: 'row',
     gap: spacing.xs,
+    flexWrap: 'wrap',
   },
   tempOption: {
     paddingHorizontal: spacing.sm,
@@ -670,6 +671,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.fog,
     borderWidth: 1,
     borderColor: 'transparent',
+    minWidth: 80,
   },
   tempOptionActive: {
     backgroundColor: colors.grassLight,
@@ -679,6 +681,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.textSecondary,
     fontWeight: '500',
+    textAlign: 'center',
   },
   tempOptionTextActive: {
     color: colors.grass,
