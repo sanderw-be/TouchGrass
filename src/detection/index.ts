@@ -147,12 +147,21 @@ export async function checkGPSPermissions(): Promise<boolean> {
  */
 export async function requestGPSPermissions(): Promise<boolean> {
   try {
+    // Check current foreground permission status
+    const { status: currentFgStatus } = await Location.getForegroundPermissionsAsync();
+    
+    // Request foreground permission
     const { status: fgStatus } = await Location.requestForegroundPermissionsAsync();
     if (fgStatus !== 'granted') {
       setSetting('gps_enabled', '0');
+      // If user explicitly denied, return false immediately
       return false;
     }
     
+    // Check current background permission status
+    const { status: currentBgStatus } = await Location.getBackgroundPermissionsAsync();
+    
+    // Request background permission
     const { status: bgStatus } = await Location.requestBackgroundPermissionsAsync();
     const granted = bgStatus === 'granted';
     
@@ -160,6 +169,8 @@ export async function requestGPSPermissions(): Promise<boolean> {
       await startLocationTracking();
       setSetting('gps_enabled', '1');
     } else {
+      // Background permission denied or not determined
+      // Update setting to reflect this
       setSetting('gps_enabled', '0');
     }
     

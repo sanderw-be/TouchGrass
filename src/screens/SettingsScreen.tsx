@@ -38,15 +38,19 @@ export default function SettingsScreen() {
     // Re-check Health Connect and GPS when screen comes into focus
     // (user may have granted permissions in Android Settings)
     recheckHealthConnect();
-    checkGPSPermissions();
+    checkGPSPermissions().then(() => {
+      // Reload status after GPS permissions check completes
+      setDetectionStatus(getDetectionStatus());
+    });
 
     // Also re-check when app comes back to foreground
     const sub = AppState.addEventListener('change', (state: AppStateStatus) => {
       if (state === 'active') {
         recheckHealthConnect();
-        checkGPSPermissions();
-        // Reload status after permissions check
-        setTimeout(() => setDetectionStatus(getDetectionStatus()), 500);
+        checkGPSPermissions().then(() => {
+          // Reload status after permission checks complete
+          setDetectionStatus(getDetectionStatus());
+        });
       }
     });
     return () => sub.remove();
@@ -147,8 +151,8 @@ export default function SettingsScreen() {
     } catch (error) {
       console.error('Error opening app settings:', error);
       Alert.alert(
-        'Error',
-        'Could not open settings. Please open Settings manually.',
+        t('settings_error_title'),
+        t('settings_error_open_settings_failed'),
       );
     }
   };
@@ -158,11 +162,11 @@ export default function SettingsScreen() {
     setDetectionStatus(getDetectionStatus());
     if (!granted) {
       Alert.alert(
-        'GPS Permission Required',
-        'Background location permission is required for GPS detection. Please grant permissions in Settings.',
+        t('settings_gps_permission_required_title'),
+        t('settings_gps_permission_required_body'),
         [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Open Settings', onPress: handleOpenAppSettings },
+          { text: t('settings_permission_cancel'), style: 'cancel' },
+          { text: t('settings_permission_open'), onPress: handleOpenAppSettings },
         ]
       );
     }

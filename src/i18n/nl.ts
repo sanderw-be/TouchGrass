@@ -104,6 +104,13 @@ export default {
   settings_hc_not_installed_body: 'Health Connect app is niet geïnstalleerd. Installeer het vanuit de Google Play Store.',
   settings_hc_open_error_title: 'Fout',
   settings_hc_open_error_body: 'Kon Health Connect instellingen niet openen. Open het handmatig vanuit je app-lijst.',
+  // GPS permission fout
+  settings_error_title: 'Fout',
+  settings_error_open_settings_failed: 'Kon instellingen niet openen. Open Instellingen handmatig.',
+  settings_gps_permission_required_title: 'GPS-toestemming vereist',
+  settings_gps_permission_required_body: 'Achtergrondlocatietoestemming is vereist voor GPS-detectie. Geef toestemming in Instellingen.',
+  settings_permission_cancel: 'Annuleren',
+  settings_permission_open: 'Instellingen openen',
   settings_gps: 'GPS-tracking',
   settings_gps_active: 'Actief',
   settings_gps_permission: 'Toestemming vereist',
