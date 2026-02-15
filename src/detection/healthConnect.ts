@@ -197,13 +197,16 @@ export async function syncHealthConnect(): Promise<boolean> {
 
 function isPermissionError(error: unknown): boolean {
   const message = String(error).toLowerCase();
-  // Broaden error detection to catch various permission-related exceptions
+  // Detect various permission-related exceptions
+  // Be specific to avoid false positives while catching common error formats
   return (
     message.includes('securityexception') ||
-    message.includes('permissiondeniedexception') ||
+    message.includes('permissiondenied') ||
+    message.includes('permission denied') ||
     message.includes('unsupportedoperationexception') ||
-    message.includes('permission') ||
-    message.includes('access_denied')
+    message.includes('access_denied') ||
+    message.includes('permission_denied') ||
+    (message.includes('permission') && message.includes('denied'))
   );
 }
 
