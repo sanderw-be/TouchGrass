@@ -50,7 +50,7 @@ export function buildSession(
     durationMinutes,
     source,
     confidence,
-    userConfirmed: null,
+    userConfirmed: source === 'manual' ? 1 : null, // Auto-approve manual sessions
     notes,
   };
 }

@@ -23,6 +23,11 @@ export default {
 
   // Sessiebeoordeling
   review: 'beoordeel',
+  session_delete: 'Verwijderen',
+  session_delete_confirm_title: 'Sessie verwijderen',
+  session_delete_confirm_body: 'Weet je zeker dat je deze sessie wilt verwijderen? Dit kan niet ongedaan worden gemaakt.',
+  session_delete_cancel: 'Annuleren',
+  session_review_again: 'Opnieuw beoordelen',
 
   // Doelen
   of: 'van',

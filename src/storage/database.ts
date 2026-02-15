@@ -184,10 +184,10 @@ export function getDailyTotalsForMonth(dateMs: number): { date: number; minutes:
   return rows.map(r => ({ date: r.day, minutes: r.minutes }));
 }
 
-export function confirmSession(id: number, confirmed: boolean): void {
+export function confirmSession(id: number, confirmed: boolean | null): void {
   db.runSync(
     'UPDATE outside_sessions SET userConfirmed = ? WHERE id = ?',
-    [confirmed ? 1 : 0, id]
+    [confirmed === null ? null : (confirmed ? 1 : 0), id]
   );
 }
 

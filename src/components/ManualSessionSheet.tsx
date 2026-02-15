@@ -29,6 +29,7 @@ export default function ManualSessionSheet({ visible, onClose, onSessionLogged }
 
   // Timer state
   const [timerRunning, setTimerRunning] = useState(false);
+  const [timerStartTime, setTimerStartTime] = useState<number>(0);
   const [timerSeconds, setTimerSeconds] = useState(0);
   const stopTimerRef = useRef<(() => void) | null>(null);
   const timerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -44,11 +45,12 @@ export default function ManualSessionSheet({ visible, onClose, onSessionLogged }
     }
   }, [visible]);
 
-  // Timer tick
+  // Timer tick - calculate elapsed time from start
   useEffect(() => {
     if (timerRunning) {
       timerIntervalRef.current = setInterval(() => {
-        setTimerSeconds((s) => s + 1);
+        const elapsed = Math.floor((Date.now() - timerStartTime) / 1000);
+        setTimerSeconds(elapsed);
       }, 1000);
     } else {
       if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
@@ -56,7 +58,7 @@ export default function ManualSessionSheet({ visible, onClose, onSessionLogged }
     return () => {
       if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
     };
-  }, [timerRunning]);
+  }, [timerRunning, timerStartTime]);
 
   // ── Log past session ──────────────────────────────────
 
@@ -77,6 +79,7 @@ export default function ManualSessionSheet({ visible, onClose, onSessionLogged }
   const handleStartTimer = () => {
     const stop = startManualSession();
     stopTimerRef.current = stop;
+    setTimerStartTime(Date.now());
     setTimerSeconds(0);
     setTimerRunning(true);
   };

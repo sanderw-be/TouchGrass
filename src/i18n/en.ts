@@ -23,6 +23,11 @@ export default {
 
   // Session review
   review: 'review',
+  session_delete: 'Delete',
+  session_delete_confirm_title: 'Delete session',
+  session_delete_confirm_body: 'Are you sure you want to delete this session? This cannot be undone.',
+  session_delete_cancel: 'Cancel',
+  session_review_again: 'Review again',
 
   // Goals
   of: 'of',
