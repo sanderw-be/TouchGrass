@@ -16,6 +16,7 @@ const OUTDOOR_ACTIVITY_TYPES = [
 
 const CONFIDENCE_ACTIVITY = 0.70;
 const MIN_DURATION_MS = 5 * 60 * 1000; // ignore sessions under 5 minutes
+const PERMISSION_WARNING_KEY = 'healthconnect_permission_warning';
 
 /**
  * Check if Health Connect is available on this device.
@@ -35,13 +36,21 @@ export async function isHealthConnectAvailable(): Promise<boolean> {
  */
 export async function requestHealthPermissions(): Promise<boolean> {
   try {
+    await initialize();
     const granted = await requestPermission([
       { accessType: 'read', recordType: 'ExerciseSession' },
       { accessType: 'read', recordType: 'Steps' as any }, // Type mismatch in library - using 'Steps' as workaround
       { accessType: 'read', recordType: 'ActiveCaloriesBurned' },
     ]);
+    if (granted.length > 0) {
+      setSetting(PERMISSION_WARNING_KEY, '0');
+    }
     return granted.length > 0;
   } catch (e) {
+    if (isPermissionError(e)) {
+      logPermissionWarningOnce();
+      return false;
+    }
     console.warn('Health Connect permission error:', e);
     return false;
   }
@@ -51,10 +60,10 @@ export async function requestHealthPermissions(): Promise<boolean> {
  * Poll Health Connect for recent activity and submit any outside sessions found.
  * Called periodically by the background fetch task.
  */
-export async function syncHealthConnect(): Promise<void> {
+export async function syncHealthConnect(): Promise<boolean> {
   try {
     const available = await isHealthConnectAvailable();
-    if (!available) return;
+    if (!available) return false;
 
     await initialize();
 
@@ -99,9 +108,28 @@ export async function syncHealthConnect(): Promise<void> {
 
     // Update last sync timestamp
     setSetting('healthconnect_last_sync', String(now));
+    return true;
   } catch (e) {
+    if (isPermissionError(e)) {
+      logPermissionWarningOnce();
+      setSetting('healthconnect_enabled', '0');
+      return false;
+    }
     console.warn('Health Connect sync error:', e);
+    return false;
   }
+}
+
+function isPermissionError(error: unknown): boolean {
+  const message = String(error);
+  return message.includes('SecurityException') && message.includes('READ_');
+}
+
+function logPermissionWarningOnce(): void {
+  const alreadyLogged = getSetting(PERMISSION_WARNING_KEY, '0') === '1';
+  if (alreadyLogged) return;
+  console.warn('Health Connect permissions missing. Reconnect in Settings.');
+  setSetting(PERMISSION_WARNING_KEY, '1');
 }
 
 /**

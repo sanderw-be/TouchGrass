@@ -111,6 +111,7 @@ export default {
   settings_gps_permission_required_body: 'Background location permission is required for GPS detection. Please grant permissions in Settings.',
   settings_permission_cancel: 'Cancel',
   settings_permission_open: 'Open Settings',
+  settings_gps: 'GPS tracking',
   settings_gps_active: 'Active',
   settings_gps_permission: 'Permission needed',
   settings_gps_warning: "⚠️ Background location permission is required for GPS detection to work. Go to your phone's Settings → Apps → TouchGrass → Permissions → Location → Allow all the time.",
@@ -208,6 +209,10 @@ export default {
   intro_ready_body: 'TouchGrass is ready to help you spend more time outdoors.',
   intro_ready_tip_title: 'Quick tip',
   intro_ready_tip_body: 'You can always manually log outdoor sessions from the home screen if automatic detection misses anything.',
+  intro_ready_checklist_title: 'First run checklist',
+  intro_ready_checklist_item_hc: 'Connect Health Connect to import exercise sessions.',
+  intro_ready_checklist_item_gps: 'Allow background location for GPS detection.',
+  intro_ready_checklist_item_notifications: 'Enable notifications for smart reminders.',
 
   // Notification titles (randomly picked)
   notif_title_1: '🌿 Time to touch grass!',

@@ -135,6 +135,21 @@ function ReadyStep() {
         <Text style={styles.tipTitle}>💡 {t('intro_ready_tip_title')}</Text>
         <Text style={styles.tipBody}>{t('intro_ready_tip_body')}</Text>
       </View>
+      <View style={styles.checklistCard}>
+        <Text style={styles.checklistTitle}>{t('intro_ready_checklist_title')}</Text>
+        <View style={styles.checklistItem}>
+          <Text style={styles.checklistBullet}>•</Text>
+          <Text style={styles.checklistText}>{t('intro_ready_checklist_item_hc')}</Text>
+        </View>
+        <View style={styles.checklistItem}>
+          <Text style={styles.checklistBullet}>•</Text>
+          <Text style={styles.checklistText}>{t('intro_ready_checklist_item_gps')}</Text>
+        </View>
+        <View style={styles.checklistItem}>
+          <Text style={styles.checklistBullet}>•</Text>
+          <Text style={styles.checklistText}>{t('intro_ready_checklist_item_notifications')}</Text>
+        </View>
+      </View>
     </View>
   );
 }
@@ -247,6 +262,37 @@ const styles = StyleSheet.create({
   tipBody: {
     fontSize: 14,
     color: '#92400E',
+    lineHeight: 20,
+  },
+  checklistCard: {
+    width: '100%',
+    backgroundColor: colors.textInverse,
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    marginTop: spacing.md,
+    ...shadows.soft,
+  },
+  checklistTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: colors.textPrimary,
+    marginBottom: spacing.sm,
+  },
+  checklistItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: spacing.xs,
+  },
+  checklistBullet: {
+    width: 16,
+    color: colors.textMuted,
+    fontSize: 16,
+    lineHeight: 20,
+  },
+  checklistText: {
+    flex: 1,
+    fontSize: 14,
+    color: colors.textSecondary,
     lineHeight: 20,
   },
 
