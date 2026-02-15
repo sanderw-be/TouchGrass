@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { getSetting, setSetting, getKnownLocations, KnownLocation, clearAllData } from '../storage/database';
-import { getDetectionStatus, requestHealthConnect, recheckHealthConnect, checkGPSPermissions, requestGPSPermissions } from '../detection/index';
+import { getDetectionStatus, requestHealthConnect, recheckHealthConnect, checkGPSPermissions, requestGPSPermissions, checkHealthConnectPermissions } from '../detection/index';
 import { AppState, AppStateStatus } from 'react-native';
 import { colors, spacing, radius, shadows } from '../utils/theme';
 import { t } from '../i18n';

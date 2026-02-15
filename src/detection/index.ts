@@ -1,7 +1,12 @@
 import * as BackgroundTask from 'expo-background-task';
 import * as TaskManager from 'expo-task-manager';
 import * as Location from 'expo-location';
-import { syncHealthConnect, requestHealthPermissions, isHealthConnectAvailable } from './healthConnect';
+import { 
+  syncHealthConnect, 
+  requestHealthPermissions, 
+  isHealthConnectAvailable,
+  checkHealthConnectPermissions 
+} from './healthConnect';
 import { startLocationTracking, autoDetectLocations } from './gpsDetection';
 import { getSetting, setSetting } from '../storage/database';
 import { scheduleNextReminder } from '../notifications/notificationManager';
@@ -34,14 +39,18 @@ export async function initDetection(): Promise<DetectionStatus> {
     gps: false,
   };
 
-  // Health Connect
+  // Health Connect - always check actual permission status on startup
   const hcAvailable = await isHealthConnectAvailable();
   if (hcAvailable) {
-    const hcEnabled = getSetting('healthconnect_enabled', '0') === '1';
-    if (hcEnabled) {
+    // Check actual permissions, don't rely on stored setting
+    const hasPermissions = await checkHealthConnectPermissions();
+    if (hasPermissions) {
+      // Try to sync - this verifies permissions work
       const ok = await syncHealthConnect();
       status.healthConnect = ok;
-      setSetting('healthconnect_enabled', ok ? '1' : '0');
+    } else {
+      status.healthConnect = false;
+      setSetting('healthconnect_enabled', '0');
     }
   }
 
@@ -103,11 +112,13 @@ export async function requestHealthConnect(): Promise<boolean> {
 export async function recheckHealthConnect(): Promise<boolean> {
   try {
     const available = await isHealthConnectAvailable();
-    if (!available) return false;
-    // Try to sync — if permissions were granted it will succeed
-    const ok = await syncHealthConnect();
-    setSetting('healthconnect_enabled', ok ? '1' : '0');
-    return ok;
+    if (!available) {
+      setSetting('healthconnect_enabled', '0');
+      return false;
+    }
+    // Check actual permissions
+    const hasPermissions = await checkHealthConnectPermissions();
+    return hasPermissions;
   } catch {
     setSetting('healthconnect_enabled', '0');
     return false;
@@ -187,3 +198,6 @@ export interface DetectionStatus {
   healthConnect: boolean;
   gps: boolean;
 }
+
+// Re-export Health Connect functions for convenience
+export { checkHealthConnectPermissions } from './healthConnect';

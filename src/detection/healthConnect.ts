@@ -15,6 +15,7 @@ const OUTDOOR_ACTIVITY_TYPES = [
 ];
 
 const CONFIDENCE_ACTIVITY = 0.70;
+const CONFIDENCE_STEPS = 0.50; // Lower confidence for steps (could be indoor)
 const MIN_DURATION_MS = 5 * 60 * 1000; // ignore sessions under 5 minutes
 const PERMISSION_WARNING_KEY = 'healthconnect_permission_warning';
 
@@ -26,6 +27,49 @@ export async function isHealthConnectAvailable(): Promise<boolean> {
     const status = await getSdkStatus();
     return status === SdkAvailabilityStatus.SDK_AVAILABLE;
   } catch {
+    return false;
+  }
+}
+
+/**
+ * Check if Health Connect permissions are actually granted.
+ * Performs a test read to verify permissions work.
+ * Returns true if permissions are valid and working.
+ */
+export async function checkHealthConnectPermissions(): Promise<boolean> {
+  try {
+    const available = await isHealthConnectAvailable();
+    if (!available) return false;
+
+    await initialize();
+
+    // Perform a test read with minimal time range to verify permissions
+    const now = Date.now();
+    const oneDayAgo = now - 24 * 60 * 60 * 1000;
+    const startTimeISO = new Date(oneDayAgo).toISOString();
+    const endTimeISO = new Date(now).toISOString();
+
+    // Try to read ExerciseSession records (this will fail if permissions not granted)
+    await readRecords('ExerciseSession', {
+      timeRangeFilter: {
+        operator: 'between',
+        startTime: startTimeISO,
+        endTime: endTimeISO,
+      },
+    });
+
+    // If we got here without error, permissions are valid
+    setSetting('healthconnect_enabled', '1');
+    setSetting(PERMISSION_WARNING_KEY, '0');
+    return true;
+  } catch (e) {
+    if (isPermissionError(e)) {
+      console.warn('Health Connect permissions check failed:', String(e).substring(0, 200));
+      setSetting('healthconnect_enabled', '0');
+      return false;
+    }
+    // Other errors (e.g., network) shouldn't change permission state
+    console.warn('Health Connect availability check error (non-permission):', e);
     return false;
   }
 }
@@ -106,6 +150,37 @@ export async function syncHealthConnect(): Promise<boolean> {
       submitSession(session);
     }
 
+    // Read steps records
+    const stepsResult = await readRecords('Steps', {
+      timeRangeFilter: {
+        operator: 'between',
+        startTime: startTimeISO,
+        endTime: endTimeISO,
+      },
+    });
+
+    for (const record of stepsResult.records) {
+      const start = new Date(record.startTime).getTime();
+      const end = new Date(record.endTime).getTime();
+      const duration = end - start;
+
+      if (duration < MIN_DURATION_MS) continue;
+
+      // Steps have lower confidence than explicit exercise sessions
+      // as they could be indoor (mall, treadmill, etc.)
+      const confidence = 0.50;
+
+      const session = buildSession(
+        start,
+        end,
+        'health_connect',
+        confidence,
+        `Steps: ${record.count}`,
+      );
+
+      submitSession(session);
+    }
+
     // Update last sync timestamp
     setSetting('healthconnect_last_sync', String(now));
     return true;
@@ -122,7 +197,15 @@ export async function syncHealthConnect(): Promise<boolean> {
 
 function isPermissionError(error: unknown): boolean {
   const message = String(error);
-  return message.includes('SecurityException') && message.includes('READ_');
+  // Broaden error detection to catch various permission-related exceptions
+  return (
+    message.includes('SecurityException') ||
+    message.includes('PermissionDeniedException') ||
+    message.includes('UnsupportedOperationException') ||
+    message.includes('permission') ||
+    message.includes('Permission') ||
+    message.includes('ACCESS_DENIED')
+  );
 }
 
 function logPermissionWarningOnce(): void {
