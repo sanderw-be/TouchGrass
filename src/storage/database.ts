@@ -141,6 +141,10 @@ export function getSessionsForRange(fromMs: number, toMs: number): OutsideSessio
   );
 }
 
+export function deleteSession(id: number): void {
+  db.runSync('DELETE FROM outside_sessions WHERE id = ?', [id]);
+}
+
 export function getTodayMinutes(): number {
   const start = startOfDay(Date.now());
   const end = start + 86400000;
