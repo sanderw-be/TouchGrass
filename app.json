@@ -24,7 +24,11 @@
         "android.permission.FOREGROUND_SERVICE",
         "android.permission.FOREGROUND_SERVICE_LOCATION",
         "android.permission.RECEIVE_BOOT_COMPLETED",
-        "android.permission.VIBRATE"
+        "android.permission.VIBRATE",
+        "android.permission.health.READ_EXERCISE",
+        "android.permission.health.READ_STEPS",
+       "android.permission.health.READ_ACTIVE_CALORIES_BURNED",
+        "android.permission.health.READ_DISTANCE"
       ]
     },
     "plugins": [
@@ -43,13 +47,25 @@
           "color": "#4A7C59"
         }
       ],
-      [
-        "expo-build-properties",
-        {
-          "android": {
-            "minSdkVersion": 26
+  [
+  "expo-build-properties",
+  {
+    "android": {
+      "minSdkVersion": 26,
+      "manifestQueries": {
+        "intents": [
+          {
+            "action": "androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE"
           }
+        ]
+      },
+      "queries": [
+        {
+          "package": "com.google.android.apps.healthdata"
         }
+      ]
+    }
+  }
       ],
       "react-native-health-connect",
       "expo-sqlite",
