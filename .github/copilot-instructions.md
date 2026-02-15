@@ -110,8 +110,11 @@ Source types: `'health_connect' | 'gps' | 'manual' | 'timeline'`
 
 ### Boolean Storage in SQLite
 - SQLite stores booleans as INTEGER (0/1) or NULL
-- Convert when reading/writing: `value ? 1 : 0` and `value === 1`
-- `userConfirmed` uses tri-state: null (not reviewed), 0 (rejected), 1 (confirmed)
+- Convert when writing: `value ? 1 : 0` or `value === null ? null : (value ? 1 : 0)`
+- Convert when reading: `value === 1` for boolean, or handle tri-state with `value === null`, `value === 1`, `value === 0`
+- Example tri-state: `userConfirmed` can be null (not reviewed), 0 (rejected), or 1 (confirmed)
+  - Write: `userConfirmed === null ? null : (userConfirmed ? 1 : 0)`
+  - Read: `row.userConfirmed === null ? null : row.userConfirmed === 1`
 
 ### Navigation
 - Bottom tab navigation with Home, Events, History, Goals, Settings
