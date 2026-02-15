@@ -35,7 +35,10 @@ export default function HistoryScreen() {
       for (let i = 0; i < 7; i++) {
         const dayStart = weekStart + i * 86400000;
         const sessions = getSessionsForRange(dayStart, dayStart + 86400000);
-        const minutes = sessions.reduce((sum, s) => sum + s.durationMinutes, 0);
+        // Filter out declined sessions (userConfirmed === 0 or false)
+        const minutes = sessions
+          .filter(s => s.userConfirmed !== 0 && s.userConfirmed !== false)
+          .reduce((sum, s) => sum + s.durationMinutes, 0);
         days.push({ date: dayStart, minutes });
       }
       setDailyData(days);

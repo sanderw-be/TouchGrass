@@ -151,7 +151,7 @@ export function getTodayMinutes(): number {
   const row = db.getFirstSync<{ total: number }>(
     `SELECT COALESCE(SUM(durationMinutes), 0) as total
      FROM outside_sessions
-     WHERE startTime >= ? AND startTime < ?`,
+     WHERE startTime >= ? AND startTime < ? AND userConfirmed IS NOT 0`,
     [start, end]
   );
   return row?.total ?? 0;
@@ -163,7 +163,7 @@ export function getWeekMinutes(): number {
   const row = db.getFirstSync<{ total: number }>(
     `SELECT COALESCE(SUM(durationMinutes), 0) as total
      FROM outside_sessions
-     WHERE startTime >= ? AND startTime < ?`,
+     WHERE startTime >= ? AND startTime < ? AND userConfirmed IS NOT 0`,
     [start, end]
   );
   return row?.total ?? 0;
