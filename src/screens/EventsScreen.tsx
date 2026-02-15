@@ -60,7 +60,7 @@ export default function EventsScreen() {
   };
 
   const handleReReview = (id: number) => {
-    confirmSession(id, null as any); // Reset to null for re-review
+    confirmSession(id, null); // Reset to null for re-review
     loadData();
   };
 

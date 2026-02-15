@@ -35,26 +35,18 @@ export default function SettingsScreen() {
   useFocusEffect(useCallback(() => {
     loadStatus();
 
-    // Re-check Health Connect when screen comes into focus
+    // Re-check Health Connect and GPS when screen comes into focus
     // (user may have granted permissions in Android Settings)
-    recheckHealthConnect().then((granted) => {
-      if (granted) setDetectionStatus((s) => ({ ...s, healthConnect: true }));
-    });
-
-    // Re-check GPS permissions
-    checkGPSPermissions().then((granted) => {
-      setDetectionStatus((s) => ({ ...s, gps: granted }));
-    });
+    recheckHealthConnect();
+    checkGPSPermissions();
 
     // Also re-check when app comes back to foreground
     const sub = AppState.addEventListener('change', (state: AppStateStatus) => {
       if (state === 'active') {
-        recheckHealthConnect().then((granted) => {
-          setDetectionStatus(getDetectionStatus());
-        });
-        checkGPSPermissions().then((granted) => {
-          setDetectionStatus(getDetectionStatus());
-        });
+        recheckHealthConnect();
+        checkGPSPermissions();
+        // Reload status after permissions check
+        setTimeout(() => setDetectionStatus(getDetectionStatus()), 500);
       }
     });
     return () => sub.remove();
@@ -244,7 +236,7 @@ export default function SettingsScreen() {
                   style={styles.connectBtn}
                   onPress={handleRequestGPSPermission}
                 >
-                  <Text style={styles.connectBtnText}>Grant</Text>
+                  <Text style={styles.connectBtnText}>{t('settings_gps_grant')}</Text>
                 </TouchableOpacity>
               )
           }
@@ -254,14 +246,14 @@ export default function SettingsScreen() {
             <Divider />
             <SettingRow
               icon="⚙️"
-              label="Open Settings"
-              sublabel="Grant location permissions in app settings"
+              label={t('settings_gps_open_settings')}
+              sublabel={t('settings_gps_open_settings_sublabel')}
               right={
                 <TouchableOpacity
                   style={styles.editBtn}
                   onPress={handleOpenAppSettings}
                 >
-                  <Text style={styles.editBtnText}>Open</Text>
+                  <Text style={styles.editBtnText}>{t('settings_hc_open')}</Text>
                 </TouchableOpacity>
               }
             />
