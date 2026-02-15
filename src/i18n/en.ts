@@ -14,7 +14,6 @@ export default {
   no_sessions_sub: 'Head out or log it manually!',
   todays_sessions: "Today's sessions",
 
-
   // Session sources
   source_health_connect: 'Activity',
   source_gps: 'GPS',
@@ -88,7 +87,10 @@ export default {
   settings_section_about: 'About',
   settings_health_connect: 'Health Connect',
   settings_health_connected: 'Connected',
-  settings_health_unavailable: 'Not available',
+  settings_health_unavailable: 'Not connected',
+  settings_hc_connect: 'Connect',
+  settings_hc_failed_title: 'Could not connect',
+  settings_hc_failed_body: 'Make sure Health Connect is installed and try again. You can also grant permissions manually via Android Settings → Apps → TouchGrass → Permissions.',
   settings_gps: 'GPS Tracking',
   settings_gps_active: 'Active',
   settings_gps_permission: 'Permission needed',

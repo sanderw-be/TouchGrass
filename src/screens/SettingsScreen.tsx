@@ -5,7 +5,8 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { getSetting, setSetting, getKnownLocations, KnownLocation } from '../storage/database';
-import { getDetectionStatus } from '../detection/index';
+import { getDetectionStatus, requestHealthConnect, recheckHealthConnect } from '../detection/index';
+import { AppState, AppStateStatus } from 'react-native';
 import { colors, spacing, radius, shadows } from '../utils/theme';
 import { t } from '../i18n';
 import i18n from '../i18n';
@@ -20,13 +21,47 @@ export default function SettingsScreen() {
   const [detectionStatus, setDetectionStatus] = useState({ healthConnect: false, gps: false });
   const [knownLocations, setKnownLocations] = useState<KnownLocation[]>([]);
   const [language, setLanguage] = useState(i18n.locale);
+  const [connectingHC, setConnectingHC] = useState(false);
 
-  useFocusEffect(useCallback(() => {
+  const loadStatus = useCallback(() => {
     setRemindersEnabled(getSetting('reminders_enabled', '1') === '1');
     setDetectionStatus(getDetectionStatus());
     setKnownLocations(getKnownLocations());
     setLanguage(i18n.locale);
-  }, []));
+  }, []);
+
+  useFocusEffect(useCallback(() => {
+    loadStatus();
+
+    // Re-check Health Connect when screen comes into focus
+    // (user may have granted permissions in Android Settings)
+    recheckHealthConnect().then((granted) => {
+      if (granted) setDetectionStatus((s) => ({ ...s, healthConnect: true }));
+    });
+
+    // Also re-check when app comes back to foreground
+    const sub = AppState.addEventListener('change', (state: AppStateStatus) => {
+      if (state === 'active') {
+        recheckHealthConnect().then((granted) => {
+          setDetectionStatus(getDetectionStatus());
+        });
+      }
+    });
+    return () => sub.remove();
+  }, [loadStatus]));
+
+  const handleConnectHealthConnect = async () => {
+    setConnectingHC(true);
+    const granted = await requestHealthConnect();
+    setDetectionStatus(getDetectionStatus());
+    setConnectingHC(false);
+    if (!granted) {
+      Alert.alert(
+        t('settings_hc_failed_title'),
+        t('settings_hc_failed_body'),
+      );
+    }
+  };
 
   const toggleReminders = (value: boolean) => {
     setSetting('reminders_enabled', value ? '1' : '0');
@@ -53,7 +88,21 @@ export default function SettingsScreen() {
           icon="👟"
           label={t('settings_health_connect')}
           sublabel={detectionStatus.healthConnect ? t('settings_health_connected') : t('settings_health_unavailable')}
-          right={<StatusDot active={detectionStatus.healthConnect} />}
+          right={
+            detectionStatus.healthConnect
+              ? <StatusDot active={true} />
+              : (
+                <TouchableOpacity
+                  style={styles.connectBtn}
+                  onPress={handleConnectHealthConnect}
+                  disabled={connectingHC}
+                >
+                  <Text style={styles.connectBtnText}>
+                    {connectingHC ? '...' : t('settings_hc_connect')}
+                  </Text>
+                </TouchableOpacity>
+              )
+          }
         />
         <Divider />
         <SettingRow
@@ -247,6 +296,13 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   editBtnText: { fontSize: 12, color: colors.grass, fontWeight: '600' },
+  connectBtn: {
+    backgroundColor: colors.grass,
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+  },
+  connectBtnText: { fontSize: 12, color: colors.textInverse, fontWeight: '600' },
 
   dangerBtn: {
     backgroundColor: '#FEE2E2',

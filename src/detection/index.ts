@@ -72,8 +72,47 @@ async function registerBackgroundTask(): Promise<void> {
 }
 
 /**
- * Get current detection status from settings.
+ * Manually request Health Connect permissions.
+ * Call this from the Settings screen connect button.
+ * Returns the updated status.
  */
+export async function requestHealthConnect(): Promise<boolean> {
+  try {
+    const available = await isHealthConnectAvailable();
+    if (!available) {
+      console.warn('Health Connect not available on this device');
+      return false;
+    }
+    const granted = await requestHealthPermissions();
+    if (granted) {
+      setSetting('healthconnect_enabled', '1');
+    }
+    return granted;
+  } catch (e) {
+    console.warn('Health Connect request error:', e);
+    return false;
+  }
+}
+
+/**
+ * Re-check Health Connect status without requesting permissions.
+ * Call this when the app comes back to foreground.
+ */
+export async function recheckHealthConnect(): Promise<boolean> {
+  try {
+    const available = await isHealthConnectAvailable();
+    if (!available) return false;
+    // Try to sync — if permissions were granted it will succeed
+    await syncHealthConnect();
+    setSetting('healthconnect_enabled', '1');
+    return true;
+  } catch {
+    setSetting('healthconnect_enabled', '0');
+    return false;
+  }
+}
+
+
 export function getDetectionStatus(): DetectionStatus {
   return {
     healthConnect: getSetting('healthconnect_enabled', '0') === '1',

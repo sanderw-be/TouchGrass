@@ -12,8 +12,7 @@ export default {
   today: 'vandaag',
   no_sessions_title: 'Nog geen buitentijd geregistreerd vandaag.',
   no_sessions_sub: 'Ga naar buiten of log het handmatig!',
-  todays_sessions: "Sessies vandaag",
-
+  todays_sessions: 'Sessies vandaag',
 
   // Sessiebronnen
   source_health_connect: 'Activiteit',
@@ -88,7 +87,10 @@ export default {
   settings_section_about: 'Over',
   settings_health_connect: 'Health Connect',
   settings_health_connected: 'Verbonden',
-  settings_health_unavailable: 'Niet beschikbaar',
+  settings_health_unavailable: 'Niet verbonden',
+  settings_hc_connect: 'Verbinden',
+  settings_hc_failed_title: 'Verbinding mislukt',
+  settings_hc_failed_body: 'Zorg dat Health Connect is geïnstalleerd en probeer het opnieuw. Je kunt ook handmatig toestemming geven via Android Instellingen → Apps → TouchGrass → Machtigingen.',
   settings_gps: 'GPS-tracking',
   settings_gps_active: 'Actief',
   settings_gps_permission: 'Toestemming vereist',
