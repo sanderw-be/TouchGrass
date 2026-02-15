@@ -43,6 +43,14 @@
           "color": "#4A7C59"
         }
       ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "minSdkVersion": 26
+          }
+        }
+      ],
       "react-native-health-connect",
       "expo-sqlite",
       "expo-background-task",
