@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
-  TouchableOpacity, Switch, Alert,
+  TouchableOpacity, Switch, Alert, Linking, Platform,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { getSetting, setSetting, getKnownLocations, KnownLocation, clearAllData } from '../storage/database';
@@ -61,6 +61,33 @@ export default function SettingsScreen() {
       Alert.alert(
         t('settings_hc_failed_title'),
         t('settings_hc_failed_body'),
+      );
+    }
+  };
+
+  const openHealthConnectSettings = async () => {
+    try {
+      if (Platform.OS === 'android') {
+        // Try to open Health Connect app directly
+        const healthConnectPackage = 'com.google.android.apps.healthdata';
+        const url = `package:${healthConnectPackage}`;
+        
+        const canOpen = await Linking.canOpenURL(url);
+        if (canOpen) {
+          await Linking.openURL(url);
+        } else {
+          // Fallback: Open app settings for TouchGrass
+          Alert.alert(
+            t('settings_hc_not_installed_title'),
+            t('settings_hc_not_installed_body'),
+          );
+        }
+      }
+    } catch (error) {
+      console.error('Error opening Health Connect settings:', error);
+      Alert.alert(
+        t('settings_hc_open_error_title'),
+        t('settings_hc_open_error_body'),
       );
     }
   };
@@ -147,6 +174,24 @@ export default function SettingsScreen() {
               )
           }
         />
+        {detectionStatus.healthConnect && (
+          <>
+            <Divider />
+            <SettingRow
+              icon="⚙️"
+              label={t('settings_hc_manage')}
+              sublabel={t('settings_hc_manage_sublabel')}
+              right={
+                <TouchableOpacity
+                  style={styles.editBtn}
+                  onPress={openHealthConnectSettings}
+                >
+                  <Text style={styles.editBtnText}>{t('settings_hc_open')}</Text>
+                </TouchableOpacity>
+              }
+            />
+          </>
+        )}
         <Divider />
         <SettingRow
           icon="📍"
