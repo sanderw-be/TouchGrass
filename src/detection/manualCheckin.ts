@@ -8,8 +8,8 @@ const CONFIDENCE_MANUAL = 1.0; // user always knows best
  * @param durationMinutes - how long the session was
  */
 export function logManualSession(durationMinutes: number, startTime?: number): void {
-  const end = Date.now();
-  const start = startTime ?? end - durationMinutes * 60 * 1000;
+  const start = startTime ?? Date.now() - durationMinutes * 60 * 1000;
+  const end = start + durationMinutes * 60 * 1000;
 
   const session = buildSession(
     start,
@@ -18,6 +18,9 @@ export function logManualSession(durationMinutes: number, startTime?: number): v
     CONFIDENCE_MANUAL,
     'Manually logged',
   );
+
+  // Manual sessions are auto-confirmed — the user knows what they logged
+  session.userConfirmed = 1;
 
   submitSession(session);
 }
