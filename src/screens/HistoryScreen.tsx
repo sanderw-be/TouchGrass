@@ -8,7 +8,8 @@ import {
   getDailyTotalsForMonth, getSessionsForRange,
   getCurrentDailyGoal, startOfDay, startOfWeek,
 } from '../storage/database';
-import { colors, spacing, radius, shadows, formatMinutes } from '../utils/theme';
+import { colors, spacing, radius, shadows } from '../utils/theme';
+import { formatMinutes } from '../utils/helpers';
 import { formatLocalDate } from '../i18n';
 import { t } from '../i18n';
 
@@ -35,7 +36,10 @@ export default function HistoryScreen() {
       for (let i = 0; i < 7; i++) {
         const dayStart = weekStart + i * 86400000;
         const sessions = getSessionsForRange(dayStart, dayStart + 86400000);
-        const minutes = sessions.reduce((sum, s) => sum + s.durationMinutes, 0);
+        // Filter out declined sessions (userConfirmed === 0)
+        const minutes = sessions
+          .filter(s => s.userConfirmed !== 0)
+          .reduce((sum, s) => sum + s.durationMinutes, 0);
         days.push({ date: dayStart, minutes });
       }
       setDailyData(days);

@@ -8,7 +8,8 @@ import {
   getUnreviewedSessions, getSessionsForRange,
   confirmSession, OutsideSession,
 } from '../storage/database';
-import { colors, spacing, radius, shadows, formatMinutes } from '../utils/theme';
+import { colors, spacing, radius, shadows } from '../utils/theme';
+import { formatMinutes } from '../utils/helpers';
 import { t, formatLocalDate, formatLocalTime } from '../i18n';
 import ManualSessionSheet from '../components/ManualSessionSheet';
 

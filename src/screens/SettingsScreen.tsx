@@ -1,15 +1,16 @@
 import React, { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
-  TouchableOpacity, Switch, Alert,
+  TouchableOpacity, Switch, Alert, Linking, Platform,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { getSetting, setSetting, getKnownLocations, KnownLocation } from '../storage/database';
+import { getSetting, setSetting, getKnownLocations, KnownLocation, clearAllData } from '../storage/database';
 import { getDetectionStatus, requestHealthConnect, recheckHealthConnect } from '../detection/index';
 import { AppState, AppStateStatus } from 'react-native';
 import { colors, spacing, radius, shadows } from '../utils/theme';
 import { t } from '../i18n';
 import i18n from '../i18n';
+import EditLocationSheet from '../components/EditLocationSheet';
 
 const LANGUAGES = [
   { code: 'en', label: 'English' },
@@ -22,6 +23,7 @@ export default function SettingsScreen() {
   const [knownLocations, setKnownLocations] = useState<KnownLocation[]>([]);
   const [language, setLanguage] = useState(i18n.locale);
   const [connectingHC, setConnectingHC] = useState(false);
+  const [editingLocation, setEditingLocation] = useState<KnownLocation | null>(null);
 
   const loadStatus = useCallback(() => {
     setRemindersEnabled(getSetting('reminders_enabled', '1') === '1');
@@ -63,6 +65,33 @@ export default function SettingsScreen() {
     }
   };
 
+  const openHealthConnectSettings = async () => {
+    try {
+      if (Platform.OS === 'android') {
+        // Try to open Health Connect app directly
+        const healthConnectPackage = 'com.google.android.apps.healthdata';
+        const url = `package:${healthConnectPackage}`;
+        
+        const canOpen = await Linking.canOpenURL(url);
+        if (canOpen) {
+          await Linking.openURL(url);
+        } else {
+          // Fallback: Open app settings for TouchGrass
+          Alert.alert(
+            t('settings_hc_not_installed_title'),
+            t('settings_hc_not_installed_body'),
+          );
+        }
+      }
+    } catch (error) {
+      console.error('Error opening Health Connect settings:', error);
+      Alert.alert(
+        t('settings_hc_open_error_title'),
+        t('settings_hc_open_error_body'),
+      );
+    }
+  };
+
   const toggleReminders = (value: boolean) => {
     setSetting('reminders_enabled', value ? '1' : '0');
     setRemindersEnabled(value);
@@ -78,19 +107,60 @@ export default function SettingsScreen() {
     );
   };
 
-  return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+  const handleClearData = () => {
+    Alert.alert(
+      t('settings_clear_data_confirm_title'),
+      t('settings_clear_data_confirm_body'),
+      [
+        { text: t('settings_clear_cancel'), style: 'cancel' },
+        {
+          text: t('settings_clear_delete'),
+          style: 'destructive',
+          onPress: () => {
+            try {
+              clearAllData();
+              loadStatus(); // Reload to show reset state
+              Alert.alert(
+                t('settings_clear_data_success_title'),
+                t('settings_clear_data_success_body'),
+              );
+            } catch (error) {
+              console.error('Error clearing data:', error);
+              Alert.alert(
+                t('settings_clear_data_error_title'),
+                t('settings_clear_data_error_body'),
+              );
+            }
+          },
+        },
+      ]
+    );
+  };
 
-      {/* Detection sources */}
-      <Text style={styles.sectionHeader}>{t('settings_section_detection')}</Text>
-      <View style={styles.card}>
-        <SettingRow
-          icon="👟"
-          label={t('settings_health_connect')}
-          sublabel={detectionStatus.healthConnect ? t('settings_health_connected') : t('settings_health_unavailable')}
-          right={
-            detectionStatus.healthConnect
-              ? <StatusDot active={true} />
+  return (
+    <>
+      <EditLocationSheet
+        visible={editingLocation !== null}
+        location={editingLocation}
+        onClose={() => setEditingLocation(null)}
+        onSave={() => {
+          loadStatus();
+          setEditingLocation(null);
+        }}
+      />
+
+      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+
+        {/* Detection sources */}
+        <Text style={styles.sectionHeader}>{t('settings_section_detection')}</Text>
+        <View style={styles.card}>
+          <SettingRow
+            icon="👟"
+            label={t('settings_health_connect')}
+            sublabel={detectionStatus.healthConnect ? t('settings_health_connected') : t('settings_health_unavailable')}
+            right={
+              detectionStatus.healthConnect
+                ? <StatusDot active={true} />
               : (
                 <TouchableOpacity
                   style={styles.connectBtn}
@@ -104,6 +174,24 @@ export default function SettingsScreen() {
               )
           }
         />
+        {detectionStatus.healthConnect && (
+          <>
+            <Divider />
+            <SettingRow
+              icon="⚙️"
+              label={t('settings_hc_manage')}
+              sublabel={t('settings_hc_manage_sublabel')}
+              right={
+                <TouchableOpacity
+                  style={styles.editBtn}
+                  onPress={openHealthConnectSettings}
+                >
+                  <Text style={styles.editBtnText}>{t('settings_hc_open')}</Text>
+                </TouchableOpacity>
+              }
+            />
+          </>
+        )}
         <Divider />
         <SettingRow
           icon="📍"
@@ -137,7 +225,7 @@ export default function SettingsScreen() {
               right={
                 <TouchableOpacity
                   style={styles.editBtn}
-                  onPress={() => Alert.alert(t('settings_location_edit_title'), t('settings_location_edit_soon'))}
+                  onPress={() => setEditingLocation(loc)}
                 >
                   <Text style={styles.editBtnText}>{t('settings_location_edit')}</Text>
                 </TouchableOpacity>
@@ -201,14 +289,7 @@ export default function SettingsScreen() {
           right={
             <TouchableOpacity
               style={styles.dangerBtn}
-              onPress={() => Alert.alert(
-                t('settings_clear_data_confirm_title'),
-                t('settings_clear_data_confirm_body'),
-                [
-                  { text: t('settings_clear_cancel'), style: 'cancel' },
-                  { text: t('settings_clear_delete'), style: 'destructive', onPress: () => Alert.alert(t('settings_coming_soon_title'), t('settings_coming_soon_body')) },
-                ]
-              )}
+              onPress={handleClearData}
             >
               <Text style={styles.dangerBtnText}>{t('settings_clear_data')}</Text>
             </TouchableOpacity>
@@ -217,6 +298,7 @@ export default function SettingsScreen() {
       </View>
 
     </ScrollView>
+    </>
   );
 }
 

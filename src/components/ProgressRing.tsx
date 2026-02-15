@@ -1,7 +1,8 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, View, Text, StyleSheet } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
-import { colors, progressColor, formatMinutes } from '../utils/theme';
+import { colors, progressColor } from '../utils/theme';
+import { formatMinutes } from '../utils/helpers';
 
 interface Props {
   current: number;    // minutes

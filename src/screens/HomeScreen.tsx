@@ -11,7 +11,8 @@ import {
   getCurrentDailyGoal, getCurrentWeeklyGoal,
   getSessionsForDay,
 } from '../storage/database';
-import { colors, spacing, radius, shadows, formatMinutes, formatTime } from '../utils/theme';
+import { colors, spacing, radius, shadows } from '../utils/theme';
+import { formatMinutes, formatTime } from '../utils/helpers';
 import { t, formatLocalDate } from '../i18n';
 
 export default function HomeScreen() {
