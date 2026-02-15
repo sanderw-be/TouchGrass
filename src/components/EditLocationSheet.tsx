@@ -71,8 +71,9 @@ export default function EditLocationSheet({ visible, location, onClose, onSave }
           text: t('location_delete_btn'),
           style: 'destructive',
           onPress: () => {
+            if (!location.id) return;
             try {
-              deleteKnownLocation(location.id!);
+              deleteKnownLocation(location.id);
               onSave();
               onClose();
             } catch (error) {
