@@ -12,6 +12,8 @@ export default {
   today: 'today',
   no_sessions_title: 'No outside time recorded yet today.',
   no_sessions_sub: 'Head out or log it manually!',
+  todays_sessions: "Today's sessions",
+
 
   // Session sources
   source_health_connect: 'Activity',
