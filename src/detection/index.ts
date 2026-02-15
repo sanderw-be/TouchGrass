@@ -116,9 +116,8 @@ export async function recheckHealthConnect(): Promise<boolean> {
       setSetting('healthconnect_enabled', '0');
       return false;
     }
-    // Check actual permissions
-    const hasPermissions = await checkHealthConnectPermissions();
-    return hasPermissions;
+    // Check actual permissions and return result
+    return await checkHealthConnectPermissions();
   } catch {
     setSetting('healthconnect_enabled', '0');
     return false;

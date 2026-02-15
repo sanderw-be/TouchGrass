@@ -168,7 +168,7 @@ export async function syncHealthConnect(): Promise<boolean> {
 
       // Steps have lower confidence than explicit exercise sessions
       // as they could be indoor (mall, treadmill, etc.)
-      const confidence = 0.50;
+      const confidence = CONFIDENCE_STEPS;
 
       const session = buildSession(
         start,
@@ -196,15 +196,14 @@ export async function syncHealthConnect(): Promise<boolean> {
 }
 
 function isPermissionError(error: unknown): boolean {
-  const message = String(error);
+  const message = String(error).toLowerCase();
   // Broaden error detection to catch various permission-related exceptions
   return (
-    message.includes('SecurityException') ||
-    message.includes('PermissionDeniedException') ||
-    message.includes('UnsupportedOperationException') ||
+    message.includes('securityexception') ||
+    message.includes('permissiondeniedexception') ||
+    message.includes('unsupportedoperationexception') ||
     message.includes('permission') ||
-    message.includes('Permission') ||
-    message.includes('ACCESS_DENIED')
+    message.includes('access_denied')
   );
 }
 
