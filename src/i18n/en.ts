@@ -19,9 +19,15 @@ export default {
   source_gps: 'GPS',
   source_manual: 'Manual',
   source_timeline: 'Timeline',
+  manually_logged: 'manually logged',
 
   // Session review
   review: 'review',
+  session_delete: 'Delete',
+  session_delete_confirm_title: 'Delete session',
+  session_delete_confirm_body: 'Are you sure you want to delete this session? This cannot be undone.',
+  session_delete_cancel: 'Cancel',
+  session_review_again: 'Review again',
 
   // Goals
   of: 'of',
@@ -98,10 +104,19 @@ export default {
   settings_hc_not_installed_body: 'Health Connect app is not installed. Please install it from the Google Play Store.',
   settings_hc_open_error_title: 'Error',
   settings_hc_open_error_body: 'Could not open Health Connect settings. Please open it manually from your app drawer.',
-  settings_gps: 'GPS Tracking',
+  // GPS permission error
+  settings_error_title: 'Error',
+  settings_error_open_settings_failed: 'Could not open settings. Please open Settings manually.',
+  settings_gps_permission_required_title: 'GPS Permission Required',
+  settings_gps_permission_required_body: 'Background location permission is required for GPS detection. Please grant permissions in Settings.',
+  settings_permission_cancel: 'Cancel',
+  settings_permission_open: 'Open Settings',
   settings_gps_active: 'Active',
   settings_gps_permission: 'Permission needed',
   settings_gps_warning: "⚠️ Background location permission is required for GPS detection to work. Go to your phone's Settings → Apps → TouchGrass → Permissions → Location → Allow all the time.",
+  settings_gps_grant: 'Grant',
+  settings_gps_open_settings: 'Open Settings',
+  settings_gps_open_settings_sublabel: 'Grant location permissions in app settings',
   settings_locations_empty: 'No locations detected yet. The app will auto-detect your home and work after a few days of use.',
   settings_location_radius: '{{radius}}m radius · {{type}}',
   settings_location_indoor: 'Indoor',

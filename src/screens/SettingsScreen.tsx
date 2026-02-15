@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { getSetting, setSetting, getKnownLocations, KnownLocation, clearAllData } from '../storage/database';
-import { getDetectionStatus, requestHealthConnect, recheckHealthConnect } from '../detection/index';
+import { getDetectionStatus, requestHealthConnect, recheckHealthConnect, checkGPSPermissions, requestGPSPermissions } from '../detection/index';
 import { AppState, AppStateStatus } from 'react-native';
 import { colors, spacing, radius, shadows } from '../utils/theme';
 import { t } from '../i18n';
@@ -35,16 +35,20 @@ export default function SettingsScreen() {
   useFocusEffect(useCallback(() => {
     loadStatus();
 
-    // Re-check Health Connect when screen comes into focus
+    // Re-check Health Connect and GPS when screen comes into focus
     // (user may have granted permissions in Android Settings)
-    recheckHealthConnect().then((granted) => {
-      if (granted) setDetectionStatus((s) => ({ ...s, healthConnect: true }));
+    recheckHealthConnect();
+    checkGPSPermissions().then(() => {
+      // Reload status after GPS permissions check completes
+      setDetectionStatus(getDetectionStatus());
     });
 
     // Also re-check when app comes back to foreground
     const sub = AppState.addEventListener('change', (state: AppStateStatus) => {
       if (state === 'active') {
-        recheckHealthConnect().then((granted) => {
+        recheckHealthConnect();
+        checkGPSPermissions().then(() => {
+          // Reload status after permission checks complete
           setDetectionStatus(getDetectionStatus());
         });
       }
@@ -137,6 +141,37 @@ export default function SettingsScreen() {
     );
   };
 
+  const handleOpenAppSettings = async () => {
+    try {
+      if (Platform.OS === 'android') {
+        await Linking.openSettings();
+      } else if (Platform.OS === 'ios') {
+        await Linking.openURL('app-settings:');
+      }
+    } catch (error) {
+      console.error('Error opening app settings:', error);
+      Alert.alert(
+        t('settings_error_title'),
+        t('settings_error_open_settings_failed'),
+      );
+    }
+  };
+
+  const handleRequestGPSPermission = async () => {
+    const granted = await requestGPSPermissions();
+    setDetectionStatus(getDetectionStatus());
+    if (!granted) {
+      Alert.alert(
+        t('settings_gps_permission_required_title'),
+        t('settings_gps_permission_required_body'),
+        [
+          { text: t('settings_permission_cancel'), style: 'cancel' },
+          { text: t('settings_permission_open'), onPress: handleOpenAppSettings },
+        ]
+      );
+    }
+  };
+
   return (
     <>
       <EditLocationSheet
@@ -197,12 +232,39 @@ export default function SettingsScreen() {
           icon="📍"
           label={t('settings_gps')}
           sublabel={detectionStatus.gps ? t('settings_gps_active') : t('settings_gps_permission')}
-          right={<StatusDot active={detectionStatus.gps} />}
+          right={
+            detectionStatus.gps
+              ? <StatusDot active={true} />
+              : (
+                <TouchableOpacity
+                  style={styles.connectBtn}
+                  onPress={handleRequestGPSPermission}
+                >
+                  <Text style={styles.connectBtnText}>{t('settings_gps_grant')}</Text>
+                </TouchableOpacity>
+              )
+          }
         />
         {!detectionStatus.gps && (
-          <View style={styles.permissionWarning}>
-            <Text style={styles.permissionWarningText}>{t('settings_gps_warning')}</Text>
-          </View>
+          <>
+            <Divider />
+            <SettingRow
+              icon="⚙️"
+              label={t('settings_gps_open_settings')}
+              sublabel={t('settings_gps_open_settings_sublabel')}
+              right={
+                <TouchableOpacity
+                  style={styles.editBtn}
+                  onPress={handleOpenAppSettings}
+                >
+                  <Text style={styles.editBtnText}>{t('settings_hc_open')}</Text>
+                </TouchableOpacity>
+              }
+            />
+            <View style={styles.permissionWarning}>
+              <Text style={styles.permissionWarningText}>{t('settings_gps_warning')}</Text>
+            </View>
+          </>
         )}
       </View>
 
@@ -394,7 +456,7 @@ const styles = StyleSheet.create({
   },
   dangerBtnText: { fontSize: 12, color: colors.error, fontWeight: '600' },
 
-  checkmark: { fontSize: 18, color: colors.grass, fontWeight: '700' },
+  checkmark: { fontSize: 18, color: colors.grass, fontWeight: '700', marginLeft: spacing.md },
 
   permissionWarning: {
     backgroundColor: '#FEF3C7',

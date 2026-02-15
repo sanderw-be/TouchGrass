@@ -19,9 +19,15 @@ export default {
   source_gps: 'GPS',
   source_manual: 'Handmatig',
   source_timeline: 'Tijdlijn',
+  manually_logged: 'handmatig toegevoegd',
 
   // Sessiebeoordeling
   review: 'beoordeel',
+  session_delete: 'Verwijderen',
+  session_delete_confirm_title: 'Sessie verwijderen',
+  session_delete_confirm_body: 'Weet je zeker dat je deze sessie wilt verwijderen? Dit kan niet ongedaan worden gemaakt.',
+  session_delete_cancel: 'Annuleren',
+  session_review_again: 'Opnieuw beoordelen',
 
   // Doelen
   of: 'van',
@@ -98,10 +104,20 @@ export default {
   settings_hc_not_installed_body: 'Health Connect app is niet geïnstalleerd. Installeer het vanuit de Google Play Store.',
   settings_hc_open_error_title: 'Fout',
   settings_hc_open_error_body: 'Kon Health Connect instellingen niet openen. Open het handmatig vanuit je app-lijst.',
+  // GPS permission fout
+  settings_error_title: 'Fout',
+  settings_error_open_settings_failed: 'Kon instellingen niet openen. Open Instellingen handmatig.',
+  settings_gps_permission_required_title: 'GPS-toestemming vereist',
+  settings_gps_permission_required_body: 'Achtergrondlocatietoestemming is vereist voor GPS-detectie. Geef toestemming in Instellingen.',
+  settings_permission_cancel: 'Annuleren',
+  settings_permission_open: 'Instellingen openen',
   settings_gps: 'GPS-tracking',
   settings_gps_active: 'Actief',
   settings_gps_permission: 'Toestemming vereist',
   settings_gps_warning: "⚠️ Achtergrondlocatietoestemming is vereist voor GPS-detectie. Ga naar Instellingen → Apps → TouchGrass → Machtigingen → Locatie → Altijd toestaan.",
+  settings_gps_grant: 'Toestaan',
+  settings_gps_open_settings: 'Instellingen openen',
+  settings_gps_open_settings_sublabel: 'Geef locatiemachtigingen in app-instellingen',
   settings_locations_empty: 'Nog geen locaties gedetecteerd. De app detecteert je thuis- en werklocatie automatisch na een paar dagen gebruik.',
   settings_location_radius: '{{radius}}m straal · {{type}}',
   settings_location_indoor: 'Binnen',
