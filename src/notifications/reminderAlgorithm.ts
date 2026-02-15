@@ -1,4 +1,6 @@
 import { getReminderFeedback, getSessionsForRange, startOfDay, startOfWeek } from '../storage/database';
+import { getWeatherForHour } from '../weather/weatherService';
+import { scoreWeatherCondition, getWeatherPreferences } from '../weather/weatherAlgorithm';
 
 const HOURS_IN_DAY = 24;
 
@@ -108,6 +110,20 @@ export function scoreReminderHours(
     if (hour >= 17 && hour <= 19) {
       score += 0.15;
       reasons.push('after-work +0.15');
+    }
+
+    // ── Weather score ─────────────────────────────────────
+    // Add weather-based scoring if weather data is available
+    const weatherPrefs = getWeatherPreferences();
+    if (weatherPrefs.enabled) {
+      const weather = getWeatherForHour(hour);
+      if (weather) {
+        const weatherScore = scoreWeatherCondition(weather, weatherPrefs);
+        if (weatherScore !== 0) {
+          score += weatherScore;
+          reasons.push(`weather ${weatherScore > 0 ? '+' : ''}${weatherScore.toFixed(2)}`);
+        }
+      }
     }
 
     scores.push({

@@ -1,4 +1,5 @@
 import * as SQLite from 'expo-sqlite';
+import { WeatherCondition, WeatherCache } from '../weather/types';
 
 const db = SQLite.openDatabaseSync('touchgrass.db');
 
@@ -87,6 +88,28 @@ export function initDatabase(): void {
     CREATE TABLE IF NOT EXISTS app_settings (
       key TEXT PRIMARY KEY,
       value TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS weather_conditions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      timestamp INTEGER NOT NULL,
+      forecastHour INTEGER NOT NULL,
+      forecastDate INTEGER NOT NULL,
+      temperature REAL NOT NULL,
+      precipitationProbability REAL NOT NULL,
+      cloudCover REAL NOT NULL,
+      uvIndex REAL NOT NULL,
+      windSpeed REAL NOT NULL,
+      weatherCode INTEGER NOT NULL,
+      isDay INTEGER NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS weather_cache (
+      id INTEGER PRIMARY KEY,
+      fetchedAt INTEGER NOT NULL,
+      latitude REAL NOT NULL,
+      longitude REAL NOT NULL,
+      expiresAt INTEGER NOT NULL
     );
   `);
 
@@ -333,4 +356,76 @@ export function startOfMonth(ms: number): number {
 export function startOfNextMonth(ms: number): number {
   const d = new Date(ms);
   return new Date(d.getFullYear(), d.getMonth() + 1, 1).getTime();
+}
+
+// ── Weather ───────────────────────────────────────────────
+
+export function saveWeatherConditions(conditions: WeatherCondition[]): void {
+  for (const condition of conditions) {
+    db.runSync(
+      `INSERT INTO weather_conditions 
+       (timestamp, forecastHour, forecastDate, temperature, precipitationProbability, 
+        cloudCover, uvIndex, windSpeed, weatherCode, isDay)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        condition.timestamp,
+        condition.forecastHour,
+        condition.forecastDate,
+        condition.temperature,
+        condition.precipitationProbability,
+        condition.cloudCover,
+        condition.uvIndex,
+        condition.windSpeed,
+        condition.weatherCode,
+        condition.isDay ? 1 : 0,
+      ]
+    );
+  }
+}
+
+export function getWeatherConditionsForHour(
+  forecastDate: number,
+  startHour: number,
+  endHour: number
+): WeatherCondition[] {
+  const rows = db.getAllSync<any>(
+    `SELECT * FROM weather_conditions 
+     WHERE forecastDate = ? AND forecastHour >= ? AND forecastHour < ?
+     ORDER BY forecastHour ASC`,
+    [forecastDate, startHour, endHour]
+  );
+  
+  return rows.map(row => ({
+    id: row.id,
+    timestamp: row.timestamp,
+    forecastHour: row.forecastHour,
+    forecastDate: row.forecastDate,
+    temperature: row.temperature,
+    precipitationProbability: row.precipitationProbability,
+    cloudCover: row.cloudCover,
+    uvIndex: row.uvIndex,
+    windSpeed: row.windSpeed,
+    weatherCode: row.weatherCode,
+    isDay: row.isDay === 1,
+  }));
+}
+
+export function saveWeatherCache(cache: WeatherCache): void {
+  db.runSync(
+    `INSERT OR REPLACE INTO weather_cache (id, fetchedAt, latitude, longitude, expiresAt)
+     VALUES (1, ?, ?, ?, ?)`,
+    [cache.fetchedAt, cache.latitude, cache.longitude, cache.expiresAt]
+  );
+}
+
+export function getWeatherCache(): WeatherCache | null {
+  return db.getFirstSync<WeatherCache>(
+    'SELECT * FROM weather_cache WHERE id = 1'
+  );
+}
+
+export function clearExpiredWeatherData(now: number): void {
+  // Delete weather conditions older than 24 hours
+  const cutoff = now - 24 * 60 * 60 * 1000;
+  db.runSync('DELETE FROM weather_conditions WHERE timestamp < ?', [cutoff]);
 }

@@ -228,6 +228,30 @@ export default {
   notif_action_snooze: '⏰ Herinner me later',
   notif_action_less_often: '🔕 Minder vaak',
 
+  // Weather-aware notifications
+  notif_weather_perfect: 'Perfect weer vandaag! ☀️',
+  notif_weather_nice: 'Lekker weer voor een wandeling! 🌤️',
+  notif_weather_cloudy_cool: 'Bewolkt — ideaal voor een wandeling zonder hitte!',
+  notif_weather_dry_window: 'Droog weervenster in aantocht! 🌈',
+  notif_weather_before_rain: 'Ga naar buiten voor de regen! ☔',
+
+  // Weather settings
+  settings_weather_title: 'Weer',
+  settings_weather_enabled: 'Weerbewuste herinneringen',
+  settings_weather_enabled_desc: 'Houd rekening met weersomstandigheden bij het voorstellen van tijden',
+  settings_temp_preference: 'Klimaatvoorkeur',
+  settings_temp_cold: 'Voorkeur voor koeler weer',
+  settings_temp_moderate: 'Gematigd klimaat',
+  settings_temp_hot: 'Voorkeur voor warmer weer',
+  settings_weather_avoid_rain: 'Vermijd regenachtige tijden',
+  settings_weather_avoid_heat: 'Vermijd extreme hitte',
+  settings_weather_consider_uv: 'Houd rekening met UV-index',
+  settings_weather_current: 'Huidig weer',
+  settings_weather_loading: 'Weer laden...',
+  settings_weather_unavailable: 'Weergegevens niet beschikbaar',
+  settings_weather_error: 'Ophalen weer mislukt',
+  settings_weather_refresh: 'Weer verversen',
+
   // Meldingskanaal
   notif_channel_name: 'Buitenherinneringen',
   notif_channel_background_name: 'Achtergrondtracking',
