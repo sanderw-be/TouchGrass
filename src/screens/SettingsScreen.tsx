@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { getSetting, setSetting, getKnownLocations, KnownLocation, clearAllData } from '../storage/database';
-import { getDetectionStatus, requestHealthConnect, recheckHealthConnect } from '../detection/index';
+import { getDetectionStatus, requestHealthConnect, recheckHealthConnect, checkGPSPermissions, requestGPSPermissions } from '../detection/index';
 import { AppState, AppStateStatus } from 'react-native';
 import { colors, spacing, radius, shadows } from '../utils/theme';
 import { t } from '../i18n';
@@ -41,10 +41,18 @@ export default function SettingsScreen() {
       if (granted) setDetectionStatus((s) => ({ ...s, healthConnect: true }));
     });
 
+    // Re-check GPS permissions
+    checkGPSPermissions().then((granted) => {
+      setDetectionStatus((s) => ({ ...s, gps: granted }));
+    });
+
     // Also re-check when app comes back to foreground
     const sub = AppState.addEventListener('change', (state: AppStateStatus) => {
       if (state === 'active') {
         recheckHealthConnect().then((granted) => {
+          setDetectionStatus(getDetectionStatus());
+        });
+        checkGPSPermissions().then((granted) => {
           setDetectionStatus(getDetectionStatus());
         });
       }
@@ -137,6 +145,37 @@ export default function SettingsScreen() {
     );
   };
 
+  const handleOpenAppSettings = async () => {
+    try {
+      if (Platform.OS === 'android') {
+        await Linking.openSettings();
+      } else if (Platform.OS === 'ios') {
+        await Linking.openURL('app-settings:');
+      }
+    } catch (error) {
+      console.error('Error opening app settings:', error);
+      Alert.alert(
+        'Error',
+        'Could not open settings. Please open Settings manually.',
+      );
+    }
+  };
+
+  const handleRequestGPSPermission = async () => {
+    const granted = await requestGPSPermissions();
+    setDetectionStatus(getDetectionStatus());
+    if (!granted) {
+      Alert.alert(
+        'GPS Permission Required',
+        'Background location permission is required for GPS detection. Please grant permissions in Settings.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Open Settings', onPress: handleOpenAppSettings },
+        ]
+      );
+    }
+  };
+
   return (
     <>
       <EditLocationSheet
@@ -197,12 +236,39 @@ export default function SettingsScreen() {
           icon="📍"
           label={t('settings_gps')}
           sublabel={detectionStatus.gps ? t('settings_gps_active') : t('settings_gps_permission')}
-          right={<StatusDot active={detectionStatus.gps} />}
+          right={
+            detectionStatus.gps
+              ? <StatusDot active={true} />
+              : (
+                <TouchableOpacity
+                  style={styles.connectBtn}
+                  onPress={handleRequestGPSPermission}
+                >
+                  <Text style={styles.connectBtnText}>Grant</Text>
+                </TouchableOpacity>
+              )
+          }
         />
         {!detectionStatus.gps && (
-          <View style={styles.permissionWarning}>
-            <Text style={styles.permissionWarningText}>{t('settings_gps_warning')}</Text>
-          </View>
+          <>
+            <Divider />
+            <SettingRow
+              icon="⚙️"
+              label="Open Settings"
+              sublabel="Grant location permissions in app settings"
+              right={
+                <TouchableOpacity
+                  style={styles.editBtn}
+                  onPress={handleOpenAppSettings}
+                >
+                  <Text style={styles.editBtnText}>Open</Text>
+                </TouchableOpacity>
+              }
+            />
+            <View style={styles.permissionWarning}>
+              <Text style={styles.permissionWarningText}>{t('settings_gps_warning')}</Text>
+            </View>
+          </>
         )}
       </View>
 

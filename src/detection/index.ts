@@ -1,5 +1,6 @@
 import * as BackgroundTask from 'expo-background-task';
 import * as TaskManager from 'expo-task-manager';
+import * as Location from 'expo-location';
 import { syncHealthConnect, requestHealthPermissions, isHealthConnectAvailable } from './healthConnect';
 import { startLocationTracking, autoDetectLocations } from './gpsDetection';
 import { getSetting, setSetting } from '../storage/database';
@@ -118,6 +119,56 @@ export function getDetectionStatus(): DetectionStatus {
     healthConnect: getSetting('healthconnect_enabled', '0') === '1',
     gps: getSetting('gps_enabled', '0') === '1',
   };
+}
+
+/**
+ * Check GPS permission status (foreground + background).
+ * Returns true if both permissions are granted.
+ */
+export async function checkGPSPermissions(): Promise<boolean> {
+  try {
+    const { status: fgStatus } = await Location.getForegroundPermissionsAsync();
+    const { status: bgStatus } = await Location.getBackgroundPermissionsAsync();
+    const granted = fgStatus === 'granted' && bgStatus === 'granted';
+    
+    // Update the setting to reflect actual permission status
+    setSetting('gps_enabled', granted ? '1' : '0');
+    
+    return granted;
+  } catch (e) {
+    console.warn('GPS permission check error:', e);
+    setSetting('gps_enabled', '0');
+    return false;
+  }
+}
+
+/**
+ * Request GPS permissions and start tracking if granted.
+ */
+export async function requestGPSPermissions(): Promise<boolean> {
+  try {
+    const { status: fgStatus } = await Location.requestForegroundPermissionsAsync();
+    if (fgStatus !== 'granted') {
+      setSetting('gps_enabled', '0');
+      return false;
+    }
+    
+    const { status: bgStatus } = await Location.requestBackgroundPermissionsAsync();
+    const granted = bgStatus === 'granted';
+    
+    if (granted) {
+      await startLocationTracking();
+      setSetting('gps_enabled', '1');
+    } else {
+      setSetting('gps_enabled', '0');
+    }
+    
+    return granted;
+  } catch (e) {
+    console.warn('GPS permission request error:', e);
+    setSetting('gps_enabled', '0');
+    return false;
+  }
 }
 
 export interface DetectionStatus {
