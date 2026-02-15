@@ -5,6 +5,7 @@ on:
     branches:
       - feature/*
       - fix/*
+      - copilot/*
 
 jobs:
   build_android:

@@ -36,8 +36,7 @@ export function startManualSession(): () => void {
     const endTime = Date.now();
     const durationMinutes = (endTime - startTime) / 60000;
 
-    if (durationMinutes < 1) return; // ignore accidental taps
-
+    // Record all sessions, even very short ones (no minimum)
     const session = buildSession(
       startTime,
       endTime,

@@ -1,4 +1,4 @@
-import { OutsideSession, insertSession, getSessionsForRange } from '../storage/database';
+import { OutsideSession, insertSession, getSessionsForRange, deleteSession } from '../storage/database';
 
 const MERGE_GAP_MS = 5 * 60 * 1000; // sessions within 5 min of each other get merged
 
@@ -22,9 +22,12 @@ export function submitSession(candidate: OutsideSession): void {
   const best = existing.reduce((a, b) => a.confidence > b.confidence ? a : b);
 
   if (candidate.confidence > best.confidence) {
-    // New candidate wins — replace the old session
-    // (In a real delete+insert flow we'd delete best.id first,
-    //  but for now we insert and let the Events screen show both for review)
+    // New candidate wins — delete old sessions and insert the new one
+    existing.forEach(session => {
+      if (session.id) {
+        deleteSession(session.id);
+      }
+    });
     insertSession({ ...candidate, userConfirmed: null });
   }
   // else: existing session wins, discard candidate silently
@@ -47,7 +50,7 @@ export function buildSession(
     durationMinutes,
     source,
     confidence,
-    userConfirmed: null,
+    userConfirmed: source === 'manual' ? 1 : null, // Auto-approve manual sessions
     notes,
   };
 }

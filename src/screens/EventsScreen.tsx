@@ -1,14 +1,15 @@
 import React, { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
-  TouchableOpacity, RefreshControl,
+  TouchableOpacity, RefreshControl, Alert,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import {
   getUnreviewedSessions, getSessionsForRange,
-  confirmSession, OutsideSession,
+  confirmSession, deleteSession, OutsideSession,
 } from '../storage/database';
-import { colors, spacing, radius, shadows, formatMinutes } from '../utils/theme';
+import { colors, spacing, radius, shadows } from '../utils/theme';
+import { formatMinutes } from '../utils/helpers';
 import { t, formatLocalDate, formatLocalTime } from '../i18n';
 import ManualSessionSheet from '../components/ManualSessionSheet';
 
@@ -37,6 +38,29 @@ export default function EventsScreen() {
 
   const handleConfirm = (id: number, confirmed: boolean) => {
     confirmSession(id, confirmed);
+    loadData();
+  };
+
+  const handleDelete = (id: number) => {
+    Alert.alert(
+      t('session_delete_confirm_title'),
+      t('session_delete_confirm_body'),
+      [
+        { text: t('session_delete_cancel'), style: 'cancel' },
+        {
+          text: t('session_delete'),
+          style: 'destructive',
+          onPress: () => {
+            deleteSession(id);
+            loadData();
+          },
+        },
+      ]
+    );
+  };
+
+  const handleReReview = (id: number) => {
+    confirmSession(id, null); // Reset to null for re-review
     loadData();
   };
 
@@ -90,6 +114,8 @@ export default function EventsScreen() {
             session={session}
             showActions={tab === 'review' || session.userConfirmed === null}
             onConfirm={(confirmed) => handleConfirm(session.id!, confirmed)}
+            onDelete={() => handleDelete(session.id!)}
+            onReReview={() => handleReReview(session.id!)}
           />
         ))}
       </ScrollView>
@@ -101,10 +127,14 @@ function SessionCard({
   session,
   showActions,
   onConfirm,
+  onDelete,
+  onReReview,
 }: {
   session: OutsideSession;
   showActions: boolean;
   onConfirm: (confirmed: boolean) => void;
+  onDelete: () => void;
+  onReReview: () => void;
 }) {
   const sourceIcon: Record<string, string> = {
     health_connect: '👟',
@@ -173,16 +203,48 @@ function SessionCard({
         </View>
       )}
 
-      {/* Already reviewed badge */}
+      {/* Already reviewed badge + actions */}
       {isConfirmed && (
-        <View style={styles.confirmedBadge}>
-          <Text style={styles.confirmedText}>{t('events_confirmed')}</Text>
-        </View>
+        <>
+          <View style={styles.confirmedBadge}>
+            <Text style={styles.confirmedText}>{t('events_confirmed')}</Text>
+          </View>
+          <View style={styles.actions}>
+            <TouchableOpacity
+              style={[styles.actionBtn, styles.actionSecondary]}
+              onPress={onDelete}
+            >
+              <Text style={styles.actionSecondaryText}>{t('session_delete')}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.actionBtn, styles.actionConfirm]}
+              onPress={onReReview}
+            >
+              <Text style={styles.actionConfirmText}>{t('session_review_again')}</Text>
+            </TouchableOpacity>
+          </View>
+        </>
       )}
       {isRejected && (
-        <View style={styles.rejectedBadge}>
-          <Text style={styles.rejectedText}>{t('events_rejected')}</Text>
-        </View>
+        <>
+          <View style={styles.rejectedBadge}>
+            <Text style={styles.rejectedText}>{t('events_rejected')}</Text>
+          </View>
+          <View style={styles.actions}>
+            <TouchableOpacity
+              style={[styles.actionBtn, styles.actionSecondary]}
+              onPress={onDelete}
+            >
+              <Text style={styles.actionSecondaryText}>{t('session_delete')}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.actionBtn, styles.actionConfirm]}
+              onPress={onReReview}
+            >
+              <Text style={styles.actionConfirmText}>{t('session_review_again')}</Text>
+            </TouchableOpacity>
+          </View>
+        </>
       )}
     </View>
   );
@@ -273,8 +335,10 @@ const styles = StyleSheet.create({
   },
   actionReject: { backgroundColor: colors.fog },
   actionConfirm: { backgroundColor: colors.grass },
+  actionSecondary: { backgroundColor: '#FEE2E2' },
   actionRejectText: { fontSize: 14, color: colors.textSecondary, fontWeight: '600' },
   actionConfirmText: { fontSize: 14, color: colors.textInverse, fontWeight: '600' },
+  actionSecondaryText: { fontSize: 14, color: colors.error, fontWeight: '600' },
 
   confirmedBadge: {
     marginTop: spacing.sm,

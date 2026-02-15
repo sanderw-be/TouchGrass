@@ -141,13 +141,17 @@ export function getSessionsForRange(fromMs: number, toMs: number): OutsideSessio
   );
 }
 
+export function deleteSession(id: number): void {
+  db.runSync('DELETE FROM outside_sessions WHERE id = ?', [id]);
+}
+
 export function getTodayMinutes(): number {
   const start = startOfDay(Date.now());
   const end = start + 86400000;
   const row = db.getFirstSync<{ total: number }>(
     `SELECT COALESCE(SUM(durationMinutes), 0) as total
      FROM outside_sessions
-     WHERE startTime >= ? AND startTime < ?`,
+     WHERE startTime >= ? AND startTime < ? AND userConfirmed IS NOT 0`,
     [start, end]
   );
   return row?.total ?? 0;
@@ -159,7 +163,7 @@ export function getWeekMinutes(): number {
   const row = db.getFirstSync<{ total: number }>(
     `SELECT COALESCE(SUM(durationMinutes), 0) as total
      FROM outside_sessions
-     WHERE startTime >= ? AND startTime < ?`,
+     WHERE startTime >= ? AND startTime < ? AND userConfirmed IS NOT 0`,
     [start, end]
   );
   return row?.total ?? 0;
@@ -180,10 +184,10 @@ export function getDailyTotalsForMonth(dateMs: number): { date: number; minutes:
   return rows.map(r => ({ date: r.day, minutes: r.minutes }));
 }
 
-export function confirmSession(id: number, confirmed: boolean): void {
+export function confirmSession(id: number, confirmed: boolean | null): void {
   db.runSync(
     'UPDATE outside_sessions SET userConfirmed = ? WHERE id = ?',
-    [confirmed ? 1 : 0, id]
+    [confirmed === null ? null : (confirmed ? 1 : 0), id]
   );
 }
 
@@ -258,6 +262,10 @@ export function upsertKnownLocation(loc: KnownLocation): void {
   }
 }
 
+export function deleteKnownLocation(id: number): void {
+  db.runSync('DELETE FROM known_locations WHERE id = ?', [id]);
+}
+
 // ── Settings ──────────────────────────────────────────────
 
 export function getSetting(key: string, fallback: string): string {
@@ -272,6 +280,35 @@ export function setSetting(key: string, value: string): void {
     'INSERT OR REPLACE INTO app_settings (key, value) VALUES (?, ?)',
     [key, value]
   );
+}
+
+// ── Clear all data ────────────────────────────────────────
+
+export function clearAllData(): void {
+  console.log('[Database] Clearing all data...');
+  
+  // Delete all sessions
+  db.runSync('DELETE FROM outside_sessions');
+  
+  // Delete reminder feedback
+  db.runSync('DELETE FROM reminder_feedback');
+  
+  // Reset goals to defaults
+  db.runSync('DELETE FROM daily_goals');
+  db.runSync('DELETE FROM weekly_goals');
+  db.runSync(
+    'INSERT INTO daily_goals (targetMinutes, createdAt) VALUES (?, ?)',
+    [30, Date.now()]
+  );
+  db.runSync(
+    'INSERT INTO weekly_goals (targetMinutes, createdAt) VALUES (?, ?)',
+    [150, Date.now()]
+  );
+  
+  // Clear non-essential settings (keep language, hasCompletedIntro)
+  db.runSync('DELETE FROM app_settings WHERE key NOT IN (?, ?)', ['language', 'hasCompletedIntro']);
+  
+  console.log('[Database] All data cleared successfully');
 }
 
 // ── Date helpers ──────────────────────────────────────────
