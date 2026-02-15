@@ -3,6 +3,7 @@ import { View, ActivityIndicator } from 'react-native';
 import { enableScreens } from 'react-native-screens';
 import 'expo-dev-client';
 import { initDatabase, getSetting, setSetting } from './src/storage/database';
+import i18n from './src/i18n';
 import { initDetection } from './src/detection/index';
 import { setupNotifications, scheduleDayReminders } from './src/notifications/notificationManager';
 import AppNavigator from './src/navigation/AppNavigator';
@@ -19,6 +20,14 @@ export default function App() {
     async function init() {
       // Database must be ready before anything else
       initDatabase();
+
+      // Apply stored language preference if available
+      const storedLanguage = getSetting('language', '');
+      if (['en', 'nl'].includes(storedLanguage)) {
+        i18n.locale = storedLanguage;
+      } else if (!storedLanguage) {
+        setSetting('language', i18n.locale);
+      }
 
       // Check if user has completed intro
       const hasCompletedIntro = getSetting('hasCompletedIntro', '0') === '1';

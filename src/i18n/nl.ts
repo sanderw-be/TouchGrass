@@ -209,6 +209,10 @@ export default {
   intro_ready_body: 'TouchGrass is klaar om je te helpen meer tijd buiten door te brengen.',
   intro_ready_tip_title: 'Snelle tip',
   intro_ready_tip_body: 'Je kunt altijd handmatig buitensessies loggen vanaf het startscherm als automatische detectie iets mist.',
+  intro_ready_checklist_title: 'Checklist eerste start',
+  intro_ready_checklist_item_hc: 'Koppel Health Connect om oefensessies te importeren.',
+  intro_ready_checklist_item_gps: 'Sta achtergrondlocatie toe voor GPS-detectie.',
+  intro_ready_checklist_item_notifications: 'Schakel meldingen in voor slimme herinneringen.',
 
   // Meldingstitels (willekeurig gekozen)
   notif_title_1: '🌿 Tijd om buiten te zijn!',

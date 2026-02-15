@@ -37,10 +37,11 @@ export async function initDetection(): Promise<DetectionStatus> {
   // Health Connect
   const hcAvailable = await isHealthConnectAvailable();
   if (hcAvailable) {
-    const hcGranted = await requestHealthPermissions();
-    if (hcGranted) {
-      status.healthConnect = true;
-      setSetting('healthconnect_enabled', '1');
+    const hcEnabled = getSetting('healthconnect_enabled', '0') === '1';
+    if (hcEnabled) {
+      const ok = await syncHealthConnect();
+      status.healthConnect = ok;
+      setSetting('healthconnect_enabled', ok ? '1' : '0');
     }
   }
 
@@ -104,9 +105,9 @@ export async function recheckHealthConnect(): Promise<boolean> {
     const available = await isHealthConnectAvailable();
     if (!available) return false;
     // Try to sync — if permissions were granted it will succeed
-    await syncHealthConnect();
-    setSetting('healthconnect_enabled', '1');
-    return true;
+    const ok = await syncHealthConnect();
+    setSetting('healthconnect_enabled', ok ? '1' : '0');
+    return ok;
   } catch {
     setSetting('healthconnect_enabled', '0');
     return false;
