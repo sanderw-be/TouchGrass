@@ -10,6 +10,7 @@ import { AppState, AppStateStatus } from 'react-native';
 import { colors, spacing, radius, shadows } from '../utils/theme';
 import { t } from '../i18n';
 import i18n from '../i18n';
+import EditLocationSheet from '../components/EditLocationSheet';
 
 const LANGUAGES = [
   { code: 'en', label: 'English' },
@@ -22,6 +23,7 @@ export default function SettingsScreen() {
   const [knownLocations, setKnownLocations] = useState<KnownLocation[]>([]);
   const [language, setLanguage] = useState(i18n.locale);
   const [connectingHC, setConnectingHC] = useState(false);
+  const [editingLocation, setEditingLocation] = useState<KnownLocation | null>(null);
 
   const loadStatus = useCallback(() => {
     setRemindersEnabled(getSetting('reminders_enabled', '1') === '1');
@@ -109,18 +111,29 @@ export default function SettingsScreen() {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <>
+      <EditLocationSheet
+        visible={editingLocation !== null}
+        location={editingLocation}
+        onClose={() => setEditingLocation(null)}
+        onSave={() => {
+          loadStatus();
+          setEditingLocation(null);
+        }}
+      />
 
-      {/* Detection sources */}
-      <Text style={styles.sectionHeader}>{t('settings_section_detection')}</Text>
-      <View style={styles.card}>
-        <SettingRow
-          icon="👟"
-          label={t('settings_health_connect')}
-          sublabel={detectionStatus.healthConnect ? t('settings_health_connected') : t('settings_health_unavailable')}
-          right={
-            detectionStatus.healthConnect
-              ? <StatusDot active={true} />
+      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+
+        {/* Detection sources */}
+        <Text style={styles.sectionHeader}>{t('settings_section_detection')}</Text>
+        <View style={styles.card}>
+          <SettingRow
+            icon="👟"
+            label={t('settings_health_connect')}
+            sublabel={detectionStatus.healthConnect ? t('settings_health_connected') : t('settings_health_unavailable')}
+            right={
+              detectionStatus.healthConnect
+                ? <StatusDot active={true} />
               : (
                 <TouchableOpacity
                   style={styles.connectBtn}
@@ -167,7 +180,7 @@ export default function SettingsScreen() {
               right={
                 <TouchableOpacity
                   style={styles.editBtn}
-                  onPress={() => Alert.alert(t('settings_location_edit_title'), t('settings_location_edit_soon'))}
+                  onPress={() => setEditingLocation(loc)}
                 >
                   <Text style={styles.editBtnText}>{t('settings_location_edit')}</Text>
                 </TouchableOpacity>
@@ -240,6 +253,7 @@ export default function SettingsScreen() {
       </View>
 
     </ScrollView>
+    </>
   );
 }
 
