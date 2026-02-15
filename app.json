@@ -61,6 +61,12 @@
         "projectId": "34928510-f2c8-47b0-9d37-c911af91d506"
       }
     },
-    "owner": "wubbewubben"
+    "owner": "wubbewubben",
+    "ios": {
+      "bundleIdentifier": "com.sanderwubben.touchgrass",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    }
   }
 }
