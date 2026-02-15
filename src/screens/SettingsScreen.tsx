@@ -4,7 +4,7 @@ import {
   TouchableOpacity, Switch, Alert,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { getSetting, setSetting, getKnownLocations, KnownLocation } from '../storage/database';
+import { getSetting, setSetting, getKnownLocations, KnownLocation, clearAllData } from '../storage/database';
 import { getDetectionStatus, requestHealthConnect, recheckHealthConnect } from '../detection/index';
 import { AppState, AppStateStatus } from 'react-native';
 import { colors, spacing, radius, shadows } from '../utils/theme';
@@ -75,6 +75,36 @@ export default function SettingsScreen() {
     Alert.alert(
       t('settings_language_changed_title'),
       t('settings_language_changed_body'),
+    );
+  };
+
+  const handleClearData = () => {
+    Alert.alert(
+      t('settings_clear_data_confirm_title'),
+      t('settings_clear_data_confirm_body'),
+      [
+        { text: t('settings_clear_cancel'), style: 'cancel' },
+        {
+          text: t('settings_clear_delete'),
+          style: 'destructive',
+          onPress: () => {
+            try {
+              clearAllData();
+              loadStatus(); // Reload to show reset state
+              Alert.alert(
+                t('settings_clear_data_success_title'),
+                t('settings_clear_data_success_body'),
+              );
+            } catch (error) {
+              console.error('Error clearing data:', error);
+              Alert.alert(
+                t('settings_clear_data_error_title'),
+                t('settings_clear_data_error_body'),
+              );
+            }
+          },
+        },
+      ]
     );
   };
 
@@ -201,14 +231,7 @@ export default function SettingsScreen() {
           right={
             <TouchableOpacity
               style={styles.dangerBtn}
-              onPress={() => Alert.alert(
-                t('settings_clear_data_confirm_title'),
-                t('settings_clear_data_confirm_body'),
-                [
-                  { text: t('settings_clear_cancel'), style: 'cancel' },
-                  { text: t('settings_clear_delete'), style: 'destructive', onPress: () => Alert.alert(t('settings_coming_soon_title'), t('settings_coming_soon_body')) },
-                ]
-              )}
+              onPress={handleClearData}
             >
               <Text style={styles.dangerBtnText}>{t('settings_clear_data')}</Text>
             </TouchableOpacity>
