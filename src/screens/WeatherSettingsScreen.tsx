@@ -248,11 +248,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingBottom: spacing.md,
   },
-  tempOptions: {
-    flexDirection: 'row',
-    gap: spacing.xs,
-    flexWrap: 'wrap',
-  },
   tempOption: {
     paddingHorizontal: spacing.sm,
     paddingVertical: 4,
