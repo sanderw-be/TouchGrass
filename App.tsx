@@ -6,6 +6,7 @@ import { initDatabase, getSetting, setSetting } from './src/storage/database';
 import i18n from './src/i18n';
 import { initDetection } from './src/detection/index';
 import { setupNotificationInfrastructure, scheduleDayReminders } from './src/notifications/notificationManager';
+import { scheduleAllScheduledNotifications } from './src/notifications/scheduledNotifications';
 import AppNavigator from './src/navigation/AppNavigator';
 import IntroScreen from './src/screens/IntroScreen';
 import { colors } from './src/utils/theme';
@@ -47,6 +48,7 @@ export default function App() {
         try {
           await initDetection();
           await scheduleDayReminders();
+          await scheduleAllScheduledNotifications();
         } catch (e) {
           console.warn('Init error:', e);
         }
@@ -63,6 +65,7 @@ export default function App() {
     try {
       await initDetection();
       await scheduleDayReminders();
+      await scheduleAllScheduledNotifications();
     } catch (e) {
       console.warn('Post-tutorial init error:', e);
     }
