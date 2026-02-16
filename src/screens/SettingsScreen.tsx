@@ -35,6 +35,18 @@ export default function SettingsScreen() {
   const [considerUV, setConsiderUV] = useState(true);
   const [weatherLoading, setWeatherLoading] = useState(false);
   const [currentWeather, setCurrentWeather] = useState<string | null>(null);
+  const [isLoadingWeather, setIsLoadingWeather] = useState(false);
+
+  // Helper to format and display current weather
+  const updateCurrentWeatherDisplay = useCallback(() => {
+    const hour = new Date().getHours();
+    const weather = getWeatherForHour(hour);
+    if (weather) {
+      const description = getWeatherDescription(weather);
+      const emoji = getWeatherEmoji(weather);
+      setCurrentWeather(`${emoji} ${description}, ${Math.round(weather.temperature)}°C`);
+    }
+  }, []);
 
   const loadStatus = useCallback(async () => {
     setRemindersEnabled(getSetting('reminders_enabled', '1') === '1');
@@ -52,34 +64,25 @@ export default function SettingsScreen() {
     
     // Load current weather if available, or fetch if unavailable
     if (isWeatherDataAvailable()) {
-      const hour = new Date().getHours();
-      const weather = getWeatherForHour(hour);
-      if (weather) {
-        const description = getWeatherDescription(weather);
-        const emoji = getWeatherEmoji(weather);
-        setCurrentWeather(`${emoji} ${description}, ${Math.round(weather.temperature)}°C`);
-      }
-    } else if (weatherEnabledValue) {
+      updateCurrentWeatherDisplay();
+    } else if (weatherEnabledValue && !isLoadingWeather) {
       // Weather is enabled but data is unavailable - fetch it
+      setIsLoadingWeather(true);
       try {
         const result = await fetchWeatherForecast();
         if (result.success) {
-          const hour = new Date().getHours();
-          const weather = getWeatherForHour(hour);
-          if (weather) {
-            const description = getWeatherDescription(weather);
-            const emoji = getWeatherEmoji(weather);
-            setCurrentWeather(`${emoji} ${description}, ${Math.round(weather.temperature)}°C`);
-          }
+          updateCurrentWeatherDisplay();
         }
       } catch (error) {
         console.warn('Auto weather fetch error:', error);
         setCurrentWeather(null);
+      } finally {
+        setIsLoadingWeather(false);
       }
     } else {
       setCurrentWeather(null);
     }
-  }, []);
+  }, [updateCurrentWeatherDisplay, isLoadingWeather]);
 
   // Check permissions and show success message if Health Connect was just enabled
   const checkAndUpdatePermissions = useCallback(async () => {
@@ -256,13 +259,7 @@ export default function SettingsScreen() {
     try {
       const result = await fetchWeatherForecast();
       if (result.success) {
-        const hour = new Date().getHours();
-        const weather = getWeatherForHour(hour);
-        if (weather) {
-          const description = getWeatherDescription(weather);
-          const emoji = getWeatherEmoji(weather);
-          setCurrentWeather(`${emoji} ${description}, ${Math.round(weather.temperature)}°C`);
-        }
+        updateCurrentWeatherDisplay();
       } else {
         Alert.alert(t('settings_weather_error'), result.error || 'Unknown error');
       }
