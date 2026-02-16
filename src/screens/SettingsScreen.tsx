@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getSetting, setSetting, getKnownLocations, KnownLocation, clearAllData } from '../storage/database';
 import { getDetectionStatus, requestHealthConnect, recheckHealthConnect, checkGPSPermissions, requestGPSPermissions, openHealthConnectSettings } from '../detection/index';
 import { AppState, AppStateStatus } from 'react-native';
@@ -21,6 +22,7 @@ const LANGUAGES = [
 
 export default function SettingsScreen() {
   const navigation = useNavigation<StackNavigationProp<SettingsStackParamList>>();
+  const insets = useSafeAreaInsets();
   const [remindersEnabled, setRemindersEnabled] = useState(true);
   const [detectionStatus, setDetectionStatus] = useState({ healthConnect: false, gps: false });
   const [knownLocations, setKnownLocations] = useState<KnownLocation[]>([]);
@@ -218,7 +220,7 @@ export default function SettingsScreen() {
 
   return (
     <>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
         <Text style={styles.headerTitle}>{t('nav_settings')}</Text>
       </View>
       
@@ -448,12 +450,11 @@ const styles = StyleSheet.create({
 
   header: {
     backgroundColor: colors.mist,
-    paddingTop: spacing.xl,
-    paddingBottom: spacing.sm,
+    paddingBottom: spacing.md,
     paddingHorizontal: spacing.md,
   },
   headerTitle: {
-    fontSize: 28,
+    fontSize: 20,
     fontWeight: '700',
     color: colors.textPrimary,
   },
