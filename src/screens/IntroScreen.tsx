@@ -3,6 +3,7 @@ import {
   View, Text, StyleSheet, ScrollView,
   TouchableOpacity, SafeAreaView, Platform, ActivityIndicator, AppState, AppStateStatus,
 } from 'react-native';
+import * as Notifications from 'expo-notifications';
 import { colors, spacing, radius, shadows } from '../utils/theme';
 import { t } from '../i18n';
 import { requestHealthConnect, recheckHealthConnect } from '../detection/index';
@@ -29,14 +30,19 @@ export default function IntroScreen({ onComplete }: Props) {
   // Re-check permissions when app comes back to foreground
   // (user may have granted permissions in Health Connect or Android Settings)
   const checkPermissions = useCallback(async () => {
-    if (Platform.OS === 'android') {
+    // Only check permissions on relevant steps
+    if (currentStep === 'health-connect' && Platform.OS === 'android') {
       const hcGranted = await recheckHealthConnect();
       setHealthConnectGranted(hcGranted);
+    } else if (currentStep === 'location') {
+      const gpsGranted = await checkGPSPermissions();
+      setLocationGranted(gpsGranted);
+    } else if (currentStep === 'notifications') {
+      // Check notification permissions
+      const { status } = await Notifications.getPermissionsAsync();
+      setNotificationsGranted(status === 'granted');
     }
-    
-    const gpsGranted = await checkGPSPermissions();
-    setLocationGranted(gpsGranted);
-  }, []);
+  }, [currentStep]);
 
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (state: AppStateStatus) => {
