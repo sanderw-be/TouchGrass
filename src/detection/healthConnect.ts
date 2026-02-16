@@ -40,13 +40,10 @@ export async function checkHealthConnectPermissions(): Promise<boolean> {
   try {
     const available = await isHealthConnectAvailable();
     if (!available) {
-      console.log('Health Connect: SDK not available');
       return false;
     }
 
-    console.log('Health Connect: Initializing SDK...');
     await initialize();
-    console.log('Health Connect: SDK initialized successfully');
 
     // Perform a test read with minimal time range to verify permissions
     const now = Date.now();
@@ -54,33 +51,25 @@ export async function checkHealthConnectPermissions(): Promise<boolean> {
     const startTimeISO = new Date(oneDayAgo).toISOString();
     const endTimeISO = new Date(now).toISOString();
 
-    console.log('Health Connect: Testing ExerciseSession permissions...');
     // Try to read ExerciseSession records (this will fail if permissions not granted)
-    const result = await readRecords('ExerciseSession', {
+    await readRecords('ExerciseSession', {
       timeRangeFilter: {
         operator: 'between',
         startTime: startTimeISO,
         endTime: endTimeISO,
       },
     });
-    console.log(`Health Connect: ExerciseSession read successful (${result.records.length} records)`);
 
     // If we got here without error, permissions are valid
     setSetting('healthconnect_enabled', '1');
     setSetting(PERMISSION_WARNING_KEY, '0');
-    console.log('Health Connect: Permissions verified and enabled');
     return true;
   } catch (e) {
-    const errorMsg = String(e);
-    console.error('Health Connect permission check error:', errorMsg);
-    
     if (isPermissionError(e)) {
-      console.warn('Health Connect: Permission error detected, disabling');
       setSetting('healthconnect_enabled', '0');
       return false;
     }
     // Other errors (e.g., network) also mean permissions couldn't be verified
-    console.warn('Health Connect: Non-permission error, check failed');
     return false;
   }
 }
@@ -91,14 +80,10 @@ export async function checkHealthConnectPermissions(): Promise<boolean> {
  */
 export async function requestHealthPermissions(): Promise<boolean> {
   try {
-    console.log('Health Connect: Requesting permissions...');
-    
     // Ensure SDK is initialized (safe to call multiple times)
     try {
       await initialize();
-      console.log('Health Connect: SDK initialized for permission request');
     } catch (initError) {
-      console.log('Health Connect: SDK already initialized or init failed:', String(initError));
       // Continue anyway - it might already be initialized
     }
     
@@ -107,23 +92,22 @@ export async function requestHealthPermissions(): Promise<boolean> {
       { accessType: 'read', recordType: 'Steps' },
       { accessType: 'read', recordType: 'ActiveCaloriesBurned' },
     ]);
-    console.log('Health Connect: Permissions granted count:', granted?.length ?? 0);
-    if (granted.length > 0) {
+    
+    // Handle case where granted might be null/undefined or not an array
+    if (granted && Array.isArray(granted) && granted.length > 0) {
       setSetting(PERMISSION_WARNING_KEY, '0');
       setSetting('healthconnect_enabled', '1');
       return true;
     }
-    console.log('Health Connect: No permissions granted');
+    
     setSetting('healthconnect_enabled', '0');
     return false;
   } catch (e) {
-    console.error('Health Connect permission request error:', String(e));
     if (isPermissionError(e)) {
       logPermissionWarningOnce();
       setSetting('healthconnect_enabled', '0');
       return false;
     }
-    console.warn('Health Connect permission error:', String(e));
     setSetting('healthconnect_enabled', '0');
     return false;
   }
@@ -138,7 +122,6 @@ export async function syncHealthConnect(): Promise<boolean> {
     const available = await isHealthConnectAvailable();
     if (!available) return false;
 
-    console.log('Health Connect: Starting sync...');
     await initialize();
 
     // Only fetch since last sync
@@ -151,7 +134,6 @@ export async function syncHealthConnect(): Promise<boolean> {
 
     // Read exercise sessions
     try {
-      console.log('Health Connect: Reading ExerciseSession records...');
       const exerciseResult = await readRecords('ExerciseSession', {
         timeRangeFilter: {
           operator: 'between',
@@ -159,7 +141,6 @@ export async function syncHealthConnect(): Promise<boolean> {
           endTime: endTimeISO,
         },
       });
-      console.log(`Health Connect: Found ${exerciseResult.records.length} exercise records`);
 
       for (const record of exerciseResult.records) {
         const start = new Date(record.startTime).getTime();
@@ -183,21 +164,17 @@ export async function syncHealthConnect(): Promise<boolean> {
         submitSession(session);
       }
     } catch (e) {
-      console.error('Health Connect: ExerciseSession read error:', String(e));
       if (isPermissionError(e)) {
-        console.warn('Health Connect: ExerciseSession permission denied');
         // If ExerciseSession fails with permission error, whole sync fails
         logPermissionWarningOnce();
         setSetting('healthconnect_enabled', '0');
         return false;
       }
       // Other errors for exercise sessions are logged but don't fail sync
-      console.warn('Health Connect: Non-permission error reading ExerciseSession, continuing');
     }
 
     // Read steps records - this is optional, if it fails we still succeed
     try {
-      console.log('Health Connect: Reading Steps records...');
       const stepsResult = await readRecords('Steps', {
         timeRangeFilter: {
           operator: 'between',
@@ -205,7 +182,6 @@ export async function syncHealthConnect(): Promise<boolean> {
           endTime: endTimeISO,
         },
       });
-      console.log(`Health Connect: Found ${stepsResult.records.length} step records`);
 
       for (const record of stepsResult.records) {
         const start = new Date(record.startTime).getTime();
@@ -229,27 +205,19 @@ export async function syncHealthConnect(): Promise<boolean> {
         submitSession(session);
       }
     } catch (e) {
-      console.error('Health Connect: Steps read error:', String(e));
       // Steps permission is optional - if we got ExerciseSession data, still succeed
-      if (isPermissionError(e)) {
-        console.warn('Health Connect: Steps permission denied (optional, continuing)');
-      } else {
-        console.warn('Health Connect: Non-permission error reading Steps');
-      }
+      // Silently continue
     }
 
     // Update last sync timestamp
     setSetting('healthconnect_last_sync', String(now));
-    console.log('Health Connect: Sync completed successfully');
     return true; // Return true if sync completed without permission errors
   } catch (e) {
-    console.error('Health Connect: Sync failed:', String(e));
     if (isPermissionError(e)) {
       logPermissionWarningOnce();
       setSetting('healthconnect_enabled', '0');
       return false;
     }
-    console.warn('Health Connect sync error:', String(e));
     return false;
   }
 }
@@ -259,7 +227,7 @@ function isPermissionError(error: unknown): boolean {
   
   // Detect various permission-related exceptions
   // Be specific to avoid false positives while catching common error formats
-  const isPermError = (
+  return (
     message.includes('securityexception') ||
     message.includes('permissiondenied') ||
     message.includes('permission denied') ||
@@ -268,18 +236,11 @@ function isPermissionError(error: unknown): boolean {
     message.includes('permission_denied') ||
     (message.includes('permission') && message.includes('denied'))
   );
-  
-  if (isPermError) {
-    console.log('Permission error detected:', message.substring(0, 150));
-  }
-  
-  return isPermError;
 }
 
 function logPermissionWarningOnce(): void {
   const alreadyLogged = getSetting(PERMISSION_WARNING_KEY, '0') === '1';
   if (alreadyLogged) return;
-  console.warn('Health Connect permissions missing. Reconnect in Settings.');
   setSetting(PERMISSION_WARNING_KEY, '1');
 }
 

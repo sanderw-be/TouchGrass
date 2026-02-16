@@ -34,36 +34,26 @@ TaskManager.defineTask(BACKGROUND_TASK_NAME, async () => {
  * Call this once on app startup.
  */
 export async function initDetection(): Promise<DetectionStatus> {
-  console.log('Detection: Initializing...');
   const status: DetectionStatus = {
     healthConnect: false,
     gps: false,
   };
 
   // Health Connect - always check actual permission status on startup
-  console.log('Detection: Checking Health Connect availability...');
   const hcAvailable = await isHealthConnectAvailable();
-  console.log('Detection: Health Connect available:', hcAvailable);
   
   if (hcAvailable) {
     // Check actual permissions, don't rely on stored setting
-    console.log('Detection: Checking Health Connect permissions...');
     const hasPermissions = await checkHealthConnectPermissions();
-    console.log('Detection: Health Connect has permissions:', hasPermissions);
     
     if (hasPermissions) {
       // Try to sync - this verifies permissions work
-      console.log('Detection: Attempting Health Connect sync...');
       const ok = await syncHealthConnect();
-      console.log('Detection: Health Connect sync result:', ok);
       status.healthConnect = ok;
     } else {
-      console.log('Detection: No Health Connect permissions, setting disabled');
       status.healthConnect = false;
       setSetting('healthconnect_enabled', '0');
     }
-  } else {
-    console.log('Detection: Health Connect not available on this device');
   }
 
   // GPS
@@ -72,7 +62,7 @@ export async function initDetection(): Promise<DetectionStatus> {
     status.gps = true;
     setSetting('gps_enabled', '1');
   } catch (e) {
-    console.warn('GPS init error:', String(e));
+    // GPS init failed
   }
 
   // Background task
@@ -90,7 +80,7 @@ async function registerBackgroundTask(): Promise<void> {
       minimumInterval: 15 * 60, // 15 minutes
     });
   } catch (e) {
-    console.warn('Background task registration error:', String(e));
+    // Background task registration failed
   }
 }
 
@@ -103,7 +93,6 @@ export async function requestHealthConnect(): Promise<boolean> {
   try {
     const available = await isHealthConnectAvailable();
     if (!available) {
-      console.warn('Health Connect not available on this device');
       return false;
     }
     const granted = await requestHealthPermissions();
@@ -112,7 +101,6 @@ export async function requestHealthConnect(): Promise<boolean> {
     }
     return granted;
   } catch (e) {
-    console.warn('Health Connect request error:', String(e));
     return false;
   }
 }
@@ -123,20 +111,15 @@ export async function requestHealthConnect(): Promise<boolean> {
  */
 export async function recheckHealthConnect(): Promise<boolean> {
   try {
-    console.log('Detection: Rechecking Health Connect...');
     const available = await isHealthConnectAvailable();
-    console.log('Detection: Health Connect available:', available);
     
     if (!available) {
       setSetting('healthconnect_enabled', '0');
       return false;
     }
     // Check actual permissions and return result
-    const hasPermissions = await checkHealthConnectPermissions();
-    console.log('Detection: Recheck result:', hasPermissions);
-    return hasPermissions;
+    return await checkHealthConnectPermissions();
   } catch (e) {
-    console.error('Detection: Recheck error:', String(e));
     setSetting('healthconnect_enabled', '0');
     return false;
   }
