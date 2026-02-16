@@ -69,7 +69,9 @@ export default function SettingsScreen() {
     // Re-check Health Connect and GPS when screen comes into focus
     // (user may have granted permissions in Android Settings or Health Connect)
     const checkPermissions = async () => {
-      const previousHCStatus = detectionStatus.healthConnect;
+      // Get current status before rechecking
+      const currentStatus = getDetectionStatus();
+      const previousHCStatus = currentStatus.healthConnect;
       
       await recheckHealthConnect();
       await checkGPSPermissions();
@@ -92,7 +94,9 @@ export default function SettingsScreen() {
     // Also re-check when app comes back to foreground
     const sub = AppState.addEventListener('change', async (state: AppStateStatus) => {
       if (state === 'active') {
-        const previousHCStatus = detectionStatus.healthConnect;
+        // Get current status before rechecking
+        const currentStatus = getDetectionStatus();
+        const previousHCStatus = currentStatus.healthConnect;
         
         await recheckHealthConnect();
         await checkGPSPermissions();
