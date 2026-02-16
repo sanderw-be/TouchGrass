@@ -131,6 +131,7 @@ export async function syncHealthConnect(): Promise<boolean> {
     const available = await isHealthConnectAvailable();
     if (!available) return false;
 
+    console.log('Health Connect: Starting sync...');
     await initialize();
 
     // Only fetch since last sync
@@ -141,72 +142,105 @@ export async function syncHealthConnect(): Promise<boolean> {
     const startTimeISO = new Date(startTime).toISOString();
     const endTimeISO = new Date(now).toISOString();
 
+    let hasAnyData = false;
+
     // Read exercise sessions
-    const exerciseResult = await readRecords('ExerciseSession', {
-      timeRangeFilter: {
-        operator: 'between',
-        startTime: startTimeISO,
-        endTime: endTimeISO,
-      },
-    });
+    try {
+      console.log('Health Connect: Reading ExerciseSession records...');
+      const exerciseResult = await readRecords('ExerciseSession', {
+        timeRangeFilter: {
+          operator: 'between',
+          startTime: startTimeISO,
+          endTime: endTimeISO,
+        },
+      });
+      console.log(`Health Connect: Found ${exerciseResult.records.length} exercise records`);
 
-    for (const record of exerciseResult.records) {
-      const start = new Date(record.startTime).getTime();
-      const end = new Date(record.endTime).getTime();
-      const duration = end - start;
+      for (const record of exerciseResult.records) {
+        const start = new Date(record.startTime).getTime();
+        const end = new Date(record.endTime).getTime();
+        const duration = end - start;
 
-      if (duration < MIN_DURATION_MS) continue;
+        if (duration < MIN_DURATION_MS) continue;
 
-      // Boost confidence for explicitly outdoor exercise types
-      const isExplicitlyOutdoor = isOutdoorExerciseType(record.exerciseType);
-      const confidence = isExplicitlyOutdoor ? 0.80 : CONFIDENCE_ACTIVITY;
+        // Boost confidence for explicitly outdoor exercise types
+        const isExplicitlyOutdoor = isOutdoorExerciseType(record.exerciseType);
+        const confidence = isExplicitlyOutdoor ? 0.80 : CONFIDENCE_ACTIVITY;
 
-      const session = buildSession(
-        start,
-        end,
-        'health_connect',
-        confidence,
-        `Exercise type: ${record.exerciseType}`,
-      );
+        const session = buildSession(
+          start,
+          end,
+          'health_connect',
+          confidence,
+          `Exercise type: ${record.exerciseType}`,
+        );
 
-      submitSession(session);
+        submitSession(session);
+      }
+      
+      hasAnyData = true;
+    } catch (e) {
+      console.error('Health Connect: ExerciseSession read error:', e);
+      if (isPermissionError(e)) {
+        console.warn('Health Connect: ExerciseSession permission denied');
+        // If ExerciseSession fails with permission error, whole sync fails
+        logPermissionWarningOnce();
+        setSetting('healthconnect_enabled', '0');
+        return false;
+      }
+      // Other errors for exercise sessions are logged but don't fail sync
+      console.warn('Health Connect: Non-permission error reading ExerciseSession, continuing');
     }
 
-    // Read steps records
-    const stepsResult = await readRecords('Steps', {
-      timeRangeFilter: {
-        operator: 'between',
-        startTime: startTimeISO,
-        endTime: endTimeISO,
-      },
-    });
+    // Read steps records - this is optional, if it fails we still succeed
+    try {
+      console.log('Health Connect: Reading Steps records...');
+      const stepsResult = await readRecords('Steps', {
+        timeRangeFilter: {
+          operator: 'between',
+          startTime: startTimeISO,
+          endTime: endTimeISO,
+        },
+      });
+      console.log(`Health Connect: Found ${stepsResult.records.length} step records`);
 
-    for (const record of stepsResult.records) {
-      const start = new Date(record.startTime).getTime();
-      const end = new Date(record.endTime).getTime();
-      const duration = end - start;
+      for (const record of stepsResult.records) {
+        const start = new Date(record.startTime).getTime();
+        const end = new Date(record.endTime).getTime();
+        const duration = end - start;
 
-      if (duration < MIN_DURATION_MS) continue;
+        if (duration < MIN_DURATION_MS) continue;
 
-      // Steps have lower confidence than explicit exercise sessions
-      // as they could be indoor (mall, treadmill, etc.)
-      const confidence = CONFIDENCE_STEPS;
+        // Steps have lower confidence than explicit exercise sessions
+        // as they could be indoor (mall, treadmill, etc.)
+        const confidence = CONFIDENCE_STEPS;
 
-      const session = buildSession(
-        start,
-        end,
-        'health_connect',
-        confidence,
-        `Steps: ${record.count}`,
-      );
+        const session = buildSession(
+          start,
+          end,
+          'health_connect',
+          confidence,
+          `Steps: ${record.count}`,
+        );
 
-      submitSession(session);
+        submitSession(session);
+      }
+    } catch (e) {
+      console.error('Health Connect: Steps read error:', e);
+      // Steps permission is optional - if we got ExerciseSession data, still succeed
+      if (isPermissionError(e)) {
+        console.warn('Health Connect: Steps permission denied (optional, continuing)');
+      } else {
+        console.warn('Health Connect: Non-permission error reading Steps');
+      }
     }
 
     // Update last sync timestamp
     setSetting('healthconnect_last_sync', String(now));
-    return true;
+    console.log('Health Connect: Sync completed successfully');
+    return hasAnyData;
   } catch (e) {
+    console.error('Health Connect: Sync failed:', e);
     if (isPermissionError(e)) {
       logPermissionWarningOnce();
       setSetting('healthconnect_enabled', '0');
