@@ -140,7 +140,13 @@ export default function IntroScreen({ onComplete }: Props) {
             requesting={requestingPermission}
           />
         )}
-        {currentStep === 'ready' && <ReadyStep />}
+        {currentStep === 'ready' && (
+          <ReadyStep
+            healthConnectGranted={healthConnectGranted}
+            locationGranted={locationGranted}
+            notificationsGranted={notificationsGranted}
+          />
+        )}
       </ScrollView>
 
       {/* Bottom buttons */}
@@ -262,7 +268,15 @@ function NotificationsStep({ onRequest, granted, requesting }: { onRequest: () =
   );
 }
 
-function ReadyStep() {
+function ReadyStep({ healthConnectGranted, locationGranted, notificationsGranted }: { 
+  healthConnectGranted: boolean; 
+  locationGranted: boolean; 
+  notificationsGranted: boolean 
+}) {
+  // Determine the status symbol for each permission
+  const getStatusSymbol = (granted: boolean) => granted ? '✓' : '-';
+  const getStatusColor = (granted: boolean) => granted ? colors.grass : colors.textMuted;
+
   return (
     <View style={styles.stepContainer}>
       <Text style={styles.emoji}>✨</Text>
@@ -275,15 +289,21 @@ function ReadyStep() {
       <View style={styles.checklistCard}>
         <Text style={styles.checklistTitle}>{t('intro_ready_checklist_title')}</Text>
         <View style={styles.checklistItem}>
-          <Text style={styles.checklistBullet}>•</Text>
+          <Text style={[styles.checklistBullet, { color: getStatusColor(healthConnectGranted) }]}>
+            {getStatusSymbol(healthConnectGranted)}
+          </Text>
           <Text style={styles.checklistText}>{t('intro_ready_checklist_item_hc')}</Text>
         </View>
         <View style={styles.checklistItem}>
-          <Text style={styles.checklistBullet}>•</Text>
+          <Text style={[styles.checklistBullet, { color: getStatusColor(locationGranted) }]}>
+            {getStatusSymbol(locationGranted)}
+          </Text>
           <Text style={styles.checklistText}>{t('intro_ready_checklist_item_gps')}</Text>
         </View>
         <View style={styles.checklistItem}>
-          <Text style={styles.checklistBullet}>•</Text>
+          <Text style={[styles.checklistBullet, { color: getStatusColor(notificationsGranted) }]}>
+            {getStatusSymbol(notificationsGranted)}
+          </Text>
           <Text style={styles.checklistText}>{t('intro_ready_checklist_item_notifications')}</Text>
         </View>
       </View>
