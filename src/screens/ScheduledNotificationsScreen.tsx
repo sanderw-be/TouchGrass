@@ -179,11 +179,15 @@ function EditNotificationModal({ visible, notification, isCreating, onClose, onS
   const [minute, setMinute] = useState(0);
   const [daysOfWeek, setDaysOfWeek] = useState<number[]>([1, 2, 3, 4, 5]);
   const [label, setLabel] = useState('');
+  const [hourText, setHourText] = useState('09');
+  const [minuteText, setMinuteText] = useState('00');
 
   React.useEffect(() => {
     if (notification) {
       setHour(notification.hour);
       setMinute(notification.minute);
+      setHourText(notification.hour.toString().padStart(2, '0'));
+      setMinuteText(notification.minute.toString().padStart(2, '0'));
       setDaysOfWeek([...notification.daysOfWeek]);
       setLabel(notification.label || '');
     }
@@ -269,28 +273,52 @@ function EditNotificationModal({ visible, notification, isCreating, onClose, onS
             <View style={styles.timePicker}>
               <TextInput
                 style={styles.timeInput}
-                value={hour.toString().padStart(2, '0')}
+                value={hourText}
                 onChangeText={(text) => {
+                  setHourText(text);
                   const value = parseInt(text, 10);
                   if (!isNaN(value) && value >= 0 && value < 24) {
                     setHour(value);
                   }
                 }}
+                onBlur={() => {
+                  // Ensure proper formatting when user leaves the field
+                  const value = parseInt(hourText, 10);
+                  if (isNaN(value) || value < 0 || value >= 24) {
+                    setHourText(hour.toString().padStart(2, '0'));
+                  } else {
+                    setHourText(value.toString().padStart(2, '0'));
+                    setHour(value);
+                  }
+                }}
                 keyboardType="number-pad"
                 maxLength={2}
+                selectTextOnFocus
               />
               <Text style={styles.timeSeparator}>:</Text>
               <TextInput
                 style={styles.timeInput}
-                value={minute.toString().padStart(2, '0')}
+                value={minuteText}
                 onChangeText={(text) => {
+                  setMinuteText(text);
                   const value = parseInt(text, 10);
                   if (!isNaN(value) && value >= 0 && value < 60) {
                     setMinute(value);
                   }
                 }}
+                onBlur={() => {
+                  // Ensure proper formatting when user leaves the field
+                  const value = parseInt(minuteText, 10);
+                  if (isNaN(value) || value < 0 || value >= 60) {
+                    setMinuteText(minute.toString().padStart(2, '0'));
+                  } else {
+                    setMinuteText(value.toString().padStart(2, '0'));
+                    setMinute(value);
+                  }
+                }}
                 keyboardType="number-pad"
                 maxLength={2}
+                selectTextOnFocus
               />
             </View>
           </View>
