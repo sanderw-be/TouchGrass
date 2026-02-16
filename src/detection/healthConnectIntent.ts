@@ -2,22 +2,17 @@ import { Platform, Linking } from 'react-native';
 import { initialize, readRecords } from 'react-native-health-connect';
 
 /**
- * Open Health Connect settings via Android Settings.
+ * Open Health Connect settings via the most reliable method available.
  * 
  * In newer Android versions (14+), Health Connect is integrated into Settings
  * under Settings → Privacy → Health Connect, rather than being a standalone app.
  * 
- * This function opens the Health Connect permission screen where TouchGrass
- * will appear after requestPermission() is called.
+ * This function tries multiple approaches to open Health Connect:
+ * 1. Direct app launch (most reliable)
+ * 2. Settings Intent (Android 14+)
+ * 3. App info page (always works as last resort)
  * 
- * Flow:
- * 1. Open Android Settings → Health Connect
- * 2. User finds TouchGrass in the app list
- * 3. User taps TouchGrass and grants permissions
- * 4. User returns to TouchGrass (via back button)
- * 5. Verify permissions via data read
- * 
- * @returns true if Settings was opened successfully, false otherwise
+ * @returns true if Health Connect was opened successfully, false otherwise
  */
 export async function openHealthConnectPermissionsViaIntent(): Promise<boolean> {
   if (Platform.OS !== 'android') {
@@ -26,41 +21,40 @@ export async function openHealthConnectPermissionsViaIntent(): Promise<boolean> 
   }
 
   try {
-    // For Android 14+ (where Health Connect is in Settings)
-    // ACTION_HEALTH_CONNECT_SETTINGS opens Health Connect in Android Settings
-    const healthConnectSettingsIntent = 'android.settings.HEALTH_CONNECT_SETTINGS';
-    const settingsUrl = `intent:#Intent;action=${healthConnectSettingsIntent};end`;
-    
     let opened = false;
     
-    // Try opening Health Connect settings (Android 14+)
-    try {
-      const canOpenSettings = await Linking.canOpenURL(settingsUrl);
-      if (canOpenSettings) {
-        await Linking.openURL(settingsUrl);
-        opened = true;
-        console.log('Opened Health Connect via Settings Intent');
-      }
-    } catch (e) {
-      console.log('Settings intent failed, trying fallback:', e);
-    }
-    
-    // Fallback 1: Try the standalone Health Connect app (older Android versions)
+    // Method 1: Try direct app launch via custom scheme
+    // This is most likely to work if Health Connect is installed
     if (!opened) {
       try {
-        const homeIntent = 'intent://healthconnect/home#Intent;package=com.google.android.apps.healthdata;end';
-        const canOpenHome = await Linking.canOpenURL(homeIntent);
-        if (canOpenHome) {
-          await Linking.openURL(homeIntent);
+        const appUrl = 'healthconnect://';
+        const canOpenApp = await Linking.canOpenURL(appUrl);
+        if (canOpenApp) {
+          await Linking.openURL(appUrl);
           opened = true;
-          console.log('Opened Health Connect standalone app');
+          console.log('Opened Health Connect via custom scheme');
         }
       } catch (e) {
-        console.log('Home intent failed, trying package URL:', e);
+        console.log('Custom scheme failed:', e);
       }
     }
     
-    // Fallback 2: Open app info page
+    // Method 2: Try Settings Intent (Android 14+)
+    if (!opened) {
+      try {
+        const settingsUrl = 'intent:#Intent;action=android.settings.HEALTH_CONNECT_SETTINGS;end';
+        const canOpenSettings = await Linking.canOpenURL(settingsUrl);
+        if (canOpenSettings) {
+          await Linking.openURL(settingsUrl);
+          opened = true;
+          console.log('Opened Health Connect via Settings Intent');
+        }
+      } catch (e) {
+        console.log('Settings intent failed:', e);
+      }
+    }
+    
+    // Method 3: Try opening the Health Connect app directly
     if (!opened) {
       try {
         const packageUrl = 'package:com.google.android.apps.healthdata';
@@ -75,8 +69,23 @@ export async function openHealthConnectPermissionsViaIntent(): Promise<boolean> 
       }
     }
     
+    // Method 4: Try Play Store link as last resort
     if (!opened) {
-      console.warn('Health Connect settings could not be opened');
+      try {
+        const playStoreUrl = 'market://details?id=com.google.android.apps.healthdata';
+        const canOpenMarket = await Linking.canOpenURL(playStoreUrl);
+        if (canOpenMarket) {
+          await Linking.openURL(playStoreUrl);
+          opened = true;
+          console.log('Opened Health Connect in Play Store');
+        }
+      } catch (e) {
+        console.log('Play Store URL failed:', e);
+      }
+    }
+    
+    if (!opened) {
+      console.warn('Health Connect could not be opened via any method');
       return false;
     }
     

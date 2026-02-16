@@ -102,37 +102,19 @@ export async function requestHealthPermissions(): Promise<boolean> {
 /**
  * Open Health Connect settings for managing existing permissions.
  * 
- * Unlike requestHealthPermissions(), this function:
- * - Does NOT check if permissions are already granted
- * - Always tries to open Health Connect settings
- * - Allows users to review/modify their existing permissions
+ * This function opens Health Connect directly without trying requestPermission().
+ * The user can then navigate to TouchGrass within Health Connect to manage permissions.
  * 
  * Use this for the "Manage permissions" button after initial connection.
  * 
- * Returns true if Health Connect settings was opened successfully.
+ * Returns true if Health Connect was opened successfully.
  */
 export async function openHealthConnectForManagement(): Promise<boolean> {
   try {
     await initialize();
     
-    // Try the library's requestPermission() first
-    // Even if permissions are already granted, this may show the management UI
-    try {
-      const granted = await requestPermission([
-        { accessType: 'read', recordType: 'ExerciseSession' },
-        { accessType: 'read', recordType: 'Steps' as any },
-        { accessType: 'read', recordType: 'ActiveCaloriesBurned' },
-      ]);
-      
-      // If requestPermission worked (showed dialog), return true
-      // Note: granted might be empty if user didn't change anything
-      return true;
-    } catch (permError) {
-      // If requestPermission fails, fall back to Intent flow
-      console.log('Library requestPermission failed, using Intent fallback:', permError);
-    }
-    
-    // Fallback: Open Health Connect Settings via Intent
+    // Skip requestPermission() - it's not working reliably even with expo-health-connect
+    // Just open Health Connect directly via Intent
     const opened = await openHealthConnectPermissionsViaIntent();
     if (!opened) {
       console.warn('Could not open Health Connect settings');
