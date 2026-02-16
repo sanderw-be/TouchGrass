@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
-  TouchableOpacity, Switch, ActivityIndicator,
+  TouchableOpacity, Switch, ActivityIndicator, Alert,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { getSetting, setSetting } from '../storage/database';
@@ -9,7 +9,6 @@ import { colors, spacing, radius, shadows } from '../utils/theme';
 import { t } from '../i18n';
 import { fetchWeatherForecast, isWeatherDataAvailable, getWeatherForHour } from '../weather/weatherService';
 import { getWeatherDescription, getWeatherEmoji } from '../weather/weatherAlgorithm';
-import { Alert } from 'react-native';
 
 export default function WeatherSettingsScreen() {
   const [tempPreference, setTempPreference] = useState<'cold' | 'moderate' | 'hot'>('moderate');
