@@ -177,14 +177,14 @@ export default function SettingsScreen() {
     try {
       await sendTestReminder();
       Alert.alert(
-        '🔔',
-        'Test notification sent! It should appear in a moment. Try tapping the action buttons to test the dismissal behavior.',
+        t('settings_test_notification_success_title'),
+        t('settings_test_notification_success_body'),
       );
     } catch (error) {
       console.error('Error sending test notification:', error);
       Alert.alert(
         t('settings_error_title'),
-        'Could not send test notification. Make sure notifications are enabled.',
+        t('settings_test_notification_error'),
       );
     }
   };
