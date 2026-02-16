@@ -237,84 +237,19 @@ export default function SettingsScreen() {
         {/* Detection sources */}
         <Text style={styles.sectionHeader}>{t('settings_section_detection')}</Text>
         <View style={styles.card}>
-          <SettingRow
-            icon="👟"
+          <DetectionSettingRow
+            active={detectionStatus.healthConnect}
             label={t('settings_health_connect')}
-            sublabel={detectionStatus.healthConnect ? t('settings_health_connected') : t('settings_health_unavailable')}
-            right={
-              detectionStatus.healthConnect
-                ? <StatusDot active={true} />
-              : (
-                <TouchableOpacity
-                  style={styles.connectBtn}
-                  onPress={handleConnectHealthConnect}
-                  disabled={connectingHC}
-                >
-                  <Text style={styles.connectBtnText}>
-                    {connectingHC ? t('settings_hc_opening') : t('settings_hc_connect')}
-                  </Text>
-                </TouchableOpacity>
-              )
-          }
-        />
-        {detectionStatus.healthConnect && (
-          <>
-            <Divider />
-            <SettingRow
-              icon="⚙️"
-              label={t('settings_hc_manage')}
-              sublabel={t('settings_hc_manage_sublabel')}
-              right={
-                <TouchableOpacity
-                  style={styles.editBtn}
-                  onPress={handleOpenHealthConnectSettings}
-                >
-                  <Text style={styles.editBtnText}>{t('settings_hc_open')}</Text>
-                </TouchableOpacity>
-              }
-            />
-          </>
-        )}
-        <Divider />
-        <SettingRow
-          icon="📍"
-          label={t('settings_gps')}
-          sublabel={detectionStatus.gps ? t('settings_gps_active') : t('settings_gps_permission')}
-          right={
-            detectionStatus.gps
-              ? <StatusDot active={true} />
-              : (
-                <TouchableOpacity
-                  style={styles.connectBtn}
-                  onPress={handleRequestGPSPermission}
-                >
-                  <Text style={styles.connectBtnText}>{t('settings_gps_grant')}</Text>
-                </TouchableOpacity>
-              )
-          }
-        />
-        {!detectionStatus.gps && (
-          <>
-            <Divider />
-            <SettingRow
-              icon="⚙️"
-              label={t('settings_gps_open_settings')}
-              sublabel={t('settings_gps_open_settings_sublabel')}
-              right={
-                <TouchableOpacity
-                  style={styles.editBtn}
-                  onPress={handleOpenAppSettings}
-                >
-                  <Text style={styles.editBtnText}>{t('settings_hc_open')}</Text>
-                </TouchableOpacity>
-              }
-            />
-            <View style={styles.permissionWarning}>
-              <Text style={styles.permissionWarningText}>{t('settings_gps_warning')}</Text>
-            </View>
-          </>
-        )}
-      </View>
+            onPress={detectionStatus.healthConnect ? handleOpenHealthConnectSettings : handleConnectHealthConnect}
+            isLoading={connectingHC}
+          />
+          <Divider />
+          <DetectionSettingRow
+            active={detectionStatus.gps}
+            label={t('settings_gps')}
+            onPress={handleOpenAppSettings}
+          />
+        </View>
 
       {/* Known locations */}
       <Text style={styles.sectionHeader}>{t('settings_section_locations')}</Text>
@@ -477,6 +412,36 @@ function StatusDot({ active }: { active: boolean }) {
   );
 }
 
+function DetectionSettingRow({
+  active,
+  label,
+  onPress,
+  isLoading,
+}: {
+  active: boolean;
+  label: string;
+  onPress: () => void;
+  isLoading?: boolean;
+}) {
+  return (
+    <View style={styles.row}>
+      {active && <StatusDot active={true} />}
+      <View style={[styles.rowContent, active && styles.rowContentWithDot]}>
+        <Text style={styles.rowLabel}>{label}</Text>
+      </View>
+      <TouchableOpacity
+        style={styles.settingsBtn}
+        onPress={onPress}
+        disabled={isLoading}
+      >
+        <Text style={styles.settingsBtnText}>
+          {isLoading ? '...' : '⚙️'}
+        </Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.mist },
   content: { padding: spacing.md, paddingBottom: spacing.xxl },
@@ -527,6 +492,18 @@ const styles = StyleSheet.create({
   statusDot: { width: 10, height: 10, borderRadius: 5 },
   statusDotActive: { backgroundColor: colors.grass },
   statusDotInactive: { backgroundColor: colors.inactive },
+
+  settingsBtn: {
+    backgroundColor: colors.grassPale,
+    borderRadius: radius.full,
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  settingsBtnText: { fontSize: 16 },
+
+  rowContentWithDot: { marginLeft: spacing.sm },
 
   editBtn: {
     backgroundColor: colors.grassPale,
