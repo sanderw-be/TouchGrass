@@ -189,7 +189,8 @@ export async function scheduleDayReminders(): Promise<void> {
 /**
  * Handle user tapping a notification action button.
  */
-function handleNotificationResponse(response: Notifications.NotificationResponse): void {
+async function handleNotificationResponse(response: Notifications.NotificationResponse): Promise<void> {
+  const notificationId = response.notification.request.identifier;
   const actionId = response.actionIdentifier;
   const now = Date.now();
   const d = new Date(now);
@@ -206,6 +207,9 @@ function handleNotificationResponse(response: Notifications.NotificationResponse
     dayOfWeek: d.getDay(),
   });
 
+  // Dismiss the notification
+  await Notifications.dismissNotificationAsync(notificationId);
+
   if (action === 'snoozed') {
     // Reschedule for 45 minutes later
     const snoozeDate = new Date(now + 45 * 60 * 1000);
@@ -213,7 +217,7 @@ function handleNotificationResponse(response: Notifications.NotificationResponse
       getTodayMinutes(),
       getCurrentDailyGoal()?.targetMinutes ?? 30,
     );
-    Notifications.scheduleNotificationAsync({
+    await Notifications.scheduleNotificationAsync({
       content: { title, body, categoryIdentifier: 'reminder', color: '#4A7C59' },
       trigger: {
         type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
