@@ -54,6 +54,13 @@ export default function IntroScreen({ onComplete }: Props) {
     return () => subscription.remove();
   }, [checkPermissions]);
 
+  // Check permissions when entering permission-related steps
+  useEffect(() => {
+    if (currentStep === 'health-connect' || currentStep === 'location' || currentStep === 'notifications') {
+      checkPermissions();
+    }
+  }, [currentStep, checkPermissions]);
+
   const handleNext = () => {
     const nextIndex = currentIndex + 1;
     if (nextIndex < steps.length) {
