@@ -34,24 +34,36 @@ TaskManager.defineTask(BACKGROUND_TASK_NAME, async () => {
  * Call this once on app startup.
  */
 export async function initDetection(): Promise<DetectionStatus> {
+  console.log('Detection: Initializing...');
   const status: DetectionStatus = {
     healthConnect: false,
     gps: false,
   };
 
   // Health Connect - always check actual permission status on startup
+  console.log('Detection: Checking Health Connect availability...');
   const hcAvailable = await isHealthConnectAvailable();
+  console.log('Detection: Health Connect available:', hcAvailable);
+  
   if (hcAvailable) {
     // Check actual permissions, don't rely on stored setting
+    console.log('Detection: Checking Health Connect permissions...');
     const hasPermissions = await checkHealthConnectPermissions();
+    console.log('Detection: Health Connect has permissions:', hasPermissions);
+    
     if (hasPermissions) {
       // Try to sync - this verifies permissions work
+      console.log('Detection: Attempting Health Connect sync...');
       const ok = await syncHealthConnect();
+      console.log('Detection: Health Connect sync result:', ok);
       status.healthConnect = ok;
     } else {
+      console.log('Detection: No Health Connect permissions, setting disabled');
       status.healthConnect = false;
       setSetting('healthconnect_enabled', '0');
     }
+  } else {
+    console.log('Detection: Health Connect not available on this device');
   }
 
   // GPS
@@ -111,14 +123,20 @@ export async function requestHealthConnect(): Promise<boolean> {
  */
 export async function recheckHealthConnect(): Promise<boolean> {
   try {
+    console.log('Detection: Rechecking Health Connect...');
     const available = await isHealthConnectAvailable();
+    console.log('Detection: Health Connect available:', available);
+    
     if (!available) {
       setSetting('healthconnect_enabled', '0');
       return false;
     }
     // Check actual permissions and return result
-    return await checkHealthConnectPermissions();
-  } catch {
+    const hasPermissions = await checkHealthConnectPermissions();
+    console.log('Detection: Recheck result:', hasPermissions);
+    return hasPermissions;
+  } catch (e) {
+    console.error('Detection: Recheck error:', e);
     setSetting('healthconnect_enabled', '0');
     return false;
   }

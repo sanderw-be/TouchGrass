@@ -39,9 +39,14 @@ export async function isHealthConnectAvailable(): Promise<boolean> {
 export async function checkHealthConnectPermissions(): Promise<boolean> {
   try {
     const available = await isHealthConnectAvailable();
-    if (!available) return false;
+    if (!available) {
+      console.log('Health Connect: SDK not available');
+      return false;
+    }
 
+    console.log('Health Connect: Initializing SDK...');
     await initialize();
+    console.log('Health Connect: SDK initialized successfully');
 
     // Perform a test read with minimal time range to verify permissions
     const now = Date.now();
@@ -49,28 +54,36 @@ export async function checkHealthConnectPermissions(): Promise<boolean> {
     const startTimeISO = new Date(oneDayAgo).toISOString();
     const endTimeISO = new Date(now).toISOString();
 
+    console.log('Health Connect: Testing ExerciseSession permissions...');
     // Try to read ExerciseSession records (this will fail if permissions not granted)
-    await readRecords('ExerciseSession', {
+    const result = await readRecords('ExerciseSession', {
       timeRangeFilter: {
         operator: 'between',
         startTime: startTimeISO,
         endTime: endTimeISO,
       },
     });
+    console.log(`Health Connect: ExerciseSession read successful (${result.records.length} records)`);
 
     // If we got here without error, permissions are valid
     setSetting('healthconnect_enabled', '1');
     setSetting(PERMISSION_WARNING_KEY, '0');
+    console.log('Health Connect: Permissions verified and enabled');
     return true;
   } catch (e) {
+    const errorMsg = String(e);
+    console.error('Health Connect permission check error:', errorMsg);
+    
     if (isPermissionError(e)) {
-      console.warn('Health Connect permissions check failed:', String(e).substring(0, 200));
+      console.warn('Health Connect: Permission error detected, disabling');
       setSetting('healthconnect_enabled', '0');
       return false;
     }
     // Other errors (e.g., network) shouldn't change permission state
-    console.warn('Health Connect availability check error (non-permission):', e);
-    return false;
+    console.warn('Health Connect: Non-permission error, not changing state');
+    // Don't change the permission state on non-permission errors
+    // Return false to indicate check failed, but keep existing state
+    return getSetting('healthconnect_enabled', '0') === '1';
   }
 }
 
@@ -80,22 +93,31 @@ export async function checkHealthConnectPermissions(): Promise<boolean> {
  */
 export async function requestHealthPermissions(): Promise<boolean> {
   try {
+    console.log('Health Connect: Requesting permissions...');
     await initialize();
     const granted = await requestPermission([
       { accessType: 'read', recordType: 'ExerciseSession' },
       { accessType: 'read', recordType: 'Steps' },
       { accessType: 'read', recordType: 'ActiveCaloriesBurned' },
     ]);
+    console.log('Health Connect: Permissions granted:', granted);
     if (granted.length > 0) {
       setSetting(PERMISSION_WARNING_KEY, '0');
+      setSetting('healthconnect_enabled', '1');
+      return true;
     }
-    return granted.length > 0;
+    console.log('Health Connect: No permissions granted');
+    setSetting('healthconnect_enabled', '0');
+    return false;
   } catch (e) {
+    console.error('Health Connect permission request error:', e);
     if (isPermissionError(e)) {
       logPermissionWarningOnce();
+      setSetting('healthconnect_enabled', '0');
       return false;
     }
     console.warn('Health Connect permission error:', e);
+    setSetting('healthconnect_enabled', '0');
     return false;
   }
 }
@@ -197,9 +219,11 @@ export async function syncHealthConnect(): Promise<boolean> {
 
 function isPermissionError(error: unknown): boolean {
   const message = String(error).toLowerCase();
+  console.log('Checking if permission error:', message.substring(0, 200));
+  
   // Detect various permission-related exceptions
   // Be specific to avoid false positives while catching common error formats
-  return (
+  const isPermError = (
     message.includes('securityexception') ||
     message.includes('permissiondenied') ||
     message.includes('permission denied') ||
@@ -208,6 +232,9 @@ function isPermissionError(error: unknown): boolean {
     message.includes('permission_denied') ||
     (message.includes('permission') && message.includes('denied'))
   );
+  
+  console.log('Is permission error:', isPermError);
+  return isPermError;
 }
 
 function logPermissionWarningOnce(): void {
