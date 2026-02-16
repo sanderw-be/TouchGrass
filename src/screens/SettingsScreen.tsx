@@ -241,6 +241,7 @@ export default function SettingsScreen() {
         <View style={styles.card}>
           <DetectionSettingRow
             active={detectionStatus.healthConnect}
+            icon="👟"
             label={t('settings_health_connect')}
             onPress={detectionStatus.healthConnect ? handleOpenHealthConnectSettings : handleConnectHealthConnect}
             isLoading={connectingHC}
@@ -248,6 +249,7 @@ export default function SettingsScreen() {
           <Divider />
           <DetectionSettingRow
             active={detectionStatus.gps}
+            icon="📍"
             label={t('settings_gps')}
             onPress={handleOpenAppSettings}
           />
@@ -416,11 +418,13 @@ function StatusDot({ active }: { active: boolean }) {
 
 function DetectionSettingRow({
   active,
+  icon,
   label,
   onPress,
   isLoading,
 }: {
   active: boolean;
+  icon: string;
   label: string;
   onPress: () => void;
   isLoading?: boolean;
@@ -428,7 +432,8 @@ function DetectionSettingRow({
   return (
     <View style={styles.row}>
       {active && <StatusDot active={true} />}
-      <View style={[styles.rowContent, active && styles.rowContentWithDot]}>
+      <Text style={[styles.rowIcon, active && styles.rowIconWithDot]}>{icon}</Text>
+      <View style={styles.rowContent}>
         <Text style={styles.rowLabel}>{label}</Text>
       </View>
       <TouchableOpacity
@@ -483,6 +488,7 @@ const styles = StyleSheet.create({
     padding: spacing.md,
   },
   rowIcon: { fontSize: 20, marginRight: spacing.md, width: 28, textAlign: 'center' },
+  rowIconWithDot: { marginLeft: spacing.sm },
   rowContent: { flex: 1 },
   rowLabel: { fontSize: 15, color: colors.textPrimary, fontWeight: '500' },
   rowSublabel: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
@@ -503,8 +509,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   settingsBtnText: { fontSize: 16 },
-
-  rowContentWithDot: { marginLeft: spacing.sm },
 
   editBtn: {
     backgroundColor: colors.grassPale,
