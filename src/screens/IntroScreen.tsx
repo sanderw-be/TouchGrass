@@ -1,10 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
-  TouchableOpacity, SafeAreaView, Platform,
+  TouchableOpacity, SafeAreaView, Platform, ActivityIndicator, AppState, AppStateStatus,
 } from 'react-native';
+import * as Notifications from 'expo-notifications';
 import { colors, spacing, radius, shadows } from '../utils/theme';
 import { t } from '../i18n';
+import { requestHealthConnect, recheckHealthConnect } from '../detection/index';
+import { requestGPSPermissions, checkGPSPermissions } from '../detection/index';
+import { requestNotificationPermissions } from '../notifications/notificationManager';
 
 interface Props {
   onComplete: () => void;
@@ -14,10 +18,48 @@ type Step = 'welcome' | 'health-connect' | 'location' | 'notifications' | 'ready
 
 export default function IntroScreen({ onComplete }: Props) {
   const [currentStep, setCurrentStep] = useState<Step>('welcome');
+  const [healthConnectGranted, setHealthConnectGranted] = useState(false);
+  const [locationGranted, setLocationGranted] = useState(false);
+  const [notificationsGranted, setNotificationsGranted] = useState(false);
+  const [requestingPermission, setRequestingPermission] = useState(false);
 
   const steps: Step[] = ['welcome', 'health-connect', 'location', 'notifications', 'ready'];
   const currentIndex = steps.indexOf(currentStep);
   const progress = ((currentIndex + 1) / steps.length) * 100;
+
+  // Re-check permissions when app comes back to foreground
+  // (user may have granted permissions in Health Connect or Android Settings)
+  const checkPermissions = useCallback(async () => {
+    // Only check permissions on relevant steps
+    if (currentStep === 'health-connect' && Platform.OS === 'android') {
+      const hcGranted = await recheckHealthConnect();
+      setHealthConnectGranted(hcGranted);
+    } else if (currentStep === 'location') {
+      const gpsGranted = await checkGPSPermissions();
+      setLocationGranted(gpsGranted);
+    } else if (currentStep === 'notifications') {
+      // Check notification permissions
+      const { status } = await Notifications.getPermissionsAsync();
+      setNotificationsGranted(status === 'granted');
+    }
+  }, [currentStep]);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (state: AppStateStatus) => {
+      if (state === 'active') {
+        checkPermissions();
+      }
+    });
+
+    return () => subscription.remove();
+  }, [checkPermissions]);
+
+  // Check permissions when entering permission-related steps
+  useEffect(() => {
+    if (currentStep === 'health-connect' || currentStep === 'location' || currentStep === 'notifications') {
+      checkPermissions();
+    }
+  }, [currentStep, checkPermissions]);
 
   const handleNext = () => {
     const nextIndex = currentIndex + 1;
@@ -32,6 +74,42 @@ export default function IntroScreen({ onComplete }: Props) {
     onComplete();
   };
 
+  const handleRequestHealthConnect = async () => {
+    setRequestingPermission(true);
+    try {
+      const granted = await requestHealthConnect();
+      setHealthConnectGranted(granted);
+    } catch (error) {
+      console.error('Error requesting Health Connect:', error);
+    } finally {
+      setRequestingPermission(false);
+    }
+  };
+
+  const handleRequestLocation = async () => {
+    setRequestingPermission(true);
+    try {
+      const granted = await requestGPSPermissions();
+      setLocationGranted(granted);
+    } catch (error) {
+      console.error('Error requesting location:', error);
+    } finally {
+      setRequestingPermission(false);
+    }
+  };
+
+  const handleRequestNotifications = async () => {
+    setRequestingPermission(true);
+    try {
+      const granted = await requestNotificationPermissions();
+      setNotificationsGranted(granted);
+    } catch (error) {
+      console.error('Error requesting notifications:', error);
+    } finally {
+      setRequestingPermission(false);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Progress bar */}
@@ -41,10 +119,34 @@ export default function IntroScreen({ onComplete }: Props) {
 
       <ScrollView style={styles.content} contentContainerStyle={styles.contentInner}>
         {currentStep === 'welcome' && <WelcomeStep />}
-        {currentStep === 'health-connect' && <HealthConnectStep />}
-        {currentStep === 'location' && <LocationStep />}
-        {currentStep === 'notifications' && <NotificationsStep />}
-        {currentStep === 'ready' && <ReadyStep />}
+        {currentStep === 'health-connect' && (
+          <HealthConnectStep
+            onRequest={handleRequestHealthConnect}
+            granted={healthConnectGranted}
+            requesting={requestingPermission}
+          />
+        )}
+        {currentStep === 'location' && (
+          <LocationStep
+            onRequest={handleRequestLocation}
+            granted={locationGranted}
+            requesting={requestingPermission}
+          />
+        )}
+        {currentStep === 'notifications' && (
+          <NotificationsStep
+            onRequest={handleRequestNotifications}
+            granted={notificationsGranted}
+            requesting={requestingPermission}
+          />
+        )}
+        {currentStep === 'ready' && (
+          <ReadyStep
+            healthConnectGranted={healthConnectGranted}
+            locationGranted={locationGranted}
+            notificationsGranted={notificationsGranted}
+          />
+        )}
       </ScrollView>
 
       {/* Bottom buttons */}
@@ -80,7 +182,7 @@ function WelcomeStep() {
   );
 }
 
-function HealthConnectStep() {
+function HealthConnectStep({ onRequest, granted, requesting }: { onRequest: () => void; granted: boolean; requesting: boolean }) {
   return (
     <View style={styles.stepContainer}>
       <Text style={styles.emoji}>👟</Text>
@@ -90,12 +192,27 @@ function HealthConnectStep() {
         <Text style={styles.permissionTitle}>{t('intro_hc_why_title')}</Text>
         <Text style={styles.permissionBody}>{t('intro_hc_why_body')}</Text>
       </View>
+      {Platform.OS === 'android' && (
+        <TouchableOpacity
+          style={[styles.permissionButton, granted && styles.permissionButtonGranted]}
+          onPress={onRequest}
+          disabled={granted || requesting}
+        >
+          {requesting ? (
+            <ActivityIndicator size="small" color={colors.textInverse} />
+          ) : (
+            <Text style={styles.permissionButtonText}>
+              {granted ? t('intro_hc_button_granted') : t('intro_hc_button')}
+            </Text>
+          )}
+        </TouchableOpacity>
+      )}
       <Text style={styles.hint}>{t('intro_hc_hint')}</Text>
     </View>
   );
 }
 
-function LocationStep() {
+function LocationStep({ onRequest, granted, requesting }: { onRequest: () => void; granted: boolean; requesting: boolean }) {
   return (
     <View style={styles.stepContainer}>
       <Text style={styles.emoji}>📍</Text>
@@ -105,12 +222,25 @@ function LocationStep() {
         <Text style={styles.permissionTitle}>{t('intro_location_why_title')}</Text>
         <Text style={styles.permissionBody}>{t('intro_location_why_body')}</Text>
       </View>
+      <TouchableOpacity
+        style={[styles.permissionButton, granted && styles.permissionButtonGranted]}
+        onPress={onRequest}
+        disabled={granted || requesting}
+      >
+        {requesting ? (
+          <ActivityIndicator size="small" color={colors.textInverse} />
+        ) : (
+          <Text style={styles.permissionButtonText}>
+            {granted ? t('intro_location_button_granted') : t('intro_location_button')}
+          </Text>
+        )}
+      </TouchableOpacity>
       <Text style={styles.hint}>{t('intro_location_hint')}</Text>
     </View>
   );
 }
 
-function NotificationsStep() {
+function NotificationsStep({ onRequest, granted, requesting }: { onRequest: () => void; granted: boolean; requesting: boolean }) {
   return (
     <View style={styles.stepContainer}>
       <Text style={styles.emoji}>🔔</Text>
@@ -120,12 +250,33 @@ function NotificationsStep() {
         <Text style={styles.permissionTitle}>{t('intro_notifications_why_title')}</Text>
         <Text style={styles.permissionBody}>{t('intro_notifications_why_body')}</Text>
       </View>
+      <TouchableOpacity
+        style={[styles.permissionButton, granted && styles.permissionButtonGranted]}
+        onPress={onRequest}
+        disabled={granted || requesting}
+      >
+        {requesting ? (
+          <ActivityIndicator size="small" color={colors.textInverse} />
+        ) : (
+          <Text style={styles.permissionButtonText}>
+            {granted ? t('intro_notifications_button_granted') : t('intro_notifications_button')}
+          </Text>
+        )}
+      </TouchableOpacity>
       <Text style={styles.hint}>{t('intro_notifications_hint')}</Text>
     </View>
   );
 }
 
-function ReadyStep() {
+function ReadyStep({ healthConnectGranted, locationGranted, notificationsGranted }: { 
+  healthConnectGranted: boolean; 
+  locationGranted: boolean; 
+  notificationsGranted: boolean 
+}) {
+  // Determine the status symbol for each permission
+  const getStatusSymbol = (granted: boolean) => granted ? '✓' : '-';
+  const getStatusColor = (granted: boolean) => granted ? colors.grass : colors.textMuted;
+
   return (
     <View style={styles.stepContainer}>
       <Text style={styles.emoji}>✨</Text>
@@ -138,15 +289,21 @@ function ReadyStep() {
       <View style={styles.checklistCard}>
         <Text style={styles.checklistTitle}>{t('intro_ready_checklist_title')}</Text>
         <View style={styles.checklistItem}>
-          <Text style={styles.checklistBullet}>•</Text>
+          <Text style={[styles.checklistBullet, { color: getStatusColor(healthConnectGranted) }]}>
+            {getStatusSymbol(healthConnectGranted)}
+          </Text>
           <Text style={styles.checklistText}>{t('intro_ready_checklist_item_hc')}</Text>
         </View>
         <View style={styles.checklistItem}>
-          <Text style={styles.checklistBullet}>•</Text>
+          <Text style={[styles.checklistBullet, { color: getStatusColor(locationGranted) }]}>
+            {getStatusSymbol(locationGranted)}
+          </Text>
           <Text style={styles.checklistText}>{t('intro_ready_checklist_item_gps')}</Text>
         </View>
         <View style={styles.checklistItem}>
-          <Text style={styles.checklistBullet}>•</Text>
+          <Text style={[styles.checklistBullet, { color: getStatusColor(notificationsGranted) }]}>
+            {getStatusSymbol(notificationsGranted)}
+          </Text>
           <Text style={styles.checklistText}>{t('intro_ready_checklist_item_notifications')}</Text>
         </View>
       </View>
@@ -245,6 +402,25 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.textSecondary,
     lineHeight: 20,
+  },
+
+  permissionButton: {
+    width: '100%',
+    backgroundColor: colors.grass,
+    borderRadius: radius.full,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+    ...shadows.soft,
+  },
+  permissionButtonGranted: {
+    backgroundColor: colors.grassDark,
+  },
+  permissionButtonText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.textInverse,
   },
 
   tipCard: {

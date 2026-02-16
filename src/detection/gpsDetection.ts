@@ -29,10 +29,14 @@ export async function requestLocationPermissions(): Promise<boolean> {
 
 /**
  * Start background location tracking for geofencing.
+ * Only starts if permissions are already granted.
  */
 export async function startLocationTracking(): Promise<void> {
-  const hasPermission = await requestLocationPermissions();
-  if (!hasPermission) {
+  // Check if we already have permissions
+  const { status: fg } = await Location.getForegroundPermissionsAsync();
+  const { status: bg } = await Location.getBackgroundPermissionsAsync();
+  
+  if (fg !== 'granted' || bg !== 'granted') {
     console.log('TouchGrass: GPS tracking not started - permissions not granted');
     return;
   }

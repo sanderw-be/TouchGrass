@@ -23,10 +23,10 @@ export const ACTION_LESS_OFTEN = 'less_often';
 const CHANNEL_ID = 'touchgrass_reminders';
 
 /**
- * Set up notification channel and action buttons.
+ * Set up notification infrastructure without requesting permissions.
  * Call once on app start.
  */
-export async function setupNotifications(): Promise<void> {
+export async function setupNotificationInfrastructure(): Promise<void> {
   // Android notification channels
   if (Platform.OS === 'android') {
     // Always create the background tracking channel, even without notification permissions
@@ -45,11 +45,30 @@ export async function setupNotifications(): Promise<void> {
     }
   }
 
-  // Request permission for reminders
+  // Set handler for foreground notifications
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: false,
+      shouldSetBadge: false,
+      shouldShowBanner: true,
+      shouldShowList: true,
+    }),
+  });
+
+  // Handle notification responses (button taps)
+  Notifications.addNotificationResponseReceivedListener(handleNotificationResponse);
+}
+
+/**
+ * Request notification permissions and complete setup.
+ * Returns true if permissions were granted.
+ */
+export async function requestNotificationPermissions(): Promise<boolean> {
   const { status } = await Notifications.requestPermissionsAsync();
   if (status !== 'granted') {
-    console.log('TouchGrass: Notification permissions not granted, skipping reminder setup');
-    return;
+    console.log('TouchGrass: Notification permissions not granted');
+    return false;
   }
 
   // Android notification channel for reminders
@@ -81,19 +100,17 @@ export async function setupNotifications(): Promise<void> {
     },
   ]);
 
-  // Handle notification responses (button taps)
-  Notifications.addNotificationResponseReceivedListener(handleNotificationResponse);
+  return true;
+}
 
-  // Set handler for foreground notifications
-  Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-      shouldShowAlert: true,
-      shouldPlaySound: false,
-      shouldSetBadge: false,
-      shouldShowBanner: true,
-      shouldShowList: true,
-    }),
-  });
+/**
+ * Set up notification channel and action buttons.
+ * Call once on app start.
+ * @deprecated Use setupNotificationInfrastructure() and requestNotificationPermissions() separately
+ */
+export async function setupNotifications(): Promise<void> {
+  await setupNotificationInfrastructure();
+  await requestNotificationPermissions();
 }
 
 /**
