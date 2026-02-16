@@ -70,7 +70,7 @@
     }
   }
       ],
-      "react-native-health-connect",
+      "expo-health-connect",
       "expo-sqlite",
       "expo-background-task",
       "expo-localization"

@@ -1,5 +1,6 @@
 import {
   initialize,
+  requestPermission,
   readRecords,
   SdkAvailabilityStatus,
   getSdkStatus,
@@ -31,24 +32,19 @@ export async function isHealthConnectAvailable(): Promise<boolean> {
 }
 
 /**
- * Request Health Connect permissions using Intent-based flow.
+ * Request Health Connect permissions using a hybrid approach.
  * 
- * The library's requestPermission() crashes in Expo due to uninitialized HealthConnectPermissionDelegate.
- * In Expo managed projects, we cannot set up the permission delegate in MainActivity.
- * 
- * Instead, we rely on:
- * 1. Manifest permissions declared in app.json (which registers the app with Health Connect)
- * 2. Opening Health Connect via Intent where user can manually grant permissions
- * 3. Verification via data read when app returns to foreground
+ * With expo-health-connect config plugin, the HealthConnectPermissionDelegate 
+ * is properly initialized, so requestPermission() should work correctly.
  * 
  * Flow:
  * 1. Check if permissions are already granted
- * 2. If not, open Health Connect Settings via Intent
- * 3. User grants permissions in Settings
+ * 2. Try library's requestPermission() - should now work with expo-health-connect plugin
+ * 3. If that fails or doesn't show dialog, fall back to Intent-based flow
  * 4. Verification happens when app returns to foreground (via recheckHealthConnect)
  * 
- * Returns true if Health Connect was opened successfully OR permissions are already granted.
- * Returns false if Health Connect could not be opened.
+ * Returns true if permissions were granted OR Settings was opened successfully.
+ * Returns false if both methods failed.
  */
 export async function requestHealthPermissions(): Promise<boolean> {
   try {
@@ -61,10 +57,29 @@ export async function requestHealthPermissions(): Promise<boolean> {
       return true;
     }
     
-    // Skip calling library's requestPermission() - it crashes in Expo due to uninitialized delegate
-    // The app is registered with Health Connect through manifest permissions in app.json
+    // Try the library's requestPermission() first
+    // With expo-health-connect plugin, this should work properly
+    try {
+      const granted = await requestPermission([
+        { accessType: 'read', recordType: 'ExerciseSession' },
+        { accessType: 'read', recordType: 'Steps' as any },
+        { accessType: 'read', recordType: 'ActiveCaloriesBurned' },
+      ]);
+      
+      // Check if permissions were granted
+      if (granted && granted.length > 0) {
+        setSetting(PERMISSION_WARNING_KEY, '0');
+        return true;
+      }
+      
+      // If no permissions granted, fall back to Intent flow
+      console.log('requestPermission returned empty, trying Intent fallback');
+    } catch (permError) {
+      // If requestPermission fails, fall back to manual flow
+      console.log('Library requestPermission failed, using Intent fallback:', permError);
+    }
     
-    // Open Health Connect Settings so user can manually grant permissions
+    // Fallback: Open Health Connect Settings so user can manually grant permissions
     const opened = await openHealthConnectPermissionsViaIntent();
     if (!opened) {
       console.warn('Could not open Health Connect settings');
