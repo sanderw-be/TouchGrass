@@ -2,19 +2,22 @@ import { Platform, Linking } from 'react-native';
 import { initialize, readRecords } from 'react-native-health-connect';
 
 /**
- * Open Health Connect app so user can manually grant permissions.
+ * Open Health Connect settings via Android Settings.
  * 
- * After calling the library's requestPermission() (which registers the app but doesn't show dialog),
- * this opens Health Connect where TouchGrass will appear in the app list.
+ * In newer Android versions (14+), Health Connect is integrated into Settings
+ * under Settings → Privacy → Health Connect, rather than being a standalone app.
+ * 
+ * This function opens the Health Connect permission screen where TouchGrass
+ * will appear after requestPermission() is called.
  * 
  * Flow:
- * 1. Open Health Connect app main screen
+ * 1. Open Android Settings → Health Connect
  * 2. User finds TouchGrass in the app list
  * 3. User taps TouchGrass and grants permissions
- * 4. User returns to TouchGrass
+ * 4. User returns to TouchGrass (via back button)
  * 5. Verify permissions via data read
  * 
- * @returns true if Health Connect was opened successfully, false otherwise
+ * @returns true if Settings was opened successfully, false otherwise
  */
 export async function openHealthConnectPermissionsViaIntent(): Promise<boolean> {
   if (Platform.OS !== 'android') {
@@ -23,39 +26,57 @@ export async function openHealthConnectPermissionsViaIntent(): Promise<boolean> 
   }
 
   try {
-    // Try different Intent URLs to open Health Connect
-    // Intent 1: Open Health Connect home screen (where apps are listed)
-    const homeIntent = 'intent://healthconnect/home#Intent;package=com.google.android.apps.healthdata;end';
+    // For Android 14+ (where Health Connect is in Settings)
+    // ACTION_HEALTH_CONNECT_SETTINGS opens Health Connect in Android Settings
+    const healthConnectSettingsIntent = 'android.settings.HEALTH_CONNECT_SETTINGS';
+    const settingsUrl = `intent:#Intent;action=${healthConnectSettingsIntent};end`;
     
     let opened = false;
     
-    // Try home intent first
+    // Try opening Health Connect settings (Android 14+)
     try {
-      const canOpenHome = await Linking.canOpenURL(homeIntent);
-      if (canOpenHome) {
-        await Linking.openURL(homeIntent);
+      const canOpenSettings = await Linking.canOpenURL(settingsUrl);
+      if (canOpenSettings) {
+        await Linking.openURL(settingsUrl);
         opened = true;
+        console.log('Opened Health Connect via Settings Intent');
       }
     } catch (e) {
-      console.log('Home intent failed, trying fallback');
+      console.log('Settings intent failed, trying fallback:', e);
     }
     
-    // If home intent didn't work, try package URL (opens app info)
+    // Fallback 1: Try the standalone Health Connect app (older Android versions)
     if (!opened) {
-      const packageUrl = 'package:com.google.android.apps.healthdata';
       try {
+        const homeIntent = 'intent://healthconnect/home#Intent;package=com.google.android.apps.healthdata;end';
+        const canOpenHome = await Linking.canOpenURL(homeIntent);
+        if (canOpenHome) {
+          await Linking.openURL(homeIntent);
+          opened = true;
+          console.log('Opened Health Connect standalone app');
+        }
+      } catch (e) {
+        console.log('Home intent failed, trying package URL:', e);
+      }
+    }
+    
+    // Fallback 2: Open app info page
+    if (!opened) {
+      try {
+        const packageUrl = 'package:com.google.android.apps.healthdata';
         const canOpenPackage = await Linking.canOpenURL(packageUrl);
         if (canOpenPackage) {
           await Linking.openURL(packageUrl);
           opened = true;
+          console.log('Opened Health Connect app info');
         }
       } catch (e) {
-        console.log('Package URL failed');
+        console.log('Package URL failed:', e);
       }
     }
     
     if (!opened) {
-      console.warn('Health Connect app not found or could not be opened');
+      console.warn('Health Connect settings could not be opened');
       return false;
     }
     
