@@ -67,21 +67,47 @@ export default function SettingsScreen() {
     loadStatus();
 
     // Re-check Health Connect and GPS when screen comes into focus
-    // (user may have granted permissions in Android Settings)
-    recheckHealthConnect();
-    checkGPSPermissions().then(() => {
-      // Reload status after GPS permissions check completes
-      setDetectionStatus(getDetectionStatus());
-    });
+    // (user may have granted permissions in Android Settings or Health Connect)
+    const checkPermissions = async () => {
+      const previousHCStatus = detectionStatus.healthConnect;
+      
+      await recheckHealthConnect();
+      await checkGPSPermissions();
+      
+      // Reload status after permission checks complete
+      const newStatus = getDetectionStatus();
+      setDetectionStatus(newStatus);
+      
+      // If Health Connect was just enabled, show success message
+      if (!previousHCStatus && newStatus.healthConnect) {
+        Alert.alert(
+          t('settings_hc_verified_title'),
+          t('settings_hc_verified_body'),
+        );
+      }
+    };
+    
+    checkPermissions();
 
     // Also re-check when app comes back to foreground
-    const sub = AppState.addEventListener('change', (state: AppStateStatus) => {
+    const sub = AppState.addEventListener('change', async (state: AppStateStatus) => {
       if (state === 'active') {
-        recheckHealthConnect();
-        checkGPSPermissions().then(() => {
-          // Reload status after permission checks complete
-          setDetectionStatus(getDetectionStatus());
-        });
+        const previousHCStatus = detectionStatus.healthConnect;
+        
+        await recheckHealthConnect();
+        await checkGPSPermissions();
+        
+        // Reload status after permission checks complete
+        const newStatus = getDetectionStatus();
+        setDetectionStatus(newStatus);
+        
+        // If Health Connect was just enabled, show success message
+        if (!previousHCStatus && newStatus.healthConnect) {
+          Alert.alert(
+            t('settings_hc_verified_title'),
+            t('settings_hc_verified_body'),
+          );
+        }
       }
     });
     return () => sub.remove();
@@ -89,10 +115,32 @@ export default function SettingsScreen() {
 
   const handleConnectHealthConnect = async () => {
     setConnectingHC(true);
-    const granted = await requestHealthConnect();
-    setDetectionStatus(getDetectionStatus());
-    setConnectingHC(false);
-    if (!granted) {
+    
+    try {
+      // Request Health Connect (this will open the Health Connect app)
+      const opened = await requestHealthConnect();
+      
+      if (!opened) {
+        // If we couldn't open Health Connect, show instructions
+        setConnectingHC(false);
+        Alert.alert(
+          t('settings_hc_failed_title'),
+          t('settings_hc_failed_body'),
+        );
+        return;
+      }
+      
+      // Health Connect was opened - user will grant permissions there
+      // We'll verify when they return (via AppState listener)
+      // For now, just reset the connecting state after a delay
+      setTimeout(() => {
+        setConnectingHC(false);
+        // Recheck will happen automatically when app comes to foreground
+      }, 1000);
+      
+    } catch (error) {
+      console.error('Error connecting to Health Connect:', error);
+      setConnectingHC(false);
       Alert.alert(
         t('settings_hc_failed_title'),
         t('settings_hc_failed_body'),
@@ -282,7 +330,7 @@ export default function SettingsScreen() {
                   disabled={connectingHC}
                 >
                   <Text style={styles.connectBtnText}>
-                    {connectingHC ? '...' : t('settings_hc_connect')}
+                    {connectingHC ? t('settings_hc_opening') : t('settings_hc_connect')}
                   </Text>
                 </TouchableOpacity>
               )

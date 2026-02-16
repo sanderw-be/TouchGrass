@@ -7,6 +7,7 @@ import {
 } from 'react-native-health-connect';
 import { getSetting, setSetting } from '../storage/database';
 import { submitSession, buildSession } from './sessionMerger';
+import { openHealthConnectPermissionsViaIntent, verifyHealthConnectPermissions } from './healthConnectIntent';
 
 // Activities that strongly suggest being outside
 const OUTDOOR_ACTIVITY_TYPES = [
@@ -31,21 +32,38 @@ export async function isHealthConnectAvailable(): Promise<boolean> {
 }
 
 /**
- * Request Health Connect permissions.
- * Returns true if granted.
+ * Request Health Connect permissions using Intent-based flow.
+ * This works around the library limitation where requestPermission() doesn't show the dialog.
+ * 
+ * Flow:
+ * 1. Open Health Connect app via Intent
+ * 2. User grants permissions in Health Connect
+ * 3. Verify permissions by attempting to read data
+ * 
+ * Returns true if permissions are granted (verified).
  */
 export async function requestHealthPermissions(): Promise<boolean> {
   try {
     await initialize();
-    const granted = await requestPermission([
-      { accessType: 'read', recordType: 'ExerciseSession' },
-      { accessType: 'read', recordType: 'Steps' as any }, // Type mismatch in library - using 'Steps' as workaround
-      { accessType: 'read', recordType: 'ActiveCaloriesBurned' },
-    ]);
-    if (granted.length > 0) {
+    
+    // First, check if permissions are already granted
+    const alreadyGranted = await verifyHealthConnectPermissions();
+    if (alreadyGranted) {
       setSetting(PERMISSION_WARNING_KEY, '0');
+      return true;
     }
-    return granted.length > 0;
+    
+    // Open Health Connect app for user to grant permissions
+    const opened = await openHealthConnectPermissionsViaIntent();
+    if (!opened) {
+      console.warn('Could not open Health Connect app');
+      return false;
+    }
+    
+    // Note: We can't verify immediately as the user hasn't returned yet.
+    // The calling code should verify when the app returns to foreground.
+    // For now, return false and let the recheck flow handle verification.
+    return false;
   } catch (e) {
     if (isPermissionError(e)) {
       logPermissionWarningOnce();

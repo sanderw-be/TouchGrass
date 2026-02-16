@@ -2,6 +2,7 @@ import * as BackgroundTask from 'expo-background-task';
 import * as TaskManager from 'expo-task-manager';
 import * as Location from 'expo-location';
 import { syncHealthConnect, requestHealthPermissions, isHealthConnectAvailable } from './healthConnect';
+import { verifyHealthConnectPermissions } from './healthConnectIntent';
 import { startLocationTracking, autoDetectLocations } from './gpsDetection';
 import { getSetting, setSetting } from '../storage/database';
 import { scheduleNextReminder } from '../notifications/notificationManager';
@@ -112,15 +113,23 @@ export async function requestHealthConnect(): Promise<boolean> {
 /**
  * Re-check Health Connect status without requesting permissions.
  * Call this when the app comes back to foreground.
+ * Uses verification via data read instead of sync to be more reliable.
  */
 export async function recheckHealthConnect(): Promise<boolean> {
   try {
     const available = await isHealthConnectAvailable();
     if (!available) return false;
-    // Try to sync — if permissions were granted it will succeed
-    const ok = await syncHealthConnect();
-    setSetting('healthconnect_enabled', ok ? '1' : '0');
-    return ok;
+    
+    // Verify permissions by attempting to read data
+    const hasPermissions = await verifyHealthConnectPermissions();
+    setSetting('healthconnect_enabled', hasPermissions ? '1' : '0');
+    
+    // If permissions are granted, try to sync data
+    if (hasPermissions) {
+      await syncHealthConnect();
+    }
+    
+    return hasPermissions;
   } catch {
     setSetting('healthconnect_enabled', '0');
     return false;
