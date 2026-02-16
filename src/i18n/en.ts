@@ -98,7 +98,7 @@ export default {
   settings_hc_opening: 'Opening Health Connect...',
   settings_hc_verifying: 'Verifying permissions...',
   settings_hc_failed_title: 'Could not connect',
-  settings_hc_failed_body: 'Please grant TouchGrass permissions in Health Connect:\n\n1. Tap your profile icon in Health Connect\n2. Find TouchGrass in the app list\n3. Tap to grant data permissions\n4. Return to TouchGrass\n\nIf Health Connect is not installed, please install it from the Google Play Store.',
+  settings_hc_failed_body: 'Please grant TouchGrass permissions in Health Connect:\n\n1. Open Health Connect app\n2. Look for TouchGrass in the app list\n3. Tap TouchGrass\n4. Enable the data types you want to share\n5. Return to TouchGrass\n\nIf TouchGrass does not appear in Health Connect, please restart the app and try again.\n\nIf Health Connect is not installed, install it from the Google Play Store.',
   settings_hc_verified_title: 'Connected successfully',
   settings_hc_verified_body: 'Health Connect permissions confirmed. Your outdoor activities will now be tracked automatically.',
   settings_hc_manage: 'Manage permissions',

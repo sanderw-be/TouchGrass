@@ -2,14 +2,17 @@ import { Platform, Linking } from 'react-native';
 import { initialize, readRecords } from 'react-native-health-connect';
 
 /**
- * Launch Health Connect app directly to grant permissions.
- * Works around library limitation by using Intent-based flow.
+ * Open Health Connect app so user can manually grant permissions.
+ * 
+ * After calling the library's requestPermission() (which registers the app but doesn't show dialog),
+ * this opens Health Connect where TouchGrass will appear in the app list.
  * 
  * Flow:
- * 1. Open Health Connect app via Intent
- * 2. User grants permissions in Health Connect
- * 3. Return to TouchGrass
- * 4. Verify permissions via data read
+ * 1. Open Health Connect app main screen
+ * 2. User finds TouchGrass in the app list
+ * 3. User taps TouchGrass and grants permissions
+ * 4. User returns to TouchGrass
+ * 5. Verify permissions via data read
  * 
  * @returns true if Health Connect was opened successfully, false otherwise
  */
@@ -20,26 +23,43 @@ export async function openHealthConnectPermissionsViaIntent(): Promise<boolean> 
   }
 
   try {
-    // Intent URL to open Health Connect app
-    // This opens the Health Connect app where users can manage permissions
-    const healthConnectIntent = 'intent://app/health-connect#Intent;scheme=health;package=com.google.android.apps.healthdata;end';
+    // Try different Intent URLs to open Health Connect
+    // Intent 1: Open Health Connect home screen (where apps are listed)
+    const homeIntent = 'intent://healthconnect/home#Intent;package=com.google.android.apps.healthdata;end';
     
-    const canOpen = await Linking.canOpenURL(healthConnectIntent);
-    if (canOpen) {
-      await Linking.openURL(healthConnectIntent);
-      return true;
-    } else {
-      // Fallback: Try to open via package name
-      const packageUrl = 'package:com.google.android.apps.healthdata';
-      const canOpenPackage = await Linking.canOpenURL(packageUrl);
-      if (canOpenPackage) {
-        await Linking.openURL(packageUrl);
-        return true;
+    let opened = false;
+    
+    // Try home intent first
+    try {
+      const canOpenHome = await Linking.canOpenURL(homeIntent);
+      if (canOpenHome) {
+        await Linking.openURL(homeIntent);
+        opened = true;
       }
-      
-      console.warn('Health Connect app not found');
+    } catch (e) {
+      console.log('Home intent failed, trying fallback');
+    }
+    
+    // If home intent didn't work, try package URL (opens app info)
+    if (!opened) {
+      const packageUrl = 'package:com.google.android.apps.healthdata';
+      try {
+        const canOpenPackage = await Linking.canOpenURL(packageUrl);
+        if (canOpenPackage) {
+          await Linking.openURL(packageUrl);
+          opened = true;
+        }
+      } catch (e) {
+        console.log('Package URL failed');
+      }
+    }
+    
+    if (!opened) {
+      console.warn('Health Connect app not found or could not be opened');
       return false;
     }
+    
+    return true;
   } catch (error) {
     console.error('Error opening Health Connect:', error);
     return false;

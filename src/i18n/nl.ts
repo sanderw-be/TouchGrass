@@ -98,7 +98,7 @@ export default {
   settings_hc_opening: 'Health Connect openen...',
   settings_hc_verifying: 'Machtigingen verifiëren...',
   settings_hc_failed_title: 'Verbinding mislukt',
-  settings_hc_failed_body: 'Geef TouchGrass machtigingen in Health Connect:\n\n1. Tik op je profielpictogram in Health Connect\n2. Zoek TouchGrass in de app-lijst\n3. Tik om gegevensmachtigingen te geven\n4. Keer terug naar TouchGrass\n\nAls Health Connect niet is geïnstalleerd, installeer het dan vanuit de Google Play Store.',
+  settings_hc_failed_body: 'Geef TouchGrass machtigingen in Health Connect:\n\n1. Open de Health Connect app\n2. Zoek TouchGrass in de app-lijst\n3. Tik op TouchGrass\n4. Schakel de gegevenstypen in die je wilt delen\n5. Keer terug naar TouchGrass\n\nAls TouchGrass niet verschijnt in Health Connect, herstart dan de app en probeer opnieuw.\n\nAls Health Connect niet is geïnstalleerd, installeer het dan vanuit de Google Play Store.',
   settings_hc_verified_title: 'Succesvol verbonden',
   settings_hc_verified_body: 'Health Connect machtigingen bevestigd. Je buitenactiviteiten worden nu automatisch bijgehouden.',
   settings_hc_manage: 'Machtigingen beheren',
