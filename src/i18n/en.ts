@@ -40,6 +40,7 @@ export default {
   nav_events: 'Events',
   nav_goals: 'Goals',
   nav_settings: 'Settings',
+  nav_weather_settings: 'Weather Settings',
 
   // Days of week (short, Monday first)
   day_mon: 'M',
@@ -253,6 +254,8 @@ export default {
   settings_weather_title: 'Weather',
   settings_weather_enabled: 'Weather-aware reminders',
   settings_weather_enabled_desc: 'Consider weather conditions when suggesting outdoor times',
+  settings_weather_more: 'More weather settings',
+  settings_weather_more_desc: 'Temperature preference, rain, heat, UV',
   settings_temp_preference: 'Climate preference',
   settings_temp_cold: 'Prefer cooler weather',
   settings_temp_moderate: 'Moderate climate',
@@ -265,6 +268,20 @@ export default {
   settings_weather_unavailable: 'Weather data unavailable',
   settings_weather_error: 'Failed to fetch weather',
   settings_weather_refresh: 'Refresh weather',
+
+  // Weather conditions
+  weather_clear_sky: 'Clear sky',
+  weather_mainly_clear: 'Mainly clear',
+  weather_partly_cloudy: 'Partly cloudy',
+  weather_overcast: 'Overcast',
+  weather_foggy: 'Foggy',
+  weather_drizzle: 'Drizzle',
+  weather_rain: 'Rain',
+  weather_snow: 'Snow',
+  weather_rain_showers: 'Rain showers',
+  weather_snow_showers: 'Snow showers',
+  weather_thunderstorm: 'Thunderstorm',
+  weather_unknown: 'Unknown',
 
   // Notification channel
   notif_channel_name: 'Outside reminders',

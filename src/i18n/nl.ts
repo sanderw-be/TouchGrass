@@ -40,6 +40,7 @@ export default {
   nav_events: 'Sessies',
   nav_goals: 'Doelen',
   nav_settings: 'Instellingen',
+  nav_weather_settings: 'Weerinstellingen',
 
   // Dagen van de week (kort, maandag eerst)
   day_mon: 'M',
@@ -253,6 +254,8 @@ export default {
   settings_weather_title: 'Weer',
   settings_weather_enabled: 'Weerbewuste herinneringen',
   settings_weather_enabled_desc: 'Houd rekening met weersomstandigheden bij het voorstellen van tijden',
+  settings_weather_more: 'Meer weerinstellingen',
+  settings_weather_more_desc: 'Temperatuurvoorkeur, regen, hitte, UV',
   settings_temp_preference: 'Klimaatvoorkeur',
   settings_temp_cold: 'Voorkeur voor koeler weer',
   settings_temp_moderate: 'Gematigd klimaat',
@@ -265,6 +268,20 @@ export default {
   settings_weather_unavailable: 'Weergegevens niet beschikbaar',
   settings_weather_error: 'Ophalen weer mislukt',
   settings_weather_refresh: 'Weer verversen',
+
+  // Weersomstandigheden
+  weather_clear_sky: 'Heldere hemel',
+  weather_mainly_clear: 'Grotendeels helder',
+  weather_partly_cloudy: 'Gedeeltelijk bewolkt',
+  weather_overcast: 'Bewolkt',
+  weather_foggy: 'Mistig',
+  weather_drizzle: 'Motregen',
+  weather_rain: 'Regen',
+  weather_snow: 'Sneeuw',
+  weather_rain_showers: 'Regenbuien',
+  weather_snow_showers: 'Sneeuwbuien',
+  weather_thunderstorm: 'Onweer',
+  weather_unknown: 'Onbekend',
 
   // Meldingskanaal
   notif_channel_name: 'Buitenherinneringen',
