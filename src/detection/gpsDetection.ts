@@ -32,11 +32,18 @@ export async function requestLocationPermissions(): Promise<boolean> {
  */
 export async function startLocationTracking(): Promise<void> {
   const hasPermission = await requestLocationPermissions();
-  if (!hasPermission) return;
+  if (!hasPermission) {
+    console.log('TouchGrass: GPS tracking not started - permissions not granted');
+    return;
+  }
 
   const isTracking = await Location.hasStartedLocationUpdatesAsync(LOCATION_TRACK_TASK);
-  if (isTracking) return;
+  if (isTracking) {
+    console.log('TouchGrass: GPS tracking already running');
+    return;
+  }
 
+  console.log('TouchGrass: Starting GPS tracking with background notification');
   await Location.startLocationUpdatesAsync(LOCATION_TRACK_TASK, {
     accuracy: Location.Accuracy.Balanced,
     timeInterval: 5 * 60 * 1000,      // every 5 minutes
@@ -49,6 +56,7 @@ export async function startLocationTracking(): Promise<void> {
     },
     pausesUpdatesAutomatically: true,
   });
+  console.log('TouchGrass: GPS tracking started successfully');
 }
 
 /**

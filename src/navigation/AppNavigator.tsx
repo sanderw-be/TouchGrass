@@ -57,14 +57,14 @@ function TabNavigator() {
         options={{ title: t('nav_home'), headerTitle: '🌱 TouchGrass' }}
       />
       <Tab.Screen
-        name="History"
-        component={HistoryScreen}
-        options={{ title: t('nav_history') }}
-      />
-      <Tab.Screen
         name="Events"
         component={EventsScreen}
         options={{ title: t('nav_events') }}
+      />
+      <Tab.Screen
+        name="History"
+        component={HistoryScreen}
+        options={{ title: t('nav_history') }}
       />
       <Tab.Screen
         name="Goals"

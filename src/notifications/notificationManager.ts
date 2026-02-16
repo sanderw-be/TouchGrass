@@ -27,9 +27,30 @@ const CHANNEL_ID = 'touchgrass_reminders';
  * Call once on app start.
  */
 export async function setupNotifications(): Promise<void> {
-  // Request permission
+  // Android notification channels
+  if (Platform.OS === 'android') {
+    // Always create the background tracking channel, even without notification permissions
+    // This is needed for the GPS foreground service notification
+    try {
+      await Notifications.setNotificationChannelAsync('touchgrass_background', {
+        name: t('notif_channel_background_name'),
+        description: t('notif_channel_background_desc'),
+        importance: Notifications.AndroidImportance.MIN, // no sound, no peek, no badge
+        showBadge: false,
+        enableVibrate: false,
+      });
+      console.log('TouchGrass: Background notification channel created');
+    } catch (e) {
+      console.warn('TouchGrass: Failed to create background channel:', e);
+    }
+  }
+
+  // Request permission for reminders
   const { status } = await Notifications.requestPermissionsAsync();
-  if (status !== 'granted') return;
+  if (status !== 'granted') {
+    console.log('TouchGrass: Notification permissions not granted, skipping reminder setup');
+    return;
+  }
 
   // Android notification channel for reminders
   if (Platform.OS === 'android') {
@@ -38,16 +59,6 @@ export async function setupNotifications(): Promise<void> {
       importance: Notifications.AndroidImportance.DEFAULT,
       vibrationPattern: [0, 250, 250, 250],
       lightColor: '#4A7C59',
-    });
-
-    // Separate low-priority channel for the background tracking notification
-    // Users can disable this independently without affecting reminders
-    await Notifications.setNotificationChannelAsync('touchgrass_background', {
-      name: t('notif_channel_background_name'),
-      description: t('notif_channel_background_desc'),
-      importance: Notifications.AndroidImportance.MIN, // no sound, no peek, no badge
-      showBadge: false,
-      enableVibrate: false,
     });
   }
 

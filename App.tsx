@@ -35,8 +35,9 @@ export default function App() {
 
       // Everything else can init after render
       try {
-        await initDetection();
+        // Setup notifications BEFORE detection to ensure channels exist
         await setupNotifications();
+        await initDetection();
         await scheduleDayReminders();
       } catch (e) {
         console.warn('Init error:', e);
