@@ -63,59 +63,43 @@ export default function SettingsScreen() {
     }
   }, []);
 
+  // Check permissions and show success message if Health Connect was just enabled
+  const checkAndUpdatePermissions = useCallback(async () => {
+    // Get current status before rechecking
+    const currentStatus = getDetectionStatus();
+    const previousHCStatus = currentStatus.healthConnect;
+    
+    await recheckHealthConnect();
+    await checkGPSPermissions();
+    
+    // Reload status after permission checks complete
+    const newStatus = getDetectionStatus();
+    setDetectionStatus(newStatus);
+    
+    // If Health Connect was just enabled, show success message
+    if (!previousHCStatus && newStatus.healthConnect) {
+      Alert.alert(
+        t('settings_hc_verified_title'),
+        t('settings_hc_verified_body'),
+      );
+    }
+  }, []);
+
   useFocusEffect(useCallback(() => {
     loadStatus();
 
     // Re-check Health Connect and GPS when screen comes into focus
     // (user may have granted permissions in Android Settings or Health Connect)
-    const checkPermissions = async () => {
-      // Get current status before rechecking
-      const currentStatus = getDetectionStatus();
-      const previousHCStatus = currentStatus.healthConnect;
-      
-      await recheckHealthConnect();
-      await checkGPSPermissions();
-      
-      // Reload status after permission checks complete
-      const newStatus = getDetectionStatus();
-      setDetectionStatus(newStatus);
-      
-      // If Health Connect was just enabled, show success message
-      if (!previousHCStatus && newStatus.healthConnect) {
-        Alert.alert(
-          t('settings_hc_verified_title'),
-          t('settings_hc_verified_body'),
-        );
-      }
-    };
-    
-    checkPermissions();
+    checkAndUpdatePermissions();
 
     // Also re-check when app comes back to foreground
-    const sub = AppState.addEventListener('change', async (state: AppStateStatus) => {
+    const sub = AppState.addEventListener('change', (state: AppStateStatus) => {
       if (state === 'active') {
-        // Get current status before rechecking
-        const currentStatus = getDetectionStatus();
-        const previousHCStatus = currentStatus.healthConnect;
-        
-        await recheckHealthConnect();
-        await checkGPSPermissions();
-        
-        // Reload status after permission checks complete
-        const newStatus = getDetectionStatus();
-        setDetectionStatus(newStatus);
-        
-        // If Health Connect was just enabled, show success message
-        if (!previousHCStatus && newStatus.healthConnect) {
-          Alert.alert(
-            t('settings_hc_verified_title'),
-            t('settings_hc_verified_body'),
-          );
-        }
+        checkAndUpdatePermissions();
       }
     });
     return () => sub.remove();
-  }, [loadStatus]));
+  }, [loadStatus, checkAndUpdatePermissions]));
 
   const handleConnectHealthConnect = async () => {
     setConnectingHC(true);

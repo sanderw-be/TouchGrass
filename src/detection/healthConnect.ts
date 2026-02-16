@@ -36,11 +36,13 @@ export async function isHealthConnectAvailable(): Promise<boolean> {
  * This works around the library limitation where requestPermission() doesn't show the dialog.
  * 
  * Flow:
- * 1. Open Health Connect app via Intent
- * 2. User grants permissions in Health Connect
- * 3. Verify permissions by attempting to read data
+ * 1. Check if permissions are already granted
+ * 2. If not, open Health Connect app via Intent
+ * 3. User grants permissions in Health Connect (outside this function)
+ * 4. Verification happens when app returns to foreground (via recheckHealthConnect)
  * 
- * Returns true if permissions are granted (verified).
+ * Returns true if Health Connect was opened successfully OR permissions are already granted.
+ * Returns false if Health Connect could not be opened.
  */
 export async function requestHealthPermissions(): Promise<boolean> {
   try {
@@ -60,10 +62,9 @@ export async function requestHealthPermissions(): Promise<boolean> {
       return false;
     }
     
-    // Note: We can't verify immediately as the user hasn't returned yet.
-    // The calling code should verify when the app returns to foreground.
-    // For now, return false and let the recheck flow handle verification.
-    return false;
+    // Successfully opened Health Connect - user will grant permissions there
+    // Verification will happen when the app returns to foreground
+    return true;
   } catch (e) {
     if (isPermissionError(e)) {
       logPermissionWarningOnce();

@@ -74,14 +74,24 @@ export async function verifyHealthConnectPermissions(): Promise<boolean> {
     // (even if there are no records, the read was successful)
     return true;
   } catch (error) {
-    // If read fails, likely a permission error
+    // If read fails, check if it's a permission error
+    // Note: react-native-health-connect throws string errors, not structured error objects
     const errorMessage = String(error);
-    if (errorMessage.includes('SecurityException') || errorMessage.includes('READ_')) {
+    const errorLower = errorMessage.toLowerCase();
+    
+    // Check for common permission-related error patterns
+    const isPermissionError = 
+      errorLower.includes('securityexception') ||
+      errorLower.includes('permission') ||
+      errorLower.includes('read_');
+    
+    if (isPermissionError) {
       console.log('Health Connect permissions not granted');
       return false;
     }
     
-    // Other errors (e.g., network, API issues) - log but return false
+    // Other errors (e.g., Health Connect not available, network issues)
+    // We treat these as "no permission" to be safe
     console.warn('Health Connect verification error:', error);
     return false;
   }
