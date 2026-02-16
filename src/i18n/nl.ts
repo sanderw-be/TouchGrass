@@ -40,7 +40,7 @@ export default {
   nav_events: 'Sessies',
   nav_goals: 'Doelen',
   nav_settings: 'Instellingen',
-  nav_weather_settings: 'Weerinstellingen',
+  nav_weather_settings: 'Weer instellingen',
 
   // Dagen van de week (kort, maandag eerst)
   day_mon: 'M',
@@ -254,7 +254,7 @@ export default {
   settings_weather_title: 'Weer',
   settings_weather_enabled: 'Weerbewuste herinneringen',
   settings_weather_enabled_desc: 'Houd rekening met weersomstandigheden bij het voorstellen van tijden',
-  settings_weather_more: 'Meer weerinstellingen',
+  settings_weather_more: 'Meer weer instellingen',
   settings_weather_more_desc: 'Temperatuurvoorkeur, regen, hitte, UV',
   settings_temp_preference: 'Klimaatvoorkeur',
   settings_temp_cold: 'Voorkeur voor koeler weer',
