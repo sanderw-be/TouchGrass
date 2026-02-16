@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
-  TouchableOpacity, SafeAreaView, Platform, ActivityIndicator,
+  TouchableOpacity, SafeAreaView, Platform, ActivityIndicator, AppState, AppStateStatus,
 } from 'react-native';
 import { colors, spacing, radius, shadows } from '../utils/theme';
 import { t } from '../i18n';
-import { requestHealthConnect } from '../detection/index';
-import { requestGPSPermissions } from '../detection/index';
+import { requestHealthConnect, recheckHealthConnect } from '../detection/index';
+import { requestGPSPermissions, checkGPSPermissions } from '../detection/index';
 import { requestNotificationPermissions } from '../notifications/notificationManager';
 
 interface Props {
@@ -25,6 +25,28 @@ export default function IntroScreen({ onComplete }: Props) {
   const steps: Step[] = ['welcome', 'health-connect', 'location', 'notifications', 'ready'];
   const currentIndex = steps.indexOf(currentStep);
   const progress = ((currentIndex + 1) / steps.length) * 100;
+
+  // Re-check permissions when app comes back to foreground
+  // (user may have granted permissions in Health Connect or Android Settings)
+  const checkPermissions = useCallback(async () => {
+    if (Platform.OS === 'android') {
+      const hcGranted = await recheckHealthConnect();
+      setHealthConnectGranted(hcGranted);
+    }
+    
+    const gpsGranted = await checkGPSPermissions();
+    setLocationGranted(gpsGranted);
+  }, []);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (state: AppStateStatus) => {
+      if (state === 'active') {
+        checkPermissions();
+      }
+    });
+
+    return () => subscription.remove();
+  }, [checkPermissions]);
 
   const handleNext = () => {
     const nextIndex = currentIndex + 1;
