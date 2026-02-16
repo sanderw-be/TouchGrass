@@ -478,6 +478,9 @@ export function insertScheduledNotification(notification: ScheduledNotification)
 }
 
 export function updateScheduledNotification(notification: ScheduledNotification): void {
+  if (!notification.id) {
+    throw new Error('Cannot update scheduled notification without an ID');
+  }
   db.runSync(
     `UPDATE scheduled_notifications 
      SET hour = ?, minute = ?, daysOfWeek = ?, enabled = ?, label = ?

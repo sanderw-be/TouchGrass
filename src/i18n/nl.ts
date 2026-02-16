@@ -300,6 +300,10 @@ export default {
   notif_channel_name: 'Buitenherinneringen',
   notif_channel_background_name: 'Achtergrondtracking',
   notif_channel_background_desc: 'Zichtbaar terwijl TouchGrass je buitentijd bijhoudt. Kan worden uitgeschakeld zonder invloed op herinneringen.',
+  
+  // Geplande meldingen
+  notif_scheduled_title: 'Tijd om naar buiten te gaan! 🌿',
+  notif_scheduled_body: 'Je geplande herinnering om een frisse neus te halen.',
 
   // Taal-/datumopmaak
   locale_tag: 'nl-NL',

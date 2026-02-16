@@ -300,6 +300,10 @@ export default {
   notif_channel_name: 'Outside reminders',
   notif_channel_background_name: 'Background tracking',
   notif_channel_background_desc: 'Shows while TouchGrass is tracking your outside time. Can be disabled without affecting reminders.',
+  
+  // Scheduled notifications
+  notif_scheduled_title: 'Time to go outside! 🌿',
+  notif_scheduled_body: 'Your scheduled reminder to get some fresh air.',
 
   // Time/date formatting locale tag
   locale_tag: 'en-GB',

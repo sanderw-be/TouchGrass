@@ -12,6 +12,7 @@ import {
   toggleScheduledNotification,
   ScheduledNotification,
 } from '../storage/database';
+import { scheduleAllScheduledNotifications } from '../notifications/scheduledNotifications';
 import { colors, spacing, radius, shadows } from '../utils/theme';
 import { t } from '../i18n';
 
@@ -60,6 +61,8 @@ export default function ScheduledNotificationsScreen() {
   const handleToggle = (id: number, enabled: boolean) => {
     toggleScheduledNotification(id, enabled);
     loadNotifications();
+    // Re-schedule all notifications
+    scheduleAllScheduledNotifications();
   };
 
   const handleDelete = (notification: ScheduledNotification) => {
@@ -75,6 +78,8 @@ export default function ScheduledNotificationsScreen() {
             if (notification.id) {
               deleteScheduledNotification(notification.id);
               loadNotifications();
+              // Re-schedule all notifications
+              scheduleAllScheduledNotifications();
             }
           },
         },
@@ -211,6 +216,8 @@ function EditNotificationModal({ visible, notification, isCreating, onClose, onS
       }
       onSave();
       onClose();
+      // Re-schedule all notifications
+      scheduleAllScheduledNotifications();
     } catch (error) {
       console.error('Error saving scheduled notification:', error);
       Alert.alert(t('settings_error_title'), String(error));
@@ -340,7 +347,7 @@ function EditNotificationModal({ visible, notification, isCreating, onClose, onS
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: colors.mist,
   },
   content: {
     padding: spacing.md,
@@ -352,7 +359,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   card: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.sand,
     borderRadius: radius.lg,
     padding: spacing.md,
     marginBottom: spacing.md,
@@ -406,15 +413,15 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
-    backgroundColor: colors.white,
+    backgroundColor: colors.sand,
     borderWidth: 1,
-    borderColor: colors.danger,
+    borderColor: colors.error,
     borderRadius: radius.md,
     alignItems: 'center',
   },
   deleteBtnText: {
     fontSize: 14,
-    color: colors.danger,
+    color: colors.error,
     fontWeight: '500',
   },
   addButton: {
@@ -429,13 +436,13 @@ const styles = StyleSheet.create({
   addButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: colors.white,
+    color: colors.textInverse,
   },
 
   // Modal styles
   modalContainer: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: colors.mist,
   },
   modalHeader: {
     flexDirection: 'row',
@@ -479,7 +486,7 @@ const styles = StyleSheet.create({
   timePicker: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.white,
+    backgroundColor: colors.sand,
     borderRadius: radius.lg,
     padding: spacing.lg,
     ...shadows.soft,
@@ -502,7 +509,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   allDaysBtn: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.sand,
     borderWidth: 2,
     borderColor: colors.fog,
     borderRadius: radius.md,
@@ -524,7 +531,7 @@ const styles = StyleSheet.create({
     color: colors.grass,
   },
   dayButton: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.sand,
     borderWidth: 2,
     borderColor: colors.fog,
     borderRadius: radius.md,
@@ -545,7 +552,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   labelInput: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.sand,
     borderRadius: radius.md,
     padding: spacing.md,
     fontSize: 16,

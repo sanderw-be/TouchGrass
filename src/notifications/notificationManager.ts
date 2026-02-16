@@ -5,6 +5,7 @@ import {
   getSetting, setSetting, insertReminderFeedback,
 } from '../storage/database';
 import { shouldRemindNow, scoreReminderHours } from './reminderAlgorithm';
+import { hasScheduledNotificationNearby, scheduleAllScheduledNotifications } from './scheduledNotifications';
 import { t } from '../i18n';
 
 const NOTIF_TITLES = [
@@ -79,6 +80,14 @@ export async function requestNotificationPermissions(): Promise<boolean> {
       vibrationPattern: [0, 250, 250, 250],
       lightColor: '#4A7C59',
     });
+    
+    // Channel for scheduled reminders
+    await Notifications.setNotificationChannelAsync('touchgrass_scheduled', {
+      name: t('settings_scheduled_notifications'),
+      importance: Notifications.AndroidImportance.DEFAULT,
+      vibrationPattern: [0, 250, 250, 250],
+      lightColor: '#4A7C59',
+    });
   }
 
   // Register action categories (the quick-reply buttons)
@@ -99,6 +108,12 @@ export async function requestNotificationPermissions(): Promise<boolean> {
       options: { opensAppToForeground: false },
     },
   ]);
+  
+  // Register scheduled reminder category (no action buttons for scheduled reminders)
+  await Notifications.setNotificationCategoryAsync('scheduled_reminder', []);
+  
+  // Schedule all scheduled notifications
+  await scheduleAllScheduledNotifications();
 
   return true;
 }
@@ -138,8 +153,20 @@ export async function scheduleNextReminder(): Promise<void> {
     return;
   }
 
-  // Cancel existing scheduled reminders
-  await Notifications.cancelAllScheduledNotificationsAsync();
+  // Check if there's a scheduled notification nearby (within 60 minutes)
+  if (hasScheduledNotificationNearby(60)) {
+    console.log('TouchGrass: skipping automatic reminder, scheduled notification nearby');
+    return;
+  }
+
+  // Cancel existing scheduled reminders (but not scheduled notifications)
+  const allScheduled = await Notifications.getAllScheduledNotificationsAsync();
+  for (const notification of allScheduled) {
+    // Only cancel non-scheduled notifications
+    if (!notification.identifier.startsWith('scheduled_')) {
+      await Notifications.cancelScheduledNotificationAsync(notification.identifier);
+    }
+  }
 
   // Build message based on progress
   const { title, body } = buildReminderMessage(todayMinutes, dailyTarget);
