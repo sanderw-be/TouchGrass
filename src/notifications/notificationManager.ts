@@ -276,17 +276,19 @@ function buildReminderMessage(
   }
 
   // Add weather context if available and enabled
-  const weatherPrefs = getWeatherPreferences();
-  if (weatherPrefs.enabled && isWeatherDataAvailable()) {
-    const currentHour = hour ?? new Date().getHours();
-    const weather = getWeatherForHour(currentHour);
-    
-    if (weather) {
-      const emoji = getWeatherEmoji(weather);
-      const temp = Math.round(weather.temperature);
+  if (isWeatherDataAvailable()) {
+    const weatherPrefs = getWeatherPreferences();
+    if (weatherPrefs.enabled) {
+      const currentHour = hour ?? new Date().getHours();
+      const weather = getWeatherForHour(currentHour);
       
-      // Add weather hint to body
-      body += ` ${emoji} ${temp}°C outside.`;
+      if (weather) {
+        const emoji = getWeatherEmoji(weather);
+        const temp = Math.round(weather.temperature);
+        
+        // Add weather hint to body
+        body += ` ${emoji} ${temp}°C outside.`;
+      }
     }
   }
 
