@@ -253,6 +253,8 @@ export default {
   settings_weather_title: 'Weer',
   settings_weather_enabled: 'Weerbewuste herinneringen',
   settings_weather_enabled_desc: 'Houd rekening met weersomstandigheden bij het voorstellen van tijden',
+  settings_weather_more: 'Meer weerinstellingen',
+  settings_weather_more_desc: 'Temperatuurvoorkeur, regen, hitte, UV',
   settings_temp_preference: 'Klimaatvoorkeur',
   settings_temp_cold: 'Voorkeur voor koeler weer',
   settings_temp_moderate: 'Gematigd klimaat',

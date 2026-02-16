@@ -253,6 +253,8 @@ export default {
   settings_weather_title: 'Weather',
   settings_weather_enabled: 'Weather-aware reminders',
   settings_weather_enabled_desc: 'Consider weather conditions when suggesting outdoor times',
+  settings_weather_more: 'More weather settings',
+  settings_weather_more_desc: 'Temperature preference, rain, heat, UV',
   settings_temp_preference: 'Climate preference',
   settings_temp_cold: 'Prefer cooler weather',
   settings_temp_moderate: 'Moderate climate',
