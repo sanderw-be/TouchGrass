@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getSetting, setSetting, getKnownLocations, KnownLocation, clearAllData } from '../storage/database';
 import { getDetectionStatus, requestHealthConnect, recheckHealthConnect, checkGPSPermissions, requestGPSPermissions, openHealthConnectSettings } from '../detection/index';
 import { AppState, AppStateStatus } from 'react-native';
@@ -21,6 +22,7 @@ const LANGUAGES = [
 
 export default function SettingsScreen() {
   const navigation = useNavigation<StackNavigationProp<SettingsStackParamList>>();
+  const insets = useSafeAreaInsets();
   const [remindersEnabled, setRemindersEnabled] = useState(true);
   const [detectionStatus, setDetectionStatus] = useState({ healthConnect: false, gps: false });
   const [knownLocations, setKnownLocations] = useState<KnownLocation[]>([]);
@@ -218,7 +220,7 @@ export default function SettingsScreen() {
 
   return (
     <>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
         <Text style={styles.headerTitle}>{t('nav_settings')}</Text>
       </View>
       
@@ -237,84 +239,21 @@ export default function SettingsScreen() {
         {/* Detection sources */}
         <Text style={styles.sectionHeader}>{t('settings_section_detection')}</Text>
         <View style={styles.card}>
-          <SettingRow
+          <DetectionSettingRow
+            active={detectionStatus.healthConnect}
             icon="👟"
             label={t('settings_health_connect')}
-            sublabel={detectionStatus.healthConnect ? t('settings_health_connected') : t('settings_health_unavailable')}
-            right={
-              detectionStatus.healthConnect
-                ? <StatusDot active={true} />
-              : (
-                <TouchableOpacity
-                  style={styles.connectBtn}
-                  onPress={handleConnectHealthConnect}
-                  disabled={connectingHC}
-                >
-                  <Text style={styles.connectBtnText}>
-                    {connectingHC ? t('settings_hc_opening') : t('settings_hc_connect')}
-                  </Text>
-                </TouchableOpacity>
-              )
-          }
-        />
-        {detectionStatus.healthConnect && (
-          <>
-            <Divider />
-            <SettingRow
-              icon="⚙️"
-              label={t('settings_hc_manage')}
-              sublabel={t('settings_hc_manage_sublabel')}
-              right={
-                <TouchableOpacity
-                  style={styles.editBtn}
-                  onPress={handleOpenHealthConnectSettings}
-                >
-                  <Text style={styles.editBtnText}>{t('settings_hc_open')}</Text>
-                </TouchableOpacity>
-              }
-            />
-          </>
-        )}
-        <Divider />
-        <SettingRow
-          icon="📍"
-          label={t('settings_gps')}
-          sublabel={detectionStatus.gps ? t('settings_gps_active') : t('settings_gps_permission')}
-          right={
-            detectionStatus.gps
-              ? <StatusDot active={true} />
-              : (
-                <TouchableOpacity
-                  style={styles.connectBtn}
-                  onPress={handleRequestGPSPermission}
-                >
-                  <Text style={styles.connectBtnText}>{t('settings_gps_grant')}</Text>
-                </TouchableOpacity>
-              )
-          }
-        />
-        {!detectionStatus.gps && (
-          <>
-            <Divider />
-            <SettingRow
-              icon="⚙️"
-              label={t('settings_gps_open_settings')}
-              sublabel={t('settings_gps_open_settings_sublabel')}
-              right={
-                <TouchableOpacity
-                  style={styles.editBtn}
-                  onPress={handleOpenAppSettings}
-                >
-                  <Text style={styles.editBtnText}>{t('settings_hc_open')}</Text>
-                </TouchableOpacity>
-              }
-            />
-            <View style={styles.permissionWarning}>
-              <Text style={styles.permissionWarningText}>{t('settings_gps_warning')}</Text>
-            </View>
-          </>
-        )}
-      </View>
+            onPress={detectionStatus.healthConnect ? handleOpenHealthConnectSettings : handleConnectHealthConnect}
+            isLoading={connectingHC}
+          />
+          <Divider />
+          <DetectionSettingRow
+            active={detectionStatus.gps}
+            icon="📍"
+            label={t('settings_gps')}
+            onPress={handleOpenAppSettings}
+          />
+        </View>
 
       {/* Known locations */}
       <Text style={styles.sectionHeader}>{t('settings_section_locations')}</Text>
@@ -477,18 +416,50 @@ function StatusDot({ active }: { active: boolean }) {
   );
 }
 
+function DetectionSettingRow({
+  active,
+  icon,
+  label,
+  onPress,
+  isLoading,
+}: {
+  active: boolean;
+  icon: string;
+  label: string;
+  onPress: () => void;
+  isLoading?: boolean;
+}) {
+  return (
+    <View style={styles.row}>
+      {active && <StatusDot active={true} />}
+      <Text style={[styles.rowIcon, active && styles.rowIconWithDot]}>{icon}</Text>
+      <View style={styles.rowContent}>
+        <Text style={styles.rowLabel}>{label}</Text>
+      </View>
+      <TouchableOpacity
+        style={styles.settingsBtn}
+        onPress={onPress}
+        disabled={isLoading}
+      >
+        <Text style={styles.settingsBtnText}>
+          {isLoading ? '...' : '⚙️'}
+        </Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.mist },
   content: { padding: spacing.md, paddingBottom: spacing.xxl },
 
   header: {
     backgroundColor: colors.mist,
-    paddingTop: spacing.xl,
-    paddingBottom: spacing.sm,
+    paddingBottom: spacing.md,
     paddingHorizontal: spacing.md,
   },
   headerTitle: {
-    fontSize: 28,
+    fontSize: 20,
     fontWeight: '700',
     color: colors.textPrimary,
   },
@@ -517,6 +488,7 @@ const styles = StyleSheet.create({
     padding: spacing.md,
   },
   rowIcon: { fontSize: 20, marginRight: spacing.md, width: 28, textAlign: 'center' },
+  rowIconWithDot: { marginLeft: spacing.sm },
   rowContent: { flex: 1 },
   rowLabel: { fontSize: 15, color: colors.textPrimary, fontWeight: '500' },
   rowSublabel: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
@@ -527,6 +499,16 @@ const styles = StyleSheet.create({
   statusDot: { width: 10, height: 10, borderRadius: 5 },
   statusDotActive: { backgroundColor: colors.grass },
   statusDotInactive: { backgroundColor: colors.inactive },
+
+  settingsBtn: {
+    backgroundColor: colors.grassPale,
+    borderRadius: radius.full,
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  settingsBtnText: { fontSize: 16 },
 
   editBtn: {
     backgroundColor: colors.grassPale,
