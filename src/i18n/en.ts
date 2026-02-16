@@ -40,6 +40,7 @@ export default {
   nav_events: 'Events',
   nav_goals: 'Goals',
   nav_settings: 'Settings',
+  nav_weather_settings: 'Weather Settings',
 
   // Days of week (short, Monday first)
   day_mon: 'M',

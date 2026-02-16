@@ -4,6 +4,7 @@ import {
   TouchableOpacity, Switch, Alert, Linking, Platform,
 } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
 import { getSetting, setSetting, getKnownLocations, KnownLocation, clearAllData } from '../storage/database';
 import { getDetectionStatus, requestHealthConnect, recheckHealthConnect, checkGPSPermissions, requestGPSPermissions, openHealthConnectSettings } from '../detection/index';
 import { AppState, AppStateStatus } from 'react-native';
@@ -11,6 +12,7 @@ import { colors, spacing, radius, shadows } from '../utils/theme';
 import { t } from '../i18n';
 import i18n from '../i18n';
 import EditLocationSheet from '../components/EditLocationSheet';
+import type { SettingsStackParamList } from '../navigation/AppNavigator';
 
 const LANGUAGES = [
   { code: 'en', label: 'English' },
@@ -18,7 +20,7 @@ const LANGUAGES = [
 ];
 
 export default function SettingsScreen() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<StackNavigationProp<SettingsStackParamList>>();
   const [remindersEnabled, setRemindersEnabled] = useState(true);
   const [detectionStatus, setDetectionStatus] = useState({ healthConnect: false, gps: false });
   const [knownLocations, setKnownLocations] = useState<KnownLocation[]>([]);
@@ -386,7 +388,7 @@ export default function SettingsScreen() {
           <>
             <Divider />
             <TouchableOpacity
-              onPress={() => navigation.navigate('WeatherSettings' as never)}
+              onPress={() => navigation.navigate('WeatherSettings')}
             >
               <SettingRow
                 icon="⚙️"

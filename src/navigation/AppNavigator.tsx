@@ -14,8 +14,13 @@ import WeatherSettingsScreen from '../screens/WeatherSettingsScreen';
 import { colors, spacing } from '../utils/theme';
 import { t } from '../i18n';
 
+export type SettingsStackParamList = {
+  SettingsMain: undefined;
+  WeatherSettings: undefined;
+};
+
 const Tab = createBottomTabNavigator();
-const SettingsStack = createStackNavigator();
+const SettingsStack = createStackNavigator<SettingsStackParamList>();
 
 const icons: Record<string, string> = {
   Home: '🌿',
@@ -43,7 +48,7 @@ function SettingsStackNavigator() {
       <SettingsStack.Screen
         name="WeatherSettings"
         component={WeatherSettingsScreen}
-        options={{ title: t('settings_weather_title') }}
+        options={{ title: t('nav_weather_settings') }}
       />
     </SettingsStack.Navigator>
   );

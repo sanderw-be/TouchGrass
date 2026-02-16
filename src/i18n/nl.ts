@@ -40,6 +40,7 @@ export default {
   nav_events: 'Sessies',
   nav_goals: 'Doelen',
   nav_settings: 'Instellingen',
+  nav_weather_settings: 'Weerinstellingen',
 
   // Dagen van de week (kort, maandag eerst)
   day_mon: 'M',
