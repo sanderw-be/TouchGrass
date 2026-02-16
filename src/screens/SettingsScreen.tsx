@@ -138,55 +138,15 @@ export default function SettingsScreen() {
 
   const openHealthConnectSettings = async () => {
     try {
-      if (Platform.OS === 'android') {
-        // Use the same Intent logic as openHealthConnectPermissionsViaIntent
-        // This ensures we open the actual Health Connect Settings, not just app info
-        
-        let opened = false;
-        
-        // Try opening Health Connect settings (Android 14+)
-        try {
-          const healthConnectSettingsIntent = 'android.settings.HEALTH_CONNECT_SETTINGS';
-          const settingsUrl = `intent:#Intent;action=${healthConnectSettingsIntent};end`;
-          const canOpenSettings = await Linking.canOpenURL(settingsUrl);
-          if (canOpenSettings) {
-            await Linking.openURL(settingsUrl);
-            opened = true;
-          }
-        } catch (e) {
-          console.log('Settings intent failed, trying fallback:', e);
-        }
-        
-        // Fallback 1: Try the standalone Health Connect app (older Android versions)
-        if (!opened) {
-          try {
-            const homeIntent = 'intent://healthconnect/home#Intent;package=com.google.android.apps.healthdata;end';
-            const canOpenHome = await Linking.canOpenURL(homeIntent);
-            if (canOpenHome) {
-              await Linking.openURL(homeIntent);
-              opened = true;
-            }
-          } catch (e) {
-            console.log('Home intent failed, trying package URL:', e);
-          }
-        }
-        
-        // Fallback 2: Open app info page
-        if (!opened) {
-          const packageUrl = 'package:com.google.android.apps.healthdata';
-          const canOpenPackage = await Linking.canOpenURL(packageUrl);
-          if (canOpenPackage) {
-            await Linking.openURL(packageUrl);
-            opened = true;
-          }
-        }
-        
-        if (!opened) {
-          Alert.alert(
-            t('settings_hc_not_installed_title'),
-            t('settings_hc_not_installed_body'),
-          );
-        }
+      // Use requestHealthConnect which tries the permission dialog first,
+      // then falls back to Intents if needed. This matches the initial connection flow.
+      const opened = await requestHealthConnect();
+      
+      if (!opened) {
+        Alert.alert(
+          t('settings_hc_open_error_title'),
+          t('settings_hc_open_error_body'),
+        );
       }
     } catch (error) {
       console.error('Error opening Health Connect settings:', error);
