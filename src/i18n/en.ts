@@ -266,6 +266,36 @@ export default {
   settings_weather_error: 'Failed to fetch weather',
   settings_weather_refresh: 'Refresh weather',
 
+  // Scheduled notifications
+  settings_scheduled_notifications: 'Scheduled reminders',
+  settings_scheduled_notifications_sublabel: 'Set specific times for reminders',
+  scheduled_notifications_title: 'Scheduled Reminders',
+  scheduled_notifications_empty: 'No scheduled reminders yet. Add a reminder to get notifications at specific times.',
+  scheduled_notifications_add: 'Add reminder',
+  scheduled_notification_edit: 'Edit reminder',
+  scheduled_notification_delete: 'Delete',
+  scheduled_notification_delete_confirm_title: 'Delete reminder',
+  scheduled_notification_delete_confirm_body: 'Are you sure you want to delete this scheduled reminder?',
+  scheduled_notification_delete_cancel: 'Cancel',
+  scheduled_notification_save: 'Save',
+  scheduled_notification_cancel: 'Cancel',
+  scheduled_notification_time: 'Time',
+  scheduled_notification_days: 'Days of week',
+  scheduled_notification_label: 'Label (optional)',
+  scheduled_notification_label_placeholder: 'e.g. Morning walk',
+  scheduled_notification_all_days: 'All days',
+  scheduled_notification_validation_no_days: 'Please select at least one day',
+  scheduled_notification_at: 'at',
+  
+  // Days of week (full names for scheduled notifications)
+  day_sunday: 'Sunday',
+  day_monday: 'Monday',
+  day_tuesday: 'Tuesday',
+  day_wednesday: 'Wednesday',
+  day_thursday: 'Thursday',
+  day_friday: 'Friday',
+  day_saturday: 'Saturday',
+
   // Notification channel
   notif_channel_name: 'Outside reminders',
   notif_channel_background_name: 'Background tracking',

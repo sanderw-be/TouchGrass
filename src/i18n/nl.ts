@@ -266,6 +266,36 @@ export default {
   settings_weather_error: 'Ophalen weer mislukt',
   settings_weather_refresh: 'Weer verversen',
 
+  // Geplande meldingen
+  settings_scheduled_notifications: 'Geplande herinneringen',
+  settings_scheduled_notifications_sublabel: 'Stel specifieke tijden in voor herinneringen',
+  scheduled_notifications_title: 'Geplande Herinneringen',
+  scheduled_notifications_empty: 'Nog geen geplande herinneringen. Voeg een herinnering toe om meldingen op specifieke tijden te ontvangen.',
+  scheduled_notifications_add: 'Herinnering toevoegen',
+  scheduled_notification_edit: 'Herinnering bewerken',
+  scheduled_notification_delete: 'Verwijderen',
+  scheduled_notification_delete_confirm_title: 'Herinnering verwijderen',
+  scheduled_notification_delete_confirm_body: 'Weet je zeker dat je deze geplande herinnering wilt verwijderen?',
+  scheduled_notification_delete_cancel: 'Annuleren',
+  scheduled_notification_save: 'Opslaan',
+  scheduled_notification_cancel: 'Annuleren',
+  scheduled_notification_time: 'Tijd',
+  scheduled_notification_days: 'Dagen van de week',
+  scheduled_notification_label: 'Label (optioneel)',
+  scheduled_notification_label_placeholder: 'bijv. Ochtendwandeling',
+  scheduled_notification_all_days: 'Alle dagen',
+  scheduled_notification_validation_no_days: 'Selecteer minimaal één dag',
+  scheduled_notification_at: 'om',
+  
+  // Dagen van de week (volledige namen voor geplande meldingen)
+  day_sunday: 'Zondag',
+  day_monday: 'Maandag',
+  day_tuesday: 'Dinsdag',
+  day_wednesday: 'Woensdag',
+  day_thursday: 'Donderdag',
+  day_friday: 'Vrijdag',
+  day_saturday: 'Zaterdag',
+
   // Meldingskanaal
   notif_channel_name: 'Buitenherinneringen',
   notif_channel_background_name: 'Achtergrondtracking',

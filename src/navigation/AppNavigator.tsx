@@ -1,6 +1,7 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Text } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -9,10 +10,12 @@ import HistoryScreen from '../screens/HistoryScreen';
 import EventsScreen from '../screens/EventsScreen';
 import GoalsScreen from '../screens/GoalsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import ScheduledNotificationsScreen from '../screens/ScheduledNotificationsScreen';
 import { colors, spacing } from '../utils/theme';
 import { t } from '../i18n';
 
 const Tab = createBottomTabNavigator();
+const SettingsStack = createNativeStackNavigator();
 
 const icons: Record<string, string> = {
   Home: '🌿',
@@ -21,6 +24,29 @@ const icons: Record<string, string> = {
   Goals: '🎯',
   Settings: '⚙️',
 };
+
+function SettingsNavigator() {
+  return (
+    <SettingsStack.Navigator
+      screenOptions={{
+        headerStyle: { backgroundColor: colors.mist },
+        headerTitleStyle: { color: colors.textPrimary, fontWeight: '700' },
+        headerShadowVisible: false,
+      }}
+    >
+      <SettingsStack.Screen
+        name="SettingsMain"
+        component={SettingsScreen}
+        options={{ title: t('nav_settings') }}
+      />
+      <SettingsStack.Screen
+        name="ScheduledNotifications"
+        component={ScheduledNotificationsScreen}
+        options={{ title: t('scheduled_notifications_title') }}
+      />
+    </SettingsStack.Navigator>
+  );
+}
 
 function TabNavigator() {
   const insets = useSafeAreaInsets();
@@ -73,8 +99,8 @@ function TabNavigator() {
       />
       <Tab.Screen
         name="Settings"
-        component={SettingsScreen}
-        options={{ title: t('nav_settings') }}
+        component={SettingsNavigator}
+        options={{ title: t('nav_settings'), headerShown: false }}
       />
     </Tab.Navigator>
   );

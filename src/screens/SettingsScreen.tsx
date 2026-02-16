@@ -3,7 +3,7 @@ import {
   View, Text, StyleSheet, ScrollView,
   TouchableOpacity, Switch, Alert, Linking, Platform, ActivityIndicator,
 } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { getSetting, setSetting, getKnownLocations, KnownLocation, clearAllData } from '../storage/database';
 import { getDetectionStatus, requestHealthConnect, recheckHealthConnect, checkGPSPermissions, requestGPSPermissions, openHealthConnectSettings } from '../detection/index';
 import { AppState, AppStateStatus } from 'react-native';
@@ -20,6 +20,7 @@ const LANGUAGES = [
 ];
 
 export default function SettingsScreen() {
+  const navigation = useNavigation();
   const [remindersEnabled, setRemindersEnabled] = useState(true);
   const [detectionStatus, setDetectionStatus] = useState({ healthConnect: false, gps: false });
   const [knownLocations, setKnownLocations] = useState<KnownLocation[]>([]);
@@ -419,6 +420,20 @@ export default function SettingsScreen() {
               trackColor={{ false: colors.fog, true: colors.grassLight }}
               thumbColor={remindersEnabled ? colors.grass : colors.inactive}
             />
+          }
+        />
+        <Divider />
+        <SettingRow
+          icon="📅"
+          label={t('settings_scheduled_notifications')}
+          sublabel={t('settings_scheduled_notifications_sublabel')}
+          right={
+            <TouchableOpacity
+              style={styles.editBtn}
+              onPress={() => navigation.navigate('ScheduledNotifications' as never)}
+            >
+              <Text style={styles.editBtnText}>{t('settings_hc_open')}</Text>
+            </TouchableOpacity>
           }
         />
         <Divider />
