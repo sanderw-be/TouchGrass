@@ -92,7 +92,16 @@ export async function checkHealthConnectPermissions(): Promise<boolean> {
 export async function requestHealthPermissions(): Promise<boolean> {
   try {
     console.log('Health Connect: Requesting permissions...');
-    await initialize();
+    
+    // Ensure SDK is initialized (safe to call multiple times)
+    try {
+      await initialize();
+      console.log('Health Connect: SDK initialized for permission request');
+    } catch (initError) {
+      console.log('Health Connect: SDK already initialized or init failed:', String(initError));
+      // Continue anyway - it might already be initialized
+    }
+    
     const granted = await requestPermission([
       { accessType: 'read', recordType: 'ExerciseSession' },
       { accessType: 'read', recordType: 'Steps' },
