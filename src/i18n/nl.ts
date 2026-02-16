@@ -269,6 +269,20 @@ export default {
   settings_weather_error: 'Ophalen weer mislukt',
   settings_weather_refresh: 'Weer verversen',
 
+  // Weersomstandigheden
+  weather_clear_sky: 'Heldere hemel',
+  weather_mainly_clear: 'Grotendeels helder',
+  weather_partly_cloudy: 'Gedeeltelijk bewolkt',
+  weather_overcast: 'Bewolkt',
+  weather_foggy: 'Mistig',
+  weather_drizzle: 'Motregen',
+  weather_rain: 'Regen',
+  weather_snow: 'Sneeuw',
+  weather_rain_showers: 'Regenbuien',
+  weather_snow_showers: 'Sneeuwbuien',
+  weather_thunderstorm: 'Onweer',
+  weather_unknown: 'Onbekend',
+
   // Meldingskanaal
   notif_channel_name: 'Buitenherinneringen',
   notif_channel_background_name: 'Achtergrondtracking',

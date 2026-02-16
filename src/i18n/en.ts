@@ -269,6 +269,20 @@ export default {
   settings_weather_error: 'Failed to fetch weather',
   settings_weather_refresh: 'Refresh weather',
 
+  // Weather conditions
+  weather_clear_sky: 'Clear sky',
+  weather_mainly_clear: 'Mainly clear',
+  weather_partly_cloudy: 'Partly cloudy',
+  weather_overcast: 'Overcast',
+  weather_foggy: 'Foggy',
+  weather_drizzle: 'Drizzle',
+  weather_rain: 'Rain',
+  weather_snow: 'Snow',
+  weather_rain_showers: 'Rain showers',
+  weather_snow_showers: 'Snow showers',
+  weather_thunderstorm: 'Thunderstorm',
+  weather_unknown: 'Unknown',
+
   // Notification channel
   notif_channel_name: 'Outside reminders',
   notif_channel_background_name: 'Background tracking',

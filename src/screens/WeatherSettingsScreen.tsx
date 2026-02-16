@@ -88,33 +88,31 @@ export default function WeatherSettingsScreen() {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.card}>
-        <SettingRow
-          icon="🌡️"
-          label={t('settings_temp_preference')}
-          right={
-            <View style={styles.tempOptions}>
-              {(['cold', 'moderate', 'hot'] as const).map((pref) => (
-                <TouchableOpacity
-                  key={pref}
-                  style={[
-                    styles.tempOption,
-                    tempPreference === pref && styles.tempOptionActive,
-                  ]}
-                  onPress={() => changeTempPreference(pref)}
-                >
-                  <Text
-                    style={[
-                      styles.tempOptionText,
-                      tempPreference === pref && styles.tempOptionTextActive,
-                    ]}
-                  >
-                    {t(`settings_temp_${pref}`)}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          }
-        />
+        <View style={styles.tempRow}>
+          <Text style={styles.tempRowIcon}>🌡️</Text>
+          <Text style={styles.tempRowLabel}>{t('settings_temp_preference')}</Text>
+        </View>
+        <View style={styles.tempOptionsContainer}>
+          {(['cold', 'moderate', 'hot'] as const).map((pref) => (
+            <TouchableOpacity
+              key={pref}
+              style={[
+                styles.tempOption,
+                tempPreference === pref && styles.tempOptionActive,
+              ]}
+              onPress={() => changeTempPreference(pref)}
+            >
+              <Text
+                style={[
+                  styles.tempOptionText,
+                  tempPreference === pref && styles.tempOptionTextActive,
+                ]}
+              >
+                {t(`settings_temp_${pref}`)}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
         <Divider />
         <SettingRow
           icon="☔"
@@ -233,6 +231,23 @@ const styles = StyleSheet.create({
   },
   editBtnText: { fontSize: 12, color: colors.grass, fontWeight: '600' },
 
+  tempRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingTop: spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.xs,
+  },
+  tempRowIcon: { fontSize: 20, marginRight: spacing.md, width: 28, textAlign: 'center' },
+  tempRowLabel: { fontSize: 15, color: colors.textPrimary, fontWeight: '500' },
+  
+  tempOptionsContainer: {
+    flexDirection: 'row',
+    gap: spacing.xs,
+    flexWrap: 'wrap',
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.md,
+  },
   tempOptions: {
     flexDirection: 'row',
     gap: spacing.xs,
