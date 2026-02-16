@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
-  TouchableOpacity, Switch, Alert, Linking, Platform,
+  TouchableOpacity, Switch, Alert, Linking, Platform, ActivityIndicator,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { getSetting, setSetting, getKnownLocations, KnownLocation, clearAllData } from '../storage/database';
@@ -11,6 +11,8 @@ import { colors, spacing, radius, shadows } from '../utils/theme';
 import { t } from '../i18n';
 import i18n from '../i18n';
 import EditLocationSheet from '../components/EditLocationSheet';
+import { fetchWeatherForecast, isWeatherDataAvailable, getWeatherForHour } from '../weather/weatherService';
+import { getWeatherDescription, getWeatherEmoji } from '../weather/weatherAlgorithm';
 
 const LANGUAGES = [
   { code: 'en', label: 'English' },
@@ -24,12 +26,41 @@ export default function SettingsScreen() {
   const [language, setLanguage] = useState(i18n.locale);
   const [connectingHC, setConnectingHC] = useState(false);
   const [editingLocation, setEditingLocation] = useState<KnownLocation | null>(null);
+  
+  // Weather state
+  const [weatherEnabled, setWeatherEnabled] = useState(true);
+  const [tempPreference, setTempPreference] = useState<'cold' | 'moderate' | 'hot'>('moderate');
+  const [avoidRain, setAvoidRain] = useState(true);
+  const [avoidHeat, setAvoidHeat] = useState(true);
+  const [considerUV, setConsiderUV] = useState(true);
+  const [weatherLoading, setWeatherLoading] = useState(false);
+  const [currentWeather, setCurrentWeather] = useState<string | null>(null);
 
   const loadStatus = useCallback(() => {
     setRemindersEnabled(getSetting('reminders_enabled', '1') === '1');
     setDetectionStatus(getDetectionStatus());
     setKnownLocations(getKnownLocations());
     setLanguage(i18n.locale);
+    
+    // Load weather settings
+    setWeatherEnabled(getSetting('weather_enabled', '1') === '1');
+    setTempPreference(getSetting('temp_preference', 'moderate') as 'cold' | 'moderate' | 'hot');
+    setAvoidRain(getSetting('weather_avoid_rain', '1') === '1');
+    setAvoidHeat(getSetting('weather_avoid_heat', '1') === '1');
+    setConsiderUV(getSetting('weather_consider_uv', '1') === '1');
+    
+    // Load current weather if available
+    if (isWeatherDataAvailable()) {
+      const hour = new Date().getHours();
+      const weather = getWeatherForHour(hour);
+      if (weather) {
+        const description = getWeatherDescription(weather);
+        const emoji = getWeatherEmoji(weather);
+        setCurrentWeather(`${emoji} ${description}, ${Math.round(weather.temperature)}°C`);
+      }
+    } else {
+      setCurrentWeather(null);
+    }
   }, []);
 
   useFocusEffect(useCallback(() => {
@@ -170,6 +201,54 @@ export default function SettingsScreen() {
         ]
       );
     }
+  };
+
+  const handleRefreshWeather = async () => {
+    setWeatherLoading(true);
+    try {
+      const result = await fetchWeatherForecast();
+      if (result.success) {
+        const hour = new Date().getHours();
+        const weather = getWeatherForHour(hour);
+        if (weather) {
+          const description = getWeatherDescription(weather);
+          const emoji = getWeatherEmoji(weather);
+          setCurrentWeather(`${emoji} ${description}, ${Math.round(weather.temperature)}°C`);
+        }
+      } else {
+        Alert.alert(t('settings_weather_error'), result.error || 'Unknown error');
+      }
+    } catch (error) {
+      console.error('Weather refresh error:', error);
+      Alert.alert(t('settings_weather_error'), String(error));
+    } finally {
+      setWeatherLoading(false);
+    }
+  };
+
+  const toggleWeatherEnabled = (value: boolean) => {
+    setSetting('weather_enabled', value ? '1' : '0');
+    setWeatherEnabled(value);
+  };
+
+  const changeTempPreference = (pref: 'cold' | 'moderate' | 'hot') => {
+    setSetting('temp_preference', pref);
+    setTempPreference(pref);
+  };
+
+  const toggleAvoidRain = (value: boolean) => {
+    setSetting('weather_avoid_rain', value ? '1' : '0');
+    setAvoidRain(value);
+  };
+
+  const toggleAvoidHeat = (value: boolean) => {
+    setSetting('weather_avoid_heat', value ? '1' : '0');
+    setAvoidHeat(value);
+  };
+
+  const toggleConsiderUV = (value: boolean) => {
+    setSetting('weather_consider_uv', value ? '1' : '0');
+    setConsiderUV(value);
   };
 
   return (
@@ -318,6 +397,113 @@ export default function SettingsScreen() {
           label={t('settings_background_tracking_label')}
           sublabel={t('settings_background_tracking_sublabel')}
         />
+      </View>
+
+      {/* Weather settings */}
+      <Text style={styles.sectionHeader}>{t('settings_weather_title')}</Text>
+      <View style={styles.card}>
+        <SettingRow
+          icon="🌤️"
+          label={t('settings_weather_enabled')}
+          sublabel={t('settings_weather_enabled_desc')}
+          right={
+            <Switch
+              value={weatherEnabled}
+              onValueChange={toggleWeatherEnabled}
+              trackColor={{ false: colors.fog, true: colors.grassLight }}
+              thumbColor={weatherEnabled ? colors.grass : colors.inactive}
+            />
+          }
+        />
+        {weatherEnabled && (
+          <>
+            <Divider />
+            <SettingRow
+              icon="🌡️"
+              label={t('settings_temp_preference')}
+              right={
+                <View style={styles.tempOptions}>
+                  {(['cold', 'moderate', 'hot'] as const).map((pref) => (
+                    <TouchableOpacity
+                      key={pref}
+                      style={[
+                        styles.tempOption,
+                        tempPreference === pref && styles.tempOptionActive,
+                      ]}
+                      onPress={() => changeTempPreference(pref)}
+                    >
+                      <Text
+                        style={[
+                          styles.tempOptionText,
+                          tempPreference === pref && styles.tempOptionTextActive,
+                        ]}
+                      >
+                        {t(`settings_temp_${pref}`)}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              }
+            />
+            <Divider />
+            <SettingRow
+              icon="☔"
+              label={t('settings_weather_avoid_rain')}
+              right={
+                <Switch
+                  value={avoidRain}
+                  onValueChange={toggleAvoidRain}
+                  trackColor={{ false: colors.fog, true: colors.grassLight }}
+                  thumbColor={avoidRain ? colors.grass : colors.inactive}
+                />
+              }
+            />
+            <Divider />
+            <SettingRow
+              icon="🌡️"
+              label={t('settings_weather_avoid_heat')}
+              right={
+                <Switch
+                  value={avoidHeat}
+                  onValueChange={toggleAvoidHeat}
+                  trackColor={{ false: colors.fog, true: colors.grassLight }}
+                  thumbColor={avoidHeat ? colors.grass : colors.inactive}
+                />
+              }
+            />
+            <Divider />
+            <SettingRow
+              icon="☀️"
+              label={t('settings_weather_consider_uv')}
+              right={
+                <Switch
+                  value={considerUV}
+                  onValueChange={toggleConsiderUV}
+                  trackColor={{ false: colors.fog, true: colors.grassLight }}
+                  thumbColor={considerUV ? colors.grass : colors.inactive}
+                />
+              }
+            />
+            <Divider />
+            <SettingRow
+              icon="📍"
+              label={t('settings_weather_current')}
+              sublabel={currentWeather || t('settings_weather_unavailable')}
+              right={
+                weatherLoading ? (
+                  <ActivityIndicator size="small" color={colors.grass} />
+                ) : (
+                  <TouchableOpacity
+                    style={styles.editBtn}
+                    onPress={handleRefreshWeather}
+                  >
+                    <Text style={styles.editBtnText}>{t('settings_weather_refresh')}</Text>
+                  </TouchableOpacity>
+                )
+              }
+            />
+          </>
+        )}
       </View>
 
       <Text style={styles.sectionHeader}>{t('settings_section_language')}</Text>
@@ -472,5 +658,33 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     padding: spacing.md,
     lineHeight: 20,
+  },
+  tempOptions: {
+    flexDirection: 'row',
+    gap: spacing.xs,
+    flexWrap: 'wrap',
+  },
+  tempOption: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.sm,
+    backgroundColor: colors.fog,
+    borderWidth: 1,
+    borderColor: 'transparent',
+    minWidth: 80,
+  },
+  tempOptionActive: {
+    backgroundColor: colors.grassLight,
+    borderColor: colors.grass,
+  },
+  tempOptionText: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+  tempOptionTextActive: {
+    color: colors.grass,
+    fontWeight: '600',
   },
 });

@@ -232,6 +232,30 @@ export default {
   notif_action_snooze: '⏰ Remind me later',
   notif_action_less_often: '🔕 Less often',
 
+  // Weather-aware notifications
+  notif_weather_perfect: 'Perfect weather today! ☀️',
+  notif_weather_nice: 'Great weather for a walk! 🌤️',
+  notif_weather_cloudy_cool: 'Cloudy skies — perfect for a walk without the heat!',
+  notif_weather_dry_window: 'Dry weather window ahead! 🌈',
+  notif_weather_before_rain: 'Get out before the rain! ☔',
+
+  // Weather settings
+  settings_weather_title: 'Weather',
+  settings_weather_enabled: 'Weather-aware reminders',
+  settings_weather_enabled_desc: 'Consider weather conditions when suggesting outdoor times',
+  settings_temp_preference: 'Climate preference',
+  settings_temp_cold: 'Prefer cooler weather',
+  settings_temp_moderate: 'Moderate climate',
+  settings_temp_hot: 'Prefer warmer weather',
+  settings_weather_avoid_rain: 'Avoid rainy times',
+  settings_weather_avoid_heat: 'Avoid extreme heat',
+  settings_weather_consider_uv: 'Consider UV index',
+  settings_weather_current: 'Current weather',
+  settings_weather_loading: 'Loading weather...',
+  settings_weather_unavailable: 'Weather data unavailable',
+  settings_weather_error: 'Failed to fetch weather',
+  settings_weather_refresh: 'Refresh weather',
+
   // Notification channel
   notif_channel_name: 'Outside reminders',
   notif_channel_background_name: 'Background tracking',

@@ -5,6 +5,7 @@ import { syncHealthConnect, requestHealthPermissions, isHealthConnectAvailable }
 import { startLocationTracking, autoDetectLocations } from './gpsDetection';
 import { getSetting, setSetting } from '../storage/database';
 import { scheduleNextReminder } from '../notifications/notificationManager';
+import { fetchWeatherForecast } from '../weather/weatherService';
 
 const BACKGROUND_TASK_NAME = 'TOUCHGRASS_BACKGROUND_TASK';
 
@@ -16,6 +17,18 @@ TaskManager.defineTask(BACKGROUND_TASK_NAME, async () => {
   try {
     await syncHealthConnect();
     await autoDetectLocations();
+    
+    // Fetch weather data for smart reminders (graceful fallback if it fails)
+    try {
+      const weatherEnabled = getSetting('weather_enabled', '1') === '1';
+      if (weatherEnabled) {
+        await fetchWeatherForecast();
+      }
+    } catch (weatherError) {
+      console.warn('Weather fetch failed in background task:', weatherError);
+      // Continue with reminder scheduling even if weather fails
+    }
+    
     await scheduleNextReminder();
     return BackgroundTask.BackgroundTaskResult.Success;
   } catch (e) {

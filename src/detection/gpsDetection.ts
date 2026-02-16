@@ -46,7 +46,6 @@ export async function startLocationTracking(): Promise<void> {
       notificationTitle: 'TouchGrass',
       notificationBody: 'Tracking outside time in the background',
       notificationColor: '#4A7C59',
-      notificationChannelId: 'touchgrass_background',
     },
     pausesUpdatesAutomatically: true,
   });
@@ -219,7 +218,7 @@ function toRad(deg: number): number {
 // ── Background task definition ────────────────────────────
 // This must be defined at module level (outside any component)
 
-TaskManager.defineTask(LOCATION_TRACK_TASK, ({ data, error }: any) => {
+TaskManager.defineTask(LOCATION_TRACK_TASK, async ({ data, error }: any) => {
   if (error) {
     console.warn('Location task error:', error);
     return;

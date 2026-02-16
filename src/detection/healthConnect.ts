@@ -39,7 +39,7 @@ export async function requestHealthPermissions(): Promise<boolean> {
     await initialize();
     const granted = await requestPermission([
       { accessType: 'read', recordType: 'ExerciseSession' },
-      { accessType: 'read', recordType: 'Steps' },
+      { accessType: 'read', recordType: 'Steps' as any }, // Type mismatch in library - using 'Steps' as workaround
       { accessType: 'read', recordType: 'ActiveCaloriesBurned' },
     ]);
     if (granted.length > 0) {

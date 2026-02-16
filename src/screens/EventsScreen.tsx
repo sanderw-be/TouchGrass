@@ -151,8 +151,8 @@ function SessionCard({
   };
 
   const confidencePct = Math.round(session.confidence * 100);
-  const isConfirmed = session.userConfirmed === 1 || session.userConfirmed === true;
-  const isRejected = session.userConfirmed === 0 || session.userConfirmed === false;
+  const isConfirmed = session.userConfirmed === 1;
+  const isRejected = session.userConfirmed === 0;
 
   return (
     <View style={[styles.card, isRejected && styles.cardRejected]}>
