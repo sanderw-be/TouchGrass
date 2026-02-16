@@ -36,20 +36,21 @@ export default function SettingsScreen() {
   const [weatherLoading, setWeatherLoading] = useState(false);
   const [currentWeather, setCurrentWeather] = useState<string | null>(null);
 
-  const loadStatus = useCallback(() => {
+  const loadStatus = useCallback(async () => {
     setRemindersEnabled(getSetting('reminders_enabled', '1') === '1');
     setDetectionStatus(getDetectionStatus());
     setKnownLocations(getKnownLocations());
     setLanguage(i18n.locale);
     
     // Load weather settings
-    setWeatherEnabled(getSetting('weather_enabled', '1') === '1');
+    const weatherEnabledValue = getSetting('weather_enabled', '1') === '1';
+    setWeatherEnabled(weatherEnabledValue);
     setTempPreference(getSetting('temp_preference', 'moderate') as 'cold' | 'moderate' | 'hot');
     setAvoidRain(getSetting('weather_avoid_rain', '1') === '1');
     setAvoidHeat(getSetting('weather_avoid_heat', '1') === '1');
     setConsiderUV(getSetting('weather_consider_uv', '1') === '1');
     
-    // Load current weather if available
+    // Load current weather if available, or fetch if unavailable
     if (isWeatherDataAvailable()) {
       const hour = new Date().getHours();
       const weather = getWeatherForHour(hour);
@@ -57,6 +58,23 @@ export default function SettingsScreen() {
         const description = getWeatherDescription(weather);
         const emoji = getWeatherEmoji(weather);
         setCurrentWeather(`${emoji} ${description}, ${Math.round(weather.temperature)}°C`);
+      }
+    } else if (weatherEnabledValue) {
+      // Weather is enabled but data is unavailable - fetch it
+      try {
+        const result = await fetchWeatherForecast();
+        if (result.success) {
+          const hour = new Date().getHours();
+          const weather = getWeatherForHour(hour);
+          if (weather) {
+            const description = getWeatherDescription(weather);
+            const emoji = getWeatherEmoji(weather);
+            setCurrentWeather(`${emoji} ${description}, ${Math.round(weather.temperature)}°C`);
+          }
+        }
+      } catch (error) {
+        console.warn('Auto weather fetch error:', error);
+        setCurrentWeather(null);
       }
     } else {
       setCurrentWeather(null);

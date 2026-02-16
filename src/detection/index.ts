@@ -71,6 +71,16 @@ export async function initDetection(): Promise<DetectionStatus> {
   // Background task
   await registerBackgroundTask();
 
+  // Fetch initial weather data if weather is enabled
+  try {
+    const weatherEnabled = getSetting('weather_enabled', '1') === '1';
+    if (weatherEnabled) {
+      await fetchWeatherForecast();
+    }
+  } catch (e) {
+    console.warn('Initial weather fetch error:', e);
+  }
+
   return status;
 }
 
@@ -80,7 +90,7 @@ export async function initDetection(): Promise<DetectionStatus> {
 async function registerBackgroundTask(): Promise<void> {
   try {
     await BackgroundTask.registerTaskAsync(BACKGROUND_TASK_NAME, {
-      minimumInterval: 15 * 60, // 15 minutes
+      minimumInterval: 60 * 60, // 60 minutes (1 hour) - matches weather update needs
     });
   } catch (e) {
     console.warn('Background task registration error:', e);
