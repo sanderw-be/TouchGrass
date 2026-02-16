@@ -1,7 +1,7 @@
 import * as BackgroundTask from 'expo-background-task';
 import * as TaskManager from 'expo-task-manager';
 import * as Location from 'expo-location';
-import { syncHealthConnect, requestHealthPermissions, isHealthConnectAvailable } from './healthConnect';
+import { syncHealthConnect, requestHealthPermissions, isHealthConnectAvailable, openHealthConnectForManagement } from './healthConnect';
 import { verifyHealthConnectPermissions } from './healthConnectIntent';
 import { startLocationTracking, autoDetectLocations } from './gpsDetection';
 import { getSetting, setSetting } from '../storage/database';
@@ -132,6 +132,25 @@ export async function recheckHealthConnect(): Promise<boolean> {
     return hasPermissions;
   } catch {
     setSetting('healthconnect_enabled', '0');
+    return false;
+  }
+}
+
+/**
+ * Open Health Connect settings for managing existing permissions.
+ * Call this from the Settings screen "Manage permissions" button.
+ * Always tries to open settings, even if permissions are already granted.
+ */
+export async function openHealthConnectSettings(): Promise<boolean> {
+  try {
+    const available = await isHealthConnectAvailable();
+    if (!available) {
+      console.warn('Health Connect not available on this device');
+      return false;
+    }
+    return await openHealthConnectForManagement();
+  } catch (e) {
+    console.warn('Health Connect settings open error:', e);
     return false;
   }
 }

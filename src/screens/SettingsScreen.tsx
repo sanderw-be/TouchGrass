@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { getSetting, setSetting, getKnownLocations, KnownLocation, clearAllData } from '../storage/database';
-import { getDetectionStatus, requestHealthConnect, recheckHealthConnect, checkGPSPermissions, requestGPSPermissions } from '../detection/index';
+import { getDetectionStatus, requestHealthConnect, recheckHealthConnect, checkGPSPermissions, requestGPSPermissions, openHealthConnectSettings } from '../detection/index';
 import { AppState, AppStateStatus } from 'react-native';
 import { colors, spacing, radius, shadows } from '../utils/theme';
 import { t } from '../i18n';
@@ -136,11 +136,11 @@ export default function SettingsScreen() {
     }
   };
 
-  const openHealthConnectSettings = async () => {
+  const handleOpenHealthConnectSettings = async () => {
     try {
-      // Use requestHealthConnect which tries the permission dialog first,
-      // then falls back to Intents if needed. This matches the initial connection flow.
-      const opened = await requestHealthConnect();
+      // Use the dedicated function for managing existing permissions
+      // This always tries to open Health Connect, even when already connected
+      const opened = await openHealthConnectSettings();
       
       if (!opened) {
         Alert.alert(
@@ -328,7 +328,7 @@ export default function SettingsScreen() {
               right={
                 <TouchableOpacity
                   style={styles.editBtn}
-                  onPress={openHealthConnectSettings}
+                  onPress={handleOpenHealthConnectSettings}
                 >
                   <Text style={styles.editBtnText}>{t('settings_hc_open')}</Text>
                 </TouchableOpacity>
