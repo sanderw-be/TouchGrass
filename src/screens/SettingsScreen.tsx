@@ -6,7 +6,6 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import { getSetting, setSetting, getKnownLocations, KnownLocation, clearAllData } from '../storage/database';
 import { getDetectionStatus, requestHealthConnect, recheckHealthConnect, checkGPSPermissions, requestGPSPermissions } from '../detection/index';
-import { sendTestReminder } from '../notifications/notificationManager';
 import { AppState, AppStateStatus } from 'react-native';
 import { colors, spacing, radius, shadows } from '../utils/theme';
 import { t } from '../i18n';
@@ -169,22 +168,6 @@ export default function SettingsScreen() {
           { text: t('settings_permission_cancel'), style: 'cancel' },
           { text: t('settings_permission_open'), onPress: handleOpenAppSettings },
         ]
-      );
-    }
-  };
-
-  const handleSendTestNotification = async () => {
-    try {
-      await sendTestReminder();
-      Alert.alert(
-        t('settings_test_notification_success_title'),
-        t('settings_test_notification_success_body'),
-      );
-    } catch (error) {
-      console.error('Error sending test notification:', error);
-      Alert.alert(
-        t('settings_error_title'),
-        t('settings_test_notification_error'),
       );
     }
   };
@@ -360,20 +343,6 @@ export default function SettingsScreen() {
         <SettingRow icon="🌿" label="TouchGrass" sublabel={t('settings_app_sublabel')} />
         <Divider />
         <SettingRow icon="🔒" label={t('settings_privacy')} sublabel={t('settings_privacy_sublabel')} />
-        <Divider />
-        <SettingRow
-          icon="🔔"
-          label={t('settings_test_notification')}
-          sublabel={t('settings_test_notification_sublabel')}
-          right={
-            <TouchableOpacity
-              style={styles.connectBtn}
-              onPress={handleSendTestNotification}
-            >
-              <Text style={styles.connectBtnText}>{t('settings_test_send')}</Text>
-            </TouchableOpacity>
-          }
-        />
         <Divider />
         <SettingRow
           icon="🗑️"

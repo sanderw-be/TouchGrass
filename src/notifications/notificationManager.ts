@@ -216,29 +216,6 @@ async function handleNotificationResponse(response: Notifications.NotificationRe
 }
 
 /**
- * Send a test reminder notification immediately.
- * For testing action buttons without waiting for scheduled reminders.
- */
-export async function sendTestReminder(): Promise<void> {
-  const todayMinutes = getTodayMinutes();
-  const dailyTarget = getCurrentDailyGoal()?.targetMinutes ?? 30;
-  const { title, body } = buildReminderMessage(todayMinutes, dailyTarget);
-
-  await Notifications.scheduleNotificationAsync({
-    content: {
-      title,
-      body,
-      categoryIdentifier: 'reminder',
-      data: { scheduledAt: Date.now(), isTest: true },
-      color: '#4A7C59',
-    },
-    trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: 1 },
-  });
-
-  console.log('TouchGrass: test reminder sent');
-}
-
-/**
  * Build a friendly reminder message based on current progress.
  */
 function buildReminderMessage(
