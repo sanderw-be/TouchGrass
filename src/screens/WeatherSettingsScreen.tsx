@@ -18,23 +18,39 @@ export default function WeatherSettingsScreen() {
   const [weatherLoading, setWeatherLoading] = useState(false);
   const [currentWeather, setCurrentWeather] = useState<string | null>(null);
 
-  const loadSettings = useCallback(() => {
+  const loadSettings = useCallback(async () => {
     setTempPreference(getSetting('temp_preference', 'moderate') as 'cold' | 'moderate' | 'hot');
     setAvoidRain(getSetting('weather_avoid_rain', '1') === '1');
     setAvoidHeat(getSetting('weather_avoid_heat', '1') === '1');
     setConsiderUV(getSetting('weather_consider_uv', '1') === '1');
     
-    // Load current weather if available
-    if (isWeatherDataAvailable()) {
+    // Auto-refresh weather data if unavailable or stale
+    if (!isWeatherDataAvailable()) {
+      // Fetch weather in background without showing loading state
+      fetchWeatherForecast().then((result) => {
+        if (result.success) {
+          const hour = new Date().getHours();
+          const weather = getWeatherForHour(hour);
+          if (weather) {
+            const description = getWeatherDescription(weather);
+            const emoji = getWeatherEmoji(weather);
+            setCurrentWeather(`${emoji} ${description}, ${Math.round(weather.temperature)}°C`);
+          }
+        }
+      }).catch((error) => {
+        console.error('Auto-refresh weather error:', error);
+      });
+    } else {
+      // Load current weather if available
       const hour = new Date().getHours();
       const weather = getWeatherForHour(hour);
       if (weather) {
         const description = getWeatherDescription(weather);
         const emoji = getWeatherEmoji(weather);
         setCurrentWeather(`${emoji} ${description}, ${Math.round(weather.temperature)}°C`);
+      } else {
+        setCurrentWeather(null);
       }
-    } else {
-      setCurrentWeather(null);
     }
   }, []);
 
