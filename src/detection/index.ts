@@ -72,7 +72,7 @@ export async function initDetection(): Promise<DetectionStatus> {
     status.gps = true;
     setSetting('gps_enabled', '1');
   } catch (e) {
-    console.warn('GPS init error:', e);
+    console.warn('GPS init error:', String(e));
   }
 
   // Background task
@@ -90,7 +90,7 @@ async function registerBackgroundTask(): Promise<void> {
       minimumInterval: 15 * 60, // 15 minutes
     });
   } catch (e) {
-    console.warn('Background task registration error:', e);
+    console.warn('Background task registration error:', String(e));
   }
 }
 
@@ -112,7 +112,7 @@ export async function requestHealthConnect(): Promise<boolean> {
     }
     return granted;
   } catch (e) {
-    console.warn('Health Connect request error:', e);
+    console.warn('Health Connect request error:', String(e));
     return false;
   }
 }
@@ -136,7 +136,7 @@ export async function recheckHealthConnect(): Promise<boolean> {
     console.log('Detection: Recheck result:', hasPermissions);
     return hasPermissions;
   } catch (e) {
-    console.error('Detection: Recheck error:', e);
+    console.error('Detection: Recheck error:', String(e));
     setSetting('healthconnect_enabled', '0');
     return false;
   }
