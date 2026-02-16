@@ -79,11 +79,9 @@ export async function checkHealthConnectPermissions(): Promise<boolean> {
       setSetting('healthconnect_enabled', '0');
       return false;
     }
-    // Other errors (e.g., network) shouldn't change permission state
-    console.warn('Health Connect: Non-permission error, not changing state');
-    // Don't change the permission state on non-permission errors
-    // Return false to indicate check failed, but keep existing state
-    return getSetting('healthconnect_enabled', '0') === '1';
+    // Other errors (e.g., network) also mean permissions couldn't be verified
+    console.warn('Health Connect: Non-permission error, check failed');
+    return false;
   }
 }
 
@@ -142,8 +140,6 @@ export async function syncHealthConnect(): Promise<boolean> {
     const startTimeISO = new Date(startTime).toISOString();
     const endTimeISO = new Date(now).toISOString();
 
-    let hasAnyData = false;
-
     // Read exercise sessions
     try {
       console.log('Health Connect: Reading ExerciseSession records...');
@@ -177,8 +173,6 @@ export async function syncHealthConnect(): Promise<boolean> {
 
         submitSession(session);
       }
-      
-      hasAnyData = true;
     } catch (e) {
       console.error('Health Connect: ExerciseSession read error:', e);
       if (isPermissionError(e)) {
@@ -238,7 +232,7 @@ export async function syncHealthConnect(): Promise<boolean> {
     // Update last sync timestamp
     setSetting('healthconnect_last_sync', String(now));
     console.log('Health Connect: Sync completed successfully');
-    return hasAnyData;
+    return true; // Return true if sync completed without permission errors
   } catch (e) {
     console.error('Health Connect: Sync failed:', e);
     if (isPermissionError(e)) {
@@ -253,7 +247,6 @@ export async function syncHealthConnect(): Promise<boolean> {
 
 function isPermissionError(error: unknown): boolean {
   const message = String(error).toLowerCase();
-  console.log('Checking if permission error:', message.substring(0, 200));
   
   // Detect various permission-related exceptions
   // Be specific to avoid false positives while catching common error formats
@@ -267,7 +260,10 @@ function isPermissionError(error: unknown): boolean {
     (message.includes('permission') && message.includes('denied'))
   );
   
-  console.log('Is permission error:', isPermError);
+  if (isPermError) {
+    console.log('Permission error detected:', message.substring(0, 150));
+  }
+  
   return isPermError;
 }
 
