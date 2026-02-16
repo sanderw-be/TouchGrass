@@ -5,6 +5,8 @@ import {
   getSetting, setSetting, insertReminderFeedback,
 } from '../storage/database';
 import { shouldRemindNow, scoreReminderHours } from './reminderAlgorithm';
+import { getWeatherForHour, isWeatherDataAvailable } from '../weather/weatherService';
+import { getWeatherDescription, getWeatherEmoji, getWeatherPreferences } from '../weather/weatherAlgorithm';
 import { t } from '../i18n';
 
 const NOTIF_TITLES = [
@@ -184,7 +186,7 @@ export async function scheduleDayReminders(): Promise<void> {
     const triggerDate = new Date();
     triggerDate.setHours(slot.hour, 0, 0, 0);
 
-    const { title, body } = buildReminderMessage(todayMinutes, dailyTarget);
+    const { title, body } = buildReminderMessage(todayMinutes, dailyTarget, slot.hour);
 
     await Notifications.scheduleNotificationAsync({
       content: {
@@ -230,9 +232,11 @@ async function handleNotificationResponse(response: Notifications.NotificationRe
   if (action === 'snoozed') {
     // Reschedule for 45 minutes later
     const snoozeDate = new Date(now + 45 * 60 * 1000);
+    const snoozeHour = snoozeDate.getHours();
     const { title, body } = buildReminderMessage(
       getTodayMinutes(),
       getCurrentDailyGoal()?.targetMinutes ?? 30,
+      snoozeHour,
     );
     await Notifications.scheduleNotificationAsync({
       content: { title, body, categoryIdentifier: 'reminder', color: '#4A7C59' },
@@ -247,10 +251,12 @@ async function handleNotificationResponse(response: Notifications.NotificationRe
 
 /**
  * Build a friendly reminder message based on current progress.
+ * Optionally includes weather context if available.
  */
 function buildReminderMessage(
   todayMinutes: number,
   dailyTarget: number,
+  hour?: number,
 ): { title: string; body: string } {
   const remaining = Math.max(0, Math.round(dailyTarget - todayMinutes));
   const percent = todayMinutes / dailyTarget;
@@ -267,6 +273,21 @@ function buildReminderMessage(
     body = t('notif_body_almost', { remaining });
   } else {
     body = t('notif_body_done');
+  }
+
+  // Add weather context if available and enabled
+  const weatherPrefs = getWeatherPreferences();
+  if (weatherPrefs.enabled && isWeatherDataAvailable()) {
+    const currentHour = hour ?? new Date().getHours();
+    const weather = getWeatherForHour(currentHour);
+    
+    if (weather) {
+      const emoji = getWeatherEmoji(weather);
+      const temp = Math.round(weather.temperature);
+      
+      // Add weather hint to body
+      body += ` ${emoji} ${temp}°C outside.`;
+    }
   }
 
   return { title, body };
