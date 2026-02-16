@@ -17,6 +17,7 @@ const WEATHER_BACKGROUND_TASK = 'WEATHER_BACKGROUND_FETCH';
 TaskManager.defineTask(WEATHER_BACKGROUND_TASK, async () => {
   try {
     // Check if weather is enabled
+    // getSetting is synchronous and safe to call in background tasks (SQLite read)
     const weatherEnabled = getSetting('weather_enabled', '1') === '1';
     if (!weatherEnabled) {
       return BackgroundFetch.BackgroundFetchResult.NoData;

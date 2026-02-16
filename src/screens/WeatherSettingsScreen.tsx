@@ -17,6 +17,13 @@ export default function WeatherSettingsScreen() {
   const [considerUV, setConsiderUV] = useState(true);
   const [weatherLoading, setWeatherLoading] = useState(false);
   const [currentWeather, setCurrentWeather] = useState<string | null>(null);
+  const isMountedRef = React.useRef(true);
+
+  React.useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   const loadSettings = useCallback(async () => {
     setTempPreference(getSetting('temp_preference', 'moderate') as 'cold' | 'moderate' | 'hot');
@@ -28,6 +35,7 @@ export default function WeatherSettingsScreen() {
     if (!isWeatherDataAvailable()) {
       // Fetch weather in background without showing loading state
       fetchWeatherForecast().then((result) => {
+        if (!isMountedRef.current) return;
         if (result.success) {
           const hour = new Date().getHours();
           const weather = getWeatherForHour(hour);
