@@ -1,7 +1,8 @@
 import * as BackgroundTask from 'expo-background-task';
 import * as TaskManager from 'expo-task-manager';
 import * as Location from 'expo-location';
-import { syncHealthConnect, requestHealthPermissions, isHealthConnectAvailable } from './healthConnect';
+import { syncHealthConnect, requestHealthPermissions, isHealthConnectAvailable, openHealthConnectForManagement } from './healthConnect';
+import { verifyHealthConnectPermissions } from './healthConnectIntent';
 import { startLocationTracking, autoDetectLocations } from './gpsDetection';
 import { getSetting, setSetting } from '../storage/database';
 import { scheduleNextReminder } from '../notifications/notificationManager';
@@ -112,17 +113,44 @@ export async function requestHealthConnect(): Promise<boolean> {
 /**
  * Re-check Health Connect status without requesting permissions.
  * Call this when the app comes back to foreground.
+ * Uses verification via data read instead of sync to be more reliable.
  */
 export async function recheckHealthConnect(): Promise<boolean> {
   try {
     const available = await isHealthConnectAvailable();
     if (!available) return false;
-    // Try to sync — if permissions were granted it will succeed
-    const ok = await syncHealthConnect();
-    setSetting('healthconnect_enabled', ok ? '1' : '0');
-    return ok;
+    
+    // Verify permissions by attempting to read data
+    const hasPermissions = await verifyHealthConnectPermissions();
+    setSetting('healthconnect_enabled', hasPermissions ? '1' : '0');
+    
+    // If permissions are granted, try to sync data
+    if (hasPermissions) {
+      await syncHealthConnect();
+    }
+    
+    return hasPermissions;
   } catch {
     setSetting('healthconnect_enabled', '0');
+    return false;
+  }
+}
+
+/**
+ * Open Health Connect settings for managing existing permissions.
+ * Call this from the Settings screen "Manage permissions" button.
+ * Always tries to open settings, even if permissions are already granted.
+ */
+export async function openHealthConnectSettings(): Promise<boolean> {
+  try {
+    const available = await isHealthConnectAvailable();
+    if (!available) {
+      console.warn('Health Connect not available on this device');
+      return false;
+    }
+    return await openHealthConnectForManagement();
+  } catch (e) {
+    console.warn('Health Connect settings open error:', e);
     return false;
   }
 }

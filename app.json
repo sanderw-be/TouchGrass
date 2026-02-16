@@ -56,6 +56,9 @@
         "intents": [
           {
             "action": "androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE"
+          },
+          {
+            "action": "android.settings.HEALTH_CONNECT_SETTINGS"
           }
         ]
       },
@@ -67,7 +70,7 @@
     }
   }
       ],
-      "react-native-health-connect",
+      "expo-health-connect",
       "expo-sqlite",
       "expo-background-task",
       "expo-localization"

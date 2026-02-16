@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { getSetting, setSetting, getKnownLocations, KnownLocation, clearAllData } from '../storage/database';
-import { getDetectionStatus, requestHealthConnect, recheckHealthConnect, checkGPSPermissions, requestGPSPermissions } from '../detection/index';
+import { getDetectionStatus, requestHealthConnect, recheckHealthConnect, checkGPSPermissions, requestGPSPermissions, openHealthConnectSettings } from '../detection/index';
 import { AppState, AppStateStatus } from 'react-native';
 import { colors, spacing, radius, shadows } from '../utils/theme';
 import { t } from '../i18n';
@@ -63,36 +63,72 @@ export default function SettingsScreen() {
     }
   }, []);
 
+  // Check permissions and show success message if Health Connect was just enabled
+  const checkAndUpdatePermissions = useCallback(async () => {
+    // Get current status before rechecking
+    const currentStatus = getDetectionStatus();
+    const previousHCStatus = currentStatus.healthConnect;
+    
+    await recheckHealthConnect();
+    await checkGPSPermissions();
+    
+    // Reload status after permission checks complete
+    const newStatus = getDetectionStatus();
+    setDetectionStatus(newStatus);
+    
+    // If Health Connect was just enabled, show success message
+    if (!previousHCStatus && newStatus.healthConnect) {
+      Alert.alert(
+        t('settings_hc_verified_title'),
+        t('settings_hc_verified_body'),
+      );
+    }
+  }, []);
+
   useFocusEffect(useCallback(() => {
     loadStatus();
 
     // Re-check Health Connect and GPS when screen comes into focus
-    // (user may have granted permissions in Android Settings)
-    recheckHealthConnect();
-    checkGPSPermissions().then(() => {
-      // Reload status after GPS permissions check completes
-      setDetectionStatus(getDetectionStatus());
-    });
+    // (user may have granted permissions in Android Settings or Health Connect)
+    checkAndUpdatePermissions();
 
     // Also re-check when app comes back to foreground
     const sub = AppState.addEventListener('change', (state: AppStateStatus) => {
       if (state === 'active') {
-        recheckHealthConnect();
-        checkGPSPermissions().then(() => {
-          // Reload status after permission checks complete
-          setDetectionStatus(getDetectionStatus());
-        });
+        checkAndUpdatePermissions();
       }
     });
     return () => sub.remove();
-  }, [loadStatus]));
+  }, [loadStatus, checkAndUpdatePermissions]));
 
   const handleConnectHealthConnect = async () => {
     setConnectingHC(true);
-    const granted = await requestHealthConnect();
-    setDetectionStatus(getDetectionStatus());
-    setConnectingHC(false);
-    if (!granted) {
+    
+    try {
+      // Request Health Connect (this will open the Health Connect app)
+      const opened = await requestHealthConnect();
+      
+      if (!opened) {
+        // If we couldn't open Health Connect, show instructions
+        setConnectingHC(false);
+        Alert.alert(
+          t('settings_hc_failed_title'),
+          t('settings_hc_failed_body'),
+        );
+        return;
+      }
+      
+      // Health Connect was opened - user will grant permissions there
+      // We'll verify when they return (via AppState listener)
+      // For now, just reset the connecting state after a delay
+      setTimeout(() => {
+        setConnectingHC(false);
+        // Recheck will happen automatically when app comes to foreground
+      }, 1000);
+      
+    } catch (error) {
+      console.error('Error connecting to Health Connect:', error);
+      setConnectingHC(false);
       Alert.alert(
         t('settings_hc_failed_title'),
         t('settings_hc_failed_body'),
@@ -100,23 +136,17 @@ export default function SettingsScreen() {
     }
   };
 
-  const openHealthConnectSettings = async () => {
+  const handleOpenHealthConnectSettings = async () => {
     try {
-      if (Platform.OS === 'android') {
-        // Try to open Health Connect app directly
-        const healthConnectPackage = 'com.google.android.apps.healthdata';
-        const url = `package:${healthConnectPackage}`;
-        
-        const canOpen = await Linking.canOpenURL(url);
-        if (canOpen) {
-          await Linking.openURL(url);
-        } else {
-          // Fallback: Open app settings for TouchGrass
-          Alert.alert(
-            t('settings_hc_not_installed_title'),
-            t('settings_hc_not_installed_body'),
-          );
-        }
+      // Use the dedicated function for managing existing permissions
+      // This always tries to open Health Connect, even when already connected
+      const opened = await openHealthConnectSettings();
+      
+      if (!opened) {
+        Alert.alert(
+          t('settings_hc_open_error_title'),
+          t('settings_hc_open_error_body'),
+        );
       }
     } catch (error) {
       console.error('Error opening Health Connect settings:', error);
@@ -282,7 +312,7 @@ export default function SettingsScreen() {
                   disabled={connectingHC}
                 >
                   <Text style={styles.connectBtnText}>
-                    {connectingHC ? '...' : t('settings_hc_connect')}
+                    {connectingHC ? t('settings_hc_opening') : t('settings_hc_connect')}
                   </Text>
                 </TouchableOpacity>
               )
@@ -298,7 +328,7 @@ export default function SettingsScreen() {
               right={
                 <TouchableOpacity
                   style={styles.editBtn}
-                  onPress={openHealthConnectSettings}
+                  onPress={handleOpenHealthConnectSettings}
                 >
                   <Text style={styles.editBtnText}>{t('settings_hc_open')}</Text>
                 </TouchableOpacity>

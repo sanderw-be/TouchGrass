@@ -7,6 +7,7 @@ import {
 } from 'react-native-health-connect';
 import { getSetting, setSetting } from '../storage/database';
 import { submitSession, buildSession } from './sessionMerger';
+import { openHealthConnectPermissionsViaIntent, verifyHealthConnectPermissions } from './healthConnectIntent';
 
 // Activities that strongly suggest being outside
 const OUTDOOR_ACTIVITY_TYPES = [
@@ -31,27 +32,98 @@ export async function isHealthConnectAvailable(): Promise<boolean> {
 }
 
 /**
- * Request Health Connect permissions.
- * Returns true if granted.
+ * Request Health Connect permissions using a hybrid approach.
+ * 
+ * With expo-health-connect config plugin, the HealthConnectPermissionDelegate 
+ * is properly initialized, so requestPermission() should work correctly.
+ * 
+ * Flow:
+ * 1. Check if permissions are already granted
+ * 2. Try library's requestPermission() - should now work with expo-health-connect plugin
+ * 3. If that fails or doesn't show dialog, fall back to Intent-based flow
+ * 4. Verification happens when app returns to foreground (via recheckHealthConnect)
+ * 
+ * Returns true if permissions were granted OR Settings was opened successfully.
+ * Returns false if both methods failed.
  */
 export async function requestHealthPermissions(): Promise<boolean> {
   try {
     await initialize();
-    const granted = await requestPermission([
-      { accessType: 'read', recordType: 'ExerciseSession' },
-      { accessType: 'read', recordType: 'Steps' as any }, // Type mismatch in library - using 'Steps' as workaround
-      { accessType: 'read', recordType: 'ActiveCaloriesBurned' },
-    ]);
-    if (granted.length > 0) {
+    
+    // First, check if permissions are already granted
+    const alreadyGranted = await verifyHealthConnectPermissions();
+    if (alreadyGranted) {
       setSetting(PERMISSION_WARNING_KEY, '0');
+      return true;
     }
-    return granted.length > 0;
+    
+    // Try the library's requestPermission() first
+    // With expo-health-connect plugin, this should work properly
+    try {
+      const granted = await requestPermission([
+        { accessType: 'read', recordType: 'ExerciseSession' },
+        { accessType: 'read', recordType: 'Steps' as any },
+        { accessType: 'read', recordType: 'ActiveCaloriesBurned' },
+      ]);
+      
+      // Check if permissions were granted
+      if (granted && granted.length > 0) {
+        setSetting(PERMISSION_WARNING_KEY, '0');
+        return true;
+      }
+      
+      // If no permissions granted, fall back to Intent flow
+      console.log('requestPermission returned empty, trying Intent fallback');
+    } catch (permError) {
+      // If requestPermission fails, fall back to manual flow
+      console.log('Library requestPermission failed, using Intent fallback:', permError);
+    }
+    
+    // Fallback: Open Health Connect Settings so user can manually grant permissions
+    const opened = await openHealthConnectPermissionsViaIntent();
+    if (!opened) {
+      console.warn('Could not open Health Connect settings');
+      return false;
+    }
+    
+    // Successfully opened Health Connect - user will grant permissions there
+    // Verification will happen when the app returns to foreground
+    return true;
   } catch (e) {
     if (isPermissionError(e)) {
       logPermissionWarningOnce();
       return false;
     }
     console.warn('Health Connect permission error:', e);
+    return false;
+  }
+}
+
+/**
+ * Open Health Connect settings for managing existing permissions.
+ * 
+ * This function opens Health Connect directly without trying requestPermission().
+ * The user can then navigate to TouchGrass within Health Connect to manage permissions.
+ * 
+ * Use this for the "Manage permissions" button after initial connection.
+ * 
+ * Returns true if Health Connect was opened successfully.
+ */
+export async function openHealthConnectForManagement(): Promise<boolean> {
+  try {
+    await initialize();
+    
+    // Skip requestPermission() - it's not working reliably even with expo-health-connect
+    // Just open Health Connect directly via Intent
+    const opened = await openHealthConnectPermissionsViaIntent();
+    if (!opened) {
+      console.warn('Could not open Health Connect settings');
+      return false;
+    }
+    
+    return true;
+  } catch (e) {
+    console.warn('Health Connect open for management error:', e);
     return false;
   }
 }

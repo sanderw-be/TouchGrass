@@ -19,6 +19,7 @@
     "expo-background-task": "~1.0.10",
     "expo-build-properties": "~1.0.10",
     "expo-dev-client": "~6.0.20",
+    "expo-health-connect": "^0.1.1",
     "expo-localization": "~17.0.8",
     "expo-location": "~19.0.8",
     "expo-notifications": "~0.32.16",
