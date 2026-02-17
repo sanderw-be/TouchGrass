@@ -16,6 +16,15 @@ import { scheduleAllScheduledNotifications } from '../notifications/scheduledNot
 import { colors, spacing, radius, shadows } from '../utils/theme';
 import { t } from '../i18n';
 
+// Validation helpers
+function isValidHour(hour: number): boolean {
+  return !isNaN(hour) && hour >= 0 && hour <= 23;
+}
+
+function isValidMinute(minute: number): boolean {
+  return !isNaN(minute) && minute >= 0 && minute <= 59;
+}
+
 export default function ScheduledNotificationsScreen() {
   const insets = useSafeAreaInsets();
   const [notifications, setNotifications] = useState<ScheduledNotification[]>([]);
@@ -196,10 +205,10 @@ function EditNotificationModal({ visible, notification, onClose, onSave }: EditM
     const newHour = parseInt(hourInput, 10);
     const newMinute = parseInt(minuteInput, 10);
     
-    if (isNaN(newHour) || newHour < 0 || newHour > 23) {
+    if (!isValidHour(newHour)) {
       Alert.alert(t('error'), t('scheduled_notif_invalid_hour'));
       setHourInput(hour.toString());
-    } else if (isNaN(newMinute) || newMinute < 0 || newMinute > 59) {
+    } else if (!isValidMinute(newMinute)) {
       Alert.alert(t('error'), t('scheduled_notif_invalid_minute'));
       setMinuteInput(minute.toString());
     } else {
@@ -215,12 +224,13 @@ function EditNotificationModal({ visible, notification, onClose, onSave }: EditM
       return;
     }
 
+    const trimmedLabel = label.trim();
     onSave({
       ...notification,
       hour,
       minute,
       daysOfWeek,
-      label: label.trim() || undefined,
+      label: trimmedLabel || undefined,
     });
   };
 

@@ -78,7 +78,7 @@ async function scheduleNotification(schedule: ScheduledNotification): Promise<vo
         trigger: {
           type: Notifications.SchedulableTriggerInputTypes.CALENDAR,
           repeats: true,
-          weekday: dayOfWeek + 1, // Expo uses 1-7 (1=Sunday), we use 0-6 (0=Sunday)
+          weekday: (dayOfWeek === 0 ? 7 : dayOfWeek), // Expo: 1=Mon, 2=Tue, ..., 7=Sun; we use 0=Sun, 1=Mon, ..., 6=Sat
           hour: schedule.hour,
           minute: schedule.minute,
           channelId: SCHEDULED_CHANNEL_ID,

@@ -25,6 +25,7 @@ export const ACTION_LESS_OFTEN = 'less_often';
 
 const CHANNEL_ID = 'touchgrass_reminders';
 const SCHEDULED_CHANNEL_ID = 'touchgrass_scheduled';
+const SCHEDULED_NOTIFICATION_WINDOW_MINUTES = 60;
 
 /**
  * Set up notification infrastructure without requesting permissions.
@@ -139,8 +140,8 @@ export async function scheduleNextReminder(): Promise<void> {
 
   if (!remindersEnabled) return;
 
-  // Skip if there's a scheduled notification within 60 minutes
-  if (hasScheduledNotificationNearby(60)) {
+  // Skip if there's a scheduled notification within the configured window
+  if (hasScheduledNotificationNearby(SCHEDULED_NOTIFICATION_WINDOW_MINUTES)) {
     console.log('TouchGrass: skipping automatic reminder, scheduled notification nearby');
     return;
   }
@@ -190,8 +191,8 @@ export async function scheduleDayReminders(): Promise<void> {
 
   if (!remindersEnabled) return;
 
-  // Skip if there's a scheduled notification within 60 minutes
-  if (hasScheduledNotificationNearby(60)) {
+  // Skip if there's a scheduled notification within the configured window
+  if (hasScheduledNotificationNearby(SCHEDULED_NOTIFICATION_WINDOW_MINUTES)) {
     console.log('TouchGrass: skipping automatic day reminders, scheduled notification nearby');
     return;
   }
