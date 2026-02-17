@@ -212,14 +212,14 @@ export default {
   intro_notifications_title: 'Herinneringen',
   intro_notifications_body: 'Ontvang zachte aansporingen om naar buiten te gaan wanneer je ze het meest nodig hebt.',
   intro_notifications_why_title: 'Waarom hebben we dit nodig?',
-  intro_notifications_why_body: 'Slimme herinneringen leren je patronen over tijd en sturen alleen meldingen op nuttige momenten. Je kunt ze altijd uitschakelen.',
+  intro_notifications_why_body: 'Slimme herinneringen leren je patronen over tijd en sturen alleen meldingen op nuttige momenten. Je kunt ook geplande herinneringen instellen voor specifieke tijden en dagen. Je kunt ze altijd uitschakelen.',
   intro_notifications_hint: 'Volledig optioneel — je kunt dit overslaan.',
   intro_notifications_button: 'Schakel herinneringen in',
   intro_notifications_button_granted: 'Herinneringen ingeschakeld ✓',
   intro_ready_title: 'Je bent klaar!',
   intro_ready_body: 'TouchGrass is klaar om je te helpen meer tijd buiten door te brengen.',
   intro_ready_tip_title: 'Snelle tip',
-  intro_ready_tip_body: 'Je kunt altijd handmatig buitensessies loggen vanaf het startscherm als automatische detectie iets mist.',
+  intro_ready_tip_body: 'Je kunt geplande herinneringen voor specifieke tijden instellen in Instellingen → Herinneringen. Je kunt ook altijd handmatig buitensessies loggen vanaf het startscherm als automatische detectie iets mist.',
   intro_ready_checklist_title: 'Checklist eerste start',
   intro_ready_checklist_item_hc: 'Koppel Health Connect om oefensessies te importeren.',
   intro_ready_checklist_item_gps: 'Sta achtergrondlocatie toe voor GPS-detectie.',
@@ -285,8 +285,40 @@ export default {
 
   // Meldingskanaal
   notif_channel_name: 'Buitenherinneringen',
+  notif_channel_scheduled_name: 'Geplande herinneringen',
   notif_channel_background_name: 'Achtergrondtracking',
   notif_channel_background_desc: 'Zichtbaar terwijl TouchGrass je buitentijd bijhoudt. Kan worden uitgeschakeld zonder invloed op herinneringen.',
+
+  // Instellingen - Geplande Herinneringen
+  settings_scheduled_reminders: 'Geplande herinneringen',
+  settings_scheduled_reminders_sublabel: 'Stel herinneringen in voor specifieke tijden',
+  nav_scheduled_notifications: 'Geplande Herinneringen',
+  
+  // Scherm Geplande Herinneringen
+  scheduled_notif_empty: 'Geen geplande herinneringen',
+  scheduled_notif_empty_sub: 'Maak aangepaste herinneringen voor specifieke tijden en dagen van de week.',
+  scheduled_notif_add: 'Herinnering toevoegen',
+  scheduled_notif_edit: 'Herinnering bewerken',
+  scheduled_notif_delete_title: 'Herinnering verwijderen',
+  scheduled_notif_delete_body: 'Weet je zeker dat je deze herinnering wilt verwijderen?',
+  scheduled_notif_time: 'Tijd',
+  scheduled_notif_days: 'Dagen',
+  scheduled_notif_label_optional: 'Label (optioneel)',
+  scheduled_notif_label_placeholder: 'bijv. Ochtendwandeling',
+  scheduled_notif_weekdays: 'Weekdagen',
+  scheduled_notif_all_days: 'Alle dagen',
+  scheduled_notif_every_day: 'Elke dag',
+  scheduled_notif_no_days: 'Selecteer minstens één dag',
+  scheduled_notif_no_days_selected: 'Geen dagen geselecteerd',
+  scheduled_notif_invalid_hour: 'Uur moet tussen 0 en 23 zijn',
+  scheduled_notif_invalid_minute: 'Minuut moet tussen 0 en 59 zijn',
+  
+  // Algemeen
+  edit: 'Bewerken',
+  delete: 'Verwijderen',
+  cancel: 'Annuleren',
+  save: 'Opslaan',
+  error: 'Fout',
 
   // Taal-/datumopmaak
   locale_tag: 'nl-NL',

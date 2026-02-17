@@ -212,14 +212,14 @@ export default {
   intro_notifications_title: 'Reminders',
   intro_notifications_body: 'Get gentle nudges to go outside when you need them most.',
   intro_notifications_why_title: 'Why do we need this?',
-  intro_notifications_why_body: 'Smart reminders learn your patterns over time and only notify you at helpful moments. You can disable them anytime.',
+  intro_notifications_why_body: 'Smart reminders learn your patterns over time and only notify you at helpful moments. You can also set up scheduled reminders for specific times and days. You can disable them anytime.',
   intro_notifications_hint: 'Completely optional — you can skip this.',
   intro_notifications_button: 'Enable Reminders',
   intro_notifications_button_granted: 'Reminders Enabled ✓',
   intro_ready_title: 'You\'re all set!',
   intro_ready_body: 'TouchGrass is ready to help you spend more time outdoors.',
   intro_ready_tip_title: 'Quick tip',
-  intro_ready_tip_body: 'You can always manually log outdoor sessions from the home screen if automatic detection misses anything.',
+  intro_ready_tip_body: 'You can set up scheduled reminders for specific times in Settings → Reminders. You can also manually log outdoor sessions from the home screen if automatic detection misses anything.',
   intro_ready_checklist_title: 'First run checklist',
   intro_ready_checklist_item_hc: 'Connect Health Connect to import exercise sessions.',
   intro_ready_checklist_item_gps: 'Allow background location for GPS detection.',
@@ -285,8 +285,40 @@ export default {
 
   // Notification channel
   notif_channel_name: 'Outside reminders',
+  notif_channel_scheduled_name: 'Scheduled reminders',
   notif_channel_background_name: 'Background tracking',
   notif_channel_background_desc: 'Shows while TouchGrass is tracking your outside time. Can be disabled without affecting reminders.',
+
+  // Settings - Scheduled Notifications
+  settings_scheduled_reminders: 'Scheduled reminders',
+  settings_scheduled_reminders_sublabel: 'Set up reminders for specific times',
+  nav_scheduled_notifications: 'Scheduled Reminders',
+  
+  // Scheduled Notifications Screen
+  scheduled_notif_empty: 'No scheduled reminders',
+  scheduled_notif_empty_sub: 'Create custom reminders for specific times and days of the week.',
+  scheduled_notif_add: 'Add reminder',
+  scheduled_notif_edit: 'Edit reminder',
+  scheduled_notif_delete_title: 'Delete reminder',
+  scheduled_notif_delete_body: 'Are you sure you want to delete this reminder?',
+  scheduled_notif_time: 'Time',
+  scheduled_notif_days: 'Days',
+  scheduled_notif_label_optional: 'Label (optional)',
+  scheduled_notif_label_placeholder: 'e.g., Morning walk',
+  scheduled_notif_weekdays: 'Weekdays',
+  scheduled_notif_all_days: 'All days',
+  scheduled_notif_every_day: 'Every day',
+  scheduled_notif_no_days: 'Please select at least one day',
+  scheduled_notif_no_days_selected: 'No days selected',
+  scheduled_notif_invalid_hour: 'Hour must be between 0 and 23',
+  scheduled_notif_invalid_minute: 'Minute must be between 0 and 59',
+  
+  // Common
+  edit: 'Edit',
+  delete: 'Delete',
+  cancel: 'Cancel',
+  save: 'Save',
+  error: 'Error',
 
   // Time/date formatting locale tag
   locale_tag: 'en-GB',
