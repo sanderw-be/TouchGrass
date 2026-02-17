@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
-import { Text } from 'react-native';
+import { Text, AppState } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import HomeScreen from '../screens/HomeScreen';
@@ -11,6 +11,8 @@ import EventsScreen from '../screens/EventsScreen';
 import GoalsScreen from '../screens/GoalsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import WeatherSettingsScreen from '../screens/WeatherSettingsScreen';
+import { fetchWeatherForecast, isWeatherDataAvailable } from '../weather/weatherService';
+import { getSetting } from '../storage/database';
 import { colors, spacing } from '../utils/theme';
 import { t } from '../i18n';
 
@@ -113,6 +115,29 @@ function TabNavigator() {
 }
 
 export default function AppNavigator() {
+  const appState = useRef(AppState.currentState);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', async (nextAppState) => {
+      // When app comes to foreground, refresh weather if stale
+      if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
+        const weatherEnabled = getSetting('weather_enabled', '1') === '1';
+        if (weatherEnabled && !isWeatherDataAvailable()) {
+          try {
+            await fetchWeatherForecast();
+          } catch (error) {
+            console.warn('Foreground weather refresh error:', error);
+          }
+        }
+      }
+      appState.current = nextAppState;
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
+
   return (
     <SafeAreaProvider>
       <NavigationContainer>
