@@ -47,7 +47,7 @@ export interface ScheduledNotification {
   id?: number;
   hour: number;            // 0-23
   minute: number;          // 0-59
-  daysOfWeek: number[];    // Array of 0-6 (0=Sunday, 6=Saturday)
+  daysOfWeek: number[];    // Array of 0-6, where 0=Sunday, 1=Monday, ..., 6=Saturday (JavaScript Date.getDay() convention)
   enabled: number;         // 0 or 1
   label?: string;
 }

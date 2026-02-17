@@ -51,6 +51,11 @@ export async function scheduleAllScheduledNotifications(): Promise<void> {
 
 /**
  * Schedule a single notification using calendar trigger for weekly recurrence.
+ * 
+ * Day numbering conversion:
+ * - Database/UI: Uses JavaScript Date.getDay() convention (0=Sunday, 1=Monday, ..., 6=Saturday)
+ * - Expo Calendar Trigger: Uses different convention (1=Monday, 2=Tuesday, ..., 7=Sunday)
+ * - Conversion: Sunday (0) -> 7, all others stay the same
  */
 async function scheduleNotification(schedule: ScheduledNotification): Promise<void> {
   if (!schedule.id) return;
@@ -78,7 +83,7 @@ async function scheduleNotification(schedule: ScheduledNotification): Promise<vo
         trigger: {
           type: Notifications.SchedulableTriggerInputTypes.CALENDAR,
           repeats: true,
-          weekday: (dayOfWeek === 0 ? 7 : dayOfWeek), // Expo: 1=Mon, 2=Tue, ..., 7=Sun; we use 0=Sun, 1=Mon, ..., 6=Sat
+          weekday: (dayOfWeek === 0 ? 7 : dayOfWeek), // Convert: 0 (Sunday) -> 7 for Expo
           hour: schedule.hour,
           minute: schedule.minute,
           channelId: SCHEDULED_CHANNEL_ID,

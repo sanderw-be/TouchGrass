@@ -25,6 +25,10 @@ function isValidMinute(minute: number): boolean {
   return !isNaN(minute) && minute >= 0 && minute <= 59;
 }
 
+// Day ordering: Display Monday-Sunday (1-6, 0) to match common calendar convention
+// Uses JavaScript Date.getDay() numbering: 0=Sunday, 1=Monday, ..., 6=Saturday
+const DAY_DISPLAY_ORDER = [1, 2, 3, 4, 5, 6, 0];
+
 export default function ScheduledNotificationsScreen() {
   const insets = useSafeAreaInsets();
   const [notifications, setNotifications] = useState<ScheduledNotification[]>([]);
@@ -49,7 +53,7 @@ export default function ScheduledNotificationsScreen() {
     setEditingNotification({
       hour: 10,
       minute: 0,
-      daysOfWeek: [1, 2, 3, 4, 5], // Mon-Fri by default
+      daysOfWeek: [1, 2, 3, 4, 5], // Mon-Fri by default (using JavaScript Date.getDay(): 0=Sun, 1=Mon, ..., 6=Sat)
       enabled: 1,
       label: '',
     });
@@ -287,7 +291,7 @@ function EditNotificationModal({ visible, notification, onClose, onSave }: EditM
 
             <Text style={styles.label}>{t('scheduled_notif_days')}</Text>
             <View style={styles.daySelector}>
-              {[1, 2, 3, 4, 5, 6, 0].map(day => (
+              {DAY_DISPLAY_ORDER.map(day => (
                 <TouchableOpacity
                   key={day}
                   style={[
