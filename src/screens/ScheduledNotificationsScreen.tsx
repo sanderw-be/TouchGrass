@@ -1,9 +1,10 @@
 import React, { useState, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Alert, Modal, TextInput,
+  View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Alert, Modal, Platform, TextInput,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import {
   getScheduledNotifications,
   insertScheduledNotification,
@@ -15,15 +16,6 @@ import {
 import { scheduleAllScheduledNotifications } from '../notifications/scheduledNotifications';
 import { colors, spacing, radius, shadows } from '../utils/theme';
 import { t } from '../i18n';
-
-// Validation helpers
-function isValidHour(hour: number): boolean {
-  return !isNaN(hour) && hour >= 0 && hour <= 23;
-}
-
-function isValidMinute(minute: number): boolean {
-  return !isNaN(minute) && minute >= 0 && minute <= 59;
-}
 
 // Day ordering: Display Monday-Sunday (1-6, 0) to match common calendar convention
 // Uses JavaScript Date.getDay() numbering: 0=Sunday, 1=Monday, ..., 6=Saturday
@@ -179,9 +171,7 @@ function EditNotificationModal({ visible, notification, onClose, onSave }: EditM
   const [minute, setMinute] = useState(notification.minute);
   const [daysOfWeek, setDaysOfWeek] = useState<number[]>(notification.daysOfWeek);
   const [label, setLabel] = useState(notification.label || '');
-  const [editingTime, setEditingTime] = useState(false);
-  const [hourInput, setHourInput] = useState(notification.hour.toString());
-  const [minuteInput, setMinuteInput] = useState(notification.minute.toString());
+  const [showTimePicker, setShowTimePicker] = useState(false);
 
   const toggleDay = (day: number) => {
     if (daysOfWeek.includes(day)) {
@@ -199,27 +189,16 @@ function EditNotificationModal({ visible, notification, onClose, onSave }: EditM
     setDaysOfWeek([1, 2, 3, 4, 5]);
   };
 
-  const handleTimeEdit = () => {
-    setHourInput(hour.toString());
-    setMinuteInput(minute.toString());
-    setEditingTime(true);
-  };
-
-  const handleTimeBlur = () => {
-    const newHour = parseInt(hourInput, 10);
-    const newMinute = parseInt(minuteInput, 10);
-    
-    if (!isValidHour(newHour)) {
-      Alert.alert(t('error'), t('scheduled_notif_invalid_hour'));
-      setHourInput(hour.toString());
-    } else if (!isValidMinute(newMinute)) {
-      Alert.alert(t('error'), t('scheduled_notif_invalid_minute'));
-      setMinuteInput(minute.toString());
-    } else {
-      setHour(newHour);
-      setMinute(newMinute);
+  const handleTimeChange = (event: any, selectedDate?: Date) => {
+    // On Android, the picker closes after selection
+    if (Platform.OS === 'android') {
+      setShowTimePicker(false);
     }
-    setEditingTime(false);
+    
+    if (selectedDate) {
+      setHour(selectedDate.getHours());
+      setMinute(selectedDate.getMinutes());
+    }
   };
 
   const handleSave = () => {
@@ -237,6 +216,10 @@ function EditNotificationModal({ visible, notification, onClose, onSave }: EditM
       label: trimmedLabel || undefined,
     });
   };
+
+  // Create a Date object for the time picker
+  const currentTime = new Date();
+  currentTime.setHours(hour, minute, 0, 0);
 
   return (
     <Modal
@@ -259,34 +242,31 @@ function EditNotificationModal({ visible, notification, onClose, onSave }: EditM
           <ScrollView style={styles.modalBody}>
             <Text style={styles.label}>{t('scheduled_notif_time')}</Text>
             
-            {!editingTime ? (
+            <TouchableOpacity
+              style={styles.timeButton}
+              onPress={() => setShowTimePicker(true)}
+            >
+              <Text style={styles.timeButtonText}>{formatTime(hour, minute)}</Text>
+            </TouchableOpacity>
+
+            {showTimePicker && (
+              <DateTimePicker
+                value={currentTime}
+                mode="time"
+                is24Hour={true}
+                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                onChange={handleTimeChange}
+                style={styles.timePicker}
+              />
+            )}
+
+            {Platform.OS === 'ios' && showTimePicker && (
               <TouchableOpacity
-                style={styles.timeButton}
-                onPress={handleTimeEdit}
+                style={styles.doneButton}
+                onPress={() => setShowTimePicker(false)}
               >
-                <Text style={styles.timeButtonText}>{formatTime(hour, minute)}</Text>
+                <Text style={styles.doneButtonText}>{t('done')}</Text>
               </TouchableOpacity>
-            ) : (
-              <View style={styles.timeInputRow}>
-                <TextInput
-                  style={styles.timeInput}
-                  value={hourInput}
-                  onChangeText={setHourInput}
-                  onBlur={handleTimeBlur}
-                  keyboardType="number-pad"
-                  maxLength={2}
-                  autoFocus
-                />
-                <Text style={styles.timeInputSeparator}>:</Text>
-                <TextInput
-                  style={styles.timeInput}
-                  value={minuteInput}
-                  onChangeText={setMinuteInput}
-                  onBlur={handleTimeBlur}
-                  keyboardType="number-pad"
-                  maxLength={2}
-                />
-              </View>
             )}
 
             <Text style={styles.label}>{t('scheduled_notif_days')}</Text>
@@ -570,35 +550,20 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.grass,
   },
-  inputContainer: {
-    backgroundColor: colors.fog,
+  timePicker: {
+    marginVertical: spacing.md,
+  },
+  doneButton: {
+    backgroundColor: colors.grass,
     borderRadius: radius.md,
-    padding: spacing.md,
-  },
-  input: {
-    fontSize: 15,
-    color: colors.textPrimary,
-  },
-  timeInputRow: {
-    flexDirection: 'row',
+    padding: spacing.sm,
     alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.grassPale,
-    borderRadius: radius.md,
-    padding: spacing.md,
+    marginTop: spacing.sm,
   },
-  timeInput: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: colors.grass,
-    textAlign: 'center',
-    width: 60,
-  },
-  timeInputSeparator: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: colors.grass,
-    marginHorizontal: spacing.xs,
+  doneButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.textInverse,
   },
   labelInput: {
     backgroundColor: colors.fog,

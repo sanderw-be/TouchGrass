@@ -318,6 +318,7 @@ export default {
   delete: 'Verwijderen',
   cancel: 'Annuleren',
   save: 'Opslaan',
+  done: 'Klaar',
   error: 'Fout',
 
   // Taal-/datumopmaak

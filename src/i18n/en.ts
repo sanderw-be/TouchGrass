@@ -318,6 +318,7 @@ export default {
   delete: 'Delete',
   cancel: 'Cancel',
   save: 'Save',
+  done: 'Done',
   error: 'Error',
 
   // Time/date formatting locale tag
