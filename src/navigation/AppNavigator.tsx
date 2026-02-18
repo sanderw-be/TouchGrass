@@ -11,6 +11,7 @@ import EventsScreen from '../screens/EventsScreen';
 import GoalsScreen from '../screens/GoalsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import WeatherSettingsScreen from '../screens/WeatherSettingsScreen';
+import ScheduledNotificationsScreen from '../screens/ScheduledNotificationsScreen';
 import { fetchWeatherForecast, isWeatherDataAvailable } from '../weather/weatherService';
 import { getSetting } from '../storage/database';
 import { colors, spacing } from '../utils/theme';
@@ -19,6 +20,7 @@ import { t } from '../i18n';
 export type SettingsStackParamList = {
   SettingsMain: undefined;
   WeatherSettings: undefined;
+  ScheduledNotifications: undefined;
 };
 
 const Tab = createBottomTabNavigator();
@@ -51,6 +53,11 @@ function SettingsStackNavigator() {
         name="WeatherSettings"
         component={WeatherSettingsScreen}
         options={{ title: t('nav_weather_settings') }}
+      />
+      <SettingsStack.Screen
+        name="ScheduledNotifications"
+        component={ScheduledNotificationsScreen}
+        options={{ title: t('settings_scheduled_reminders') }}
       />
     </SettingsStack.Navigator>
   );

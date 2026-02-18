@@ -1,0 +1,137 @@
+jest.mock('expo-notifications');
+jest.mock('../storage/database');
+
+import * as Notifications from 'expo-notifications';
+import * as Database from '../storage/database';
+import {
+  scheduleAllScheduledNotifications,
+  cancelAllScheduledNotifications,
+  hasScheduledNotificationNearby,
+} from '../notifications/scheduledNotifications';
+
+describe('scheduledNotifications', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  describe('scheduleAllScheduledNotifications', () => {
+    it('schedules enabled notifications with calendar triggers', async () => {
+      const mockSchedules = [
+        { id: 1, hour: 10, minute: 0, daysOfWeek: [1, 3, 5], enabled: 1, label: 'Morning walk' },
+        { id: 2, hour: 18, minute: 30, daysOfWeek: [0, 6], enabled: 0, label: 'Weekend reminder' },
+      ];
+
+      (Database.getScheduledNotifications as jest.Mock).mockReturnValue(mockSchedules);
+      (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([]);
+
+      await scheduleAllScheduledNotifications();
+
+      // Should schedule 3 notifications (Mon, Wed, Fri)
+      expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledTimes(3);
+    });
+
+    it('does not schedule disabled notifications', async () => {
+      const mockSchedules = [
+        { id: 1, hour: 10, minute: 0, daysOfWeek: [1, 2], enabled: 0, label: 'Disabled' },
+      ];
+
+      (Database.getScheduledNotifications as jest.Mock).mockReturnValue(mockSchedules);
+      (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([]);
+
+      await scheduleAllScheduledNotifications();
+
+      expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
+    });
+
+    it('cancels existing scheduled notifications before scheduling new ones', async () => {
+      const mockSchedules = [
+        { id: 1, hour: 10, minute: 0, daysOfWeek: [1], enabled: 1, label: 'Test' },
+      ];
+
+      (Database.getScheduledNotifications as jest.Mock).mockReturnValue(mockSchedules);
+      (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([
+        { identifier: 'scheduled_1_1' },
+      ]);
+
+      await scheduleAllScheduledNotifications();
+
+      expect(Notifications.cancelScheduledNotificationAsync).toHaveBeenCalledWith('scheduled_1_1');
+    });
+  });
+
+  describe('cancelAllScheduledNotifications', () => {
+    it('only cancels notifications with scheduled_ prefix', async () => {
+      const mockNotifications = [
+        { identifier: 'scheduled_1_1' },
+        { identifier: 'scheduled_2_3' },
+        { identifier: 'automatic_reminder' },
+      ];
+
+      (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue(mockNotifications);
+
+      await cancelAllScheduledNotifications();
+
+      expect(Notifications.cancelScheduledNotificationAsync).toHaveBeenCalledTimes(2);
+      expect(Notifications.cancelScheduledNotificationAsync).toHaveBeenCalledWith('scheduled_1_1');
+      expect(Notifications.cancelScheduledNotificationAsync).toHaveBeenCalledWith('scheduled_2_3');
+      expect(Notifications.cancelScheduledNotificationAsync).not.toHaveBeenCalledWith('automatic_reminder');
+    });
+  });
+
+  describe('hasScheduledNotificationNearby', () => {
+    beforeEach(() => {
+      // Mock current time to Wednesday, 10:30
+      jest.spyOn(Date.prototype, 'getDay').mockReturnValue(3); // Wednesday
+      jest.spyOn(Date.prototype, 'getHours').mockReturnValue(10);
+      jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(30);
+    });
+
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+
+    it('returns true when a schedule is within the window', () => {
+      const mockSchedules = [
+        { id: 1, hour: 11, minute: 0, daysOfWeek: [3], enabled: 1, label: 'Nearby' },
+      ];
+
+      (Database.getScheduledNotifications as jest.Mock).mockReturnValue(mockSchedules);
+
+      const result = hasScheduledNotificationNearby(60);
+      expect(result).toBe(true);
+    });
+
+    it('returns false when no schedules are nearby', () => {
+      const mockSchedules = [
+        { id: 1, hour: 14, minute: 0, daysOfWeek: [3], enabled: 1, label: 'Far away' },
+      ];
+
+      (Database.getScheduledNotifications as jest.Mock).mockReturnValue(mockSchedules);
+
+      const result = hasScheduledNotificationNearby(60);
+      expect(result).toBe(false);
+    });
+
+    it('returns false when schedule is for a different day', () => {
+      const mockSchedules = [
+        { id: 1, hour: 10, minute: 30, daysOfWeek: [1, 2, 4], enabled: 1, label: 'Wrong day' },
+      ];
+
+      (Database.getScheduledNotifications as jest.Mock).mockReturnValue(mockSchedules);
+
+      const result = hasScheduledNotificationNearby(60);
+      expect(result).toBe(false);
+    });
+
+    it('ignores disabled schedules', () => {
+      const mockSchedules = [
+        { id: 1, hour: 10, minute: 30, daysOfWeek: [3], enabled: 0, label: 'Disabled' },
+      ];
+
+      (Database.getScheduledNotifications as jest.Mock).mockReturnValue(mockSchedules);
+
+      const result = hasScheduledNotificationNearby(60);
+      expect(result).toBe(false);
+    });
+  });
+});

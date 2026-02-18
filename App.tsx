@@ -6,6 +6,7 @@ import { initDatabase, getSetting, setSetting } from './src/storage/database';
 import i18n from './src/i18n';
 import { initDetection } from './src/detection/index';
 import { setupNotificationInfrastructure, scheduleDayReminders } from './src/notifications/notificationManager';
+import { scheduleAllScheduledNotifications } from './src/notifications/scheduledNotifications';
 import { registerWeatherBackgroundFetch } from './src/weather/weatherBackgroundTask';
 import AppNavigator from './src/navigation/AppNavigator';
 import IntroScreen from './src/screens/IntroScreen';
@@ -48,6 +49,7 @@ export default function App() {
         try {
           await initDetection();
           await scheduleDayReminders();
+          await scheduleAllScheduledNotifications();
           // Register weather background fetch for hourly updates
           await registerWeatherBackgroundFetch();
         } catch (e) {
@@ -66,6 +68,7 @@ export default function App() {
     try {
       await initDetection();
       await scheduleDayReminders();
+      await scheduleAllScheduledNotifications();
       // Register weather background fetch for hourly updates
       await registerWeatherBackgroundFetch();
     } catch (e) {

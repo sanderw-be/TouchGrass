@@ -2,7 +2,7 @@
 jest.mock('expo-sqlite', () => ({
   openDatabaseSync: jest.fn(() => ({
     execSync: jest.fn(),
-    runSync: jest.fn(),
+    runSync: jest.fn(() => ({ lastInsertRowId: 1 })),
     getAllSync: jest.fn(() => []),
     getFirstSync: jest.fn(),
   })),
@@ -20,6 +20,22 @@ jest.mock('expo-notifications', () => ({
   setNotificationHandler: jest.fn(),
   scheduleNotificationAsync: jest.fn(),
   cancelAllScheduledNotificationsAsync: jest.fn(),
+  getAllScheduledNotificationsAsync: jest.fn(() => Promise.resolve([])),
+  cancelScheduledNotificationAsync: jest.fn(),
+  setNotificationChannelAsync: jest.fn(),
+  setNotificationCategoryAsync: jest.fn(),
+  addNotificationResponseReceivedListener: jest.fn(() => ({ remove: jest.fn() })),
+  SchedulableTriggerInputTypes: {
+    TIME_INTERVAL: 'timeInterval',
+    DATE: 'date',
+    CALENDAR: 'calendar',
+  },
+  AndroidImportance: {
+    MIN: 1,
+    LOW: 2,
+    DEFAULT: 3,
+    HIGH: 4,
+  },
 }));
 
 // Mock expo-location
@@ -58,6 +74,14 @@ jest.mock('expo-background-fetch', () => ({
   registerTaskAsync: jest.fn(),
   unregisterTaskAsync: jest.fn(),
 }));
+
+// Mock @react-native-community/datetimepicker
+jest.mock('@react-native-community/datetimepicker', () => {
+  const React = require('react');
+  return jest.fn().mockImplementation(({ value, onChange }) => {
+    return React.createElement('DateTimePicker', { value, onChange });
+  });
+});
 
 // Suppress Expo runtime warnings in tests
 global.__ExpoImportMetaRegistry = {

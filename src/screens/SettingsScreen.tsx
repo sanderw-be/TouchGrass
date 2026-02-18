@@ -301,6 +301,14 @@ export default function SettingsScreen() {
         />
         <Divider />
         <SettingRow
+          icon="📅"
+          label={t('settings_scheduled_reminders')}
+          sublabel={t('settings_scheduled_reminders_sublabel')}
+          onPress={() => navigation.navigate('ScheduledNotifications')}
+          right={<Text style={styles.chevron}>›</Text>}
+        />
+        <Divider />
+        <SettingRow
           icon="📡"
           label={t('settings_background_tracking_label')}
           sublabel={t('settings_background_tracking_sublabel')}

@@ -43,6 +43,15 @@ export interface KnownLocation {
   isIndoor: boolean;
 }
 
+export interface ScheduledNotification {
+  id?: number;
+  hour: number;            // 0-23
+  minute: number;          // 0-59
+  daysOfWeek: number[];    // 0-6, Sunday=0
+  enabled: number;         // 0 or 1 (SQLite boolean)
+  label: string;           // optional label like "Morning walk"
+}
+
 export function initDatabase(): void {
   db.execSync(`
     CREATE TABLE IF NOT EXISTS outside_sessions (
@@ -110,6 +119,15 @@ export function initDatabase(): void {
       latitude REAL NOT NULL,
       longitude REAL NOT NULL,
       expiresAt INTEGER NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS scheduled_notifications (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      hour INTEGER NOT NULL,
+      minute INTEGER NOT NULL,
+      daysOfWeek TEXT NOT NULL,
+      enabled INTEGER NOT NULL DEFAULT 1,
+      label TEXT NOT NULL DEFAULT ''
     );
   `);
 
@@ -428,4 +446,58 @@ export function clearExpiredWeatherData(now: number): void {
   // Delete weather conditions older than 24 hours
   const cutoff = now - 24 * 60 * 60 * 1000;
   db.runSync('DELETE FROM weather_conditions WHERE timestamp < ?', [cutoff]);
+}
+
+// ── Scheduled Notifications ───────────────────────────────
+
+export function getScheduledNotifications(): ScheduledNotification[] {
+  const rows = db.getAllSync<any>('SELECT * FROM scheduled_notifications ORDER BY hour, minute');
+  return rows.map(row => ({
+    id: row.id,
+    hour: row.hour,
+    minute: row.minute,
+    daysOfWeek: row.daysOfWeek.split(',').map((d: string) => parseInt(d, 10)),
+    enabled: row.enabled,
+    label: row.label,
+  }));
+}
+
+export function insertScheduledNotification(notification: Omit<ScheduledNotification, 'id'>): number {
+  const result = db.runSync(
+    'INSERT INTO scheduled_notifications (hour, minute, daysOfWeek, enabled, label) VALUES (?, ?, ?, ?, ?)',
+    [
+      notification.hour,
+      notification.minute,
+      notification.daysOfWeek.join(','),
+      notification.enabled,
+      notification.label,
+    ]
+  );
+  return result.lastInsertRowId;
+}
+
+export function updateScheduledNotification(notification: ScheduledNotification): void {
+  if (!notification.id) throw new Error('Cannot update notification without id');
+  db.runSync(
+    'UPDATE scheduled_notifications SET hour=?, minute=?, daysOfWeek=?, enabled=?, label=? WHERE id=?',
+    [
+      notification.hour,
+      notification.minute,
+      notification.daysOfWeek.join(','),
+      notification.enabled,
+      notification.label,
+      notification.id,
+    ]
+  );
+}
+
+export function deleteScheduledNotification(id: number): void {
+  db.runSync('DELETE FROM scheduled_notifications WHERE id = ?', [id]);
+}
+
+export function toggleScheduledNotification(id: number, enabled: boolean): void {
+  db.runSync(
+    'UPDATE scheduled_notifications SET enabled = ? WHERE id = ?',
+    [enabled ? 1 : 0, id]
+  );
 }
