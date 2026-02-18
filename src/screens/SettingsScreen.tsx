@@ -300,13 +300,14 @@ export default function SettingsScreen() {
           }
         />
         <Divider />
-        <SettingRow
-          icon="📅"
-          label={t('settings_scheduled_reminders')}
-          sublabel={t('settings_scheduled_reminders_sublabel')}
-          onPress={() => navigation.navigate('ScheduledNotifications')}
-          right={<Text style={styles.chevron}>›</Text>}
-        />
+        <TouchableOpacity onPress={() => navigation.navigate('ScheduledNotifications')}>
+          <SettingRow
+            icon="📅"
+            label={t('settings_scheduled_reminders')}
+            sublabel={t('settings_scheduled_reminders_sublabel')}
+            right={<Text style={styles.chevron}>›</Text>}
+          />
+        </TouchableOpacity>
         <Divider />
         <SettingRow
           icon="📡"
