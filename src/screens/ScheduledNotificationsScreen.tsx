@@ -75,7 +75,9 @@ export default function ScheduledNotificationsScreen() {
           onPress: async () => {
             deleteScheduledNotification(schedule.id!);
             await scheduleAllScheduledNotifications();
-            loadSchedules();
+            // Immediately update state to reflect deletion
+            const updated = getScheduledNotifications();
+            setSchedules(updated);
           },
         },
       ]
@@ -86,7 +88,9 @@ export default function ScheduledNotificationsScreen() {
     if (!schedule.id) return;
     toggleScheduledNotification(schedule.id, value);
     await scheduleAllScheduledNotifications();
-    loadSchedules();
+    // Immediately update state to reflect toggle
+    const updated = getScheduledNotifications();
+    setSchedules(updated);
   };
 
   const handleSave = async () => {
@@ -114,8 +118,13 @@ export default function ScheduledNotificationsScreen() {
     }
 
     await scheduleAllScheduledNotifications();
+    
+    // Close modal and refresh list
     setIsModalVisible(false);
-    loadSchedules();
+    
+    // Immediately update state to reflect changes
+    const updated = getScheduledNotifications();
+    setSchedules(updated);
   };
 
   const toggleDay = (day: number) => {

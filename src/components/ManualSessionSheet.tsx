@@ -3,6 +3,7 @@ import {
   View, Text, StyleSheet, Modal, TouchableOpacity,
   ScrollView, TextInput, Platform, Alert,
 } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { logManualSession, startManualSession } from '../detection/manualCheckin';
 import { colors, spacing, radius, shadows } from '../utils/theme';
 import { formatMinutes } from '../utils/helpers';
@@ -25,7 +26,12 @@ export default function ManualSessionSheet({ visible, onClose, onSessionLogged }
   const [durationMinutes, setDurationMinutes] = useState(30);
   const [customDuration, setCustomDuration] = useState('');
   const [useCustom, setUseCustom] = useState(false);
-  const [offsetHours, setOffsetHours] = useState(0); // hours ago session started
+  
+  // Time pickers for start and end time
+  const [startTime, setStartTime] = useState(new Date());
+  const [endTime, setEndTime] = useState(new Date());
+  const [showStartPicker, setShowStartPicker] = useState(false);
+  const [showEndPicker, setShowEndPicker] = useState(false);
 
   // Timer state
   const [timerRunning, setTimerRunning] = useState(false);
@@ -41,7 +47,12 @@ export default function ManualSessionSheet({ visible, onClose, onSessionLogged }
       setDurationMinutes(30);
       setCustomDuration('');
       setUseCustom(false);
-      setOffsetHours(0);
+      
+      // Set default times: end time is now, start time is 30 minutes ago
+      const now = new Date();
+      setEndTime(now);
+      const start = new Date(now.getTime() - 30 * 60 * 1000);
+      setStartTime(start);
     }
   }, [visible]);
 
@@ -63,15 +74,46 @@ export default function ManualSessionSheet({ visible, onClose, onSessionLogged }
   // ── Log past session ──────────────────────────────────
 
   const handleLogSession = () => {
-    const duration = useCustom ? parseInt(customDuration, 10) : durationMinutes;
-    if (isNaN(duration) || duration < 1 || duration > 720) {
+    // Calculate duration from start and end times
+    const durationMs = endTime.getTime() - startTime.getTime();
+    const duration = Math.round(durationMs / (60 * 1000)); // Convert to minutes
+    
+    if (duration < 1 || duration > 720) {
       Alert.alert(t('manual_invalid_title'), t('manual_invalid_body'));
       return;
     }
-    const startTime = Date.now() - offsetHours * 60 * 60 * 1000 - duration * 60 * 1000;
-    logManualSession(duration, startTime);
+    
+    logManualSession(duration, startTime.getTime());
     onSessionLogged();
     onClose();
+  };
+
+  const onStartTimeChange = (event: any, date?: Date) => {
+    if (Platform.OS === 'android') {
+      setShowStartPicker(false);
+    }
+    if (date) {
+      setStartTime(date);
+      // If start time is after end time, adjust end time
+      if (date.getTime() >= endTime.getTime()) {
+        const newEnd = new Date(date.getTime() + 30 * 60 * 1000);
+        setEndTime(newEnd);
+      }
+    }
+  };
+
+  const onEndTimeChange = (event: any, date?: Date) => {
+    if (Platform.OS === 'android') {
+      setShowEndPicker(false);
+    }
+    if (date) {
+      setEndTime(date);
+      // If end time is before start time, adjust start time
+      if (date.getTime() <= startTime.getTime()) {
+        const newStart = new Date(date.getTime() - 30 * 60 * 1000);
+        setStartTime(newStart);
+      }
+    }
   };
 
   // ── Timer ─────────────────────────────────────────────
@@ -109,10 +151,8 @@ export default function ManualSessionSheet({ visible, onClose, onSessionLogged }
     return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
   };
 
-  // Compute preview start time for log tab
-  const previewDuration = useCustom ? parseInt(customDuration, 10) || 0 : durationMinutes;
-  const previewStart = Date.now() - offsetHours * 60 * 60 * 1000 - previewDuration * 60 * 1000;
-  const previewEnd = Date.now() - offsetHours * 60 * 60 * 1000;
+  // Calculate duration from start and end times
+  const calculatedDuration = Math.round((endTime.getTime() - startTime.getTime()) / (60 * 1000));
 
   return (
     <Modal
@@ -160,68 +200,82 @@ export default function ManualSessionSheet({ visible, onClose, onSessionLogged }
           {/* ── Log past session tab ── */}
           {tab === 'log' && (
             <View>
-              {/* Duration */}
-              <Text style={styles.sectionLabel}>{t('manual_duration')}</Text>
-              <View style={styles.presets}>
-                {DURATION_PRESETS.map((p) => (
-                  <TouchableOpacity
-                    key={p}
-                    style={[
-                      styles.preset,
-                      !useCustom && durationMinutes === p && styles.presetActive,
-                    ]}
-                    onPress={() => { setDurationMinutes(p); setUseCustom(false); }}
-                  >
-                    <Text style={[
-                      styles.presetText,
-                      !useCustom && durationMinutes === p && styles.presetTextActive,
-                    ]}>
-                      {formatMinutes(p)}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-
-              {/* Custom duration */}
-              <View style={styles.customRow}>
-                <TextInput
-                  style={[styles.input, useCustom && styles.inputActive]}
-                  value={customDuration}
-                  onChangeText={(v) => { setCustomDuration(v); setUseCustom(true); }}
-                  onFocus={() => setUseCustom(true)}
-                  keyboardType="number-pad"
-                  placeholder={t('manual_custom_placeholder')}
-                  placeholderTextColor={colors.textMuted}
-                  maxLength={4}
+              {/* Start Time */}
+              <Text style={styles.sectionLabel}>{t('manual_start_time')}</Text>
+              {Platform.OS === 'ios' ? (
+                <DateTimePicker
+                  value={startTime}
+                  mode="time"
+                  display="spinner"
+                  onChange={onStartTimeChange}
+                  style={styles.timePicker}
                 />
-                <Text style={styles.inputUnit}>{t('manual_minutes')}</Text>
-              </View>
-
-              {/* How long ago */}
-              <Text style={styles.sectionLabel}>{t('manual_when')}</Text>
-              <View style={styles.offsetRow}>
-                {[0, 1, 2, 3, 4, 6].map((h) => (
+              ) : (
+                <>
                   <TouchableOpacity
-                    key={h}
-                    style={[styles.preset, offsetHours === h && styles.presetActive]}
-                    onPress={() => setOffsetHours(h)}
+                    style={styles.timeButton}
+                    onPress={() => setShowStartPicker(true)}
                   >
-                    <Text style={[styles.presetText, offsetHours === h && styles.presetTextActive]}>
-                      {h === 0 ? t('manual_just_now') : t('manual_hours_ago', { hours: h })}
+                    <Text style={styles.timeButtonText}>
+                      {formatLocalTime(startTime.getTime())}
                     </Text>
                   </TouchableOpacity>
-                ))}
-              </View>
+                  {showStartPicker && (
+                    <DateTimePicker
+                      value={startTime}
+                      mode="time"
+                      is24Hour={true}
+                      display="default"
+                      onChange={onStartTimeChange}
+                    />
+                  )}
+                </>
+              )}
+
+              {/* End Time */}
+              <Text style={styles.sectionLabel}>{t('manual_end_time')}</Text>
+              {Platform.OS === 'ios' ? (
+                <DateTimePicker
+                  value={endTime}
+                  mode="time"
+                  display="spinner"
+                  onChange={onEndTimeChange}
+                  style={styles.timePicker}
+                />
+              ) : (
+                <>
+                  <TouchableOpacity
+                    style={styles.timeButton}
+                    onPress={() => setShowEndPicker(true)}
+                  >
+                    <Text style={styles.timeButtonText}>
+                      {formatLocalTime(endTime.getTime())}
+                    </Text>
+                  </TouchableOpacity>
+                  {showEndPicker && (
+                    <DateTimePicker
+                      value={endTime}
+                      mode="time"
+                      is24Hour={true}
+                      display="default"
+                      onChange={onEndTimeChange}
+                    />
+                  )}
+                </>
+              )}
 
               {/* Preview */}
-              {previewDuration > 0 && (
+              {calculatedDuration > 0 && (
                 <View style={styles.preview}>
                   <Text style={styles.previewLabel}>{t('manual_preview')}</Text>
                   <Text style={styles.previewTime}>
-                    {formatLocalTime(previewStart)} – {formatLocalTime(previewEnd)}
+                    {formatLocalTime(startTime.getTime())} – {formatLocalTime(endTime.getTime())}
+                  </Text>
+                  <Text style={styles.previewDuration}>
+                    {formatMinutes(calculatedDuration)}
                   </Text>
                   <Text style={styles.previewDate}>
-                    {formatLocalDate(previewStart, { weekday: 'long', month: 'short', day: 'numeric' })}
+                    {formatLocalDate(startTime.getTime(), { weekday: 'long', month: 'short', day: 'numeric' })}
                   </Text>
                 </View>
               )}
@@ -458,5 +512,30 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontSize: 16,
     fontWeight: '600',
+  },
+
+  // Time picker styles
+  timePicker: {
+    alignSelf: 'flex-start',
+    marginBottom: spacing.md,
+  },
+  timeButton: {
+    backgroundColor: colors.fog,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    marginBottom: spacing.md,
+  },
+  timeButtonText: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: colors.textPrimary,
+  },
+  previewDuration: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.grass,
+    marginTop: spacing.xs,
   },
 });

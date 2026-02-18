@@ -171,6 +171,8 @@ export default {
   manual_tab_timer: '⏱ Timer starten',
   manual_duration: 'Duur',
   manual_when: 'Wanneer ben je buiten geweest?',
+  manual_start_time: 'Starttijd',
+  manual_end_time: 'Eindtijd',
   manual_just_now: 'Net nu',
   manual_hours_ago: '{{hours}}u geleden',
   manual_custom_placeholder: 'bijv. 40',

@@ -171,6 +171,8 @@ export default {
   manual_tab_timer: '⏱ Start timer',
   manual_duration: 'Duration',
   manual_when: 'When did you go out?',
+  manual_start_time: 'Start time',
+  manual_end_time: 'End time',
   manual_just_now: 'Just now',
   manual_hours_ago: '{{hours}}h ago',
   manual_custom_placeholder: 'e.g. 40',
