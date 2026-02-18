@@ -76,11 +76,23 @@ jobs:
           expo-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
 
-      - name: Verify app can initialize
+      - name: Setup EAS CLI
+        run: npm install -g eas-cli
+
+      - name: Build Android APK
         run: |
-          echo "Verifying app structure and dependencies..."
-          npx expo install --check
-          echo "App dependencies verified successfully!"
+          echo "Building Android APK..."
+          eas build --platform android --profile preview --local --non-interactive --output ${{ github.workspace }}/TouchGrass.apk
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Upload Android APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: touchgrass-android-apk
+          path: ${{ github.workspace }}/TouchGrass.apk
+          retention-days: 30
+          if-no-files-found: error
 
   lint-and-format:
     name: Lint and Format Check

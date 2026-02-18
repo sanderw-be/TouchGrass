@@ -78,6 +78,16 @@ npm run test:coverage
 npm run type-check
 ```
 
+### CI/CD Build Artifacts
+
+Every PR builds an Android APK automatically via GitHub Actions. After the workflow completes:
+1. Go to the **Actions** tab
+2. Select the workflow run
+3. Download the **touchgrass-android-apk** artifact
+4. Install on your test device
+
+This allows you to test builds directly from PRs without building locally.
+
 ## Project Structure
 
 ```

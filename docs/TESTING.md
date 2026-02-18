@@ -68,9 +68,10 @@ The CI pipeline runs on every pull request and push to main/master branches:
 - Generates and uploads coverage reports
 
 #### 2. **Build Android App** Job
-- Verifies app can be built
-- Checks Expo dependencies
-- Ensures app initialization works
+- Builds Android APK using EAS Build
+- Uploads APK as downloadable artifact
+- Artifact available for 30 days after workflow run
+- APK can be installed on test devices for manual testing
 
 #### 3. **Lint and Format Check** Job
 - Validates TypeScript compilation
@@ -81,6 +82,18 @@ The CI pipeline runs on every pull request and push to main/master branches:
 ✅ **Does the build succeed?** - TypeScript compilation and dependency installation verified  
 ✅ **Can the app run?** - App initialization and structure validated  
 ✅ **Do first-run tutorial steps work?** - IntroScreen component and navigation tested
+
+### Downloading Build Artifacts
+
+After a successful workflow run, you can download the Android APK:
+
+1. Go to the **Actions** tab in the GitHub repository
+2. Select the completed workflow run
+3. Scroll down to the **Artifacts** section
+4. Click on **touchgrass-android-apk** to download
+5. Install the APK on your Android device for testing
+
+The APK artifact is retained for 30 days after the workflow run.
 
 ## Writing New Tests
 
