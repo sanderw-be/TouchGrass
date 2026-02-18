@@ -80,7 +80,7 @@ jobs:
         run: npm install -g eas-cli
 
       - name: Setup EAS Keystore
-        run: eas credentials -p android
+        run: eas credentials:build-config -p android -e production
 
       - name: Build Android APK
         run: |
