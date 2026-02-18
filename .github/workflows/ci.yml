@@ -79,10 +79,18 @@ jobs:
       - name: Setup EAS CLI
         run: npm install -g eas-cli
 
+      - name: Setup EAS Credentials
+        run: |
+          mkdir -p .gradle
+          echo "TOUCHGRASS_UPLOAD_STORE_FILE=${{ secrets.TOUCHGRASS_UPLOAD_STORE_FILE}}" > .gradle/gradle.properties
+          echo "TOUCHGRASS_UPLOAD_STORE_PASSWORD=${{ secrets.TOUCHGRASS_UPLOAD_STORE_PASSWORD}}" >> .gradle/gradle.properties
+          echo "TOUCHGRASS_UPLOAD_KEY_ALIAS=${{ secrets.TOUCHGRASS_UPLOAD_KEY_ALIAS}}" >> .gradle/gradle.properties
+          echo "TOUCHGRASS_UPLOAD_KEY_PASSWORD=${{ secrets.TOUCHGRASS_UPLOAD_KEY_PASSWORD}}" >> .gradle/gradle.properties
+
       - name: Build Android APK
         run: |
           echo "Building Android APK..."
-          eas build --platform android --profile development --local --non-interactive --output ${{ github.workspace }}/TouchGrass.apk
+          eas build --platform android --profile production --local --non-interactive --output ${{ github.workspace }}/TouchGrass.apk
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
