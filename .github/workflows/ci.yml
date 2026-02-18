@@ -82,7 +82,7 @@ jobs:
       - name: Build Android APK
         run: |
           echo "Building Android APK..."
-          eas build --platform android --profile preview --local --non-interactive --output ${{ github.workspace }}/TouchGrass.apk
+          eas build --platform android --profile release --local --non-interactive --output ${{ github.workspace }}/TouchGrass.apk
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
