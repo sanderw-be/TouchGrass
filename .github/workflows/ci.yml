@@ -79,13 +79,10 @@ jobs:
       - name: Setup EAS CLI
         run: npm install -g eas-cli
 
-      - name: Setup EAS Keystore
-        run: eas credentials:configure-build -p android -e production
-
       - name: Build Android APK
         run: |
           echo "Building Android APK..."
-          eas build --platform android --profile release --local --non-interactive --output ${{ github.workspace }}/TouchGrass.apk
+          eas build --platform android --profile development --local --non-interactive --output ${{ github.workspace }}/TouchGrass.apk
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
