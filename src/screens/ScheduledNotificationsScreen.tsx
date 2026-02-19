@@ -72,25 +72,34 @@ export default function ScheduledNotificationsScreen() {
         {
           text: t('scheduled_delete_confirm'),
           style: 'destructive',
-          onPress: async () => {
+          onPress: () => {
+            // Delete from database
             deleteScheduledNotification(schedule.id!);
-            await scheduleAllScheduledNotifications();
-            // Immediately update state to reflect deletion
+            
+            // Update state immediately
             const updated = getScheduledNotifications();
             setSchedules(updated);
+            
+            // Schedule notifications in background
+            scheduleAllScheduledNotifications();
           },
         },
       ]
     );
   };
 
-  const handleToggle = async (schedule: ScheduledNotification, value: boolean) => {
+  const handleToggle = (schedule: ScheduledNotification, value: boolean) => {
     if (!schedule.id) return;
+    
+    // Update database
     toggleScheduledNotification(schedule.id, value);
-    await scheduleAllScheduledNotifications();
-    // Immediately update state to reflect toggle
+    
+    // Update state immediately
     const updated = getScheduledNotifications();
     setSchedules(updated);
+    
+    // Schedule notifications in background
+    scheduleAllScheduledNotifications();
   };
 
   const handleSave = async () => {
@@ -110,6 +119,7 @@ export default function ScheduledNotificationsScreen() {
       label: label.trim(),
     };
 
+    // Update database
     if (editingSchedule?.id) {
       notification.id = editingSchedule.id;
       updateScheduledNotification(notification);
@@ -117,14 +127,15 @@ export default function ScheduledNotificationsScreen() {
       insertScheduledNotification(notification);
     }
 
-    await scheduleAllScheduledNotifications();
-    
-    // Close modal and refresh list
-    setIsModalVisible(false);
-    
-    // Immediately update state to reflect changes
+    // Reload the list from database
     const updated = getScheduledNotifications();
     setSchedules(updated);
+    
+    // Close modal after state update
+    setIsModalVisible(false);
+    
+    // Schedule notifications in background
+    scheduleAllScheduledNotifications();
   };
 
   const toggleDay = (day: number) => {
