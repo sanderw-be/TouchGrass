@@ -66,7 +66,7 @@ export async function setupNotificationInfrastructure(): Promise<void> {
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
       shouldShowAlert: true,
-      shouldPlaySound: false,
+      shouldPlaySound: true, // Allow sound from notification content
       shouldSetBadge: false,
       shouldShowBanner: true,
       shouldShowList: true,

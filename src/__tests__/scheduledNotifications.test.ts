@@ -12,6 +12,8 @@ import {
 describe('scheduledNotifications', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    // Mock permission granted by default
+    (Notifications.getPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'granted' });
   });
 
   describe('scheduleAllScheduledNotifications', () => {
@@ -128,6 +130,15 @@ describe('scheduledNotifications', () => {
       
       // Should still attempt to schedule the second one
       expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledTimes(2);
+    });
+
+    it('throws error when notification permissions are not granted', async () => {
+      (Notifications.getPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'denied' });
+      
+      await expect(scheduleAllScheduledNotifications()).rejects.toThrow('Notification permissions not granted');
+      
+      // Should not attempt to schedule any notifications
+      expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
     });
   });
 

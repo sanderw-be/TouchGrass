@@ -10,13 +10,24 @@ const SCHEDULED_NOTIF_PREFIX = 'scheduled_';
  */
 export async function scheduleAllScheduledNotifications(): Promise<void> {
   try {
+    // Check if we have notification permissions first
+    const { status } = await Notifications.getPermissionsAsync();
+    if (status !== 'granted') {
+      console.warn('Cannot schedule notifications: Permission not granted. Current status:', status);
+      throw new Error('Notification permissions not granted');
+    }
+
     const schedules = getScheduledNotifications();
     const enabled = schedules.filter(s => s.enabled === 1);
+
+    console.log(`Preparing to schedule notifications for ${enabled.length} enabled schedules...`);
 
     // Cancel existing scheduled notifications (prefix-based)
     await cancelAllScheduledNotifications();
 
     let totalScheduled = 0;
+    const errors: string[] = [];
+    
     for (const schedule of enabled) {
       for (const dayOfWeek of schedule.daysOfWeek) {
         // Schedule a weekly recurring notification for this day and time
@@ -26,7 +37,7 @@ export async function scheduleAllScheduledNotifications(): Promise<void> {
         const expoWeekday = dayOfWeek === 0 ? 1 : dayOfWeek + 1;
         
         try {
-          await Notifications.scheduleNotificationAsync({
+          const result = await Notifications.scheduleNotificationAsync({
             identifier: notificationId,
             content: {
               title: schedule.label || '🌿 Time to touch grass!',
@@ -45,14 +56,32 @@ export async function scheduleAllScheduledNotifications(): Promise<void> {
             },
           });
           totalScheduled++;
-          console.log(`Scheduled notification ${notificationId} for weekday ${expoWeekday} at ${schedule.hour}:${schedule.minute}`);
+          console.log(`✓ Scheduled notification ${notificationId} for weekday ${expoWeekday} at ${schedule.hour}:${String(schedule.minute).padStart(2, '0')} - Result: ${result}`);
         } catch (error) {
-          console.error(`Failed to schedule notification ${notificationId}:`, error);
+          const errorMsg = `Failed to schedule ${notificationId}: ${error}`;
+          console.error(errorMsg);
+          errors.push(errorMsg);
         }
       }
     }
 
     console.log(`Successfully scheduled ${totalScheduled} recurring notifications from ${enabled.length} schedules`);
+    
+    if (errors.length > 0) {
+      console.error(`Encountered ${errors.length} errors during scheduling:`, errors);
+    }
+
+    // Verify what got scheduled
+    const allScheduled = await Notifications.getAllScheduledNotificationsAsync();
+    const ourNotifications = allScheduled.filter(n => n.identifier.startsWith(SCHEDULED_NOTIF_PREFIX));
+    console.log(`Verification: Found ${ourNotifications.length} scheduled notifications in system`);
+    
+    if (ourNotifications.length > 0) {
+      console.log('Scheduled notifications:', ourNotifications.map(n => ({
+        id: n.identifier,
+        trigger: n.trigger,
+      })));
+    }
   } catch (error) {
     console.error('Error in scheduleAllScheduledNotifications:', error);
     throw error;

@@ -14,6 +14,7 @@ import {
   ScheduledNotification,
 } from '../storage/database';
 import { scheduleAllScheduledNotifications } from '../notifications/scheduledNotifications';
+import { runNotificationDiagnostics } from '../utils/notificationDiagnostics';
 import { colors, spacing, radius, shadows } from '../utils/theme';
 import { t } from '../i18n';
 
@@ -72,7 +73,7 @@ export default function ScheduledNotificationsScreen() {
         {
           text: t('scheduled_delete_confirm'),
           style: 'destructive',
-          onPress: () => {
+          onPress: async () => {
             // Delete from database
             deleteScheduledNotification(schedule.id!);
             
@@ -80,15 +81,19 @@ export default function ScheduledNotificationsScreen() {
             const updated = getScheduledNotifications();
             setSchedules(updated);
             
-            // Schedule notifications in background
-            scheduleAllScheduledNotifications();
+            // Schedule notifications in background (with await to catch errors)
+            try {
+              await scheduleAllScheduledNotifications();
+            } catch (error) {
+              console.error('Failed to reschedule notifications after delete:', error);
+            }
           },
         },
       ]
     );
   };
 
-  const handleToggle = (schedule: ScheduledNotification, value: boolean) => {
+  const handleToggle = async (schedule: ScheduledNotification, value: boolean) => {
     if (!schedule.id) return;
     
     // Update database
@@ -98,8 +103,12 @@ export default function ScheduledNotificationsScreen() {
     const updated = getScheduledNotifications();
     setSchedules(updated);
     
-    // Schedule notifications in background
-    scheduleAllScheduledNotifications();
+    // Schedule notifications in background (with await to catch errors)
+    try {
+      await scheduleAllScheduledNotifications();
+    } catch (error) {
+      console.error('Failed to reschedule notifications after toggle:', error);
+    }
   };
 
   const handleSave = async () => {
@@ -134,8 +143,16 @@ export default function ScheduledNotificationsScreen() {
     // Close modal after state update
     setIsModalVisible(false);
     
-    // Schedule notifications in background
-    scheduleAllScheduledNotifications();
+    // Schedule notifications in background (with await to catch errors)
+    try {
+      await scheduleAllScheduledNotifications();
+    } catch (error) {
+      console.error('Failed to schedule notifications after save:', error);
+      Alert.alert(
+        'Notification Error',
+        'The reminder was saved but notifications may not work. Please check notification permissions in settings.'
+      );
+    }
   };
 
   const toggleDay = (day: number) => {
@@ -171,6 +188,13 @@ export default function ScheduledNotificationsScreen() {
     if (date) {
       setSelectedTime(date);
     }
+  };
+
+  const handleRunDiagnostics = async () => {
+    const report = await runNotificationDiagnostics();
+    Alert.alert('Notification Diagnostics', report, [{ text: 'OK' }], {
+      cancelable: true,
+    });
   };
 
   return (
@@ -221,6 +245,16 @@ export default function ScheduledNotificationsScreen() {
           ))
         )}
       </ScrollView>
+
+      {/* Debug button - only show in development */}
+      {__DEV__ && (
+        <TouchableOpacity 
+          style={styles.diagnosticButton} 
+          onPress={handleRunDiagnostics}
+        >
+          <Text style={styles.diagnosticButtonText}>🔍 Run Diagnostics</Text>
+        </TouchableOpacity>
+      )}
 
       <TouchableOpacity style={styles.addButton} onPress={handleAdd}>
         <Text style={styles.addButtonText}>+ {t('scheduled_add')}</Text>
@@ -433,6 +467,21 @@ const styles = StyleSheet.create({
   addButtonText: {
     fontSize: 16,
     fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  diagnosticButton: {
+    position: 'absolute',
+    bottom: spacing.lg + 60, // Above the add button
+    left: spacing.md,
+    right: spacing.md,
+    backgroundColor: colors.sky,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.md,
+    alignItems: 'center',
+  },
+  diagnosticButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
     color: '#FFFFFF',
   },
   modalOverlay: {
