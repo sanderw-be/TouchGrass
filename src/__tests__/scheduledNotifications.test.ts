@@ -57,6 +57,78 @@ describe('scheduledNotifications', () => {
 
       expect(Notifications.cancelScheduledNotificationAsync).toHaveBeenCalledWith('scheduled_1_1');
     });
+
+    it('schedules with correct trigger configuration including second field', async () => {
+      const mockSchedules = [
+        { id: 1, hour: 14, minute: 30, daysOfWeek: [2], enabled: 1, label: 'Afternoon reminder' },
+      ];
+
+      (Database.getScheduledNotifications as jest.Mock).mockReturnValue(mockSchedules);
+      (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([]);
+
+      await scheduleAllScheduledNotifications();
+
+      expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledWith(
+        expect.objectContaining({
+          identifier: 'scheduled_1_2',
+          content: expect.objectContaining({
+            title: 'Afternoon reminder',
+            body: 'Your scheduled reminder to go outside.',
+            sound: true,
+          }),
+          trigger: expect.objectContaining({
+            type: Notifications.SchedulableTriggerInputTypes.CALENDAR,
+            repeats: true,
+            weekday: 3, // Tuesday (2) converts to Expo weekday 3
+            hour: 14,
+            minute: 30,
+            second: 0,
+            channelId: 'touchgrass_scheduled',
+          }),
+        })
+      );
+    });
+
+    it('converts JavaScript weekdays to Expo weekdays correctly', async () => {
+      const mockSchedules = [
+        { id: 1, hour: 9, minute: 0, daysOfWeek: [0, 1, 6], enabled: 1, label: 'Test' },
+      ];
+
+      (Database.getScheduledNotifications as jest.Mock).mockReturnValue(mockSchedules);
+      (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([]);
+
+      await scheduleAllScheduledNotifications();
+
+      // Should be called 3 times (Sunday, Monday, Saturday)
+      expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledTimes(3);
+      
+      const calls = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls;
+      
+      // Sunday (0) -> Expo weekday 1
+      expect(calls[0][0].trigger.weekday).toBe(1);
+      // Monday (1) -> Expo weekday 2
+      expect(calls[1][0].trigger.weekday).toBe(2);
+      // Saturday (6) -> Expo weekday 7
+      expect(calls[2][0].trigger.weekday).toBe(7);
+    });
+
+    it('handles scheduling errors gracefully', async () => {
+      const mockSchedules = [
+        { id: 1, hour: 10, minute: 0, daysOfWeek: [1, 2], enabled: 1, label: 'Test' },
+      ];
+
+      (Database.getScheduledNotifications as jest.Mock).mockReturnValue(mockSchedules);
+      (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([]);
+      (Notifications.scheduleNotificationAsync as jest.Mock)
+        .mockRejectedValueOnce(new Error('Permission denied'))
+        .mockResolvedValueOnce('success');
+
+      // Should not throw, but log error
+      await expect(scheduleAllScheduledNotifications()).resolves.not.toThrow();
+      
+      // Should still attempt to schedule the second one
+      expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledTimes(2);
+    });
   });
 
   describe('cancelAllScheduledNotifications', () => {

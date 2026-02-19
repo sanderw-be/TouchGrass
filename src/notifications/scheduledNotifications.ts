@@ -9,38 +9,54 @@ const SCHEDULED_NOTIF_PREFIX = 'scheduled_';
  * These recur weekly on the specified days.
  */
 export async function scheduleAllScheduledNotifications(): Promise<void> {
-  const schedules = getScheduledNotifications();
-  const enabled = schedules.filter(s => s.enabled === 1);
+  try {
+    const schedules = getScheduledNotifications();
+    const enabled = schedules.filter(s => s.enabled === 1);
 
-  // Cancel existing scheduled notifications (prefix-based)
-  await cancelAllScheduledNotifications();
+    // Cancel existing scheduled notifications (prefix-based)
+    await cancelAllScheduledNotifications();
 
-  for (const schedule of enabled) {
-    for (const dayOfWeek of schedule.daysOfWeek) {
-      // Schedule a weekly recurring notification for this day and time
-      const notificationId = `${SCHEDULED_NOTIF_PREFIX}${schedule.id}_${dayOfWeek}`;
-      
-      await Notifications.scheduleNotificationAsync({
-        identifier: notificationId,
-        content: {
-          title: schedule.label || '🌿 Time to touch grass!',
-          body: 'Your scheduled reminder to go outside.',
-          sound: false,
-          color: '#4A7C59',
-        },
-        trigger: {
-          type: Notifications.SchedulableTriggerInputTypes.CALENDAR,
-          repeats: true,
-          weekday: dayOfWeek === 0 ? 1 : dayOfWeek + 1, // Expo uses 1=Sunday, 2=Monday, etc.
-          hour: schedule.hour,
-          minute: schedule.minute,
-          channelId: 'touchgrass_scheduled',
-        },
-      });
+    let totalScheduled = 0;
+    for (const schedule of enabled) {
+      for (const dayOfWeek of schedule.daysOfWeek) {
+        // Schedule a weekly recurring notification for this day and time
+        const notificationId = `${SCHEDULED_NOTIF_PREFIX}${schedule.id}_${dayOfWeek}`;
+        
+        // Convert JavaScript day (0=Sunday) to Expo weekday (1=Sunday)
+        const expoWeekday = dayOfWeek === 0 ? 1 : dayOfWeek + 1;
+        
+        try {
+          await Notifications.scheduleNotificationAsync({
+            identifier: notificationId,
+            content: {
+              title: schedule.label || '🌿 Time to touch grass!',
+              body: 'Your scheduled reminder to go outside.',
+              sound: true,
+              color: '#4A7C59',
+            },
+            trigger: {
+              type: Notifications.SchedulableTriggerInputTypes.CALENDAR,
+              repeats: true,
+              weekday: expoWeekday,
+              hour: schedule.hour,
+              minute: schedule.minute,
+              second: 0,
+              channelId: 'touchgrass_scheduled',
+            },
+          });
+          totalScheduled++;
+          console.log(`Scheduled notification ${notificationId} for weekday ${expoWeekday} at ${schedule.hour}:${schedule.minute}`);
+        } catch (error) {
+          console.error(`Failed to schedule notification ${notificationId}:`, error);
+        }
+      }
     }
-  }
 
-  console.log(`Scheduled ${enabled.length} recurring notifications`);
+    console.log(`Successfully scheduled ${totalScheduled} recurring notifications from ${enabled.length} schedules`);
+  } catch (error) {
+    console.error('Error in scheduleAllScheduledNotifications:', error);
+    throw error;
+  }
 }
 
 /**
@@ -86,4 +102,14 @@ export function hasScheduledNotificationNearby(windowMinutes: number): boolean {
   }
 
   return false;
+}
+
+/**
+ * Get all currently scheduled notifications (for debugging)
+ */
+export async function getAllScheduledNotificationsDebug(): Promise<any[]> {
+  const all = await Notifications.getAllScheduledNotificationsAsync();
+  const scheduled = all.filter(n => n.identifier.startsWith(SCHEDULED_NOTIF_PREFIX));
+  console.log(`Found ${scheduled.length} scheduled notifications:`, scheduled);
+  return scheduled;
 }
