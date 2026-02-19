@@ -69,7 +69,14 @@ export async function runNotificationDiagnostics(): Promise<string> {
           const weekdayNames = ['', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
           const day = weekdayNames[trigger.weekday] || `Day ${trigger.weekday}`;
           const time = `${String(trigger.hour).padStart(2, '0')}:${String(trigger.minute).padStart(2, '0')}`;
-          report.push(`   - ${notif.identifier}: ${day} at ${time}`);
+          report.push(`   - ${notif.identifier}: ${day} at ${time} (CALENDAR - may not work on Android)`);
+        } else if (trigger.type === 'date') {
+          const date = new Date(trigger.date);
+          const dateStr = date.toLocaleString();
+          const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+          const dayOfWeek = dayNames[date.getDay()];
+          const time = `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+          report.push(`   - ${notif.identifier}: ${dayOfWeek} at ${time} (${dateStr})`);
         } else {
           report.push(`   - ${notif.identifier}: ${trigger.type} trigger`);
         }
