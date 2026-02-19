@@ -1,26 +1,31 @@
-# Copilot Instructions
+# GitHub Copilot Instructions
 
 ## Overview
-This document outlines the instructions for using Copilot and best practices.
+This document provides instructions for the use of GitHub Copilot in the TouchGrass repository.
 
 ## Getting Started
-1. Install the necessary tools.
-2. Follow the setup instructions provided in the official documentation.
+To get started with GitHub Copilot, ensure you have the GitHub Copilot extension installed in your development environment.
 
 ## Usage
-- Use Copilot to assist with code generation based on your comments.
-- Remember to review and modify the generated code as necessary to fit your project’s needs.
+Once installed, you can begin using GitHub Copilot in your coding sessions. It will suggest whole lines or blocks of code based on your current context.
 
-## Best Practices
-- Always validate the output of Copilot.
-- Keep your codebase clean and maintainable.
+## Features
+- Code completion
+- Syntax suggestions
+- Code generation based on comments
+
+## Limitations
+Keep in mind that GitHub Copilot is a tool to assist with coding and is not a replacement for understanding programming concepts.
 
 ## Testing & Validation
-### New Testing Requirements:
-1. **Unit Tests**: Each module should have corresponding unit tests to ensure individual components function correctly.
-2. **Integration Tests**: Conduct integration tests to verify that the modules interact as intended.
-3. **Coverage Requirements**: Aim for at least 80% code coverage in tests to ensure overall code reliability.
-4. **Maintenance of Existing Tests**: Regularly review and update existing tests to accommodate new features or changes in functionality.
+Testing has been introduced as an essential part of our development process. This includes:
+- **Unit Tests**: Every new functionality should include unit tests to verify its correctness.
+- **Integration Tests**: Ensure that new integrations do not break existing functionalities.
+- **Coverage Requirements**: Code coverage should not decrease with new changes. All new code should be covered by tests.
+- **Existing Tests**: Previous tests must continue to pass or should be rewritten/deprecated when introducing new functionalities, all within reason.
+
+## Resources
+For more information on using GitHub Copilot, refer to the [official documentation](https://docs.github.com/en/copilot).
 
 ## Conclusion
-By following these guidelines, we can leverage Copilot effectively while maintaining a high standard of code quality.
+GitHub Copilot is a powerful tool that can enhance your coding experience. Ensure you adhere to the testing and validation guidelines to maintain the integrity of the project.
