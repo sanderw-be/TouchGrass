@@ -5,8 +5,37 @@ import { getScheduledNotifications } from '../storage/database';
 const SCHEDULED_NOTIF_PREFIX = 'scheduled_';
 
 /**
- * Schedule all enabled scheduled notifications using calendar triggers.
- * These recur weekly on the specified days.
+ * Calculate the next occurrence of a scheduled notification.
+ * @param hour - Hour of day (0-23)
+ * @param minute - Minute of hour (0-59)
+ * @param dayOfWeek - Day of week (0=Sunday, 6=Saturday)
+ * @returns Date object for the next occurrence
+ */
+function getNextOccurrence(hour: number, minute: number, dayOfWeek: number): Date {
+  const now = new Date();
+  const targetDate = new Date();
+  
+  // Set the target time
+  targetDate.setHours(hour, minute, 0, 0);
+  
+  // Calculate days until target day of week
+  const currentDay = now.getDay();
+  let daysUntilTarget = dayOfWeek - currentDay;
+  
+  // If target day is today but time has passed, or target day is earlier in week, go to next week
+  if (daysUntilTarget < 0 || (daysUntilTarget === 0 && now >= targetDate)) {
+    daysUntilTarget += 7;
+  }
+  
+  // Add the days to reach target day
+  targetDate.setDate(targetDate.getDate() + daysUntilTarget);
+  
+  return targetDate;
+}
+
+/**
+ * Schedule all enabled scheduled notifications using DATE triggers.
+ * Uses DATE triggers instead of CALENDAR for better Android compatibility.
  */
 export async function scheduleAllScheduledNotifications(): Promise<void> {
   try {
@@ -30,11 +59,11 @@ export async function scheduleAllScheduledNotifications(): Promise<void> {
     
     for (const schedule of enabled) {
       for (const dayOfWeek of schedule.daysOfWeek) {
-        // Schedule a weekly recurring notification for this day and time
+        // Schedule a notification for the next occurrence of this day/time
         const notificationId = `${SCHEDULED_NOTIF_PREFIX}${schedule.id}_${dayOfWeek}`;
         
-        // Convert JavaScript day (0=Sunday) to Expo weekday (1=Sunday)
-        const expoWeekday = dayOfWeek === 0 ? 1 : dayOfWeek + 1;
+        // Calculate next occurrence
+        const nextOccurrence = getNextOccurrence(schedule.hour, schedule.minute, dayOfWeek);
         
         try {
           const result = await Notifications.scheduleNotificationAsync({
@@ -44,19 +73,23 @@ export async function scheduleAllScheduledNotifications(): Promise<void> {
               body: 'Your scheduled reminder to go outside.',
               sound: true,
               color: '#4A7C59',
+              data: {
+                scheduleId: schedule.id,
+                dayOfWeek,
+                hour: schedule.hour,
+                minute: schedule.minute,
+                isScheduledNotification: true,
+              },
             },
             trigger: {
-              type: Notifications.SchedulableTriggerInputTypes.CALENDAR,
-              repeats: true,
-              weekday: expoWeekday,
-              hour: schedule.hour,
-              minute: schedule.minute,
-              second: 0,
+              type: Notifications.SchedulableTriggerInputTypes.DATE,
+              date: nextOccurrence,
               channelId: 'touchgrass_scheduled',
             },
           });
           totalScheduled++;
-          console.log(`✓ Scheduled notification ${notificationId} for weekday ${expoWeekday} at ${schedule.hour}:${String(schedule.minute).padStart(2, '0')} - Result: ${result}`);
+          const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+          console.log(`✓ Scheduled notification ${notificationId} for ${dayNames[dayOfWeek]} at ${schedule.hour}:${String(schedule.minute).padStart(2, '0')} - Next: ${nextOccurrence.toLocaleString()} - Result: ${result}`);
         } catch (error) {
           const errorMsg = `Failed to schedule ${notificationId}: ${error}`;
           console.error(errorMsg);
@@ -65,7 +98,7 @@ export async function scheduleAllScheduledNotifications(): Promise<void> {
       }
     }
 
-    console.log(`Successfully scheduled ${totalScheduled} recurring notifications from ${enabled.length} schedules`);
+    console.log(`Successfully scheduled ${totalScheduled} notifications from ${enabled.length} schedules`);
     
     if (errors.length > 0) {
       console.error(`Encountered ${errors.length} errors during scheduling:`, errors);
@@ -85,6 +118,50 @@ export async function scheduleAllScheduledNotifications(): Promise<void> {
   } catch (error) {
     console.error('Error in scheduleAllScheduledNotifications:', error);
     throw error;
+  }
+}
+
+/**
+ * Reschedule a single notification for next week.
+ * Called when a scheduled notification fires.
+ */
+export async function rescheduleNotificationForNextWeek(
+  scheduleId: number,
+  dayOfWeek: number,
+  hour: number,
+  minute: number
+): Promise<void> {
+  try {
+    const notificationId = `${SCHEDULED_NOTIF_PREFIX}${scheduleId}_${dayOfWeek}`;
+    
+    // Calculate next occurrence (will be 7 days from now since we just fired)
+    const nextOccurrence = getNextOccurrence(hour, minute, dayOfWeek);
+    
+    console.log(`Rescheduling ${notificationId} for ${nextOccurrence.toLocaleString()}`);
+    
+    await Notifications.scheduleNotificationAsync({
+      identifier: notificationId,
+      content: {
+        title: '🌿 Time to touch grass!',
+        body: 'Your scheduled reminder to go outside.',
+        sound: true,
+        color: '#4A7C59',
+        data: {
+          scheduleId,
+          dayOfWeek,
+          hour,
+          minute,
+          isScheduledNotification: true,
+        },
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DATE,
+        date: nextOccurrence,
+        channelId: 'touchgrass_scheduled',
+      },
+    });
+  } catch (error) {
+    console.error(`Failed to reschedule notification:`, error);
   }
 }
 

@@ -75,6 +75,31 @@ export async function setupNotificationInfrastructure(): Promise<void> {
 
   // Handle notification responses (button taps)
   Notifications.addNotificationResponseReceivedListener(handleNotificationResponse);
+
+  // Handle notifications being delivered/fired
+  Notifications.addNotificationReceivedListener(handleNotificationReceived);
+}
+
+/**
+ * Handle when a notification is received (fired/delivered).
+ * Reschedule weekly notifications for next week.
+ */
+async function handleNotificationReceived(notification: Notifications.Notification) {
+  const { data } = notification.request.content;
+  
+  // Check if this is a scheduled notification that needs rescheduling
+  if (data && data.isScheduledNotification && data.scheduleId && typeof data.dayOfWeek === 'number') {
+    console.log('Scheduled notification fired, rescheduling for next week:', data);
+    
+    // Import dynamically to avoid circular dependency
+    const { rescheduleNotificationForNextWeek } = await import('./scheduledNotifications');
+    await rescheduleNotificationForNextWeek(
+      data.scheduleId as number,
+      data.dayOfWeek as number,
+      data.hour as number,
+      data.minute as number
+    );
+  }
 }
 
 /**

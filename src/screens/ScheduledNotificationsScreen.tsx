@@ -246,15 +246,13 @@ export default function ScheduledNotificationsScreen() {
         )}
       </ScrollView>
 
-      {/* Debug button - only show in development */}
-      {__DEV__ && (
-        <TouchableOpacity 
-          style={styles.diagnosticButton} 
-          onPress={handleRunDiagnostics}
-        >
-          <Text style={styles.diagnosticButtonText}>🔍 Run Diagnostics</Text>
-        </TouchableOpacity>
-      )}
+      {/* Debug button - always show for troubleshooting */}
+      <TouchableOpacity 
+        style={styles.diagnosticButton} 
+        onPress={handleRunDiagnostics}
+      >
+        <Text style={styles.diagnosticButtonText}>🔍 Run Diagnostics</Text>
+      </TouchableOpacity>
 
       <TouchableOpacity style={styles.addButton} onPress={handleAdd}>
         <Text style={styles.addButtonText}>+ {t('scheduled_add')}</Text>

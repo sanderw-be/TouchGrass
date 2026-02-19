@@ -60,7 +60,7 @@ describe('scheduledNotifications', () => {
       expect(Notifications.cancelScheduledNotificationAsync).toHaveBeenCalledWith('scheduled_1_1');
     });
 
-    it('schedules with correct trigger configuration including second field', async () => {
+    it('schedules with correct trigger configuration using DATE instead of CALENDAR', async () => {
       const mockSchedules = [
         { id: 1, hour: 14, minute: 30, daysOfWeek: [2], enabled: 1, label: 'Afternoon reminder' },
       ];
@@ -77,21 +77,24 @@ describe('scheduledNotifications', () => {
             title: 'Afternoon reminder',
             body: 'Your scheduled reminder to go outside.',
             sound: true,
+            data: expect.objectContaining({
+              scheduleId: 1,
+              dayOfWeek: 2,
+              hour: 14,
+              minute: 30,
+              isScheduledNotification: true,
+            }),
           }),
           trigger: expect.objectContaining({
-            type: Notifications.SchedulableTriggerInputTypes.CALENDAR,
-            repeats: true,
-            weekday: 3, // Tuesday (2) converts to Expo weekday 3
-            hour: 14,
-            minute: 30,
-            second: 0,
+            type: Notifications.SchedulableTriggerInputTypes.DATE,
+            // Date trigger will have a specific date, not weekday/hour/minute
             channelId: 'touchgrass_scheduled',
           }),
         })
       );
     });
 
-    it('converts JavaScript weekdays to Expo weekdays correctly', async () => {
+    it('calculates next occurrence correctly', async () => {
       const mockSchedules = [
         { id: 1, hour: 9, minute: 0, daysOfWeek: [0, 1, 6], enabled: 1, label: 'Test' },
       ];
@@ -106,12 +109,13 @@ describe('scheduledNotifications', () => {
       
       const calls = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls;
       
-      // Sunday (0) -> Expo weekday 1
-      expect(calls[0][0].trigger.weekday).toBe(1);
-      // Monday (1) -> Expo weekday 2
-      expect(calls[1][0].trigger.weekday).toBe(2);
-      // Saturday (6) -> Expo weekday 7
-      expect(calls[2][0].trigger.weekday).toBe(7);
+      // Each call should have DATE trigger with a future date
+      for (const call of calls) {
+        const trigger = call[0].trigger;
+        expect(trigger.type).toBe(Notifications.SchedulableTriggerInputTypes.DATE);
+        expect(trigger.date).toBeInstanceOf(Date);
+        expect(trigger.date.getTime()).toBeGreaterThan(Date.now());
+      }
     });
 
     it('handles scheduling errors gracefully', async () => {

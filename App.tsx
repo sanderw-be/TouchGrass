@@ -49,6 +49,7 @@ export default function App() {
         try {
           await initDetection();
           await scheduleDayReminders();
+          // Reschedule any scheduled notifications (handles past notifications and ensures they're set for next occurrence)
           await scheduleAllScheduledNotifications();
           // Register weather background fetch for hourly updates
           await registerWeatherBackgroundFetch();
