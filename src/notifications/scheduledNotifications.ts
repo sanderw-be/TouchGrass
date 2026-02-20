@@ -100,11 +100,11 @@ export async function scheduleAllScheduledNotifications(): Promise<void> {
               sound: true,
               color: '#4A7C59',
               data: {
-                scheduleId: schedule.id,
-                dayOfWeek,
-                hour: schedule.hour,
-                minute: schedule.minute,
-                isScheduledNotification: true,
+                scheduleId: String(schedule.id),
+                dayOfWeek: String(dayOfWeek),
+                hour: String(schedule.hour),
+                minute: String(schedule.minute),
+                isScheduledNotification: 'true',
               },
             },
             trigger: {
@@ -155,11 +155,11 @@ export async function rescheduleNotificationForNextWeek(
         sound: true,
         color: '#4A7C59',
         data: {
-          scheduleId,
-          dayOfWeek,
-          hour,
-          minute,
-          isScheduledNotification: true,
+          scheduleId: String(scheduleId),
+          dayOfWeek: String(dayOfWeek),
+          hour: String(hour),
+          minute: String(minute),
+          isScheduledNotification: 'true',
         },
       },
       trigger: {

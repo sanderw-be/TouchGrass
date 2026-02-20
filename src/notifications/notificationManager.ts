@@ -88,14 +88,15 @@ async function handleNotificationReceived(notification: Notifications.Notificati
   const { data } = notification.request.content;
   
   // Check if this is a scheduled notification that needs rescheduling
-  if (data && data.isScheduledNotification && data.scheduleId && typeof data.dayOfWeek === 'number') {
+  // Note: All data values are strings for Android compatibility
+  if (data && data.isScheduledNotification === 'true' && data.scheduleId && data.dayOfWeek) {
     // Import dynamically to avoid circular dependency
     const { rescheduleNotificationForNextWeek } = await import('./scheduledNotifications');
     await rescheduleNotificationForNextWeek(
-      data.scheduleId as number,
-      data.dayOfWeek as number,
-      data.hour as number,
-      data.minute as number
+      parseInt(data.scheduleId as string, 10),
+      parseInt(data.dayOfWeek as string, 10),
+      parseInt(data.hour as string, 10),
+      parseInt(data.minute as string, 10)
     );
   }
 }
