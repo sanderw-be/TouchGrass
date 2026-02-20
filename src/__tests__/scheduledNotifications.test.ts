@@ -109,12 +109,12 @@ describe('scheduledNotifications', () => {
       
       const calls = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls;
       
-      // Each call should have DATE trigger with a future date
+      // Each call should have DATE trigger with a future timestamp
       for (const call of calls) {
         const trigger = call[0].trigger;
         expect(trigger.type).toBe(Notifications.SchedulableTriggerInputTypes.DATE);
-        expect(trigger.date).toBeInstanceOf(Date);
-        expect(trigger.date.getTime()).toBeGreaterThan(Date.now());
+        expect(typeof trigger.date).toBe('number'); // Should be timestamp now
+        expect(trigger.date).toBeGreaterThan(Date.now());
       }
     });
 

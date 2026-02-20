@@ -109,7 +109,7 @@ export async function scheduleAllScheduledNotifications(): Promise<void> {
             },
             trigger: {
               type: Notifications.SchedulableTriggerInputTypes.DATE,
-              date: nextOccurrence,
+              date: nextOccurrence.getTime(), // Use timestamp (milliseconds) for better cross-platform compatibility
               channelId: 'touchgrass_scheduled',
             },
           });
@@ -182,7 +182,7 @@ export async function rescheduleNotificationForNextWeek(
       },
       trigger: {
         type: Notifications.SchedulableTriggerInputTypes.DATE,
-        date: nextOccurrence,
+        date: nextOccurrence.getTime(), // Use timestamp for better cross-platform compatibility
         channelId: 'touchgrass_scheduled',
       },
     });

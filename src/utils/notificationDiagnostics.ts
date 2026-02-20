@@ -71,7 +71,26 @@ export async function runNotificationDiagnostics(): Promise<string> {
           const time = `${String(trigger.hour).padStart(2, '0')}:${String(trigger.minute).padStart(2, '0')}`;
           report.push(`   - ${notif.identifier}: ${day} at ${time} (CALENDAR - may not work on Android)`);
         } else if (trigger.type === 'date') {
-          const date = new Date(trigger.date);
+          // trigger.date could be a Date, number (timestamp), or undefined
+          let date: Date;
+          if (trigger.date instanceof Date) {
+            date = trigger.date;
+          } else if (typeof trigger.date === 'number') {
+            date = new Date(trigger.date);
+          } else if (typeof trigger.date === 'string') {
+            date = new Date(trigger.date);
+          } else {
+            // Invalid or missing date
+            report.push(`   - ${notif.identifier}: DATE trigger with invalid date (${typeof trigger.date}: ${trigger.date})`);
+            continue;
+          }
+          
+          // Check if date is valid
+          if (isNaN(date.getTime())) {
+            report.push(`   - ${notif.identifier}: DATE trigger with Invalid Date (${trigger.date})`);
+            continue;
+          }
+          
           const dateStr = date.toLocaleString();
           const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
           const dayOfWeek = dayNames[date.getDay()];
