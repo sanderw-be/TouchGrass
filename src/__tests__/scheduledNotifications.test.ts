@@ -78,11 +78,11 @@ describe('scheduledNotifications', () => {
             body: 'Your scheduled reminder to go outside.',
             sound: true,
             data: expect.objectContaining({
-              scheduleId: 1,
-              dayOfWeek: 2,
-              hour: 14,
-              minute: 30,
-              isScheduledNotification: true,
+              scheduleId: '1',
+              dayOfWeek: '2',
+              hour: '14',
+              minute: '30',
+              isScheduledNotification: 'true',
             }),
           }),
           trigger: expect.objectContaining({
