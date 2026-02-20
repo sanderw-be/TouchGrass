@@ -456,7 +456,10 @@ export function getScheduledNotifications(): ScheduledNotification[] {
     id: row.id,
     hour: row.hour,
     minute: row.minute,
-    daysOfWeek: row.daysOfWeek.split(',').map((d: string) => parseInt(d, 10)),
+    daysOfWeek: row.daysOfWeek
+      .split(',')
+      .map((d: string) => parseInt(d.trim(), 10))
+      .filter((d: number) => !isNaN(d) && d >= 0 && d <= 6), // Filter out invalid values
     enabled: row.enabled,
     label: row.label,
   }));

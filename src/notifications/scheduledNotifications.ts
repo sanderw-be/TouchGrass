@@ -12,6 +12,24 @@ const SCHEDULED_NOTIF_PREFIX = 'scheduled_';
  * @returns Date object for the next occurrence
  */
 function getNextOccurrence(hour: number, minute: number, dayOfWeek: number): Date {
+  // Validate inputs
+  if (isNaN(hour) || isNaN(minute) || isNaN(dayOfWeek)) {
+    console.error(`Invalid input to getNextOccurrence: hour=${hour}, minute=${minute}, dayOfWeek=${dayOfWeek}`);
+    throw new Error(`Invalid schedule data: hour=${hour}, minute=${minute}, dayOfWeek=${dayOfWeek}`);
+  }
+  
+  if (hour < 0 || hour > 23) {
+    throw new Error(`Invalid hour: ${hour}. Must be 0-23`);
+  }
+  
+  if (minute < 0 || minute > 59) {
+    throw new Error(`Invalid minute: ${minute}. Must be 0-59`);
+  }
+  
+  if (dayOfWeek < 0 || dayOfWeek > 6) {
+    throw new Error(`Invalid dayOfWeek: ${dayOfWeek}. Must be 0-6`);
+  }
+  
   const now = new Date();
   const targetDate = new Date();
   
@@ -58,14 +76,22 @@ export async function scheduleAllScheduledNotifications(): Promise<void> {
     const errors: string[] = [];
     
     for (const schedule of enabled) {
+      // Validate schedule data before processing
+      if (!schedule.daysOfWeek || schedule.daysOfWeek.length === 0) {
+        console.error(`Schedule ${schedule.id} has no valid days of week:`, schedule);
+        continue;
+      }
+      
+      console.log(`Processing schedule ${schedule.id}: hour=${schedule.hour}, minute=${schedule.minute}, days=[${schedule.daysOfWeek.join(', ')}]`);
+      
       for (const dayOfWeek of schedule.daysOfWeek) {
         // Schedule a notification for the next occurrence of this day/time
         const notificationId = `${SCHEDULED_NOTIF_PREFIX}${schedule.id}_${dayOfWeek}`;
         
-        // Calculate next occurrence
-        const nextOccurrence = getNextOccurrence(schedule.hour, schedule.minute, dayOfWeek);
-        
         try {
+          // Calculate next occurrence
+          const nextOccurrence = getNextOccurrence(schedule.hour, schedule.minute, dayOfWeek);
+          
           const result = await Notifications.scheduleNotificationAsync({
             identifier: notificationId,
             content: {
