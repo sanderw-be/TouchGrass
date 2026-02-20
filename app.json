@@ -51,6 +51,14 @@
           "color": "#4A7C59"
         }
       ],
+      [
+        "./withAbiFilters",
+        {
+          "abiFilters": [
+            "arm64-v8a"
+          ]
+        }
+      ],
   [
   "expo-build-properties",
   {
