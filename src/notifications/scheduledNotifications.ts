@@ -71,8 +71,6 @@ export async function scheduleAllScheduledNotifications(): Promise<void> {
     const schedules = getScheduledNotifications();
     const enabled = schedules.filter(s => s.enabled === 1);
 
-    console.log(`Preparing to schedule notifications for ${enabled.length} enabled schedules...`);
-
     // Cancel existing scheduled notifications (prefix-based)
     await cancelAllScheduledNotifications();
 
@@ -82,11 +80,9 @@ export async function scheduleAllScheduledNotifications(): Promise<void> {
     for (const schedule of enabled) {
       // Validate schedule data before processing
       if (!schedule.daysOfWeek || schedule.daysOfWeek.length === 0) {
-        console.error(`Schedule ${schedule.id} has no valid days of week:`, schedule);
+        console.error(`Schedule ${schedule.id} has no valid days of week`);
         continue;
       }
-      
-      console.log(`Processing schedule ${schedule.id}: hour=${schedule.hour}, minute=${schedule.minute}, days=[${schedule.daysOfWeek.join(', ')}]`);
       
       for (const dayOfWeek of schedule.daysOfWeek) {
         // Schedule a notification for the next occurrence of this day/time
@@ -96,7 +92,7 @@ export async function scheduleAllScheduledNotifications(): Promise<void> {
           // Calculate next occurrence
           const nextOccurrence = getNextOccurrence(schedule.hour, schedule.minute, dayOfWeek);
           
-          const result = await Notifications.scheduleNotificationAsync({
+          await Notifications.scheduleNotificationAsync({
             identifier: notificationId,
             content: {
               title: schedule.label || '🌿 Time to touch grass!',
@@ -118,8 +114,6 @@ export async function scheduleAllScheduledNotifications(): Promise<void> {
             },
           });
           totalScheduled++;
-          const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-          console.log(`✓ Scheduled notification ${notificationId} for ${dayNames[dayOfWeek]} at ${schedule.hour}:${String(schedule.minute).padStart(2, '0')} - Next: ${nextOccurrence.toLocaleString()} - Result: ${result}`);
         } catch (error) {
           const errorMsg = `Failed to schedule ${notificationId}: ${error}`;
           console.error(errorMsg);
@@ -127,23 +121,9 @@ export async function scheduleAllScheduledNotifications(): Promise<void> {
         }
       }
     }
-
-    console.log(`Successfully scheduled ${totalScheduled} notifications from ${enabled.length} schedules`);
     
     if (errors.length > 0) {
-      console.error(`Encountered ${errors.length} errors during scheduling:`, errors);
-    }
-
-    // Verify what got scheduled
-    const allScheduled = await Notifications.getAllScheduledNotificationsAsync();
-    const ourNotifications = allScheduled.filter(n => n.identifier.startsWith(SCHEDULED_NOTIF_PREFIX));
-    console.log(`Verification: Found ${ourNotifications.length} scheduled notifications in system`);
-    
-    if (ourNotifications.length > 0) {
-      console.log('Scheduled notifications:', ourNotifications.map(n => ({
-        id: n.identifier,
-        trigger: n.trigger,
-      })));
+      console.error(`Encountered ${errors.length} errors during scheduling`);
     }
   } catch (error) {
     console.error('Error in scheduleAllScheduledNotifications:', error);
@@ -166,8 +146,6 @@ export async function rescheduleNotificationForNextWeek(
     
     // Calculate next occurrence (will be 7 days from now since we just fired)
     const nextOccurrence = getNextOccurrence(hour, minute, dayOfWeek);
-    
-    console.log(`Rescheduling ${notificationId} for ${nextOccurrence.toLocaleString()}`);
     
     await Notifications.scheduleNotificationAsync({
       identifier: notificationId,
@@ -238,14 +216,4 @@ export function hasScheduledNotificationNearby(windowMinutes: number): boolean {
   }
 
   return false;
-}
-
-/**
- * Get all currently scheduled notifications (for debugging)
- */
-export async function getAllScheduledNotificationsDebug(): Promise<any[]> {
-  const all = await Notifications.getAllScheduledNotificationsAsync();
-  const scheduled = all.filter(n => n.identifier.startsWith(SCHEDULED_NOTIF_PREFIX));
-  console.log(`Found ${scheduled.length} scheduled notifications:`, scheduled);
-  return scheduled;
 }

@@ -89,8 +89,6 @@ async function handleNotificationReceived(notification: Notifications.Notificati
   
   // Check if this is a scheduled notification that needs rescheduling
   if (data && data.isScheduledNotification && data.scheduleId && typeof data.dayOfWeek === 'number') {
-    console.log('Scheduled notification fired, rescheduling for next week:', data);
-    
     // Import dynamically to avoid circular dependency
     const { rescheduleNotificationForNextWeek } = await import('./scheduledNotifications');
     await rescheduleNotificationForNextWeek(

@@ -14,7 +14,6 @@ import {
   ScheduledNotification,
 } from '../storage/database';
 import { scheduleAllScheduledNotifications } from '../notifications/scheduledNotifications';
-import { runNotificationDiagnostics } from '../utils/notificationDiagnostics';
 import { colors, spacing, radius, shadows } from '../utils/theme';
 import { t } from '../i18n';
 
@@ -190,13 +189,6 @@ export default function ScheduledNotificationsScreen() {
     }
   };
 
-  const handleRunDiagnostics = async () => {
-    const report = await runNotificationDiagnostics();
-    Alert.alert('Notification Diagnostics', report, [{ text: 'OK' }], {
-      cancelable: true,
-    });
-  };
-
   return (
     <View style={styles.container}>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
@@ -245,14 +237,6 @@ export default function ScheduledNotificationsScreen() {
           ))
         )}
       </ScrollView>
-
-      {/* Debug button - always show for troubleshooting */}
-      <TouchableOpacity 
-        style={styles.diagnosticButton} 
-        onPress={handleRunDiagnostics}
-      >
-        <Text style={styles.diagnosticButtonText}>🔍 Run Diagnostics</Text>
-      </TouchableOpacity>
 
       <TouchableOpacity style={styles.addButton} onPress={handleAdd}>
         <Text style={styles.addButtonText}>+ {t('scheduled_add')}</Text>
@@ -465,21 +449,6 @@ const styles = StyleSheet.create({
   addButtonText: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#FFFFFF',
-  },
-  diagnosticButton: {
-    position: 'absolute',
-    bottom: spacing.lg + 60, // Above the add button
-    left: spacing.md,
-    right: spacing.md,
-    backgroundColor: colors.sky,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.md,
-    alignItems: 'center',
-  },
-  diagnosticButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
     color: '#FFFFFF',
   },
   modalOverlay: {

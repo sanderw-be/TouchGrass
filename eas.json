@@ -19,7 +19,9 @@
     },
     "production": {
       "android": {
-        "buildType": "apk"
+        "buildType": "apk",
+        "gradleCommand": ":app:assembleRelease",
+        "artifactPath": "android/app/build/outputs/apk/release/app-arm64-v8a-release.apk"
       }
     }
   }
