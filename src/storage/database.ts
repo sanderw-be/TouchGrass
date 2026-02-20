@@ -145,6 +145,16 @@ export function initDatabase(): void {
       [150, Date.now()]
     );
   }
+  
+  // Clean up any corrupted scheduled notifications (one-time migration)
+  try {
+    const deletedCount = cleanupInvalidScheduledNotifications();
+    if (deletedCount > 0) {
+      console.log(`Database migration: Removed ${deletedCount} corrupted scheduled notification(s)`);
+    }
+  } catch (error) {
+    console.error('Error cleaning up scheduled notifications:', error);
+  }
 }
 
 // ── Sessions ──────────────────────────────────────────────
@@ -457,15 +467,22 @@ export function getScheduledNotifications(): ScheduledNotification[] {
     hour: row.hour,
     minute: row.minute,
     daysOfWeek: row.daysOfWeek
-      .split(',')
-      .map((d: string) => parseInt(d.trim(), 10))
-      .filter((d: number) => !isNaN(d) && d >= 0 && d <= 6), // Filter out invalid values
+      ? row.daysOfWeek
+          .split(',')
+          .map((d: string) => parseInt(d.trim(), 10))
+          .filter((d: number) => !isNaN(d) && d >= 0 && d <= 6) // Filter out invalid values
+      : [], // Handle empty/null daysOfWeek
     enabled: row.enabled,
     label: row.label,
   }));
 }
 
 export function insertScheduledNotification(notification: Omit<ScheduledNotification, 'id'>): number {
+  // Validate daysOfWeek is not empty
+  if (!notification.daysOfWeek || notification.daysOfWeek.length === 0) {
+    throw new Error('Cannot insert scheduled notification without any days selected');
+  }
+  
   const result = db.runSync(
     'INSERT INTO scheduled_notifications (hour, minute, daysOfWeek, enabled, label) VALUES (?, ?, ?, ?, ?)',
     [
@@ -481,6 +498,12 @@ export function insertScheduledNotification(notification: Omit<ScheduledNotifica
 
 export function updateScheduledNotification(notification: ScheduledNotification): void {
   if (!notification.id) throw new Error('Cannot update notification without id');
+  
+  // Validate daysOfWeek is not empty
+  if (!notification.daysOfWeek || notification.daysOfWeek.length === 0) {
+    throw new Error('Cannot update scheduled notification without any days selected');
+  }
+  
   db.runSync(
     'UPDATE scheduled_notifications SET hour=?, minute=?, daysOfWeek=?, enabled=?, label=? WHERE id=?',
     [
@@ -503,4 +526,25 @@ export function toggleScheduledNotification(id: number, enabled: boolean): void 
     'UPDATE scheduled_notifications SET enabled = ? WHERE id = ?',
     [enabled ? 1 : 0, id]
   );
+}
+
+/**
+ * Clean up corrupted scheduled notifications with invalid daysOfWeek data.
+ * This removes notifications that have empty or invalid day selections.
+ */
+export function cleanupInvalidScheduledNotifications(): number {
+  // Find and delete notifications with empty or invalid daysOfWeek
+  const result = db.runSync(
+    `DELETE FROM scheduled_notifications 
+     WHERE daysOfWeek = '' 
+        OR daysOfWeek IS NULL 
+        OR length(trim(daysOfWeek)) = 0`
+  );
+  
+  const deletedCount = result.changes;
+  if (deletedCount > 0) {
+    console.log(`Cleaned up ${deletedCount} corrupted scheduled notification(s)`);
+  }
+  
+  return deletedCount;
 }
