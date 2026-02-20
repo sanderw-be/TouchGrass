@@ -48,13 +48,28 @@ export default function App() {
       if (hasCompletedIntro) {
         try {
           await initDetection();
+        } catch (e) {
+          console.warn('Detection init error:', e);
+        }
+        
+        try {
           await scheduleDayReminders();
-          // Reschedule any scheduled notifications (handles past notifications and ensures they're set for next occurrence)
+        } catch (e) {
+          console.warn('Day reminders error:', e);
+        }
+        
+        // Reschedule any scheduled notifications (handles past notifications and ensures they're set for next occurrence)
+        try {
           await scheduleAllScheduledNotifications();
-          // Register weather background fetch for hourly updates
+        } catch (e) {
+          console.warn('Scheduled notifications init error:', e);
+        }
+        
+        // Register weather background fetch for hourly updates
+        try {
           await registerWeatherBackgroundFetch();
         } catch (e) {
-          console.warn('Init error:', e);
+          console.warn('Weather background fetch error:', e);
         }
       }
     }
@@ -68,12 +83,27 @@ export default function App() {
     // Initialize detection after tutorial is complete
     try {
       await initDetection();
+    } catch (e) {
+      console.warn('Detection init error:', e);
+    }
+    
+    try {
       await scheduleDayReminders();
+    } catch (e) {
+      console.warn('Day reminders error:', e);
+    }
+    
+    try {
       await scheduleAllScheduledNotifications();
-      // Register weather background fetch for hourly updates
+    } catch (e) {
+      console.warn('Scheduled notifications init error:', e);
+    }
+    
+    // Register weather background fetch for hourly updates
+    try {
       await registerWeatherBackgroundFetch();
     } catch (e) {
-      console.warn('Post-tutorial init error:', e);
+      console.warn('Weather background fetch error:', e);
     }
   };
 

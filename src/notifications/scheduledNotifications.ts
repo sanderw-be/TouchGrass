@@ -58,21 +58,29 @@ function getNextOccurrence(hour: number, minute: number, dayOfWeek: number): Dat
 /**
  * Schedule all enabled scheduled notifications using DATE triggers.
  * Uses DATE triggers instead of CALENDAR for better Android compatibility.
+ * This function does not throw errors to avoid crashing the app.
  */
 export async function scheduleAllScheduledNotifications(): Promise<void> {
   try {
     // Check if we have notification permissions first
     const { status } = await Notifications.getPermissionsAsync();
     if (status !== 'granted') {
-      console.warn('Cannot schedule notifications: Permission not granted. Current status:', status);
-      throw new Error('Notification permissions not granted');
+      console.warn('TouchGrass: Cannot schedule notifications - permission not granted. Current status:', status);
+      return; // Don't throw, just return
     }
 
     const schedules = getScheduledNotifications();
     const enabled = schedules.filter(s => s.enabled === 1);
+    
+    console.log(`TouchGrass: Scheduling ${enabled.length} enabled notification schedule(s)`);
 
     // Cancel existing scheduled notifications (prefix-based)
-    await cancelAllScheduledNotifications();
+    try {
+      await cancelAllScheduledNotifications();
+    } catch (error) {
+      console.error('TouchGrass: Error canceling existing notifications:', error);
+      // Continue anyway
+    }
 
     let totalScheduled = 0;
     const errors: string[] = [];
@@ -80,7 +88,7 @@ export async function scheduleAllScheduledNotifications(): Promise<void> {
     for (const schedule of enabled) {
       // Validate schedule data before processing
       if (!schedule.daysOfWeek || schedule.daysOfWeek.length === 0) {
-        console.error(`Schedule ${schedule.id} has no valid days of week`);
+        console.warn(`TouchGrass: Schedule ${schedule.id} has no valid days of week, skipping`);
         continue;
       }
       
@@ -116,18 +124,21 @@ export async function scheduleAllScheduledNotifications(): Promise<void> {
           totalScheduled++;
         } catch (error) {
           const errorMsg = `Failed to schedule ${notificationId}: ${error}`;
-          console.error(errorMsg);
+          console.error(`TouchGrass: ${errorMsg}`);
           errors.push(errorMsg);
         }
       }
     }
     
+    console.log(`TouchGrass: Successfully scheduled ${totalScheduled} notifications`);
+    
     if (errors.length > 0) {
-      console.error(`Encountered ${errors.length} errors during scheduling`);
+      console.error(`TouchGrass: Encountered ${errors.length} error(s) during scheduling`);
+      // Don't throw, just log the errors
     }
   } catch (error) {
-    console.error('Error in scheduleAllScheduledNotifications:', error);
-    throw error;
+    console.error('TouchGrass: Error in scheduleAllScheduledNotifications:', error);
+    // Don't throw to avoid crashing the app
   }
 }
 
@@ -142,6 +153,8 @@ export async function rescheduleNotificationForNextWeek(
   minute: number
 ): Promise<void> {
   try {
+    console.log(`TouchGrass: Rescheduling notification for schedule ${scheduleId}, day ${dayOfWeek}, time ${hour}:${minute}`);
+    
     const notificationId = `${SCHEDULED_NOTIF_PREFIX}${scheduleId}_${dayOfWeek}`;
     
     // Calculate next occurrence (will be 7 days from now since we just fired)
@@ -168,8 +181,11 @@ export async function rescheduleNotificationForNextWeek(
         channelId: 'touchgrass_scheduled',
       },
     });
+    
+    console.log(`TouchGrass: Successfully rescheduled ${notificationId} for ${nextOccurrence.toLocaleString()}`);
   } catch (error) {
-    console.error(`Failed to reschedule notification:`, error);
+    console.error(`TouchGrass: Failed to reschedule notification:`, error);
+    // Don't throw to avoid crashing the app
   }
 }
 

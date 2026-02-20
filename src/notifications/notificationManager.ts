@@ -85,19 +85,26 @@ export async function setupNotificationInfrastructure(): Promise<void> {
  * Reschedule weekly notifications for next week.
  */
 async function handleNotificationReceived(notification: Notifications.Notification) {
-  const { data } = notification.request.content;
-  
-  // Check if this is a scheduled notification that needs rescheduling
-  // Note: All data values are strings for Android compatibility
-  if (data && data.isScheduledNotification === 'true' && data.scheduleId && data.dayOfWeek) {
-    // Import dynamically to avoid circular dependency
-    const { rescheduleNotificationForNextWeek } = await import('./scheduledNotifications');
-    await rescheduleNotificationForNextWeek(
-      parseInt(data.scheduleId as string, 10),
-      parseInt(data.dayOfWeek as string, 10),
-      parseInt(data.hour as string, 10),
-      parseInt(data.minute as string, 10)
-    );
+  try {
+    const { data } = notification.request.content;
+    
+    // Check if this is a scheduled notification that needs rescheduling
+    // Note: All data values are strings for Android compatibility
+    if (data && data.isScheduledNotification === 'true' && data.scheduleId && data.dayOfWeek) {
+      console.log('TouchGrass: Scheduled notification fired, rescheduling for next week');
+      
+      // Import dynamically to avoid circular dependency
+      const { rescheduleNotificationForNextWeek } = await import('./scheduledNotifications');
+      await rescheduleNotificationForNextWeek(
+        parseInt(data.scheduleId as string, 10),
+        parseInt(data.dayOfWeek as string, 10),
+        parseInt(data.hour as string, 10),
+        parseInt(data.minute as string, 10)
+      );
+    }
+  } catch (error) {
+    console.error('TouchGrass: Error in handleNotificationReceived:', error);
+    // Don't throw to avoid crashing the app
   }
 }
 
