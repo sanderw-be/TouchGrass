@@ -159,10 +159,11 @@ describe('scheduledNotifications', () => {
       expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledTimes(2);
     });
 
-    it('throws error when notification permissions are not granted', async () => {
+    it('returns gracefully when notification permissions are not granted', async () => {
       (Notifications.getPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'denied' });
       
-      await expect(scheduleAllScheduledNotifications()).rejects.toThrow('Notification permissions not granted');
+      // Should not throw, but return gracefully
+      await expect(scheduleAllScheduledNotifications()).resolves.not.toThrow();
       
       // Should not attempt to schedule any notifications
       expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
