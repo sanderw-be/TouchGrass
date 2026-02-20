@@ -33,20 +33,24 @@ function getNextOccurrence(hour: number, minute: number, dayOfWeek: number): Dat
   const now = new Date();
   const targetDate = new Date();
   
-  // Set the target time
-  targetDate.setHours(hour, minute, 0, 0);
-  
   // Calculate days until target day of week
   const currentDay = now.getDay();
   let daysUntilTarget = dayOfWeek - currentDay;
   
+  // Create a comparison date with target time to check if time has passed today
+  const todayAtTargetTime = new Date();
+  todayAtTargetTime.setHours(hour, minute, 0, 0);
+  
   // If target day is today but time has passed, or target day is earlier in week, go to next week
-  if (daysUntilTarget < 0 || (daysUntilTarget === 0 && now >= targetDate)) {
+  if (daysUntilTarget < 0 || (daysUntilTarget === 0 && now >= todayAtTargetTime)) {
     daysUntilTarget += 7;
   }
   
-  // Add the days to reach target day
+  // Add the days to reach target day first
   targetDate.setDate(targetDate.getDate() + daysUntilTarget);
+  
+  // Set the exact target time AFTER adjusting the date to prevent minute drift
+  targetDate.setHours(hour, minute, 0, 0);
   
   return targetDate;
 }

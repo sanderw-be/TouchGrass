@@ -118,6 +118,29 @@ describe('scheduledNotifications', () => {
       }
     });
 
+    it('schedules notifications with exact time (no minute drift)', async () => {
+      const mockSchedules = [
+        { id: 1, hour: 14, minute: 30, daysOfWeek: [2], enabled: 1, label: 'Exact time test' },
+      ];
+
+      (Database.getScheduledNotifications as jest.Mock).mockReturnValue(mockSchedules);
+      (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([]);
+
+      await scheduleAllScheduledNotifications();
+
+      expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledTimes(1);
+      
+      const call = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls[0];
+      const trigger = call[0].trigger;
+      
+      // Convert timestamp back to Date and verify exact time
+      const scheduledDate = new Date(trigger.date);
+      expect(scheduledDate.getHours()).toBe(14);
+      expect(scheduledDate.getMinutes()).toBe(30);
+      expect(scheduledDate.getSeconds()).toBe(0);
+      expect(scheduledDate.getMilliseconds()).toBe(0);
+    });
+
     it('handles scheduling errors gracefully', async () => {
       const mockSchedules = [
         { id: 1, hour: 10, minute: 0, daysOfWeek: [1, 2], enabled: 1, label: 'Test' },
