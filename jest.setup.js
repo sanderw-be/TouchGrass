@@ -29,6 +29,7 @@ jest.mock('expo-notifications', () => ({
     TIME_INTERVAL: 'timeInterval',
     DATE: 'date',
     CALENDAR: 'calendar',
+    WEEKLY: 'weekly',
   },
   AndroidImportance: {
     MIN: 1,

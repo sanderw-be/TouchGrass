@@ -5,59 +5,9 @@ import { getScheduledNotifications } from '../storage/database';
 const SCHEDULED_NOTIF_PREFIX = 'scheduled_';
 
 /**
- * Calculate the next occurrence of a scheduled notification.
- * @param hour - Hour of day (0-23)
- * @param minute - Minute of hour (0-59)
- * @param dayOfWeek - Day of week (0=Sunday, 6=Saturday)
- * @returns Date object for the next occurrence
- */
-function getNextOccurrence(hour: number, minute: number, dayOfWeek: number): Date {
-  // Validate inputs
-  if (isNaN(hour) || isNaN(minute) || isNaN(dayOfWeek)) {
-    console.error(`Invalid input to getNextOccurrence: hour=${hour}, minute=${minute}, dayOfWeek=${dayOfWeek}`);
-    throw new Error(`Invalid schedule data: hour=${hour}, minute=${minute}, dayOfWeek=${dayOfWeek}`);
-  }
-  
-  if (hour < 0 || hour > 23) {
-    throw new Error(`Invalid hour: ${hour}. Must be 0-23`);
-  }
-  
-  if (minute < 0 || minute > 59) {
-    throw new Error(`Invalid minute: ${minute}. Must be 0-59`);
-  }
-  
-  if (dayOfWeek < 0 || dayOfWeek > 6) {
-    throw new Error(`Invalid dayOfWeek: ${dayOfWeek}. Must be 0-6`);
-  }
-  
-  const now = new Date();
-  const targetDate = new Date();
-  
-  // Calculate days until target day of week
-  const currentDay = now.getDay();
-  let daysUntilTarget = dayOfWeek - currentDay;
-  
-  // Create a comparison date with target time to check if time has passed today
-  const todayAtTargetTime = new Date();
-  todayAtTargetTime.setHours(hour, minute, 0, 0);
-  
-  // If target day is today but time has passed, or target day is earlier in week, go to next week
-  if (daysUntilTarget < 0 || (daysUntilTarget === 0 && now >= todayAtTargetTime)) {
-    daysUntilTarget += 7;
-  }
-  
-  // Add the days to reach target day first
-  targetDate.setDate(targetDate.getDate() + daysUntilTarget);
-  
-  // Set the exact target time AFTER adjusting the date to prevent minute drift
-  targetDate.setHours(hour, minute, 0, 0);
-  
-  return targetDate;
-}
-
-/**
- * Schedule all enabled scheduled notifications using DATE triggers.
- * Uses DATE triggers instead of CALENDAR for better Android compatibility.
+ * Schedule all enabled scheduled notifications using WEEKLY triggers.
+ * WEEKLY triggers auto-repeat every week and use Android's AlarmManager directly,
+ * which avoids the WorkManager serialization issue (NotSerializableException).
  * This function does not throw errors to avoid crashing the app.
  */
 export async function scheduleAllScheduledNotifications(): Promise<void> {
@@ -97,27 +47,22 @@ export async function scheduleAllScheduledNotifications(): Promise<void> {
         const notificationId = `${SCHEDULED_NOTIF_PREFIX}${schedule.id}_${dayOfWeek}`;
         
         try {
-          // Calculate next occurrence
-          const nextOccurrence = getNextOccurrence(schedule.hour, schedule.minute, dayOfWeek);
-          
           await Notifications.scheduleNotificationAsync({
             identifier: notificationId,
             content: {
               title: schedule.label || '🌿 Time to touch grass!',
               body: 'Your scheduled reminder to go outside.',
               sound: true,
-              color: '#4A7C59',
               data: {
                 scheduleId: String(schedule.id),
-                dayOfWeek: String(dayOfWeek),
-                hour: String(schedule.hour),
-                minute: String(schedule.minute),
                 isScheduledNotification: 'true',
               },
             },
             trigger: {
-              type: Notifications.SchedulableTriggerInputTypes.DATE,
-              date: nextOccurrence.getTime(), // Use timestamp (milliseconds) for better cross-platform compatibility
+              type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
+              weekday: dayOfWeek + 1, // expo-notifications uses 1-7 (1=Sunday), JS Date uses 0-6 (0=Sunday)
+              hour: schedule.hour,
+              minute: schedule.minute,
               channelId: 'touchgrass_scheduled',
             },
           });
@@ -138,53 +83,6 @@ export async function scheduleAllScheduledNotifications(): Promise<void> {
     }
   } catch (error) {
     console.error('TouchGrass: Error in scheduleAllScheduledNotifications:', error);
-    // Don't throw to avoid crashing the app
-  }
-}
-
-/**
- * Reschedule a single notification for next week.
- * Called when a scheduled notification fires.
- */
-export async function rescheduleNotificationForNextWeek(
-  scheduleId: number,
-  dayOfWeek: number,
-  hour: number,
-  minute: number
-): Promise<void> {
-  try {
-    console.log(`TouchGrass: Rescheduling notification for schedule ${scheduleId}, day ${dayOfWeek}, time ${hour}:${minute}`);
-    
-    const notificationId = `${SCHEDULED_NOTIF_PREFIX}${scheduleId}_${dayOfWeek}`;
-    
-    // Calculate next occurrence (will be 7 days from now since we just fired)
-    const nextOccurrence = getNextOccurrence(hour, minute, dayOfWeek);
-    
-    await Notifications.scheduleNotificationAsync({
-      identifier: notificationId,
-      content: {
-        title: '🌿 Time to touch grass!',
-        body: 'Your scheduled reminder to go outside.',
-        sound: true,
-        color: '#4A7C59',
-        data: {
-          scheduleId: String(scheduleId),
-          dayOfWeek: String(dayOfWeek),
-          hour: String(hour),
-          minute: String(minute),
-          isScheduledNotification: 'true',
-        },
-      },
-      trigger: {
-        type: Notifications.SchedulableTriggerInputTypes.DATE,
-        date: nextOccurrence.getTime(), // Use timestamp for better cross-platform compatibility
-        channelId: 'touchgrass_scheduled',
-      },
-    });
-    
-    console.log(`TouchGrass: Successfully rescheduled ${notificationId} for ${nextOccurrence.toLocaleString()}`);
-  } catch (error) {
-    console.error(`TouchGrass: Failed to reschedule notification:`, error);
     // Don't throw to avoid crashing the app
   }
 }

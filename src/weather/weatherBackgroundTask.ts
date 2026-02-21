@@ -3,7 +3,7 @@
  * Runs approximately every hour to keep weather forecast fresh
  */
 
-import * as BackgroundFetch from 'expo-background-fetch';
+import * as BackgroundTask from 'expo-background-task';
 import * as TaskManager from 'expo-task-manager';
 import { fetchWeatherForecast } from './weatherService';
 import { getSetting } from '../storage/database';
@@ -20,7 +20,7 @@ TaskManager.defineTask(WEATHER_BACKGROUND_TASK, async () => {
     // getSetting is synchronous and safe to call in background tasks (SQLite read)
     const weatherEnabled = getSetting('weather_enabled', '1') === '1';
     if (!weatherEnabled) {
-      return BackgroundFetch.BackgroundFetchResult.NoData;
+      return BackgroundTask.BackgroundTaskResult.Success;
     }
 
     // Fetch fresh weather data
@@ -28,14 +28,14 @@ TaskManager.defineTask(WEATHER_BACKGROUND_TASK, async () => {
     
     if (result.success) {
       console.log('Weather background fetch successful');
-      return BackgroundFetch.BackgroundFetchResult.NewData;
+      return BackgroundTask.BackgroundTaskResult.Success;
     } else {
       console.warn('Weather background fetch failed:', result.error);
-      return BackgroundFetch.BackgroundFetchResult.Failed;
+      return BackgroundTask.BackgroundTaskResult.Failed;
     }
   } catch (error) {
     console.error('Weather background fetch error:', error);
-    return BackgroundFetch.BackgroundFetchResult.Failed;
+    return BackgroundTask.BackgroundTaskResult.Failed;
   }
 });
 
@@ -49,10 +49,8 @@ export async function registerWeatherBackgroundFetch(): Promise<void> {
     const isRegistered = await TaskManager.isTaskRegisteredAsync(WEATHER_BACKGROUND_TASK);
     
     if (!isRegistered) {
-      await BackgroundFetch.registerTaskAsync(WEATHER_BACKGROUND_TASK, {
-        minimumInterval: 60 * 60, // 1 hour in seconds
-        stopOnTerminate: false, // Continue after app is terminated
-        startOnBoot: true, // Start when device boots
+      await BackgroundTask.registerTaskAsync(WEATHER_BACKGROUND_TASK, {
+        minimumInterval: 60, // 1 hour in minutes
       });
       console.log('Weather background fetch registered');
     }
@@ -70,7 +68,7 @@ export async function unregisterWeatherBackgroundFetch(): Promise<void> {
     const isRegistered = await TaskManager.isTaskRegisteredAsync(WEATHER_BACKGROUND_TASK);
     
     if (isRegistered) {
-      await BackgroundFetch.unregisterTaskAsync(WEATHER_BACKGROUND_TASK);
+      await BackgroundTask.unregisterTaskAsync(WEATHER_BACKGROUND_TASK);
       console.log('Weather background fetch unregistered');
     }
   } catch (error) {
