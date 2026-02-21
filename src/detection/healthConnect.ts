@@ -16,7 +16,7 @@ const OUTDOOR_ACTIVITY_TYPES = [
 ];
 
 const CONFIDENCE_ACTIVITY = 0.70;
-const MIN_DURATION_MS = 5 * 60 * 1000; // ignore sessions under 5 minutes
+export const MIN_DURATION_MS = 5 * 60 * 1000; // ignore sessions under 5 minutes
 const PERMISSION_WARNING_KEY = 'healthconnect_permission_warning';
 
 /**
@@ -178,6 +178,43 @@ export async function syncHealthConnect(): Promise<boolean> {
       submitSession(session);
     }
 
+    // Also read step-count records — Google Fit writes auto-detected walks here
+    // even when they are not tracked as explicit ExerciseSession entries.
+    try {
+      const stepsResult = await readRecords('Steps', {
+        timeRangeFilter: {
+          operator: 'between',
+          startTime: startTimeISO,
+          endTime: endTimeISO,
+        },
+      });
+
+      for (const record of stepsResult.records) {
+        const start = new Date(record.startTime).getTime();
+        const end = new Date(record.endTime).getTime();
+        const duration = end - start;
+
+        // Require at least 5 min and a meaningful step count (>= 500 steps)
+        // to filter out short bursts of indoor movement.
+        if (duration < MIN_DURATION_MS || record.count < 500) continue;
+
+        const session = buildSession(
+          start,
+          end,
+          'health_connect',
+          CONFIDENCE_ACTIVITY,
+          `Steps: ${record.count}`,
+        );
+
+        submitSession(session);
+      }
+    } catch (stepsError) {
+      // Steps reading is supplementary — don't fail the whole sync if it errors
+      if (!isPermissionError(stepsError)) {
+        console.warn('Health Connect steps sync error:', stepsError);
+      }
+    }
+
     // Update last sync timestamp
     setSetting('healthconnect_last_sync', String(now));
     return true;
@@ -187,6 +224,8 @@ export async function syncHealthConnect(): Promise<boolean> {
       setSetting('healthconnect_enabled', '0');
       return false;
     }
+    // Transient errors (network, API unavailable, etc.) should not permanently
+    // disable Health Connect — just return false and retry next time.
     console.warn('Health Connect sync error:', e);
     return false;
   }

@@ -187,8 +187,8 @@ export function getSessionsForDay(dateMs: number): OutsideSession[] {
 
 export function getSessionsForRange(fromMs: number, toMs: number): OutsideSession[] {
   return db.getAllSync<OutsideSession>(
-    'SELECT * FROM outside_sessions WHERE startTime >= ? AND startTime < ? ORDER BY startTime ASC',
-    [fromMs, toMs]
+    'SELECT * FROM outside_sessions WHERE startTime < ? AND endTime > ? ORDER BY startTime ASC',
+    [toMs, fromMs]
   );
 }
 

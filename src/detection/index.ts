@@ -55,7 +55,13 @@ export async function initDetection(): Promise<DetectionStatus> {
     if (hcEnabled) {
       const ok = await syncHealthConnect();
       status.healthConnect = ok;
-      setSetting('healthconnect_enabled', ok ? '1' : '0');
+      // Only disable Health Connect when syncHealthConnect explicitly detects a
+      // permission error (it already calls setSetting inside).  A transient
+      // failure (network, API unavailable, etc.) must not permanently turn off
+      // the integration — the next background task will retry automatically.
+      if (ok) {
+        setSetting('healthconnect_enabled', '1');
+      }
     }
   }
 

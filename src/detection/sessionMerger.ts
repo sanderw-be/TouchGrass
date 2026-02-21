@@ -4,8 +4,11 @@ const MERGE_GAP_MS = 5 * 60 * 1000; // sessions within 5 min of each other get m
 
 /**
  * Submit a candidate session from any detection source.
- * If an overlapping session already exists, keep the one with higher confidence.
- * If sessions are close together (within MERGE_GAP_MS), merge them.
+ * If an overlapping or adjacent session already exists, merge all of them
+ * into one session that spans the full combined time range (using the highest
+ * confidence among all merged sessions).  Existing user confirmations are
+ * preserved so that a GPS/Health-Connect top-up never resets a "confirmed"
+ * or "denied" decision.
  */
 export function submitSession(candidate: OutsideSession): void {
   const windowStart = candidate.startTime - MERGE_GAP_MS;
@@ -18,19 +21,30 @@ export function submitSession(candidate: OutsideSession): void {
     return;
   }
 
-  // Find the best existing session to compare against
-  const best = existing.reduce((a, b) => a.confidence > b.confidence ? a : b);
+  // Merge all overlapping sessions and the candidate into one session
+  const allSessions = [...existing, candidate];
+  const mergedStart = Math.min(...allSessions.map(s => s.startTime));
+  const mergedEnd   = Math.max(...allSessions.map(s => s.endTime));
+  const mergedConfidence = Math.max(...allSessions.map(s => s.confidence));
 
-  if (candidate.confidence > best.confidence) {
-    // New candidate wins — delete old sessions and insert the new one
-    existing.forEach(session => {
-      if (session.id) {
-        deleteSession(session.id);
-      }
-    });
-    insertSession({ ...candidate, userConfirmed: null });
-  }
-  // else: existing session wins, discard candidate silently
+  // Preserve any existing user confirmation so user decisions are never lost
+  const confirmedSession = existing.find(s => s.userConfirmed !== null);
+
+  // Delete all existing sessions in the overlap window
+  existing.forEach(session => {
+    if (session.id) {
+      deleteSession(session.id);
+    }
+  });
+
+  insertSession({
+    ...candidate,
+    startTime: mergedStart,
+    endTime: mergedEnd,
+    durationMinutes: (mergedEnd - mergedStart) / 60000,
+    confidence: mergedConfidence,
+    userConfirmed: confirmedSession ? confirmedSession.userConfirmed : null,
+  });
 }
 
 /**
