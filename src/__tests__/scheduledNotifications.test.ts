@@ -77,10 +77,6 @@ describe('scheduledNotifications', () => {
             title: 'Afternoon reminder',
             body: 'Your scheduled reminder to go outside.',
             sound: true,
-            data: expect.objectContaining({
-              scheduleId: '1',
-              isScheduledNotification: 'true',
-            }),
           }),
           trigger: expect.objectContaining({
             type: Notifications.SchedulableTriggerInputTypes.WEEKLY,

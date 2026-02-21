@@ -53,10 +53,11 @@ export async function scheduleAllScheduledNotifications(): Promise<void> {
               title: schedule.label || '🌿 Time to touch grass!',
               body: 'Your scheduled reminder to go outside.',
               sound: true,
-              data: {
-                scheduleId: String(schedule.id),
-                isScheduledNotification: 'true',
-              },
+              // Note: 'data' is intentionally omitted. Passing a 'data' object causes
+              // NotificationContent.mBody to be a JSONObject. On Android, R8/ProGuard can
+              // strip the private writeObject() method despite the keep rule, falling back to
+              // default Java serialization which cannot serialize JSONObject → NotSerializableException.
+              // WEEKLY triggers auto-repeat so there is no rescheduling logic that would need metadata.
             },
             trigger: {
               type: Notifications.SchedulableTriggerInputTypes.WEEKLY,

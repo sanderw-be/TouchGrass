@@ -73,15 +73,6 @@ jest.mock('react-native-health-connect', () => ({
   },
 }));
 
-// Mock expo-background-fetch
-jest.mock('expo-background-fetch', () => ({
-  BackgroundFetchStatus: {
-    Available: 1,
-  },
-  registerTaskAsync: jest.fn(),
-  unregisterTaskAsync: jest.fn(),
-}));
-
 // Mock expo-background-task
 jest.mock('expo-background-task', () => ({
   BackgroundTaskResult: {
