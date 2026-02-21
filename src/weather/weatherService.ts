@@ -24,12 +24,20 @@ export interface WeatherFetchResult {
   error?: string;
 }
 
+export interface FetchWeatherForecastOptions {
+  allowPermissionPrompt?: boolean;
+}
+
 /**
  * Fetch weather forecast for the current location
  * Returns hourly forecast for the next 24 hours
  */
-export async function fetchWeatherForecast(): Promise<WeatherFetchResult> {
+export async function fetchWeatherForecast(
+  options: FetchWeatherForecastOptions = {},
+): Promise<WeatherFetchResult> {
   try {
+    const { allowPermissionPrompt = true } = options;
+
     // Check cache first
     const cache = getWeatherCache();
     const now = Date.now();
@@ -40,21 +48,69 @@ export async function fetchWeatherForecast(): Promise<WeatherFetchResult> {
       const conditions = getWeatherConditionsForHour(todayStart, 0, 24);
       
       if (conditions.length > 0) {
+        console.log('Weather forecast source: cache-fresh');
         return { success: true, conditions };
       }
     }
 
-    // Get current location
-    const { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== 'granted') {
-      return { success: false, error: 'Location permission denied' };
+    // Resolve coordinates with resilient fallback order:
+    // 1) current fix, 2) last known fix, 3) cached coordinates.
+    let latitude: number | null = null;
+    let longitude: number | null = null;
+    let locationSource: 'current' | 'lastKnown' | 'cache' | null = null;
+
+    const foregroundPermissions = await Location.getForegroundPermissionsAsync();
+    let permissionGranted = foregroundPermissions.status === 'granted';
+
+    if (!permissionGranted && allowPermissionPrompt) {
+      const requestedPermissions = await Location.requestForegroundPermissionsAsync();
+      permissionGranted = requestedPermissions.status === 'granted';
     }
 
-    const location = await Location.getCurrentPositionAsync({
-      accuracy: Location.Accuracy.Balanced,
-    });
+    if (permissionGranted) {
+      const servicesEnabled = await Location.hasServicesEnabledAsync();
 
-    const { latitude, longitude } = location.coords;
+      if (servicesEnabled) {
+        try {
+          const location = await Location.getCurrentPositionAsync({
+            accuracy: Location.Accuracy.Balanced,
+          });
+          latitude = location.coords.latitude;
+          longitude = location.coords.longitude;
+          locationSource = 'current';
+        } catch {
+          const lastKnownLocation = await Location.getLastKnownPositionAsync({
+            maxAge: 6 * 60 * 60 * 1000,
+            requiredAccuracy: 5000,
+          });
+
+          if (lastKnownLocation) {
+            latitude = lastKnownLocation.coords.latitude;
+            longitude = lastKnownLocation.coords.longitude;
+            locationSource = 'lastKnown';
+          }
+        }
+      }
+    }
+
+    if (latitude === null || longitude === null) {
+      if (cache) {
+        latitude = cache.latitude;
+        longitude = cache.longitude;
+        locationSource = 'cache';
+      } else if (!permissionGranted) {
+        return { success: false, error: 'Location permission denied' };
+      } else {
+        return {
+          success: false,
+          error: 'Current location is unavailable. Make sure that location services are enabled.',
+        };
+      }
+    }
+
+    if (locationSource) {
+      console.log(`Weather location source: ${locationSource}`);
+    }
 
     // Fetch weather data from Open-Meteo
     const params = new URLSearchParams({
@@ -98,13 +154,15 @@ export async function fetchWeatherForecast(): Promise<WeatherFetchResult> {
         longitude,
         expiresAt: now + CACHE_DURATION_MS,
       });
+
+      console.log('Weather forecast source: network');
       
       return { success: true, conditions };
     }
 
     return { success: false, error: 'No weather data available' };
   } catch (error) {
-    console.error('Weather fetch error:', error);
+    console.warn('Weather fetch error:', error);
     return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
   }
 }

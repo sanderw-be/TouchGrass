@@ -24,6 +24,33 @@ describe('Database', () => {
       expect(typeof setSetting).toBe('function');
     });
   });
+
+  describe('Scheduled Notifications', () => {
+    it('getScheduledNotifications function exists', () => {
+      const { getScheduledNotifications } = require('../storage/database');
+      expect(typeof getScheduledNotifications).toBe('function');
+    });
+
+    it('insertScheduledNotification function exists', () => {
+      const { insertScheduledNotification } = require('../storage/database');
+      expect(typeof insertScheduledNotification).toBe('function');
+    });
+
+    it('updateScheduledNotification function exists', () => {
+      const { updateScheduledNotification } = require('../storage/database');
+      expect(typeof updateScheduledNotification).toBe('function');
+    });
+
+    it('deleteScheduledNotification function exists', () => {
+      const { deleteScheduledNotification } = require('../storage/database');
+      expect(typeof deleteScheduledNotification).toBe('function');
+    });
+
+    it('toggleScheduledNotification function exists', () => {
+      const { toggleScheduledNotification } = require('../storage/database');
+      expect(typeof toggleScheduledNotification).toBe('function');
+    });
+  });
 });
 
 describe('Date helpers', () => {

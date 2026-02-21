@@ -6,6 +6,7 @@ import { initDatabase, getSetting, setSetting } from './src/storage/database';
 import i18n from './src/i18n';
 import { initDetection } from './src/detection/index';
 import { setupNotificationInfrastructure, scheduleDayReminders } from './src/notifications/notificationManager';
+import { scheduleAllScheduledNotifications } from './src/notifications/scheduledNotifications';
 import { registerWeatherBackgroundFetch } from './src/weather/weatherBackgroundTask';
 import AppNavigator from './src/navigation/AppNavigator';
 import IntroScreen from './src/screens/IntroScreen';
@@ -47,11 +48,28 @@ export default function App() {
       if (hasCompletedIntro) {
         try {
           await initDetection();
+        } catch (e) {
+          console.warn('Detection init error:', e);
+        }
+        
+        try {
           await scheduleDayReminders();
-          // Register weather background fetch for hourly updates
+        } catch (e) {
+          console.warn('Day reminders error:', e);
+        }
+        
+        // Reschedule any scheduled notifications (handles past notifications and ensures they're set for next occurrence)
+        try {
+          await scheduleAllScheduledNotifications();
+        } catch (e) {
+          console.warn('Scheduled notifications init error:', e);
+        }
+        
+        // Register weather background fetch for hourly updates
+        try {
           await registerWeatherBackgroundFetch();
         } catch (e) {
-          console.warn('Init error:', e);
+          console.warn('Weather background fetch error:', e);
         }
       }
     }
@@ -65,11 +83,27 @@ export default function App() {
     // Initialize detection after tutorial is complete
     try {
       await initDetection();
+    } catch (e) {
+      console.warn('Detection init error:', e);
+    }
+    
+    try {
       await scheduleDayReminders();
-      // Register weather background fetch for hourly updates
+    } catch (e) {
+      console.warn('Day reminders error:', e);
+    }
+    
+    try {
+      await scheduleAllScheduledNotifications();
+    } catch (e) {
+      console.warn('Scheduled notifications init error:', e);
+    }
+    
+    // Register weather background fetch for hourly updates
+    try {
       await registerWeatherBackgroundFetch();
     } catch (e) {
-      console.warn('Post-tutorial init error:', e);
+      console.warn('Weather background fetch error:', e);
     }
   };
 

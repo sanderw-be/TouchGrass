@@ -7,6 +7,7 @@ import {
 import { shouldRemindNow, scoreReminderHours } from './reminderAlgorithm';
 import { getWeatherForHour, isWeatherDataAvailable } from '../weather/weatherService';
 import { getWeatherDescription, getWeatherEmoji, getWeatherPreferences } from '../weather/weatherAlgorithm';
+import { hasScheduledNotificationNearby } from './scheduledNotifications';
 import { t } from '../i18n';
 
 const NOTIF_TITLES = [
@@ -45,13 +46,27 @@ export async function setupNotificationInfrastructure(): Promise<void> {
     } catch (e) {
       console.warn('TouchGrass: Failed to create background channel:', e);
     }
+
+    // Create channel for scheduled notifications
+    try {
+      await Notifications.setNotificationChannelAsync('touchgrass_scheduled', {
+        name: t('notif_channel_scheduled_name'),
+        description: t('notif_channel_scheduled_desc'),
+        importance: Notifications.AndroidImportance.DEFAULT,
+        vibrationPattern: [0, 250, 250, 250],
+        lightColor: '#4A7C59',
+      });
+      console.log('TouchGrass: Scheduled notification channel created');
+    } catch (e) {
+      console.warn('TouchGrass: Failed to create scheduled channel:', e);
+    }
   }
 
   // Set handler for foreground notifications
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
       shouldShowAlert: true,
-      shouldPlaySound: false,
+      shouldPlaySound: true, // Allow sound from notification content
       shouldSetBadge: false,
       shouldShowBanner: true,
       shouldShowList: true,
@@ -60,6 +75,37 @@ export async function setupNotificationInfrastructure(): Promise<void> {
 
   // Handle notification responses (button taps)
   Notifications.addNotificationResponseReceivedListener(handleNotificationResponse);
+
+  // Handle notifications being delivered/fired
+  Notifications.addNotificationReceivedListener(handleNotificationReceived);
+}
+
+/**
+ * Handle when a notification is received (fired/delivered).
+ * Reschedule weekly notifications for next week.
+ */
+async function handleNotificationReceived(notification: Notifications.Notification) {
+  try {
+    const { data } = notification.request.content;
+    
+    // Check if this is a scheduled notification that needs rescheduling
+    // Note: All data values are strings for Android compatibility
+    if (data && data.isScheduledNotification === 'true' && data.scheduleId && data.dayOfWeek) {
+      console.log('TouchGrass: Scheduled notification fired, rescheduling for next week');
+      
+      // Import dynamically to avoid circular dependency
+      const { rescheduleNotificationForNextWeek } = await import('./scheduledNotifications');
+      await rescheduleNotificationForNextWeek(
+        parseInt(data.scheduleId as string, 10),
+        parseInt(data.dayOfWeek as string, 10),
+        parseInt(data.hour as string, 10),
+        parseInt(data.minute as string, 10)
+      );
+    }
+  } catch (error) {
+    console.error('TouchGrass: Error in handleNotificationReceived:', error);
+    // Don't throw to avoid crashing the app
+  }
 }
 
 /**
@@ -128,6 +174,12 @@ export async function scheduleNextReminder(): Promise<void> {
 
   if (!remindersEnabled) return;
 
+  // Skip if there's a scheduled notification nearby
+  if (hasScheduledNotificationNearby(60)) {
+    console.log('TouchGrass: Skipping automatic reminder - scheduled notification nearby');
+    return;
+  }
+
   const { should, reason } = shouldRemindNow(
     todayMinutes,
     dailyTarget,
@@ -140,8 +192,8 @@ export async function scheduleNextReminder(): Promise<void> {
     return;
   }
 
-  // Cancel existing scheduled reminders
-  await Notifications.cancelAllScheduledNotificationsAsync();
+  // Cancel existing automatic reminders (but preserve scheduled ones)
+  await cancelAutomaticReminders();
 
   // Build message based on progress
   const { title, body } = buildReminderMessage(todayMinutes, dailyTarget);
@@ -172,7 +224,7 @@ export async function scheduleDayReminders(): Promise<void> {
 
   if (!remindersEnabled) return;
 
-  await Notifications.cancelAllScheduledNotificationsAsync();
+  await cancelAutomaticReminders();
 
   const currentHour = new Date().getHours();
   const scores = scoreReminderHours(todayMinutes, dailyTarget, currentHour);
@@ -183,6 +235,19 @@ export async function scheduleDayReminders(): Promise<void> {
     .slice(0, 2);
 
   for (const slot of topHours) {
+    // Skip this hour if there's a scheduled notification nearby
+    const testDate = new Date();
+    testDate.setHours(slot.hour, 0, 0, 0);
+    const slotMinutes = slot.hour * 60;
+    const currentMinutes = new Date().getHours() * 60 + new Date().getMinutes();
+    
+    // Simple check: if the slot is within 60 minutes of any scheduled notification
+    // We'll do a more precise check in hasScheduledNotificationNearby
+    if (hasScheduledNotificationNearby(60)) {
+      console.log(`Skipping reminder at ${slot.hour}:00 - scheduled notification nearby`);
+      continue;
+    }
+
     const triggerDate = new Date();
     triggerDate.setHours(slot.hour, 0, 0, 0);
 
@@ -202,6 +267,20 @@ export async function scheduleDayReminders(): Promise<void> {
         channelId: CHANNEL_ID,
       },
     });
+  }
+}
+
+/**
+ * Cancel only automatic/smart reminders, preserving scheduled notifications.
+ */
+async function cancelAutomaticReminders(): Promise<void> {
+  const all = await Notifications.getAllScheduledNotificationsAsync();
+  
+  for (const notif of all) {
+    // Only cancel if it's NOT a scheduled notification (those have 'scheduled_' prefix)
+    if (!notif.identifier.startsWith('scheduled_')) {
+      await Notifications.cancelScheduledNotificationAsync(notif.identifier);
+    }
   }
 }
 
