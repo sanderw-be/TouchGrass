@@ -24,7 +24,7 @@ TaskManager.defineTask(WEATHER_BACKGROUND_TASK, async () => {
     }
 
     // Fetch fresh weather data
-    const result = await fetchWeatherForecast();
+    const result = await fetchWeatherForecast({ allowPermissionPrompt: false });
     
     if (result.success) {
       console.log('Weather background fetch successful');

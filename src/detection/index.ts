@@ -23,7 +23,7 @@ TaskManager.defineTask(BACKGROUND_TASK_NAME, async () => {
     try {
       const weatherEnabled = getSetting('weather_enabled', '1') === '1';
       if (weatherEnabled) {
-        await fetchWeatherForecast();
+        await fetchWeatherForecast({ allowPermissionPrompt: false });
       }
     } catch (weatherError) {
       console.warn('Weather fetch failed in background task:', weatherError);
