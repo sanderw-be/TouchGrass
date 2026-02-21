@@ -11,11 +11,48 @@ const LOCATION_TRACK_TASK = 'TOUCHGRASS_LOCATION_TRACK';
 
 const CONFIDENCE_GPS_ONLY = 0.80;
 const CONFIDENCE_GPS_AND_ACTIVITY = 0.95;
-const MIN_OUTSIDE_DURATION_MS = 5 * 60 * 1000;
+export const MIN_OUTSIDE_DURATION_MS = 5 * 60 * 1000;
 
 // In-memory state for the current outside session
 let outsideSessionStart: number | null = null;
 let lastKnownOutside = false;
+let gpsStateLoaded = false;
+
+// Persistence keys for GPS session state
+const GPS_SESSION_START_KEY = 'gps_session_start';
+const GPS_LAST_OUTSIDE_KEY = 'gps_last_outside';
+
+/**
+ * Load GPS session state from persistent storage.
+ * Called lazily on the first location update after a (re)start.
+ */
+function loadGPSState(): void {
+  if (gpsStateLoaded) return;
+  const start = parseInt(getSetting(GPS_SESSION_START_KEY, '0'), 10);
+  const outside = getSetting(GPS_LAST_OUTSIDE_KEY, '0') === '1';
+  outsideSessionStart = start > 0 ? start : null;
+  lastKnownOutside = outside;
+  gpsStateLoaded = true;
+}
+
+/**
+ * Persist GPS session state so it survives app restarts.
+ */
+function saveGPSState(): void {
+  setSetting(GPS_SESSION_START_KEY, String(outsideSessionStart ?? 0));
+  setSetting(GPS_LAST_OUTSIDE_KEY, lastKnownOutside ? '1' : '0');
+}
+
+/**
+ * Reset all in-memory GPS session state.
+ * Exported for use in unit tests only.
+ * @internal
+ */
+export function _resetGPSStateForTesting(): void {
+  outsideSessionStart = null;
+  lastKnownOutside = false;
+  gpsStateLoaded = false;
+}
 
 /**
  * Request location permissions (foreground + background).
@@ -58,7 +95,7 @@ export async function startLocationTracking(): Promise<void> {
       notificationBody: 'Tracking outside time in the background',
       notificationColor: '#4A7C59',
     },
-    pausesUpdatesAutomatically: true,
+    pausesUpdatesAutomatically: false,
   });
   console.log('TouchGrass: GPS tracking started successfully');
 }
@@ -93,12 +130,14 @@ export function isAtKnownIndoorLocation(
  * Called by the background task.
  */
 export function processLocationUpdate(lat: number, lon: number, timestamp: number): void {
+  loadGPSState();
+
   const knownLocations = getKnownLocations();
   const isIndoor = isAtKnownIndoorLocation(lat, lon, knownLocations);
   const isOutside = !isIndoor;
 
   if (isOutside && !lastKnownOutside) {
-    // Just went outside
+    // Just went outside (or first update with no known indoor locations)
     outsideSessionStart = timestamp;
     lastKnownOutside = true;
   } else if (!isOutside && lastKnownOutside && outsideSessionStart !== null) {
@@ -116,7 +155,25 @@ export function processLocationUpdate(lat: number, lon: number, timestamp: numbe
     }
     outsideSessionStart = null;
     lastKnownOutside = false;
+  } else if (isOutside && lastKnownOutside && outsideSessionStart !== null) {
+    // Still outside without an indoor transition.
+    // Flush periodically so sessions are logged even when no known indoor
+    // locations exist to trigger the normal transition-based completion.
+    const duration = timestamp - outsideSessionStart;
+    if (duration >= MIN_OUTSIDE_DURATION_MS) {
+      const session = buildSession(
+        outsideSessionStart,
+        timestamp,
+        'gps',
+        CONFIDENCE_GPS_ONLY,
+        'GPS periodic',
+      );
+      submitSession(session);
+      outsideSessionStart = timestamp; // start next segment from now
+    }
   }
+
+  saveGPSState();
 
   // Update location clusters for auto-detect
   recordLocationForClustering(lat, lon, timestamp);
