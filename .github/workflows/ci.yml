@@ -93,7 +93,7 @@ jobs:
       - name: Build Android APK
         run: |
           echo "Building Android APK..."
-          npm run android:release
+          eas build --platform android --profile production --local --non-interactive --output ${{ github.workspace }}/TouchGrass.apk
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
@@ -101,7 +101,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: touchgrass-android-apk
-          path: ${{ github.workspace }}/android/app/build/outputs/apk/release/app-release.apk
+          path: ${{ github.workspace }}/TouchGrass.apk
           retention-days: 30
           if-no-files-found: error
 
