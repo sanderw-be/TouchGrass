@@ -76,16 +76,17 @@ export default function ManualSessionSheet({ visible, onClose, onSessionLogged }
   // ── Log past session ──────────────────────────────────
 
   const handleLogSession = () => {
-    // Calculate duration from start and end times
+    // Use exact millisecond precision so very short timer sessions are not
+    // blocked by rounding, and the stored times match what the user reviewed.
     const durationMs = endTime.getTime() - startTime.getTime();
-    const duration = Math.round(durationMs / (60 * 1000)); // Convert to minutes
-    
-    if (duration < 1 || duration > 720) {
+    const durationMinutes = durationMs / 60000;
+
+    if (durationMs <= 0 || durationMinutes > 720) {
       Alert.alert(t('manual_invalid_title'), t('manual_invalid_body'));
       return;
     }
-    
-    logManualSession(duration, startTime.getTime());
+
+    logManualSession(durationMinutes, startTime.getTime(), endTime.getTime());
     onSessionLogged();
     onClose();
   };

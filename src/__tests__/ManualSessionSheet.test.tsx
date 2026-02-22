@@ -93,16 +93,46 @@ describe('ManualSessionSheet', () => {
     const { logManualSession } = require('../detection/manualCheckin');
     const onSessionLogged = jest.fn();
     const onClose = jest.fn();
+    const startMs = new Date('2024-01-01T10:00:00.000Z').getTime();
+    const endMs = new Date('2024-01-01T10:10:00.000Z').getTime();
     const { getByText } = render(
       <ManualSessionSheet visible={true} onClose={onClose} onSessionLogged={onSessionLogged} />,
     );
     fireEvent.press(getByText('manual_tab_timer'));
     fireEvent.press(getByText('manual_timer_start'));
     // Advance 10 minutes so the duration is valid
-    jest.setSystemTime(new Date('2024-01-01T10:10:00.000Z'));
+    jest.setSystemTime(new Date(endMs));
     fireEvent.press(getByText('manual_timer_stop'));
     fireEvent.press(getByText('manual_log_btn'));
-    expect(logManualSession).toHaveBeenCalled();
+    // Exact start and end timestamps are passed (not a rounded duration)
+    expect(logManualSession).toHaveBeenCalledWith(
+      (endMs - startMs) / 60000,
+      startMs,
+      endMs,
+    );
+    expect(onSessionLogged).toHaveBeenCalled();
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it('saves a short timer session (under 1 minute) without showing an error', () => {
+    const { logManualSession } = require('../detection/manualCheckin');
+    const onSessionLogged = jest.fn();
+    const onClose = jest.fn();
+    const startMs = new Date('2024-01-01T10:00:00.000Z').getTime();
+    const endMs = new Date('2024-01-01T10:00:20.000Z').getTime(); // 20 seconds
+    const { getByText } = render(
+      <ManualSessionSheet visible={true} onClose={onClose} onSessionLogged={onSessionLogged} />,
+    );
+    fireEvent.press(getByText('manual_tab_timer'));
+    fireEvent.press(getByText('manual_timer_start'));
+    jest.setSystemTime(new Date(endMs));
+    fireEvent.press(getByText('manual_timer_stop'));
+    fireEvent.press(getByText('manual_log_btn'));
+    expect(logManualSession).toHaveBeenCalledWith(
+      (endMs - startMs) / 60000,
+      startMs,
+      endMs,
+    );
     expect(onSessionLogged).toHaveBeenCalled();
     expect(onClose).toHaveBeenCalled();
   });

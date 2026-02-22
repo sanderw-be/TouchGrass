@@ -4,12 +4,14 @@ const CONFIDENCE_MANUAL = 1.0; // user always knows best
 
 /**
  * Log a manual outside session.
- * @param startTime - unix ms, defaults to now minus durationMinutes
  * @param durationMinutes - how long the session was
+ * @param startTime - unix ms, defaults to now minus durationMinutes
+ * @param endTime - unix ms, defaults to startTime + durationMinutes. Pass the
+ *   exact stop timestamp so the stored times match what the user reviewed.
  */
-export function logManualSession(durationMinutes: number, startTime?: number): void {
+export function logManualSession(durationMinutes: number, startTime?: number, endTime?: number): void {
   const start = startTime ?? Date.now() - durationMinutes * 60 * 1000;
-  const end = start + durationMinutes * 60 * 1000;
+  const end = endTime ?? start + durationMinutes * 60 * 1000;
 
   const session = buildSession(
     start,

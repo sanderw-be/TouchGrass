@@ -185,8 +185,8 @@ export default {
   manual_timer_stop: "✓ I'm back",
   manual_timer_cancel: 'Cancel',
   manual_timer_stopped_hint: 'Timer stopped — review and adjust your session times before saving.',
-  manual_invalid_title: 'Invalid duration',
-  manual_invalid_body: 'Please enter a duration between 1 and 720 minutes.',
+  manual_invalid_title: 'Invalid time range',
+  manual_invalid_body: 'Please make sure the end time is after the start time and the session is no longer than 12 hours.',
 
   // Intro/Onboarding
   intro_skip: 'Skip',
