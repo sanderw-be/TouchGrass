@@ -172,7 +172,6 @@ export async function scheduleNextReminder(): Promise<void> {
       title,
       body,
       categoryIdentifier: 'reminder',
-      data: { scheduledAt: Date.now() },
       color: '#4A7C59',
     },
     trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: 1 },
@@ -227,7 +226,6 @@ export async function scheduleDayReminders(): Promise<void> {
         title,
         body,
         categoryIdentifier: 'reminder',
-        data: { scheduledAt: Date.now(), plannedHour: slot.hour },
         color: '#4A7C59',
       },
       trigger: {
