@@ -1,5 +1,6 @@
 import * as Notifications from 'expo-notifications';
 import { getScheduledNotifications } from '../storage/database';
+import { t } from '../i18n';
 
 // Prefix for scheduled notification identifiers
 const SCHEDULED_NOTIF_PREFIX = 'scheduled_';
@@ -50,8 +51,8 @@ export async function scheduleAllScheduledNotifications(): Promise<void> {
           await Notifications.scheduleNotificationAsync({
             identifier: notificationId,
             content: {
-              title: schedule.label || '🌿 Time to touch grass!',
-              body: 'Your scheduled reminder to go outside.',
+              title: schedule.label || t('notif_title_1'),
+              body: t('scheduled_notif_body'),
               sound: true,
               // Note: 'data' is intentionally omitted. Passing a 'data' object causes
               // NotificationContent.mBody to be a JSONObject. On Android, R8/ProGuard can

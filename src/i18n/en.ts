@@ -294,6 +294,7 @@ export default {
   notif_channel_scheduled_desc: 'Your custom scheduled reminders to go outside',
 
   // Scheduled notifications
+  scheduled_notif_body: 'Your scheduled reminder to go outside.',
   scheduled_empty: 'No scheduled reminders yet',
   scheduled_empty_hint: 'Tap the + button to create a recurring reminder',
   scheduled_add: 'Add reminder',
