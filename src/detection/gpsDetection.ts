@@ -222,11 +222,13 @@ export async function autoDetectLocations(): Promise<void> {
       if (alreadyKnown) continue;
 
       // Insert as a suggested location with an empty label (displayed as default at render time)
+      // Use the user's chosen default suggestion radius (falls back to CLUSTER_DETECTION_RADIUS_M)
+      const suggestionRadius = parseInt(getSetting('location_suggestion_radius', String(CLUSTER_DETECTION_RADIUS_M)), 10);
       upsertKnownLocation({
         label: '',
         latitude: cluster.lat,
         longitude: cluster.lon,
-        radiusMeters: 100,
+        radiusMeters: isNaN(suggestionRadius) ? CLUSTER_DETECTION_RADIUS_M : suggestionRadius,
         isIndoor: true,
         status: 'suggested',
       });
@@ -287,6 +289,12 @@ interface DwellCluster {
 const MAX_CLUSTER_SAMPLES = 500;
 // Maximum gap between two consecutive samples to count as continuous dwell
 const MAX_DWELL_GAP_MS = 2 * 60 * 60 * 1000; // 2 hours
+/**
+ * Radius (metres) used when deciding if two GPS points are "at the same place"
+ * for dwell-time clustering. This is a data-collection constant independent of
+ * any individual location's geofence radius.
+ */
+export const CLUSTER_DETECTION_RADIUS_M = 100;
 
 function recordLocationForClustering(lat: number, lon: number, timestamp: number): void {
   try {
@@ -320,10 +328,10 @@ export function computeDwellClusters(samples: LocationSample[]): DwellCluster[] 
     const gap = next.timestamp - curr.timestamp;
 
     // Only accumulate dwell if the user stayed nearby with no large gap
-    if (dist <= 100 && gap <= MAX_DWELL_GAP_MS) {
+    if (dist <= CLUSTER_DETECTION_RADIUS_M && gap <= MAX_DWELL_GAP_MS) {
       let found = false;
       for (const c of clusters) {
-        if (haversineDistance(c.lat, c.lon, curr.lat, curr.lon) <= 100) {
+        if (haversineDistance(c.lat, c.lon, curr.lat, curr.lon) <= CLUSTER_DETECTION_RADIUS_M) {
           c.totalDwellMs += gap;
           c.sampleCount++;
           c.latSum += curr.lat;

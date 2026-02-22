@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View, Text, StyleSheet, Modal, TouchableOpacity,
   TextInput, Alert, ScrollView, ActivityIndicator,
@@ -27,6 +27,12 @@ interface Coords {
   longitude: number;
 }
 
+interface AddressSuggestion {
+  /** Human-readable display text */
+  display: string;
+  coords: Coords;
+}
+
 interface Props {
   visible: boolean;
   /** Existing location to edit (or suggested location to approve). Pass null to create new. */
@@ -44,13 +50,24 @@ export default function EditLocationSheet({
   const [label, setLabel] = useState('');
   const [radiusIdx, setRadiusIdx] = useState(findRadiusIdx(100));
   const [isIndoor, setIsIndoor] = useState(true);
+
+  // Address state
   const [address, setAddress] = useState<string | null>(null);
   const [addressLoading, setAddressLoading] = useState(false);
+  const [addressEditing, setAddressEditing] = useState(false);
+  const [addressQuery, setAddressQuery] = useState('');
+  const [addressSuggestions, setAddressSuggestions] = useState<AddressSuggestion[]>([]);
+  const [addressSearching, setAddressSearching] = useState(false);
 
-  // Derive working coordinates: existing location or provided initial coords
-  const coords: Coords | null = location
+  // Manually chosen coords (overrides original coords when user picks an address)
+  const [manualCoords, setManualCoords] = useState<Coords | null>(null);
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Working coordinates: manual override > existing location > initial coords
+  const baseCoords: Coords | null = location
     ? { latitude: location.latitude, longitude: location.longitude }
     : initialCoords ?? null;
+  const coords: Coords | null = manualCoords ?? baseCoords;
 
   const isNew = location === null;
   const isSuggested = location?.status === 'suggested';
@@ -62,12 +79,16 @@ export default function EditLocationSheet({
       setRadiusIdx(findRadiusIdx(location?.radiusMeters ?? 100));
       setIsIndoor(location?.isIndoor ?? true);
       setAddress(null);
+      setManualCoords(null);
+      setAddressEditing(false);
+      setAddressQuery('');
+      setAddressSuggestions([]);
     }
   }, [visible, location]);
 
   // Reverse-geocode coordinates to a human-readable address
   useEffect(() => {
-    if (!visible || !coords) return;
+    if (!visible || !coords || addressEditing) return;
     let cancelled = false;
     setAddressLoading(true);
     setAddress(null);
@@ -90,14 +111,64 @@ export default function EditLocationSheet({
         if (!cancelled) setAddressLoading(false);
       });
     return () => { cancelled = true; };
-  }, [visible, coords?.latitude, coords?.longitude]);
+  }, [visible, coords?.latitude, coords?.longitude, addressEditing]);
+
+  // Geocode search with 500ms debounce
+  const handleAddressQueryChange = useCallback((text: string) => {
+    setAddressQuery(text);
+    setAddressSuggestions([]);
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    if (!text.trim()) return;
+    searchTimerRef.current = setTimeout(async () => {
+      setAddressSearching(true);
+      try {
+        const results = await Location.geocodeAsync(text.trim());
+        const suggestions: AddressSuggestion[] = results
+          .filter(r => r.latitude !== 0 || r.longitude !== 0) // exclude null island (0,0)
+          .slice(0, 5)
+          .map((r) => ({
+            // Temporary display text — replaced by reverse-geocode below
+            display: text.trim(),
+            coords: { latitude: r.latitude, longitude: r.longitude },
+          }));
+
+        // Reverse-geocode each suggestion to get a human-readable label
+        const labelled = await Promise.all(
+          suggestions.map(async (s) => {
+            try {
+              const rev = await Location.reverseGeocodeAsync(s.coords);
+              if (rev[0]) {
+                const street = [rev[0].street, rev[0].streetNumber].filter(Boolean).join(' ');
+                const parts = [street, rev[0].city, rev[0].country].filter(Boolean);
+                return { ...s, display: parts.join(', ') || s.display };
+              }
+            } catch { /* keep original */ }
+            return s;
+          })
+        );
+        setAddressSuggestions(labelled);
+      } catch {
+        setAddressSuggestions([]);
+      } finally {
+        setAddressSearching(false);
+      }
+    }, 500);
+  }, []);
+
+  const handleSelectSuggestion = (suggestion: AddressSuggestion) => {
+    setManualCoords(suggestion.coords);
+    setAddress(suggestion.display);
+    setAddressEditing(false);
+    setAddressQuery('');
+    setAddressSuggestions([]);
+  };
 
   const handleSave = () => {
     if (!label.trim()) {
       Alert.alert(t('location_edit_error_title'), t('location_edit_error_label'));
       return;
     }
-    if (!coords) return; // shouldn't happen but guard anyway
+    if (!coords) return;
 
     try {
       upsertKnownLocation({
@@ -107,7 +178,7 @@ export default function EditLocationSheet({
         longitude: coords.longitude,
         radiusMeters: RADIUS_STEPS[radiusIdx],
         isIndoor,
-        status: 'active', // always active when saved through this sheet
+        status: 'active',
       });
       onSave();
       onClose();
@@ -178,21 +249,88 @@ export default function EditLocationSheet({
           contentContainerStyle={[styles.contentInner, { paddingTop: spacing.sm }]}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Address display */}
-          {coords && (
+          {/* Address — view or editable search */}
+          {(coords || addressEditing) && (
             <View style={styles.section}>
               <Text style={styles.sectionLabel}>{t('location_edit_address')}</Text>
-              <View style={styles.addressCard}>
-                <Text style={styles.addressIcon}>📍</Text>
-                {addressLoading ? (
-                  <ActivityIndicator size="small" color={colors.grass} style={{ marginLeft: spacing.sm }} />
-                ) : (
-                  <Text style={styles.addressText}>{address ?? t('location_edit_address_unavailable')}</Text>
-                )}
-              </View>
-              <Text style={styles.hint}>
-                {`${coords.latitude.toFixed(5)}, ${coords.longitude.toFixed(5)}`}
-              </Text>
+
+              {addressEditing ? (
+                /* Search input */
+                <View>
+                  <View style={styles.addressSearchRow}>
+                    <Text style={styles.addressIcon}>📍</Text>
+                    <TextInput
+                      style={styles.addressInput}
+                      value={addressQuery}
+                      onChangeText={handleAddressQueryChange}
+                      placeholder={t('location_edit_address_search_placeholder')}
+                      placeholderTextColor={colors.textMuted}
+                      autoFocus
+                    />
+                    {addressSearching && (
+                      <ActivityIndicator size="small" color={colors.grass} />
+                    )}
+                    <TouchableOpacity
+                      onPress={() => {
+                        setAddressEditing(false);
+                        setAddressQuery('');
+                        setAddressSuggestions([]);
+                      }}
+                    >
+                      <Text style={styles.cancelSearch}>✕</Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  {/* Suggestions list */}
+                  {addressSuggestions.length > 0 && (
+                    <View style={styles.suggestionsList}>
+                      {addressSuggestions.map((s, i) => (
+                        <TouchableOpacity
+                          key={`${s.coords.latitude}-${s.coords.longitude}`}
+                          style={[
+                            styles.suggestionRow,
+                            i < addressSuggestions.length - 1 && styles.suggestionDivider,
+                          ]}
+                          onPress={() => handleSelectSuggestion(s)}
+                        >
+                          <Text style={styles.suggestionIcon}>📍</Text>
+                          <Text style={styles.suggestionText} numberOfLines={2}>{s.display}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  )}
+
+                  {!addressSearching && addressQuery.trim() && addressSuggestions.length === 0 && (
+                    <Text style={styles.noResults}>{t('location_edit_address_no_results')}</Text>
+                  )}
+                </View>
+              ) : (
+                /* Display card — tap to edit */
+                <TouchableOpacity
+                  style={styles.addressCard}
+                  onPress={() => {
+                    setAddressQuery(address ?? '');
+                    setAddressEditing(true);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.addressIcon}>📍</Text>
+                  {addressLoading ? (
+                    <ActivityIndicator size="small" color={colors.grass} style={{ marginLeft: spacing.sm }} />
+                  ) : (
+                    <>
+                      <Text style={styles.addressText}>{address ?? t('location_edit_address_unavailable')}</Text>
+                      <Text style={styles.addressEditHint}>✎</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+              )}
+
+              {coords && !addressEditing && (
+                <Text style={styles.hint}>
+                  {`${coords.latitude.toFixed(5)}, ${coords.longitude.toFixed(5)}`}
+                </Text>
+              )}
             </View>
           )}
 
@@ -402,6 +540,46 @@ const styles = StyleSheet.create({
   },
   addressIcon: { fontSize: 16, marginRight: spacing.sm },
   addressText: { flex: 1, fontSize: 15, color: colors.textPrimary },
+  addressEditHint: { fontSize: 16, color: colors.textMuted, marginLeft: spacing.sm },
+
+  addressSearchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.textInverse,
+    borderRadius: radius.md,
+    padding: spacing.sm,
+    gap: spacing.sm,
+    ...shadows.soft,
+  },
+  addressInput: {
+    flex: 1,
+    fontSize: 15,
+    color: colors.textPrimary,
+    padding: spacing.xs,
+  },
+  cancelSearch: { fontSize: 14, color: colors.textMuted, fontWeight: '700', paddingHorizontal: 4 },
+
+  suggestionsList: {
+    backgroundColor: colors.textInverse,
+    borderRadius: radius.md,
+    marginTop: spacing.xs,
+    ...shadows.soft,
+    overflow: 'hidden',
+  },
+  suggestionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: spacing.md,
+    gap: spacing.sm,
+  },
+  suggestionDivider: {
+    borderBottomWidth: 1,
+    borderBottomColor: colors.fog,
+  },
+  suggestionIcon: { fontSize: 14 },
+  suggestionText: { flex: 1, fontSize: 14, color: colors.textPrimary },
+
+  noResults: { fontSize: 13, color: colors.textMuted, marginTop: spacing.xs, textAlign: 'center' },
 
   input: {
     backgroundColor: colors.textInverse,
