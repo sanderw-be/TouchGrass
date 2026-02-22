@@ -26,9 +26,9 @@ const mockFetchWeatherForecast = jest.fn();
 const mockIsWeatherDataAvailable = jest.fn(() => true);
 const mockGetWeatherForHour = jest.fn(() => null);
 jest.mock('../weather/weatherService', () => ({
-  fetchWeatherForecast: (...args: unknown[]) => mockFetchWeatherForecast(...args),
-  isWeatherDataAvailable: (...args: unknown[]) => mockIsWeatherDataAvailable(...args),
-  getWeatherForHour: (...args: unknown[]) => mockGetWeatherForHour(...args),
+  fetchWeatherForecast: () => mockFetchWeatherForecast(),
+  isWeatherDataAvailable: () => mockIsWeatherDataAvailable(),
+  getWeatherForHour: (_hour: number) => mockGetWeatherForHour(),
 }));
 
 // Mock weather algorithm
