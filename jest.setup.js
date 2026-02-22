@@ -91,6 +91,19 @@ jest.mock('@react-native-community/datetimepicker', () => {
   });
 });
 
+// Mock expo-calendar
+jest.mock('expo-calendar', () => ({
+  requestCalendarPermissionsAsync: jest.fn(() => Promise.resolve({ status: 'granted' })),
+  getCalendarPermissionsAsync: jest.fn(() => Promise.resolve({ status: 'granted' })),
+  getCalendarsAsync: jest.fn(() => Promise.resolve([])),
+  getEventsAsync: jest.fn(() => Promise.resolve([])),
+  createEventAsync: jest.fn(() => Promise.resolve('event-id-1')),
+  EntityTypes: {
+    EVENT: 'event',
+    REMINDER: 'reminder',
+  },
+}));
+
 // Suppress Expo runtime warnings in tests
 global.__ExpoImportMetaRegistry = {
   get: jest.fn(),

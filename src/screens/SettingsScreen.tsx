@@ -14,6 +14,7 @@ import { t } from '../i18n';
 import i18n from '../i18n';
 import EditLocationSheet from '../components/EditLocationSheet';
 import type { SettingsStackParamList } from '../navigation/AppNavigator';
+import { requestCalendarPermissions, hasCalendarPermissions } from '../calendar/calendarService';
 
 const LANGUAGES = [
   { code: 'en', label: 'English' },
@@ -33,6 +34,12 @@ export default function SettingsScreen() {
   // Weather state - only the main toggle
   const [weatherEnabled, setWeatherEnabled] = useState(true);
 
+  // Calendar state
+  const [calendarEnabled, setCalendarEnabled] = useState(false);
+  const [calendarPermissionGranted, setCalendarPermissionGranted] = useState(false);
+  const [calendarBuffer, setCalendarBuffer] = useState(30);
+  const [calendarDuration, setCalendarDuration] = useState(15);
+
   const loadStatus = useCallback(() => {
     setRemindersEnabled(getSetting('reminders_enabled', '1') === '1');
     setDetectionStatus(getDetectionStatus());
@@ -41,6 +48,11 @@ export default function SettingsScreen() {
     
     // Load weather settings
     setWeatherEnabled(getSetting('weather_enabled', '1') === '1');
+
+    // Load calendar settings
+    setCalendarEnabled(getSetting('calendar_integration_enabled', '0') === '1');
+    setCalendarBuffer(parseInt(getSetting('calendar_buffer_minutes', '30'), 10));
+    setCalendarDuration(parseInt(getSetting('calendar_default_duration', '15'), 10));
   }, []);
 
   // Check permissions and show success message if Health Connect was just enabled
@@ -63,6 +75,10 @@ export default function SettingsScreen() {
         t('settings_hc_verified_body'),
       );
     }
+
+    // Refresh calendar permission status
+    const calGranted = await hasCalendarPermissions();
+    setCalendarPermissionGranted(calGranted);
   }, []);
 
   useFocusEffect(useCallback(() => {
@@ -218,6 +234,43 @@ export default function SettingsScreen() {
     setWeatherEnabled(value);
   };
 
+  const CALENDAR_BUFFER_OPTIONS = [10, 20, 30, 45, 60];
+  const CALENDAR_DURATION_OPTIONS = [5, 10, 15, 20, 30];
+
+  const toggleCalendarIntegration = async (value: boolean) => {
+    if (value && !calendarPermissionGranted) {
+      const granted = await requestCalendarPermissions();
+      setCalendarPermissionGranted(granted);
+      if (!granted) {
+        Alert.alert(
+          t('settings_calendar_permission_title'),
+          t('settings_calendar_permission_body'),
+          [
+            { text: t('settings_calendar_permission_cancel'), style: 'cancel' },
+            { text: t('settings_calendar_permission_open'), onPress: handleOpenAppSettings },
+          ],
+        );
+        return;
+      }
+    }
+    setSetting('calendar_integration_enabled', value ? '1' : '0');
+    setCalendarEnabled(value);
+  };
+
+  const cycleCalendarBuffer = () => {
+    const idx = CALENDAR_BUFFER_OPTIONS.indexOf(calendarBuffer);
+    const next = CALENDAR_BUFFER_OPTIONS[(idx + 1) % CALENDAR_BUFFER_OPTIONS.length];
+    setSetting('calendar_buffer_minutes', String(next));
+    setCalendarBuffer(next);
+  };
+
+  const cycleCalendarDuration = () => {
+    const idx = CALENDAR_DURATION_OPTIONS.indexOf(calendarDuration);
+    const next = CALENDAR_DURATION_OPTIONS[(idx + 1) % CALENDAR_DURATION_OPTIONS.length];
+    setSetting('calendar_default_duration', String(next));
+    setCalendarDuration(next);
+  };
+
   return (
     <>
       <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
@@ -344,6 +397,54 @@ export default function SettingsScreen() {
                 sublabel={t('settings_weather_more_desc')}
                 right={
                   <Text style={styles.chevron}>›</Text>
+                }
+              />
+            </TouchableOpacity>
+          </>
+        )}
+      </View>
+
+      {/* Calendar integration */}
+      <Text style={styles.sectionHeader}>{t('settings_section_calendar')}</Text>
+      <View style={styles.card}>
+        <SettingRow
+          icon="📆"
+          label={t('settings_calendar_integration')}
+          sublabel={t('settings_calendar_integration_desc')}
+          right={
+            <Switch
+              value={calendarEnabled}
+              onValueChange={toggleCalendarIntegration}
+              trackColor={{ false: colors.fog, true: colors.grassLight }}
+              thumbColor={calendarEnabled ? colors.grass : colors.inactive}
+            />
+          }
+        />
+        {calendarEnabled && (
+          <>
+            <Divider />
+            <TouchableOpacity onPress={cycleCalendarBuffer}>
+              <SettingRow
+                icon="⏱️"
+                label={t('settings_calendar_buffer')}
+                sublabel={t('settings_calendar_buffer_desc')}
+                right={
+                  <Text style={styles.valueChip}>
+                    {t('settings_calendar_buffer_minutes', { minutes: calendarBuffer })}
+                  </Text>
+                }
+              />
+            </TouchableOpacity>
+            <Divider />
+            <TouchableOpacity onPress={cycleCalendarDuration}>
+              <SettingRow
+                icon="🕐"
+                label={t('settings_calendar_duration')}
+                sublabel={t('settings_calendar_duration_desc')}
+                right={
+                  <Text style={styles.valueChip}>
+                    {t('settings_calendar_duration_minutes', { minutes: calendarDuration })}
+                  </Text>
                 }
               />
             </TouchableOpacity>
@@ -544,6 +645,16 @@ const styles = StyleSheet.create({
 
   checkmark: { fontSize: 18, color: colors.grass, fontWeight: '700', marginLeft: spacing.md },
   chevron: { fontSize: 24, color: colors.textMuted, fontWeight: '300' },
+
+  valueChip: {
+    fontSize: 13,
+    color: colors.grass,
+    fontWeight: '600',
+    backgroundColor: colors.grassPale,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 3,
+    borderRadius: radius.full,
+  },
 
   permissionWarning: {
     backgroundColor: '#FEF3C7',

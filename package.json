@@ -23,6 +23,7 @@
     "expo": "~54.0.33",
     "expo-background-task": "~1.0.10",
     "expo-build-properties": "~1.0.10",
+    "expo-calendar": "~14.0.6",
     "expo-dev-client": "~6.0.20",
     "expo-health-connect": "^0.1.1",
     "expo-localization": "~17.0.8",

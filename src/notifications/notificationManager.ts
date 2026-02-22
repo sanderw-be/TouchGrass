@@ -8,6 +8,7 @@ import { shouldRemindNow, scoreReminderHours } from './reminderAlgorithm';
 import { getWeatherForHour, isWeatherDataAvailable } from '../weather/weatherService';
 import { getWeatherDescription, getWeatherEmoji, getWeatherPreferences } from '../weather/weatherAlgorithm';
 import { hasScheduledNotificationNearby } from './scheduledNotifications';
+import { hasUpcomingEvent } from '../calendar/calendarService';
 import { t } from '../i18n';
 
 const NOTIF_TITLES = [
@@ -146,6 +147,13 @@ export async function scheduleNextReminder(): Promise<void> {
   // Skip if there's a scheduled notification nearby
   if (hasScheduledNotificationNearby(60)) {
     console.log('TouchGrass: Skipping automatic reminder - scheduled notification nearby');
+    return;
+  }
+
+  // Skip if there is an imminent calendar event (smart reminders only)
+  const calendarBuffer = parseInt(getSetting('calendar_buffer_minutes', '30'), 10);
+  if (await hasUpcomingEvent(calendarBuffer)) {
+    console.log('TouchGrass: Skipping smart reminder - upcoming calendar event');
     return;
   }
 
