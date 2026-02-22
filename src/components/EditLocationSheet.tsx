@@ -4,6 +4,7 @@ import {
   TextInput, Alert, ScrollView, ActivityIndicator,
 } from 'react-native';
 import * as Location from 'expo-location';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { upsertKnownLocation, deleteKnownLocation, KnownLocation } from '../storage/database';
 import { colors, spacing, radius, shadows } from '../utils/theme';
 import { t } from '../i18n';
@@ -39,6 +40,7 @@ interface Props {
 export default function EditLocationSheet({
   visible, location, initialCoords, onClose, onSave,
 }: Props) {
+  const insets = useSafeAreaInsets();
   const [label, setLabel] = useState('');
   const [radiusIdx, setRadiusIdx] = useState(findRadiusIdx(100));
   const [isIndoor, setIsIndoor] = useState(true);
@@ -152,23 +154,30 @@ export default function EditLocationSheet({
   return (
     <Modal
       visible={visible}
+      transparent
       animationType="slide"
-      presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
-      <View style={styles.container}>
+      {/* Tappable backdrop */}
+      <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onClose} />
+
+      {/* Bottom sheet */}
+      <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, spacing.md) }]}>
+        {/* Drag handle */}
+        <View style={styles.handle} />
+
+        {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={onClose}>
-            <Text style={styles.cancelBtn}>{t('goals_cancel')}</Text>
-          </TouchableOpacity>
           <Text style={styles.title}>{title}</Text>
-          <TouchableOpacity onPress={handleSave}>
-            <Text style={styles.saveBtn}>{saveLabel}</Text>
+          <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
+            <Text style={styles.closeBtnText}>✕</Text>
           </TouchableOpacity>
         </View>
 
-        <ScrollView style={styles.content} contentContainerStyle={styles.contentInner}>
-
+        <ScrollView
+          contentContainerStyle={[styles.contentInner, { paddingTop: spacing.sm }]}
+          keyboardShouldPersistTaps="handled"
+        >
           {/* Address display */}
           {coords && (
             <View style={styles.section}>
@@ -230,6 +239,13 @@ export default function EditLocationSheet({
                 </Text>
               </TouchableOpacity>
             </View>
+          </View>
+
+          {/* Save button */}
+          <View style={styles.section}>
+            <TouchableOpacity style={styles.primaryBtn} onPress={handleSave}>
+              <Text style={styles.primaryBtnText}>{saveLabel}</Text>
+            </TouchableOpacity>
           </View>
 
           {/* Delete button — only for existing saved locations */}
@@ -327,22 +343,44 @@ const sliderStyles = StyleSheet.create({
 // ── Sheet styles ─────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.mist },
+  backdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+  },
+  sheet: {
+    backgroundColor: colors.mist,
+    borderTopLeftRadius: radius.lg,
+    borderTopRightRadius: radius.lg,
+    maxHeight: '88%',
+    ...shadows.medium,
+  },
+  handle: {
+    width: 40,
+    height: 4,
+    backgroundColor: colors.fog,
+    borderRadius: radius.full,
+    alignSelf: 'center',
+    marginTop: spacing.sm,
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: spacing.md,
-    backgroundColor: colors.textInverse,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.fog,
+    paddingBottom: spacing.sm,
   },
   title: { fontSize: 18, fontWeight: '700', color: colors.textPrimary },
-  cancelBtn: { fontSize: 16, color: colors.textMuted },
-  saveBtn: { fontSize: 16, color: colors.grass, fontWeight: '600' },
+  closeBtn: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: colors.fog,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  closeBtnText: { fontSize: 12, color: colors.textSecondary, fontWeight: '700' },
 
-  content: { flex: 1 },
-  contentInner: { padding: spacing.md },
+  contentInner: { padding: spacing.md, paddingBottom: spacing.lg },
 
   section: { marginBottom: spacing.lg },
   sectionLabel: {
@@ -399,6 +437,14 @@ const styles = StyleSheet.create({
   },
   toggleText: { fontSize: 14, color: colors.textMuted, fontWeight: '500' },
   toggleTextActive: { color: colors.grass, fontWeight: '700' },
+
+  primaryBtn: {
+    backgroundColor: colors.grass,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    alignItems: 'center',
+  },
+  primaryBtnText: { fontSize: 16, color: colors.textInverse, fontWeight: '700' },
 
   deleteBtn: {
     backgroundColor: '#FEE2E2',
