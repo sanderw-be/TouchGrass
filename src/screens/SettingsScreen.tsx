@@ -37,7 +37,7 @@ export default function SettingsScreen() {
   const [calendarEnabled, setCalendarEnabled] = useState(false);
   const [calendarPermissionGranted, setCalendarPermissionGranted] = useState(false);
   const [calendarBuffer, setCalendarBuffer] = useState(30);
-  const [calendarDuration, setCalendarDuration] = useState(15);
+  const [calendarDuration, setCalendarDuration] = useState(0);
 
   const loadStatus = useCallback(() => {
     setRemindersEnabled(getSetting('reminders_enabled', '1') === '1');
