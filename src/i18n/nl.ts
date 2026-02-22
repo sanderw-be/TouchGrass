@@ -373,6 +373,7 @@ export default {
   settings_calendar_add_outdoor_desc: 'Plan een slot in je agenda voor buitentijd',
   settings_calendar_duration: 'Standaard sessieduur',
   settings_calendar_duration_desc: 'Duur bij het toevoegen van buitentijd aan de agenda',
+  settings_calendar_duration_off: 'Uit',
   settings_calendar_duration_minutes: '{{minutes}} min',
   calendar_add_success_title: 'Toegevoegd aan agenda',
   calendar_add_success_body: 'Buitentijd is toegevoegd aan je agenda.',

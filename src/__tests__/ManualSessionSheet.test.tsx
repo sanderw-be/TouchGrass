@@ -13,6 +13,7 @@ jest.mock('../detection/manualCheckin', () => ({
   startManualSession: jest.fn(() => jest.fn()),
 }));
 
+
 jest.mock('../utils/helpers', () => ({
   formatMinutes: (mins: number) => `${mins} min`,
 }));

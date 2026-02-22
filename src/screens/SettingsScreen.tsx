@@ -37,7 +37,7 @@ export default function SettingsScreen() {
   const [calendarEnabled, setCalendarEnabled] = useState(false);
   const [calendarPermissionGranted, setCalendarPermissionGranted] = useState(false);
   const [calendarBuffer, setCalendarBuffer] = useState(30);
-  const [calendarDuration, setCalendarDuration] = useState(15);
+  const [calendarDuration, setCalendarDuration] = useState(0);
 
   const loadStatus = useCallback(() => {
     setRemindersEnabled(getSetting('reminders_enabled', '1') === '1');
@@ -52,7 +52,7 @@ export default function SettingsScreen() {
     // Load calendar settings
     setCalendarEnabled(getSetting('calendar_integration_enabled', '0') === '1');
     setCalendarBuffer(parseInt(getSetting('calendar_buffer_minutes', '30'), 10));
-    setCalendarDuration(parseInt(getSetting('calendar_default_duration', '15'), 10));
+    setCalendarDuration(parseInt(getSetting('calendar_default_duration', '0'), 10));
   }, []);
 
   // Check permissions and show success message if Health Connect was just enabled
@@ -235,7 +235,7 @@ export default function SettingsScreen() {
   };
 
   const CALENDAR_BUFFER_OPTIONS = [10, 20, 30, 45, 60];
-  const CALENDAR_DURATION_OPTIONS = [5, 10, 15, 20, 30];
+  const CALENDAR_DURATION_OPTIONS = [0, 5, 10, 15, 20, 30];
 
   const toggleCalendarIntegration = async (value: boolean) => {
     if (value && !calendarPermissionGranted) {
@@ -430,7 +430,9 @@ export default function SettingsScreen() {
                 sublabel={t('settings_calendar_duration_desc')}
                 right={
                   <Text style={styles.valueChip}>
-                    {t('settings_calendar_duration_minutes', { minutes: calendarDuration })}
+                    {calendarDuration === 0
+                      ? t('settings_calendar_duration_off')
+                      : t('settings_calendar_duration_minutes', { minutes: calendarDuration })}
                   </Text>
                 }
               />

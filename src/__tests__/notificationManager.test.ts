@@ -5,6 +5,10 @@ jest.mock('../notifications/scheduledNotifications');
 jest.mock('../weather/weatherService');
 jest.mock('../weather/weatherAlgorithm');
 jest.mock('../i18n', () => ({ t: (key: string) => key }));
+jest.mock('../calendar/calendarService', () => ({
+  hasUpcomingEvent: jest.fn(() => Promise.resolve(false)),
+  maybeAddOutdoorTimeToCalendar: jest.fn(() => Promise.resolve()),
+}));
 
 import * as Notifications from 'expo-notifications';
 import * as Database from '../storage/database';
@@ -12,6 +16,7 @@ import * as ReminderAlgorithm from '../notifications/reminderAlgorithm';
 import * as ScheduledNotifications from '../notifications/scheduledNotifications';
 import * as WeatherService from '../weather/weatherService';
 import * as WeatherAlgorithm from '../weather/weatherAlgorithm';
+import * as CalendarService from '../calendar/calendarService';
 import {
   scheduleNextReminder,
   scheduleDayReminders,
@@ -32,6 +37,7 @@ describe('notificationManager', () => {
     (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([]);
     (Notifications.cancelScheduledNotificationAsync as jest.Mock).mockResolvedValue(undefined);
     (Notifications.scheduleNotificationAsync as jest.Mock).mockResolvedValue('notif-id');
+    (CalendarService.maybeAddOutdoorTimeToCalendar as jest.Mock).mockResolvedValue(undefined);
   });
 
   describe('scheduleNextReminder', () => {
@@ -178,6 +184,59 @@ describe('notificationManager', () => {
       expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledTimes(2);
 
       jest.restoreAllMocks();
+    });
+
+    it('creates a calendar event for each scheduled reminder slot', async () => {
+      (Database.getTodayMinutes as jest.Mock).mockReturnValue(10);
+      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
+      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
+        if (key === 'reminders_enabled') return '1';
+        return fallback;
+      });
+      jest.spyOn(Date.prototype, 'getHours').mockReturnValue(9);
+      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockReturnValue([
+        { hour: 12, score: 0.8, reason: 'lunch' },
+        { hour: 17, score: 0.7, reason: 'after-work' },
+        { hour: 8, score: 0.3, reason: 'past' },
+      ]);
+
+      await scheduleDayReminders();
+
+      // One calendar event per scheduled reminder (2 slots passed the filter)
+      expect(CalendarService.maybeAddOutdoorTimeToCalendar).toHaveBeenCalledTimes(2);
+
+      jest.restoreAllMocks();
+    });
+  });
+
+  describe('calendar integration in scheduleNextReminder', () => {
+    it('creates a calendar event when a reminder is sent', async () => {
+      (Database.getTodayMinutes as jest.Mock).mockReturnValue(10);
+      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
+        if (key === 'reminders_enabled') return '1';
+        if (key === 'currently_outside') return '0';
+        if (key === 'last_reminder_ms') return '0';
+        return fallback;
+      });
+      (ReminderAlgorithm.shouldRemindNow as jest.Mock).mockReturnValue({
+        should: true,
+        reason: 'score 0.65: baseline',
+      });
+
+      await scheduleNextReminder();
+
+      expect(CalendarService.maybeAddOutdoorTimeToCalendar).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not create a calendar event when no reminder is sent', async () => {
+      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
+        if (key === 'reminders_enabled') return '0';
+        return fallback;
+      });
+
+      await scheduleNextReminder();
+
+      expect(CalendarService.maybeAddOutdoorTimeToCalendar).not.toHaveBeenCalled();
     });
   });
 });

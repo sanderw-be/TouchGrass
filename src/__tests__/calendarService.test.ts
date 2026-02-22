@@ -4,6 +4,7 @@ import {
   hasCalendarPermissions,
   hasUpcomingEvent,
   addOutdoorTimeToCalendar,
+  maybeAddOutdoorTimeToCalendar,
 } from '../calendar/calendarService';
 
 // Mock the database module
@@ -194,6 +195,74 @@ describe('calendarService', () => {
 
       const result = await addOutdoorTimeToCalendar(new Date(), 15);
       expect(result).toBe(false);
+    });
+  });
+
+  describe('maybeAddOutdoorTimeToCalendar', () => {
+    it('does nothing when calendar integration is disabled', async () => {
+      mockGetSetting.mockImplementation((key: string, fallback: string) => {
+        if (key === 'calendar_integration_enabled') return '0';
+        return fallback;
+      });
+
+      await maybeAddOutdoorTimeToCalendar(new Date());
+      expect(mockGetCalendars).not.toHaveBeenCalled();
+    });
+
+    it('does nothing when duration is Off (0)', async () => {
+      mockGetSetting.mockImplementation((key: string, fallback: string) => {
+        if (key === 'calendar_integration_enabled') return '1';
+        if (key === 'calendar_default_duration') return '0';
+        return fallback;
+      });
+
+      await maybeAddOutdoorTimeToCalendar(new Date());
+      expect(mockGetCalendars).not.toHaveBeenCalled();
+    });
+
+    it('creates a calendar event when integration is enabled and duration is non-zero', async () => {
+      mockGetSetting.mockImplementation((key: string, fallback: string) => {
+        if (key === 'calendar_integration_enabled') return '1';
+        if (key === 'calendar_default_duration') return '15';
+        return fallback;
+      });
+      mockGetCalendarPermissions.mockResolvedValueOnce({ status: 'granted' });
+      const writable = { id: 'cal1', allowsModifications: true, source: { isLocalAccount: true } };
+      mockGetCalendars.mockResolvedValueOnce([writable]);
+      mockCreateEvent.mockResolvedValueOnce('event-id-1');
+
+      const start = new Date('2025-06-01T09:00:00');
+      await maybeAddOutdoorTimeToCalendar(start);
+
+      expect(mockCreateEvent).toHaveBeenCalledWith(
+        'cal1',
+        expect.objectContaining({
+          startDate: start,
+          endDate: new Date(start.getTime() + 15 * 60 * 1000),
+        }),
+      );
+    });
+
+    it('uses the configured duration from settings', async () => {
+      mockGetSetting.mockImplementation((key: string, fallback: string) => {
+        if (key === 'calendar_integration_enabled') return '1';
+        if (key === 'calendar_default_duration') return '30';
+        return fallback;
+      });
+      mockGetCalendarPermissions.mockResolvedValueOnce({ status: 'granted' });
+      const writable = { id: 'cal1', allowsModifications: true, source: { isLocalAccount: true } };
+      mockGetCalendars.mockResolvedValueOnce([writable]);
+      mockCreateEvent.mockResolvedValueOnce('event-id-1');
+
+      const start = new Date('2025-06-01T09:00:00');
+      await maybeAddOutdoorTimeToCalendar(start);
+
+      expect(mockCreateEvent).toHaveBeenCalledWith(
+        'cal1',
+        expect.objectContaining({
+          endDate: new Date(start.getTime() + 30 * 60 * 1000),
+        }),
+      );
     });
   });
 });
