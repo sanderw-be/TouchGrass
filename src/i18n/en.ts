@@ -320,6 +320,31 @@ export default {
   settings_scheduled_reminders: 'Scheduled reminders',
   settings_scheduled_reminders_sublabel: 'Create recurring reminders for specific times',
 
+  // Calendar integration
+  settings_section_calendar: 'Calendar',
+  settings_calendar_integration: 'Calendar integration',
+  settings_calendar_integration_desc: 'Check your calendar to avoid scheduling reminders during meetings',
+  settings_calendar_permission_title: 'Calendar Permission',
+  settings_calendar_permission_body: 'Calendar access is needed to check your appointments for smart reminders.',
+  settings_calendar_permission_open: 'Open Settings',
+  settings_calendar_permission_cancel: 'Cancel',
+  settings_calendar_buffer: 'Meeting buffer',
+  settings_calendar_buffer_desc: 'Skip smart reminders when a meeting starts within this window',
+  settings_calendar_buffer_minutes: '{{minutes}} minutes',
+  settings_calendar_add_outdoor: 'Add outdoor time to calendar',
+  settings_calendar_add_outdoor_desc: 'Schedule a slot in your calendar for outdoor time',
+  settings_calendar_duration: 'Default session duration',
+  settings_calendar_duration_desc: 'Duration when adding outdoor time to calendar',
+  settings_calendar_duration_minutes: '{{minutes}} min',
+  calendar_add_success_title: 'Added to calendar',
+  calendar_add_success_body: 'Outdoor time has been added to your calendar.',
+  calendar_add_error_title: 'Error',
+  calendar_add_error_body: 'Could not add to calendar. Please check calendar permissions.',
+  calendar_permission_denied_title: 'Calendar Permission Required',
+  calendar_permission_denied_body: 'Please grant calendar access in Settings to use this feature.',
+  calendar_event_title: '🌿 Outdoor time',
+  calendar_event_notes: 'Scheduled by TouchGrass',
+
   // Time/date formatting locale tag
   locale_tag: 'en-GB',
 };

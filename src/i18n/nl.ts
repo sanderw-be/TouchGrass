@@ -320,6 +320,31 @@ export default {
   settings_scheduled_reminders: 'Geplande herinneringen',
   settings_scheduled_reminders_sublabel: 'Maak terugkerende herinneringen voor specifieke tijden',
 
+  // Kalenderintegratie
+  settings_section_calendar: 'Agenda',
+  settings_calendar_integration: 'Agendaïntegratie',
+  settings_calendar_integration_desc: 'Controleer je agenda om herinneringen te vermijden tijdens afspraken',
+  settings_calendar_permission_title: 'Agendatoestemming',
+  settings_calendar_permission_body: 'Toegang tot de agenda is nodig om je afspraken te controleren voor slimme herinneringen.',
+  settings_calendar_permission_open: 'Instellingen openen',
+  settings_calendar_permission_cancel: 'Annuleren',
+  settings_calendar_buffer: 'Afspraakbuffer',
+  settings_calendar_buffer_desc: 'Sla slimme herinneringen over als een afspraak binnen dit venster begint',
+  settings_calendar_buffer_minutes: '{{minutes}} minuten',
+  settings_calendar_add_outdoor: 'Buitentijd toevoegen aan agenda',
+  settings_calendar_add_outdoor_desc: 'Plan een slot in je agenda voor buitentijd',
+  settings_calendar_duration: 'Standaard sessieduur',
+  settings_calendar_duration_desc: 'Duur bij het toevoegen van buitentijd aan de agenda',
+  settings_calendar_duration_minutes: '{{minutes}} min',
+  calendar_add_success_title: 'Toegevoegd aan agenda',
+  calendar_add_success_body: 'Buitentijd is toegevoegd aan je agenda.',
+  calendar_add_error_title: 'Fout',
+  calendar_add_error_body: 'Kon niet toevoegen aan agenda. Controleer agendamachtigingen.',
+  calendar_permission_denied_title: 'Agendatoestemming vereist',
+  calendar_permission_denied_body: 'Geef toegang tot de agenda in Instellingen om deze functie te gebruiken.',
+  calendar_event_title: '🌿 Buitentijd',
+  calendar_event_notes: 'Gepland door TouchGrass',
+
   // Taal-/datumopmaak
   locale_tag: 'nl-NL',
 };
