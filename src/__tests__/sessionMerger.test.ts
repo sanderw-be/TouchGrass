@@ -131,14 +131,42 @@ describe('submitSession', () => {
     expect(inserted.userConfirmed).toBe(1);
   });
 
-  it('preserves userConfirmed=0 (denied) from existing session when merging', () => {
+  it('preserves userConfirmed=0 (denied) from existing session when merging non-manual sessions', () => {
     const existing = makeSession({ id: 1, userConfirmed: 0 }); // user said no
     (Database.getSessionsForRange as jest.Mock).mockReturnValue([existing]);
 
-    submitSession(makeSession({ userConfirmed: null }));
+    submitSession(makeSession({ userConfirmed: null })); // GPS candidate
 
     const inserted = (Database.insertSession as jest.Mock).mock.calls[0][0];
     expect(inserted.userConfirmed).toBe(0);
+  });
+
+  it('inserts a manual session directly without merging, even when overlapping sessions exist', () => {
+    const candidate = makeSession({
+      source: 'manual',
+      userConfirmed: 1,
+      startTime: BASE_TIME + 5 * 60 * 1000,
+      endTime: BASE_TIME + 10 * 60 * 1000,
+    });
+    submitSession(candidate);
+
+    // Should not touch the existing session
+    expect(Database.deleteSession).not.toHaveBeenCalled();
+    // Should insert the manual session as-is
+    expect(Database.insertSession).toHaveBeenCalledWith(candidate);
+    // getSessionsForRange should not even be called for manual sessions
+    expect(Database.getSessionsForRange).not.toHaveBeenCalled();
+  });
+
+  it('inserts a manual session directly even when a rejected session overlaps', () => {
+    const rejected = makeSession({ id: 2, userConfirmed: 0 });
+    (Database.getSessionsForRange as jest.Mock).mockReturnValue([rejected]);
+
+    const candidate = makeSession({ source: 'manual', userConfirmed: 1 });
+    submitSession(candidate);
+
+    expect(Database.deleteSession).not.toHaveBeenCalled();
+    expect(Database.insertSession).toHaveBeenCalledWith(candidate);
   });
 
   it('merges multiple overlapping sessions at once', () => {
