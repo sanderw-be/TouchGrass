@@ -6,8 +6,7 @@ import { initDatabase, getSetting, setSetting } from './src/storage/database';
 import i18n from './src/i18n';
 import { initDetection } from './src/detection/index';
 import { setupNotificationInfrastructure, scheduleDayReminders } from './src/notifications/notificationManager';
-import { scheduleAllScheduledNotifications } from './src/notifications/scheduledNotifications';
-import { registerWeatherBackgroundFetch } from './src/weather/weatherBackgroundTask';
+
 import AppNavigator from './src/navigation/AppNavigator';
 import IntroScreen from './src/screens/IntroScreen';
 import { colors } from './src/utils/theme';
@@ -60,6 +59,7 @@ export default function App() {
         
         // Reschedule any scheduled notifications (handles past notifications and ensures they're set for next occurrence)
         try {
+          const { scheduleAllScheduledNotifications } = await import('./src/notifications/scheduledNotifications');
           await scheduleAllScheduledNotifications();
         } catch (e) {
           console.warn('Scheduled notifications init error:', e);
@@ -67,6 +67,7 @@ export default function App() {
         
         // Register weather background fetch for hourly updates
         try {
+          const { registerWeatherBackgroundFetch } = await import('./src/weather/weatherBackgroundTask');
           await registerWeatherBackgroundFetch();
         } catch (e) {
           console.warn('Weather background fetch error:', e);
@@ -94,6 +95,7 @@ export default function App() {
     }
     
     try {
+      const { scheduleAllScheduledNotifications } = await import('./src/notifications/scheduledNotifications');
       await scheduleAllScheduledNotifications();
     } catch (e) {
       console.warn('Scheduled notifications init error:', e);
@@ -101,6 +103,7 @@ export default function App() {
     
     // Register weather background fetch for hourly updates
     try {
+      const { registerWeatherBackgroundFetch } = await import('./src/weather/weatherBackgroundTask');
       await registerWeatherBackgroundFetch();
     } catch (e) {
       console.warn('Weather background fetch error:', e);
