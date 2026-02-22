@@ -158,6 +158,9 @@ export async function scheduleNextReminder(): Promise<void> {
 
   if (!should) {
     console.log('TouchGrass: no reminder needed:', reason);
+    if (reason === 'daily goal reached') {
+      await cancelAutomaticReminders();
+    }
     return;
   }
 
@@ -193,6 +196,11 @@ export async function scheduleDayReminders(): Promise<void> {
   if (!remindersEnabled) return;
 
   await cancelAutomaticReminders();
+
+  // Don't schedule reminders if daily goal is already reached
+  if (todayMinutes >= dailyTarget) {
+    return;
+  }
 
   const currentHour = new Date().getHours();
   const scores = scoreReminderHours(todayMinutes, dailyTarget, currentHour);
