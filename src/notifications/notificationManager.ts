@@ -8,7 +8,7 @@ import { shouldRemindNow, scoreReminderHours } from './reminderAlgorithm';
 import { getWeatherForHour, isWeatherDataAvailable } from '../weather/weatherService';
 import { getWeatherDescription, getWeatherEmoji, getWeatherPreferences } from '../weather/weatherAlgorithm';
 import { hasScheduledNotificationNearby } from './scheduledNotifications';
-import { hasUpcomingEvent } from '../calendar/calendarService';
+import { hasUpcomingEvent, maybeAddOutdoorTimeToCalendar } from '../calendar/calendarService';
 import { t } from '../i18n';
 
 const NOTIF_TITLES = [
@@ -188,6 +188,11 @@ export async function scheduleNextReminder(): Promise<void> {
     trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: 1 },
   });
 
+  // Add a future outdoor time slot to the calendar alongside the reminder
+  maybeAddOutdoorTimeToCalendar(new Date()).catch((e) =>
+    console.warn('TouchGrass: Failed to add reminder time to calendar:', e),
+  );
+
   setSetting('last_reminder_ms', String(Date.now()));
   console.log('TouchGrass: reminder sent, reason:', reason);
 }
@@ -250,6 +255,11 @@ export async function scheduleDayReminders(): Promise<void> {
         channelId: CHANNEL_ID,
       },
     });
+
+    // Add a future outdoor time slot to the calendar for this reminder time
+    maybeAddOutdoorTimeToCalendar(triggerDate).catch((e) =>
+      console.warn('TouchGrass: Failed to add reminder slot to calendar:', e),
+    );
   }
 }
 
