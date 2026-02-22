@@ -1,8 +1,8 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, Suspense, lazy } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
-import { Text, AppState } from 'react-native';
+import { Text, AppState, ActivityIndicator, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import HomeScreen from '../screens/HomeScreen';
@@ -10,8 +10,8 @@ import HistoryScreen from '../screens/HistoryScreen';
 import EventsScreen from '../screens/EventsScreen';
 import GoalsScreen from '../screens/GoalsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
-import WeatherSettingsScreen from '../screens/WeatherSettingsScreen';
-import ScheduledNotificationsScreen from '../screens/ScheduledNotificationsScreen';
+const WeatherSettingsScreen = lazy(() => import('../screens/WeatherSettingsScreen'));
+const ScheduledNotificationsScreen = lazy(() => import('../screens/ScheduledNotificationsScreen'));
 import { fetchWeatherForecast, isWeatherDataAvailable } from '../weather/weatherService';
 import { getSetting } from '../storage/database';
 import { colors, spacing } from '../utils/theme';
@@ -25,6 +25,14 @@ export type SettingsStackParamList = {
 
 const Tab = createBottomTabNavigator();
 const SettingsStack = createStackNavigator<SettingsStackParamList>();
+
+function ScreenFallback() {
+  return (
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.mist }}>
+      <ActivityIndicator color={colors.grass} />
+    </View>
+  );
+}
 
 const icons: Record<string, string> = {
   Home: '🌿',
@@ -51,14 +59,24 @@ function SettingsStackNavigator() {
       />
       <SettingsStack.Screen
         name="WeatherSettings"
-        component={WeatherSettingsScreen}
         options={{ title: t('nav_weather_settings') }}
-      />
+      >
+        {() => (
+          <Suspense fallback={<ScreenFallback />}>
+            <WeatherSettingsScreen />
+          </Suspense>
+        )}
+      </SettingsStack.Screen>
       <SettingsStack.Screen
         name="ScheduledNotifications"
-        component={ScheduledNotificationsScreen}
         options={{ title: t('settings_scheduled_reminders') }}
-      />
+      >
+        {() => (
+          <Suspense fallback={<ScreenFallback />}>
+            <ScheduledNotificationsScreen />
+          </Suspense>
+        )}
+      </SettingsStack.Screen>
     </SettingsStack.Navigator>
   );
 }
