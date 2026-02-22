@@ -59,6 +59,21 @@ export async function hasUpcomingEvent(windowMinutes: number): Promise<boolean> 
 }
 
 /**
+ * Conditionally add an outdoor time slot to the calendar based on the user's
+ * settings.  Does nothing when calendar integration is disabled or the default
+ * duration is set to Off (0).  Safe to call fire-and-forget.
+ */
+export async function maybeAddOutdoorTimeToCalendar(startTime: Date): Promise<void> {
+  const enabled = getSetting('calendar_integration_enabled', '0') === '1';
+  if (!enabled) return;
+
+  const duration = parseInt(getSetting('calendar_default_duration', '0'), 10);
+  if (duration === 0) return;
+
+  await addOutdoorTimeToCalendar(startTime, duration);
+}
+
+/**
  * Add an outdoor time slot to the user's default calendar.
  * @param startTime  When the outdoor session should start
  * @param durationMinutes  Length of the session in minutes (5/10/15/20/30)

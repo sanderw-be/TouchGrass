@@ -12,6 +12,7 @@ import { colors, spacing, radius, shadows } from '../utils/theme';
 import { formatMinutes } from '../utils/helpers';
 import { t, formatLocalDate, formatLocalTime } from '../i18n';
 import ManualSessionSheet from '../components/ManualSessionSheet';
+import { maybeAddOutdoorTimeToCalendar } from '../calendar/calendarService';
 
 type Tab = 'review' | 'all';
 
@@ -36,8 +37,13 @@ export default function EventsScreen() {
     setRefreshing(false);
   };
 
-  const handleConfirm = (id: number, confirmed: boolean) => {
+  const handleConfirm = (id: number, confirmed: boolean, startTime: number) => {
     confirmSession(id, confirmed);
+    if (confirmed) {
+      maybeAddOutdoorTimeToCalendar(new Date(startTime)).catch((e) =>
+        console.warn('TouchGrass: Failed to add confirmed session to calendar:', e),
+      );
+    }
     loadData();
   };
 
@@ -113,7 +119,7 @@ export default function EventsScreen() {
             key={session.id}
             session={session}
             showActions={tab === 'review' || session.userConfirmed === null}
-            onConfirm={(confirmed) => handleConfirm(session.id!, confirmed)}
+            onConfirm={(confirmed) => handleConfirm(session.id!, confirmed, session.startTime)}
             onDelete={() => handleDelete(session.id!)}
             onReReview={() => handleReReview(session.id!)}
           />

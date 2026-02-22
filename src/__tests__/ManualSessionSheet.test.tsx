@@ -13,6 +13,10 @@ jest.mock('../detection/manualCheckin', () => ({
   startManualSession: jest.fn(() => jest.fn()),
 }));
 
+jest.mock('../calendar/calendarService', () => ({
+  maybeAddOutdoorTimeToCalendar: jest.fn(() => Promise.resolve()),
+}));
+
 jest.mock('../utils/helpers', () => ({
   formatMinutes: (mins: number) => `${mins} min`,
 }));

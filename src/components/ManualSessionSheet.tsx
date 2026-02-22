@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { logManualSession, startManualSession } from '../detection/manualCheckin';
+import { maybeAddOutdoorTimeToCalendar } from '../calendar/calendarService';
 import { colors, spacing, radius, shadows } from '../utils/theme';
 import { formatMinutes } from '../utils/helpers';
 import { t, formatLocalDate, formatLocalTime } from '../i18n';
@@ -87,6 +88,9 @@ export default function ManualSessionSheet({ visible, onClose, onSessionLogged }
     }
 
     logManualSession(durationMinutes, startTime.getTime(), endTime.getTime());
+    maybeAddOutdoorTimeToCalendar(startTime).catch((e) =>
+      console.warn('TouchGrass: Failed to add manual session to calendar:', e),
+    );
     onSessionLogged();
     onClose();
   };
