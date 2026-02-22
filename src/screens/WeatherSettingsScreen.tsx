@@ -16,12 +16,15 @@ export default function WeatherSettingsScreen() {
   const [avoidHeat, setAvoidHeat] = useState(true);
   const [considerUV, setConsiderUV] = useState(true);
   const [weatherLoading, setWeatherLoading] = useState(false);
+  const [weatherSuccess, setWeatherSuccess] = useState(false);
   const [currentWeather, setCurrentWeather] = useState<string | null>(null);
   const isMountedRef = React.useRef(true);
+  const successTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   React.useEffect(() => {
     return () => {
       isMountedRef.current = false;
+      if (successTimerRef.current !== null) clearTimeout(successTimerRef.current);
     };
   }, []);
 
@@ -98,6 +101,10 @@ export default function WeatherSettingsScreen() {
           const emoji = getWeatherEmoji(weather);
           setCurrentWeather(`${emoji} ${description}, ${Math.round(weather.temperature)}°C`);
         }
+        setWeatherSuccess(true);
+        successTimerRef.current = setTimeout(() => {
+          if (isMountedRef.current) setWeatherSuccess(false);
+        }, 2000);
       } else {
         Alert.alert(t('settings_weather_error'), result.error || 'Unknown error');
       }
@@ -184,6 +191,10 @@ export default function WeatherSettingsScreen() {
           right={
             weatherLoading ? (
               <ActivityIndicator size="small" color={colors.grass} />
+            ) : weatherSuccess ? (
+              <View style={styles.successIndicator}>
+                <Text style={styles.successIndicatorText}>✓</Text>
+              </View>
             ) : (
               <TouchableOpacity
                 style={styles.editBtn}
@@ -254,6 +265,14 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   editBtnText: { fontSize: 12, color: colors.grass, fontWeight: '600' },
+
+  successIndicator: {
+    backgroundColor: colors.grassPale,
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+  },
+  successIndicatorText: { fontSize: 12, color: colors.grass, fontWeight: '700' },
 
   tempRow: {
     flexDirection: 'row',
