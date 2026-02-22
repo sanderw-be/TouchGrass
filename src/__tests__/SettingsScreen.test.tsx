@@ -13,8 +13,8 @@ jest.mock('../i18n', () => ({
 const mockGetSetting = jest.fn((key: string, def: string) => def);
 const mockSetSetting = jest.fn();
 jest.mock('../storage/database', () => ({
-  getSetting: (...args: any[]) => mockGetSetting(...args),
-  setSetting: (...args: any[]) => mockSetSetting(...args),
+  getSetting: (key: string, def: string) => mockGetSetting(key, def),
+  setSetting: (key: string, value: string) => mockSetSetting(key, value),
   getKnownLocations: jest.fn(() => []),
   getSuggestedLocations: jest.fn(() => []),
   clearAllData: jest.fn(),
