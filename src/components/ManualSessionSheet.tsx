@@ -37,6 +37,7 @@ export default function ManualSessionSheet({ visible, onClose, onSessionLogged }
   const [timerRunning, setTimerRunning] = useState(false);
   const [timerStartTime, setTimerStartTime] = useState<number>(0);
   const [timerSeconds, setTimerSeconds] = useState(0);
+  const [fromTimer, setFromTimer] = useState(false);
   const stopTimerRef = useRef<(() => void) | null>(null);
   const timerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -47,6 +48,7 @@ export default function ManualSessionSheet({ visible, onClose, onSessionLogged }
       setDurationMinutes(30);
       setCustomDuration('');
       setUseCustom(false);
+      setFromTimer(false);
       
       // Set default times: end time is now, start time is 30 minutes ago
       const now = new Date();
@@ -135,9 +137,10 @@ export default function ManualSessionSheet({ visible, onClose, onSessionLogged }
     // Pre-fill the log form with the timed session's actual start and end times
     // so the user can review and edit before saving (or cancel entirely).
     const end = new Date();
-    const start = timerStartTime > 0 ? new Date(timerStartTime) : new Date(end.getTime() - 60 * 1000);
+    const start = timerStartTime > 0 ? new Date(timerStartTime) : new Date(end.getTime() - timerSeconds * 1000);
     setStartTime(start);
     setEndTime(end);
+    setFromTimer(true);
     setTab('log');
   };
 
@@ -192,7 +195,7 @@ export default function ManualSessionSheet({ visible, onClose, onSessionLogged }
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.tab, tab === 'timer' && styles.tabActive]}
-            onPress={() => setTab('timer')}
+            onPress={() => { setTab('timer'); setFromTimer(false); }}
           >
             <Text style={[styles.tabText, tab === 'timer' && styles.tabTextActive]}>
               {t('manual_tab_timer')}
@@ -205,6 +208,13 @@ export default function ManualSessionSheet({ visible, onClose, onSessionLogged }
           {/* ── Log past session tab ── */}
           {tab === 'log' && (
             <View>
+              {/* Hint shown when log form was pre-filled from a just-ended timer */}
+              {fromTimer && (
+                <View style={styles.timerHint}>
+                  <Text style={styles.timerHintText}>{t('manual_timer_stopped_hint')}</Text>
+                </View>
+              )}
+
               {/* Start Time */}
               <Text style={styles.sectionLabel}>{t('manual_start_time')}</Text>
               {Platform.OS === 'ios' ? (
@@ -542,5 +552,16 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.grass,
     marginTop: spacing.xs,
+  },
+  timerHint: {
+    backgroundColor: colors.grassPale,
+    borderRadius: radius.md,
+    padding: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  timerHintText: {
+    fontSize: 13,
+    color: colors.grassDark,
+    textAlign: 'center',
   },
 });

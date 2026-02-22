@@ -184,6 +184,7 @@ export default {
   manual_timer_start: '🌿 Ik ga naar buiten',
   manual_timer_stop: '✓ Ik ben terug',
   manual_timer_cancel: 'Annuleren',
+  manual_timer_stopped_hint: 'Timer gestopt — controleer en pas je sessietijden aan voor het opslaan.',
   manual_invalid_title: 'Ongeldige duur',
   manual_invalid_body: 'Voer een duur in tussen 1 en 720 minuten.',
 

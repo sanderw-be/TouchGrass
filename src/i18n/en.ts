@@ -184,6 +184,7 @@ export default {
   manual_timer_start: "🌿 I'm heading outside",
   manual_timer_stop: "✓ I'm back",
   manual_timer_cancel: 'Cancel',
+  manual_timer_stopped_hint: 'Timer stopped — review and adjust your session times before saving.',
   manual_invalid_title: 'Invalid duration',
   manual_invalid_body: 'Please enter a duration between 1 and 720 minutes.',
 
