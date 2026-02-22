@@ -373,6 +373,7 @@ export default {
   settings_calendar_add_outdoor_desc: 'Schedule a slot in your calendar for outdoor time',
   settings_calendar_duration: 'Default session duration',
   settings_calendar_duration_desc: 'Duration when adding outdoor time to calendar',
+  settings_calendar_duration_off: 'Off',
   settings_calendar_duration_minutes: '{{minutes}} min',
   calendar_add_success_title: 'Added to calendar',
   calendar_add_success_body: 'Outdoor time has been added to your calendar.',
