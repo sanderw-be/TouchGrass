@@ -191,6 +191,13 @@ export default {
   settings_location_deny_confirm: 'Verwijderen',
   settings_location_deny_cancel: 'Annuleren',
   location_suggestion_default_label: 'Voorgestelde locatie',
+  location_add_title: 'Locatie toevoegen',
+  location_edit_address: 'Dichtstbijzijnde adres',
+  location_edit_address_unavailable: 'Adres niet beschikbaar',
+  location_edit_approve_title: 'Locatie goedkeuren',
+  location_edit_approve_confirm: 'Goedkeuren & opslaan',
+  location_position_error_title: 'Locatie niet beschikbaar',
+  location_position_error_body: 'Kon je huidige locatie niet ophalen. Zorg dat GPS ingeschakeld is.',
   notif_location_suggestion_title: '📍 Nieuwe locatie gedetecteerd',
   notif_location_suggestion_body: 'TouchGrass heeft een plek gedetecteerd die je vaak bezoekt. Tik om te beoordelen en een naam te geven.',
 

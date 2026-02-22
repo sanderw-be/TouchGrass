@@ -191,6 +191,13 @@ export default {
   settings_location_deny_confirm: 'Remove',
   settings_location_deny_cancel: 'Cancel',
   location_suggestion_default_label: 'Suggested place',
+  location_add_title: 'Add location',
+  location_edit_address: 'Nearest address',
+  location_edit_address_unavailable: 'Address not available',
+  location_edit_approve_title: 'Approve location',
+  location_edit_approve_confirm: 'Approve & save',
+  location_position_error_title: 'Location unavailable',
+  location_position_error_body: 'Could not get your current location. Make sure GPS is enabled.',
   notif_location_suggestion_title: '📍 New location detected',
   notif_location_suggestion_body: 'TouchGrass detected a place you visit often. Tap to review and name it.',
 
