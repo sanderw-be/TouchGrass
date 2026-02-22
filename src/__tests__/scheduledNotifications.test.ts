@@ -1,5 +1,6 @@
 jest.mock('expo-notifications');
 jest.mock('../storage/database');
+jest.mock('../i18n', () => ({ t: (key: string) => key }));
 
 import * as Notifications from 'expo-notifications';
 import * as Database from '../storage/database';
@@ -75,7 +76,7 @@ describe('scheduledNotifications', () => {
           identifier: 'scheduled_1_2',
           content: expect.objectContaining({
             title: 'Afternoon reminder',
-            body: 'Your scheduled reminder to go outside.',
+            body: 'scheduled_notif_body',
             sound: true,
           }),
           trigger: expect.objectContaining({

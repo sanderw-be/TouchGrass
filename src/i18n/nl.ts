@@ -294,6 +294,7 @@ export default {
   notif_channel_scheduled_desc: 'Je aangepaste geplande herinneringen om naar buiten te gaan',
 
   // Scheduled notifications
+  scheduled_notif_body: 'Je geplande herinnering om naar buiten te gaan.',
   scheduled_empty: 'Nog geen geplande herinneringen',
   scheduled_empty_hint: 'Tik op de + knop om een terugkerende herinnering aan te maken',
   scheduled_add: 'Herinnering toevoegen',
