@@ -17,7 +17,7 @@ describe('isAtKnownIndoorLocation', () => {
 
   it('returns false when no indoor locations are nearby', () => {
     const locations = [
-      { id: 1, label: 'Home', latitude: 51.5, longitude: 4.3, radiusMeters: 100, isIndoor: true },
+      { id: 1, label: 'Home', latitude: 51.5, longitude: 4.3, radiusMeters: 100, isIndoor: true, status: 'active' as const },
     ];
     // ~1km away — outside radius
     expect(isAtKnownIndoorLocation(51.51, 4.31, locations)).toBe(false);
@@ -25,7 +25,7 @@ describe('isAtKnownIndoorLocation', () => {
 
   it('returns true when within radius of an indoor location', () => {
     const locations = [
-      { id: 1, label: 'Home', latitude: 51.5, longitude: 4.3, radiusMeters: 100, isIndoor: true },
+      { id: 1, label: 'Home', latitude: 51.5, longitude: 4.3, radiusMeters: 100, isIndoor: true, status: 'active' as const },
     ];
     // ~0m away — inside radius
     expect(isAtKnownIndoorLocation(51.5, 4.3, locations)).toBe(true);
@@ -33,7 +33,7 @@ describe('isAtKnownIndoorLocation', () => {
 
   it('ignores outdoor (non-indoor) locations', () => {
     const locations = [
-      { id: 1, label: 'Park', latitude: 51.5, longitude: 4.3, radiusMeters: 100, isIndoor: false },
+      { id: 1, label: 'Park', latitude: 51.5, longitude: 4.3, radiusMeters: 100, isIndoor: false, status: 'active' as const },
     ];
     expect(isAtKnownIndoorLocation(51.5, 4.3, locations)).toBe(false);
   });
@@ -116,7 +116,7 @@ describe('processLocationUpdate', () => {
     const homeLocation = {
       id: 1, label: 'Home',
       latitude: 51.5, longitude: 4.3,
-      radiusMeters: 100, isIndoor: true,
+      radiusMeters: 100, isIndoor: true, status: 'active' as const,
     };
 
     // First update: user is outside (far from home)
@@ -136,7 +136,7 @@ describe('processLocationUpdate', () => {
     const homeLocation = {
       id: 1, label: 'Home',
       latitude: 51.5, longitude: 4.3,
-      radiusMeters: 100, isIndoor: true,
+      radiusMeters: 100, isIndoor: true, status: 'active' as const,
     };
 
     (Database.getKnownLocations as jest.Mock).mockReturnValue([homeLocation]);

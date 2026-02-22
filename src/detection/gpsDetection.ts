@@ -1,10 +1,12 @@
 import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager';
+import * as Notifications from 'expo-notifications';
 import {
-  getKnownLocations, upsertKnownLocation,
+  getKnownLocations, getAllKnownLocations, upsertKnownLocation,
   getSetting, setSetting, KnownLocation,
 } from '../storage/database';
 import { submitSession, buildSession } from './sessionMerger';
+import { t } from '../i18n';
 
 const GEOFENCE_TASK = 'TOUCHGRASS_GEOFENCE';
 const LOCATION_TRACK_TASK = 'TOUCHGRASS_LOCATION_TRACK';
@@ -180,61 +182,90 @@ export function processLocationUpdate(lat: number, lon: number, timestamp: numbe
 }
 
 /**
- * Auto-detect home and work from location history.
- * Clusters locations visited during:
- * - Nights (10pm–7am) → home
- * - Weekday mornings/afternoons (9am–5pm) → work
+ * Auto-detect frequently-visited locations from GPS dwell time.
+ * Suggests a location after the user spends:
+ *   - 2 hours at the same place when no known locations exist yet
+ *   - 10 hours at the same place when known locations already exist
+ * Only runs when GPS is permitted and location suggestions are enabled.
  */
 export async function autoDetectLocations(): Promise<void> {
+  // Guard: only run when GPS is permitted
+  const { status: fg } = await Location.getForegroundPermissionsAsync();
+  if (fg !== 'granted') return;
+
+  // Guard: only run when suggestions are enabled
+  if (getSetting('location_suggestions_enabled', '1') !== '1') return;
+
   try {
     const rawClusters = getSetting('location_clusters', '[]');
-    const clusters: LocationSample[] = JSON.parse(rawClusters);
+    const samples: LocationSample[] = JSON.parse(rawClusters);
 
-    if (clusters.length < 20) return; // not enough data yet
+    if (samples.length < 10) return; // not enough data yet
 
-    const homeSamples = clusters.filter((s) => {
-      const h = new Date(s.timestamp).getHours();
-      return h >= 22 || h < 7;
-    });
+    const dwellClusters = computeDwellClusters(samples);
 
-    const workSamples = clusters.filter((s) => {
-      const d = new Date(s.timestamp).getDay();
-      const h = new Date(s.timestamp).getHours();
-      return d >= 1 && d <= 5 && h >= 9 && h < 17;
-    });
+    // Threshold depends on whether active known locations already exist
+    const existingActive = getKnownLocations();
+    const thresholdMs = existingActive.length === 0
+      ? 2 * 60 * 60 * 1000   // 2 hours when no known locations
+      : 10 * 60 * 60 * 1000; // 10 hours when known locations exist
 
-    const homeCenter = centroid(homeSamples);
-    const workCenter = centroid(workSamples);
+    const allLocations = getAllKnownLocations();
 
-    if (homeCenter && !getSetting('home_detected', '')) {
+    for (const cluster of dwellClusters) {
+      if (cluster.totalDwellMs < thresholdMs) continue;
+
+      // Skip if this place is already known (active or suggested)
+      const alreadyKnown = allLocations.some(loc =>
+        haversineDistance(loc.latitude, loc.longitude, cluster.lat, cluster.lon) <= loc.radiusMeters
+      );
+      if (alreadyKnown) continue;
+
+      // Insert as a suggested location with an empty label (displayed as default at render time)
+      // Use the user's chosen default suggestion radius (falls back to CLUSTER_DETECTION_RADIUS_M)
+      const suggestionRadius = parseInt(getSetting('location_suggestion_radius', String(CLUSTER_DETECTION_RADIUS_M)), 10);
       upsertKnownLocation({
-        label: 'Home',
-        latitude: homeCenter.lat,
-        longitude: homeCenter.lon,
-        radiusMeters: 100,
+        label: '',
+        latitude: cluster.lat,
+        longitude: cluster.lon,
+        radiusMeters: isNaN(suggestionRadius) ? CLUSTER_DETECTION_RADIUS_M : suggestionRadius,
         isIndoor: true,
+        status: 'suggested',
       });
-      setSetting('home_detected', '1');
-    }
 
-    if (workCenter && !getSetting('work_detected', '')) {
-      // Only set work if it's meaningfully far from home
-      if (!homeCenter || haversineDistance(
-        workCenter.lat, workCenter.lon,
-        homeCenter.lat, homeCenter.lon
-      ) > 200) {
-        upsertKnownLocation({
-          label: 'Work',
-          latitude: workCenter.lat,
-          longitude: workCenter.lon,
-          radiusMeters: 100,
-          isIndoor: true,
-        });
-        setSetting('work_detected', '1');
-      }
+      // Notify the user about the new suggestion
+      await sendLocationSuggestionNotification();
+
+      // Only suggest one new location per run to avoid flooding
+      break;
     }
   } catch (e) {
     console.warn('Auto-detect locations error:', e);
+  }
+}
+
+/**
+ * Send a local notification to inform the user that a new location has been suggested.
+ */
+async function sendLocationSuggestionNotification(): Promise<void> {
+  try {
+    const { status } = await Notifications.getPermissionsAsync();
+    if (status !== 'granted') return;
+
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: t('notif_location_suggestion_title'),
+        body: t('notif_location_suggestion_body'),
+        data: { type: 'location_suggestion' },
+        color: '#4A7C59',
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds: 1,
+      },
+    });
+  } catch (e) {
+    console.warn('Failed to send location suggestion notification:', e);
   }
 }
 
@@ -246,7 +277,24 @@ interface LocationSample {
   timestamp: number;
 }
 
+interface DwellCluster {
+  lat: number;
+  lon: number;
+  latSum: number;
+  lonSum: number;
+  totalDwellMs: number;
+  sampleCount: number;
+}
+
 const MAX_CLUSTER_SAMPLES = 500;
+// Maximum gap between two consecutive samples to count as continuous dwell
+const MAX_DWELL_GAP_MS = 2 * 60 * 60 * 1000; // 2 hours
+/**
+ * Radius (metres) used when deciding if two GPS points are "at the same place"
+ * for dwell-time clustering. This is a data-collection constant independent of
+ * any individual location's geofence radius.
+ */
+export const CLUSTER_DETECTION_RADIUS_M = 100;
 
 function recordLocationForClustering(lat: number, lon: number, timestamp: number): void {
   try {
@@ -261,11 +309,53 @@ function recordLocationForClustering(lat: number, lon: number, timestamp: number
   }
 }
 
-function centroid(samples: LocationSample[]): { lat: number; lon: number } | null {
-  if (samples.length === 0) return null;
-  const lat = samples.reduce((sum, s) => sum + s.lat, 0) / samples.length;
-  const lon = samples.reduce((sum, s) => sum + s.lon, 0) / samples.length;
-  return { lat, lon };
+/**
+ * Compute dwell time at distinct locations from a list of GPS samples.
+ * Consecutive samples within 100 m of each other (with no gap > MAX_DWELL_GAP_MS)
+ * are merged into a cluster and their inter-sample intervals summed as dwell time.
+ * Exported for unit testing.
+ */
+export function computeDwellClusters(samples: LocationSample[]): DwellCluster[] {
+  if (samples.length < 2) return [];
+
+  const sorted = [...samples].sort((a, b) => a.timestamp - b.timestamp);
+  const clusters: DwellCluster[] = [];
+
+  for (let i = 0; i < sorted.length - 1; i++) {
+    const curr = sorted[i];
+    const next = sorted[i + 1];
+    const dist = haversineDistance(curr.lat, curr.lon, next.lat, next.lon);
+    const gap = next.timestamp - curr.timestamp;
+
+    // Only accumulate dwell if the user stayed nearby with no large gap
+    if (dist <= CLUSTER_DETECTION_RADIUS_M && gap <= MAX_DWELL_GAP_MS) {
+      let found = false;
+      for (const c of clusters) {
+        if (haversineDistance(c.lat, c.lon, curr.lat, curr.lon) <= CLUSTER_DETECTION_RADIUS_M) {
+          c.totalDwellMs += gap;
+          c.sampleCount++;
+          c.latSum += curr.lat;
+          c.lonSum += curr.lon;
+          c.lat = c.latSum / c.sampleCount;
+          c.lon = c.lonSum / c.sampleCount;
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        clusters.push({
+          lat: curr.lat,
+          lon: curr.lon,
+          latSum: curr.lat,
+          lonSum: curr.lon,
+          totalDwellMs: gap,
+          sampleCount: 1,
+        });
+      }
+    }
+  }
+
+  return clusters;
 }
 
 // ── Haversine distance ────────────────────────────────────
@@ -299,5 +389,7 @@ TaskManager.defineTask(LOCATION_TRACK_TASK, async ({ data, error }: any) => {
       loc.coords.longitude,
       loc.timestamp,
     );
+    // Run dwell-based location suggestion after processing
+    await autoDetectLocations();
   }
 });
