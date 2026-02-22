@@ -127,13 +127,18 @@ export default function ManualSessionSheet({ visible, onClose, onSessionLogged }
   };
 
   const handleStopTimer = () => {
-    if (stopTimerRef.current) {
-      stopTimerRef.current();
-      stopTimerRef.current = null;
-    }
+    if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+    stopTimerRef.current = null;
     setTimerRunning(false);
-    onSessionLogged();
-    onClose();
+    setTimerSeconds(0);
+
+    // Pre-fill the log form with the timed session's actual start and end times
+    // so the user can review and edit before saving (or cancel entirely).
+    const end = new Date();
+    const start = timerStartTime > 0 ? new Date(timerStartTime) : new Date(end.getTime() - 60 * 1000);
+    setStartTime(start);
+    setEndTime(end);
+    setTab('log');
   };
 
   const handleCancelTimer = () => {
