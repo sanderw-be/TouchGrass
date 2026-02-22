@@ -41,6 +41,7 @@ export interface KnownLocation {
   longitude: number;
   radiusMeters: number;
   isIndoor: boolean;
+  status: 'active' | 'suggested';  // 'suggested' = pending user approval
 }
 
 export interface ScheduledNotification {
@@ -91,7 +92,8 @@ export function initDatabase(): void {
       latitude REAL NOT NULL,
       longitude REAL NOT NULL,
       radiusMeters REAL NOT NULL DEFAULT 100,
-      isIndoor INTEGER NOT NULL DEFAULT 1
+      isIndoor INTEGER NOT NULL DEFAULT 1,
+      status TEXT NOT NULL DEFAULT 'active'
     );
 
     CREATE TABLE IF NOT EXISTS app_settings (
@@ -154,6 +156,14 @@ export function initDatabase(): void {
     }
   } catch (error) {
     console.error('Error cleaning up scheduled notifications:', error);
+  }
+
+  // Add status column to known_locations if it doesn't exist (migration)
+  try {
+    db.execSync(`ALTER TABLE known_locations ADD COLUMN status TEXT NOT NULL DEFAULT 'active'`);
+    console.log('Database migration: Added status column to known_locations');
+  } catch {
+    // Column already exists — safe to ignore
   }
 }
 
@@ -296,21 +306,53 @@ export function getReminderFeedback(): ReminderFeedback[] {
 // ── Known locations ───────────────────────────────────────
 
 export function getKnownLocations(): KnownLocation[] {
-  return db.getAllSync<KnownLocation>('SELECT * FROM known_locations');
+  return db.getAllSync<any>('SELECT * FROM known_locations WHERE status = ?', ['active']).map(mapLocation);
+}
+
+export function getAllKnownLocations(): KnownLocation[] {
+  return db.getAllSync<any>('SELECT * FROM known_locations').map(mapLocation);
+}
+
+export function getSuggestedLocations(): KnownLocation[] {
+  return db.getAllSync<any>('SELECT * FROM known_locations WHERE status = ?', ['suggested']).map(mapLocation);
+}
+
+function mapLocation(row: any): KnownLocation {
+  return {
+    id: row.id,
+    label: row.label,
+    latitude: row.latitude,
+    longitude: row.longitude,
+    radiusMeters: row.radiusMeters,
+    isIndoor: row.isIndoor === 1,
+    status: row.status === 'suggested' ? 'suggested' : 'active',
+  };
 }
 
 export function upsertKnownLocation(loc: KnownLocation): void {
+  const status = loc.status ?? 'active';
   if (loc.id) {
     db.runSync(
-      `UPDATE known_locations SET label=?, latitude=?, longitude=?, radiusMeters=?, isIndoor=? WHERE id=?`,
-      [loc.label, loc.latitude, loc.longitude, loc.radiusMeters, loc.isIndoor ? 1 : 0, loc.id]
+      `UPDATE known_locations SET label=?, latitude=?, longitude=?, radiusMeters=?, isIndoor=?, status=? WHERE id=?`,
+      [loc.label, loc.latitude, loc.longitude, loc.radiusMeters, loc.isIndoor ? 1 : 0, status, loc.id]
     );
   } else {
     db.runSync(
-      `INSERT INTO known_locations (label, latitude, longitude, radiusMeters, isIndoor) VALUES (?,?,?,?,?)`,
-      [loc.label, loc.latitude, loc.longitude, loc.radiusMeters, loc.isIndoor ? 1 : 0]
+      `INSERT INTO known_locations (label, latitude, longitude, radiusMeters, isIndoor, status) VALUES (?,?,?,?,?,?)`,
+      [loc.label, loc.latitude, loc.longitude, loc.radiusMeters, loc.isIndoor ? 1 : 0, status]
     );
   }
+}
+
+export function approveKnownLocation(id: number, label: string): void {
+  db.runSync(
+    `UPDATE known_locations SET status='active', label=? WHERE id=?`,
+    [label, id]
+  );
+}
+
+export function denyKnownLocation(id: number): void {
+  db.runSync('DELETE FROM known_locations WHERE id = ?', [id]);
 }
 
 export function deleteKnownLocation(id: number): void {

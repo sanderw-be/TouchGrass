@@ -6,13 +6,12 @@ import {
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { getSetting, setSetting, getKnownLocations, KnownLocation, clearAllData } from '../storage/database';
+import { getSetting, setSetting, getKnownLocations, getSuggestedLocations, KnownLocation, clearAllData } from '../storage/database';
 import { getDetectionStatus, requestHealthConnect, recheckHealthConnect, checkGPSPermissions, requestGPSPermissions, openHealthConnectSettings } from '../detection/index';
 import { AppState, AppStateStatus } from 'react-native';
 import { colors, spacing, radius, shadows } from '../utils/theme';
 import { t } from '../i18n';
 import i18n from '../i18n';
-import EditLocationSheet from '../components/EditLocationSheet';
 import type { SettingsStackParamList } from '../navigation/AppNavigator';
 import { requestCalendarPermissions, hasCalendarPermissions } from '../calendar/calendarService';
 
@@ -27,9 +26,9 @@ export default function SettingsScreen() {
   const [remindersEnabled, setRemindersEnabled] = useState(true);
   const [detectionStatus, setDetectionStatus] = useState({ healthConnect: false, gps: false });
   const [knownLocations, setKnownLocations] = useState<KnownLocation[]>([]);
+  const [suggestedCount, setSuggestedCount] = useState(0);
   const [language, setLanguage] = useState(i18n.locale);
   const [connectingHC, setConnectingHC] = useState(false);
-  const [editingLocation, setEditingLocation] = useState<KnownLocation | null>(null);
   
   // Weather state - only the main toggle
   const [weatherEnabled, setWeatherEnabled] = useState(true);
@@ -44,6 +43,7 @@ export default function SettingsScreen() {
     setRemindersEnabled(getSetting('reminders_enabled', '1') === '1');
     setDetectionStatus(getDetectionStatus());
     setKnownLocations(getKnownLocations());
+    setSuggestedCount(getSuggestedLocations().length);
     setLanguage(i18n.locale);
     
     // Load weather settings
@@ -276,16 +276,6 @@ export default function SettingsScreen() {
       <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
         <Text style={styles.headerTitle}>{t('nav_settings')}</Text>
       </View>
-      
-      <EditLocationSheet
-        visible={editingLocation !== null}
-        location={editingLocation}
-        onClose={() => setEditingLocation(null)}
-        onSave={() => {
-          loadStatus();
-          setEditingLocation(null);
-        }}
-      />
 
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
 
@@ -311,30 +301,27 @@ export default function SettingsScreen() {
       {/* Known locations */}
       <Text style={styles.sectionHeader}>{t('settings_section_locations')}</Text>
       <View style={styles.card}>
-        {knownLocations.length === 0 && (
-          <Text style={styles.emptyText}>{t('settings_locations_empty')}</Text>
-        )}
-        {knownLocations.map((loc, i) => (
-          <View key={loc.id}>
-            {i > 0 && <Divider />}
-            <SettingRow
-              icon={loc.label === 'Home' ? '🏠' : loc.label === 'Work' ? '🏢' : '📌'}
-              label={loc.label}
-              sublabel={t('settings_location_radius', {
-                radius: loc.radiusMeters,
-                type: loc.isIndoor ? t('settings_location_indoor') : t('settings_location_outdoor'),
-              })}
-              right={
-                <TouchableOpacity
-                  style={styles.editBtn}
-                  onPress={() => setEditingLocation(loc)}
-                >
-                  <Text style={styles.editBtnText}>{t('settings_location_edit')}</Text>
-                </TouchableOpacity>
-              }
-            />
-          </View>
-        ))}
+        <TouchableOpacity onPress={() => navigation.navigate('KnownLocations')}>
+          <SettingRow
+            icon="📍"
+            label={t('settings_locations_manage')}
+            sublabel={
+              knownLocations.length > 0
+                ? t('settings_locations_count', { count: knownLocations.length })
+                : t('settings_locations_manage_desc')
+            }
+            right={
+              <View style={styles.locationRight}>
+                {suggestedCount > 0 && (
+                  <View style={styles.badge}>
+                    <Text style={styles.badgeText}>{suggestedCount}</Text>
+                  </View>
+                )}
+                <Text style={styles.chevron}>›</Text>
+              </View>
+            }
+          />
+        </TouchableOpacity>
       </View>
 
       <Text style={styles.sectionHeader}>{t('settings_section_reminders')}</Text>
@@ -671,4 +658,20 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     lineHeight: 20,
   },
+
+  locationRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  badge: {
+    backgroundColor: colors.error,
+    borderRadius: radius.full,
+    minWidth: 20,
+    height: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 5,
+  },
+  badgeText: { fontSize: 11, color: colors.textInverse, fontWeight: '700' },
 });

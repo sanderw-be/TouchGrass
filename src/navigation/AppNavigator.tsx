@@ -12,6 +12,7 @@ import GoalsScreen from '../screens/GoalsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 const WeatherSettingsScreen = lazy(() => import('../screens/WeatherSettingsScreen'));
 const ScheduledNotificationsScreen = lazy(() => import('../screens/ScheduledNotificationsScreen'));
+const KnownLocationsScreen = lazy(() => import('../screens/KnownLocationsScreen'));
 import { fetchWeatherForecast, isWeatherDataAvailable } from '../weather/weatherService';
 import { getSetting } from '../storage/database';
 import { colors, spacing } from '../utils/theme';
@@ -21,6 +22,7 @@ export type SettingsStackParamList = {
   SettingsMain: undefined;
   WeatherSettings: undefined;
   ScheduledNotifications: undefined;
+  KnownLocations: undefined;
 };
 
 const Tab = createBottomTabNavigator();
@@ -74,6 +76,16 @@ function SettingsStackNavigator() {
         {() => (
           <Suspense fallback={<ScreenFallback />}>
             <ScheduledNotificationsScreen />
+          </Suspense>
+        )}
+      </SettingsStack.Screen>
+      <SettingsStack.Screen
+        name="KnownLocations"
+        options={{ title: t('nav_known_locations') }}
+      >
+        {() => (
+          <Suspense fallback={<ScreenFallback />}>
+            <KnownLocationsScreen />
           </Suspense>
         )}
       </SettingsStack.Screen>
