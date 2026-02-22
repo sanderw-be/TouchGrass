@@ -75,37 +75,6 @@ export async function setupNotificationInfrastructure(): Promise<void> {
 
   // Handle notification responses (button taps)
   Notifications.addNotificationResponseReceivedListener(handleNotificationResponse);
-
-  // Handle notifications being delivered/fired
-  Notifications.addNotificationReceivedListener(handleNotificationReceived);
-}
-
-/**
- * Handle when a notification is received (fired/delivered).
- * Reschedule weekly notifications for next week.
- */
-async function handleNotificationReceived(notification: Notifications.Notification) {
-  try {
-    const { data } = notification.request.content;
-    
-    // Check if this is a scheduled notification that needs rescheduling
-    // Note: All data values are strings for Android compatibility
-    if (data && data.isScheduledNotification === 'true' && data.scheduleId && data.dayOfWeek) {
-      console.log('TouchGrass: Scheduled notification fired, rescheduling for next week');
-      
-      // Import dynamically to avoid circular dependency
-      const { rescheduleNotificationForNextWeek } = await import('./scheduledNotifications');
-      await rescheduleNotificationForNextWeek(
-        parseInt(data.scheduleId as string, 10),
-        parseInt(data.dayOfWeek as string, 10),
-        parseInt(data.hour as string, 10),
-        parseInt(data.minute as string, 10)
-      );
-    }
-  } catch (error) {
-    console.error('TouchGrass: Error in handleNotificationReceived:', error);
-    // Don't throw to avoid crashing the app
-  }
 }
 
 /**
@@ -203,7 +172,6 @@ export async function scheduleNextReminder(): Promise<void> {
       title,
       body,
       categoryIdentifier: 'reminder',
-      data: { scheduledAt: Date.now() },
       color: '#4A7C59',
     },
     trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: 1 },
@@ -258,7 +226,6 @@ export async function scheduleDayReminders(): Promise<void> {
         title,
         body,
         categoryIdentifier: 'reminder',
-        data: { scheduledAt: Date.now(), plannedHour: slot.hour },
         color: '#4A7C59',
       },
       trigger: {

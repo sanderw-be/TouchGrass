@@ -29,6 +29,7 @@ jest.mock('expo-notifications', () => ({
     TIME_INTERVAL: 'timeInterval',
     DATE: 'date',
     CALENDAR: 'calendar',
+    WEEKLY: 'weekly',
   },
   AndroidImportance: {
     MIN: 1,
@@ -70,15 +71,6 @@ jest.mock('react-native-health-connect', () => ({
     SDK_UNAVAILABLE: 1,
     SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED: 2,
   },
-}));
-
-// Mock expo-background-fetch
-jest.mock('expo-background-fetch', () => ({
-  BackgroundFetchStatus: {
-    Available: 1,
-  },
-  registerTaskAsync: jest.fn(),
-  unregisterTaskAsync: jest.fn(),
 }));
 
 // Mock expo-background-task

@@ -60,7 +60,7 @@ describe('scheduledNotifications', () => {
       expect(Notifications.cancelScheduledNotificationAsync).toHaveBeenCalledWith('scheduled_1_1');
     });
 
-    it('schedules with correct trigger configuration using DATE instead of CALENDAR', async () => {
+    it('schedules with correct trigger configuration using WEEKLY trigger', async () => {
       const mockSchedules = [
         { id: 1, hour: 14, minute: 30, daysOfWeek: [2], enabled: 1, label: 'Afternoon reminder' },
       ];
@@ -77,24 +77,19 @@ describe('scheduledNotifications', () => {
             title: 'Afternoon reminder',
             body: 'Your scheduled reminder to go outside.',
             sound: true,
-            data: expect.objectContaining({
-              scheduleId: '1',
-              dayOfWeek: '2',
-              hour: '14',
-              minute: '30',
-              isScheduledNotification: 'true',
-            }),
           }),
           trigger: expect.objectContaining({
-            type: Notifications.SchedulableTriggerInputTypes.DATE,
-            // Date trigger will have a specific date, not weekday/hour/minute
+            type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
+            weekday: 3, // JS dayOfWeek 2 (Wednesday) + 1 = 3
+            hour: 14,
+            minute: 30,
             channelId: 'touchgrass_scheduled',
           }),
         })
       );
     });
 
-    it('calculates next occurrence correctly', async () => {
+    it('schedules with correct weekday conversion (JS 0-6 to expo 1-7)', async () => {
       const mockSchedules = [
         { id: 1, hour: 9, minute: 0, daysOfWeek: [0, 1, 6], enabled: 1, label: 'Test' },
       ];
@@ -109,16 +104,18 @@ describe('scheduledNotifications', () => {
       
       const calls = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls;
       
-      // Each call should have DATE trigger with a future timestamp
+      // Each call should have WEEKLY trigger with correct weekday/hour/minute
       for (const call of calls) {
         const trigger = call[0].trigger;
-        expect(trigger.type).toBe(Notifications.SchedulableTriggerInputTypes.DATE);
-        expect(typeof trigger.date).toBe('number'); // Should be timestamp now
-        expect(trigger.date).toBeGreaterThan(Date.now());
+        expect(trigger.type).toBe(Notifications.SchedulableTriggerInputTypes.WEEKLY);
+        expect(trigger.hour).toBe(9);
+        expect(trigger.minute).toBe(0);
+        // weekday should be JS dayOfWeek + 1: Sun=1, Mon=2, Sat=7
+        expect([1, 2, 7]).toContain(trigger.weekday);
       }
     });
 
-    it('schedules notifications with exact time (no minute drift)', async () => {
+    it('schedules notifications with exact hour and minute via WEEKLY trigger', async () => {
       const mockSchedules = [
         { id: 1, hour: 14, minute: 30, daysOfWeek: [2], enabled: 1, label: 'Exact time test' },
       ];
@@ -133,12 +130,11 @@ describe('scheduledNotifications', () => {
       const call = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls[0];
       const trigger = call[0].trigger;
       
-      // Convert timestamp back to Date and verify exact time
-      const scheduledDate = new Date(trigger.date);
-      expect(scheduledDate.getHours()).toBe(14);
-      expect(scheduledDate.getMinutes()).toBe(30);
-      expect(scheduledDate.getSeconds()).toBe(0);
-      expect(scheduledDate.getMilliseconds()).toBe(0);
+      // WEEKLY trigger carries hour and minute directly - no timestamp conversion needed
+      expect(trigger.type).toBe(Notifications.SchedulableTriggerInputTypes.WEEKLY);
+      expect(trigger.weekday).toBe(3); // Wednesday (JS 2) + 1 = 3
+      expect(trigger.hour).toBe(14);
+      expect(trigger.minute).toBe(30);
     });
 
     it('handles scheduling errors gracefully', async () => {

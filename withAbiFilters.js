@@ -1,4 +1,4 @@
-const { withGradleProperties, withAppBuildGradle } = require('@expo/config-plugins');
+const { withGradleProperties, withAppBuildGradle, withAndroidManifest } = require('@expo/config-plugins');
 
 const withAbiFilters = (config, { abiFilters = ['arm64-v8a'] } = {}) => {
   console.log('🔧 ABI Filter plugin is running!', abiFilters);
@@ -38,6 +38,15 @@ const withAbiFilters = (config, { abiFilters = ['arm64-v8a'] } = {}) => {
       );
     }
 
+    return config;
+  });
+
+  // Enable OnBackInvokedCallback to suppress the Android warning and support predictive back gesture
+  config = withAndroidManifest(config, (config) => {
+    const application = config.modResults.manifest.application[0];
+    if (application && application.$) {
+      application.$['android:enableOnBackInvokedCallback'] = 'true';
+    }
     return config;
   });
 
