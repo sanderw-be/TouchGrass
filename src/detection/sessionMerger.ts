@@ -4,13 +4,21 @@ const MERGE_GAP_MS = 5 * 60 * 1000; // sessions within 5 min of each other get m
 
 /**
  * Submit a candidate session from any detection source.
- * If an overlapping or adjacent session already exists, merge all of them
- * into one session that spans the full combined time range (using the highest
- * confidence among all merged sessions).  Existing user confirmations are
- * preserved so that a GPS/Health-Connect top-up never resets a "confirmed"
- * or "denied" decision.
+ * Manual sessions are always inserted as standalone entries — the user is the
+ * authoritative source and their explicit log should never be merged with or
+ * altered by auto-detected sessions.
+ * For automated sources (GPS, Health Connect, timeline) any overlapping or
+ * adjacent session is merged into one session spanning the full combined time
+ * range (using the highest confidence).  Existing user confirmations are
+ * preserved so a top-up never resets a "confirmed" or "denied" decision.
  */
 export function submitSession(candidate: OutsideSession): void {
+  // Manual sessions bypass merging — insert directly as a separate entry.
+  if (candidate.source === 'manual') {
+    insertSession(candidate);
+    return;
+  }
+
   const windowStart = candidate.startTime - MERGE_GAP_MS;
   const windowEnd = candidate.endTime + MERGE_GAP_MS;
   const existing = getSessionsForRange(windowStart, windowEnd);
