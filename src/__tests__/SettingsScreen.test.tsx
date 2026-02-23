@@ -54,6 +54,12 @@ jest.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
 }));
 
+// Mock IntroContext so useShowIntro returns a no-op in tests
+jest.mock('../context/IntroContext', () => ({
+  useShowIntro: () => jest.fn(),
+  IntroContext: { Provider: ({ children }: { children: React.ReactNode }) => children },
+}));
+
 import SettingsScreen from '../screens/SettingsScreen';
 
 describe('SettingsScreen calendar duration', () => {

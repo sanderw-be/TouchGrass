@@ -164,6 +164,8 @@ export default {
   settings_coming_soon_body: 'Data clearing will be implemented in a future update.',
   settings_language_changed_title: 'Language changed',
   settings_language_changed_body: 'Restart the app to apply the language change fully.',
+  settings_rerun_tutorial: 'Re-run tutorial',
+  settings_rerun_tutorial_sublabel: 'Review the setup guide again',
 
   // Known locations management
   nav_known_locations: 'Known Locations',
@@ -257,6 +259,17 @@ export default {
   intro_notifications_hint: 'Completely optional — you can skip this.',
   intro_notifications_button: 'Enable Reminders',
   intro_notifications_button_granted: 'Reminders Enabled ✓',
+  intro_calendar_title: 'Calendar',
+  intro_calendar_body: 'Connect your calendar so TouchGrass can schedule outdoor time around your meetings.',
+  intro_calendar_why_title: 'Why do we need this?',
+  intro_calendar_why_body: 'With calendar access, TouchGrass avoids sending reminders when you have a meeting coming up and can automatically add outdoor time slots to your calendar.',
+  intro_calendar_hint: 'You can configure this later in Settings.',
+  intro_calendar_button: 'Connect Calendar',
+  intro_calendar_button_granted: 'Calendar Connected ✓',
+  intro_calendar_buffer_label: 'Meeting buffer',
+  intro_calendar_buffer_desc: 'Skip reminders when a meeting starts within this window',
+  intro_calendar_duration_label: 'Add outdoor time to calendar',
+  intro_calendar_duration_desc: 'Automatically schedule outdoor time slots',
   intro_ready_title: 'You\'re all set!',
   intro_ready_body: 'TouchGrass is ready to help you spend more time outdoors.',
   intro_ready_tip_title: 'Quick tip',
@@ -265,6 +278,7 @@ export default {
   intro_ready_checklist_item_hc: 'Connect Health Connect to import exercise sessions.',
   intro_ready_checklist_item_gps: 'Allow background location for GPS detection.',
   intro_ready_checklist_item_notifications: 'Enable notifications for smart reminders.',
+  intro_ready_checklist_item_calendar: 'Connect calendar for smart scheduling.',
 
   // Notification titles (randomly picked)
   notif_title_1: '🌿 Time to touch grass!',

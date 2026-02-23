@@ -9,23 +9,39 @@ import { t } from '../i18n';
 import { requestHealthConnect, recheckHealthConnect } from '../detection/index';
 import { requestGPSPermissions, checkGPSPermissions } from '../detection/index';
 import { requestNotificationPermissions } from '../notifications/notificationManager';
+import { requestCalendarPermissions, hasCalendarPermissions } from '../calendar/calendarService';
+import { getSetting, setSetting } from '../storage/database';
 
 interface Props {
   onComplete: () => void;
 }
 
-type Step = 'welcome' | 'health-connect' | 'location' | 'notifications' | 'ready';
+type Step = 'welcome' | 'health-connect' | 'location' | 'notifications' | 'calendar' | 'ready';
 
 export default function IntroScreen({ onComplete }: Props) {
   const [currentStep, setCurrentStep] = useState<Step>('welcome');
   const [healthConnectGranted, setHealthConnectGranted] = useState(false);
   const [locationGranted, setLocationGranted] = useState(false);
   const [notificationsGranted, setNotificationsGranted] = useState(false);
+  const [calendarGranted, setCalendarGranted] = useState(false);
+  const [calendarBuffer, setCalendarBuffer] = useState(30);
+  const [calendarDuration, setCalendarDuration] = useState(0);
   const [requestingPermission, setRequestingPermission] = useState(false);
 
-  const steps: Step[] = ['welcome', 'health-connect', 'location', 'notifications', 'ready'];
+  const steps: Step[] = ['welcome', 'health-connect', 'location', 'notifications', 'calendar', 'ready'];
   const currentIndex = steps.indexOf(currentStep);
   const progress = ((currentIndex + 1) / steps.length) * 100;
+
+  // Load saved calendar settings on mount
+  useEffect(() => {
+    const rawBuffer = getSetting('calendar_buffer_minutes', '30');
+    const parsedBuffer = parseInt(rawBuffer, 10);
+    setCalendarBuffer(Number.isNaN(parsedBuffer) ? 30 : parsedBuffer);
+
+    const rawDuration = getSetting('calendar_default_duration', '0');
+    const parsedDuration = parseInt(rawDuration, 10);
+    setCalendarDuration(Number.isNaN(parsedDuration) ? 0 : parsedDuration);
+  }, []);
 
   // Re-check permissions when app comes back to foreground
   // (user may have granted permissions in Health Connect or Android Settings)
@@ -41,6 +57,24 @@ export default function IntroScreen({ onComplete }: Props) {
       // Check notification permissions
       const { status } = await Notifications.getPermissionsAsync();
       setNotificationsGranted(status === 'granted');
+    } else if (currentStep === 'calendar') {
+      const calGranted = await hasCalendarPermissions();
+      setCalendarGranted(calGranted);
+      if (calGranted && getSetting('calendar_integration_enabled', '0') !== '1') {
+        setSetting('calendar_integration_enabled', '1');
+      }
+    } else if (currentStep === 'ready') {
+      // Refresh all permissions so the summary stays accurate
+      if (Platform.OS === 'android') {
+        const hcGranted = await recheckHealthConnect();
+        setHealthConnectGranted(hcGranted);
+      }
+      const gpsGranted = await checkGPSPermissions();
+      setLocationGranted(gpsGranted);
+      const { status } = await Notifications.getPermissionsAsync();
+      setNotificationsGranted(status === 'granted');
+      const calGranted = await hasCalendarPermissions();
+      setCalendarGranted(calGranted);
     }
   }, [currentStep]);
 
@@ -56,7 +90,7 @@ export default function IntroScreen({ onComplete }: Props) {
 
   // Check permissions when entering permission-related steps
   useEffect(() => {
-    if (currentStep === 'health-connect' || currentStep === 'location' || currentStep === 'notifications') {
+    if (currentStep === 'health-connect' || currentStep === 'location' || currentStep === 'notifications' || currentStep === 'calendar' || currentStep === 'ready') {
       checkPermissions();
     }
   }, [currentStep, checkPermissions]);
@@ -110,6 +144,38 @@ export default function IntroScreen({ onComplete }: Props) {
     }
   };
 
+  const CALENDAR_BUFFER_OPTIONS = [10, 20, 30, 45, 60];
+  const CALENDAR_DURATION_OPTIONS = [0, 5, 10, 15, 20, 30];
+
+  const handleRequestCalendar = async () => {
+    setRequestingPermission(true);
+    try {
+      const granted = await requestCalendarPermissions();
+      setCalendarGranted(granted);
+      if (granted) {
+        setSetting('calendar_integration_enabled', '1');
+      }
+    } catch (error) {
+      console.error('Error requesting calendar:', error);
+    } finally {
+      setRequestingPermission(false);
+    }
+  };
+
+  const handleCycleCalendarBuffer = () => {
+    const idx = CALENDAR_BUFFER_OPTIONS.indexOf(calendarBuffer);
+    const next = CALENDAR_BUFFER_OPTIONS[(idx + 1) % CALENDAR_BUFFER_OPTIONS.length];
+    setSetting('calendar_buffer_minutes', String(next));
+    setCalendarBuffer(next);
+  };
+
+  const handleCycleCalendarDuration = () => {
+    const idx = CALENDAR_DURATION_OPTIONS.indexOf(calendarDuration);
+    const next = CALENDAR_DURATION_OPTIONS[(idx + 1) % CALENDAR_DURATION_OPTIONS.length];
+    setSetting('calendar_default_duration', String(next));
+    setCalendarDuration(next);
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Progress bar */}
@@ -140,11 +206,23 @@ export default function IntroScreen({ onComplete }: Props) {
             requesting={requestingPermission}
           />
         )}
+        {currentStep === 'calendar' && (
+          <CalendarStep
+            onRequest={handleRequestCalendar}
+            granted={calendarGranted}
+            requesting={requestingPermission}
+            calendarBuffer={calendarBuffer}
+            calendarDuration={calendarDuration}
+            onCycleBuffer={handleCycleCalendarBuffer}
+            onCycleDuration={handleCycleCalendarDuration}
+          />
+        )}
         {currentStep === 'ready' && (
           <ReadyStep
             healthConnectGranted={healthConnectGranted}
             locationGranted={locationGranted}
             notificationsGranted={notificationsGranted}
+            calendarGranted={calendarGranted}
           />
         )}
       </ScrollView>
@@ -268,10 +346,11 @@ function NotificationsStep({ onRequest, granted, requesting }: { onRequest: () =
   );
 }
 
-function ReadyStep({ healthConnectGranted, locationGranted, notificationsGranted }: { 
+function ReadyStep({ healthConnectGranted, locationGranted, notificationsGranted, calendarGranted }: { 
   healthConnectGranted: boolean; 
   locationGranted: boolean; 
-  notificationsGranted: boolean 
+  notificationsGranted: boolean;
+  calendarGranted: boolean;
 }) {
   // Determine the status symbol for each permission
   const getStatusSymbol = (granted: boolean) => granted ? '✓' : '-';
@@ -306,7 +385,80 @@ function ReadyStep({ healthConnectGranted, locationGranted, notificationsGranted
           </Text>
           <Text style={styles.checklistText}>{t('intro_ready_checklist_item_notifications')}</Text>
         </View>
+        <View style={styles.checklistItem}>
+          <Text style={[styles.checklistBullet, { color: getStatusColor(calendarGranted) }]}>
+            {getStatusSymbol(calendarGranted)}
+          </Text>
+          <Text style={styles.checklistText}>{t('intro_ready_checklist_item_calendar')}</Text>
+        </View>
       </View>
+    </View>
+  );
+}
+
+function CalendarStep({
+  onRequest,
+  granted,
+  requesting,
+  calendarBuffer,
+  calendarDuration,
+  onCycleBuffer,
+  onCycleDuration,
+}: {
+  onRequest: () => void;
+  granted: boolean;
+  requesting: boolean;
+  calendarBuffer: number;
+  calendarDuration: number;
+  onCycleBuffer: () => void;
+  onCycleDuration: () => void;
+}) {
+  return (
+    <View style={styles.stepContainer}>
+      <Text style={styles.emoji}>📆</Text>
+      <Text style={styles.title}>{t('intro_calendar_title')}</Text>
+      <Text style={styles.body}>{t('intro_calendar_body')}</Text>
+      <View style={styles.permissionCard}>
+        <Text style={styles.permissionTitle}>{t('intro_calendar_why_title')}</Text>
+        <Text style={styles.permissionBody}>{t('intro_calendar_why_body')}</Text>
+      </View>
+      <TouchableOpacity
+        style={[styles.permissionButton, granted && styles.permissionButtonGranted]}
+        onPress={onRequest}
+        disabled={granted || requesting}
+      >
+        {requesting ? (
+          <ActivityIndicator size="small" color={colors.textInverse} />
+        ) : (
+          <Text style={styles.permissionButtonText}>
+            {granted ? t('intro_calendar_button_granted') : t('intro_calendar_button')}
+          </Text>
+        )}
+      </TouchableOpacity>
+      <View style={styles.calendarSettingsCard}>
+        <TouchableOpacity onPress={onCycleBuffer} style={styles.calendarSettingRow}>
+          <View style={styles.calendarSettingContent}>
+            <Text style={styles.calendarSettingLabel}>{t('intro_calendar_buffer_label')}</Text>
+            <Text style={styles.calendarSettingDesc}>{t('intro_calendar_buffer_desc')}</Text>
+          </View>
+          <Text style={styles.valueChip}>
+            {t('settings_calendar_buffer_minutes', { minutes: calendarBuffer })}
+          </Text>
+        </TouchableOpacity>
+        <View style={styles.calendarSettingDivider} />
+        <TouchableOpacity onPress={onCycleDuration} style={styles.calendarSettingRow}>
+          <View style={styles.calendarSettingContent}>
+            <Text style={styles.calendarSettingLabel}>{t('intro_calendar_duration_label')}</Text>
+            <Text style={styles.calendarSettingDesc}>{t('intro_calendar_duration_desc')}</Text>
+          </View>
+          <Text style={styles.valueChip}>
+            {calendarDuration === 0
+              ? t('settings_calendar_duration_off')
+              : t('settings_calendar_duration_minutes', { minutes: calendarDuration })}
+          </Text>
+        </TouchableOpacity>
+      </View>
+      <Text style={styles.hint}>{t('intro_calendar_hint')}</Text>
     </View>
   );
 }
@@ -478,6 +630,47 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: spacing.sm,
     lineHeight: 18,
+  },
+
+  calendarSettingsCard: {
+    width: '100%',
+    backgroundColor: colors.textInverse,
+    borderRadius: radius.lg,
+    overflow: 'hidden',
+    marginBottom: spacing.sm,
+    ...shadows.soft,
+  },
+  calendarSettingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: spacing.md,
+  },
+  calendarSettingContent: {
+    flex: 1,
+  },
+  calendarSettingLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.textPrimary,
+  },
+  calendarSettingDesc: {
+    fontSize: 12,
+    color: colors.textMuted,
+    marginTop: 2,
+  },
+  calendarSettingDivider: {
+    height: 1,
+    backgroundColor: colors.fog,
+    marginLeft: spacing.md,
+  },
+  valueChip: {
+    fontSize: 13,
+    color: colors.grass,
+    fontWeight: '600',
+    backgroundColor: colors.grassPale,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 3,
+    borderRadius: radius.full,
   },
 
   footer: {

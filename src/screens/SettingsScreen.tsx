@@ -14,6 +14,7 @@ import { t } from '../i18n';
 import i18n from '../i18n';
 import type { SettingsStackParamList } from '../navigation/AppNavigator';
 import { requestCalendarPermissions, hasCalendarPermissions } from '../calendar/calendarService';
+import { useShowIntro } from '../context/IntroContext';
 
 const LANGUAGES = [
   { code: 'en', label: 'English' },
@@ -21,6 +22,7 @@ const LANGUAGES = [
 ];
 
 export default function SettingsScreen() {
+  const showIntro = useShowIntro();
   const navigation = useNavigation<StackNavigationProp<SettingsStackParamList>>();
   const insets = useSafeAreaInsets();
   const [remindersEnabled, setRemindersEnabled] = useState(true);
@@ -180,7 +182,7 @@ export default function SettingsScreen() {
           onPress: () => {
             try {
               clearAllData();
-              loadStatus(); // Reload to show reset state
+              showIntro();
               Alert.alert(
                 t('settings_clear_data_success_title'),
                 t('settings_clear_data_success_body'),
@@ -464,6 +466,20 @@ export default function SettingsScreen() {
         <SettingRow icon="🌿" label="TouchGrass" sublabel={t('settings_app_sublabel')} />
         <Divider />
         <SettingRow icon="🔒" label={t('settings_privacy')} sublabel={t('settings_privacy_sublabel')} />
+        <Divider />
+        <SettingRow
+          icon="🎓"
+          label={t('settings_rerun_tutorial')}
+          sublabel={t('settings_rerun_tutorial_sublabel')}
+          right={
+            <TouchableOpacity
+              style={styles.editBtn}
+              onPress={showIntro}
+            >
+              <Text style={styles.editBtnText}>{t('settings_rerun_tutorial')}</Text>
+            </TouchableOpacity>
+          }
+        />
         <Divider />
         <SettingRow
           icon="🗑️"
