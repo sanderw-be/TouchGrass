@@ -75,6 +75,12 @@
           },
           {
             "action": "android.settings.HEALTH_CONNECT_SETTINGS"
+          },
+          {
+            "action": "android.health.connect.action.MANAGE_HEALTH_PERMISSIONS"
+          },
+          {
+            "action": "android.health.connect.action.HEALTH_HOME_SETTINGS"
           }
         ]
       },
