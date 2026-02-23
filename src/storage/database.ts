@@ -398,8 +398,8 @@ export function clearAllData(): void {
     [150, Date.now()]
   );
   
-  // Clear non-essential settings (keep language, hasCompletedIntro)
-  db.runSync('DELETE FROM app_settings WHERE key NOT IN (?, ?)', ['language', 'hasCompletedIntro']);
+  // Clear non-essential settings (keep language only; hasCompletedIntro is reset so tutorial shows again)
+  db.runSync('DELETE FROM app_settings WHERE key NOT IN (?)', ['language']);
   
   console.log('[Database] All data cleared successfully');
 }

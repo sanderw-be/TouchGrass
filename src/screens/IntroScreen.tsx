@@ -34,8 +34,13 @@ export default function IntroScreen({ onComplete }: Props) {
 
   // Load saved calendar settings on mount
   useEffect(() => {
-    setCalendarBuffer(parseInt(getSetting('calendar_buffer_minutes', '30'), 10));
-    setCalendarDuration(parseInt(getSetting('calendar_default_duration', '0'), 10));
+    const rawBuffer = getSetting('calendar_buffer_minutes', '30');
+    const parsedBuffer = parseInt(rawBuffer, 10);
+    setCalendarBuffer(Number.isNaN(parsedBuffer) ? 30 : parsedBuffer);
+
+    const rawDuration = getSetting('calendar_default_duration', '0');
+    const parsedDuration = parseInt(rawDuration, 10);
+    setCalendarDuration(Number.isNaN(parsedDuration) ? 0 : parsedDuration);
   }, []);
 
   // Re-check permissions when app comes back to foreground
@@ -55,6 +60,21 @@ export default function IntroScreen({ onComplete }: Props) {
     } else if (currentStep === 'calendar') {
       const calGranted = await hasCalendarPermissions();
       setCalendarGranted(calGranted);
+      if (calGranted && getSetting('calendar_integration_enabled', '0') !== '1') {
+        setSetting('calendar_integration_enabled', '1');
+      }
+    } else if (currentStep === 'ready') {
+      // Refresh all permissions so the summary stays accurate
+      if (Platform.OS === 'android') {
+        const hcGranted = await recheckHealthConnect();
+        setHealthConnectGranted(hcGranted);
+      }
+      const gpsGranted = await checkGPSPermissions();
+      setLocationGranted(gpsGranted);
+      const { status } = await Notifications.getPermissionsAsync();
+      setNotificationsGranted(status === 'granted');
+      const calGranted = await hasCalendarPermissions();
+      setCalendarGranted(calGranted);
     }
   }, [currentStep]);
 
@@ -70,7 +90,7 @@ export default function IntroScreen({ onComplete }: Props) {
 
   // Check permissions when entering permission-related steps
   useEffect(() => {
-    if (currentStep === 'health-connect' || currentStep === 'location' || currentStep === 'notifications' || currentStep === 'calendar') {
+    if (currentStep === 'health-connect' || currentStep === 'location' || currentStep === 'notifications' || currentStep === 'calendar' || currentStep === 'ready') {
       checkPermissions();
     }
   }, [currentStep, checkPermissions]);

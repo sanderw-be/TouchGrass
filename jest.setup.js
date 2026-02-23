@@ -15,8 +15,8 @@ jest.mock('expo-localization', () => ({
 
 // Mock expo-notifications
 jest.mock('expo-notifications', () => ({
-  getPermissionsAsync: jest.fn(),
-  requestPermissionsAsync: jest.fn(),
+  getPermissionsAsync: jest.fn(() => Promise.resolve({ status: 'denied' })),
+  requestPermissionsAsync: jest.fn(() => Promise.resolve({ status: 'denied' })),
   setNotificationHandler: jest.fn(),
   scheduleNotificationAsync: jest.fn(),
   cancelAllScheduledNotificationsAsync: jest.fn(),

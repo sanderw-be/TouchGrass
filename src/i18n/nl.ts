@@ -164,6 +164,8 @@ export default {
   settings_coming_soon_body: 'Gegevens wissen wordt in een toekomstige update toegevoegd.',
   settings_language_changed_title: 'Taal gewijzigd',
   settings_language_changed_body: 'Start de app opnieuw op om de taalwijziging volledig toe te passen.',
+  settings_rerun_tutorial: 'Tutorial opnieuw starten',
+  settings_rerun_tutorial_sublabel: 'Bekijk de installatiegids opnieuw',
 
   // Bekende locaties beheer
   nav_known_locations: 'Bekende locaties',

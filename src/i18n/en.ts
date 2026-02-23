@@ -164,6 +164,8 @@ export default {
   settings_coming_soon_body: 'Data clearing will be implemented in a future update.',
   settings_language_changed_title: 'Language changed',
   settings_language_changed_body: 'Restart the app to apply the language change fully.',
+  settings_rerun_tutorial: 'Re-run tutorial',
+  settings_rerun_tutorial_sublabel: 'Review the setup guide again',
 
   // Known locations management
   nav_known_locations: 'Known Locations',

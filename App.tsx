@@ -77,6 +77,11 @@ export default function App() {
     init().then(() => setReady(true));
   }, []);
 
+  const handleShowIntro = () => {
+    setSetting('hasCompletedIntro', '0');
+    setShowIntro(true);
+  };
+
   const handleIntroComplete = async () => {
     setSetting('hasCompletedIntro', '1');
     setShowIntro(false);
@@ -122,5 +127,5 @@ export default function App() {
     return <IntroScreen onComplete={handleIntroComplete} />;
   }
 
-  return <AppNavigator />;
+  return <AppNavigator onShowIntro={handleShowIntro} />;
 }

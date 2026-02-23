@@ -20,7 +20,7 @@ const LANGUAGES = [
   { code: 'nl', label: 'Nederlands' },
 ];
 
-export default function SettingsScreen() {
+export default function SettingsScreen({ onShowIntro }: { onShowIntro?: () => void }) {
   const navigation = useNavigation<StackNavigationProp<SettingsStackParamList>>();
   const insets = useSafeAreaInsets();
   const [remindersEnabled, setRemindersEnabled] = useState(true);
@@ -180,7 +180,11 @@ export default function SettingsScreen() {
           onPress: () => {
             try {
               clearAllData();
-              loadStatus(); // Reload to show reset state
+              if (onShowIntro) {
+                onShowIntro();
+              } else {
+                loadStatus();
+              }
               Alert.alert(
                 t('settings_clear_data_success_title'),
                 t('settings_clear_data_success_body'),
@@ -464,6 +468,24 @@ export default function SettingsScreen() {
         <SettingRow icon="🌿" label="TouchGrass" sublabel={t('settings_app_sublabel')} />
         <Divider />
         <SettingRow icon="🔒" label={t('settings_privacy')} sublabel={t('settings_privacy_sublabel')} />
+        {onShowIntro && (
+          <>
+            <Divider />
+            <SettingRow
+              icon="🎓"
+              label={t('settings_rerun_tutorial')}
+              sublabel={t('settings_rerun_tutorial_sublabel')}
+              right={
+                <TouchableOpacity
+                  style={styles.editBtn}
+                  onPress={onShowIntro}
+                >
+                  <Text style={styles.editBtnText}>{t('settings_rerun_tutorial')}</Text>
+                </TouchableOpacity>
+              }
+            />
+          </>
+        )}
         <Divider />
         <SettingRow
           icon="🗑️"
