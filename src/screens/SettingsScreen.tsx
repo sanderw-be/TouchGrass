@@ -14,13 +14,15 @@ import { t } from '../i18n';
 import i18n from '../i18n';
 import type { SettingsStackParamList } from '../navigation/AppNavigator';
 import { requestCalendarPermissions, hasCalendarPermissions } from '../calendar/calendarService';
+import { useShowIntro } from '../context/IntroContext';
 
 const LANGUAGES = [
   { code: 'en', label: 'English' },
   { code: 'nl', label: 'Nederlands' },
 ];
 
-export default function SettingsScreen({ onShowIntro }: { onShowIntro?: () => void }) {
+export default function SettingsScreen() {
+  const showIntro = useShowIntro();
   const navigation = useNavigation<StackNavigationProp<SettingsStackParamList>>();
   const insets = useSafeAreaInsets();
   const [remindersEnabled, setRemindersEnabled] = useState(true);
@@ -180,11 +182,7 @@ export default function SettingsScreen({ onShowIntro }: { onShowIntro?: () => vo
           onPress: () => {
             try {
               clearAllData();
-              if (onShowIntro) {
-                onShowIntro();
-              } else {
-                loadStatus();
-              }
+              showIntro();
               Alert.alert(
                 t('settings_clear_data_success_title'),
                 t('settings_clear_data_success_body'),
@@ -476,7 +474,7 @@ export default function SettingsScreen({ onShowIntro }: { onShowIntro?: () => vo
           right={
             <TouchableOpacity
               style={styles.editBtn}
-              onPress={() => onShowIntro && onShowIntro()}
+              onPress={showIntro}
             >
               <Text style={styles.editBtnText}>{t('settings_rerun_tutorial')}</Text>
             </TouchableOpacity>

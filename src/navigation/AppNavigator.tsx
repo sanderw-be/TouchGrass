@@ -44,7 +44,7 @@ const icons: Record<string, string> = {
   Settings: '⚙️',
 };
 
-function SettingsStackNavigator({ onShowIntro }: { onShowIntro?: () => void }) {
+function SettingsStackNavigator() {
   return (
     <SettingsStack.Navigator
       screenOptions={{
@@ -56,10 +56,9 @@ function SettingsStackNavigator({ onShowIntro }: { onShowIntro?: () => void }) {
     >
       <SettingsStack.Screen
         name="SettingsMain"
+        component={SettingsScreen}
         options={{ headerShown: false }}
-      >
-        {() => <SettingsScreen onShowIntro={onShowIntro} />}
-      </SettingsStack.Screen>
+      />
       <SettingsStack.Screen
         name="WeatherSettings"
         options={{ title: t('nav_weather_settings') }}
@@ -94,7 +93,7 @@ function SettingsStackNavigator({ onShowIntro }: { onShowIntro?: () => void }) {
   );
 }
 
-function TabNavigator({ onShowIntro }: { onShowIntro?: () => void }) {
+function TabNavigator() {
   const insets = useSafeAreaInsets();
 
   return (
@@ -145,15 +144,14 @@ function TabNavigator({ onShowIntro }: { onShowIntro?: () => void }) {
       />
       <Tab.Screen
         name="Settings"
+        component={SettingsStackNavigator}
         options={{ title: t('nav_settings'), headerShown: false }}
-      >
-        {() => <SettingsStackNavigator onShowIntro={onShowIntro} />}
-      </Tab.Screen>
+      />
     </Tab.Navigator>
   );
 }
 
-export default function AppNavigator({ onShowIntro }: { onShowIntro?: () => void }) {
+export default function AppNavigator() {
   const appState = useRef(AppState.currentState);
 
   useEffect(() => {
@@ -180,7 +178,7 @@ export default function AppNavigator({ onShowIntro }: { onShowIntro?: () => void
   return (
     <SafeAreaProvider>
       <NavigationContainer>
-        <TabNavigator onShowIntro={onShowIntro} />
+        <TabNavigator />
       </NavigationContainer>
     </SafeAreaProvider>
   );

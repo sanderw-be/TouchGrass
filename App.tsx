@@ -9,6 +9,7 @@ import { setupNotificationInfrastructure, scheduleDayReminders } from './src/not
 
 import AppNavigator from './src/navigation/AppNavigator';
 import IntroScreen from './src/screens/IntroScreen';
+import { IntroContext } from './src/context/IntroContext';
 import { colors } from './src/utils/theme';
 
 enableScreens();
@@ -127,5 +128,9 @@ export default function App() {
     return <IntroScreen onComplete={handleIntroComplete} />;
   }
 
-  return <AppNavigator onShowIntro={handleShowIntro} />;
+  return (
+    <IntroContext.Provider value={handleShowIntro}>
+      <AppNavigator />
+    </IntroContext.Provider>
+  );
 }
