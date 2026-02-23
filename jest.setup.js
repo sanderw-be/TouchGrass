@@ -73,6 +73,7 @@ jest.mock('react-native-health-connect', () => ({
   getGrantedPermissions: jest.fn(),
   readRecords: jest.fn(),
   getSdkStatus: jest.fn(),
+  openHealthConnectSettings: jest.fn(),
   SdkAvailabilityStatus: {
     SDK_AVAILABLE: 3,
     SDK_UNAVAILABLE: 1,
