@@ -121,14 +121,18 @@ describe('submitSession', () => {
     expect(inserted.confidence).toBe(0.95);
   });
 
-  it('preserves userConfirmed from existing session when merging', () => {
+  it('does not merge a new GPS session with an existing confirmed GPS session', () => {
+    // Both cover the same time range — the confirmed session should stay intact,
+    // and the candidate (fully covered by the confirmed session) produces no new segment.
     const existing = makeSession({ id: 1, userConfirmed: 1 }); // user said yes
     (Database.getSessionsForRange as jest.Mock).mockReturnValue([existing]);
 
     submitSession(makeSession({ userConfirmed: null }));
 
-    const inserted = (Database.insertSession as jest.Mock).mock.calls[0][0];
-    expect(inserted.userConfirmed).toBe(1);
+    // The confirmed session must not be deleted
+    expect(Database.deleteSession).not.toHaveBeenCalledWith(1);
+    // No new segment to propose — the confirmed session already covers the range
+    expect(Database.insertSession).not.toHaveBeenCalled();
   });
 
   it('preserves userConfirmed=0 (denied) from existing session when merging non-manual sessions', () => {
@@ -341,6 +345,91 @@ describe('submitSession', () => {
     (Database.getSessionsForRange as jest.Mock).mockReturnValue([manual]);
 
     const candidate = makeSession({ startTime: BASE_TIME, endTime: BASE_TIME + 30 * 60 * 1000 });
+    submitSession(candidate);
+
+    const calls = (Database.insertSession as jest.Mock).mock.calls.map(c => c[0]);
+    calls.forEach(s => expect(s.userConfirmed).toBeNull());
+  });
+
+  // ── Confirmed-session protection (any source) ─────────────
+
+  it('does not merge an unconfirmed health_connect session with an existing confirmed health_connect session', () => {
+    const existing = makeSession({ id: 1, source: 'health_connect', userConfirmed: 1 });
+    (Database.getSessionsForRange as jest.Mock).mockReturnValue([existing]);
+
+    submitSession(makeSession({ source: 'health_connect', userConfirmed: null }));
+
+    expect(Database.deleteSession).not.toHaveBeenCalledWith(1);
+    expect(Database.insertSession).not.toHaveBeenCalled();
+  });
+
+  it('splits an unconfirmed health_connect session around a confirmed GPS session', () => {
+    // Confirmed GPS: [T10, T20], Health Connect: [T0, T30] → two HC segments
+    const confirmedGps = makeSession({
+      id: 5,
+      source: 'gps',
+      userConfirmed: 1,
+      startTime: BASE_TIME + 10 * 60 * 1000,
+      endTime: BASE_TIME + 20 * 60 * 1000,
+    });
+    (Database.getSessionsForRange as jest.Mock).mockReturnValue([confirmedGps]);
+
+    const candidate = makeSession({
+      source: 'health_connect',
+      userConfirmed: null,
+      startTime: BASE_TIME,
+      endTime: BASE_TIME + 30 * 60 * 1000,
+    });
+    submitSession(candidate);
+
+    expect(Database.deleteSession).not.toHaveBeenCalledWith(5);
+    expect(Database.insertSession).toHaveBeenCalledTimes(2);
+    const calls = (Database.insertSession as jest.Mock).mock.calls.map(c => c[0]);
+    expect(calls).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ startTime: BASE_TIME, endTime: BASE_TIME + 10 * 60 * 1000 }),
+        expect.objectContaining({ startTime: BASE_TIME + 20 * 60 * 1000, endTime: BASE_TIME + 30 * 60 * 1000 }),
+      ]),
+    );
+  });
+
+  it('does not insert a health_connect session entirely covered by a confirmed GPS session', () => {
+    const confirmedGps = makeSession({
+      id: 5,
+      source: 'gps',
+      userConfirmed: 1,
+      startTime: BASE_TIME,
+      endTime: BASE_TIME + 60 * 60 * 1000,
+    });
+    (Database.getSessionsForRange as jest.Mock).mockReturnValue([confirmedGps]);
+
+    const candidate = makeSession({
+      source: 'health_connect',
+      userConfirmed: null,
+      startTime: BASE_TIME + 10 * 60 * 1000,
+      endTime: BASE_TIME + 50 * 60 * 1000,
+    });
+    submitSession(candidate);
+
+    expect(Database.insertSession).not.toHaveBeenCalled();
+  });
+
+  it('health_connect segments produced after splitting around a confirmed session are unconfirmed', () => {
+    const confirmedGps = makeSession({
+      id: 5,
+      source: 'gps',
+      userConfirmed: 1,
+      startTime: BASE_TIME + 10 * 60 * 1000,
+      endTime: BASE_TIME + 20 * 60 * 1000,
+    });
+    (Database.getSessionsForRange as jest.Mock).mockReturnValue([confirmedGps]);
+
+    const candidate = makeSession({
+      source: 'health_connect',
+      userConfirmed: null,
+      startTime: BASE_TIME,
+      endTime: BASE_TIME + 30 * 60 * 1000,
+    });
     submitSession(candidate);
 
     const calls = (Database.insertSession as jest.Mock).mock.calls.map(c => c[0]);
