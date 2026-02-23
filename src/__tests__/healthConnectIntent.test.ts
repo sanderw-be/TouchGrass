@@ -73,7 +73,7 @@ describe('openHealthConnectPermissionsViaIntent', () => {
       await openHealthConnectPermissionsViaIntent();
 
       const playStoreCalls = (Linking.openURL as jest.Mock).mock.calls.filter(([url]: [string]) =>
-        url.includes('play.google.com') || url.includes('market://'),
+        /^https?:\/\/play\.google\.com\//.test(url) || url.startsWith('market://'),
       );
       expect(playStoreCalls).toHaveLength(0);
     });
