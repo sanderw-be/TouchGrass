@@ -23,36 +23,55 @@ export function submitSession(candidate: OutsideSession): void {
   const windowEnd = candidate.endTime + MERGE_GAP_MS;
   const existing = getSessionsForRange(windowStart, windowEnd);
 
-  if (existing.length === 0) {
-    // No overlap — insert as new session
-    insertSession(candidate);
-    return;
-  }
+  // Manual sessions must never be modified by automated detection — separate them out.
+  const manualSessions = existing.filter(s => s.source === 'manual');
+  const nonManualSessions = existing.filter(s => s.source !== 'manual');
 
-  // Merge all overlapping sessions and the candidate into one session
-  const allSessions = [...existing, candidate];
-  const mergedStart = Math.min(...allSessions.map(s => s.startTime));
-  const mergedEnd   = Math.max(...allSessions.map(s => s.endTime));
-  const mergedConfidence = Math.max(...allSessions.map(s => s.confidence));
+  // Merge all non-manual overlapping sessions and the candidate into one session
+  const allNonManual = [...nonManualSessions, candidate];
+  const mergedStart = Math.min(...allNonManual.map(s => s.startTime));
+  const mergedEnd   = Math.max(...allNonManual.map(s => s.endTime));
+  const mergedConfidence = Math.max(...allNonManual.map(s => s.confidence));
 
   // Preserve any existing user confirmation so user decisions are never lost
-  const confirmedSession = existing.find(s => s.userConfirmed !== null);
+  const confirmedSession = nonManualSessions.find(s => s.userConfirmed !== null);
 
-  // Delete all existing sessions in the overlap window
-  existing.forEach(session => {
+  // Delete all existing non-manual sessions in the overlap window
+  nonManualSessions.forEach(session => {
     if (session.id) {
       deleteSession(session.id);
     }
   });
 
-  insertSession({
-    ...candidate,
-    startTime: mergedStart,
-    endTime: mergedEnd,
-    durationMinutes: (mergedEnd - mergedStart) / 60000,
-    confidence: mergedConfidence,
-    userConfirmed: confirmedSession ? confirmedSession.userConfirmed : null,
-  });
+  // Subtract manual session time from the merged range so that confirmed user
+  // data is never overwritten.  Each remaining gap becomes a GPS segment.
+  const sortedManuals = [...manualSessions]
+    .filter(s => s.startTime < mergedEnd && s.endTime > mergedStart)
+    .sort((a, b) => a.startTime - b.startTime);
+
+  const segments: Array<[number, number]> = [];
+  let cursor = mergedStart;
+
+  for (const manual of sortedManuals) {
+    if (manual.startTime > cursor) {
+      segments.push([cursor, manual.startTime]);
+    }
+    cursor = Math.max(cursor, manual.endTime);
+  }
+  if (cursor < mergedEnd) {
+    segments.push([cursor, mergedEnd]);
+  }
+
+  for (const [segStart, segEnd] of segments) {
+    insertSession({
+      ...candidate,
+      startTime: segStart,
+      endTime: segEnd,
+      durationMinutes: (segEnd - segStart) / 60000,
+      confidence: mergedConfidence,
+      userConfirmed: confirmedSession ? confirmedSession.userConfirmed : null,
+    });
+  }
 }
 
 /**
