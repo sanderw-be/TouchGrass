@@ -468,24 +468,20 @@ export default function SettingsScreen({ onShowIntro }: { onShowIntro?: () => vo
         <SettingRow icon="🌿" label="TouchGrass" sublabel={t('settings_app_sublabel')} />
         <Divider />
         <SettingRow icon="🔒" label={t('settings_privacy')} sublabel={t('settings_privacy_sublabel')} />
-        {onShowIntro && (
-          <>
-            <Divider />
-            <SettingRow
-              icon="🎓"
-              label={t('settings_rerun_tutorial')}
-              sublabel={t('settings_rerun_tutorial_sublabel')}
-              right={
-                <TouchableOpacity
-                  style={styles.editBtn}
-                  onPress={onShowIntro}
-                >
-                  <Text style={styles.editBtnText}>{t('settings_rerun_tutorial')}</Text>
-                </TouchableOpacity>
-              }
-            />
-          </>
-        )}
+        <Divider />
+        <SettingRow
+          icon="🎓"
+          label={t('settings_rerun_tutorial')}
+          sublabel={t('settings_rerun_tutorial_sublabel')}
+          right={
+            <TouchableOpacity
+              style={styles.editBtn}
+              onPress={() => onShowIntro && onShowIntro()}
+            >
+              <Text style={styles.editBtnText}>{t('settings_rerun_tutorial')}</Text>
+            </TouchableOpacity>
+          }
+        />
         <Divider />
         <SettingRow
           icon="🗑️"
