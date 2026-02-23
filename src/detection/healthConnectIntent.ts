@@ -1,5 +1,10 @@
 import { Platform, Linking } from 'react-native';
-import { initialize, readRecords } from 'react-native-health-connect';
+import {
+  initialize,
+  openHealthConnectSettings,
+  openHealthConnectDataManagement,
+  readRecords,
+} from 'react-native-health-connect';
 
 const APP_PACKAGE_NAME = 'com.sanderwubben.touchgrass';
 const HEALTH_CONNECT_PLAY_STORE_ID = 'com.google.android.apps.healthdata';
@@ -8,8 +13,9 @@ const HEALTH_CONNECT_PLAY_STORE_ID = 'com.google.android.apps.healthdata';
  * Open Health Connect settings via the most reliable method available.
  *
  * On Android 14+ (API 34+), Health Connect is integrated into the OS under
- * Settings → Security & Privacy → Privacy → Health Connect. A deep link is
- * used to open the app-specific permissions page directly.
+ * Settings → Security & Privacy → Privacy → Health Connect.
+ * The react-native-health-connect library's native functions are used, as they
+ * call startActivity() directly and work reliably across all Android versions.
  *
  * On Android 13 and below, Health Connect is a standalone app. The custom
  * scheme is tried first; if unavailable the Play Store is opened so the user
@@ -28,24 +34,23 @@ export async function openHealthConnectPermissionsViaIntent(): Promise<boolean> 
   try {
     if (apiLevel >= 34) {
       // Android 14+ (API 34+): Health Connect is built into the OS.
+      // Use the library's native functions which call startActivity() directly.
       // Method 1: Open the app-specific Health Connect permissions page.
       try {
-        const permissionsUrl = `intent:#Intent;action=android.health.connect.action.MANAGE_HEALTH_PERMISSIONS;S.android.intent.extra.PACKAGE_NAME=${APP_PACKAGE_NAME};end`;
-        await Linking.openURL(permissionsUrl);
-        console.log('Opened Health Connect permissions via MANAGE_HEALTH_PERMISSIONS intent');
+        openHealthConnectDataManagement(APP_PACKAGE_NAME);
+        console.log('Opened Health Connect data management via native library');
         return true;
       } catch (e) {
-        console.log('MANAGE_HEALTH_PERMISSIONS intent failed:', e);
+        console.log('openHealthConnectDataManagement failed:', e);
       }
 
       // Method 2: Open the Health Connect main settings page.
       try {
-        const settingsUrl = 'intent:#Intent;action=android.health.connect.action.HEALTH_HOME_SETTINGS;end';
-        await Linking.openURL(settingsUrl);
-        console.log('Opened Health Connect settings via HEALTH_HOME_SETTINGS intent');
+        openHealthConnectSettings();
+        console.log('Opened Health Connect settings via native library');
         return true;
       } catch (e) {
-        console.log('HEALTH_HOME_SETTINGS intent failed:', e);
+        console.log('openHealthConnectSettings failed:', e);
       }
     } else {
       // Android 13 and below: Health Connect is a standalone app.
