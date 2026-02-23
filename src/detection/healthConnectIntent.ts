@@ -2,7 +2,6 @@ import { Platform, Linking } from 'react-native';
 import {
   initialize,
   openHealthConnectSettings,
-  openHealthConnectDataManagement,
   readRecords,
 } from 'react-native-health-connect';
 
@@ -14,8 +13,14 @@ const HEALTH_CONNECT_PLAY_STORE_ID = 'com.google.android.apps.healthdata';
  *
  * On Android 14+ (API 34+), Health Connect is integrated into the OS under
  * Settings → Security & Privacy → Privacy → Health Connect.
- * The react-native-health-connect library's native functions are used, as they
- * call startActivity() directly and work reliably across all Android versions.
+ *
+ * Method 1: Deep-link directly to the TouchGrass permissions page using the
+ * MANAGE_HEALTH_PERMISSIONS intent (requires manifest <queries> declaration).
+ * React Native's Linking module parses intent: URIs via Intent.parseUri with
+ * URI_INTENT_SCHEME, which calls startActivity() natively.
+ *
+ * Method 2: Fall back to the main Health Connect settings page via the library's
+ * native openHealthConnectSettings() which uses startActivity() directly.
  *
  * On Android 13 and below, Health Connect is a standalone app. The custom
  * scheme is tried first; if unavailable the Play Store is opened so the user
@@ -34,17 +39,22 @@ export async function openHealthConnectPermissionsViaIntent(): Promise<boolean> 
   try {
     if (apiLevel >= 34) {
       // Android 14+ (API 34+): Health Connect is built into the OS.
-      // Use the library's native functions which call startActivity() directly.
-      // Method 1: Open the app-specific Health Connect permissions page.
+
+      // Method 1: Deep-link to the TouchGrass-specific permissions page.
+      // React Native parses intent: URIs via Intent.parseUri (URI_INTENT_SCHEME).
+      // Note: canOpenURL is intentionally skipped — it returns false for intent: URIs
+      // even when the target activity exists.
       try {
-        openHealthConnectDataManagement(APP_PACKAGE_NAME);
-        console.log('Opened Health Connect data management via native library');
+        const permissionsUrl = `intent:#Intent;action=android.health.connect.action.MANAGE_HEALTH_PERMISSIONS;S.android.intent.extra.PACKAGE_NAME=${APP_PACKAGE_NAME};end`;
+        await Linking.openURL(permissionsUrl);
+        console.log('Opened Health Connect permissions via MANAGE_HEALTH_PERMISSIONS');
         return true;
       } catch (e) {
-        console.log('openHealthConnectDataManagement failed:', e);
+        console.log('MANAGE_HEALTH_PERMISSIONS intent failed, trying main settings:', e);
       }
 
-      // Method 2: Open the Health Connect main settings page.
+      // Method 2: Open the main Health Connect settings page.
+      // (Settings → Security & Privacy → Privacy → Health Connect)
       try {
         openHealthConnectSettings();
         console.log('Opened Health Connect settings via native library');

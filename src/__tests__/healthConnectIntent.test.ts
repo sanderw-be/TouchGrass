@@ -18,7 +18,6 @@ describe('openHealthConnectPermissionsViaIntent', () => {
     (Platform as any).Version = 34;
     (Linking.openURL as jest.Mock).mockResolvedValue(undefined);
     (Linking.canOpenURL as jest.Mock).mockResolvedValue(false);
-    (HealthConnect.openHealthConnectDataManagement as jest.Mock).mockReturnValue(undefined);
     (HealthConnect.openHealthConnectSettings as jest.Mock).mockReturnValue(undefined);
   });
 
@@ -28,9 +27,8 @@ describe('openHealthConnectPermissionsViaIntent', () => {
     const result = await openHealthConnectPermissionsViaIntent();
 
     expect(result).toBe(false);
-    expect(HealthConnect.openHealthConnectDataManagement).not.toHaveBeenCalled();
-    expect(HealthConnect.openHealthConnectSettings).not.toHaveBeenCalled();
     expect(Linking.openURL).not.toHaveBeenCalled();
+    expect(HealthConnect.openHealthConnectSettings).not.toHaveBeenCalled();
   });
 
   describe('Android 14+ (API 34+)', () => {
@@ -38,32 +36,36 @@ describe('openHealthConnectPermissionsViaIntent', () => {
       (Platform as any).Version = 34;
     });
 
-    it('opens app-specific Health Connect permissions page via openHealthConnectDataManagement', async () => {
+    it('opens TouchGrass-specific permissions page via MANAGE_HEALTH_PERMISSIONS intent URI', async () => {
       const result = await openHealthConnectPermissionsViaIntent();
 
       expect(result).toBe(true);
-      expect(HealthConnect.openHealthConnectDataManagement).toHaveBeenCalledWith(
-        'com.sanderwubben.touchgrass',
+      expect(Linking.openURL).toHaveBeenCalledWith(
+        expect.stringContaining('android.health.connect.action.MANAGE_HEALTH_PERMISSIONS'),
       );
-      expect(Linking.openURL).not.toHaveBeenCalled();
+      expect(Linking.openURL).toHaveBeenCalledWith(
+        expect.stringContaining('com.sanderwubben.touchgrass'),
+      );
+      expect(HealthConnect.openHealthConnectSettings).not.toHaveBeenCalled();
     });
 
-    it('falls back to openHealthConnectSettings when openHealthConnectDataManagement fails', async () => {
-      (HealthConnect.openHealthConnectDataManagement as jest.Mock).mockImplementation(() => {
-        throw new Error('Failed');
-      });
+    it('does not call canOpenURL before openURL for intent: URIs on Android 14+', async () => {
+      await openHealthConnectPermissionsViaIntent();
+
+      expect(Linking.canOpenURL).not.toHaveBeenCalled();
+    });
+
+    it('falls back to openHealthConnectSettings when MANAGE_HEALTH_PERMISSIONS fails', async () => {
+      (Linking.openURL as jest.Mock).mockRejectedValueOnce(new Error('ActivityNotFoundException'));
 
       const result = await openHealthConnectPermissionsViaIntent();
 
       expect(result).toBe(true);
       expect(HealthConnect.openHealthConnectSettings).toHaveBeenCalled();
-      expect(Linking.openURL).not.toHaveBeenCalled();
     });
 
     it('returns false when both Android 14+ methods fail', async () => {
-      (HealthConnect.openHealthConnectDataManagement as jest.Mock).mockImplementation(() => {
-        throw new Error('Failed');
-      });
+      (Linking.openURL as jest.Mock).mockRejectedValue(new Error('Failed'));
       (HealthConnect.openHealthConnectSettings as jest.Mock).mockImplementation(() => {
         throw new Error('Failed');
       });
@@ -74,9 +76,7 @@ describe('openHealthConnectPermissionsViaIntent', () => {
     });
 
     it('does not open the Play Store on Android 14+', async () => {
-      (HealthConnect.openHealthConnectDataManagement as jest.Mock).mockImplementation(() => {
-        throw new Error('Failed');
-      });
+      (Linking.openURL as jest.Mock).mockRejectedValue(new Error('Failed'));
       (HealthConnect.openHealthConnectSettings as jest.Mock).mockImplementation(() => {
         throw new Error('Failed');
       });
@@ -95,8 +95,8 @@ describe('openHealthConnectPermissionsViaIntent', () => {
       const result = await openHealthConnectPermissionsViaIntent();
 
       expect(result).toBe(true);
-      expect(HealthConnect.openHealthConnectDataManagement).toHaveBeenCalledWith(
-        'com.sanderwubben.touchgrass',
+      expect(Linking.openURL).toHaveBeenCalledWith(
+        expect.stringContaining('android.health.connect.action.MANAGE_HEALTH_PERMISSIONS'),
       );
     });
 
@@ -108,7 +108,7 @@ describe('openHealthConnectPermissionsViaIntent', () => {
 
       // apiLevel would be 0 (NaN || 0), so it should use the Android 13- path
       expect(Linking.openURL).toHaveBeenCalledWith('healthconnect://');
-      expect(HealthConnect.openHealthConnectDataManagement).not.toHaveBeenCalled();
+      expect(HealthConnect.openHealthConnectSettings).not.toHaveBeenCalled();
     });
   });
 
@@ -124,7 +124,7 @@ describe('openHealthConnectPermissionsViaIntent', () => {
 
       expect(result).toBe(true);
       expect(Linking.openURL).toHaveBeenCalledWith('healthconnect://');
-      expect(HealthConnect.openHealthConnectDataManagement).not.toHaveBeenCalled();
+      expect(HealthConnect.openHealthConnectSettings).not.toHaveBeenCalled();
     });
 
     it('falls back to Play Store market URL when custom scheme is unavailable', async () => {
@@ -165,7 +165,6 @@ describe('openHealthConnectPermissionsViaIntent', () => {
 
       await openHealthConnectPermissionsViaIntent();
 
-      expect(HealthConnect.openHealthConnectDataManagement).not.toHaveBeenCalled();
       expect(HealthConnect.openHealthConnectSettings).not.toHaveBeenCalled();
     });
   });
