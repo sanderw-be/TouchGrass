@@ -27,6 +27,7 @@ export default {
   session_delete_confirm_body: 'Are you sure you want to delete this session? This cannot be undone.',
   session_delete_cancel: 'Cancel',
   session_review_again: 'Review again',
+  session_review_anyway: 'Review anyway',
 
   // Goals
   of: 'of',

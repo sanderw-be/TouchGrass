@@ -6,7 +6,7 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import {
   getApprovedSessions, getStandardSessions, getAllSessionsIncludingDiscarded,
-  confirmSession, deleteSession, OutsideSession,
+  confirmSession, deleteSession, unDiscardSession, OutsideSession,
 } from '../storage/database';
 import { colors, spacing, radius, shadows } from '../utils/theme';
 import { formatMinutes } from '../utils/helpers';
@@ -87,12 +87,20 @@ export default function EventsScreen() {
     loadData();
   };
 
+  const handleUnDiscard = (id: number) => {
+    unDiscardSession(id);
+    setExpandedId(null);
+    loadData();
+  };
+
   const sessions =
     tab === 'approved' ? approvedSessions :
     tab === 'standard' ? standardSessions :
     allSessions;
 
-  const pendingCount = standardSessions.filter(s => s.userConfirmed === null && !s.discarded).length;
+  // standardSessions never contains discarded sessions (getStandardSessions filters them out),
+  // but we guard explicitly so the intent is clear.
+  const pendingCount = standardSessions.filter(s => s.userConfirmed === null && s.discarded !== 1).length;
 
   const grouped = groupByDay(sessions);
 
@@ -161,6 +169,7 @@ export default function EventsScreen() {
                 onConfirm={(confirmed) => handleConfirm(session.id!, confirmed)}
                 onDelete={() => handleDelete(session.id!)}
                 onReReview={() => handleReReview(session.id!)}
+                onUnDiscard={() => handleUnDiscard(session.id!)}
               />
             ))}
           </View>
@@ -177,6 +186,7 @@ function SessionRow({
   onConfirm,
   onDelete,
   onReReview,
+  onUnDiscard,
 }: {
   session: OutsideSession;
   expanded: boolean;
@@ -184,6 +194,7 @@ function SessionRow({
   onConfirm: (confirmed: boolean) => void;
   onDelete: () => void;
   onReReview: () => void;
+  onUnDiscard: () => void;
 }) {
   const sourceIcon: Record<string, string> = {
     health_connect: '👟',
@@ -201,7 +212,7 @@ function SessionRow({
 
   const isConfirmed = session.userConfirmed === 1;
   const isRejected = session.userConfirmed === 0;
-  const isDiscarded = !!session.discarded;
+  const isDiscarded = session.discarded === 1;
   const confidencePct = Math.round(session.confidence * 100);
 
   const statusLabel = isDiscarded
@@ -320,6 +331,12 @@ function SessionRow({
               >
                 <Text style={styles.actionSecondaryText}>{t('session_delete')}</Text>
               </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.actionBtn, styles.actionConfirm]}
+                onPress={onUnDiscard}
+              >
+                <Text style={styles.actionConfirmText}>{t('session_review_anyway')}</Text>
+              </TouchableOpacity>
             </View>
           )}
         </View>
@@ -408,10 +425,10 @@ const styles = StyleSheet.create({
   badgeConfirmedText: { color: colors.grass },
   badgeRejected: { backgroundColor: colors.fog },
   badgeRejectedText: { color: colors.textMuted },
-  badgeProposed: { backgroundColor: '#FEF9C3' },
-  badgeProposedText: { color: '#854D0E' },
-  badgeDiscarded: { backgroundColor: '#F3F4F6' },
-  badgeDiscardedText: { color: '#6B7280' },
+  badgeProposed: { backgroundColor: colors.grassPale },
+  badgeProposedText: { color: colors.grass },
+  badgeDiscarded: { backgroundColor: colors.fog },
+  badgeDiscardedText: { color: colors.textMuted },
 
   rowIcon: { fontSize: 18, marginLeft: 'auto' },
   rowChevron: { fontSize: 10, color: colors.textMuted },

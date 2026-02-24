@@ -27,6 +27,7 @@ export default {
   session_delete_confirm_body: 'Weet je zeker dat je deze sessie wilt verwijderen? Dit kan niet ongedaan worden gemaakt.',
   session_delete_cancel: 'Annuleren',
   session_review_again: 'Opnieuw beoordelen',
+  session_review_anyway: 'Toch beoordelen',
 
   // Doelen
   of: 'van',

@@ -12,7 +12,7 @@ export interface OutsideSession {
   confidence: number;      // 0-1, how sure are we this was outside?
   userConfirmed: number | null;  // 0, 1, or null — SQLite has no boolean, null = not reviewed, true/false = user feedback
   notes?: string;
-  discarded?: number;      // 1 = algorithmically discarded (too unreliable to propose), 0 = normal session
+  discarded: number;       // 1 = algorithmically discarded (too unreliable to propose), 0 = normal session
 }
 
 export interface DailyGoal {
@@ -269,12 +269,14 @@ export function getUnreviewedSessions(): OutsideSession[] {
 }
 
 /**
- * Returns approved sessions only (userConfirmed = 1, not discarded).
+ * Returns approved sessions only (userConfirmed = 1).
+ * A session that is algorithmically discarded would never have been shown for user
+ * confirmation and thus can never have userConfirmed = 1, so no extra discarded filter needed.
  */
 export function getApprovedSessions(fromMs: number, toMs: number): OutsideSession[] {
   return db.getAllSync<OutsideSession>(
     `SELECT * FROM outside_sessions
-     WHERE startTime < ? AND endTime > ? AND userConfirmed = 1 AND (discarded IS NULL OR discarded = 0)
+     WHERE startTime < ? AND endTime > ? AND userConfirmed = 1
      ORDER BY startTime DESC`,
     [toMs, fromMs]
   );
@@ -294,6 +296,10 @@ export function getStandardSessions(fromMs: number, toMs: number): OutsideSessio
 
 /**
  * Returns all sessions including discarded.
+ * NOTE: The 'all' tab is intended to include sessions marked as discarded (low-confidence).
+ * Currently, no detection code sets `discarded = 1`, so 'standard' and 'all' show the same data.
+ * TODO: Once buildSession/submitSession can flag unreliable sessions as discarded,
+ *       the 'all' tab will diverge from 'standard'.
  */
 export function getAllSessionsIncludingDiscarded(fromMs: number, toMs: number): OutsideSession[] {
   return db.getAllSync<OutsideSession>(
@@ -301,6 +307,17 @@ export function getAllSessionsIncludingDiscarded(fromMs: number, toMs: number): 
      WHERE startTime < ? AND endTime > ?
      ORDER BY startTime DESC`,
     [toMs, fromMs]
+  );
+}
+
+/**
+ * Clears the discarded flag so the user can manually review the session.
+ * Sets discarded = 0 and userConfirmed = null so it surfaces in the Standard tab for review.
+ */
+export function unDiscardSession(id: number): void {
+  db.runSync(
+    'UPDATE outside_sessions SET discarded = 0, userConfirmed = NULL WHERE id = ?',
+    [id]
   );
 }
 
