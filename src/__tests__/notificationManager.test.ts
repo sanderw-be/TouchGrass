@@ -20,6 +20,7 @@ import * as CalendarService from '../calendar/calendarService';
 import {
   scheduleNextReminder,
   scheduleDayReminders,
+  setupNotificationInfrastructure,
 } from '../notifications/notificationManager';
 
 describe('notificationManager', () => {
@@ -37,6 +38,7 @@ describe('notificationManager', () => {
     (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([]);
     (Notifications.cancelScheduledNotificationAsync as jest.Mock).mockResolvedValue(undefined);
     (Notifications.scheduleNotificationAsync as jest.Mock).mockResolvedValue('notif-id');
+    (Notifications.dismissNotificationAsync as jest.Mock).mockResolvedValue(undefined);
     (CalendarService.maybeAddOutdoorTimeToCalendar as jest.Mock).mockResolvedValue(undefined);
   });
 
@@ -237,6 +239,87 @@ describe('notificationManager', () => {
       await scheduleNextReminder();
 
       expect(CalendarService.maybeAddOutdoorTimeToCalendar).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('handleNotificationResponse confirmation notifications', () => {
+    let capturedListener: ((response: any) => Promise<void>) | null = null;
+
+    beforeEach(async () => {
+      jest.useFakeTimers();
+      capturedListener = null;
+      (Notifications.addNotificationResponseReceivedListener as jest.Mock)
+        .mockImplementation((listener) => {
+          capturedListener = listener;
+          return { remove: jest.fn() };
+        });
+      await setupNotificationInfrastructure();
+    });
+
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
+    it('dismisses the original notification for any action', async () => {
+      await capturedListener!({
+        notification: { request: { identifier: 'notif-abc' } },
+        actionIdentifier: 'went_outside',
+      });
+      expect(Notifications.dismissNotificationAsync).toHaveBeenCalledWith('notif-abc');
+    });
+
+    it('shows a confirmation notification when went_outside is tapped', async () => {
+      await capturedListener!({
+        notification: { request: { identifier: 'notif-abc' } },
+        actionIdentifier: 'went_outside',
+      });
+      expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledWith(
+        expect.objectContaining({
+          identifier: 'reminder_confirmation',
+          content: expect.objectContaining({ body: 'notif_confirm_went_outside' }),
+        }),
+      );
+    });
+
+    it('shows a confirmation notification when snoozed is tapped', async () => {
+      await capturedListener!({
+        notification: { request: { identifier: 'notif-abc' } },
+        actionIdentifier: 'snoozed',
+      });
+      const calls = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls;
+      const confirmCall = calls.find((call: any[]) => call[0]?.identifier === 'reminder_confirmation');
+      expect(confirmCall).toBeDefined();
+      expect(confirmCall[0].content.body).toBe('notif_confirm_snoozed');
+    });
+
+    it('shows a confirmation notification when less_often is tapped', async () => {
+      await capturedListener!({
+        notification: { request: { identifier: 'notif-abc' } },
+        actionIdentifier: 'less_often',
+      });
+      expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledWith(
+        expect.objectContaining({
+          identifier: 'reminder_confirmation',
+          content: expect.objectContaining({ body: 'notif_confirm_less_often' }),
+        }),
+      );
+    });
+
+    it('auto-dismisses the confirmation notification after 5 seconds', async () => {
+      await capturedListener!({
+        notification: { request: { identifier: 'notif-abc' } },
+        actionIdentifier: 'went_outside',
+      });
+      jest.runAllTimers();
+      expect(Notifications.dismissNotificationAsync).toHaveBeenCalledWith('reminder_confirmation');
+    });
+
+    it('does not show a confirmation when the notification body is tapped (dismissed)', async () => {
+      await capturedListener!({
+        notification: { request: { identifier: 'notif-abc' } },
+        actionIdentifier: 'com.apple.UNNotificationDefaultActionIdentifier',
+      });
+      expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
     });
   });
 });

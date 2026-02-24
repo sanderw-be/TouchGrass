@@ -25,6 +25,11 @@ export const ACTION_SNOOZE = 'snoozed';
 export const ACTION_LESS_OFTEN = 'less_often';
 
 const CHANNEL_ID = 'touchgrass_reminders';
+const CONFIRMATION_NOTIF_ID = 'reminder_confirmation';
+const CONFIRMATION_DISPLAY_MS = 5000;
+const CONFIRMATION_TRIGGER_SECS = 1;
+
+let confirmationDismissTimer: ReturnType<typeof setTimeout> | null = null;
 
 /**
  * Set up notification infrastructure without requesting permissions.
@@ -300,6 +305,31 @@ async function handleNotificationResponse(response: Notifications.NotificationRe
 
   // Dismiss the notification
   await Notifications.dismissNotificationAsync(notificationId);
+
+  // Show a brief confirmation notification to acknowledge the action, then auto-dismiss
+  if (action !== 'dismissed') {
+    const confirmBodyKey = action === 'went_outside' ? 'notif_confirm_went_outside'
+      : action === 'snoozed' ? 'notif_confirm_snoozed'
+      : 'notif_confirm_less_often';
+
+    await Notifications.scheduleNotificationAsync({
+      identifier: CONFIRMATION_NOTIF_ID,
+      content: {
+        title: t('notif_confirm_title'),
+        body: t(confirmBodyKey),
+      },
+      trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: CONFIRMATION_TRIGGER_SECS },
+    });
+
+    // Auto-dismiss confirmation after 5 seconds (accounting for trigger delay)
+    if (confirmationDismissTimer !== null) {
+      clearTimeout(confirmationDismissTimer);
+    }
+    confirmationDismissTimer = setTimeout(() => {
+      confirmationDismissTimer = null;
+      Notifications.dismissNotificationAsync(CONFIRMATION_NOTIF_ID).catch(() => {});
+    }, CONFIRMATION_TRIGGER_SECS * 1000 + CONFIRMATION_DISPLAY_MS);
+  }
 
   if (action === 'snoozed') {
     // Reschedule for 45 minutes later
