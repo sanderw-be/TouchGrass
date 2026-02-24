@@ -17,6 +17,7 @@ function makeSession(overrides: Partial<OutsideSession> = {}): OutsideSession {
     source: 'gps',
     confidence: 0.8,
     userConfirmed: null,
+    discarded: 0,
     ...overrides,
   };
 }
