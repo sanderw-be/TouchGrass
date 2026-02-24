@@ -121,14 +121,18 @@ describe('submitSession', () => {
     expect(inserted.confidence).toBe(0.95);
   });
 
-  it('preserves userConfirmed from existing session when merging', () => {
+  it('does not merge a new GPS session with an existing confirmed GPS session', () => {
+    // Both cover the same time range — the confirmed session should stay intact,
+    // and the candidate (fully covered by the confirmed session) produces no new segment.
     const existing = makeSession({ id: 1, userConfirmed: 1 }); // user said yes
     (Database.getSessionsForRange as jest.Mock).mockReturnValue([existing]);
 
     submitSession(makeSession({ userConfirmed: null }));
 
-    const inserted = (Database.insertSession as jest.Mock).mock.calls[0][0];
-    expect(inserted.userConfirmed).toBe(1);
+    // The confirmed session must not be deleted
+    expect(Database.deleteSession).not.toHaveBeenCalledWith(1);
+    // No new segment to propose — the confirmed session already covers the range
+    expect(Database.insertSession).not.toHaveBeenCalled();
   });
 
   it('preserves userConfirmed=0 (denied) from existing session when merging non-manual sessions', () => {
@@ -185,5 +189,250 @@ describe('submitSession', () => {
     const inserted = (Database.insertSession as jest.Mock).mock.calls[0][0];
     expect(inserted.startTime).toBe(BASE_TIME);
     expect(inserted.endTime).toBe(BASE_TIME + 30 * 60 * 1000);
+  });
+
+  // ── Manual-session protection ─────────────────────────────
+
+  it('does not delete a manual session when a GPS session spans it', () => {
+    const manual = makeSession({
+      id: 10,
+      source: 'manual',
+      userConfirmed: 1,
+      startTime: BASE_TIME + 10 * 60 * 1000,
+      endTime: BASE_TIME + 20 * 60 * 1000,
+    });
+    (Database.getSessionsForRange as jest.Mock).mockReturnValue([manual]);
+
+    // GPS session fully spans the manual session
+    const candidate = makeSession({
+      startTime: BASE_TIME,
+      endTime: BASE_TIME + 30 * 60 * 1000,
+    });
+    submitSession(candidate);
+
+    expect(Database.deleteSession).not.toHaveBeenCalledWith(10);
+  });
+
+  it('splits a GPS session around a contained manual session into two segments', () => {
+    const manual = makeSession({
+      id: 10,
+      source: 'manual',
+      userConfirmed: 1,
+      startTime: BASE_TIME + 10 * 60 * 1000,
+      endTime: BASE_TIME + 20 * 60 * 1000,
+    });
+    (Database.getSessionsForRange as jest.Mock).mockReturnValue([manual]);
+
+    const candidate = makeSession({
+      startTime: BASE_TIME,
+      endTime: BASE_TIME + 30 * 60 * 1000,
+    });
+    submitSession(candidate);
+
+    // Two GPS segments: before and after the manual session
+    expect(Database.insertSession).toHaveBeenCalledTimes(2);
+    const calls = (Database.insertSession as jest.Mock).mock.calls.map(c => c[0]);
+    expect(calls).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ startTime: BASE_TIME, endTime: BASE_TIME + 10 * 60 * 1000, durationMinutes: 10 }),
+        expect.objectContaining({ startTime: BASE_TIME + 20 * 60 * 1000, endTime: BASE_TIME + 30 * 60 * 1000, durationMinutes: 10 }),
+      ]),
+    );
+  });
+
+  it('trims a GPS session that overlaps the start of a manual session', () => {
+    // GPS: [T0, T20], Manual: [T10, T30]  →  GPS segment [T0, T10]
+    const manual = makeSession({
+      id: 10,
+      source: 'manual',
+      userConfirmed: 1,
+      startTime: BASE_TIME + 10 * 60 * 1000,
+      endTime: BASE_TIME + 30 * 60 * 1000,
+    });
+    (Database.getSessionsForRange as jest.Mock).mockReturnValue([manual]);
+
+    const candidate = makeSession({
+      startTime: BASE_TIME,
+      endTime: BASE_TIME + 20 * 60 * 1000,
+    });
+    submitSession(candidate);
+
+    expect(Database.insertSession).toHaveBeenCalledTimes(1);
+    const inserted = (Database.insertSession as jest.Mock).mock.calls[0][0];
+    expect(inserted.startTime).toBe(BASE_TIME);
+    expect(inserted.endTime).toBe(BASE_TIME + 10 * 60 * 1000);
+    expect(inserted.durationMinutes).toBe(10);
+  });
+
+  it('trims a GPS session that overlaps the end of a manual session', () => {
+    // GPS: [T10, T30], Manual: [T0, T20]  →  GPS segment [T20, T30]
+    const manual = makeSession({
+      id: 10,
+      source: 'manual',
+      userConfirmed: 1,
+      startTime: BASE_TIME,
+      endTime: BASE_TIME + 20 * 60 * 1000,
+    });
+    (Database.getSessionsForRange as jest.Mock).mockReturnValue([manual]);
+
+    const candidate = makeSession({
+      startTime: BASE_TIME + 10 * 60 * 1000,
+      endTime: BASE_TIME + 30 * 60 * 1000,
+    });
+    submitSession(candidate);
+
+    expect(Database.insertSession).toHaveBeenCalledTimes(1);
+    const inserted = (Database.insertSession as jest.Mock).mock.calls[0][0];
+    expect(inserted.startTime).toBe(BASE_TIME + 20 * 60 * 1000);
+    expect(inserted.endTime).toBe(BASE_TIME + 30 * 60 * 1000);
+    expect(inserted.durationMinutes).toBe(10);
+  });
+
+  it('does not insert a GPS session entirely covered by a manual session', () => {
+    // Manual: [T0, T60], GPS: [T10, T50]  →  nothing to insert
+    const manual = makeSession({
+      id: 10,
+      source: 'manual',
+      userConfirmed: 1,
+      startTime: BASE_TIME,
+      endTime: BASE_TIME + 60 * 60 * 1000,
+    });
+    (Database.getSessionsForRange as jest.Mock).mockReturnValue([manual]);
+
+    const candidate = makeSession({
+      startTime: BASE_TIME + 10 * 60 * 1000,
+      endTime: BASE_TIME + 50 * 60 * 1000,
+    });
+    submitSession(candidate);
+
+    expect(Database.insertSession).not.toHaveBeenCalled();
+  });
+
+  it('does not touch a manual session adjacent to (but not overlapping) a GPS session', () => {
+    // Manual: [T20, T30], GPS candidate: [T0, T15] — manual is in the MERGE_GAP_MS
+    // buffer but does not actually overlap the GPS range
+    const manual = makeSession({
+      id: 10,
+      source: 'manual',
+      userConfirmed: 1,
+      startTime: BASE_TIME + 20 * 60 * 1000,
+      endTime: BASE_TIME + 30 * 60 * 1000,
+    });
+    (Database.getSessionsForRange as jest.Mock).mockReturnValue([manual]);
+
+    const candidate = makeSession({
+      startTime: BASE_TIME,
+      endTime: BASE_TIME + 15 * 60 * 1000,
+    });
+    submitSession(candidate);
+
+    expect(Database.deleteSession).not.toHaveBeenCalledWith(10);
+    // GPS session should be inserted as-is (manual is outside its range)
+    expect(Database.insertSession).toHaveBeenCalledTimes(1);
+    const inserted = (Database.insertSession as jest.Mock).mock.calls[0][0];
+    expect(inserted.startTime).toBe(BASE_TIME);
+    expect(inserted.endTime).toBe(BASE_TIME + 15 * 60 * 1000);
+  });
+
+  it('GPS session pending approval (userConfirmed null) after being split around a manual', () => {
+    const manual = makeSession({
+      id: 10,
+      source: 'manual',
+      userConfirmed: 1,
+      startTime: BASE_TIME + 10 * 60 * 1000,
+      endTime: BASE_TIME + 20 * 60 * 1000,
+    });
+    (Database.getSessionsForRange as jest.Mock).mockReturnValue([manual]);
+
+    const candidate = makeSession({ startTime: BASE_TIME, endTime: BASE_TIME + 30 * 60 * 1000 });
+    submitSession(candidate);
+
+    const calls = (Database.insertSession as jest.Mock).mock.calls.map(c => c[0]);
+    calls.forEach(s => expect(s.userConfirmed).toBeNull());
+  });
+
+  // ── Confirmed-session protection (any source) ─────────────
+
+  it('does not merge an unconfirmed health_connect session with an existing confirmed health_connect session', () => {
+    const existing = makeSession({ id: 1, source: 'health_connect', userConfirmed: 1 });
+    (Database.getSessionsForRange as jest.Mock).mockReturnValue([existing]);
+
+    submitSession(makeSession({ source: 'health_connect', userConfirmed: null }));
+
+    expect(Database.deleteSession).not.toHaveBeenCalledWith(1);
+    expect(Database.insertSession).not.toHaveBeenCalled();
+  });
+
+  it('splits an unconfirmed health_connect session around a confirmed GPS session', () => {
+    // Confirmed GPS: [T10, T20], Health Connect: [T0, T30] → two HC segments
+    const confirmedGps = makeSession({
+      id: 5,
+      source: 'gps',
+      userConfirmed: 1,
+      startTime: BASE_TIME + 10 * 60 * 1000,
+      endTime: BASE_TIME + 20 * 60 * 1000,
+    });
+    (Database.getSessionsForRange as jest.Mock).mockReturnValue([confirmedGps]);
+
+    const candidate = makeSession({
+      source: 'health_connect',
+      userConfirmed: null,
+      startTime: BASE_TIME,
+      endTime: BASE_TIME + 30 * 60 * 1000,
+    });
+    submitSession(candidate);
+
+    expect(Database.deleteSession).not.toHaveBeenCalledWith(5);
+    expect(Database.insertSession).toHaveBeenCalledTimes(2);
+    const calls = (Database.insertSession as jest.Mock).mock.calls.map(c => c[0]);
+    expect(calls).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ startTime: BASE_TIME, endTime: BASE_TIME + 10 * 60 * 1000 }),
+        expect.objectContaining({ startTime: BASE_TIME + 20 * 60 * 1000, endTime: BASE_TIME + 30 * 60 * 1000 }),
+      ]),
+    );
+  });
+
+  it('does not insert a health_connect session entirely covered by a confirmed GPS session', () => {
+    const confirmedGps = makeSession({
+      id: 5,
+      source: 'gps',
+      userConfirmed: 1,
+      startTime: BASE_TIME,
+      endTime: BASE_TIME + 60 * 60 * 1000,
+    });
+    (Database.getSessionsForRange as jest.Mock).mockReturnValue([confirmedGps]);
+
+    const candidate = makeSession({
+      source: 'health_connect',
+      userConfirmed: null,
+      startTime: BASE_TIME + 10 * 60 * 1000,
+      endTime: BASE_TIME + 50 * 60 * 1000,
+    });
+    submitSession(candidate);
+
+    expect(Database.insertSession).not.toHaveBeenCalled();
+  });
+
+  it('health_connect segments produced after splitting around a confirmed session are unconfirmed', () => {
+    const confirmedGps = makeSession({
+      id: 5,
+      source: 'gps',
+      userConfirmed: 1,
+      startTime: BASE_TIME + 10 * 60 * 1000,
+      endTime: BASE_TIME + 20 * 60 * 1000,
+    });
+    (Database.getSessionsForRange as jest.Mock).mockReturnValue([confirmedGps]);
+
+    const candidate = makeSession({
+      source: 'health_connect',
+      userConfirmed: null,
+      startTime: BASE_TIME,
+      endTime: BASE_TIME + 30 * 60 * 1000,
+    });
+    submitSession(candidate);
+
+    const calls = (Database.insertSession as jest.Mock).mock.calls.map(c => c[0]);
+    calls.forEach(s => expect(s.userConfirmed).toBeNull());
   });
 });

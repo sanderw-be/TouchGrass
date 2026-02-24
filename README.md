@@ -103,6 +103,20 @@ src/
 └── weather/         # Weather data integration
 ```
 
+## Session Detection & Merging
+
+When multiple sources (GPS, Health Connect) detect overlapping outdoor time, TouchGrass merges them intelligently while always preserving the user's own decisions:
+
+| Situation | Behaviour |
+|-----------|-----------|
+| Two unconfirmed automated sessions overlap | Merged into one session pending user review |
+| New automated session overlaps a **confirmed** session (any source) | Confirmed session is left intact; only the time outside the confirmed window is proposed as a new unconfirmed session |
+| New automated session is fully covered by a confirmed session | No new session is created |
+| New automated session overlaps a **denied** session | Sessions are merged; the denied (`userConfirmed = 0`) status is preserved |
+| Manual session submitted | Always inserted as a standalone entry, bypassing all merge logic entirely — regardless of `userConfirmed` status |
+
+In short: **confirmed and manual sessions are never overwritten.** Automated sessions are only ever trimmed or split to fit around time the user has already approved.
+
 ## Platform-Specific Features
 
 ### Android
