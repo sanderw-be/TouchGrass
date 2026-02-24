@@ -1,8 +1,9 @@
 // Format minutes as human-readable
 export function formatMinutes(minutes: number): string {
-  if (minutes < 60) return `${Math.round(minutes)}m`;
-  const h = Math.floor(minutes / 60);
-  const m = Math.round(minutes % 60);
+  const rounded = Math.round(minutes);
+  if (rounded < 60) return `${rounded}m`;
+  const h = Math.floor(rounded / 60);
+  const m = rounded % 60;
   return m > 0 ? `${h}h ${m}m` : `${h}h`;
 }
 
