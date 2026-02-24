@@ -436,4 +436,63 @@ describe('submitSession', () => {
     const calls = (Database.insertSession as jest.Mock).mock.calls.map(c => c[0]);
     calls.forEach(s => expect(s.userConfirmed).toBeNull());
   });
+
+  // ── Confidence-based discard ──────────────────────────────
+
+  it('marks a very short GPS session (≤ 5 min) as discarded=1', () => {
+    (Database.getSessionsForRange as jest.Mock).mockReturnValue([]);
+
+    const candidate = makeSession({
+      startTime: BASE_TIME,
+      endTime: BASE_TIME + 5 * 60 * 1000, // exactly 5 min
+      confidence: 0.8,
+    });
+    submitSession(candidate);
+
+    const inserted = (Database.insertSession as jest.Mock).mock.calls[0][0];
+    expect(inserted.discarded).toBe(1);
+  });
+
+  it('marks a very long GPS session (> 4 h) as discarded=1', () => {
+    (Database.getSessionsForRange as jest.Mock).mockReturnValue([]);
+
+    const candidate = makeSession({
+      startTime: BASE_TIME,
+      endTime: BASE_TIME + 5 * 60 * 60 * 1000, // 5 hours
+      confidence: 0.8,
+    });
+    submitSession(candidate);
+
+    const inserted = (Database.insertSession as jest.Mock).mock.calls[0][0];
+    expect(inserted.discarded).toBe(1);
+  });
+
+  it('does not discard a standard 30-minute GPS session', () => {
+    (Database.getSessionsForRange as jest.Mock).mockReturnValue([]);
+
+    const candidate = makeSession({
+      startTime: BASE_TIME,
+      endTime: BASE_TIME + 30 * 60 * 1000,
+      confidence: 0.8,
+    });
+    submitSession(candidate);
+
+    const inserted = (Database.insertSession as jest.Mock).mock.calls[0][0];
+    expect(inserted.discarded).toBe(0);
+  });
+
+  it('manual sessions are never scored for discard (inserted as-is)', () => {
+    const candidate = makeSession({
+      source: 'manual',
+      userConfirmed: 1,
+      startTime: BASE_TIME,
+      endTime: BASE_TIME + 5 * 60 * 1000, // 5 min — would be discarded if GPS
+    });
+    submitSession(candidate);
+
+    // Manual sessions bypass confidence scoring
+    expect(Database.insertSession).toHaveBeenCalledWith(candidate);
+    const inserted = (Database.insertSession as jest.Mock).mock.calls[0][0];
+    expect(inserted.discarded).toBe(0);
+  });
 });

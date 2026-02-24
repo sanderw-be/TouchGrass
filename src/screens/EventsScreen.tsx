@@ -12,6 +12,7 @@ import { colors, spacing, radius, shadows } from '../utils/theme';
 import { formatMinutes } from '../utils/helpers';
 import { t, formatLocalDate, formatLocalTime } from '../i18n';
 import ManualSessionSheet from '../components/ManualSessionSheet';
+import { updateTimeSlotProbability } from '../detection/sessionConfidence';
 
 type Tab = 'approved' | 'standard' | 'all';
 
@@ -56,8 +57,10 @@ export default function EventsScreen() {
     setRefreshing(false);
   };
 
-  const handleConfirm = (id: number, confirmed: boolean) => {
+  const handleConfirm = (id: number, startTime: number, confirmed: boolean) => {
     confirmSession(id, confirmed);
+    const d = new Date(startTime);
+    updateTimeSlotProbability(d.getHours(), d.getDay(), confirmed);
     setExpandedId(null);
     loadData();
   };
@@ -166,7 +169,7 @@ export default function EventsScreen() {
                 session={session}
                 expanded={expandedId === session.id}
                 onToggle={() => setExpandedId(expandedId === session.id ? null : session.id!)}
-                onConfirm={(confirmed) => handleConfirm(session.id!, confirmed)}
+                onConfirm={(confirmed) => handleConfirm(session.id!, session.startTime, confirmed)}
                 onDelete={() => handleDelete(session.id!)}
                 onReReview={() => handleReReview(session.id!)}
                 onUnDiscard={() => handleUnDiscard(session.id!)}
