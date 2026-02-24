@@ -321,5 +321,26 @@ describe('notificationManager', () => {
       });
       expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
     });
+
+    it('clears the previous auto-dismiss timer when a second action is tapped rapidly', async () => {
+      // First tap
+      await capturedListener!({
+        notification: { request: { identifier: 'notif-abc' } },
+        actionIdentifier: 'went_outside',
+      });
+
+      // Second tap before the first timer fires
+      await capturedListener!({
+        notification: { request: { identifier: 'notif-abc' } },
+        actionIdentifier: 'less_often',
+      });
+
+      // Fire all timers — the dismiss should only happen once
+      jest.runAllTimers();
+      const dismissCalls = (Notifications.dismissNotificationAsync as jest.Mock).mock.calls.filter(
+        (call: any[]) => call[0] === 'reminder_confirmation',
+      );
+      expect(dismissCalls).toHaveLength(1);
+    });
   });
 });
