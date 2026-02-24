@@ -107,4 +107,21 @@ describe('Date helpers', () => {
       expect(result).toBe(expected);
     });
   });
+
+  describe('Session query functions', () => {
+    it('getApprovedSessions function exists', () => {
+      const { getApprovedSessions } = require('../storage/database');
+      expect(typeof getApprovedSessions).toBe('function');
+    });
+
+    it('getStandardSessions function exists', () => {
+      const { getStandardSessions } = require('../storage/database');
+      expect(typeof getStandardSessions).toBe('function');
+    });
+
+    it('getAllSessionsIncludingDiscarded function exists', () => {
+      const { getAllSessionsIncludingDiscarded } = require('../storage/database');
+      expect(typeof getAllSessionsIncludingDiscarded).toBe('function');
+    });
+  });
 });

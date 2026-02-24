@@ -12,6 +12,7 @@ export interface OutsideSession {
   confidence: number;      // 0-1, how sure are we this was outside?
   userConfirmed: number | null;  // 0, 1, or null — SQLite has no boolean, null = not reviewed, true/false = user feedback
   notes?: string;
+  discarded?: number;      // 1 = algorithmically discarded (too unreliable to propose), 0 = normal session
 }
 
 export interface DailyGoal {
@@ -165,14 +166,22 @@ export function initDatabase(): void {
   } catch {
     // Column already exists — safe to ignore
   }
+
+  // Add discarded column to outside_sessions if it doesn't exist (migration)
+  try {
+    db.execSync(`ALTER TABLE outside_sessions ADD COLUMN discarded INTEGER NOT NULL DEFAULT 0`);
+    console.log('Database migration: Added discarded column to outside_sessions');
+  } catch {
+    // Column already exists — safe to ignore
+  }
 }
 
 // ── Sessions ──────────────────────────────────────────────
 
 export function insertSession(session: OutsideSession): number {
   const result = db.runSync(
-    `INSERT INTO outside_sessions (startTime, endTime, durationMinutes, source, confidence, userConfirmed, notes)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO outside_sessions (startTime, endTime, durationMinutes, source, confidence, userConfirmed, notes, discarded)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       session.startTime,
       session.endTime,
@@ -181,6 +190,7 @@ export function insertSession(session: OutsideSession): number {
       session.confidence,
       session.userConfirmed === null ? null : session.userConfirmed ? 1 : 0,
       session.notes ?? null,
+      session.discarded ?? 0,
     ]
   );
   return result.lastInsertRowId;
@@ -255,6 +265,42 @@ export function confirmSession(id: number, confirmed: boolean | null): void {
 export function getUnreviewedSessions(): OutsideSession[] {
   return db.getAllSync<OutsideSession>(
     'SELECT * FROM outside_sessions WHERE userConfirmed IS NULL ORDER BY startTime DESC LIMIT 20'
+  );
+}
+
+/**
+ * Returns approved sessions only (userConfirmed = 1, not discarded).
+ */
+export function getApprovedSessions(fromMs: number, toMs: number): OutsideSession[] {
+  return db.getAllSync<OutsideSession>(
+    `SELECT * FROM outside_sessions
+     WHERE startTime < ? AND endTime > ? AND userConfirmed = 1 AND (discarded IS NULL OR discarded = 0)
+     ORDER BY startTime DESC`,
+    [toMs, fromMs]
+  );
+}
+
+/**
+ * Returns all non-discarded sessions (approved + proposed + disapproved).
+ */
+export function getStandardSessions(fromMs: number, toMs: number): OutsideSession[] {
+  return db.getAllSync<OutsideSession>(
+    `SELECT * FROM outside_sessions
+     WHERE startTime < ? AND endTime > ? AND (discarded IS NULL OR discarded = 0)
+     ORDER BY startTime DESC`,
+    [toMs, fromMs]
+  );
+}
+
+/**
+ * Returns all sessions including discarded.
+ */
+export function getAllSessionsIncludingDiscarded(fromMs: number, toMs: number): OutsideSession[] {
+  return db.getAllSync<OutsideSession>(
+    `SELECT * FROM outside_sessions
+     WHERE startTime < ? AND endTime > ?
+     ORDER BY startTime DESC`,
+    [toMs, fromMs]
   );
 }
 
