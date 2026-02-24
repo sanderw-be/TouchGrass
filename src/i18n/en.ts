@@ -27,6 +27,7 @@ export default {
   session_delete_confirm_body: 'Are you sure you want to delete this session? This cannot be undone.',
   session_delete_cancel: 'Cancel',
   session_review_again: 'Review again',
+  session_review_anyway: 'Review anyway',
 
   // Goals
   of: 'of',
@@ -64,15 +65,17 @@ export default {
   goals_who_tip: "The WHO recommends at least 150 minutes of moderate outdoor activity per week — that's about 30 minutes a day on weekdays.",
 
   // Events screen
-  events_tab_review: 'To review',
-  events_tab_all: 'All sessions',
-  events_all_reviewed: 'All sessions reviewed!',
+  events_tab_approved: 'Approved',
+  events_tab_standard: 'Standard',
+  events_tab_all: 'All',
   events_none_recorded: 'No sessions recorded yet.',
   events_confidence: 'Confidence',
   events_not_outside: '✕ Not outside',
   events_confirm: '✓ Confirm',
   events_confirmed: '✓ Confirmed',
   events_rejected: '✕ Not outside',
+  events_discarded: 'Discarded',
+  events_proposed: 'Proposed',
 
   // History screen
   history_period_week: 'Week',

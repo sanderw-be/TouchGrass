@@ -101,5 +101,6 @@ export function buildSession(
     confidence,
     userConfirmed: source === 'manual' ? 1 : null, // Auto-approve manual sessions
     notes,
+    discarded: 0,
   };
 }

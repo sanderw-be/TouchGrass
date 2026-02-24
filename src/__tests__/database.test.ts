@@ -107,4 +107,64 @@ describe('Date helpers', () => {
       expect(result).toBe(expected);
     });
   });
+
+  describe('Session query functions', () => {
+    const mockSessions = [
+      // Normal, confirmed
+      { id: 1, discarded: 0, userConfirmed: 1, startTime: 1000, endTime: 2000, durationMinutes: 16, source: 'gps', confidence: 0.9, notes: null },
+      // Normal, rejected
+      { id: 2, discarded: 0, userConfirmed: 0, startTime: 3000, endTime: 4000, durationMinutes: 16, source: 'gps', confidence: 0.8, notes: null },
+      // Normal, pending (proposed)
+      { id: 3, discarded: 0, userConfirmed: null, startTime: 5000, endTime: 6000, durationMinutes: 16, source: 'gps', confidence: 0.7, notes: null },
+      // Discarded
+      { id: 4, discarded: 1, userConfirmed: null, startTime: 7000, endTime: 8000, durationMinutes: 16, source: 'gps', confidence: 0.2, notes: null },
+    ];
+
+    let mockDb: { getAllSync: jest.Mock; runSync: jest.Mock; execSync: jest.Mock; getFirstSync: jest.Mock };
+
+    beforeAll(() => {
+      // Get the mock db object created when database.ts was first imported
+      const SQLite = require('expo-sqlite');
+      mockDb = SQLite.openDatabaseSync.mock.results[0].value;
+    });
+
+    it('getApprovedSessions returns only confirmed sessions', () => {
+      const { getApprovedSessions } = require('../storage/database');
+      mockDb.getAllSync.mockReturnValueOnce(mockSessions.filter(s => s.userConfirmed === 1));
+      const result = getApprovedSessions(0, 9999);
+      expect(result.map((s: { id: number }) => s.id)).toEqual([1]);
+      expect(mockDb.getAllSync).toHaveBeenCalledWith(
+        expect.stringContaining('userConfirmed = 1'),
+        expect.any(Array)
+      );
+    });
+
+    it('getStandardSessions excludes discarded sessions', () => {
+      const { getStandardSessions } = require('../storage/database');
+      mockDb.getAllSync.mockReturnValueOnce(mockSessions.filter(s => s.discarded !== 1));
+      const result = getStandardSessions(0, 9999);
+      expect(result.map((s: { id: number }) => s.id)).toEqual([1, 2, 3]);
+      expect(mockDb.getAllSync).toHaveBeenCalledWith(
+        expect.stringContaining('discarded'),
+        expect.any(Array)
+      );
+    });
+
+    it('getAllSessionsIncludingDiscarded returns all sessions', () => {
+      const { getAllSessionsIncludingDiscarded } = require('../storage/database');
+      mockDb.getAllSync.mockReturnValueOnce(mockSessions);
+      const result = getAllSessionsIncludingDiscarded(0, 9999);
+      expect(result.map((s: { id: number }) => s.id)).toEqual([1, 2, 3, 4]);
+    });
+
+    it('unDiscardSession function exists and calls db with correct query', () => {
+      const { unDiscardSession } = require('../storage/database');
+      expect(typeof unDiscardSession).toBe('function');
+      unDiscardSession(4);
+      expect(mockDb.runSync).toHaveBeenCalledWith(
+        expect.stringContaining('discarded = 0'),
+        expect.arrayContaining([4])
+      );
+    });
+  });
 });
