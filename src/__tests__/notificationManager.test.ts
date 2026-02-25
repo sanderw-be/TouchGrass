@@ -21,6 +21,7 @@ import {
   scheduleNextReminder,
   scheduleDayReminders,
   setupNotificationInfrastructure,
+  DISMISS_SIGNAL_ID,
 } from '../notifications/notificationManager';
 
 describe('notificationManager', () => {
@@ -244,20 +245,21 @@ describe('notificationManager', () => {
 
   describe('handleNotificationResponse confirmation notifications', () => {
     let capturedListener: ((response: any) => Promise<void>) | null = null;
+    let capturedHandler: ((notification: any) => Promise<any>) | null = null;
 
     beforeEach(async () => {
-      jest.useFakeTimers();
       capturedListener = null;
+      capturedHandler = null;
       (Notifications.addNotificationResponseReceivedListener as jest.Mock)
         .mockImplementation((listener) => {
           capturedListener = listener;
           return { remove: jest.fn() };
         });
+      (Notifications.setNotificationHandler as jest.Mock)
+        .mockImplementation(({ handleNotification }) => {
+          capturedHandler = handleNotification;
+        });
       await setupNotificationInfrastructure();
-    });
-
-    afterEach(() => {
-      jest.useRealTimers();
     });
 
     it('dismisses the original notification for any action', async () => {
@@ -305,13 +307,34 @@ describe('notificationManager', () => {
       );
     });
 
-    it('auto-dismisses the confirmation notification after 5 seconds', async () => {
+    it('schedules a dismiss signal after showing the confirmation', async () => {
       await capturedListener!({
         notification: { request: { identifier: 'notif-abc' } },
         actionIdentifier: 'went_outside',
       });
-      jest.runAllTimers();
+      expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledWith(
+        expect.objectContaining({
+          identifier: DISMISS_SIGNAL_ID,
+          trigger: expect.objectContaining({ seconds: 5 }),
+        }),
+      );
+    });
+
+    it('suppresses the dismiss signal and dismisses the confirmation when the signal fires', async () => {
+      const result = await capturedHandler!({
+        request: { identifier: DISMISS_SIGNAL_ID, content: {} },
+      });
+      expect(result.shouldShowAlert).toBe(false);
+      expect(result.shouldPlaySound).toBe(false);
       expect(Notifications.dismissNotificationAsync).toHaveBeenCalledWith('reminder_confirmation');
+    });
+
+    it('passes through non-signal notifications normally', async () => {
+      const result = await capturedHandler!({
+        request: { identifier: 'some-other-notif', content: {} },
+      });
+      expect(result.shouldShowAlert).toBe(true);
+      expect(Notifications.dismissNotificationAsync).not.toHaveBeenCalled();
     });
 
     it('does not show a confirmation when the notification body is tapped (dismissed)', async () => {
@@ -322,25 +345,22 @@ describe('notificationManager', () => {
       expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
     });
 
-    it('clears the previous auto-dismiss timer when a second action is tapped rapidly', async () => {
+    it('cancels the previous dismiss signal before scheduling a new one on rapid successive taps', async () => {
       // First tap
       await capturedListener!({
         notification: { request: { identifier: 'notif-abc' } },
         actionIdentifier: 'went_outside',
       });
 
-      // Second tap before the first timer fires
+      // Second tap before the first signal fires
       await capturedListener!({
         notification: { request: { identifier: 'notif-abc' } },
         actionIdentifier: 'less_often',
       });
 
-      // Fire all timers — the dismiss should only happen once
-      jest.runAllTimers();
-      const dismissCalls = (Notifications.dismissNotificationAsync as jest.Mock).mock.calls.filter(
-        (call: any[]) => call[0] === 'reminder_confirmation',
-      );
-      expect(dismissCalls).toHaveLength(1);
+      // cancelScheduledNotificationAsync should have been called with the signal ID
+      // to clear the first pending dismiss before registering the second
+      expect(Notifications.cancelScheduledNotificationAsync).toHaveBeenCalledWith(DISMISS_SIGNAL_ID);
     });
   });
 });

@@ -26,9 +26,12 @@ export const ACTION_LESS_OFTEN = 'less_often';
 
 const CHANNEL_ID = 'touchgrass_reminders';
 const CONFIRMATION_NOTIF_ID = 'reminder_confirmation';
+// Internal dismiss signal: scheduled via AlarmManager so it fires even when Doze
+// mode suspends the JS event loop. Uses an IMPORTANCE_NONE channel so it is never
+// shown in the notification shade.
+export const DISMISS_SIGNAL_ID = 'reminder_confirmation_dismiss';
+const DISMISS_CHANNEL_ID = 'touchgrass_dismiss';
 const CONFIRMATION_DISPLAY_MS = 5000;
-
-let confirmationDismissTimer: ReturnType<typeof setTimeout> | null = null;
 
 /**
  * Set up notification infrastructure without requesting permissions.
@@ -65,17 +68,43 @@ export async function setupNotificationInfrastructure(): Promise<void> {
     } catch (e) {
       console.warn('TouchGrass: Failed to create scheduled channel:', e);
     }
+    // Create dismiss signal channel (Android only, IMPORTANCE_NONE so it is never
+    // shown in the notification shade). Used to reliably auto-dismiss the
+    // confirmation notification via AlarmManager even when Doze mode is active.
+    try {
+      await Notifications.setNotificationChannelAsync(DISMISS_CHANNEL_ID, {
+        name: 'Dismiss signals',
+        importance: Notifications.AndroidImportance.NONE,
+        showBadge: false,
+        enableVibrate: false,
+      });
+    } catch (e) {
+      console.warn('TouchGrass: Failed to create dismiss channel:', e);
+    }
   }
 
   // Set handler for foreground notifications
   Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-      shouldShowAlert: true,
-      shouldPlaySound: true, // Allow sound from notification content
-      shouldSetBadge: false,
-      shouldShowBanner: true,
-      shouldShowList: true,
-    }),
+    handleNotification: async (notification) => {
+      // Intercept the dismiss signal: suppress its display and dismiss the confirmation.
+      if (notification.request.identifier === DISMISS_SIGNAL_ID) {
+        Notifications.dismissNotificationAsync(CONFIRMATION_NOTIF_ID).catch(() => {});
+        return {
+          shouldShowAlert: false,
+          shouldPlaySound: false,
+          shouldSetBadge: false,
+          shouldShowBanner: false,
+          shouldShowList: false,
+        };
+      }
+      return {
+        shouldShowAlert: true,
+        shouldPlaySound: true,
+        shouldSetBadge: false,
+        shouldShowBanner: true,
+        shouldShowList: true,
+      };
+    },
   });
 
   // Handle notification responses (button taps)
@@ -275,7 +304,8 @@ async function cancelAutomaticReminders(): Promise<void> {
   
   for (const notif of all) {
     // Only cancel if it's NOT a scheduled notification (those have 'scheduled_' prefix)
-    if (!notif.identifier.startsWith('scheduled_')) {
+    // and not the pending dismiss signal (which is very short-lived)
+    if (!notif.identifier.startsWith('scheduled_') && notif.identifier !== DISMISS_SIGNAL_ID) {
       await Notifications.cancelScheduledNotificationAsync(notif.identifier);
     }
   }
@@ -320,14 +350,19 @@ async function handleNotificationResponse(response: Notifications.NotificationRe
       trigger: null,
     });
 
-    // Auto-dismiss confirmation after 5 seconds
-    if (confirmationDismissTimer !== null) {
-      clearTimeout(confirmationDismissTimer);
-    }
-    confirmationDismissTimer = setTimeout(() => {
-      confirmationDismissTimer = null;
-      Notifications.dismissNotificationAsync(CONFIRMATION_NOTIF_ID).catch(() => {});
-    }, CONFIRMATION_DISPLAY_MS);
+    // Schedule a dismiss signal via AlarmManager so the confirmation auto-closes
+    // after 5 seconds even when Android's Doze mode suspends the JS event loop.
+    // Cancel any previous signal first (handles rapid successive taps).
+    await Notifications.cancelScheduledNotificationAsync(DISMISS_SIGNAL_ID).catch(() => {});
+    await Notifications.scheduleNotificationAsync({
+      identifier: DISMISS_SIGNAL_ID,
+      content: {},
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds: Math.round(CONFIRMATION_DISPLAY_MS / 1000),
+        channelId: DISMISS_CHANNEL_ID,
+      },
+    });
   }
 
   if (action === 'snoozed') {
