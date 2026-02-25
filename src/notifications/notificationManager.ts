@@ -27,7 +27,6 @@ export const ACTION_LESS_OFTEN = 'less_often';
 const CHANNEL_ID = 'touchgrass_reminders';
 const CONFIRMATION_NOTIF_ID = 'reminder_confirmation';
 const CONFIRMATION_DISPLAY_MS = 5000;
-const CONFIRMATION_TRIGGER_SECS = 1;
 
 let confirmationDismissTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -318,17 +317,17 @@ async function handleNotificationResponse(response: Notifications.NotificationRe
         title: t('notif_confirm_title'),
         body: t(confirmBodyKey),
       },
-      trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: CONFIRMATION_TRIGGER_SECS },
+      trigger: null,
     });
 
-    // Auto-dismiss confirmation after 5 seconds (accounting for trigger delay)
+    // Auto-dismiss confirmation after 5 seconds
     if (confirmationDismissTimer !== null) {
       clearTimeout(confirmationDismissTimer);
     }
     confirmationDismissTimer = setTimeout(() => {
       confirmationDismissTimer = null;
       Notifications.dismissNotificationAsync(CONFIRMATION_NOTIF_ID).catch(() => {});
-    }, CONFIRMATION_TRIGGER_SECS * 1000 + CONFIRMATION_DISPLAY_MS);
+    }, CONFIRMATION_DISPLAY_MS);
   }
 
   if (action === 'snoozed') {
