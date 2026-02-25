@@ -20,6 +20,7 @@ import * as CalendarService from '../calendar/calendarService';
 import {
   scheduleNextReminder,
   scheduleDayReminders,
+  setupNotificationInfrastructure,
 } from '../notifications/notificationManager';
 
 describe('notificationManager', () => {
@@ -37,6 +38,7 @@ describe('notificationManager', () => {
     (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([]);
     (Notifications.cancelScheduledNotificationAsync as jest.Mock).mockResolvedValue(undefined);
     (Notifications.scheduleNotificationAsync as jest.Mock).mockResolvedValue('notif-id');
+    (Notifications.dismissNotificationAsync as jest.Mock).mockResolvedValue(undefined);
     (CalendarService.maybeAddOutdoorTimeToCalendar as jest.Mock).mockResolvedValue(undefined);
   });
 
@@ -237,6 +239,94 @@ describe('notificationManager', () => {
       await scheduleNextReminder();
 
       expect(CalendarService.maybeAddOutdoorTimeToCalendar).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('handleNotificationResponse confirmation notifications', () => {
+    let capturedListener: ((response: any) => Promise<void>) | null = null;
+
+    beforeEach(async () => {
+      capturedListener = null;
+      (Notifications.addNotificationResponseReceivedListener as jest.Mock)
+        .mockImplementation((listener) => {
+          capturedListener = listener;
+          return { remove: jest.fn() };
+        });
+      await setupNotificationInfrastructure();
+    });
+
+    it('updates the notification in-place with a confirmation message when went_outside is tapped', async () => {
+      await capturedListener!({
+        notification: { request: { identifier: 'notif-abc' } },
+        actionIdentifier: 'went_outside',
+      });
+      expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledWith(
+        expect.objectContaining({
+          identifier: 'notif-abc',
+          content: expect.objectContaining({ body: 'notif_confirm_went_outside' }),
+          trigger: null,
+        }),
+      );
+    });
+
+    it('updates the notification in-place with a confirmation message when snoozed is tapped', async () => {
+      await capturedListener!({
+        notification: { request: { identifier: 'notif-abc' } },
+        actionIdentifier: 'snoozed',
+      });
+      const calls = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls;
+      const confirmCall = calls.find((call: any[]) => call[0]?.identifier === 'notif-abc' && call[0]?.trigger === null);
+      expect(confirmCall).toBeDefined();
+      expect(confirmCall[0].content.body).toBe('notif_confirm_snoozed');
+    });
+
+    it('updates the notification in-place with a confirmation message when less_often is tapped', async () => {
+      await capturedListener!({
+        notification: { request: { identifier: 'notif-abc' } },
+        actionIdentifier: 'less_often',
+      });
+      expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledWith(
+        expect.objectContaining({
+          identifier: 'notif-abc',
+          content: expect.objectContaining({ body: 'notif_confirm_less_often' }),
+          trigger: null,
+        }),
+      );
+    });
+
+    it('does not include a categoryIdentifier in the confirmation (removes action buttons)', async () => {
+      await capturedListener!({
+        notification: { request: { identifier: 'notif-abc' } },
+        actionIdentifier: 'went_outside',
+      });
+      const calls = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls;
+      const confirmCall = calls.find((call: any[]) => call[0]?.identifier === 'notif-abc' && call[0]?.trigger === null);
+      expect(confirmCall![0].content.categoryIdentifier).toBeUndefined();
+    });
+
+    it('does not update the notification when the body is tapped', async () => {
+      await capturedListener!({
+        notification: { request: { identifier: 'notif-abc' } },
+        actionIdentifier: 'com.apple.UNNotificationDefaultActionIdentifier',
+      });
+      expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
+    });
+
+    it('updates the notification again on a second rapid tap, replacing the first confirmation', async () => {
+      await capturedListener!({
+        notification: { request: { identifier: 'notif-abc' } },
+        actionIdentifier: 'went_outside',
+      });
+      await capturedListener!({
+        notification: { request: { identifier: 'notif-abc' } },
+        actionIdentifier: 'less_often',
+      });
+
+      const calls = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls;
+      const confirmCalls = calls.filter((call: any[]) => call[0]?.identifier === 'notif-abc' && call[0]?.trigger === null);
+      // Both taps produce an in-place update; Android replaces with the last one
+      expect(confirmCalls).toHaveLength(2);
+      expect(confirmCalls[1][0].content.body).toBe('notif_confirm_less_often');
     });
   });
 });

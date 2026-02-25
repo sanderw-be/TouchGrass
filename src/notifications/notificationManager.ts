@@ -67,7 +67,7 @@ export async function setupNotificationInfrastructure(): Promise<void> {
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
       shouldShowAlert: true,
-      shouldPlaySound: true, // Allow sound from notification content
+      shouldPlaySound: true,
       shouldSetBadge: false,
       shouldShowBanner: true,
       shouldShowList: true,
@@ -298,8 +298,26 @@ async function handleNotificationResponse(response: Notifications.NotificationRe
     dayOfWeek: d.getDay(),
   });
 
-  // Dismiss the notification
-  await Notifications.dismissNotificationAsync(notificationId);
+  // Update the notification in-place: re-post with the same identifier using a
+  // confirmation message and no categoryIdentifier (which removes the action buttons).
+  // On Android, re-posting with the same tag/ID causes NotificationManagerCompat to
+  // replace the existing notification entirely — no native reflection needed.
+  // The user can swipe to dismiss when ready.
+  if (action !== 'dismissed') {
+    const confirmBodyKey = action === 'went_outside' ? 'notif_confirm_went_outside'
+      : action === 'snoozed' ? 'notif_confirm_snoozed'
+      : 'notif_confirm_less_often';
+
+    await Notifications.scheduleNotificationAsync({
+      identifier: notificationId,
+      content: {
+        title: t('notif_confirm_title'),
+        body: t(confirmBodyKey),
+        // No categoryIdentifier: the rebuilt notification has no action buttons
+      },
+      trigger: null,
+    });
+  }
 
   if (action === 'snoozed') {
     // Reschedule for 45 minutes later

@@ -267,6 +267,12 @@ export default {
   notif_action_snooze: '⏰ Remind me later',
   notif_action_less_often: '🔕 Less often',
 
+  // Notification action confirmation messages (shown briefly after tapping an action button)
+  notif_confirm_title: 'TouchGrass',
+  notif_confirm_went_outside: '✅ Got it! Nice work getting outside.',
+  notif_confirm_snoozed: "⏰ I'll remind you again in 45 minutes.",
+  notif_confirm_less_often: "🔕 Got it! I'll remind you less often.",
+
   // Weather settings
   settings_weather_title: 'Weather',
   settings_weather_enabled: 'Weather-aware reminders',

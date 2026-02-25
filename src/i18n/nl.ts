@@ -267,6 +267,12 @@ export default {
   notif_action_snooze: '⏰ Herinner me later',
   notif_action_less_often: '🔕 Minder vaak',
 
+  // Bevestigingsberichten na het tikken op een meldingsknop
+  notif_confirm_title: 'TouchGrass',
+  notif_confirm_went_outside: '✅ Begrepen! Goed bezig.',
+  notif_confirm_snoozed: '⏰ Ik herinner je over 45 minuten.',
+  notif_confirm_less_often: '🔕 Begrepen! Ik herinner je minder vaak.',
+
   // Weather settings
   settings_weather_title: 'Weer',
   settings_weather_enabled: 'Weerbewuste herinneringen',
