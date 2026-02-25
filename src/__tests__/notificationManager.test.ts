@@ -21,7 +21,6 @@ import {
   scheduleNextReminder,
   scheduleDayReminders,
   setupNotificationInfrastructure,
-  DISMISS_SIGNAL_ID,
 } from '../notifications/notificationManager';
 
 describe('notificationManager', () => {
@@ -245,99 +244,67 @@ describe('notificationManager', () => {
 
   describe('handleNotificationResponse confirmation notifications', () => {
     let capturedListener: ((response: any) => Promise<void>) | null = null;
-    let capturedHandler: ((notification: any) => Promise<any>) | null = null;
 
     beforeEach(async () => {
       capturedListener = null;
-      capturedHandler = null;
       (Notifications.addNotificationResponseReceivedListener as jest.Mock)
         .mockImplementation((listener) => {
           capturedListener = listener;
           return { remove: jest.fn() };
         });
-      (Notifications.setNotificationHandler as jest.Mock)
-        .mockImplementation(({ handleNotification }) => {
-          capturedHandler = handleNotification;
-        });
       await setupNotificationInfrastructure();
     });
 
-    it('dismisses the original notification for any action', async () => {
-      await capturedListener!({
-        notification: { request: { identifier: 'notif-abc' } },
-        actionIdentifier: 'went_outside',
-      });
-      expect(Notifications.dismissNotificationAsync).toHaveBeenCalledWith('notif-abc');
-    });
-
-    it('shows a confirmation notification when went_outside is tapped', async () => {
+    it('updates the notification in-place with a confirmation message when went_outside is tapped', async () => {
       await capturedListener!({
         notification: { request: { identifier: 'notif-abc' } },
         actionIdentifier: 'went_outside',
       });
       expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledWith(
         expect.objectContaining({
-          identifier: 'reminder_confirmation',
+          identifier: 'notif-abc',
           content: expect.objectContaining({ body: 'notif_confirm_went_outside' }),
+          trigger: null,
         }),
       );
     });
 
-    it('shows a confirmation notification when snoozed is tapped', async () => {
+    it('updates the notification in-place with a confirmation message when snoozed is tapped', async () => {
       await capturedListener!({
         notification: { request: { identifier: 'notif-abc' } },
         actionIdentifier: 'snoozed',
       });
       const calls = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls;
-      const confirmCall = calls.find((call: any[]) => call[0]?.identifier === 'reminder_confirmation');
+      const confirmCall = calls.find((call: any[]) => call[0]?.identifier === 'notif-abc' && call[0]?.trigger === null);
       expect(confirmCall).toBeDefined();
       expect(confirmCall[0].content.body).toBe('notif_confirm_snoozed');
     });
 
-    it('shows a confirmation notification when less_often is tapped', async () => {
+    it('updates the notification in-place with a confirmation message when less_often is tapped', async () => {
       await capturedListener!({
         notification: { request: { identifier: 'notif-abc' } },
         actionIdentifier: 'less_often',
       });
       expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledWith(
         expect.objectContaining({
-          identifier: 'reminder_confirmation',
+          identifier: 'notif-abc',
           content: expect.objectContaining({ body: 'notif_confirm_less_often' }),
+          trigger: null,
         }),
       );
     });
 
-    it('schedules a dismiss signal after showing the confirmation', async () => {
+    it('does not include a categoryIdentifier in the confirmation (removes action buttons)', async () => {
       await capturedListener!({
         notification: { request: { identifier: 'notif-abc' } },
         actionIdentifier: 'went_outside',
       });
-      expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledWith(
-        expect.objectContaining({
-          identifier: DISMISS_SIGNAL_ID,
-          trigger: expect.objectContaining({ seconds: 5 }),
-        }),
-      );
+      const calls = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls;
+      const confirmCall = calls.find((call: any[]) => call[0]?.identifier === 'notif-abc' && call[0]?.trigger === null);
+      expect(confirmCall![0].content.categoryIdentifier).toBeUndefined();
     });
 
-    it('suppresses the dismiss signal and dismisses the confirmation when the signal fires', async () => {
-      const result = await capturedHandler!({
-        request: { identifier: DISMISS_SIGNAL_ID, content: {} },
-      });
-      expect(result.shouldShowAlert).toBe(false);
-      expect(result.shouldPlaySound).toBe(false);
-      expect(Notifications.dismissNotificationAsync).toHaveBeenCalledWith('reminder_confirmation');
-    });
-
-    it('passes through non-signal notifications normally', async () => {
-      const result = await capturedHandler!({
-        request: { identifier: 'some-other-notif', content: {} },
-      });
-      expect(result.shouldShowAlert).toBe(true);
-      expect(Notifications.dismissNotificationAsync).not.toHaveBeenCalled();
-    });
-
-    it('does not show a confirmation when the notification body is tapped (dismissed)', async () => {
+    it('does not update the notification when the body is tapped', async () => {
       await capturedListener!({
         notification: { request: { identifier: 'notif-abc' } },
         actionIdentifier: 'com.apple.UNNotificationDefaultActionIdentifier',
@@ -345,22 +312,21 @@ describe('notificationManager', () => {
       expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
     });
 
-    it('cancels the previous dismiss signal before scheduling a new one on rapid successive taps', async () => {
-      // First tap
+    it('updates the notification again on a second rapid tap, replacing the first confirmation', async () => {
       await capturedListener!({
         notification: { request: { identifier: 'notif-abc' } },
         actionIdentifier: 'went_outside',
       });
-
-      // Second tap before the first signal fires
       await capturedListener!({
         notification: { request: { identifier: 'notif-abc' } },
         actionIdentifier: 'less_often',
       });
 
-      // cancelScheduledNotificationAsync should have been called with the signal ID
-      // to clear the first pending dismiss before registering the second
-      expect(Notifications.cancelScheduledNotificationAsync).toHaveBeenCalledWith(DISMISS_SIGNAL_ID);
+      const calls = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls;
+      const confirmCalls = calls.filter((call: any[]) => call[0]?.identifier === 'notif-abc' && call[0]?.trigger === null);
+      // Both taps produce an in-place update; Android replaces with the last one
+      expect(confirmCalls).toHaveLength(2);
+      expect(confirmCalls[1][0].content.body).toBe('notif_confirm_less_often');
     });
   });
 });
