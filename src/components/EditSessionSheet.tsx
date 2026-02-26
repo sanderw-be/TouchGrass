@@ -105,7 +105,7 @@ export default function EditSessionSheet({ visible, session, onClose, onSessionU
           {Platform.OS === 'ios' ? (
             <DateTimePicker
               value={startTime}
-              mode="datetime"
+              mode="time"
               display="spinner"
               onChange={onStartTimeChange}
               style={styles.timePicker}
@@ -117,14 +117,13 @@ export default function EditSessionSheet({ visible, session, onClose, onSessionU
                 onPress={() => setShowStartPicker(true)}
               >
                 <Text style={styles.timeButtonText}>
-                  {formatLocalDate(startTime.getTime(), { weekday: 'short', month: 'short', day: 'numeric' })}{' '}
                   {formatLocalTime(startTime.getTime())}
                 </Text>
               </TouchableOpacity>
               {showStartPicker && (
                 <DateTimePicker
                   value={startTime}
-                  mode="datetime"
+                  mode="time"
                   is24Hour={true}
                   display="default"
                   onChange={onStartTimeChange}
@@ -138,7 +137,7 @@ export default function EditSessionSheet({ visible, session, onClose, onSessionU
           {Platform.OS === 'ios' ? (
             <DateTimePicker
               value={endTime}
-              mode="datetime"
+              mode="time"
               display="spinner"
               onChange={onEndTimeChange}
               style={styles.timePicker}
@@ -150,14 +149,13 @@ export default function EditSessionSheet({ visible, session, onClose, onSessionU
                 onPress={() => setShowEndPicker(true)}
               >
                 <Text style={styles.timeButtonText}>
-                  {formatLocalDate(endTime.getTime(), { weekday: 'short', month: 'short', day: 'numeric' })}{' '}
                   {formatLocalTime(endTime.getTime())}
                 </Text>
               </TouchableOpacity>
               {showEndPicker && (
                 <DateTimePicker
                   value={endTime}
-                  mode="datetime"
+                  mode="time"
                   is24Hour={true}
                   display="default"
                   onChange={onEndTimeChange}
@@ -274,7 +272,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   timeButtonText: {
-    fontSize: 18,
+    fontSize: 24,
     fontWeight: '700',
     color: colors.textPrimary,
   },
