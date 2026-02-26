@@ -1,4 +1,5 @@
 import { OutsideSession, insertSession, getSessionsForRange, deleteSession } from '../storage/database';
+import { computeSessionScore, DISCARD_CONFIDENCE_THRESHOLD } from './sessionConfidence';
 
 const MERGE_GAP_MS = 5 * 60 * 1000; // sessions within 5 min of each other get merged
 
@@ -71,13 +72,26 @@ export function submitSession(candidate: OutsideSession): void {
   }
 
   for (const [segStart, segEnd] of segments) {
-    insertSession({
+    const segSession: OutsideSession = {
       ...candidate,
       startTime: segStart,
       endTime: segEnd,
       durationMinutes: (segEnd - segStart) / 60000,
       confidence: mergedConfidence,
       userConfirmed: deniedSession ? 0 : null,
+      discarded: 0,
+    };
+    const score = computeSessionScore(segSession);
+    // Only discard sessions that have no user feedback yet (userConfirmed === null).
+    // Sessions the user explicitly denied (userConfirmed === 0) keep discarded=0 so
+    // their rejection is preserved and visible in the Standard tab.
+    const shouldDiscard =
+      segSession.userConfirmed === null &&
+      score < DISCARD_CONFIDENCE_THRESHOLD;
+    insertSession({
+      ...segSession,
+      confidence: score,  // store computed score so the UI reflects actual confidence
+      discarded: shouldDiscard ? 1 : 0,
     });
   }
 }
