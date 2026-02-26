@@ -28,6 +28,10 @@ export default {
   session_delete_cancel: 'Annuleren',
   session_review_again: 'Opnieuw beoordelen',
   session_review_anyway: 'Toch beoordelen',
+  session_edit_times: '✏️ Tijden bewerken',
+  session_edit_title: 'Sessietijden bewerken',
+  session_edit_save: '✓ Opslaan & goedkeuren',
+  session_edit_hint: 'Opslaan met aangepaste tijden keurt deze sessie automatisch goed.',
 
   // Doelen
   of: 'van',

@@ -51,6 +51,13 @@ describe('Database', () => {
       expect(typeof toggleScheduledNotification).toBe('function');
     });
   });
+
+  describe('Sessions', () => {
+    it('updateSessionTimes function exists', () => {
+      const { updateSessionTimes } = require('../storage/database');
+      expect(typeof updateSessionTimes).toBe('function');
+    });
+  });
 });
 
 describe('Date helpers', () => {
