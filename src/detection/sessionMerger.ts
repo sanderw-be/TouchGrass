@@ -82,9 +82,16 @@ export function submitSession(candidate: OutsideSession): void {
       discarded: 0,
     };
     const score = computeSessionScore(segSession);
+    // Only discard sessions that have no user feedback yet (userConfirmed === null).
+    // Sessions the user explicitly denied (userConfirmed === 0) keep discarded=0 so
+    // their rejection is preserved and visible in the Standard tab.
+    const shouldDiscard =
+      segSession.userConfirmed === null &&
+      score < DISCARD_CONFIDENCE_THRESHOLD;
     insertSession({
       ...segSession,
-      discarded: score < DISCARD_CONFIDENCE_THRESHOLD ? 1 : 0,
+      confidence: score,  // store computed score so the UI reflects actual confidence
+      discarded: shouldDiscard ? 1 : 0,
     });
   }
 }

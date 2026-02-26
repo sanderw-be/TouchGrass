@@ -481,6 +481,40 @@ describe('submitSession', () => {
     expect(inserted.discarded).toBe(0);
   });
 
+  it('does not discard a re-detected session that was previously denied by the user', () => {
+    // User denied this session previously; re-detection should never override that
+    // with discarded=1 — the explicit rejection must remain visible in the Standard tab.
+    const denied = makeSession({ id: 1, userConfirmed: 0 });
+    (Database.getSessionsForRange as jest.Mock).mockReturnValue([denied]);
+
+    // A short re-detected candidate that would normally be discarded
+    const candidate = makeSession({
+      startTime: BASE_TIME,
+      endTime: BASE_TIME + 5 * 60 * 1000, // short — would be discarded if unreviewed
+      confidence: 0.8,
+    });
+    submitSession(candidate);
+
+    const inserted = (Database.insertSession as jest.Mock).mock.calls[0][0];
+    expect(inserted.userConfirmed).toBe(0);   // preserved denial
+    expect(inserted.discarded).toBe(0);        // NOT discarded
+  });
+
+  it('stores the computed confidence score instead of the raw detection confidence', () => {
+    (Database.getSessionsForRange as jest.Mock).mockReturnValue([]);
+
+    // 5-hour session: duration factor = 0.40, score = 0.8 × 0.40 × 1.0 = 0.32
+    const candidate = makeSession({
+      startTime: BASE_TIME,
+      endTime: BASE_TIME + 5 * 60 * 60 * 1000,
+      confidence: 0.8,
+    });
+    submitSession(candidate);
+
+    const inserted = (Database.insertSession as jest.Mock).mock.calls[0][0];
+    expect(inserted.confidence).toBeLessThan(0.8);  // lower than raw GPS confidence
+  });
+
   it('manual sessions are never scored for discard (inserted as-is)', () => {
     const candidate = makeSession({
       source: 'manual',

@@ -308,7 +308,7 @@ function SessionRow({
           )}
 
           {/* Actions for confirmed/rejected */}
-          {(isConfirmed || isRejected) && (
+          {(isConfirmed || isRejected) && !isDiscarded && (
             <View style={styles.actions}>
               <TouchableOpacity
                 style={[styles.actionBtn, styles.actionSecondary]}
