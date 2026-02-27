@@ -367,9 +367,9 @@ describe('calendarService', () => {
       expect(mockCreateCalendar).toHaveBeenCalledWith(
         expect.objectContaining({
           entityType: 'event',
-          name: 'touchgrass',
-          ownerAccount: 'local',
-          source: expect.objectContaining({ isLocalAccount: true }),
+          name: 'TouchGrass_Internal',
+          ownerAccount: 'TouchGrass_App',
+          source: expect.objectContaining({ isLocalAccount: true, name: 'TouchGrass_App' }),
         }),
       );
       expect(mockSetSetting).toHaveBeenCalledWith('calendar_touchgrass_id', 'new-tg-id');

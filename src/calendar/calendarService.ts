@@ -69,12 +69,12 @@ export async function getOrCreateTouchGrassCalendar(): Promise<string | null> {
       title: t('calendar_touchgrass_name'),
       color: TOUCHGRASS_CALENDAR_COLOR,
       entityType: Calendar.EntityTypes.EVENT, // ensures the calendar accepts event inserts on all Android builds
-      name: 'touchgrass',
-      ownerAccount: 'local',
+      name: 'TouchGrass_Internal',
+      ownerAccount: 'TouchGrass_App', // must match source.name so Android treats calendar as app-owned and writable
       accessLevel: Calendar.CalendarAccessLevel.OWNER,
       source: {
         isLocalAccount: true,
-        name: 'local',
+        name: 'TouchGrass_App', // must match ownerAccount
         type: Calendar.SourceType.LOCAL,
       },
     });
