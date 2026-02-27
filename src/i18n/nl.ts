@@ -152,6 +152,14 @@ export default {
   settings_rerun_tutorial: 'Tutorial opnieuw starten',
   settings_rerun_tutorial_sublabel: 'Bekijk de installatiegids opnieuw',
 
+  // Uiterlijk (donkere modus)
+  settings_section_appearance: 'Uiterlijk',
+  settings_theme_label: 'Thema',
+  settings_theme_sublabel: 'Kies je gewenste kleurenschema',
+  settings_theme_system: 'Systeemstandaard',
+  settings_theme_light: 'Licht',
+  settings_theme_dark: 'Donker',
+
   // Bekende locaties beheer
   nav_known_locations: 'Bekende locaties',
   settings_locations_manage: 'Beheer bekende locaties',

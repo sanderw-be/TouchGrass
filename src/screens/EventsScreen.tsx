@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
   TouchableOpacity, RefreshControl, Alert,
@@ -8,7 +8,8 @@ import {
   getApprovedSessions, getStandardSessions, getAllSessionsIncludingDiscarded,
   confirmSession, deleteSession, unDiscardSession, OutsideSession,
 } from '../storage/database';
-import { colors, spacing, radius, shadows } from '../utils/theme';
+import { spacing, radius, shadows } from '../utils/theme';
+import { useTheme } from '../context/ThemeContext';
 import { formatMinutes } from '../utils/helpers';
 import { t, formatLocalDate, formatLocalTime } from '../i18n';
 import ManualSessionSheet from '../components/ManualSessionSheet';
@@ -34,6 +35,8 @@ function groupByDay(sessions: OutsideSession[]): { dayMs: number; sessions: Outs
 }
 
 export default function EventsScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const [tab, setTab] = useState<Tab>('standard');
   const [approvedSessions, setApprovedSessions] = useState<OutsideSession[]>([]);
   const [standardSessions, setStandardSessions] = useState<OutsideSession[]>([]);
@@ -210,6 +213,8 @@ function SessionRow({
   onUnDiscard: () => void;
   onEditTimes: () => void;
 }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const sourceIcon: Record<string, string> = {
     health_connect: '👟',
     gps: '📍',
@@ -367,12 +372,13 @@ function SessionRow({
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
+  return StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.mist },
 
   tabs: {
     flexDirection: 'row',
-    backgroundColor: colors.textInverse,
+    backgroundColor: colors.card,
     borderBottomWidth: 1,
     borderBottomColor: colors.fog,
     alignItems: 'center',
@@ -417,7 +423,7 @@ const styles = StyleSheet.create({
   },
 
   rowCard: {
-    backgroundColor: colors.textInverse,
+    backgroundColor: colors.card,
     borderRadius: radius.md,
     marginBottom: 6,
     ...shadows.soft,
@@ -505,4 +511,5 @@ const styles = StyleSheet.create({
   actionConfirmText: { fontSize: 14, color: colors.textInverse, fontWeight: '600' },
   actionSecondaryText: { fontSize: 14, color: colors.error, fontWeight: '600' },
   actionEditTimesText: { fontSize: 14, color: colors.textPrimary, fontWeight: '600' },
-});
+  });
+}

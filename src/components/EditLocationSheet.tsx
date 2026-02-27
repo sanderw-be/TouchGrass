@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, Modal, TouchableOpacity,
   TextInput, Alert, ScrollView, ActivityIndicator,
@@ -6,7 +6,8 @@ import {
 import * as Location from 'expo-location';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { upsertKnownLocation, deleteKnownLocation, KnownLocation } from '../storage/database';
-import { colors, spacing, radius, shadows } from '../utils/theme';
+import { spacing, radius, shadows } from '../utils/theme';
+import { useTheme } from '../context/ThemeContext';
 import { t } from '../i18n';
 
 // Radius step values in metres that the slider snaps to
@@ -46,6 +47,8 @@ interface Props {
 export default function EditLocationSheet({
   visible, location, initialCoords, onClose, onSave,
 }: Props) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const insets = useSafeAreaInsets();
   const [label, setLabel] = useState('');
   const [radiusIdx, setRadiusIdx] = useState(findRadiusIdx(100));
@@ -403,16 +406,18 @@ export default function EditLocationSheet({
 // ── Radius step slider ──────────────────────────────────
 
 function RadiusSlider({ idx, onChange }: { idx: number; onChange: (i: number) => void }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeSliderStyles(colors), [colors]);
   const last = RADIUS_STEPS.length - 1;
   const fillPercent = Math.round((idx / last) * 100);
   return (
-    <View style={sliderStyles.wrapper}>
+    <View style={styles.wrapper}>
       {/* Background track */}
-      <View style={sliderStyles.track} />
+      <View style={styles.track} />
       {/* Filled track up to active step */}
-      <View style={[sliderStyles.trackFill, { width: `${fillPercent}%` as `${number}%` }]} />
+      <View style={[styles.trackFill, { width: `${fillPercent}%` as `${number}%` }]} />
       {/* Step dots */}
-      <View style={sliderStyles.dotsRow}>
+      <View style={styles.dotsRow}>
         {RADIUS_STEPS.map((_, i) => (
           <TouchableOpacity
             key={i}
@@ -420,9 +425,9 @@ function RadiusSlider({ idx, onChange }: { idx: number; onChange: (i: number) =>
             hitSlop={{ top: 14, bottom: 14, left: 4, right: 4 }}
           >
             <View style={[
-              sliderStyles.dot,
-              i <= idx && sliderStyles.dotFilled,
-              i === idx && sliderStyles.dotActive,
+              styles.dot,
+              i <= idx && styles.dotFilled,
+              i === idx && styles.dotActive,
             ]} />
           </TouchableOpacity>
         ))}
@@ -431,7 +436,8 @@ function RadiusSlider({ idx, onChange }: { idx: number; onChange: (i: number) =>
   );
 }
 
-const sliderStyles = StyleSheet.create({
+function makeSliderStyles(colors: ReturnType<typeof useTheme>['colors']) {
+  return StyleSheet.create({
   wrapper: {
     height: 40,
     justifyContent: 'center',
@@ -476,11 +482,11 @@ const sliderStyles = StyleSheet.create({
     backgroundColor: colors.grass,
     borderColor: colors.grassDark,
   },
-});
+  });
+}
 
-// ── Sheet styles ─────────────────────────────────────────
-
-const styles = StyleSheet.create({
+function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
+  return StyleSheet.create({
   backdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.4)',
@@ -533,7 +539,7 @@ const styles = StyleSheet.create({
   addressCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.textInverse,
+    backgroundColor: colors.card,
     borderRadius: radius.md,
     padding: spacing.md,
     ...shadows.soft,
@@ -545,7 +551,7 @@ const styles = StyleSheet.create({
   addressSearchRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.textInverse,
+    backgroundColor: colors.card,
     borderRadius: radius.md,
     padding: spacing.sm,
     gap: spacing.sm,
@@ -560,7 +566,7 @@ const styles = StyleSheet.create({
   cancelSearch: { fontSize: 14, color: colors.textMuted, fontWeight: '700', paddingHorizontal: 4 },
 
   suggestionsList: {
-    backgroundColor: colors.textInverse,
+    backgroundColor: colors.card,
     borderRadius: radius.md,
     marginTop: spacing.xs,
     ...shadows.soft,
@@ -582,7 +588,7 @@ const styles = StyleSheet.create({
   noResults: { fontSize: 13, color: colors.textMuted, marginTop: spacing.xs, textAlign: 'center' },
 
   input: {
-    backgroundColor: colors.textInverse,
+    backgroundColor: colors.card,
     borderRadius: radius.md,
     padding: spacing.md,
     fontSize: 16,
@@ -602,7 +608,7 @@ const styles = StyleSheet.create({
   toggleRow: { flexDirection: 'row', gap: spacing.sm },
   toggleBtn: {
     flex: 1,
-    backgroundColor: colors.textInverse,
+    backgroundColor: colors.card,
     borderRadius: radius.md,
     padding: spacing.md,
     alignItems: 'center',
@@ -631,5 +637,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   deleteBtnText: { fontSize: 16, color: colors.error, fontWeight: '600' },
-});
+  });
+}
 

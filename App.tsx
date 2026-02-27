@@ -10,11 +10,12 @@ import { setupNotificationInfrastructure, scheduleDayReminders } from './src/not
 import AppNavigator from './src/navigation/AppNavigator';
 import IntroScreen from './src/screens/IntroScreen';
 import { IntroContext } from './src/context/IntroContext';
-import { colors } from './src/utils/theme';
+import { ThemeProvider, useTheme } from './src/context/ThemeContext';
 
 enableScreens();
 
-export default function App() {
+function AppContent() {
+  const { colors } = useTheme();
   const [ready, setReady] = useState(false);
   const [showIntro, setShowIntro] = useState(false);
 
@@ -132,5 +133,13 @@ export default function App() {
     <IntroContext.Provider value={handleShowIntro}>
       <AppNavigator />
     </IntroContext.Provider>
+  );
+}
+
+export default function App() {
+  return (
+    <ThemeProvider>
+      <AppContent />
+    </ThemeProvider>
   );
 }

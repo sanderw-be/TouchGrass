@@ -15,7 +15,8 @@ const ScheduledNotificationsScreen = lazy(() => import('../screens/ScheduledNoti
 const KnownLocationsScreen = lazy(() => import('../screens/KnownLocationsScreen'));
 import { fetchWeatherForecast, isWeatherDataAvailable } from '../weather/weatherService';
 import { getSetting } from '../storage/database';
-import { colors, spacing } from '../utils/theme';
+import { spacing } from '../utils/theme';
+import { useTheme } from '../context/ThemeContext';
 import { t } from '../i18n';
 
 export type SettingsStackParamList = {
@@ -29,6 +30,7 @@ const Tab = createBottomTabNavigator();
 const SettingsStack = createStackNavigator<SettingsStackParamList>();
 
 function ScreenFallback() {
+  const { colors } = useTheme();
   return (
     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.mist }}>
       <ActivityIndicator color={colors.grass} />
@@ -45,6 +47,7 @@ const icons: Record<string, string> = {
 };
 
 function SettingsStackNavigator() {
+  const { colors } = useTheme();
   return (
     <SettingsStack.Navigator
       screenOptions={{
@@ -95,6 +98,7 @@ function SettingsStackNavigator() {
 
 function TabNavigator() {
   const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
 
   return (
     <Tab.Navigator
@@ -107,7 +111,7 @@ function TabNavigator() {
         tabBarActiveTintColor: colors.grass,
         tabBarInactiveTintColor: colors.inactive,
         tabBarStyle: {
-          backgroundColor: '#FFFFFF',
+          backgroundColor: colors.card,
           borderTopColor: colors.fog,
           borderTopWidth: 1,
           paddingBottom: Math.max(insets.bottom, spacing.xs),

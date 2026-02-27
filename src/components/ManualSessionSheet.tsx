@@ -1,11 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   View, Text, StyleSheet, Modal, TouchableOpacity,
   ScrollView, TextInput, Platform, Alert,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { logManualSession, startManualSession } from '../detection/manualCheckin';
-import { colors, spacing, radius, shadows } from '../utils/theme';
+import { spacing, radius, shadows } from '../utils/theme';
+import { useTheme } from '../context/ThemeContext';
 import { formatMinutes } from '../utils/helpers';
 import { t, formatLocalDate, formatLocalTime } from '../i18n';
 
@@ -20,6 +21,8 @@ type Tab = 'log' | 'timer';
 const DURATION_PRESETS = [15, 20, 30, 45, 60, 90];
 
 export default function ManualSessionSheet({ visible, onClose, onSessionLogged }: Props) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const [tab, setTab] = useState<Tab>('log');
 
   // Log past session state
@@ -334,7 +337,8 @@ export default function ManualSessionSheet({ visible, onClose, onSessionLogged }
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
+  return StyleSheet.create({
   backdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.4)',
@@ -394,7 +398,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
     alignItems: 'center',
   },
-  tabActive: { backgroundColor: colors.textInverse, ...shadows.soft },
+  tabActive: { backgroundColor: colors.card, ...shadows.soft },
   tabText: { fontSize: 14, color: colors.textMuted, fontWeight: '500' },
   tabTextActive: { color: colors.textPrimary, fontWeight: '700' },
 
@@ -431,7 +435,7 @@ const styles = StyleSheet.create({
     borderColor: colors.fog,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
-    backgroundColor: colors.textInverse,
+    backgroundColor: colors.card,
   },
   presetActive: { backgroundColor: colors.grass, borderColor: colors.grass },
   presetText: { fontSize: 14, color: colors.textSecondary, fontWeight: '500' },
@@ -451,7 +455,7 @@ const styles = StyleSheet.create({
     padding: spacing.sm,
     fontSize: 16,
     color: colors.textPrimary,
-    backgroundColor: colors.textInverse,
+    backgroundColor: colors.card,
   },
   inputActive: { borderColor: colors.grass },
   inputUnit: { fontSize: 14, color: colors.textSecondary },
@@ -565,4 +569,5 @@ const styles = StyleSheet.create({
     color: colors.grassDark,
     textAlign: 'center',
   },
-});
+  });
+}

@@ -28,6 +28,40 @@ export const colors = {
   textSecondary: '#5A7060',
   textMuted: '#8FA892',
   textInverse: '#FFFFFF',
+  card: '#FFFFFF',
+};
+
+export const darkColors: typeof colors = {
+  // Primary greens — same brand identity
+  grass: '#5A9E6F',
+  grassLight: '#6BAF7A',
+  grassPale: '#1A3320',
+  grassDark: '#4A8060',
+
+  // Accent — warm sky
+  sky: '#7EB8D4',
+  skyLight: '#4A7A8C',
+  sun: '#F5C842',
+
+  // Neutrals
+  soil: '#D0C8C0',
+  bark: '#A08070',
+  sand: '#1E2820',
+  mist: '#121C14',
+  fog: '#2A3D2E',
+
+  // Semantic
+  success: '#5A9E6F',
+  warning: '#F5C842',
+  error: '#EF6B67',
+  inactive: '#5A7060',
+
+  // Text
+  textPrimary: '#E4EFE7',
+  textSecondary: '#9DB8A2',
+  textMuted: '#6B8A6F',
+  textInverse: '#FFFFFF',
+  card: '#1E2820',
 };
 
 export const fonts = {

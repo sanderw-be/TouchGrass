@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
   TouchableOpacity, RefreshControl, StatusBar,
@@ -11,11 +11,14 @@ import {
   getCurrentDailyGoal, getCurrentWeeklyGoal,
   getSessionsForDay,
 } from '../storage/database';
-import { colors, spacing, radius, shadows } from '../utils/theme';
+import { spacing, radius, shadows } from '../utils/theme';
+import { useTheme } from '../context/ThemeContext';
 import { formatMinutes, formatTime } from '../utils/helpers';
 import { t, formatLocalDate } from '../i18n';
 
 export default function HomeScreen() {
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const [todayMinutes, setTodayMinutes] = useState(0);
   const [weekMinutes, setWeekMinutes] = useState(0);
   const [dailyTarget, setDailyTarget] = useState(30);
@@ -63,7 +66,7 @@ export default function HomeScreen() {
       contentContainerStyle={styles.content}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.grass} />}
     >
-      <StatusBar barStyle="dark-content" backgroundColor={colors.mist} />
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.mist} />
 
       <ManualSessionSheet
         visible={sheetVisible}
@@ -133,6 +136,8 @@ export default function HomeScreen() {
 }
 
 function WeekDots() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const today = new Date().getDay();
   const days = [
     t('day_mon'), t('day_tue'), t('day_wed'), t('day_thu'),
@@ -157,6 +162,8 @@ function WeekDots() {
 }
 
 function SessionRow({ session }: { session: any }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const sourceIcon: Record<string, string> = {
     health_connect: '👟',
     gps: '📍',
@@ -182,7 +189,8 @@ function SessionRow({ session }: { session: any }) {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
+  return StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.mist },
   content: { padding: spacing.md, paddingBottom: spacing.xxl },
 
@@ -208,7 +216,7 @@ const styles = StyleSheet.create({
   addBtnText: { fontSize: 24, color: colors.textInverse, lineHeight: 30, fontWeight: '300' },
 
   ringCard: {
-    backgroundColor: colors.textInverse,
+    backgroundColor: colors.card,
     borderRadius: radius.lg,
     padding: spacing.xl,
     alignItems: 'center',
@@ -224,7 +232,7 @@ const styles = StyleSheet.create({
   },
 
   weekCard: {
-    backgroundColor: colors.textInverse,
+    backgroundColor: colors.card,
     borderRadius: radius.lg,
     padding: spacing.lg,
     marginBottom: spacing.md,
@@ -265,7 +273,7 @@ const styles = StyleSheet.create({
   sessionRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.textInverse,
+    backgroundColor: colors.card,
     borderRadius: radius.md,
     padding: spacing.md,
     marginBottom: spacing.xs,
@@ -287,4 +295,5 @@ const styles = StyleSheet.create({
   emptyIcon: { fontSize: 48, marginBottom: spacing.md },
   emptyText: { fontSize: 16, color: colors.textSecondary, fontWeight: '500' },
   emptySubtext: { fontSize: 13, color: colors.textMuted, marginTop: spacing.xs },
-});
+  });
+}

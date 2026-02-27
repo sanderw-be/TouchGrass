@@ -152,6 +152,14 @@ export default {
   settings_rerun_tutorial: 'Re-run tutorial',
   settings_rerun_tutorial_sublabel: 'Review the setup guide again',
 
+  // Appearance (dark mode)
+  settings_section_appearance: 'Appearance',
+  settings_theme_label: 'Theme',
+  settings_theme_sublabel: 'Choose your preferred color scheme',
+  settings_theme_system: 'System default',
+  settings_theme_light: 'Light',
+  settings_theme_dark: 'Dark',
+
   // Known locations management
   nav_known_locations: 'Known Locations',
   settings_locations_manage: 'Manage known locations',
