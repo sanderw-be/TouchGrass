@@ -51,15 +51,17 @@ jobs:
     permissions:
       contents: read
       actions: write
+      pull-requests: write
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node & NPM Cache
         uses: actions/setup-node@v4
         with:
           node-version: '20.x'
+          # This caches the global npm cache (~/.npm) automatically
           cache: 'npm'
 
       - name: Setup Java
@@ -111,6 +113,27 @@ jobs:
           path: ./build-artifacts/app-arm64.apk
           retention-days: 30
           if-no-files-found: error
+
+      - name: Comment PR with APK download link
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: { artifacts } } = await github.rest.actions.listWorkflowRunArtifacts({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              run_id: context.runId,
+            });
+            const apk = artifacts.find(a => a.name === 'android-preview-apk');
+            const url = apk
+              ? `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}/artifacts/${apk.id}`
+              : `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `## 📱 Android Preview APK\n\nThe build succeeded — grab the APK below.\n\n[⬇️ Download APK](${url})`,
+            });
 
   lint-and-format:
     name: Lint and Format Check
