@@ -22,6 +22,9 @@ export const colors = {
   warning: '#F5C842',
   error: '#D9534F',
   inactive: '#A8B5A2',
+  errorSurface: '#FEE2E2',
+  warningSurface: '#FEF3C7',
+  warningText: '#92400E',
 
   // Text
   textPrimary: '#1A2E1F',
@@ -55,6 +58,9 @@ export const darkColors: typeof colors = {
   warning: '#F5C842',
   error: '#EF6B67',
   inactive: '#5A7060',
+  errorSurface: '#3D1A1A',
+  warningSurface: '#2D2806',
+  warningText: '#D4A843',
 
   // Text
   textPrimary: '#E4EFE7',

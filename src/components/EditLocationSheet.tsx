@@ -631,7 +631,7 @@ function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
   primaryBtnText: { fontSize: 16, color: colors.textInverse, fontWeight: '700' },
 
   deleteBtn: {
-    backgroundColor: '#FEE2E2',
+    backgroundColor: colors.errorSurface,
     borderRadius: radius.md,
     padding: spacing.md,
     alignItems: 'center',

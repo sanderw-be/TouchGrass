@@ -595,19 +595,19 @@ function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
 
   tipCard: {
     width: '100%',
-    backgroundColor: '#FEF3C7',
+    backgroundColor: colors.warningSurface,
     borderRadius: radius.lg,
     padding: spacing.lg,
   },
   tipTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#92400E',
+    color: colors.warningText,
     marginBottom: spacing.xs,
   },
   tipBody: {
     fontSize: 14,
-    color: '#92400E',
+    color: colors.warningText,
     lineHeight: 20,
   },
   checklistCard: {

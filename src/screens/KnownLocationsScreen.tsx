@@ -282,12 +282,12 @@ function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
   pendingBadge: {
     alignSelf: 'flex-start',
     marginTop: 4,
-    backgroundColor: '#FEF3C7',
+    backgroundColor: colors.warningSurface,
     borderRadius: radius.full,
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,
   },
-  pendingBadgeText: { fontSize: 11, color: '#92400E', fontWeight: '600' },
+  pendingBadgeText: { fontSize: 11, color: colors.warningText, fontWeight: '600' },
 
   actionButtons: {
     flexDirection: 'column',
@@ -303,7 +303,7 @@ function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
   },
   approveBtnText: { fontSize: 12, color: colors.grass, fontWeight: '600' },
   denyBtn: {
-    backgroundColor: '#FEE2E2',
+    backgroundColor: colors.errorSurface,
     borderRadius: radius.full,
     paddingHorizontal: spacing.sm,
     paddingVertical: 4,

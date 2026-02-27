@@ -505,7 +505,7 @@ function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
   },
   actionReject: { backgroundColor: colors.fog },
   actionConfirm: { backgroundColor: colors.grass },
-  actionSecondary: { backgroundColor: '#FEE2E2' },
+  actionSecondary: { backgroundColor: colors.errorSurface },
   actionEditTimes: { backgroundColor: colors.fog, marginTop: spacing.sm },
   actionRejectText: { fontSize: 14, color: colors.textSecondary, fontWeight: '600' },
   actionConfirmText: { fontSize: 14, color: colors.textInverse, fontWeight: '600' },
