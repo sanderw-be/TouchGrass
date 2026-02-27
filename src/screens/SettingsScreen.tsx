@@ -281,11 +281,12 @@ export default function SettingsScreen() {
   };
 
   const handleSelectCalendar = async () => {
-    // Show a picker with all writable calendars plus a "TouchGrass (local)" option.
+    // Show only local-account calendars (the only ones that accept writes on Android)
+    // plus the dedicated TouchGrass local calendar as the first/default option.
+    const otherCalendars = calendarOptions.filter((c) => !c.title.includes('TouchGrass'));
     const options = [
-      { id: '', title: t('settings_calendar_select_automatic') },
       { id: '__touchgrass__', title: t('settings_calendar_select_touchgrass') },
-      ...calendarOptions.filter((c) => !c.title.includes('TouchGrass')),
+      ...otherCalendars,
     ];
     const isSelected = (optId: string) =>
       optId === calendarSelectedId || (optId === '__touchgrass__' && !calendarSelectedId);
@@ -313,9 +314,9 @@ export default function SettingsScreen() {
   };
 
   const calendarSelectedTitle = (): string => {
-    if (!calendarSelectedId) return t('settings_calendar_select_automatic');
+    if (!calendarSelectedId) return t('settings_calendar_select_touchgrass');
     const match = calendarOptions.find((c) => c.id === calendarSelectedId);
-    return match?.title ?? t('settings_calendar_select_automatic');
+    return match?.title ?? t('settings_calendar_select_touchgrass');
   };
 
   return (

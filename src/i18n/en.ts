@@ -361,7 +361,6 @@ export default {
   settings_calendar_select: 'Write outdoor time to',
   settings_calendar_select_desc: 'Calendar where outdoor time slots are saved',
   settings_calendar_select_title: 'Select Calendar',
-  settings_calendar_select_automatic: 'Automatic',
   settings_calendar_select_touchgrass: 'TouchGrass (local)',
   calendar_event_title: '🌿 Outdoor time',
   calendar_event_notes: 'Scheduled by TouchGrass',

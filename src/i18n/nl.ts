@@ -361,7 +361,6 @@ export default {
   settings_calendar_select: 'Buitentijd opslaan in',
   settings_calendar_select_desc: 'Agenda waar buitentijdslots worden opgeslagen',
   settings_calendar_select_title: 'Agenda selecteren',
-  settings_calendar_select_automatic: 'Automatisch',
   settings_calendar_select_touchgrass: 'TouchGrass (lokaal)',
   calendar_event_title: '🌿 Buitentijd',
   calendar_event_notes: 'Gepland door TouchGrass',

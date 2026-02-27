@@ -35,16 +35,17 @@ export async function hasCalendarPermissions(): Promise<boolean> {
 }
 
 /**
- * Return all writable calendars available on the device, sorted with
- * local-account calendars first (most reliable for direct writes on Android).
+ * Return local-account writable calendars available on the device.
+ * On Android, only local-account calendars reliably accept direct writes —
+ * Google/Exchange sync-account calendars reject ContentProvider inserts
+ * regardless of permissions. Sorted alphabetically by title.
  */
 export async function getWritableCalendars(): Promise<Calendar.Calendar[]> {
   try {
     const calendars = await Calendar.getCalendarsAsync(Calendar.EntityTypes.EVENT);
-    return [
-      ...calendars.filter((c) => c.allowsModifications && c.source?.isLocalAccount),
-      ...calendars.filter((c) => c.allowsModifications && !c.source?.isLocalAccount),
-    ];
+    return calendars
+      .filter((c) => c.allowsModifications && c.source?.isLocalAccount)
+      .sort((a, b) => a.title.localeCompare(b.title));
   } catch {
     return [];
   }
@@ -163,15 +164,13 @@ export async function addOutdoorTimeToCalendar(
   try {
     const calendars = await Calendar.getCalendarsAsync(Calendar.EntityTypes.EVENT);
 
-    // Build a preference-ordered list of calendars to try:
-    //  1. The calendar explicitly chosen by the user (if any)
-    //  2. Local-account calendars (most reliable for direct writes on Android)
-    //  3. Sync-account calendars (Google, Exchange, etc.)
+    // Only try local-account calendars — Google/Exchange sync-account calendars
+    // always reject direct ContentProvider writes on Android regardless of permission.
+    // Prefer the explicitly selected calendar first, then other local-account calendars.
     const selectedId = getSelectedCalendarId();
     const writable = [
-      ...calendars.filter((c) => c.allowsModifications && c.id === selectedId),
+      ...calendars.filter((c) => c.allowsModifications && c.id === selectedId && c.source?.isLocalAccount),
       ...calendars.filter((c) => c.allowsModifications && c.id !== selectedId && c.source?.isLocalAccount),
-      ...calendars.filter((c) => c.allowsModifications && c.id !== selectedId && !c.source?.isLocalAccount),
     ];
 
     const endTime = new Date(startTime.getTime() + durationMinutes * 60 * 1000);
@@ -199,7 +198,7 @@ export async function addOutdoorTimeToCalendar(
     }
 
     // Last resort: write to a guaranteed-writable local calendar owned by this app.
-    console.warn('TouchGrass: All existing calendars rejected the write, falling back to local TouchGrass calendar');
+    console.warn('TouchGrass: No local writable calendar accepted the write, falling back to local TouchGrass calendar');
     const touchGrassId = await getOrCreateTouchGrassCalendar();
     if (touchGrassId) {
       await Calendar.createEventAsync(touchGrassId, eventDetails);
