@@ -67,6 +67,9 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
 
@@ -87,15 +90,17 @@ jobs:
       - name: Build Android APK
         run: |
           echo "Building Android APK..."
-          eas build --platform android --profile production --local --non-interactive --output ${{ github.workspace }}/TouchGrass.apk
+          mkdir -p ./build-artifacts
+          eas build --platform android --profile preview --local --non-interactive --output ./build-artifacts/app-arm64.apk
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          GRADLE_OPTS: "-Xmx3072m"
 
       - name: Upload Android APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: touchgrass-android-apk
-          path: ${{ github.workspace }}/TouchGrass.apk
+          name: android-preview-apk
+          path: ./build-artifacts/app-arm64.apk
           retention-days: 30
           if-no-files-found: error
 
