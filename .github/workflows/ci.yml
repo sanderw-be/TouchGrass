@@ -84,7 +84,7 @@ jobs:
         run: npm ci --legacy-peer-deps
 
       - name: Install EAS CLI
-        run: npm install -g eas-cli
+        run: npm install -g eas-cli@latest
 
       - name: Setup EAS Credentials
         run: |
