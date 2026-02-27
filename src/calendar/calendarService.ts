@@ -111,6 +111,7 @@ export async function addOutdoorTimeToCalendar(
       endDate: endTime,
       notes: t('calendar_event_notes'),
       timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      alarms: [], // No calendar notification for TouchGrass-scheduled events
     });
 
     return true;

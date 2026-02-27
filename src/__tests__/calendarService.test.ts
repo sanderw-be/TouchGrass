@@ -156,6 +156,7 @@ describe('calendarService', () => {
         expect.objectContaining({
           startDate: start,
           endDate: new Date(start.getTime() + 20 * 60 * 1000),
+          alarms: [],
         }),
       );
     });

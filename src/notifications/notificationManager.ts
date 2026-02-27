@@ -199,19 +199,27 @@ export async function scheduleNextReminder(): Promise<void> {
 
 /**
  * Schedule reminders for optimal times throughout the day.
- * Call this once in the morning to plan the day's reminders.
+ * Call this once at the start of each day to plan the day's reminders.
+ * Records today's date in settings so the background task can call it
+ * once per new day without re-planning on every run.
  */
 export async function scheduleDayReminders(): Promise<void> {
-  const todayMinutes = getTodayMinutes();
-  const dailyTarget = getCurrentDailyGoal()?.targetMinutes ?? 30;
+  const todayStr = new Date().toDateString();
   const remindersEnabled = getSetting('reminders_enabled', '1') === '1';
 
-  if (!remindersEnabled) return;
+  if (!remindersEnabled) {
+    setSetting('reminders_last_planned_date', todayStr);
+    return;
+  }
 
   await cancelAutomaticReminders();
 
+  const todayMinutes = getTodayMinutes();
+  const dailyTarget = getCurrentDailyGoal()?.targetMinutes ?? 30;
+
   // Don't schedule reminders if daily goal is already reached
   if (todayMinutes >= dailyTarget) {
+    setSetting('reminders_last_planned_date', todayStr);
     return;
   }
 
@@ -261,6 +269,9 @@ export async function scheduleDayReminders(): Promise<void> {
       console.warn('TouchGrass: Failed to add reminder slot to calendar:', e),
     );
   }
+
+  // Record that planning has been done for today
+  setSetting('reminders_last_planned_date', todayStr);
 }
 
 /**
