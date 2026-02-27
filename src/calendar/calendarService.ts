@@ -62,7 +62,20 @@ export async function getOrCreateTouchGrassCalendar(): Promise<string | null> {
     const savedId = getSetting(TOUCHGRASS_CALENDAR_SETTING, '');
     if (savedId) {
       const calendars = await Calendar.getCalendarsAsync(Calendar.EntityTypes.EVENT);
-      if (calendars.some((c) => c.id === savedId)) return savedId;
+      const existing = calendars.find((c) => c.id === savedId);
+      if (existing) {
+        if (!existing.allowsModifications) {
+          console.warn('TouchGrass: Cached TouchGrass calendar is read-only — recreating', {
+            allowsModifications: existing.allowsModifications,
+            accessLevel: existing.accessLevel,
+            sourceType: existing.source?.type,
+            isLocal: existing.source?.isLocalAccount,
+          });
+          // Fall through to recreate
+        } else {
+          return savedId;
+        }
+      }
     }
 
     const id = await Calendar.createCalendarAsync({
@@ -78,6 +91,19 @@ export async function getOrCreateTouchGrassCalendar(): Promise<string | null> {
         type: Calendar.SourceType.LOCAL,
       },
     });
+
+    // Verify the newly created calendar is actually writable before caching
+    const allCals = await Calendar.getCalendarsAsync(Calendar.EntityTypes.EVENT);
+    const created = allCals.find((c) => c.id === id);
+    if (created && !created.allowsModifications) {
+      console.warn('TouchGrass: Newly created TouchGrass calendar is not writable', {
+        allowsModifications: created.allowsModifications,
+        accessLevel: created.accessLevel,
+        sourceType: created.source?.type,
+        isLocal: created.source?.isLocalAccount,
+      });
+    }
+
     setSetting(TOUCHGRASS_CALENDAR_SETTING, id);
     return id;
   } catch (e) {

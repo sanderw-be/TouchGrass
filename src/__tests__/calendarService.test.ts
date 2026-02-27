@@ -357,13 +357,16 @@ describe('calendarService', () => {
     });
 
     it('creates a new calendar when no cached ID is saved (savedId is empty)', async () => {
-      // savedId = '' → getOrCreateTouchGrassCalendar skips getCalendarsAsync entirely
+      // savedId = '' → getOrCreateTouchGrassCalendar skips the "check existing" getCalendarsAsync,
+      // but now calls it once for post-creation verification
       mockGetSetting.mockImplementation((_key: string, fallback: string) => fallback);
       mockCreateCalendar.mockResolvedValueOnce('new-tg-id');
+      // post-creation verification call
+      mockGetCalendars.mockResolvedValueOnce([{ id: 'new-tg-id', allowsModifications: true }]);
 
       const id = await getOrCreateTouchGrassCalendar();
       expect(id).toBe('new-tg-id');
-      expect(mockGetCalendars).not.toHaveBeenCalled();
+      expect(mockGetCalendars).toHaveBeenCalledTimes(1); // only the post-creation verification call
       expect(mockCreateCalendar).toHaveBeenCalledWith(
         expect.objectContaining({
           entityType: 'event',
@@ -375,6 +378,38 @@ describe('calendarService', () => {
       expect(mockSetSetting).toHaveBeenCalledWith('calendar_touchgrass_id', 'new-tg-id');
     });
 
+    it('warns when newly created calendar has allowsModifications=false', async () => {
+      mockGetSetting.mockImplementation((_key: string, fallback: string) => fallback);
+      mockCreateCalendar.mockResolvedValueOnce('new-tg-id');
+      // post-creation verification: calendar is NOT writable
+      mockGetCalendars.mockResolvedValueOnce([{ id: 'new-tg-id', allowsModifications: false, accessLevel: 'read', source: { type: 'local', isLocalAccount: true } }]);
+      const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+
+      const id = await getOrCreateTouchGrassCalendar();
+      expect(id).toBe('new-tg-id'); // still returns the id, just logs a warning
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('not writable'),
+        expect.objectContaining({ allowsModifications: false }),
+      );
+      warnSpy.mockRestore();
+    });
+
+    it('recreates calendar when cached calendar is read-only', async () => {
+      mockGetSetting.mockImplementation((key: string, fallback: string) => {
+        if (key === 'calendar_touchgrass_id') return 'readonly-id';
+        return fallback;
+      });
+      // First getCalendarsAsync: cached calendar exists but is read-only
+      mockGetCalendars.mockResolvedValueOnce([{ id: 'readonly-id', allowsModifications: false, accessLevel: 'read', source: { type: 'local', isLocalAccount: true } }]);
+      mockCreateCalendar.mockResolvedValueOnce('new-tg-id-3');
+      // post-creation verification
+      mockGetCalendars.mockResolvedValueOnce([{ id: 'new-tg-id-3', allowsModifications: true }]);
+
+      const id = await getOrCreateTouchGrassCalendar();
+      expect(id).toBe('new-tg-id-3');
+      expect(mockCreateCalendar).toHaveBeenCalled();
+    });
+
     it('creates a new calendar when cached ID no longer exists on device', async () => {
       mockGetSetting.mockImplementation((key: string, fallback: string) => {
         if (key === 'calendar_touchgrass_id') return 'stale-id';
@@ -383,6 +418,8 @@ describe('calendarService', () => {
       // savedId is non-empty, getCalendarsAsync called but stale-id not found
       mockGetCalendars.mockResolvedValueOnce([{ id: 'other-cal', allowsModifications: true }]);
       mockCreateCalendar.mockResolvedValueOnce('new-tg-id-2');
+      // post-creation verification
+      mockGetCalendars.mockResolvedValueOnce([{ id: 'new-tg-id-2', allowsModifications: true }]);
 
       const id = await getOrCreateTouchGrassCalendar();
       expect(id).toBe('new-tg-id-2');
