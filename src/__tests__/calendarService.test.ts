@@ -5,6 +5,10 @@ import {
   hasUpcomingEvent,
   addOutdoorTimeToCalendar,
   maybeAddOutdoorTimeToCalendar,
+  getWritableCalendars,
+  getOrCreateTouchGrassCalendar,
+  getSelectedCalendarId,
+  setSelectedCalendarId,
 } from '../calendar/calendarService';
 
 // Mock the database module
@@ -13,14 +17,16 @@ jest.mock('../storage/database', () => ({
   setSetting: jest.fn(),
 }));
 
-import { getSetting } from '../storage/database';
+import { getSetting, setSetting } from '../storage/database';
 
 const mockGetSetting = getSetting as jest.Mock;
+const mockSetSetting = setSetting as jest.Mock;
 const mockGetCalendarPermissions = Calendar.getCalendarPermissionsAsync as jest.Mock;
 const mockRequestCalendarPermissions = Calendar.requestCalendarPermissionsAsync as jest.Mock;
 const mockGetCalendars = Calendar.getCalendarsAsync as jest.Mock;
 const mockGetEvents = Calendar.getEventsAsync as jest.Mock;
 const mockCreateEvent = Calendar.createEventAsync as jest.Mock;
+const mockCreateCalendar = Calendar.createCalendarAsync as jest.Mock;
 
 describe('calendarService', () => {
   beforeEach(() => {
@@ -192,12 +198,16 @@ describe('calendarService', () => {
       expect(mockCreateEvent).toHaveBeenNthCalledWith(2, 'google-cal', expect.anything());
     });
 
-    it('returns false when all writable calendars reject the write', async () => {
+    it('returns false when all calendars reject and local TouchGrass calendar cannot be created', async () => {
       mockGetCalendarPermissions.mockResolvedValueOnce({ status: 'granted' });
       const cal1 = { id: 'cal1', allowsModifications: true, source: { isLocalAccount: false } };
       const cal2 = { id: 'cal2', allowsModifications: true, source: { isLocalAccount: false } };
+      // No saved TouchGrass ID → getOrCreateTouchGrassCalendar skips the getCalendarsAsync call.
       mockGetCalendars.mockResolvedValueOnce([cal1, cal2]);
-      mockCreateEvent.mockRejectedValue(new Error('E_EVENT_NOT_SAVED'));
+      mockCreateEvent
+        .mockRejectedValueOnce(new Error('E_EVENT_NOT_SAVED'))
+        .mockRejectedValueOnce(new Error('E_EVENT_NOT_SAVED'));
+      mockCreateCalendar.mockRejectedValueOnce(new Error('cannot create calendar'));
 
       const result = await addOutdoorTimeToCalendar(new Date(), 15);
       expect(result).toBe(false);
@@ -215,13 +225,17 @@ describe('calendarService', () => {
       expect(mockRequestCalendarPermissions).toHaveBeenCalled();
     });
 
-    it('returns false when no writable calendar is found', async () => {
+    it('falls back to TouchGrass local calendar when no writable calendars exist', async () => {
       mockGetCalendarPermissions.mockResolvedValueOnce({ status: 'granted' });
-      mockGetCalendars.mockResolvedValueOnce([{ id: 'cal1', allowsModifications: false }]);
+      // No writable calendars (only read-only ones); no saved TouchGrass ID so
+      // getOrCreateTouchGrassCalendar skips the second getCalendarsAsync call.
+      mockGetCalendars.mockResolvedValueOnce([{ id: 'ro', allowsModifications: false }]);
+      mockCreateCalendar.mockResolvedValueOnce('local-tg-id');
 
       const result = await addOutdoorTimeToCalendar(new Date(), 15);
-      expect(result).toBe(false);
-      expect(mockCreateEvent).not.toHaveBeenCalled();
+      expect(result).toBe(true);
+      expect(mockCreateCalendar).toHaveBeenCalled();
+      expect(mockCreateEvent).toHaveBeenCalledWith('local-tg-id', expect.anything());
     });
 
     it('returns false when permissions are denied and cannot be requested', async () => {
@@ -306,6 +320,135 @@ describe('calendarService', () => {
           endDate: new Date(start.getTime() + 30 * 60 * 1000),
         }),
       );
+    });
+  });
+
+  describe('getWritableCalendars', () => {
+    it('returns only writable calendars, local-account first', async () => {
+      const readOnly = { id: 'ro', allowsModifications: false, source: { isLocalAccount: false } };
+      const googleCal = { id: 'google', allowsModifications: true, source: { isLocalAccount: false } };
+      const localCal = { id: 'local', allowsModifications: true, source: { isLocalAccount: true } };
+      mockGetCalendars.mockResolvedValueOnce([readOnly, googleCal, localCal]);
+
+      const result = await getWritableCalendars();
+
+      expect(result.map((c) => c.id)).toEqual(['local', 'google']);
+    });
+
+    it('returns empty array when getCalendarsAsync throws', async () => {
+      mockGetCalendars.mockRejectedValueOnce(new Error('error'));
+      const result = await getWritableCalendars();
+      expect(result).toEqual([]);
+    });
+  });
+
+  describe('getOrCreateTouchGrassCalendar', () => {
+    it('returns cached ID when the calendar still exists', async () => {
+      mockGetSetting.mockImplementation((key: string, fallback: string) => {
+        if (key === 'calendar_touchgrass_id') return 'existing-tg-id';
+        return fallback;
+      });
+      // savedId is non-empty, so the function verifies it via getCalendarsAsync
+      mockGetCalendars.mockResolvedValueOnce([{ id: 'existing-tg-id', allowsModifications: true }]);
+
+      const id = await getOrCreateTouchGrassCalendar();
+      expect(id).toBe('existing-tg-id');
+      expect(mockCreateCalendar).not.toHaveBeenCalled();
+    });
+
+    it('creates a new calendar when no cached ID is saved (savedId is empty)', async () => {
+      // savedId = '' → getOrCreateTouchGrassCalendar skips getCalendarsAsync entirely
+      mockGetSetting.mockImplementation((_key: string, fallback: string) => fallback);
+      mockCreateCalendar.mockResolvedValueOnce('new-tg-id');
+
+      const id = await getOrCreateTouchGrassCalendar();
+      expect(id).toBe('new-tg-id');
+      expect(mockGetCalendars).not.toHaveBeenCalled();
+      expect(mockCreateCalendar).toHaveBeenCalledWith(
+        expect.objectContaining({
+          name: 'touchgrass',
+          ownerAccount: 'local',
+          source: expect.objectContaining({ isLocalAccount: true }),
+        }),
+      );
+      expect(mockSetSetting).toHaveBeenCalledWith('calendar_touchgrass_id', 'new-tg-id');
+    });
+
+    it('creates a new calendar when cached ID no longer exists on device', async () => {
+      mockGetSetting.mockImplementation((key: string, fallback: string) => {
+        if (key === 'calendar_touchgrass_id') return 'stale-id';
+        return fallback;
+      });
+      // savedId is non-empty, getCalendarsAsync called but stale-id not found
+      mockGetCalendars.mockResolvedValueOnce([{ id: 'other-cal', allowsModifications: true }]);
+      mockCreateCalendar.mockResolvedValueOnce('new-tg-id-2');
+
+      const id = await getOrCreateTouchGrassCalendar();
+      expect(id).toBe('new-tg-id-2');
+    });
+
+    it('returns null when createCalendarAsync throws', async () => {
+      // savedId = '' → skips getCalendarsAsync
+      mockGetSetting.mockImplementation((_key: string, fallback: string) => fallback);
+      mockCreateCalendar.mockRejectedValueOnce(new Error('create failed'));
+
+      const id = await getOrCreateTouchGrassCalendar();
+      expect(id).toBeNull();
+    });
+  });
+
+  describe('getSelectedCalendarId / setSelectedCalendarId', () => {
+    it('returns empty string when no preference is saved', () => {
+      mockGetSetting.mockImplementation((_key: string, fallback: string) => fallback);
+      expect(getSelectedCalendarId()).toBe('');
+    });
+
+    it('returns the saved calendar ID', () => {
+      mockGetSetting.mockImplementation((key: string, fallback: string) => {
+        if (key === 'calendar_selected_id') return 'my-cal-id';
+        return fallback;
+      });
+      expect(getSelectedCalendarId()).toBe('my-cal-id');
+    });
+
+    it('persists the selected calendar ID', () => {
+      setSelectedCalendarId('chosen-cal');
+      expect(mockSetSetting).toHaveBeenCalledWith('calendar_selected_id', 'chosen-cal');
+    });
+  });
+
+  describe('addOutdoorTimeToCalendar — TouchGrass local fallback', () => {
+    it('falls back to local TouchGrass calendar when all others reject', async () => {
+      mockGetCalendarPermissions.mockResolvedValueOnce({ status: 'granted' });
+      const googleCal = { id: 'google', allowsModifications: true, source: { isLocalAccount: false }, title: 'Google' };
+      // No saved TouchGrass ID → getOrCreateTouchGrassCalendar skips getCalendarsAsync.
+      mockGetCalendars.mockResolvedValueOnce([googleCal]);
+      // google rejects; TouchGrass local calendar then succeeds
+      mockCreateEvent
+        .mockRejectedValueOnce(new Error('E_EVENT_NOT_SAVED'))
+        .mockResolvedValueOnce('event-ok');
+      mockCreateCalendar.mockResolvedValueOnce('tg-fallback-id');
+
+      const result = await addOutdoorTimeToCalendar(new Date('2025-06-01T10:00:00'), 15);
+      expect(result).toBe(true);
+      expect(mockCreateCalendar).toHaveBeenCalled();
+    });
+
+    it('uses user-selected calendar first when set', async () => {
+      mockGetCalendarPermissions.mockResolvedValueOnce({ status: 'granted' });
+      mockGetSetting.mockImplementation((key: string, fallback: string) => {
+        if (key === 'calendar_selected_id') return 'preferred-cal';
+        return fallback;
+      });
+      const preferred = { id: 'preferred-cal', allowsModifications: true, source: { isLocalAccount: false }, title: 'Preferred' };
+      const other = { id: 'other-cal', allowsModifications: true, source: { isLocalAccount: true }, title: 'Other' };
+      mockGetCalendars.mockResolvedValueOnce([preferred, other]);
+      mockCreateEvent.mockResolvedValueOnce('event-id');
+
+      const result = await addOutdoorTimeToCalendar(new Date('2025-06-01T10:00:00'), 15);
+      expect(result).toBe(true);
+      expect(mockCreateEvent).toHaveBeenCalledTimes(1);
+      expect(mockCreateEvent).toHaveBeenCalledWith('preferred-cal', expect.anything());
     });
   });
 });

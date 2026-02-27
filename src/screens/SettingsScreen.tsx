@@ -13,7 +13,7 @@ import { colors, spacing, radius, shadows } from '../utils/theme';
 import { t } from '../i18n';
 import i18n from '../i18n';
 import type { SettingsStackParamList } from '../navigation/AppNavigator';
-import { requestCalendarPermissions, hasCalendarPermissions } from '../calendar/calendarService';
+import { requestCalendarPermissions, hasCalendarPermissions, getWritableCalendars, getOrCreateTouchGrassCalendar, getSelectedCalendarId, setSelectedCalendarId } from '../calendar/calendarService';
 import { useShowIntro } from '../context/IntroContext';
 
 const LANGUAGES = [
@@ -40,6 +40,8 @@ export default function SettingsScreen() {
   const [calendarPermissionGranted, setCalendarPermissionGranted] = useState(false);
   const [calendarBuffer, setCalendarBuffer] = useState(30);
   const [calendarDuration, setCalendarDuration] = useState(0);
+  const [calendarSelectedId, setCalendarSelectedIdState] = useState('');
+  const [calendarOptions, setCalendarOptions] = useState<{ id: string; title: string }[]>([]);
 
   const loadStatus = useCallback(() => {
     setRemindersEnabled(getSetting('reminders_enabled', '1') === '1');
@@ -55,6 +57,7 @@ export default function SettingsScreen() {
     setCalendarEnabled(getSetting('calendar_integration_enabled', '0') === '1');
     setCalendarBuffer(parseInt(getSetting('calendar_buffer_minutes', '30'), 10));
     setCalendarDuration(parseInt(getSetting('calendar_default_duration', '0'), 10));
+    setCalendarSelectedIdState(getSelectedCalendarId());
   }, []);
 
   // Check permissions and show success message if Health Connect was just enabled
@@ -81,6 +84,10 @@ export default function SettingsScreen() {
     // Refresh calendar permission status
     const calGranted = await hasCalendarPermissions();
     setCalendarPermissionGranted(calGranted);
+    if (calGranted) {
+      const cals = await getWritableCalendars();
+      setCalendarOptions(cals.map((c) => ({ id: c.id, title: c.title })));
+    }
   }, []);
 
   useFocusEffect(useCallback(() => {
@@ -273,6 +280,44 @@ export default function SettingsScreen() {
     setCalendarDuration(next);
   };
 
+  const handleSelectCalendar = async () => {
+    // Show a picker with all writable calendars plus a "TouchGrass (local)" option.
+    const options = [
+      { id: '', title: t('settings_calendar_select_automatic') },
+      { id: '__touchgrass__', title: t('settings_calendar_select_touchgrass') },
+      ...calendarOptions.filter((c) => !c.title.includes('TouchGrass')),
+    ];
+    const isSelected = (optId: string) =>
+      optId === calendarSelectedId || (optId === '__touchgrass__' && !calendarSelectedId);
+    Alert.alert(
+      t('settings_calendar_select_title'),
+      undefined,
+      [
+        ...options.map((opt) => ({
+          text: isSelected(opt.id) ? `${opt.title} ✓` : opt.title,
+          onPress: async () => {
+            if (opt.id === '__touchgrass__') {
+              const id = await getOrCreateTouchGrassCalendar();
+              const newId = id ?? '';
+              setSelectedCalendarId(newId);
+              setCalendarSelectedIdState(newId);
+            } else {
+              setSelectedCalendarId(opt.id);
+              setCalendarSelectedIdState(opt.id);
+            }
+          },
+        })),
+        { text: t('settings_calendar_permission_cancel'), style: 'cancel' },
+      ],
+    );
+  };
+
+  const calendarSelectedTitle = (): string => {
+    if (!calendarSelectedId) return t('settings_calendar_select_automatic');
+    const match = calendarOptions.find((c) => c.id === calendarSelectedId);
+    return match?.title ?? t('settings_calendar_select_automatic');
+  };
+
   return (
     <>
       <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
@@ -436,6 +481,17 @@ export default function SettingsScreen() {
                       ? t('settings_calendar_duration_off')
                       : t('settings_calendar_duration_minutes', { minutes: calendarDuration })}
                   </Text>
+                }
+              />
+            </TouchableOpacity>
+            <Divider />
+            <TouchableOpacity onPress={handleSelectCalendar}>
+              <SettingRow
+                icon="📋"
+                label={t('settings_calendar_select')}
+                sublabel={t('settings_calendar_select_desc')}
+                right={
+                  <Text style={styles.valueChip}>{calendarSelectedTitle()}</Text>
                 }
               />
             </TouchableOpacity>

@@ -34,6 +34,10 @@ jest.mock('../detection/index', () => ({
 jest.mock('../calendar/calendarService', () => ({
   requestCalendarPermissions: jest.fn(() => Promise.resolve(false)),
   hasCalendarPermissions: jest.fn(() => Promise.resolve(false)),
+  getSelectedCalendarId: jest.fn(() => ''),
+  setSelectedCalendarId: jest.fn(),
+  getWritableCalendars: jest.fn(() => Promise.resolve([])),
+  getOrCreateTouchGrassCalendar: jest.fn(() => Promise.resolve('local-tg-id')),
 }));
 
 // Mock navigation — useFocusEffect delegates to useEffect so it runs on mount

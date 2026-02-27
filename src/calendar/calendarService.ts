@@ -2,6 +2,10 @@ import * as Calendar from 'expo-calendar';
 import { getSetting, setSetting } from '../storage/database';
 import { t } from '../i18n';
 
+const TOUCHGRASS_CALENDAR_SETTING = 'calendar_touchgrass_id';
+const SELECTED_CALENDAR_SETTING = 'calendar_selected_id';
+const TOUCHGRASS_CALENDAR_COLOR = '#4CAF50';
+
 /**
  * Request calendar read/write permissions from the user.
  * Returns true if permissions were granted.
@@ -29,6 +33,72 @@ export async function hasCalendarPermissions(): Promise<boolean> {
     return false;
   }
 }
+
+/**
+ * Return all writable calendars available on the device, sorted with
+ * local-account calendars first (most reliable for direct writes on Android).
+ */
+export async function getWritableCalendars(): Promise<Calendar.Calendar[]> {
+  try {
+    const calendars = await Calendar.getCalendarsAsync(Calendar.EntityTypes.EVENT);
+    return [
+      ...calendars.filter((c) => c.allowsModifications && c.source?.isLocalAccount),
+      ...calendars.filter((c) => c.allowsModifications && !c.source?.isLocalAccount),
+    ];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Get or create a dedicated local "TouchGrass" calendar.
+ * On Android, Google/Exchange sync-account calendars reject direct ContentProvider
+ * inserts. A local-account calendar is the only guaranteed writable target.
+ * The calendar ID is cached in app_settings to avoid creating duplicates.
+ */
+export async function getOrCreateTouchGrassCalendar(): Promise<string | null> {
+  try {
+    const savedId = getSetting(TOUCHGRASS_CALENDAR_SETTING, '');
+    if (savedId) {
+      const calendars = await Calendar.getCalendarsAsync(Calendar.EntityTypes.EVENT);
+      if (calendars.some((c) => c.id === savedId)) return savedId;
+    }
+
+    const id = await Calendar.createCalendarAsync({
+      title: t('calendar_touchgrass_name'),
+      color: TOUCHGRASS_CALENDAR_COLOR,
+      name: 'touchgrass',
+      ownerAccount: 'local',
+      accessLevel: Calendar.CalendarAccessLevel.OWNER,
+      source: {
+        isLocalAccount: true,
+        name: 'local',
+        type: Calendar.SourceType.LOCAL,
+      },
+    });
+    setSetting(TOUCHGRASS_CALENDAR_SETTING, id);
+    return id;
+  } catch (e) {
+    console.warn('TouchGrass: Failed to create local TouchGrass calendar:', e);
+    return null;
+  }
+}
+
+/**
+ * Return the ID of the calendar the user has chosen to write outdoor events to.
+ * Returns an empty string when no preference is saved.
+ */
+export function getSelectedCalendarId(): string {
+  return getSetting(SELECTED_CALENDAR_SETTING, '');
+}
+
+/**
+ * Persist the user's preferred calendar ID.
+ */
+export function setSelectedCalendarId(id: string): void {
+  setSetting(SELECTED_CALENDAR_SETTING, id);
+}
+
 
 /**
  * Check whether any calendar event starts within the next `windowMinutes` minutes.
@@ -93,18 +163,16 @@ export async function addOutdoorTimeToCalendar(
   try {
     const calendars = await Calendar.getCalendarsAsync(Calendar.EntityTypes.EVENT);
 
-    // Sort writable calendars: prefer local-account calendars (most reliable on
-    // Android) before sync-account ones (Google, Exchange, etc.) which can
-    // reject direct ContentProvider writes depending on account state.
+    // Build a preference-ordered list of calendars to try:
+    //  1. The calendar explicitly chosen by the user (if any)
+    //  2. Local-account calendars (most reliable for direct writes on Android)
+    //  3. Sync-account calendars (Google, Exchange, etc.)
+    const selectedId = getSelectedCalendarId();
     const writable = [
-      ...calendars.filter((c) => c.allowsModifications && c.source?.isLocalAccount),
-      ...calendars.filter((c) => c.allowsModifications && !c.source?.isLocalAccount),
+      ...calendars.filter((c) => c.allowsModifications && c.id === selectedId),
+      ...calendars.filter((c) => c.allowsModifications && c.id !== selectedId && c.source?.isLocalAccount),
+      ...calendars.filter((c) => c.allowsModifications && c.id !== selectedId && !c.source?.isLocalAccount),
     ];
-
-    if (writable.length === 0) {
-      console.warn('TouchGrass: No writable calendar found');
-      return false;
-    }
 
     const endTime = new Date(startTime.getTime() + durationMinutes * 60 * 1000);
     const eventTitle = title ?? t('calendar_event_title');
@@ -119,7 +187,8 @@ export async function addOutdoorTimeToCalendar(
       alarms: [], // No calendar notification for TouchGrass-scheduled events
     };
 
-    // Try each calendar in preference order; some accounts reject direct writes.
+    // Try each calendar in preference order; sync-account calendars (Google,
+    // Exchange) can reject direct ContentProvider writes even with permission.
     for (const cal of writable) {
       try {
         await Calendar.createEventAsync(cal.id, eventDetails);
@@ -129,7 +198,15 @@ export async function addOutdoorTimeToCalendar(
       }
     }
 
-    console.warn('TouchGrass: All writable calendars rejected the event');
+    // Last resort: write to a guaranteed-writable local calendar owned by this app.
+    console.warn('TouchGrass: All existing calendars rejected the write, falling back to local TouchGrass calendar');
+    const touchGrassId = await getOrCreateTouchGrassCalendar();
+    if (touchGrassId) {
+      await Calendar.createEventAsync(touchGrassId, eventDetails);
+      return true;
+    }
+
+    console.warn('TouchGrass: Could not obtain a writable calendar');
     return false;
   } catch (e) {
     console.warn('TouchGrass: Failed to add event to calendar:', e);

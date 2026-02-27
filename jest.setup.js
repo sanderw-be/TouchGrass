@@ -107,9 +107,16 @@ jest.mock('expo-calendar', () => ({
   getCalendarsAsync: jest.fn(() => Promise.resolve([])),
   getEventsAsync: jest.fn(() => Promise.resolve([])),
   createEventAsync: jest.fn(() => Promise.resolve('event-id-1')),
+  createCalendarAsync: jest.fn(() => Promise.resolve('touchgrass-cal-id')),
   EntityTypes: {
     EVENT: 'event',
     REMINDER: 'reminder',
+  },
+  CalendarAccessLevel: {
+    OWNER: 'owner',
+  },
+  SourceType: {
+    LOCAL: 'local',
   },
 }));
 
