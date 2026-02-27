@@ -63,6 +63,32 @@ export async function setupNotificationInfrastructure(): Promise<void> {
     }
   }
 
+  // Re-register notification action categories on every app start.
+  // This must run every startup (not just during onboarding) so that
+  // scheduled notifications can resolve the 'reminder' category when
+  // they fire — even after the app is killed and restarted.
+  try {
+    await Notifications.setNotificationCategoryAsync('reminder', [
+      {
+        identifier: ACTION_WENT_OUTSIDE,
+        buttonTitle: t('notif_action_went_outside'),
+        options: { opensAppToForeground: false },
+      },
+      {
+        identifier: ACTION_SNOOZE,
+        buttonTitle: t('notif_action_snooze'),
+        options: { opensAppToForeground: false },
+      },
+      {
+        identifier: ACTION_LESS_OFTEN,
+        buttonTitle: t('notif_action_less_often'),
+        options: { opensAppToForeground: false },
+      },
+    ]);
+  } catch (e) {
+    console.warn('TouchGrass: Failed to register notification categories:', e);
+  }
+
   // Set handler for foreground notifications
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
