@@ -1,0 +1,12 @@
+diff --git a/node_modules/react-native-safe-area-context/android/src/main/java/com/th3rdwave/safeareacontext/SafeAreaView.kt b/node_modules/react-native-safe-area-context/android/src/main/java/com/th3rdwave/safeareacontext/SafeAreaView.kt
+index b29e787..36b257c 100644
+--- a/node_modules/react-native-safe-area-context/android/src/main/java/com/th3rdwave/safeareacontext/SafeAreaView.kt
++++ b/node_modules/react-native-safe-area-context/android/src/main/java/com/th3rdwave/safeareacontext/SafeAreaView.kt
+@@ -29,6 +29,7 @@ class SafeAreaView(context: Context?) :
+     mStateWrapper = stateWrapper
+   }
+ 
++  @Suppress("DEPRECATION")
+   private fun updateInsets() {
+     val insets = mInsets
+     if (insets != null) {

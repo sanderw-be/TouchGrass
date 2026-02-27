@@ -1,0 +1,20 @@
+diff --git a/node_modules/expo-dev-launcher/android/src/main/java/expo/modules/devlauncher/launcher/configurators/DevLauncherExpoActivityConfigurator.kt b/node_modules/expo-dev-launcher/android/src/main/java/expo/modules/devlauncher/launcher/configurators/DevLauncherExpoActivityConfigurator.kt
+index c6b9681..957a7f2 100644
+--- a/node_modules/expo-dev-launcher/android/src/main/java/expo/modules/devlauncher/launcher/configurators/DevLauncherExpoActivityConfigurator.kt
++++ b/node_modules/expo-dev-launcher/android/src/main/java/expo/modules/devlauncher/launcher/configurators/DevLauncherExpoActivityConfigurator.kt
+@@ -86,6 +86,7 @@ class DevLauncherExpoActivityConfigurator(
+   }
+ 
+   @UiThread
++  @Suppress("DEPRECATION")
+   private fun setStyle(style: String?, activity: Activity): String {
+     var appliedStatusBarStyle = DevLauncherStatusBarStyle.LIGHT
+     val decorView = activity.window.decorView
+@@ -150,6 +151,7 @@ class DevLauncherExpoActivityConfigurator(
+       .window.statusBarColor = color
+   }
+ 
++  @Suppress("DEPRECATION")
+   fun applyNavigationBarConfiguration(activity: ReactActivity) {
+     val navBarOptions = manifest.getAndroidNavigationBarOptions() ?: return
+ 
