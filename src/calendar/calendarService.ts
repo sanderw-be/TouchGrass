@@ -68,6 +68,7 @@ export async function getOrCreateTouchGrassCalendar(): Promise<string | null> {
     const id = await Calendar.createCalendarAsync({
       title: t('calendar_touchgrass_name'),
       color: TOUCHGRASS_CALENDAR_COLOR,
+      entityType: Calendar.EntityTypes.EVENT, // ensures the calendar accepts event inserts on all Android builds
       name: 'touchgrass',
       ownerAccount: 'local',
       accessLevel: Calendar.CalendarAccessLevel.OWNER,
@@ -181,9 +182,9 @@ export async function addOutdoorTimeToCalendar(
       title: eventTitle,
       startDate: startTime,
       endDate: endTime,
-      notes: t('calendar_event_notes'),
       timeZone,
-      alarms: [], // No calendar notification for TouchGrass-scheduled events
+      // Do not pass alarms: [] — an empty array can cause saveEventAsync to fail
+      // on some Android ROM variants. Omitting the field means no reminders.
     };
 
     // Try each calendar in preference order; sync-account calendars (Google,

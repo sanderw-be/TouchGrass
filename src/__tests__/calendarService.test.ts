@@ -162,7 +162,6 @@ describe('calendarService', () => {
         expect.objectContaining({
           startDate: start,
           endDate: new Date(start.getTime() + 20 * 60 * 1000),
-          alarms: [],
         }),
       );
     });
@@ -367,6 +366,7 @@ describe('calendarService', () => {
       expect(mockGetCalendars).not.toHaveBeenCalled();
       expect(mockCreateCalendar).toHaveBeenCalledWith(
         expect.objectContaining({
+          entityType: 'event',
           name: 'touchgrass',
           ownerAccount: 'local',
           source: expect.objectContaining({ isLocalAccount: true }),
