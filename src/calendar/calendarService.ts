@@ -92,29 +92,45 @@ export async function addOutdoorTimeToCalendar(
 
   try {
     const calendars = await Calendar.getCalendarsAsync(Calendar.EntityTypes.EVENT);
-    // Prefer the default calendar; fall back to the first writable one
-    const defaultCalendar =
-      calendars.find((c) => c.allowsModifications && c.source?.isLocalAccount) ??
-      calendars.find((c) => c.allowsModifications);
 
-    if (!defaultCalendar) {
+    // Sort writable calendars: prefer local-account calendars (most reliable on
+    // Android) before sync-account ones (Google, Exchange, etc.) which can
+    // reject direct ContentProvider writes depending on account state.
+    const writable = [
+      ...calendars.filter((c) => c.allowsModifications && c.source?.isLocalAccount),
+      ...calendars.filter((c) => c.allowsModifications && !c.source?.isLocalAccount),
+    ];
+
+    if (writable.length === 0) {
       console.warn('TouchGrass: No writable calendar found');
       return false;
     }
 
     const endTime = new Date(startTime.getTime() + durationMinutes * 60 * 1000);
     const eventTitle = title ?? t('calendar_event_title');
+    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'; // fallback: Hermes can return '' on some Android builds
 
-    await Calendar.createEventAsync(defaultCalendar.id, {
+    const eventDetails = {
       title: eventTitle,
       startDate: startTime,
       endDate: endTime,
       notes: t('calendar_event_notes'),
-      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      timeZone,
       alarms: [], // No calendar notification for TouchGrass-scheduled events
-    });
+    };
 
-    return true;
+    // Try each calendar in preference order; some accounts reject direct writes.
+    for (const cal of writable) {
+      try {
+        await Calendar.createEventAsync(cal.id, eventDetails);
+        return true;
+      } catch (calError) {
+        console.warn(`TouchGrass: Calendar "${cal.title || cal.id}" rejected write, trying next:`, calError);
+      }
+    }
+
+    console.warn('TouchGrass: All writable calendars rejected the event');
+    return false;
   } catch (e) {
     console.warn('TouchGrass: Failed to add event to calendar:', e);
     return false;

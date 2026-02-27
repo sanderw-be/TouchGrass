@@ -161,6 +161,48 @@ describe('calendarService', () => {
       );
     });
 
+    it('prefers local-account calendars over sync-account calendars', async () => {
+      mockGetCalendarPermissions.mockResolvedValueOnce({ status: 'granted' });
+      const googleCal = { id: 'google-cal', allowsModifications: true, source: { isLocalAccount: false } };
+      const localCal = { id: 'local-cal', allowsModifications: true, source: { isLocalAccount: true } };
+      mockGetCalendars.mockResolvedValueOnce([googleCal, localCal]);
+      mockCreateEvent.mockResolvedValueOnce('event-id-1');
+
+      const result = await addOutdoorTimeToCalendar(new Date('2025-06-01T10:00:00'), 15);
+
+      expect(result).toBe(true);
+      expect(mockCreateEvent).toHaveBeenCalledWith('local-cal', expect.anything());
+    });
+
+    it('falls back to the next calendar when the preferred one rejects the write', async () => {
+      mockGetCalendarPermissions.mockResolvedValueOnce({ status: 'granted' });
+      const googleCal = { id: 'google-cal', allowsModifications: true, source: { isLocalAccount: false } };
+      const localCal = { id: 'local-cal', allowsModifications: true, source: { isLocalAccount: true } };
+      mockGetCalendars.mockResolvedValueOnce([googleCal, localCal]);
+      // local-cal tried first but fails; google-cal should be tried next
+      mockCreateEvent
+        .mockRejectedValueOnce(new Error('E_EVENT_NOT_SAVED'))
+        .mockResolvedValueOnce('event-id-2');
+
+      const result = await addOutdoorTimeToCalendar(new Date('2025-06-01T10:00:00'), 15);
+
+      expect(result).toBe(true);
+      expect(mockCreateEvent).toHaveBeenCalledTimes(2);
+      expect(mockCreateEvent).toHaveBeenNthCalledWith(1, 'local-cal', expect.anything());
+      expect(mockCreateEvent).toHaveBeenNthCalledWith(2, 'google-cal', expect.anything());
+    });
+
+    it('returns false when all writable calendars reject the write', async () => {
+      mockGetCalendarPermissions.mockResolvedValueOnce({ status: 'granted' });
+      const cal1 = { id: 'cal1', allowsModifications: true, source: { isLocalAccount: false } };
+      const cal2 = { id: 'cal2', allowsModifications: true, source: { isLocalAccount: false } };
+      mockGetCalendars.mockResolvedValueOnce([cal1, cal2]);
+      mockCreateEvent.mockRejectedValue(new Error('E_EVENT_NOT_SAVED'));
+
+      const result = await addOutdoorTimeToCalendar(new Date(), 15);
+      expect(result).toBe(false);
+    });
+
     it('requests permissions when not yet granted', async () => {
       mockGetCalendarPermissions.mockResolvedValueOnce({ status: 'denied' });
       mockRequestCalendarPermissions.mockResolvedValueOnce({ status: 'granted' });
