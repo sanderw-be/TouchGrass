@@ -12,6 +12,7 @@ import { colors, spacing, radius, shadows } from '../utils/theme';
 import { formatMinutes } from '../utils/helpers';
 import { t, formatLocalDate, formatLocalTime } from '../i18n';
 import ManualSessionSheet from '../components/ManualSessionSheet';
+import EditSessionSheet from '../components/EditSessionSheet';
 import { updateTimeSlotProbability } from '../detection/sessionConfidence';
 
 type Tab = 'approved' | 'standard' | 'all';
@@ -40,6 +41,7 @@ export default function EventsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [sheetVisible, setSheetVisible] = useState(false);
   const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [editSession, setEditSession] = useState<OutsideSession | null>(null);
 
   const loadData = useCallback(() => {
     const from = FOUR_WEEKS_AGO();
@@ -114,6 +116,12 @@ export default function EventsScreen() {
         onClose={() => setSheetVisible(false)}
         onSessionLogged={loadData}
       />
+      <EditSessionSheet
+        visible={editSession !== null}
+        session={editSession}
+        onClose={() => setEditSession(null)}
+        onSessionUpdated={() => { setExpandedId(null); loadData(); }}
+      />
 
       {/* Tab switcher */}
       <View style={styles.tabs}>
@@ -173,6 +181,7 @@ export default function EventsScreen() {
                 onDelete={() => handleDelete(session.id!)}
                 onReReview={() => handleReReview(session.id!)}
                 onUnDiscard={() => handleUnDiscard(session.id!)}
+                onEditTimes={() => setEditSession(session)}
               />
             ))}
           </View>
@@ -190,6 +199,7 @@ function SessionRow({
   onDelete,
   onReReview,
   onUnDiscard,
+  onEditTimes,
 }: {
   session: OutsideSession;
   expanded: boolean;
@@ -198,6 +208,7 @@ function SessionRow({
   onDelete: () => void;
   onReReview: () => void;
   onUnDiscard: () => void;
+  onEditTimes: () => void;
 }) {
   const sourceIcon: Record<string, string> = {
     health_connect: '👟',
@@ -288,6 +299,14 @@ function SessionRow({
           {session.notes && (
             <Text style={styles.notes}>{session.notes}</Text>
           )}
+
+          {/* Edit times — always available */}
+          <TouchableOpacity
+            style={[styles.actionBtn, styles.actionEditTimes]}
+            onPress={onEditTimes}
+          >
+            <Text style={styles.actionEditTimesText}>{t('session_edit_times')}</Text>
+          </TouchableOpacity>
 
           {/* Actions for pending sessions */}
           {!isConfirmed && !isRejected && !isDiscarded && (
@@ -481,7 +500,9 @@ const styles = StyleSheet.create({
   actionReject: { backgroundColor: colors.fog },
   actionConfirm: { backgroundColor: colors.grass },
   actionSecondary: { backgroundColor: '#FEE2E2' },
+  actionEditTimes: { backgroundColor: colors.fog, marginTop: spacing.sm },
   actionRejectText: { fontSize: 14, color: colors.textSecondary, fontWeight: '600' },
   actionConfirmText: { fontSize: 14, color: colors.textInverse, fontWeight: '600' },
   actionSecondaryText: { fontSize: 14, color: colors.error, fontWeight: '600' },
+  actionEditTimesText: { fontSize: 14, color: colors.textPrimary, fontWeight: '600' },
 });

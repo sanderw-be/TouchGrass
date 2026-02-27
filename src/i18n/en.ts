@@ -28,6 +28,10 @@ export default {
   session_delete_cancel: 'Cancel',
   session_review_again: 'Review again',
   session_review_anyway: 'Review anyway',
+  session_edit_times: '✏️ Edit times',
+  session_edit_title: 'Edit session times',
+  session_edit_save: '✓ Save & approve',
+  session_edit_hint: 'Saving edited times will auto-approve this session.',
 
   // Goals
   of: 'of',

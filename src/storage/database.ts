@@ -321,6 +321,21 @@ export function unDiscardSession(id: number): void {
   );
 }
 
+/**
+ * Update a session's start/end times and duration, and auto-approve it.
+ * Sets userConfirmed = 1 and discarded = 0 so the session surfaces in the
+ * Approved tab regardless of its previous state.
+ */
+export function updateSessionTimes(id: number, startTime: number, endTime: number): void {
+  const durationMinutes = (endTime - startTime) / 60000;
+  db.runSync(
+    `UPDATE outside_sessions
+     SET startTime = ?, endTime = ?, durationMinutes = ?, userConfirmed = 1, discarded = 0
+     WHERE id = ?`,
+    [startTime, endTime, durationMinutes, id]
+  );
+}
+
 // ── Goals ─────────────────────────────────────────────────
 
 export function getCurrentDailyGoal(): DailyGoal | null {
