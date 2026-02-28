@@ -102,7 +102,7 @@ export async function cleanupTouchGrassCalendars(): Promise<CalendarCleanupResul
       ?? touchGrassLocalCalendars[0]
       ?? null;
 
-    let primaryCalendarId = primaryCalendar?.id ?? null;
+    let primaryCalendarId: string | null = primaryCalendar?.id ?? null;
     if (!primaryCalendarId) {
       primaryCalendarId = await getOrCreateTouchGrassCalendar();
       if (!primaryCalendarId) {
@@ -110,8 +110,10 @@ export async function cleanupTouchGrassCalendars(): Promise<CalendarCleanupResul
       }
     }
 
-    setSetting(TOUCHGRASS_CALENDAR_SETTING, primaryCalendarId);
-    setSetting(SELECTED_CALENDAR_SETTING, primaryCalendarId);
+    const resolvedPrimaryCalendarId: string = primaryCalendarId;
+
+    setSetting(TOUCHGRASS_CALENDAR_SETTING, resolvedPrimaryCalendarId);
+    setSetting(SELECTED_CALENDAR_SETTING, resolvedPrimaryCalendarId);
 
     const from = new Date(Date.now() - 24 * 60 * 60 * 1000);
     const to = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
@@ -119,7 +121,7 @@ export async function cleanupTouchGrassCalendars(): Promise<CalendarCleanupResul
     let removedCalendars = 0;
     let removedEvents = 0;
 
-    const primaryEvents = await Calendar.getEventsAsync([primaryCalendarId], from, to);
+    const primaryEvents = await Calendar.getEventsAsync([resolvedPrimaryCalendarId], from, to);
     const primarySeen = new Set<string>();
     for (const event of primaryEvents) {
       const title = event.title || t('calendar_event_title');
@@ -152,7 +154,7 @@ export async function cleanupTouchGrassCalendars(): Promise<CalendarCleanupResul
 
           const fingerprint = eventFingerprint(title, startMs, endMs);
           if (!primarySeen.has(fingerprint)) {
-            await Calendar.createEventAsync(primaryCalendarId, {
+            await Calendar.createEventAsync(resolvedPrimaryCalendarId, {
               title,
               startDate: new Date(startMs),
               endDate: new Date(endMs),
@@ -176,7 +178,7 @@ export async function cleanupTouchGrassCalendars(): Promise<CalendarCleanupResul
       }
     }
 
-    return { primaryCalendarId, removedCalendars, removedEvents };
+    return { primaryCalendarId: resolvedPrimaryCalendarId, removedCalendars, removedEvents };
   } catch (error) {
     console.warn('TouchGrass: Failed to clean TouchGrass calendars:', error);
     return { primaryCalendarId: null, removedCalendars: 0, removedEvents: 0 };
