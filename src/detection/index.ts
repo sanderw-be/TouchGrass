@@ -5,7 +5,7 @@ import { syncHealthConnect, requestHealthPermissions, isHealthConnectAvailable, 
 import { verifyHealthConnectPermissions } from './healthConnectIntent';
 import { startLocationTracking, autoDetectLocations } from './gpsDetection';
 import { getSetting, setSetting } from '../storage/database';
-import { scheduleNextReminder } from '../notifications/notificationManager';
+import { scheduleNextReminder, scheduleDayReminders } from '../notifications/notificationManager';
 import { fetchWeatherForecast } from '../weather/weatherService';
 
 const BACKGROUND_TASK_NAME = 'TOUCHGRASS_BACKGROUND_TASK';
@@ -31,6 +31,14 @@ TaskManager.defineTask(BACKGROUND_TASK_NAME, async () => {
     }
     
     await scheduleNextReminder();
+
+    // Plan the day's reminders once per new day (at/after midnight)
+    const today = new Date().toDateString();
+    const lastPlanned = getSetting('reminders_last_planned_date', '');
+    if (lastPlanned !== today) {
+      await scheduleDayReminders();
+    }
+
     return BackgroundTask.BackgroundTaskResult.Success;
   } catch (e) {
     console.warn('Background task error:', e);

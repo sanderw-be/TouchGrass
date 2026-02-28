@@ -366,8 +366,13 @@ export default {
   settings_calendar_duration_desc: 'Duration when adding outdoor time to calendar',
   settings_calendar_duration_off: 'Off',
   settings_calendar_duration_minutes: '{{minutes}} min',
+  settings_calendar_select: 'Write outdoor time to',
+  settings_calendar_select_desc: 'Calendar where outdoor time slots are saved',
+  settings_calendar_select_title: 'Select Calendar',
+  settings_calendar_select_touchgrass: 'TouchGrass (local)',
   calendar_event_title: '🌿 Outdoor time',
   calendar_event_notes: 'Scheduled by TouchGrass',
+  calendar_touchgrass_name: 'TouchGrass',
 
   // Time/date formatting locale tag
   locale_tag: 'en-GB',
