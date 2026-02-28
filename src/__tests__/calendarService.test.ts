@@ -27,6 +27,7 @@ const mockGetCalendars = Calendar.getCalendarsAsync as jest.Mock;
 const mockGetEvents = Calendar.getEventsAsync as jest.Mock;
 const mockCreateEvent = Calendar.createEventAsync as jest.Mock;
 const mockCreateCalendar = Calendar.createCalendarAsync as jest.Mock;
+const mockUpdateCalendar = Calendar.updateCalendarAsync as jest.Mock;
 
 describe('calendarService', () => {
   beforeEach(() => {
@@ -354,6 +355,8 @@ describe('calendarService', () => {
       const id = await getOrCreateTouchGrassCalendar();
       expect(id).toBe('existing-tg-id');
       expect(mockCreateCalendar).not.toHaveBeenCalled();
+      // Legacy calendars get isSynced/isVisible patched
+      expect(mockUpdateCalendar).toHaveBeenCalledWith('existing-tg-id', { isSynced: true, isVisible: true });
     });
 
     it('creates a new calendar when no cached ID is saved (savedId is empty)', async () => {
@@ -372,6 +375,8 @@ describe('calendarService', () => {
           entityType: 'event',
           name: 'TouchGrass_Internal',
           ownerAccount: 'TouchGrass_App',
+          isSynced: true,
+          isVisible: true,
           source: expect.objectContaining({ isLocalAccount: true, name: 'TouchGrass_App' }),
         }),
       );
@@ -458,18 +463,23 @@ describe('calendarService', () => {
   describe('addOutdoorTimeToCalendar — TouchGrass local fallback', () => {
     it('skips sync-account calendars and falls back to TouchGrass when no local calendars exist', async () => {
       mockGetCalendarPermissions.mockResolvedValueOnce({ status: 'granted' });
-      // Only a sync-account calendar exists; it should be skipped entirely
+      // Only a sync-account calendar exists; it is tried in the non-local fallback
+      // but rejects the write, so we eventually fall through to TouchGrass.
       const googleCal = { id: 'google', allowsModifications: true, source: { isLocalAccount: false }, title: 'Google' };
       // No saved TouchGrass ID → getOrCreateTouchGrassCalendar skips getCalendarsAsync.
       mockGetCalendars.mockResolvedValueOnce([googleCal]);
+      mockCreateEvent
+        .mockRejectedValueOnce(new Error('E_EVENT_NOT_SAVED')) // Google calendar rejects
+        .mockResolvedValueOnce('event-id-tg');
       mockCreateCalendar.mockResolvedValueOnce('tg-fallback-id');
 
       const result = await addOutdoorTimeToCalendar(new Date('2025-06-01T10:00:00'), 15);
       expect(result).toBe(true);
       expect(mockCreateCalendar).toHaveBeenCalled();
-      // google-cal should never have been tried
-      expect(mockCreateEvent).toHaveBeenCalledTimes(1);
-      expect(mockCreateEvent).toHaveBeenCalledWith('tg-fallback-id', expect.anything());
+      // google-cal was tried first (non-local fallback), then TouchGrass was created
+      expect(mockCreateEvent).toHaveBeenCalledTimes(2);
+      expect(mockCreateEvent).toHaveBeenNthCalledWith(1, 'google', expect.anything());
+      expect(mockCreateEvent).toHaveBeenNthCalledWith(2, 'tg-fallback-id', expect.anything());
     });
 
     it('uses user-selected local calendar first when set', async () => {
@@ -488,6 +498,66 @@ describe('calendarService', () => {
       expect(result).toBe(true);
       expect(mockCreateEvent).toHaveBeenCalledTimes(1);
       expect(mockCreateEvent).toHaveBeenCalledWith('preferred-cal', expect.anything());
+    });
+
+    it('succeeds on a non-local calendar when all local calendars reject', async () => {
+      mockGetCalendarPermissions.mockResolvedValueOnce({ status: 'granted' });
+      const localCal = { id: 'local', allowsModifications: true, source: { isLocalAccount: true }, title: 'Local' };
+      const googleCal = { id: 'google', allowsModifications: true, source: { isLocalAccount: false }, title: 'Google' };
+      mockGetCalendars.mockResolvedValueOnce([localCal, googleCal]);
+      mockCreateEvent
+        .mockRejectedValueOnce(new Error('E_EVENT_NOT_SAVED'))  // local rejects
+        .mockResolvedValueOnce('event-id');                      // Google accepts
+
+      const result = await addOutdoorTimeToCalendar(new Date('2025-06-01T10:00:00'), 15);
+      expect(result).toBe(true);
+      expect(mockCreateEvent).toHaveBeenCalledTimes(2);
+      expect(mockCreateEvent).toHaveBeenNthCalledWith(1, 'local', expect.anything());
+      expect(mockCreateEvent).toHaveBeenNthCalledWith(2, 'google', expect.anything());
+    });
+
+    it('passes allDay: false in event details', async () => {
+      mockGetCalendarPermissions.mockResolvedValueOnce({ status: 'granted' });
+      const writable = { id: 'cal1', allowsModifications: true, source: { isLocalAccount: true } };
+      mockGetCalendars.mockResolvedValueOnce([writable]);
+      mockCreateEvent.mockResolvedValueOnce('event-id-1');
+
+      await addOutdoorTimeToCalendar(new Date('2025-06-01T10:00:00'), 20);
+
+      expect(mockCreateEvent).toHaveBeenCalledWith(
+        'cal1',
+        expect.objectContaining({ allDay: false }),
+      );
+    });
+
+    it('clears cached TouchGrass calendar ID when the fallback write fails', async () => {
+      mockGetCalendarPermissions.mockResolvedValueOnce({ status: 'granted' });
+      // No writable calendars at all
+      mockGetCalendars.mockResolvedValueOnce([]);
+      // getOrCreateTouchGrassCalendar creates a new calendar
+      mockCreateCalendar.mockResolvedValueOnce('tg-id');
+      // But the write to it also fails
+      mockCreateEvent.mockRejectedValueOnce(new Error('E_EVENT_NOT_SAVED'));
+
+      const result = await addOutdoorTimeToCalendar(new Date('2025-06-01T10:00:00'), 15);
+      expect(result).toBe(false);
+      // Cached ID should be cleared so a fresh calendar is created next time
+      expect(mockSetSetting).toHaveBeenCalledWith('calendar_touchgrass_id', '');
+    });
+
+    it('creates new calendar with isSynced and isVisible', async () => {
+      mockGetSetting.mockImplementation((_key: string, fallback: string) => fallback);
+      mockCreateCalendar.mockResolvedValueOnce('new-tg-id');
+      mockGetCalendars.mockResolvedValueOnce([{ id: 'new-tg-id', allowsModifications: true }]);
+
+      await getOrCreateTouchGrassCalendar();
+
+      expect(mockCreateCalendar).toHaveBeenCalledWith(
+        expect.objectContaining({
+          isSynced: true,
+          isVisible: true,
+        }),
+      );
     });
   });
 });

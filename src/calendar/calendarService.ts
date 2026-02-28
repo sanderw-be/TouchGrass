@@ -73,6 +73,13 @@ export async function getOrCreateTouchGrassCalendar(): Promise<string | null> {
           });
           // Fall through to recreate
         } else {
+          // Ensure isSynced/isVisible are set for calendars created before this fix —
+          // without SYNC_EVENTS=1 some Android CalendarProviders reject event inserts.
+          try {
+            await Calendar.updateCalendarAsync(savedId, { isSynced: true, isVisible: true });
+          } catch {
+            // Non-critical: best-effort update for legacy calendars
+          }
           return savedId;
         }
       }
@@ -85,6 +92,8 @@ export async function getOrCreateTouchGrassCalendar(): Promise<string | null> {
       name: 'TouchGrass_Internal',
       ownerAccount: 'TouchGrass_App', // must match source.name so Android treats calendar as app-owned and writable
       accessLevel: Calendar.CalendarAccessLevel.OWNER,
+      isSynced: true,   // SYNC_EVENTS=1: required on some Android ROMs for event inserts to succeed
+      isVisible: true,   // VISIBLE=1: ensures calendar appears in the system calendar app
       source: {
         isLocalAccount: true,
         name: 'TouchGrass_App', // must match ownerAccount
@@ -208,13 +217,13 @@ export async function addOutdoorTimeToCalendar(
       title: eventTitle,
       startDate: startTime,
       endDate: endTime,
+      allDay: false,  // explicit: prevents some Android CalendarProviders from treating events as all-day
       timeZone,
       // Do not pass alarms: [] — an empty array can cause saveEventAsync to fail
       // on some Android ROM variants. Omitting the field means no reminders.
     };
 
-    // Try each calendar in preference order; sync-account calendars (Google,
-    // Exchange) can reject direct ContentProvider writes even with permission.
+    // Try each local-account calendar in preference order.
     for (const cal of writable) {
       try {
         await Calendar.createEventAsync(cal.id, eventDetails);
@@ -224,12 +233,33 @@ export async function addOutdoorTimeToCalendar(
       }
     }
 
+    // Secondary fallback: try non-local writable calendars (Google, Exchange).
+    // These reject writes on some devices, but work fine on many others.
+    const nonLocal = calendars.filter(
+      (c) => c.allowsModifications && !c.source?.isLocalAccount,
+    );
+    for (const cal of nonLocal) {
+      try {
+        await Calendar.createEventAsync(cal.id, eventDetails);
+        return true;
+      } catch (calError) {
+        console.warn(`TouchGrass: Non-local calendar "${cal.title || cal.id}" rejected write, trying next:`, calError);
+      }
+    }
+
     // Last resort: write to a guaranteed-writable local calendar owned by this app.
-    console.warn('TouchGrass: No local writable calendar accepted the write, falling back to local TouchGrass calendar');
+    console.warn('TouchGrass: No existing calendar accepted the write, falling back to local TouchGrass calendar');
     const touchGrassId = await getOrCreateTouchGrassCalendar();
     if (touchGrassId) {
-      await Calendar.createEventAsync(touchGrassId, eventDetails);
-      return true;
+      try {
+        await Calendar.createEventAsync(touchGrassId, eventDetails);
+        return true;
+      } catch (tgError) {
+        // The cached TouchGrass calendar is broken — clear it so the next attempt
+        // creates a fresh one with the corrected isSynced/isVisible properties.
+        console.warn('TouchGrass: TouchGrass calendar rejected write, clearing cached ID:', tgError);
+        setSetting(TOUCHGRASS_CALENDAR_SETTING, '');
+      }
     }
 
     console.warn('TouchGrass: Could not obtain a writable calendar');
