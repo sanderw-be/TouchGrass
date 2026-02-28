@@ -33,6 +33,7 @@
       ]
     },
     "plugins": [
+      "expo-calendar",
       [
         "expo-location",
         {

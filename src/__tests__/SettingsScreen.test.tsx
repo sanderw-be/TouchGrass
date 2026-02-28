@@ -34,6 +34,11 @@ jest.mock('../detection/index', () => ({
 jest.mock('../calendar/calendarService', () => ({
   requestCalendarPermissions: jest.fn(() => Promise.resolve(false)),
   hasCalendarPermissions: jest.fn(() => Promise.resolve(false)),
+  getSelectedCalendarId: jest.fn(() => ''),
+  setSelectedCalendarId: jest.fn(),
+  getWritableCalendars: jest.fn(() => Promise.resolve([])),
+  getOrCreateTouchGrassCalendar: jest.fn(() => Promise.resolve('local-tg-id')),
+  cleanupTouchGrassCalendars: jest.fn(() => Promise.resolve({ primaryCalendarId: 'local-tg-id', removedCalendars: 0, removedEvents: 0 })),
 }));
 
 // Mock navigation — useFocusEffect delegates to useEffect so it runs on mount
@@ -61,6 +66,7 @@ jest.mock('../context/IntroContext', () => ({
 }));
 
 import SettingsScreen from '../screens/SettingsScreen';
+import * as CalendarService from '../calendar/calendarService';
 
 describe('SettingsScreen calendar duration', () => {
   beforeEach(() => {
@@ -152,5 +158,29 @@ describe('SettingsScreen calendar duration', () => {
 
     await waitFor(() => expect(findByText('settings_calendar_duration_off')).resolves.toBeTruthy());
     expect(mockSetSetting).toHaveBeenCalledWith('calendar_default_duration', '0');
+  });
+
+  it('does not open calendar picker when only TouchGrass local calendar exists', async () => {
+    mockGetSetting.mockImplementation((key: string, def: string) => {
+      if (key === 'calendar_integration_enabled') return '1';
+      return def;
+    });
+    (CalendarService.hasCalendarPermissions as jest.Mock).mockResolvedValue(true);
+    (CalendarService.getWritableCalendars as jest.Mock).mockResolvedValue([
+      { id: 'tg-local', title: 'TouchGrass', allowsModifications: true, source: { isLocalAccount: true } },
+    ]);
+
+    const alertSpy = jest.spyOn(require('react-native').Alert, 'alert').mockImplementation(() => {});
+    const { findByText } = render(<SettingsScreen />);
+
+    const selectRow = await findByText('settings_calendar_select');
+    alertSpy.mockClear();
+
+    await act(async () => {
+      fireEvent.press(selectRow);
+    });
+
+    expect(alertSpy).not.toHaveBeenCalled();
+    alertSpy.mockRestore();
   });
 });

@@ -119,6 +119,20 @@ describe('notificationManager', () => {
   });
 
   describe('scheduleDayReminders', () => {
+    it('does nothing when reminders are already planned for today', async () => {
+      const today = new Date().toDateString();
+      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
+        if (key === 'reminders_last_planned_date') return today;
+        if (key === 'reminders_enabled') return '1';
+        return fallback;
+      });
+
+      await scheduleDayReminders();
+
+      expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
+      expect(Database.setSetting).not.toHaveBeenCalledWith('reminders_last_planned_date', today);
+    });
+
     it('does not schedule any reminders and cancels existing ones when daily goal is already reached', async () => {
       (Database.getTodayMinutes as jest.Mock).mockReturnValue(30);
       (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
@@ -208,6 +222,59 @@ describe('notificationManager', () => {
       expect(CalendarService.maybeAddOutdoorTimeToCalendar).toHaveBeenCalledTimes(2);
 
       jest.restoreAllMocks();
+    });
+
+    it('saves reminders_last_planned_date after successful planning', async () => {
+      (Database.getTodayMinutes as jest.Mock).mockReturnValue(10);
+      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
+      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
+        if (key === 'reminders_enabled') return '1';
+        return fallback;
+      });
+      jest.spyOn(Date.prototype, 'getHours').mockReturnValue(9);
+      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockReturnValue([
+        { hour: 12, score: 0.8, reason: 'lunch' },
+      ]);
+
+      await scheduleDayReminders();
+
+      expect(Database.setSetting).toHaveBeenCalledWith(
+        'reminders_last_planned_date',
+        new Date().toDateString(),
+      );
+
+      jest.restoreAllMocks();
+    });
+
+    it('saves reminders_last_planned_date when reminders are disabled', async () => {
+      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
+        if (key === 'reminders_enabled') return '0';
+        return fallback;
+      });
+
+      await scheduleDayReminders();
+
+      expect(Database.setSetting).toHaveBeenCalledWith(
+        'reminders_last_planned_date',
+        new Date().toDateString(),
+      );
+    });
+
+    it('saves reminders_last_planned_date when daily goal is already reached', async () => {
+      (Database.getTodayMinutes as jest.Mock).mockReturnValue(30);
+      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
+      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
+        if (key === 'reminders_enabled') return '1';
+        return fallback;
+      });
+      (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([]);
+
+      await scheduleDayReminders();
+
+      expect(Database.setSetting).toHaveBeenCalledWith(
+        'reminders_last_planned_date',
+        new Date().toDateString(),
+      );
     });
   });
 

@@ -41,3 +41,6 @@ yarn-error.*
 /android
 .gradle/
 credentials.jsondocs/
+
+.idea/
+credentials.json

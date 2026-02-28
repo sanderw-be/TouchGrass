@@ -358,8 +358,13 @@ export default {
   settings_calendar_duration_desc: 'Duur bij het toevoegen van buitentijd aan de agenda',
   settings_calendar_duration_off: 'Uit',
   settings_calendar_duration_minutes: '{{minutes}} min',
+  settings_calendar_select: 'Buitentijd opslaan in',
+  settings_calendar_select_desc: 'Agenda waar buitentijdslots worden opgeslagen',
+  settings_calendar_select_title: 'Agenda selecteren',
+  settings_calendar_select_touchgrass: 'TouchGrass (lokaal)',
   calendar_event_title: '🌿 Buitentijd',
   calendar_event_notes: 'Gepland door TouchGrass',
+  calendar_touchgrass_name: 'TouchGrass',
 
   // Taal-/datumopmaak
   locale_tag: 'nl-NL',

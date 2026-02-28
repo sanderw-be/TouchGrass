@@ -63,6 +63,32 @@ export async function setupNotificationInfrastructure(): Promise<void> {
     }
   }
 
+  // Re-register notification action categories on every app start.
+  // This must run every startup (not just during onboarding) so that
+  // scheduled notifications can resolve the 'reminder' category when
+  // they fire — even after the app is killed and restarted.
+  try {
+    await Notifications.setNotificationCategoryAsync('reminder', [
+      {
+        identifier: ACTION_WENT_OUTSIDE,
+        buttonTitle: t('notif_action_went_outside'),
+        options: { opensAppToForeground: false },
+      },
+      {
+        identifier: ACTION_SNOOZE,
+        buttonTitle: t('notif_action_snooze'),
+        options: { opensAppToForeground: false },
+      },
+      {
+        identifier: ACTION_LESS_OFTEN,
+        buttonTitle: t('notif_action_less_often'),
+        options: { opensAppToForeground: false },
+      },
+    ]);
+  } catch (e) {
+    console.warn('TouchGrass: Failed to register notification categories:', e);
+  }
+
   // Set handler for foreground notifications
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
@@ -199,19 +225,32 @@ export async function scheduleNextReminder(): Promise<void> {
 
 /**
  * Schedule reminders for optimal times throughout the day.
- * Call this once in the morning to plan the day's reminders.
+ * Call this once at the start of each day to plan the day's reminders.
+ * Records today's date in settings so the background task can call it
+ * once per new day without re-planning on every run.
  */
 export async function scheduleDayReminders(): Promise<void> {
-  const todayMinutes = getTodayMinutes();
-  const dailyTarget = getCurrentDailyGoal()?.targetMinutes ?? 30;
+  const todayStr = new Date().toDateString();
+  const lastPlannedDate = getSetting('reminders_last_planned_date', '');
+  if (lastPlannedDate === todayStr) {
+    return;
+  }
+
   const remindersEnabled = getSetting('reminders_enabled', '1') === '1';
 
-  if (!remindersEnabled) return;
+  if (!remindersEnabled) {
+    setSetting('reminders_last_planned_date', todayStr);
+    return;
+  }
 
   await cancelAutomaticReminders();
 
+  const todayMinutes = getTodayMinutes();
+  const dailyTarget = getCurrentDailyGoal()?.targetMinutes ?? 30;
+
   // Don't schedule reminders if daily goal is already reached
   if (todayMinutes >= dailyTarget) {
+    setSetting('reminders_last_planned_date', todayStr);
     return;
   }
 
@@ -261,6 +300,9 @@ export async function scheduleDayReminders(): Promise<void> {
       console.warn('TouchGrass: Failed to add reminder slot to calendar:', e),
     );
   }
+
+  // Record that planning has been done for today
+  setSetting('reminders_last_planned_date', todayStr);
 }
 
 /**
