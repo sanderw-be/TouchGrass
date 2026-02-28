@@ -6,6 +6,12 @@ const TOUCHGRASS_CALENDAR_SETTING = 'calendar_touchgrass_id';
 const SELECTED_CALENDAR_SETTING = 'calendar_selected_id';
 const TOUCHGRASS_CALENDAR_COLOR = '#4CAF50';
 
+function isEventNotSavedError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false;
+  const maybeCode = (error as { code?: unknown }).code;
+  return typeof maybeCode === 'string' && maybeCode === 'E_EVENT_NOT_SAVED';
+}
+
 /**
  * Request calendar read/write permissions from the user.
  * Returns true if permissions were granted.
@@ -222,11 +228,29 @@ export async function addOutdoorTimeToCalendar(
       // Do not pass alarms: [] — an empty array can cause saveEventAsync to fail
       // on some Android ROM variants. Omitting the field means no reminders.
     };
+    const fallbackEventDetails = {
+      title: eventTitle,
+      startDate: startTime,
+      endDate: endTime,
+      allDay: false,
+    };
+
+    const createEventWithFallback = async (calendarId: string): Promise<void> => {
+      try {
+        await Calendar.createEventAsync(calendarId, eventDetails);
+      } catch (eventError) {
+        if (isEventNotSavedError(eventError)) {
+          await Calendar.createEventAsync(calendarId, fallbackEventDetails);
+          return;
+        }
+        throw eventError;
+      }
+    };
 
     // Try each local-account calendar in preference order.
     for (const cal of writable) {
       try {
-        await Calendar.createEventAsync(cal.id, eventDetails);
+        await createEventWithFallback(cal.id);
         return true;
       } catch (calError) {
         console.warn(`TouchGrass: Calendar "${cal.title || cal.id}" rejected write, trying next:`, calError);
@@ -240,7 +264,7 @@ export async function addOutdoorTimeToCalendar(
     );
     for (const cal of nonLocal) {
       try {
-        await Calendar.createEventAsync(cal.id, eventDetails);
+        await createEventWithFallback(cal.id);
         return true;
       } catch (calError) {
         console.warn(`TouchGrass: Non-local calendar "${cal.title || cal.id}" rejected write, trying next:`, calError);
@@ -252,7 +276,7 @@ export async function addOutdoorTimeToCalendar(
     const touchGrassId = await getOrCreateTouchGrassCalendar();
     if (touchGrassId) {
       try {
-        await Calendar.createEventAsync(touchGrassId, eventDetails);
+        await createEventWithFallback(touchGrassId);
         return true;
       } catch (tgError) {
         // The cached TouchGrass calendar is broken — clear it so the next attempt

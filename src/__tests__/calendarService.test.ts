@@ -198,6 +198,29 @@ describe('calendarService', () => {
       expect(mockCreateEvent).toHaveBeenNthCalledWith(2, 'local-cal-2', expect.anything());
     });
 
+    it('retries with fallback event payload when provider returns E_EVENT_NOT_SAVED', async () => {
+      mockGetCalendarPermissions.mockResolvedValueOnce({ status: 'granted' });
+      const localCal = { id: 'local-cal', allowsModifications: true, source: { isLocalAccount: true } };
+      mockGetCalendars.mockResolvedValueOnce([localCal]);
+      mockCreateEvent
+        .mockRejectedValueOnce({ code: 'E_EVENT_NOT_SAVED' })
+        .mockResolvedValueOnce('event-id-2');
+
+      const result = await addOutdoorTimeToCalendar(new Date('2025-06-01T10:00:00'), 15);
+
+      expect(result).toBe(true);
+      expect(mockCreateEvent).toHaveBeenCalledTimes(2);
+      expect(mockCreateEvent).toHaveBeenNthCalledWith(
+        2,
+        'local-cal',
+        expect.objectContaining({
+          startDate: expect.any(Date),
+          endDate: expect.any(Date),
+          allDay: false,
+        }),
+      );
+    });
+
     it('returns false when all calendars reject and local TouchGrass calendar cannot be created', async () => {
       mockGetCalendarPermissions.mockResolvedValueOnce({ status: 'granted' });
       // Only local-account calendars are tried; sync-account ones are skipped
