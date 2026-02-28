@@ -92,8 +92,8 @@ export async function getOrCreateTouchGrassCalendar(): Promise<string | null> {
       name: 'TouchGrass_Internal',
       ownerAccount: 'TouchGrass_App', // must match source.name so Android treats calendar as app-owned and writable
       accessLevel: Calendar.CalendarAccessLevel.OWNER,
-      isSynced: true,   // SYNC_EVENTS=1: required on some Android ROMs for event inserts to succeed
-      isVisible: true,   // VISIBLE=1: ensures calendar appears in the system calendar app
+      isSynced: true, // SYNC_EVENTS=1: required on some Android ROMs for event inserts to succeed
+      isVisible: true, // VISIBLE=1: ensures calendar appears in the system calendar app
       source: {
         isLocalAccount: true,
         name: 'TouchGrass_App', // must match ownerAccount
@@ -217,7 +217,7 @@ export async function addOutdoorTimeToCalendar(
       title: eventTitle,
       startDate: startTime,
       endDate: endTime,
-      allDay: false,  // explicit: prevents some Android CalendarProviders from treating events as all-day
+      allDay: false, // prevents some Android CalendarProviders from treating events as all-day
       timeZone,
       // Do not pass alarms: [] — an empty array can cause saveEventAsync to fail
       // on some Android ROM variants. Omitting the field means no reminders.
