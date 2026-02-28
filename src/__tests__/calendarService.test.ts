@@ -240,7 +240,30 @@ describe('calendarService', () => {
       expect(result).toBe(true);
       expect(logSpy).toHaveBeenCalledWith(
         expect.stringContaining('Calendar write debug - event write succeeded'),
-        expect.objectContaining({ calendarId: 'local-cal', payload: 'fallback' }),
+        expect.objectContaining({ calendarId: 'local-cal', calendarLabel: 'Local', payload: 'fallback' }),
+      );
+      logSpy.mockRestore();
+    });
+
+    it('logs TouchGrass fallback label when fallback calendar write succeeds in debug mode', async () => {
+      mockGetSetting.mockImplementation((key: string, fallback: string) => {
+        if (key === 'calendar_debug_logging') return '1';
+        return fallback;
+      });
+      mockGetCalendarPermissions.mockResolvedValueOnce({ status: 'granted' });
+      mockGetCalendars
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([{ id: 'tg-id', allowsModifications: true }]);
+      mockCreateCalendar.mockResolvedValueOnce('tg-id');
+      mockCreateEvent.mockResolvedValueOnce('event-id');
+      const logSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+
+      const result = await addOutdoorTimeToCalendar(new Date('2025-06-01T10:00:00'), 15);
+
+      expect(result).toBe(true);
+      expect(logSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Calendar write debug - event write succeeded'),
+        expect.objectContaining({ calendarId: 'tg-id', calendarLabel: 'TouchGrass local fallback', payload: 'primary' }),
       );
       logSpy.mockRestore();
     });
