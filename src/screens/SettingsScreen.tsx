@@ -14,7 +14,14 @@ import { useTheme, ThemePreference } from '../context/ThemeContext';
 import { t } from '../i18n';
 import i18n from '../i18n';
 import type { SettingsStackParamList } from '../navigation/AppNavigator';
-import { requestCalendarPermissions, hasCalendarPermissions, getWritableCalendars, getOrCreateTouchGrassCalendar, getSelectedCalendarId, setSelectedCalendarId } from '../calendar/calendarService';
+import {
+  requestCalendarPermissions,
+  hasCalendarPermissions,
+  getWritableCalendars,
+  getOrCreateTouchGrassCalendar,
+  getSelectedCalendarId,
+  setSelectedCalendarId,
+} from '../calendar/calendarService';
 import { useShowIntro } from '../context/IntroContext';
 
 const LANGUAGES = [
@@ -288,6 +295,9 @@ export default function SettingsScreen() {
     const hasAlternatives = calendarOptions.some((c) => !c.title.toLowerCase().includes('touchgrass'));
     if (!hasAlternatives) return;
 
+
+    // Show only local-account calendars (the only ones that accept writes on Android)
+    // plus the dedicated TouchGrass local calendar as the first/default option.
     const otherCalendars = calendarOptions.filter((c) => !c.title.includes('TouchGrass'));
     const options = [
       { id: '__touchgrass__', title: t('settings_calendar_select_touchgrass') },
