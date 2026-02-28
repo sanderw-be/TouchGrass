@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
   TouchableOpacity, SafeAreaView, Platform, ActivityIndicator, AppState, AppStateStatus,
 } from 'react-native';
 import * as Notifications from 'expo-notifications';
-import { colors, spacing, radius, shadows } from '../utils/theme';
+import { spacing, radius, shadows } from '../utils/theme';
+import { useTheme } from '../context/ThemeContext';
 import { t } from '../i18n';
 import { requestHealthConnect, recheckHealthConnect } from '../detection/index';
 import { requestGPSPermissions, checkGPSPermissions } from '../detection/index';
@@ -19,6 +20,8 @@ interface Props {
 type Step = 'welcome' | 'health-connect' | 'location' | 'notifications' | 'calendar' | 'ready';
 
 export default function IntroScreen({ onComplete }: Props) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const [currentStep, setCurrentStep] = useState<Step>('welcome');
   const [healthConnectGranted, setHealthConnectGranted] = useState(false);
   const [locationGranted, setLocationGranted] = useState(false);
@@ -245,6 +248,8 @@ export default function IntroScreen({ onComplete }: Props) {
 }
 
 function WelcomeStep() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   return (
     <View style={styles.stepContainer}>
       <Text style={styles.emoji}>🌱</Text>
@@ -261,6 +266,8 @@ function WelcomeStep() {
 }
 
 function HealthConnectStep({ onRequest, granted, requesting }: { onRequest: () => void; granted: boolean; requesting: boolean }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   return (
     <View style={styles.stepContainer}>
       <Text style={styles.emoji}>👟</Text>
@@ -291,6 +298,8 @@ function HealthConnectStep({ onRequest, granted, requesting }: { onRequest: () =
 }
 
 function LocationStep({ onRequest, granted, requesting }: { onRequest: () => void; granted: boolean; requesting: boolean }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   return (
     <View style={styles.stepContainer}>
       <Text style={styles.emoji}>📍</Text>
@@ -319,6 +328,8 @@ function LocationStep({ onRequest, granted, requesting }: { onRequest: () => voi
 }
 
 function NotificationsStep({ onRequest, granted, requesting }: { onRequest: () => void; granted: boolean; requesting: boolean }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   return (
     <View style={styles.stepContainer}>
       <Text style={styles.emoji}>🔔</Text>
@@ -352,6 +363,8 @@ function ReadyStep({ healthConnectGranted, locationGranted, notificationsGranted
   notificationsGranted: boolean;
   calendarGranted: boolean;
 }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   // Determine the status symbol for each permission
   const getStatusSymbol = (granted: boolean) => granted ? '✓' : '-';
   const getStatusColor = (granted: boolean) => granted ? colors.grass : colors.textMuted;
@@ -413,6 +426,8 @@ function CalendarStep({
   onCycleBuffer: () => void;
   onCycleDuration: () => void;
 }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   return (
     <View style={styles.stepContainer}>
       <Text style={styles.emoji}>📆</Text>
@@ -464,6 +479,8 @@ function CalendarStep({
 }
 
 function FeatureItem({ icon, text }: { icon: string; text: string }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   return (
     <View style={styles.featureItem}>
       <Text style={styles.featureIcon}>{icon}</Text>
@@ -472,7 +489,8 @@ function FeatureItem({ icon, text }: { icon: string; text: string }) {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
+  return StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.mist,
@@ -524,7 +542,7 @@ const styles = StyleSheet.create({
   featureItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.textInverse,
+    backgroundColor: colors.card,
     borderRadius: radius.md,
     padding: spacing.md,
     ...shadows.soft,
@@ -577,24 +595,24 @@ const styles = StyleSheet.create({
 
   tipCard: {
     width: '100%',
-    backgroundColor: '#FEF3C7',
+    backgroundColor: colors.warningSurface,
     borderRadius: radius.lg,
     padding: spacing.lg,
   },
   tipTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#92400E',
+    color: colors.warningText,
     marginBottom: spacing.xs,
   },
   tipBody: {
     fontSize: 14,
-    color: '#92400E',
+    color: colors.warningText,
     lineHeight: 20,
   },
   checklistCard: {
     width: '100%',
-    backgroundColor: colors.textInverse,
+    backgroundColor: colors.card,
     borderRadius: radius.lg,
     padding: spacing.lg,
     marginTop: spacing.md,
@@ -634,7 +652,7 @@ const styles = StyleSheet.create({
 
   calendarSettingsCard: {
     width: '100%',
-    backgroundColor: colors.textInverse,
+    backgroundColor: colors.card,
     borderRadius: radius.lg,
     overflow: 'hidden',
     marginBottom: spacing.sm,
@@ -678,7 +696,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: spacing.md,
-    backgroundColor: colors.textInverse,
+    backgroundColor: colors.card,
     borderTopWidth: 1,
     borderTopColor: colors.fog,
   },
@@ -699,4 +717,5 @@ const styles = StyleSheet.create({
     color: colors.textInverse,
     fontWeight: '700',
   },
-});
+  });
+}

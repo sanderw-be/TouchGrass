@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
   TouchableOpacity, Dimensions,
@@ -8,7 +8,8 @@ import {
   getDailyTotalsForMonth, getSessionsForRange,
   getCurrentDailyGoal, startOfDay, startOfWeek,
 } from '../storage/database';
-import { colors, spacing, radius, shadows } from '../utils/theme';
+import { spacing, radius, shadows } from '../utils/theme';
+import { useTheme } from '../context/ThemeContext';
 import { formatMinutes } from '../utils/helpers';
 import { formatLocalDate } from '../i18n';
 import { t } from '../i18n';
@@ -19,6 +20,8 @@ const BAR_AREA_WIDTH = SCREEN_WIDTH - spacing.md * 2 - spacing.lg * 2;
 type Period = 'week' | 'month';
 
 export default function HistoryScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const [period, setPeriod] = useState<Period>('week');
   const [dailyData, setDailyData] = useState<{ date: number; minutes: number }[]>([]);
   const [dailyTarget, setDailyTarget] = useState(30);
@@ -124,6 +127,8 @@ export default function HistoryScreen() {
 }
 
 function StatBox({ label, value }: { label: string; value: string }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   return (
     <View style={styles.statBox}>
       <Text style={styles.statValue}>{value}</Text>
@@ -143,6 +148,8 @@ function BarChart({
   maxValue: number;
   period: Period;
 }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const CHART_HEIGHT = 160;
   const targetY = CHART_HEIGHT - (target / maxValue) * CHART_HEIGHT;
   const barCount = data.length || 1;
@@ -225,7 +232,8 @@ function BarChart({
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
+  return StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.mist },
   content: { padding: spacing.md, paddingBottom: spacing.xxl },
 
@@ -242,7 +250,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
     alignItems: 'center',
   },
-  tabActive: { backgroundColor: colors.textInverse, ...shadows.soft },
+  tabActive: { backgroundColor: colors.card, ...shadows.soft },
   tabText: { fontSize: 14, color: colors.textMuted, fontWeight: '500' },
   tabTextActive: { color: colors.textPrimary, fontWeight: '700' },
 
@@ -256,7 +264,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: colors.textInverse,
+    backgroundColor: colors.card,
     alignItems: 'center',
     justifyContent: 'center',
     ...shadows.soft,
@@ -272,7 +280,7 @@ const styles = StyleSheet.create({
   },
   statBox: {
     flex: 1,
-    backgroundColor: colors.textInverse,
+    backgroundColor: colors.card,
     borderRadius: radius.md,
     padding: spacing.md,
     alignItems: 'center',
@@ -282,7 +290,7 @@ const styles = StyleSheet.create({
   statLabel: { fontSize: 11, color: colors.textMuted, marginTop: 2, textTransform: 'uppercase', letterSpacing: 0.5 },
 
   chartCard: {
-    backgroundColor: colors.textInverse,
+    backgroundColor: colors.card,
     borderRadius: radius.lg,
     padding: spacing.lg,
     ...shadows.soft,
@@ -324,4 +332,5 @@ const styles = StyleSheet.create({
   legendDot: { width: 8, height: 8, borderRadius: 4 },
   legendLine: { width: 16, height: 2, backgroundColor: colors.sun },
   legendText: { fontSize: 11, color: colors.textMuted },
-});
+  });
+}

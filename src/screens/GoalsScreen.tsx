@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
   TouchableOpacity, TextInput, Alert,
@@ -8,7 +8,8 @@ import {
   getCurrentDailyGoal, getCurrentWeeklyGoal,
   setDailyGoal, setWeeklyGoal,
 } from '../storage/database';
-import { colors, spacing, radius, shadows } from '../utils/theme';
+import { spacing, radius, shadows } from '../utils/theme';
+import { useTheme } from '../context/ThemeContext';
 import { formatMinutes } from '../utils/helpers';
 import { t } from '../i18n';
 
@@ -16,6 +17,8 @@ const DAILY_PRESETS = [15, 20, 30, 45, 60, 90];
 const WEEKLY_PRESETS = [60, 90, 120, 150, 210, 300];
 
 export default function GoalsScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const [dailyTarget, setDailyTargetState] = useState(30);
   const [weeklyTarget, setWeeklyTargetState] = useState(150);
   const [editingDaily, setEditingDaily] = useState(false);
@@ -177,12 +180,13 @@ export default function GoalsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
+  return StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.mist },
   content: { padding: spacing.md, paddingBottom: spacing.xxl },
 
   card: {
-    backgroundColor: colors.textInverse,
+    backgroundColor: colors.card,
     borderRadius: radius.lg,
     padding: spacing.lg,
     marginBottom: spacing.md,
@@ -248,4 +252,5 @@ const styles = StyleSheet.create({
   },
   tipIcon: { fontSize: 18 },
   tipText: { flex: 1, fontSize: 13, color: colors.grassDark, lineHeight: 20 },
-});
+  });
+}

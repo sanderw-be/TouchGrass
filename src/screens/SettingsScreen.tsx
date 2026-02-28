@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
   TouchableOpacity, Switch, Alert, Linking, Platform,
@@ -9,7 +9,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getSetting, setSetting, getKnownLocations, getSuggestedLocations, KnownLocation, clearAllData } from '../storage/database';
 import { getDetectionStatus, requestHealthConnect, recheckHealthConnect, checkGPSPermissions, requestGPSPermissions, openHealthConnectSettings } from '../detection/index';
 import { AppState, AppStateStatus } from 'react-native';
-import { colors, spacing, radius, shadows } from '../utils/theme';
+import { spacing, radius, shadows } from '../utils/theme';
+import { useTheme, ThemePreference } from '../context/ThemeContext';
 import { t } from '../i18n';
 import i18n from '../i18n';
 import type { SettingsStackParamList } from '../navigation/AppNavigator';
@@ -30,6 +31,7 @@ const LANGUAGES = [
 
 export default function SettingsScreen() {
   const showIntro = useShowIntro();
+  const { colors, themePreference, setThemePreference } = useTheme();
   const navigation = useNavigation<StackNavigationProp<SettingsStackParamList>>();
   const insets = useSafeAreaInsets();
   const [remindersEnabled, setRemindersEnabled] = useState(true);
@@ -49,6 +51,8 @@ export default function SettingsScreen() {
   const [calendarDuration, setCalendarDuration] = useState(0);
   const [calendarSelectedId, setCalendarSelectedIdState] = useState('');
   const [calendarOptions, setCalendarOptions] = useState<{ id: string; title: string }[]>([]);
+
+  const styles = useMemo(() => makeStyles(colors), [colors]);
 
   const loadStatus = useCallback(() => {
     setRemindersEnabled(getSetting('reminders_enabled', '1') === '1');
@@ -291,6 +295,7 @@ export default function SettingsScreen() {
     const hasAlternatives = calendarOptions.some((c) => !c.title.toLowerCase().includes('touchgrass'));
     if (!hasAlternatives) return;
 
+
     // Show only local-account calendars (the only ones that accept writes on Android)
     // plus the dedicated TouchGrass local calendar as the first/default option.
     const otherCalendars = calendarOptions.filter((c) => !c.title.includes('TouchGrass'));
@@ -512,6 +517,35 @@ export default function SettingsScreen() {
         )}
       </View>
 
+      <Text style={styles.sectionHeader}>{t('settings_section_appearance')}</Text>
+      <View style={styles.card}>
+        {(['system', 'light', 'dark'] as ThemePreference[]).map((pref, i) => (
+          <View key={pref}>
+            {i > 0 && <Divider />}
+            <TouchableOpacity
+              style={styles.row}
+              onPress={() => setThemePreference(pref)}
+            >
+              <Text style={styles.rowIcon}>
+                {pref === 'system' ? '🌗' : pref === 'light' ? '☀️' : '🌙'}
+              </Text>
+              <View style={styles.rowContent}>
+                <Text style={styles.rowLabel}>
+                  {pref === 'system'
+                    ? t('settings_theme_system')
+                    : pref === 'light'
+                    ? t('settings_theme_light')
+                    : t('settings_theme_dark')}
+                </Text>
+              </View>
+              {themePreference === pref && (
+                <Text style={styles.checkmark}>✓</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        ))}
+      </View>
+
       <Text style={styles.sectionHeader}>{t('settings_section_language')}</Text>
       <View style={styles.card}>
         {LANGUAGES.map((lang, i) => (
@@ -578,6 +612,8 @@ function SettingRow({
   sublabel?: string;
   right?: React.ReactNode;
 }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   return (
     <View style={styles.row}>
       <Text style={styles.rowIcon}>{icon}</Text>
@@ -591,10 +627,14 @@ function SettingRow({
 }
 
 function Divider() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   return <View style={styles.divider} />;
 }
 
 function StatusDot({ active }: { active: boolean }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   return (
     <View style={[styles.statusDot, active ? styles.statusDotActive : styles.statusDotInactive]} />
   );
@@ -613,6 +653,8 @@ function DetectionSettingRow({
   onPress: () => void;
   isLoading?: boolean;
 }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   return (
     <View style={styles.row}>
       {active && <StatusDot active={true} />}
@@ -633,7 +675,8 @@ function DetectionSettingRow({
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
+  return StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.mist },
   content: { padding: spacing.md, paddingBottom: spacing.xxl },
 
@@ -660,7 +703,7 @@ const styles = StyleSheet.create({
   },
 
   card: {
-    backgroundColor: colors.textInverse,
+    backgroundColor: colors.card,
     borderRadius: radius.lg,
     overflow: 'hidden',
     ...shadows.soft,
@@ -710,7 +753,7 @@ const styles = StyleSheet.create({
   connectBtnText: { fontSize: 12, color: colors.textInverse, fontWeight: '600' },
 
   dangerBtn: {
-    backgroundColor: '#FEE2E2',
+    backgroundColor: colors.errorSurface,
     borderRadius: radius.full,
     paddingHorizontal: spacing.sm,
     paddingVertical: 4,
@@ -731,13 +774,13 @@ const styles = StyleSheet.create({
   },
 
   permissionWarning: {
-    backgroundColor: '#FEF3C7',
+    backgroundColor: colors.warningSurface,
     marginHorizontal: spacing.md,
     marginBottom: spacing.md,
     borderRadius: radius.md,
     padding: spacing.sm,
   },
-  permissionWarningText: { fontSize: 12, color: '#92400E', lineHeight: 18 },
+  permissionWarningText: { fontSize: 12, color: colors.warningText, lineHeight: 18 },
 
   emptyText: {
     fontSize: 13,
@@ -761,4 +804,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: 5,
   },
   badgeText: { fontSize: 11, color: colors.textInverse, fontWeight: '700' },
-});
+  });
+}

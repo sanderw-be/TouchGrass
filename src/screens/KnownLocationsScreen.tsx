@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useLayoutEffect } from 'react';
+import React, { useState, useCallback, useLayoutEffect, useMemo } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
   TouchableOpacity, Switch, Alert,
@@ -15,12 +15,15 @@ import {
   setSetting,
 } from '../storage/database';
 import { getDetectionStatus } from '../detection/index';
-import { colors, spacing, radius, shadows } from '../utils/theme';
+import { spacing, radius, shadows } from '../utils/theme';
+import { useTheme } from '../context/ThemeContext';
 import { t } from '../i18n';
 import EditLocationSheet from '../components/EditLocationSheet';
 import type { SettingsStackParamList } from '../navigation/AppNavigator';
 
 export default function KnownLocationsScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const navigation = useNavigation<StackNavigationProp<SettingsStackParamList>>();
   const insets = useSafeAreaInsets();
   const [suggestionsEnabled, setSuggestionsEnabled] = useState(true);
@@ -237,7 +240,8 @@ export default function KnownLocationsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
+  return StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.mist },
   content: { padding: spacing.md },
 
@@ -253,7 +257,7 @@ const styles = StyleSheet.create({
   },
 
   card: {
-    backgroundColor: colors.textInverse,
+    backgroundColor: colors.card,
     borderRadius: radius.lg,
     overflow: 'hidden',
     ...shadows.soft,
@@ -278,12 +282,12 @@ const styles = StyleSheet.create({
   pendingBadge: {
     alignSelf: 'flex-start',
     marginTop: 4,
-    backgroundColor: '#FEF3C7',
+    backgroundColor: colors.warningSurface,
     borderRadius: radius.full,
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,
   },
-  pendingBadgeText: { fontSize: 11, color: '#92400E', fontWeight: '600' },
+  pendingBadgeText: { fontSize: 11, color: colors.warningText, fontWeight: '600' },
 
   actionButtons: {
     flexDirection: 'column',
@@ -299,7 +303,7 @@ const styles = StyleSheet.create({
   },
   approveBtnText: { fontSize: 12, color: colors.grass, fontWeight: '600' },
   denyBtn: {
-    backgroundColor: '#FEE2E2',
+    backgroundColor: colors.errorSurface,
     borderRadius: radius.full,
     paddingHorizontal: spacing.sm,
     paddingVertical: 4,
@@ -311,5 +315,6 @@ const styles = StyleSheet.create({
 
   headerAddBtn: { marginRight: spacing.md },
   headerAddBtnText: { fontSize: 24, color: colors.grass, fontWeight: '400', lineHeight: 28 },
-});
+  });
+}
 
