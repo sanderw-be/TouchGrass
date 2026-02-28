@@ -6,6 +6,25 @@ const TOUCHGRASS_CALENDAR_SETTING = 'calendar_touchgrass_id';
 const SELECTED_CALENDAR_SETTING = 'calendar_selected_id';
 const TOUCHGRASS_CALENDAR_COLOR = '#4CAF50';
 
+function isEventNotSavedError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false;
+  const maybeCode = (error as { code?: unknown }).code;
+  return typeof maybeCode === 'string' && maybeCode === 'E_EVENT_NOT_SAVED';
+}
+
+function isCalendarWriteDebugEnabled(): boolean {
+  return getSetting('calendar_debug_logging', '0') === '1';
+}
+
+function logCalendarWriteDebug(message: string, details?: Record<string, unknown>): void {
+  if (!isCalendarWriteDebugEnabled()) return;
+  if (details) {
+    console.log(`TouchGrass: Calendar write debug - ${message}`, details);
+  } else {
+    console.log(`TouchGrass: Calendar write debug - ${message}`);
+  }
+}
+
 /**
  * Request calendar read/write permissions from the user.
  * Returns true if permissions were granted.
@@ -222,11 +241,38 @@ export async function addOutdoorTimeToCalendar(
       // Do not pass alarms: [] — an empty array can cause saveEventAsync to fail
       // on some Android ROM variants. Omitting the field means no reminders.
     };
+    const fallbackEventDetails = {
+      title: eventTitle,
+      startDate: startTime,
+      endDate: endTime,
+      allDay: false,
+    };
+
+    const createEventWithFallback = async (calendarId: string, calendarLabel: string): Promise<void> => {
+      logCalendarWriteDebug('attempting primary event payload', { calendarId, calendarLabel });
+      try {
+        await Calendar.createEventAsync(calendarId, eventDetails);
+        logCalendarWriteDebug('event write succeeded', { calendarId, calendarLabel, payload: 'primary' });
+      } catch (eventError) {
+        if (isEventNotSavedError(eventError)) {
+          logCalendarWriteDebug('primary payload rejected; retrying fallback payload', { calendarId, calendarLabel });
+          try {
+            await Calendar.createEventAsync(calendarId, fallbackEventDetails);
+            logCalendarWriteDebug('event write succeeded', { calendarId, calendarLabel, payload: 'fallback' });
+            return;
+          } catch (fallbackError) {
+            logCalendarWriteDebug('fallback payload failed', { calendarId, calendarLabel });
+            throw fallbackError;
+          }
+        }
+        throw eventError;
+      }
+    };
 
     // Try each local-account calendar in preference order.
     for (const cal of writable) {
       try {
-        await Calendar.createEventAsync(cal.id, eventDetails);
+        await createEventWithFallback(cal.id, cal.title || cal.id);
         return true;
       } catch (calError) {
         console.warn(`TouchGrass: Calendar "${cal.title || cal.id}" rejected write, trying next:`, calError);
@@ -240,7 +286,7 @@ export async function addOutdoorTimeToCalendar(
     );
     for (const cal of nonLocal) {
       try {
-        await Calendar.createEventAsync(cal.id, eventDetails);
+        await createEventWithFallback(cal.id, cal.title || cal.id);
         return true;
       } catch (calError) {
         console.warn(`TouchGrass: Non-local calendar "${cal.title || cal.id}" rejected write, trying next:`, calError);
@@ -252,7 +298,7 @@ export async function addOutdoorTimeToCalendar(
     const touchGrassId = await getOrCreateTouchGrassCalendar();
     if (touchGrassId) {
       try {
-        await Calendar.createEventAsync(touchGrassId, eventDetails);
+        await createEventWithFallback(touchGrassId, 'TouchGrass local fallback');
         return true;
       } catch (tgError) {
         // The cached TouchGrass calendar is broken — clear it so the next attempt

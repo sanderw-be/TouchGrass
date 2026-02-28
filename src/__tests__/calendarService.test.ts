@@ -198,6 +198,95 @@ describe('calendarService', () => {
       expect(mockCreateEvent).toHaveBeenNthCalledWith(2, 'local-cal-2', expect.anything());
     });
 
+    it('retries with fallback event payload when provider returns E_EVENT_NOT_SAVED', async () => {
+      mockGetCalendarPermissions.mockResolvedValueOnce({ status: 'granted' });
+      const localCal = { id: 'local-cal', allowsModifications: true, source: { isLocalAccount: true } };
+      mockGetCalendars.mockResolvedValueOnce([localCal]);
+      mockCreateEvent
+        .mockRejectedValueOnce({ code: 'E_EVENT_NOT_SAVED' })
+        .mockResolvedValueOnce('event-id-2');
+
+      const result = await addOutdoorTimeToCalendar(new Date('2025-06-01T10:00:00'), 15);
+
+      expect(result).toBe(true);
+      expect(mockCreateEvent).toHaveBeenCalledTimes(2);
+      expect(mockCreateEvent).toHaveBeenNthCalledWith(
+        2,
+        'local-cal',
+        expect.objectContaining({
+          startDate: expect.any(Date),
+          endDate: expect.any(Date),
+          allDay: false,
+        }),
+      );
+      expect(mockCreateEvent.mock.calls[1][1]).not.toHaveProperty('timeZone');
+    });
+
+    it('logs that fallback payload succeeded when calendar debug logging is enabled', async () => {
+      mockGetSetting.mockImplementation((key: string, fallback: string) => {
+        if (key === 'calendar_debug_logging') return '1';
+        return fallback;
+      });
+      mockGetCalendarPermissions.mockResolvedValueOnce({ status: 'granted' });
+      const localCal = { id: 'local-cal', allowsModifications: true, source: { isLocalAccount: true }, title: 'Local' };
+      mockGetCalendars.mockResolvedValueOnce([localCal]);
+      mockCreateEvent
+        .mockRejectedValueOnce({ code: 'E_EVENT_NOT_SAVED' })
+        .mockResolvedValueOnce('event-id-2');
+      const logSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+
+      const result = await addOutdoorTimeToCalendar(new Date('2025-06-01T10:00:00'), 15);
+
+      expect(result).toBe(true);
+      expect(logSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Calendar write debug - event write succeeded'),
+        expect.objectContaining({ calendarId: 'local-cal', calendarLabel: 'Local', payload: 'fallback' }),
+      );
+      logSpy.mockRestore();
+    });
+
+    it('logs TouchGrass fallback label when fallback calendar write succeeds in debug mode', async () => {
+      mockGetSetting.mockImplementation((key: string, fallback: string) => {
+        if (key === 'calendar_debug_logging') return '1';
+        return fallback;
+      });
+      mockGetCalendarPermissions.mockResolvedValueOnce({ status: 'granted' });
+      mockGetCalendars
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([{ id: 'tg-id', allowsModifications: true }]);
+      mockCreateCalendar.mockResolvedValueOnce('tg-id');
+      mockCreateEvent.mockResolvedValueOnce('event-id');
+      const logSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+
+      const result = await addOutdoorTimeToCalendar(new Date('2025-06-01T10:00:00'), 15);
+
+      expect(result).toBe(true);
+      expect(logSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Calendar write debug - event write succeeded'),
+        expect.objectContaining({ calendarId: 'tg-id', calendarLabel: 'TouchGrass local fallback', payload: 'primary' }),
+      );
+      logSpy.mockRestore();
+    });
+
+    it('continues to the next calendar when fallback retry fails after E_EVENT_NOT_SAVED', async () => {
+      mockGetCalendarPermissions.mockResolvedValueOnce({ status: 'granted' });
+      const localCal1 = { id: 'local-cal-1', allowsModifications: true, source: { isLocalAccount: true } };
+      const localCal2 = { id: 'local-cal-2', allowsModifications: true, source: { isLocalAccount: true } };
+      mockGetCalendars.mockResolvedValueOnce([localCal1, localCal2]);
+      mockCreateEvent
+        .mockRejectedValueOnce({ code: 'E_EVENT_NOT_SAVED' })
+        .mockRejectedValueOnce(new Error('fallback event creation failed'))
+        .mockResolvedValueOnce('event-id-3');
+
+      const result = await addOutdoorTimeToCalendar(new Date('2025-06-01T10:00:00'), 15);
+
+      expect(result).toBe(true);
+      expect(mockCreateEvent).toHaveBeenCalledTimes(3);
+      expect(mockCreateEvent).toHaveBeenNthCalledWith(1, 'local-cal-1', expect.anything());
+      expect(mockCreateEvent).toHaveBeenNthCalledWith(2, 'local-cal-1', expect.anything());
+      expect(mockCreateEvent).toHaveBeenNthCalledWith(3, 'local-cal-2', expect.anything());
+    });
+
     it('returns false when all calendars reject and local TouchGrass calendar cannot be created', async () => {
       mockGetCalendarPermissions.mockResolvedValueOnce({ status: 'granted' });
       // Only local-account calendars are tried; sync-account ones are skipped
