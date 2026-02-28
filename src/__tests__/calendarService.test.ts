@@ -219,6 +219,26 @@ describe('calendarService', () => {
           allDay: false,
         }),
       );
+      expect(mockCreateEvent.mock.calls[1][1]).not.toHaveProperty('timeZone');
+    });
+
+    it('continues to the next calendar when fallback retry fails after E_EVENT_NOT_SAVED', async () => {
+      mockGetCalendarPermissions.mockResolvedValueOnce({ status: 'granted' });
+      const localCal1 = { id: 'local-cal-1', allowsModifications: true, source: { isLocalAccount: true } };
+      const localCal2 = { id: 'local-cal-2', allowsModifications: true, source: { isLocalAccount: true } };
+      mockGetCalendars.mockResolvedValueOnce([localCal1, localCal2]);
+      mockCreateEvent
+        .mockRejectedValueOnce({ code: 'E_EVENT_NOT_SAVED' })
+        .mockRejectedValueOnce(new Error('fallback event creation failed'))
+        .mockResolvedValueOnce('event-id-3');
+
+      const result = await addOutdoorTimeToCalendar(new Date('2025-06-01T10:00:00'), 15);
+
+      expect(result).toBe(true);
+      expect(mockCreateEvent).toHaveBeenCalledTimes(3);
+      expect(mockCreateEvent).toHaveBeenNthCalledWith(1, 'local-cal-1', expect.anything());
+      expect(mockCreateEvent).toHaveBeenNthCalledWith(2, 'local-cal-1', expect.anything());
+      expect(mockCreateEvent).toHaveBeenNthCalledWith(3, 'local-cal-2', expect.anything());
     });
 
     it('returns false when all calendars reject and local TouchGrass calendar cannot be created', async () => {
