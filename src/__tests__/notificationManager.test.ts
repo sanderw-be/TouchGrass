@@ -119,6 +119,20 @@ describe('notificationManager', () => {
   });
 
   describe('scheduleDayReminders', () => {
+    it('does nothing when reminders are already planned for today', async () => {
+      const today = new Date().toDateString();
+      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
+        if (key === 'reminders_last_planned_date') return today;
+        if (key === 'reminders_enabled') return '1';
+        return fallback;
+      });
+
+      await scheduleDayReminders();
+
+      expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
+      expect(Database.setSetting).not.toHaveBeenCalledWith('reminders_last_planned_date', today);
+    });
+
     it('does not schedule any reminders and cancels existing ones when daily goal is already reached', async () => {
       (Database.getTodayMinutes as jest.Mock).mockReturnValue(30);
       (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });

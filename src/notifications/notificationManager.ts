@@ -231,6 +231,11 @@ export async function scheduleNextReminder(): Promise<void> {
  */
 export async function scheduleDayReminders(): Promise<void> {
   const todayStr = new Date().toDateString();
+  const lastPlannedDate = getSetting('reminders_last_planned_date', '');
+  if (lastPlannedDate === todayStr) {
+    return;
+  }
+
   const remindersEnabled = getSetting('reminders_enabled', '1') === '1';
 
   if (!remindersEnabled) {
