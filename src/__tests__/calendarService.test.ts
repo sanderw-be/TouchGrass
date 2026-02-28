@@ -222,6 +222,29 @@ describe('calendarService', () => {
       expect(mockCreateEvent.mock.calls[1][1]).not.toHaveProperty('timeZone');
     });
 
+    it('logs that fallback payload succeeded when calendar debug logging is enabled', async () => {
+      mockGetSetting.mockImplementation((key: string, fallback: string) => {
+        if (key === 'calendar_debug_logging') return '1';
+        return fallback;
+      });
+      mockGetCalendarPermissions.mockResolvedValueOnce({ status: 'granted' });
+      const localCal = { id: 'local-cal', allowsModifications: true, source: { isLocalAccount: true }, title: 'Local' };
+      mockGetCalendars.mockResolvedValueOnce([localCal]);
+      mockCreateEvent
+        .mockRejectedValueOnce({ code: 'E_EVENT_NOT_SAVED' })
+        .mockResolvedValueOnce('event-id-2');
+      const logSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+
+      const result = await addOutdoorTimeToCalendar(new Date('2025-06-01T10:00:00'), 15);
+
+      expect(result).toBe(true);
+      expect(logSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Calendar write debug - event write succeeded'),
+        expect.objectContaining({ calendarId: 'local-cal', payload: 'fallback' }),
+      );
+      logSpy.mockRestore();
+    });
+
     it('continues to the next calendar when fallback retry fails after E_EVENT_NOT_SAVED', async () => {
       mockGetCalendarPermissions.mockResolvedValueOnce({ status: 'granted' });
       const localCal1 = { id: 'local-cal-1', allowsModifications: true, source: { isLocalAccount: true } };
