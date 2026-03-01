@@ -152,6 +152,19 @@ describe('syncHealthConnect', () => {
     expect(Database.setSetting).toHaveBeenCalledWith('healthconnect_enabled', '0');
   });
 
+  it('disables Health Connect when a SecurityException without READ_ in message occurs', async () => {
+    (HealthConnect.readRecords as jest.Mock).mockRejectedValue(
+      new Error(
+        'SecurityException: android.health.connect.HealthConnectException: java.lang.SecurityException: Caller does not have permission to read data for the following (recordType: class android.health.connect.datatypes.ExerciseSessionRecord) from other applications.',
+      ),
+    );
+
+    const result = await syncHealthConnect();
+
+    expect(result).toBe(false);
+    expect(Database.setSetting).toHaveBeenCalledWith('healthconnect_enabled', '0');
+  });
+
   it('updates healthconnect_last_sync on success', async () => {
     (HealthConnect.readRecords as jest.Mock).mockResolvedValue({ records: [] });
 

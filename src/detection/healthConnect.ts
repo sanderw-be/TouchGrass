@@ -64,6 +64,7 @@ export async function requestHealthPermissions(): Promise<boolean> {
         { accessType: 'read', recordType: 'ExerciseSession' },
         { accessType: 'read', recordType: 'Steps' as any },
         { accessType: 'read', recordType: 'ActiveCaloriesBurned' },
+        { accessType: 'read', recordType: 'Distance' },
       ]);
       
       // Check if permissions were granted
@@ -233,7 +234,8 @@ export async function syncHealthConnect(): Promise<boolean> {
 
 function isPermissionError(error: unknown): boolean {
   const message = String(error);
-  return message.includes('SecurityException') && message.includes('READ_');
+  return message.includes('SecurityException') &&
+    (message.includes('READ_') || message.toLowerCase().includes('permission'));
 }
 
 function logPermissionWarningOnce(): void {
