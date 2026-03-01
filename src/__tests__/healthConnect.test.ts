@@ -94,25 +94,31 @@ describe('syncHealthConnect', () => {
     expect(session.notes).toContain('Steps:');
   });
 
-  it('skips steps records with too few steps', async () => {
-    const stepsStart = new Date(NOW - 30 * 60 * 1000).toISOString();
+  it('submits steps records with too few steps as low-confidence sessions (for aggregation)', async () => {
+    // Small chunks from Google Fit batch-sync must be submitted so the session
+    // merger can aggregate adjacent records into a long-enough session.
+    const stepsStart = new Date(NOW - 2 * 60 * 1000).toISOString();
     const stepsEnd = new Date(NOW).toISOString();
 
     (HealthConnect.readRecords as jest.Mock).mockImplementation((type: string) => {
       if (type === 'Steps') {
         return Promise.resolve({
-          records: [{ startTime: stepsStart, endTime: stepsEnd, count: 100 }], // too few
+          records: [{ startTime: stepsStart, endTime: stepsEnd, count: 100 }],
         });
       }
       return Promise.resolve({ records: [] });
     });
 
     await syncHealthConnect();
-    expect(SessionMerger.submitSession).not.toHaveBeenCalled();
+    expect(SessionMerger.submitSession).toHaveBeenCalledTimes(1);
+    const session = (SessionMerger.submitSession as jest.Mock).mock.calls[0][0];
+    expect(session.source).toBe('health_connect');
+    expect(session.notes).toContain('Steps:');
   });
 
-  it('skips steps records shorter than minimum duration when step count is also insufficient for estimation', async () => {
-    // 520 steps at 110 steps/min ≈ 4.7 min estimated — still below MIN_DURATION_MS
+  it('submits short steps records as sessions for aggregation', async () => {
+    // 520 steps at 110 steps/min ≈ 4.7 min effective — below the old minimum
+    // but must be submitted so it can merge with neighbouring records.
     const stepsStart = new Date(NOW - 2 * 60 * 1000).toISOString();
     const stepsEnd = new Date(NOW).toISOString();
 
@@ -126,7 +132,9 @@ describe('syncHealthConnect', () => {
     });
 
     await syncHealthConnect();
-    expect(SessionMerger.submitSession).not.toHaveBeenCalled();
+    expect(SessionMerger.submitSession).toHaveBeenCalledTimes(1);
+    const session = (SessionMerger.submitSession as jest.Mock).mock.calls[0][0];
+    expect(session.source).toBe('health_connect');
   });
 
   it('uses step-based estimated duration when recorded duration is too short (batch sync)', async () => {

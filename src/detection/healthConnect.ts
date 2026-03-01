@@ -214,18 +214,17 @@ export async function syncHealthConnect(): Promise<boolean> {
         const estimatedDurationMs = (record.count / STEPS_PER_MINUTE_AT_5KMH) * 60_000;
         const effectiveDurationMs = Math.max(recordedDuration, estimatedDurationMs);
 
-        // Require at least 5 min (effective) and a meaningful step count (>= 500)
-        // to filter out short bursts of indoor movement.
-        if (record.count < 500 || effectiveDurationMs < MIN_DURATION_MS) {
-          const reason = record.count < 500
-            ? `too few steps (${record.count})`
-            : `too short (${Math.round(effectiveDurationMs / 60000)} min effective)`;
-          console.log(`TouchGrass: HC steps[${i}] skipped - ${reason}: ${record.startTime} – ${record.endTime}`);
-          continue;
-        }
-
+        // Submit every steps record — even tiny chunks from Google Fit's batch-sync.
+        // Small records score below the discard threshold on their own but will be
+        // aggregated by the session merger when adjacent records fall within the
+        // 5-minute merge window, producing a long session with a higher score.
         const sessionStart = end - effectiveDurationMs;
-        console.log(`TouchGrass: HC steps[${i}]: ${record.count} steps start=${new Date(sessionStart).toISOString()} end=${record.endTime} duration=${Math.round(effectiveDurationMs / 60000)} min`);
+        const isTiny = record.count < 500 || effectiveDurationMs < MIN_DURATION_MS;
+        if (isTiny) {
+          console.log(`TouchGrass: HC steps[${i}] tiny (${record.count} steps, ${Math.round(effectiveDurationMs / 60000)} min) - submitting as low-confidence: ${record.startTime} – ${record.endTime}`);
+        } else {
+          console.log(`TouchGrass: HC steps[${i}]: ${record.count} steps start=${new Date(sessionStart).toISOString()} end=${record.endTime} duration=${Math.round(effectiveDurationMs / 60000)} min`);
+        }
 
         // Use the recorded end time (when batch-sync writes the record) and
         // extend backwards so the session covers the full estimated walk.
