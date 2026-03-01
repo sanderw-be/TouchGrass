@@ -161,16 +161,23 @@ export async function syncHealthConnect(): Promise<boolean> {
       },
     });
 
-    for (const record of exerciseResult.records) {
+    console.log(`TouchGrass: Health Connect - ${exerciseResult.records.length} exercise session(s) received`);
+
+    for (const [i, record] of exerciseResult.records.entries()) {
       const start = new Date(record.startTime).getTime();
       const end = new Date(record.endTime).getTime();
       const duration = end - start;
 
-      if (duration < MIN_DURATION_MS) continue;
+      if (duration < MIN_DURATION_MS) {
+        console.log(`TouchGrass: HC exercise[${i}] skipped - too short (${Math.round(duration / 60000)} min): type=${record.exerciseType} ${record.startTime} – ${record.endTime}`);
+        continue;
+      }
 
       // Boost confidence for explicitly outdoor exercise types
       const isExplicitlyOutdoor = isOutdoorExerciseType(record.exerciseType);
       const confidence = isExplicitlyOutdoor ? 0.80 : CONFIDENCE_ACTIVITY;
+
+      console.log(`TouchGrass: HC exercise[${i}]: type=${record.exerciseType} start=${record.startTime} end=${record.endTime} duration=${Math.round(duration / 60000)} min confidence=${confidence.toFixed(2)}`);
 
       const session = buildSession(
         start,
@@ -194,7 +201,9 @@ export async function syncHealthConnect(): Promise<boolean> {
         },
       });
 
-      for (const record of stepsResult.records) {
+      console.log(`TouchGrass: Health Connect - ${stepsResult.records.length} steps record(s) received`);
+
+      for (const [i, record] of stepsResult.records.entries()) {
         const start = new Date(record.startTime).getTime();
         const end = new Date(record.endTime).getTime();
         const recordedDuration = end - start;
@@ -207,12 +216,21 @@ export async function syncHealthConnect(): Promise<boolean> {
 
         // Require at least 5 min (effective) and a meaningful step count (>= 500)
         // to filter out short bursts of indoor movement.
-        if (record.count < 500 || effectiveDurationMs < MIN_DURATION_MS) continue;
+        if (record.count < 500 || effectiveDurationMs < MIN_DURATION_MS) {
+          const reason = record.count < 500
+            ? `too few steps (${record.count})`
+            : `too short (${Math.round(effectiveDurationMs / 60000)} min effective)`;
+          console.log(`TouchGrass: HC steps[${i}] skipped - ${reason}: ${record.startTime} – ${record.endTime}`);
+          continue;
+        }
+
+        const sessionStart = end - effectiveDurationMs;
+        console.log(`TouchGrass: HC steps[${i}]: ${record.count} steps start=${new Date(sessionStart).toISOString()} end=${record.endTime} duration=${Math.round(effectiveDurationMs / 60000)} min`);
 
         // Use the recorded end time (when batch-sync writes the record) and
         // extend backwards so the session covers the full estimated walk.
         const session = buildSession(
-          end - effectiveDurationMs,
+          sessionStart,
           end,
           'health_connect',
           CONFIDENCE_ACTIVITY,
