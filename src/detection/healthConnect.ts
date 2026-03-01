@@ -17,6 +17,10 @@ const OUTDOOR_ACTIVITY_TYPES = [
 
 const CONFIDENCE_ACTIVITY = 0.70;
 export const MIN_DURATION_MS = 5 * 60 * 1000; // ignore sessions under 5 minutes
+// Average walking cadence at 5 km/h (~110 steps/min); used to estimate walk
+// duration from step count when the recorded time window is unreliably short
+// (e.g. batch-synced records from Google Fit).
+export const STEPS_PER_MINUTE_AT_5KMH = 110;
 const PERMISSION_WARNING_KEY = 'healthconnect_permission_warning';
 
 /**
@@ -193,15 +197,21 @@ export async function syncHealthConnect(): Promise<boolean> {
       for (const record of stepsResult.records) {
         const start = new Date(record.startTime).getTime();
         const end = new Date(record.endTime).getTime();
-        const duration = end - start;
+        const recordedDuration = end - start;
 
-        // Require at least 5 min and a meaningful step count (>= 500 steps)
+        // Estimate duration from step count at average walking pace (5 km/h).
+        // Health Connect sometimes batch-syncs steps with an inaccurately short
+        // time window; the step-based estimate lets us recover those sessions.
+        const estimatedDurationMs = (record.count / STEPS_PER_MINUTE_AT_5KMH) * 60_000;
+        const effectiveDurationMs = Math.max(recordedDuration, estimatedDurationMs);
+
+        // Require at least 5 min (effective) and a meaningful step count (>= 500)
         // to filter out short bursts of indoor movement.
-        if (duration < MIN_DURATION_MS || record.count < 500) continue;
+        if (record.count < 500 || effectiveDurationMs < MIN_DURATION_MS) continue;
 
         const session = buildSession(
           start,
-          end,
+          start + effectiveDurationMs,
           'health_connect',
           CONFIDENCE_ACTIVITY,
           `Steps: ${record.count}`,
