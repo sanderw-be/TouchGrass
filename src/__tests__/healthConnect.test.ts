@@ -149,8 +149,9 @@ describe('syncHealthConnect', () => {
     expect(result).toBe(true);
     expect(SessionMerger.submitSession).toHaveBeenCalledTimes(1);
     const session = (SessionMerger.submitSession as jest.Mock).mock.calls[0][0];
-    // endTime should reflect the step-based estimate, not the recorded 1-second window
     const expectedDurationMs = (3000 / STEPS_PER_MINUTE_AT_5KMH) * 60_000;
+    // The recorded end time must be preserved; the start is pushed backwards.
+    expect(session.endTime).toBe(NOW);
     expect(session.endTime - session.startTime).toBeCloseTo(expectedDurationMs, -2); // -2: nearest 100 ms
   });
 

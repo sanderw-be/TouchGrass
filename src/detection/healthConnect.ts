@@ -209,9 +209,11 @@ export async function syncHealthConnect(): Promise<boolean> {
         // to filter out short bursts of indoor movement.
         if (record.count < 500 || effectiveDurationMs < MIN_DURATION_MS) continue;
 
+        // Use the recorded end time (when batch-sync writes the record) and
+        // extend backwards so the session covers the full estimated walk.
         const session = buildSession(
-          start,
-          start + effectiveDurationMs,
+          end - effectiveDurationMs,
+          end,
           'health_connect',
           CONFIDENCE_ACTIVITY,
           `Steps: ${record.count}`,
