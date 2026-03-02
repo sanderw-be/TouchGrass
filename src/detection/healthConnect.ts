@@ -273,15 +273,6 @@ export async function syncHealthConnect(): Promise<boolean> {
         const estimatedDurationMs = (record.count / STEPS_PER_MINUTE_AT_5KMH) * 60_000;
         const effectiveDurationMs = Math.max(recordedDuration, estimatedDurationMs);
 
-        // Speed-based quality filter: steps/minute → equivalent walking speed.
-        // Below 2.5 km/h (55 steps/min) is physiologically unrealistic for
-        // purposeful walking outdoors — skip the record entirely.
-        const stepsPerMinute = record.count / (effectiveDurationMs / 60_000);
-        if (stepsPerMinute < STEPS_PER_MIN_AT_2_5KMH) {
-          console.log(`TouchGrass: HC steps[${i}] skipped - too slow (${stepsPerMinute.toFixed(1)} steps/min < ${STEPS_PER_MIN_AT_2_5KMH}): ${record.startTime} – ${record.endTime}`);
-          continue;
-        }
-
         const sessionStart = end - effectiveDurationMs;
 
         // Skip if GPS data shows the user was at a known indoor location throughout
@@ -290,7 +281,11 @@ export async function syncHealthConnect(): Promise<boolean> {
           continue;
         }
 
-        // 2.5–4 km/h is plausible but slow walking; use reduced confidence.
+        // Compute steps/min to determine confidence tier.
+        // Records below 2.5 km/h are still submitted so they can merge with
+        // adjacent records in the 5-minute window — the pruning phase removes
+        // settled sessions that remain too slow after all merging is done.
+        const stepsPerMinute = record.count / (effectiveDurationMs / 60_000);
         const isSlowWalking = stepsPerMinute < STEPS_PER_MIN_AT_4KMH;
         const stepConfidence = isSlowWalking ? CONFIDENCE_SLOW_WALK : CONFIDENCE_ACTIVITY;
 
@@ -322,15 +317,15 @@ export async function syncHealthConnect(): Promise<boolean> {
       }
     }
 
-    // Prune settled short discarded sessions from previous syncs.
-    // Any discarded HC session whose endTime is at least MIN_DURATION_MS before
-    // the current sync's end time is "settled": every record that could merge into
-    // it has already been processed.  If it is still under 5 minutes it will never
-    // grow into a real session and is safe to remove.
+    // Prune settled sessions from previous syncs that are too short or too slow.
+    // A session is settled when its endTime is before (now - MIN_DURATION_MS):
+    // no new records can merge into it. At that point remove it if:
+    //   - it was discarded and is still under 5 minutes in duration, OR
+    //   - its aggregated step rate is below the minimum walking speed (2.5 km/h).
     const pruneBeforeMs = now - MIN_DURATION_MS;
-    const pruned = pruneShortDiscardedHealthConnectSessions(pruneBeforeMs);
+    const pruned = pruneShortDiscardedHealthConnectSessions(pruneBeforeMs, STEPS_PER_MIN_AT_2_5KMH);
     if (pruned > 0) {
-      console.log(`TouchGrass: HC cleanup - deleted ${pruned} short discarded session(s) settled before ${new Date(pruneBeforeMs).toISOString()}`);
+      console.log(`TouchGrass: HC cleanup - deleted ${pruned} short/slow session(s) settled before ${new Date(pruneBeforeMs).toISOString()}`);
     }
 
     // Update last sync timestamp

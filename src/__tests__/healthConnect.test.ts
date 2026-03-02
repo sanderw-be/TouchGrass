@@ -105,8 +105,10 @@ describe('syncHealthConnect', () => {
     expect(session.notes).toBeUndefined();
   });
 
-  it('skips steps records with walking speed below 2.5 km/h (too slow to be real walking)', async () => {
-    // 100 steps in 2 minutes = 50 steps/min < STEPS_PER_MIN_AT_2_5KMH (55)
+  it('submits steps records with walking speed below 2.5 km/h for later pruning (not skipped at ingestion)', async () => {
+    // 100 steps in 2 minutes = 50 steps/min < STEPS_PER_MIN_AT_2_5KMH (55).
+    // These tiny records must be submitted so adjacent records can merge in the
+    // 5-minute window; the pruning phase drops them if they remain too slow once settled.
     const stepsStart = new Date(NOW - 2 * 60 * 1000).toISOString();
     const stepsEnd = new Date(NOW).toISOString();
 
@@ -120,7 +122,11 @@ describe('syncHealthConnect', () => {
     });
 
     await syncHealthConnect();
-    expect(SessionMerger.submitSession).not.toHaveBeenCalled();
+    // Record is submitted (not skipped) — it can still merge with adjacent records
+    expect(SessionMerger.submitSession).toHaveBeenCalledTimes(1);
+    const session = (SessionMerger.submitSession as jest.Mock).mock.calls[0][0];
+    expect(session.source).toBe('health_connect');
+    expect(session.steps).toBe(100);
   });
 
   it('submits steps records with walking speed between 2.5–4 km/h with reduced confidence', async () => {
@@ -241,7 +247,7 @@ describe('syncHealthConnect', () => {
     expect(lastSyncCall).toBeDefined();
   });
 
-  it('prunes settled short discarded sessions after a successful sync', async () => {
+  it('prunes settled short/slow discarded sessions after a successful sync', async () => {
     (HealthConnect.readRecords as jest.Mock).mockResolvedValue({ records: [] });
 
     const before = Date.now();
@@ -249,10 +255,12 @@ describe('syncHealthConnect', () => {
     const after = Date.now();
 
     expect(Database.pruneShortDiscardedHealthConnectSessions).toHaveBeenCalledTimes(1);
-    const [beforeMs] = (Database.pruneShortDiscardedHealthConnectSessions as jest.Mock).mock.calls[0];
+    const [beforeMs, minStepsPerMinute] = (Database.pruneShortDiscardedHealthConnectSessions as jest.Mock).mock.calls[0];
     // cutoff must be now - MIN_DURATION_MS (5 min), within the test execution window
     expect(beforeMs).toBeGreaterThanOrEqual(before - 5 * 60 * 1000);
     expect(beforeMs).toBeLessThanOrEqual(after - 5 * 60 * 1000 + 100); // +100 ms: allow for JS execution time
+    // speed threshold must be passed so the DB can prune too-slow settled sessions
+    expect(minStepsPerMinute).toBe(STEPS_PER_MIN_AT_2_5KMH);
   });
 
   it('does not prune when sync fails', async () => {

@@ -348,30 +348,35 @@ export function updateSessionTimes(id: number, startTime: number, endTime: numbe
 }
 
 /**
- * Delete discarded Health Connect sessions that are settled and still short.
+ * Delete Health Connect sessions that are settled and either too short or too slow.
  *
  * A session is considered settled when its endTime is before `beforeMs` —
  * meaning the Health Connect sync that supplied `beforeMs` as its end time
  * has already processed every record that could have merged into it.
  *
- * Conditions for deletion:
- *   - source = 'health_connect'
- *   - discarded = 1   (algorithmically below threshold)
- *   - userConfirmed IS NULL  (user has not manually interacted with it)
- *   - endTime < beforeMs    (settled: no future records can extend it)
- *   - durationMinutes < 5   (still a short stub, not yet merged into something meaningful)
+ * Conditions for deletion (userConfirmed must be NULL in all cases):
+ *   - discarded = 1 AND durationMinutes < 5  (too short — never grew into a real session), OR
+ *   - steps IS NOT NULL AND durationMinutes > 0
+ *       AND steps / durationMinutes < minStepsPerMinute
+ *       (too slow — aggregated step rate below minimum walking speed; only for
+ *        sessions that have step data)
  *
  * Returns the number of rows deleted.
  */
-export function pruneShortDiscardedHealthConnectSessions(beforeMs: number): number {
+export function pruneShortDiscardedHealthConnectSessions(
+  beforeMs: number,
+  minStepsPerMinute: number,
+): number {
   const result = db.runSync(
     `DELETE FROM outside_sessions
      WHERE source = 'health_connect'
-       AND discarded = 1
        AND userConfirmed IS NULL
        AND endTime < ?
-       AND durationMinutes < 5`,
-    [beforeMs]
+       AND (
+         (discarded = 1 AND durationMinutes < 5)
+         OR (steps IS NOT NULL AND durationMinutes > 0 AND CAST(steps AS REAL) / durationMinutes < ?)
+       )`,
+    [beforeMs, minStepsPerMinute]
   );
   return result.changes;
 }
