@@ -164,6 +164,40 @@ describe('Date helpers', () => {
       expect(result.map((s: { id: number }) => s.id)).toEqual([1, 2, 3, 4]);
     });
 
+    it('getSessionsForDay excludes rejected sessions and keeps approved and pending', () => {
+      const { getSessionsForDay } = require('../storage/database');
+      // Only approved (1) and pending (null) sessions should be returned
+      mockDb.getAllSync.mockReturnValueOnce(mockSessions.filter(s => s.userConfirmed !== 0));
+      const result = getSessionsForDay(Date.now());
+      expect(result.map((s: { id: number }) => s.id)).toEqual([1, 3, 4]);
+      expect(mockDb.getAllSync).toHaveBeenCalledWith(
+        expect.stringContaining('userConfirmed IS NOT 0'),
+        expect.any(Array)
+      );
+    });
+
+    it('getTodayMinutes only sums approved sessions', () => {
+      const { getTodayMinutes } = require('../storage/database');
+      mockDb.getFirstSync.mockReturnValueOnce({ total: 30 });
+      const result = getTodayMinutes();
+      expect(result).toBe(30);
+      expect(mockDb.getFirstSync).toHaveBeenCalledWith(
+        expect.stringContaining('userConfirmed = 1'),
+        expect.any(Array)
+      );
+    });
+
+    it('getWeekMinutes only sums approved sessions', () => {
+      const { getWeekMinutes } = require('../storage/database');
+      mockDb.getFirstSync.mockReturnValueOnce({ total: 120 });
+      const result = getWeekMinutes();
+      expect(result).toBe(120);
+      expect(mockDb.getFirstSync).toHaveBeenCalledWith(
+        expect.stringContaining('userConfirmed = 1'),
+        expect.any(Array)
+      );
+    });
+
     it('unDiscardSession function exists and calls db with correct query', () => {
       const { unDiscardSession } = require('../storage/database');
       expect(typeof unDiscardSession).toBe('function');

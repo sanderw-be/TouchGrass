@@ -211,7 +211,7 @@ export function getSessionsForDay(dateMs: number): OutsideSession[] {
   const start = startOfDay(dateMs);
   const end = start + 86400000;
   return db.getAllSync<OutsideSession>(
-    'SELECT * FROM outside_sessions WHERE startTime >= ? AND startTime < ? ORDER BY startTime ASC',
+    'SELECT * FROM outside_sessions WHERE startTime >= ? AND startTime < ? AND userConfirmed IS NOT 0 ORDER BY startTime ASC',
     [start, end]
   );
 }
@@ -233,7 +233,7 @@ export function getTodayMinutes(): number {
   const row = db.getFirstSync<{ total: number }>(
     `SELECT COALESCE(SUM(durationMinutes), 0) as total
      FROM outside_sessions
-     WHERE startTime >= ? AND startTime < ? AND userConfirmed IS NOT 0`,
+     WHERE startTime >= ? AND startTime < ? AND userConfirmed = 1`,
     [start, end]
   );
   return row?.total ?? 0;
@@ -245,7 +245,7 @@ export function getWeekMinutes(): number {
   const row = db.getFirstSync<{ total: number }>(
     `SELECT COALESCE(SUM(durationMinutes), 0) as total
      FROM outside_sessions
-     WHERE startTime >= ? AND startTime < ? AND userConfirmed IS NOT 0`,
+     WHERE startTime >= ? AND startTime < ? AND userConfirmed = 1`,
     [start, end]
   );
   return row?.total ?? 0;
