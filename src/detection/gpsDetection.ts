@@ -142,9 +142,16 @@ export function processLocationUpdate(lat: number, lon: number, timestamp: numbe
     // Just went outside (or first update with no known indoor locations)
     outsideSessionStart = timestamp;
     lastKnownOutside = true;
+    console.log('TouchGrass: GPS update - now outside, session started');
   } else if (!isOutside && lastKnownOutside && outsideSessionStart !== null) {
     // Just came back inside
     const duration = timestamp - outsideSessionStart;
+    const matchedLocation = knownLocations.find(loc =>
+      // Recompute the matched location solely for the debug log label.
+      loc.isIndoor && haversineDistance(lat, lon, loc.latitude, loc.longitude) <= loc.radiusMeters,
+    );
+    const locationLabel = matchedLocation?.label || `(${lat.toFixed(4)}, ${lon.toFixed(4)})`;
+    console.log(`TouchGrass: GPS update - at known location "${locationLabel}", ended outside session of ${Math.round(duration / 60000)} min`);
     if (duration >= MIN_OUTSIDE_DURATION_MS) {
       const session = buildSession(
         outsideSessionStart,
@@ -162,6 +169,7 @@ export function processLocationUpdate(lat: number, lon: number, timestamp: numbe
     // Flush periodically so sessions are logged even when no known indoor
     // locations exist to trigger the normal transition-based completion.
     const duration = timestamp - outsideSessionStart;
+    console.log(`TouchGrass: GPS update - still outside, current session length: ${Math.round(duration / 60000)} min`);
     if (duration >= MIN_OUTSIDE_DURATION_MS) {
       const session = buildSession(
         outsideSessionStart,

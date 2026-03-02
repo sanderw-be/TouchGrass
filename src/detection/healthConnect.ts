@@ -5,7 +5,7 @@ import {
   SdkAvailabilityStatus,
   getSdkStatus,
 } from 'react-native-health-connect';
-import { getSetting, setSetting } from '../storage/database';
+import { getSetting, setSetting, pruneShortDiscardedHealthConnectSessions } from '../storage/database';
 import { submitSession, buildSession } from './sessionMerger';
 import { openHealthConnectPermissionsViaIntent, verifyHealthConnectPermissions } from './healthConnectIntent';
 
@@ -17,6 +17,10 @@ const OUTDOOR_ACTIVITY_TYPES = [
 
 const CONFIDENCE_ACTIVITY = 0.70;
 export const MIN_DURATION_MS = 5 * 60 * 1000; // ignore sessions under 5 minutes
+// Average walking cadence at 5 km/h (~110 steps/min); used to estimate walk
+// duration from step count when the recorded time window is unreliably short
+// (e.g. batch-synced records from Google Fit).
+export const STEPS_PER_MINUTE_AT_5KMH = 110;
 const PERMISSION_WARNING_KEY = 'healthconnect_permission_warning';
 
 /**
@@ -64,6 +68,7 @@ export async function requestHealthPermissions(): Promise<boolean> {
         { accessType: 'read', recordType: 'ExerciseSession' },
         { accessType: 'read', recordType: 'Steps' as any },
         { accessType: 'read', recordType: 'ActiveCaloriesBurned' },
+        { accessType: 'read', recordType: 'Distance' },
       ]);
       
       // Check if permissions were granted
@@ -156,16 +161,23 @@ export async function syncHealthConnect(): Promise<boolean> {
       },
     });
 
-    for (const record of exerciseResult.records) {
+    console.log(`TouchGrass: Health Connect - ${exerciseResult.records.length} exercise session(s) received`);
+
+    for (const [i, record] of exerciseResult.records.entries()) {
       const start = new Date(record.startTime).getTime();
       const end = new Date(record.endTime).getTime();
       const duration = end - start;
 
-      if (duration < MIN_DURATION_MS) continue;
+      if (duration < MIN_DURATION_MS) {
+        console.log(`TouchGrass: HC exercise[${i}] skipped - too short (${Math.round(duration / 60000)} min): type=${record.exerciseType} ${record.startTime} – ${record.endTime}`);
+        continue;
+      }
 
       // Boost confidence for explicitly outdoor exercise types
       const isExplicitlyOutdoor = isOutdoorExerciseType(record.exerciseType);
       const confidence = isExplicitlyOutdoor ? 0.80 : CONFIDENCE_ACTIVITY;
+
+      console.log(`TouchGrass: HC exercise[${i}]: type=${record.exerciseType} start=${record.startTime} end=${record.endTime} duration=${Math.round(duration / 60000)} min confidence=${confidence.toFixed(2)}`);
 
       const session = buildSession(
         start,
@@ -189,17 +201,35 @@ export async function syncHealthConnect(): Promise<boolean> {
         },
       });
 
-      for (const record of stepsResult.records) {
+      console.log(`TouchGrass: Health Connect - ${stepsResult.records.length} steps record(s) received`);
+
+      for (const [i, record] of stepsResult.records.entries()) {
         const start = new Date(record.startTime).getTime();
         const end = new Date(record.endTime).getTime();
-        const duration = end - start;
+        const recordedDuration = end - start;
 
-        // Require at least 5 min and a meaningful step count (>= 500 steps)
-        // to filter out short bursts of indoor movement.
-        if (duration < MIN_DURATION_MS || record.count < 500) continue;
+        // Estimate duration from step count at average walking pace (5 km/h).
+        // Health Connect sometimes batch-syncs steps with an inaccurately short
+        // time window; the step-based estimate lets us recover those sessions.
+        const estimatedDurationMs = (record.count / STEPS_PER_MINUTE_AT_5KMH) * 60_000;
+        const effectiveDurationMs = Math.max(recordedDuration, estimatedDurationMs);
 
+        // Submit every steps record — even tiny chunks from Google Fit's batch-sync.
+        // Small records score below the discard threshold on their own but will be
+        // aggregated by the session merger when adjacent records fall within the
+        // 5-minute merge window, producing a long session with a higher score.
+        const sessionStart = end - effectiveDurationMs;
+        const isTiny = record.count < 500 || effectiveDurationMs < MIN_DURATION_MS;
+        if (isTiny) {
+          console.log(`TouchGrass: HC steps[${i}] tiny (${record.count} steps, ${Math.round(effectiveDurationMs / 60000)} min) - submitting as low-confidence: ${record.startTime} – ${record.endTime}`);
+        } else {
+          console.log(`TouchGrass: HC steps[${i}]: ${record.count} steps start=${new Date(sessionStart).toISOString()} end=${record.endTime} duration=${Math.round(effectiveDurationMs / 60000)} min`);
+        }
+
+        // Use the recorded end time (when batch-sync writes the record) and
+        // extend backwards so the session covers the full estimated walk.
         const session = buildSession(
-          start,
+          sessionStart,
           end,
           'health_connect',
           CONFIDENCE_ACTIVITY,
@@ -213,6 +243,17 @@ export async function syncHealthConnect(): Promise<boolean> {
       if (!isPermissionError(stepsError)) {
         console.warn('Health Connect steps sync error:', stepsError);
       }
+    }
+
+    // Prune settled short discarded sessions from previous syncs.
+    // Any discarded HC session whose endTime is at least MIN_DURATION_MS before
+    // the current sync's end time is "settled": every record that could merge into
+    // it has already been processed.  If it is still under 5 minutes it will never
+    // grow into a real session and is safe to remove.
+    const pruneBeforeMs = now - MIN_DURATION_MS;
+    const pruned = pruneShortDiscardedHealthConnectSessions(pruneBeforeMs);
+    if (pruned > 0) {
+      console.log(`TouchGrass: HC cleanup - deleted ${pruned} short discarded session(s) settled before ${new Date(pruneBeforeMs).toISOString()}`);
     }
 
     // Update last sync timestamp
@@ -233,7 +274,8 @@ export async function syncHealthConnect(): Promise<boolean> {
 
 function isPermissionError(error: unknown): boolean {
   const message = String(error);
-  return message.includes('SecurityException') && message.includes('READ_');
+  return message.includes('SecurityException') &&
+    (message.includes('READ_') || message.toLowerCase().includes('permission'));
 }
 
 function logPermissionWarningOnce(): void {

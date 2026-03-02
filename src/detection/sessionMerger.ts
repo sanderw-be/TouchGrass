@@ -58,6 +58,10 @@ export function submitSession(candidate: OutsideSession): void {
     .filter(s => s.startTime < mergedEnd && s.endTime > mergedStart)
     .sort((a, b) => a.startTime - b.startTime);
 
+  if (sortedConfirmed.length > 0) {
+    console.log(`TouchGrass: Session split around ${sortedConfirmed.length} confirmed session(s)`);
+  }
+
   const segments: Array<[number, number]> = [];
   let cursor = mergedStart;
 
@@ -69,6 +73,13 @@ export function submitSession(candidate: OutsideSession): void {
   }
   if (cursor < mergedEnd) {
     segments.push([cursor, mergedEnd]);
+  }
+
+  if (sortedConfirmed.length > 0) {
+    console.log(`TouchGrass: Session split result: ${segments.length} segment(s) after subtracting confirmed ranges`);
+    segments.forEach(([s, e], idx) => {
+      console.log(`  Segment ${idx}: ${new Date(s).toISOString()} – ${new Date(e).toISOString()} (${Math.round((e - s) / 60000)} min)`);
+    });
   }
 
   for (const [segStart, segEnd] of segments) {
@@ -88,6 +99,9 @@ export function submitSession(candidate: OutsideSession): void {
     const shouldDiscard =
       segSession.userConfirmed === null &&
       score < DISCARD_CONFIDENCE_THRESHOLD;
+    if (shouldDiscard) {
+      console.log(`TouchGrass: Session discarded (score ${score.toFixed(2)} < threshold ${DISCARD_CONFIDENCE_THRESHOLD}): ${new Date(segStart).toISOString()} – ${new Date(segEnd).toISOString()} source=${candidate.source}`);
+    }
     insertSession({
       ...segSession,
       confidence: score,  // store computed score so the UI reflects actual confidence

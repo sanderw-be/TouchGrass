@@ -336,6 +336,35 @@ export function updateSessionTimes(id: number, startTime: number, endTime: numbe
   );
 }
 
+/**
+ * Delete discarded Health Connect sessions that are settled and still short.
+ *
+ * A session is considered settled when its endTime is before `beforeMs` —
+ * meaning the Health Connect sync that supplied `beforeMs` as its end time
+ * has already processed every record that could have merged into it.
+ *
+ * Conditions for deletion:
+ *   - source = 'health_connect'
+ *   - discarded = 1   (algorithmically below threshold)
+ *   - userConfirmed IS NULL  (user has not manually interacted with it)
+ *   - endTime < beforeMs    (settled: no future records can extend it)
+ *   - durationMinutes < 5   (still a short stub, not yet merged into something meaningful)
+ *
+ * Returns the number of rows deleted.
+ */
+export function pruneShortDiscardedHealthConnectSessions(beforeMs: number): number {
+  const result = db.runSync(
+    `DELETE FROM outside_sessions
+     WHERE source = 'health_connect'
+       AND discarded = 1
+       AND userConfirmed IS NULL
+       AND endTime < ?
+       AND durationMinutes < 5`,
+    [beforeMs]
+  );
+  return result.changes;
+}
+
 // ── Goals ─────────────────────────────────────────────────
 
 export function getCurrentDailyGoal(): DailyGoal | null {

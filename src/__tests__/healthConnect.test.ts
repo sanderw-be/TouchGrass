@@ -5,7 +5,7 @@ jest.mock('react-native-health-connect');
 import * as HealthConnect from 'react-native-health-connect';
 import * as Database from '../storage/database';
 import * as SessionMerger from '../detection/sessionMerger';
-import { syncHealthConnect, MIN_DURATION_MS } from '../detection/healthConnect';
+import { syncHealthConnect, MIN_DURATION_MS, STEPS_PER_MINUTE_AT_5KMH } from '../detection/healthConnect';
 
 describe('syncHealthConnect', () => {
   const NOW = 1_700_000_000_000;
@@ -17,6 +17,7 @@ describe('syncHealthConnect', () => {
     (HealthConnect.initialize as jest.Mock).mockResolvedValue(undefined);
     (Database.getSetting as jest.Mock).mockReturnValue('0');
     (Database.setSetting as jest.Mock).mockImplementation(() => undefined);
+    (Database.pruneShortDiscardedHealthConnectSessions as jest.Mock).mockReturnValue(0);
     (SessionMerger.buildSession as jest.Mock).mockImplementation(
       (startTime, endTime, source, confidence, notes) => ({
         startTime, endTime, durationMinutes: (endTime - startTime) / 60000,
@@ -94,25 +95,53 @@ describe('syncHealthConnect', () => {
     expect(session.notes).toContain('Steps:');
   });
 
-  it('skips steps records with too few steps', async () => {
-    const stepsStart = new Date(NOW - 30 * 60 * 1000).toISOString();
+  it('submits steps records with too few steps as low-confidence sessions (for aggregation)', async () => {
+    // Small chunks from Google Fit batch-sync must be submitted so the session
+    // merger can aggregate adjacent records into a long-enough session.
+    const stepsStart = new Date(NOW - 2 * 60 * 1000).toISOString();
     const stepsEnd = new Date(NOW).toISOString();
 
     (HealthConnect.readRecords as jest.Mock).mockImplementation((type: string) => {
       if (type === 'Steps') {
         return Promise.resolve({
-          records: [{ startTime: stepsStart, endTime: stepsEnd, count: 100 }], // too few
+          records: [{ startTime: stepsStart, endTime: stepsEnd, count: 100 }],
         });
       }
       return Promise.resolve({ records: [] });
     });
 
     await syncHealthConnect();
-    expect(SessionMerger.submitSession).not.toHaveBeenCalled();
+    expect(SessionMerger.submitSession).toHaveBeenCalledTimes(1);
+    const session = (SessionMerger.submitSession as jest.Mock).mock.calls[0][0];
+    expect(session.source).toBe('health_connect');
+    expect(session.notes).toContain('Steps:');
   });
 
-  it('skips steps records shorter than minimum duration', async () => {
-    const stepsStart = new Date(NOW - 2 * 60 * 1000).toISOString(); // only 2 min
+  it('submits short steps records as sessions for aggregation', async () => {
+    // 520 steps at 110 steps/min ≈ 4.7 min effective — below the old minimum
+    // but must be submitted so it can merge with neighbouring records.
+    const stepsStart = new Date(NOW - 2 * 60 * 1000).toISOString();
+    const stepsEnd = new Date(NOW).toISOString();
+
+    (HealthConnect.readRecords as jest.Mock).mockImplementation((type: string) => {
+      if (type === 'Steps') {
+        return Promise.resolve({
+          records: [{ startTime: stepsStart, endTime: stepsEnd, count: 520 }],
+        });
+      }
+      return Promise.resolve({ records: [] });
+    });
+
+    await syncHealthConnect();
+    expect(SessionMerger.submitSession).toHaveBeenCalledTimes(1);
+    const session = (SessionMerger.submitSession as jest.Mock).mock.calls[0][0];
+    expect(session.source).toBe('health_connect');
+  });
+
+  it('uses step-based estimated duration when recorded duration is too short (batch sync)', async () => {
+    // 3000 steps at 110 steps/min ≈ 27 min — well above MIN_DURATION_MS
+    // Recorded window is only 1 second, simulating a batch-sync scenario.
+    const stepsStart = new Date(NOW - 1000).toISOString(); // 1 second recorded
     const stepsEnd = new Date(NOW).toISOString();
 
     (HealthConnect.readRecords as jest.Mock).mockImplementation((type: string) => {
@@ -124,8 +153,15 @@ describe('syncHealthConnect', () => {
       return Promise.resolve({ records: [] });
     });
 
-    await syncHealthConnect();
-    expect(SessionMerger.submitSession).not.toHaveBeenCalled();
+    const result = await syncHealthConnect();
+
+    expect(result).toBe(true);
+    expect(SessionMerger.submitSession).toHaveBeenCalledTimes(1);
+    const session = (SessionMerger.submitSession as jest.Mock).mock.calls[0][0];
+    const expectedDurationMs = (3000 / STEPS_PER_MINUTE_AT_5KMH) * 60_000;
+    // The recorded end time must be preserved; the start is pushed backwards.
+    expect(session.endTime).toBe(NOW);
+    expect(session.endTime - session.startTime).toBeCloseTo(expectedDurationMs, -2); // -2: nearest 100 ms
   });
 
   it('does not disable Health Connect when sync fails with a non-permission error', async () => {
@@ -152,6 +188,19 @@ describe('syncHealthConnect', () => {
     expect(Database.setSetting).toHaveBeenCalledWith('healthconnect_enabled', '0');
   });
 
+  it('disables Health Connect when a SecurityException without READ_ in message occurs', async () => {
+    (HealthConnect.readRecords as jest.Mock).mockRejectedValue(
+      new Error(
+        'SecurityException: android.health.connect.HealthConnectException: java.lang.SecurityException: Caller does not have permission to read data for the following (recordType: class android.health.connect.datatypes.ExerciseSessionRecord) from other applications.',
+      ),
+    );
+
+    const result = await syncHealthConnect();
+
+    expect(result).toBe(false);
+    expect(Database.setSetting).toHaveBeenCalledWith('healthconnect_enabled', '0');
+  });
+
   it('updates healthconnect_last_sync on success', async () => {
     (HealthConnect.readRecords as jest.Mock).mockResolvedValue({ records: [] });
 
@@ -161,5 +210,27 @@ describe('syncHealthConnect', () => {
       ([key]: [string]) => key === 'healthconnect_last_sync',
     );
     expect(lastSyncCall).toBeDefined();
+  });
+
+  it('prunes settled short discarded sessions after a successful sync', async () => {
+    (HealthConnect.readRecords as jest.Mock).mockResolvedValue({ records: [] });
+
+    const before = Date.now();
+    await syncHealthConnect();
+    const after = Date.now();
+
+    expect(Database.pruneShortDiscardedHealthConnectSessions).toHaveBeenCalledTimes(1);
+    const [beforeMs] = (Database.pruneShortDiscardedHealthConnectSessions as jest.Mock).mock.calls[0];
+    // cutoff must be now - MIN_DURATION_MS (5 min), within the test execution window
+    expect(beforeMs).toBeGreaterThanOrEqual(before - 5 * 60 * 1000);
+    expect(beforeMs).toBeLessThanOrEqual(after - 5 * 60 * 1000 + 100); // +100 ms: allow for JS execution time
+  });
+
+  it('does not prune when sync fails', async () => {
+    (HealthConnect.readRecords as jest.Mock).mockRejectedValue(new Error('Network timeout'));
+
+    await syncHealthConnect();
+
+    expect(Database.pruneShortDiscardedHealthConnectSessions).not.toHaveBeenCalled();
   });
 });
