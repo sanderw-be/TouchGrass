@@ -17,6 +17,7 @@ describe('syncHealthConnect', () => {
     (HealthConnect.initialize as jest.Mock).mockResolvedValue(undefined);
     (Database.getSetting as jest.Mock).mockReturnValue('0');
     (Database.setSetting as jest.Mock).mockImplementation(() => undefined);
+    (Database.pruneShortDiscardedHealthConnectSessions as jest.Mock).mockReturnValue(0);
     (SessionMerger.buildSession as jest.Mock).mockImplementation(
       (startTime, endTime, source, confidence, notes) => ({
         startTime, endTime, durationMinutes: (endTime - startTime) / 60000,
@@ -209,5 +210,27 @@ describe('syncHealthConnect', () => {
       ([key]: [string]) => key === 'healthconnect_last_sync',
     );
     expect(lastSyncCall).toBeDefined();
+  });
+
+  it('prunes settled short discarded sessions after a successful sync', async () => {
+    (HealthConnect.readRecords as jest.Mock).mockResolvedValue({ records: [] });
+
+    const before = Date.now();
+    await syncHealthConnect();
+    const after = Date.now();
+
+    expect(Database.pruneShortDiscardedHealthConnectSessions).toHaveBeenCalledTimes(1);
+    const [beforeMs] = (Database.pruneShortDiscardedHealthConnectSessions as jest.Mock).mock.calls[0];
+    // cutoff must be now - MIN_DURATION_MS (5 min), within the test execution window
+    expect(beforeMs).toBeGreaterThanOrEqual(before - 5 * 60 * 1000);
+    expect(beforeMs).toBeLessThanOrEqual(after - 5 * 60 * 1000 + 100); // +100 ms: allow for JS execution time
+  });
+
+  it('does not prune when sync fails', async () => {
+    (HealthConnect.readRecords as jest.Mock).mockRejectedValue(new Error('Network timeout'));
+
+    await syncHealthConnect();
+
+    expect(Database.pruneShortDiscardedHealthConnectSessions).not.toHaveBeenCalled();
   });
 });

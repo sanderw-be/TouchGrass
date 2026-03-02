@@ -5,7 +5,7 @@ import {
   SdkAvailabilityStatus,
   getSdkStatus,
 } from 'react-native-health-connect';
-import { getSetting, setSetting } from '../storage/database';
+import { getSetting, setSetting, pruneShortDiscardedHealthConnectSessions } from '../storage/database';
 import { submitSession, buildSession } from './sessionMerger';
 import { openHealthConnectPermissionsViaIntent, verifyHealthConnectPermissions } from './healthConnectIntent';
 
@@ -243,6 +243,17 @@ export async function syncHealthConnect(): Promise<boolean> {
       if (!isPermissionError(stepsError)) {
         console.warn('Health Connect steps sync error:', stepsError);
       }
+    }
+
+    // Prune settled short discarded sessions from previous syncs.
+    // Any discarded HC session whose endTime is at least MIN_DURATION_MS before
+    // the current sync's end time is "settled": every record that could merge into
+    // it has already been processed.  If it is still under 5 minutes it will never
+    // grow into a real session and is safe to remove.
+    const pruneBeforeMs = now - MIN_DURATION_MS;
+    const pruned = pruneShortDiscardedHealthConnectSessions(pruneBeforeMs);
+    if (pruned > 0) {
+      console.log(`TouchGrass: HC cleanup - deleted ${pruned} short discarded session(s) settled before ${new Date(pruneBeforeMs).toISOString()}`);
     }
 
     // Update last sync timestamp
