@@ -42,11 +42,16 @@ export function submitSession(candidate: OutsideSession): void {
   const mergedConfidence = Math.max(...allUnconfirmed.map(s => s.confidence));
 
   // Combine unique notes from all merging sessions so source-specific data
-  // (e.g. Health Connect step counts) is not lost when sessions from different
-  // detection sources overlap.
+  // (e.g. exercise type) is not lost when sessions from different detection
+  // sources overlap.  Step counts are stored in the `steps` column instead.
   const allNotesList = allUnconfirmed.map(s => s.notes).filter((n): n is string => !!n);
   const uniqueNotes = [...new Set(allNotesList)];
   const mergedNotes = uniqueNotes.length > 0 ? uniqueNotes.join('; ') : undefined;
+
+  // Sum step counts so the merged session reflects the total steps walked
+  // across all contributing Health Connect steps records.
+  const stepsTotal = allUnconfirmed.reduce((sum, s) => sum + (s.steps ?? 0), 0);
+  const mergedSteps = stepsTotal > 0 ? stepsTotal : undefined;
 
   // Preserve a denied (userConfirmed=0) status from existing unconfirmed sessions
   // so that a re-detection never silently un-denies a session.
@@ -99,6 +104,7 @@ export function submitSession(candidate: OutsideSession): void {
       userConfirmed: deniedSession ? 0 : null,
       discarded: 0,
       notes: mergedNotes,
+      steps: mergedSteps,
     };
     const score = computeSessionScore(segSession);
     // Only discard sessions that have no user feedback yet (userConfirmed === null).
@@ -127,6 +133,7 @@ export function buildSession(
   source: OutsideSession['source'],
   confidence: number,
   notes?: string,
+  steps?: number,
 ): OutsideSession {
   const durationMinutes = (endTime - startTime) / 60000;
   return {
@@ -137,6 +144,7 @@ export function buildSession(
     confidence,
     userConfirmed: source === 'manual' ? 1 : null, // Auto-approve manual sessions
     notes,
+    steps,
     discarded: 0,
   };
 }

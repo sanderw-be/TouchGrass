@@ -12,6 +12,7 @@ export interface OutsideSession {
   confidence: number;      // 0-1, how sure are we this was outside?
   userConfirmed: number | null;  // 0, 1, or null — SQLite has no boolean, null = not reviewed, true/false = user feedback
   notes?: string;
+  steps?: number;          // aggregated step count from Health Connect steps records
   discarded: number;       // 1 = algorithmically discarded (too unreliable to propose), 0 = normal session
 }
 
@@ -64,7 +65,8 @@ export function initDatabase(): void {
       source TEXT NOT NULL,
       confidence REAL NOT NULL DEFAULT 0.8,
       userConfirmed INTEGER,
-      notes TEXT
+      notes TEXT,
+      steps INTEGER
     );
 
     CREATE TABLE IF NOT EXISTS daily_goals (
@@ -174,14 +176,22 @@ export function initDatabase(): void {
   } catch {
     // Column already exists — safe to ignore
   }
+
+  // Add steps column to outside_sessions if it doesn't exist (migration)
+  try {
+    db.execSync(`ALTER TABLE outside_sessions ADD COLUMN steps INTEGER`);
+    console.log('Database migration: Added steps column to outside_sessions');
+  } catch {
+    // Column already exists — safe to ignore
+  }
 }
 
 // ── Sessions ──────────────────────────────────────────────
 
 export function insertSession(session: OutsideSession): number {
   const result = db.runSync(
-    `INSERT INTO outside_sessions (startTime, endTime, durationMinutes, source, confidence, userConfirmed, notes, discarded)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO outside_sessions (startTime, endTime, durationMinutes, source, confidence, userConfirmed, notes, steps, discarded)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       session.startTime,
       session.endTime,
@@ -190,6 +200,7 @@ export function insertSession(session: OutsideSession): number {
       session.confidence,
       session.userConfirmed === null ? null : session.userConfirmed ? 1 : 0,
       session.notes ?? null,
+      session.steps ?? null,
       session.discarded ?? 0,
     ]
   );

@@ -5,7 +5,14 @@ jest.mock('react-native-health-connect');
 import * as HealthConnect from 'react-native-health-connect';
 import * as Database from '../storage/database';
 import * as SessionMerger from '../detection/sessionMerger';
-import { syncHealthConnect, MIN_DURATION_MS, STEPS_PER_MINUTE_AT_5KMH } from '../detection/healthConnect';
+import {
+  syncHealthConnect,
+  MIN_DURATION_MS,
+  STEPS_PER_MINUTE_AT_5KMH,
+  STEPS_PER_MIN_AT_2_5KMH,
+  STEPS_PER_MIN_AT_4KMH,
+  CONFIDENCE_ACTIVITY,
+} from '../detection/healthConnect';
 
 describe('syncHealthConnect', () => {
   const NOW = 1_700_000_000_000;
@@ -18,10 +25,11 @@ describe('syncHealthConnect', () => {
     (Database.getSetting as jest.Mock).mockReturnValue('0');
     (Database.setSetting as jest.Mock).mockImplementation(() => undefined);
     (Database.pruneShortDiscardedHealthConnectSessions as jest.Mock).mockReturnValue(0);
+    (Database.getKnownLocations as jest.Mock).mockReturnValue([]);
     (SessionMerger.buildSession as jest.Mock).mockImplementation(
-      (startTime, endTime, source, confidence, notes) => ({
+      (startTime, endTime, source, confidence, notes, steps) => ({
         startTime, endTime, durationMinutes: (endTime - startTime) / 60000,
-        source, confidence, userConfirmed: null, notes,
+        source, confidence, userConfirmed: null, notes, steps,
       }),
     );
     (SessionMerger.submitSession as jest.Mock).mockImplementation(() => undefined);
@@ -92,12 +100,13 @@ describe('syncHealthConnect', () => {
     expect(SessionMerger.submitSession).toHaveBeenCalledTimes(1);
     const session = (SessionMerger.submitSession as jest.Mock).mock.calls[0][0];
     expect(session.source).toBe('health_connect');
-    expect(session.notes).toContain('Steps:');
+    // Step count is stored in the `steps` field, not in notes
+    expect(session.steps).toBe(3000);
+    expect(session.notes).toBeUndefined();
   });
 
-  it('submits steps records with too few steps as low-confidence sessions (for aggregation)', async () => {
-    // Small chunks from Google Fit batch-sync must be submitted so the session
-    // merger can aggregate adjacent records into a long-enough session.
+  it('skips steps records with walking speed below 2.5 km/h (too slow to be real walking)', async () => {
+    // 100 steps in 2 minutes = 50 steps/min < STEPS_PER_MIN_AT_2_5KMH (55)
     const stepsStart = new Date(NOW - 2 * 60 * 1000).toISOString();
     const stepsEnd = new Date(NOW).toISOString();
 
@@ -111,15 +120,34 @@ describe('syncHealthConnect', () => {
     });
 
     await syncHealthConnect();
+    expect(SessionMerger.submitSession).not.toHaveBeenCalled();
+  });
+
+  it('submits steps records with walking speed between 2.5–4 km/h with reduced confidence', async () => {
+    // Steps/min between STEPS_PER_MIN_AT_2_5KMH (55) and STEPS_PER_MIN_AT_4KMH (88).
+    // e.g. 420 steps in 6 minutes = 70 steps/min → slow walk
+    const stepsStart = new Date(NOW - 6 * 60 * 1000).toISOString();
+    const stepsEnd = new Date(NOW).toISOString();
+
+    (HealthConnect.readRecords as jest.Mock).mockImplementation((type: string) => {
+      if (type === 'Steps') {
+        return Promise.resolve({
+          records: [{ startTime: stepsStart, endTime: stepsEnd, count: 420 }],
+        });
+      }
+      return Promise.resolve({ records: [] });
+    });
+
+    await syncHealthConnect();
     expect(SessionMerger.submitSession).toHaveBeenCalledTimes(1);
     const session = (SessionMerger.submitSession as jest.Mock).mock.calls[0][0];
-    expect(session.source).toBe('health_connect');
-    expect(session.notes).toContain('Steps:');
+    // Confidence must be less than CONFIDENCE_ACTIVITY
+    expect(session.confidence).toBeLessThan(CONFIDENCE_ACTIVITY);
   });
 
   it('submits short steps records as sessions for aggregation', async () => {
-    // 520 steps at 110 steps/min ≈ 4.7 min effective — below the old minimum
-    // but must be submitted so it can merge with neighbouring records.
+    // 520 steps at 110 steps/min ≈ 4.7 min effective — above speed threshold
+    // (stepsPerMinute ≈ 110) but still a short session for aggregation.
     const stepsStart = new Date(NOW - 2 * 60 * 1000).toISOString();
     const stepsEnd = new Date(NOW).toISOString();
 
@@ -136,6 +164,7 @@ describe('syncHealthConnect', () => {
     expect(SessionMerger.submitSession).toHaveBeenCalledTimes(1);
     const session = (SessionMerger.submitSession as jest.Mock).mock.calls[0][0];
     expect(session.source).toBe('health_connect');
+    expect(session.steps).toBe(520);
   });
 
   it('uses step-based estimated duration when recorded duration is too short (batch sync)', async () => {
@@ -232,5 +261,98 @@ describe('syncHealthConnect', () => {
     await syncHealthConnect();
 
     expect(Database.pruneShortDiscardedHealthConnectSessions).not.toHaveBeenCalled();
+  });
+
+  it('skips steps records when GPS shows user was at a known indoor location throughout', async () => {
+    const stepsStart = new Date(NOW - 30 * 60 * 1000).toISOString();
+    const stepsEnd = new Date(NOW).toISOString();
+
+    (HealthConnect.readRecords as jest.Mock).mockImplementation((type: string) => {
+      if (type === 'Steps') {
+        return Promise.resolve({
+          records: [{ startTime: stepsStart, endTime: stepsEnd, count: 3000 }],
+        });
+      }
+      return Promise.resolve({ records: [] });
+    });
+
+    // GPS samples all within the session window, all inside a known location
+    const indoorLat = 51.0;
+    const indoorLon = 4.0;
+    const gpsSamples = [
+      { lat: indoorLat, lon: indoorLon, timestamp: NOW - 25 * 60 * 1000 },
+      { lat: indoorLat, lon: indoorLon, timestamp: NOW - 15 * 60 * 1000 },
+      { lat: indoorLat, lon: indoorLon, timestamp: NOW - 5 * 60 * 1000 },
+    ];
+    (Database.getSetting as jest.Mock).mockImplementation((key: string) => {
+      if (key === 'location_clusters') return JSON.stringify(gpsSamples);
+      return '0';
+    });
+    (Database.getKnownLocations as jest.Mock).mockReturnValue([
+      { id: 1, label: 'home', latitude: indoorLat, longitude: indoorLon, radiusMeters: 100, isIndoor: true, status: 'active' },
+    ]);
+
+    await syncHealthConnect();
+    expect(SessionMerger.submitSession).not.toHaveBeenCalled();
+  });
+
+  it('does not skip steps records when GPS samples are outside the known location', async () => {
+    const stepsStart = new Date(NOW - 30 * 60 * 1000).toISOString();
+    const stepsEnd = new Date(NOW).toISOString();
+
+    (HealthConnect.readRecords as jest.Mock).mockImplementation((type: string) => {
+      if (type === 'Steps') {
+        return Promise.resolve({
+          records: [{ startTime: stepsStart, endTime: stepsEnd, count: 3000 }],
+        });
+      }
+      return Promise.resolve({ records: [] });
+    });
+
+    // GPS sample is far from the known indoor location
+    const gpsSamples = [
+      { lat: 52.0, lon: 5.0, timestamp: NOW - 15 * 60 * 1000 },
+    ];
+    (Database.getSetting as jest.Mock).mockImplementation((key: string) => {
+      if (key === 'location_clusters') return JSON.stringify(gpsSamples);
+      return '0';
+    });
+    (Database.getKnownLocations as jest.Mock).mockReturnValue([
+      { id: 1, label: 'home', latitude: 51.0, longitude: 4.0, radiusMeters: 100, isIndoor: true, status: 'active' },
+    ]);
+
+    await syncHealthConnect();
+    expect(SessionMerger.submitSession).toHaveBeenCalledTimes(1);
+  });
+
+  it('skips exercise sessions when GPS shows user was at a known indoor location throughout', async () => {
+    const sessionStart = new Date(NOW - 30 * 60 * 1000).toISOString();
+    const sessionEnd = new Date(NOW).toISOString();
+
+    (HealthConnect.readRecords as jest.Mock).mockImplementation((type: string) => {
+      if (type === 'ExerciseSession') {
+        return Promise.resolve({
+          records: [{ startTime: sessionStart, endTime: sessionEnd, exerciseType: 79 }],
+        });
+      }
+      return Promise.resolve({ records: [] });
+    });
+
+    const indoorLat = 51.0;
+    const indoorLon = 4.0;
+    const gpsSamples = [
+      { lat: indoorLat, lon: indoorLon, timestamp: NOW - 25 * 60 * 1000 },
+      { lat: indoorLat, lon: indoorLon, timestamp: NOW - 10 * 60 * 1000 },
+    ];
+    (Database.getSetting as jest.Mock).mockImplementation((key: string) => {
+      if (key === 'location_clusters') return JSON.stringify(gpsSamples);
+      return '0';
+    });
+    (Database.getKnownLocations as jest.Mock).mockReturnValue([
+      { id: 1, label: 'home', latitude: indoorLat, longitude: indoorLon, radiusMeters: 100, isIndoor: true, status: 'active' },
+    ]);
+
+    await syncHealthConnect();
+    expect(SessionMerger.submitSession).not.toHaveBeenCalled();
   });
 });

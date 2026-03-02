@@ -122,11 +122,12 @@ describe('submitSession', () => {
     expect(inserted.confidence).toBe(0.95);
   });
 
-  it('preserves Health Connect step notes when a GPS session merges with a HC session', () => {
+  it('aggregates step counts from Health Connect sessions when merging', () => {
     const hcSession = makeSession({
       id: 1,
       source: 'health_connect',
-      notes: 'Steps: 996',
+      steps: 996,
+      notes: undefined,
       userConfirmed: null,
     });
     (Database.getSessionsForRange as jest.Mock).mockReturnValue([hcSession]);
@@ -134,13 +135,26 @@ describe('submitSession', () => {
     const gpsCandidate = makeSession({
       source: 'gps',
       notes: 'GPS geofence exit/return',
+      steps: undefined,
       userConfirmed: null,
     });
     submitSession(gpsCandidate);
 
     const inserted = (Database.insertSession as jest.Mock).mock.calls[0][0];
-    expect(inserted.notes).toContain('Steps: 996');
-    expect(inserted.notes).toContain('GPS geofence exit/return');
+    expect(inserted.steps).toBe(996);
+  });
+
+  it('sums step counts when multiple step sessions are merged', () => {
+    const hc1 = makeSession({ id: 1, source: 'health_connect', steps: 500, userConfirmed: null });
+    const hc2 = makeSession({ id: 2, source: 'health_connect', steps: 300, userConfirmed: null,
+      startTime: BASE_TIME + 3 * 60 * 1000, endTime: BASE_TIME + 25 * 60 * 1000 });
+    (Database.getSessionsForRange as jest.Mock).mockReturnValue([hc1, hc2]);
+
+    const candidate = makeSession({ source: 'health_connect', steps: 200, userConfirmed: null });
+    submitSession(candidate);
+
+    const inserted = (Database.insertSession as jest.Mock).mock.calls[0][0];
+    expect(inserted.steps).toBe(1000);
   });
 
   it('does not duplicate notes when merging sessions with identical notes', () => {
