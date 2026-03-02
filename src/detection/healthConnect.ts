@@ -5,7 +5,7 @@ import {
   SdkAvailabilityStatus,
   getSdkStatus,
 } from 'react-native-health-connect';
-import { getSetting, setSetting, pruneShortDiscardedHealthConnectSessions } from '../storage/database';
+import { getSetting, setSetting, pruneShortDiscardedHealthConnectSessions, getKnownLocations } from '../storage/database';
 import { submitSession, buildSession } from './sessionMerger';
 import { openHealthConnectPermissionsViaIntent, verifyHealthConnectPermissions } from './healthConnectIntent';
 
@@ -15,13 +15,36 @@ const OUTDOOR_ACTIVITY_TYPES = [
   'StepsRecord',
 ];
 
-const CONFIDENCE_ACTIVITY = 0.70;
+export const CONFIDENCE_ACTIVITY = 0.70;
 export const MIN_DURATION_MS = 5 * 60 * 1000; // ignore sessions under 5 minutes
 // Average walking cadence at 5 km/h (~110 steps/min); used to estimate walk
 // duration from step count when the recorded time window is unreliably short
 // (e.g. batch-synced records from Google Fit).
 export const STEPS_PER_MINUTE_AT_5KMH = 110;
+// Speed-based step-rate thresholds. Below 2.5 km/h is too slow to be real
+// outdoor walking (skip the record entirely); between 2.5 and 4 km/h is slow
+// but plausible (submit with reduced confidence).
+export const STEPS_PER_MIN_AT_2_5KMH = Math.round(STEPS_PER_MINUTE_AT_5KMH * 0.5); // 55
+export const STEPS_PER_MIN_AT_4KMH   = Math.round(STEPS_PER_MINUTE_AT_5KMH * 0.8); // 88
+const CONFIDENCE_SLOW_WALK = 0.50; // 2.5–4 km/h: plausible but below normal pace
 const PERMISSION_WARNING_KEY = 'healthconnect_permission_warning';
+
+const EARTH_RADIUS_METERS = 6_371_000;
+
+/** Haversine distance between two GPS coordinates in metres. */
+function haversineDistanceMeters(
+  lat1: number, lon1: number,
+  lat2: number, lon2: number,
+): number {
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1 * Math.PI / 180) *
+    Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) ** 2;
+  return EARTH_RADIUS_METERS * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
 
 /**
  * Check if Health Connect is available on this device.
@@ -134,6 +157,36 @@ export async function openHealthConnectForManagement(): Promise<boolean> {
 }
 
 /**
+ * Returns true if every GPS cluster sample within [startMs, endMs] falls inside
+ * a known indoor location — meaning the user was definitely not outside.
+ * Returns false when there are no GPS samples for the period (cannot conclude).
+ */
+function wasDefinitelyAtKnownIndoorLocation(startMs: number, endMs: number): boolean {
+  try {
+    const parsed: unknown = JSON.parse(getSetting('location_clusters', '[]'));
+    const allSamples: Array<{ lat: number; lon: number; timestamp: number }> =
+      Array.isArray(parsed) ? parsed : [];
+    const sessionSamples = allSamples.filter(
+      s => s.timestamp >= startMs && s.timestamp <= endMs,
+    );
+    if (sessionSamples.length === 0) return false;
+
+    const knownLocations = getKnownLocations();
+    if (knownLocations.length === 0) return false;
+
+    return sessionSamples.every(sample =>
+      knownLocations.some(loc =>
+        loc.isIndoor &&
+        haversineDistanceMeters(sample.lat, sample.lon, loc.latitude, loc.longitude) <= loc.radiusMeters,
+      ),
+    );
+  } catch (e) {
+    console.warn('wasDefinitelyAtKnownIndoorLocation error:', e);
+    return false;
+  }
+}
+
+/**
  * Poll Health Connect for recent activity and submit any outside sessions found.
  * Called periodically by the background fetch task.
  */
@@ -179,6 +232,12 @@ export async function syncHealthConnect(): Promise<boolean> {
 
       console.log(`TouchGrass: HC exercise[${i}]: type=${record.exerciseType} start=${record.startTime} end=${record.endTime} duration=${Math.round(duration / 60000)} min confidence=${confidence.toFixed(2)}`);
 
+      // Skip if GPS data shows the user was at a known indoor location throughout
+      if (wasDefinitelyAtKnownIndoorLocation(start, end)) {
+        console.log(`TouchGrass: HC exercise[${i}] skipped - GPS shows user was at known indoor location throughout`);
+        continue;
+      }
+
       const session = buildSession(
         start,
         end,
@@ -214,11 +273,22 @@ export async function syncHealthConnect(): Promise<boolean> {
         const estimatedDurationMs = (record.count / STEPS_PER_MINUTE_AT_5KMH) * 60_000;
         const effectiveDurationMs = Math.max(recordedDuration, estimatedDurationMs);
 
-        // Submit every steps record — even tiny chunks from Google Fit's batch-sync.
-        // Small records score below the discard threshold on their own but will be
-        // aggregated by the session merger when adjacent records fall within the
-        // 5-minute merge window, producing a long session with a higher score.
         const sessionStart = end - effectiveDurationMs;
+
+        // Skip if GPS data shows the user was at a known indoor location throughout
+        if (wasDefinitelyAtKnownIndoorLocation(sessionStart, end)) {
+          console.log(`TouchGrass: HC steps[${i}] skipped - GPS shows user was at known indoor location throughout`);
+          continue;
+        }
+
+        // Compute steps/min to determine confidence tier.
+        // Records below 2.5 km/h are still submitted so they can merge with
+        // adjacent records in the 5-minute window — the pruning phase removes
+        // settled sessions that remain too slow after all merging is done.
+        const stepsPerMinute = record.count / (effectiveDurationMs / 60_000);
+        const isSlowWalking = stepsPerMinute < STEPS_PER_MIN_AT_4KMH;
+        const stepConfidence = isSlowWalking ? CONFIDENCE_SLOW_WALK : CONFIDENCE_ACTIVITY;
+
         const isTiny = record.count < 500 || effectiveDurationMs < MIN_DURATION_MS;
         if (isTiny) {
           console.log(`TouchGrass: HC steps[${i}] tiny (${record.count} steps, ${Math.round(effectiveDurationMs / 60000)} min) - submitting as low-confidence: ${record.startTime} – ${record.endTime}`);
@@ -228,12 +298,14 @@ export async function syncHealthConnect(): Promise<boolean> {
 
         // Use the recorded end time (when batch-sync writes the record) and
         // extend backwards so the session covers the full estimated walk.
+        // Step count is stored in the `steps` field, not in notes.
         const session = buildSession(
           sessionStart,
           end,
           'health_connect',
-          CONFIDENCE_ACTIVITY,
-          `Steps: ${record.count}`,
+          stepConfidence,
+          undefined,
+          record.count,
         );
 
         submitSession(session);
@@ -245,15 +317,15 @@ export async function syncHealthConnect(): Promise<boolean> {
       }
     }
 
-    // Prune settled short discarded sessions from previous syncs.
-    // Any discarded HC session whose endTime is at least MIN_DURATION_MS before
-    // the current sync's end time is "settled": every record that could merge into
-    // it has already been processed.  If it is still under 5 minutes it will never
-    // grow into a real session and is safe to remove.
+    // Prune settled sessions from previous syncs that are too short or too slow.
+    // A session is settled when its endTime is before (now - MIN_DURATION_MS):
+    // no new records can merge into it. At that point remove it if:
+    //   - it was discarded and is still under 5 minutes in duration, OR
+    //   - its aggregated step rate is below the minimum walking speed (2.5 km/h).
     const pruneBeforeMs = now - MIN_DURATION_MS;
-    const pruned = pruneShortDiscardedHealthConnectSessions(pruneBeforeMs);
+    const pruned = pruneShortDiscardedHealthConnectSessions(pruneBeforeMs, STEPS_PER_MIN_AT_2_5KMH);
     if (pruned > 0) {
-      console.log(`TouchGrass: HC cleanup - deleted ${pruned} short discarded session(s) settled before ${new Date(pruneBeforeMs).toISOString()}`);
+      console.log(`TouchGrass: HC cleanup - deleted ${pruned} short/slow session(s) settled before ${new Date(pruneBeforeMs).toISOString()}`);
     }
 
     // Update last sync timestamp
