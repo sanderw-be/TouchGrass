@@ -164,14 +164,18 @@ describe('Date helpers', () => {
       expect(result.map((s: { id: number }) => s.id)).toEqual([1, 2, 3, 4]);
     });
 
-    it('getSessionsForDay excludes rejected sessions and keeps approved and pending', () => {
+    it('getSessionsForDay excludes rejected and discarded sessions', () => {
       const { getSessionsForDay } = require('../storage/database');
-      // Only approved (1) and pending (null) sessions should be returned
-      mockDb.getAllSync.mockReturnValueOnce(mockSessions.filter(s => s.userConfirmed !== 0));
+      // Only approved (1) and non-discarded pending (null) sessions should be returned
+      mockDb.getAllSync.mockReturnValueOnce(mockSessions.filter(s => s.userConfirmed !== 0 && s.discarded !== 1));
       const result = getSessionsForDay(Date.now());
-      expect(result.map((s: { id: number }) => s.id)).toEqual([1, 3, 4]);
+      expect(result.map((s: { id: number }) => s.id)).toEqual([1, 3]);
       expect(mockDb.getAllSync).toHaveBeenCalledWith(
         expect.stringContaining('userConfirmed IS NOT 0'),
+        expect.any(Array)
+      );
+      expect(mockDb.getAllSync).toHaveBeenCalledWith(
+        expect.stringContaining('discarded IS NOT 1'),
         expect.any(Array)
       );
     });

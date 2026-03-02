@@ -211,7 +211,7 @@ export function getSessionsForDay(dateMs: number): OutsideSession[] {
   const start = startOfDay(dateMs);
   const end = start + 86400000;
   return db.getAllSync<OutsideSession>(
-    'SELECT * FROM outside_sessions WHERE startTime >= ? AND startTime < ? AND userConfirmed IS NOT 0 ORDER BY startTime ASC',
+    'SELECT * FROM outside_sessions WHERE startTime >= ? AND startTime < ? AND userConfirmed IS NOT 0 AND discarded IS NOT 1 ORDER BY startTime ASC',
     [start, end]
   );
 }
