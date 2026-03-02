@@ -122,6 +122,49 @@ describe('submitSession', () => {
     expect(inserted.confidence).toBe(0.95);
   });
 
+  it('preserves Health Connect step notes when a GPS session merges with a HC session', () => {
+    const hcSession = makeSession({
+      id: 1,
+      source: 'health_connect',
+      notes: 'Steps: 996',
+      userConfirmed: null,
+    });
+    (Database.getSessionsForRange as jest.Mock).mockReturnValue([hcSession]);
+
+    const gpsCandidate = makeSession({
+      source: 'gps',
+      notes: 'GPS geofence exit/return',
+      userConfirmed: null,
+    });
+    submitSession(gpsCandidate);
+
+    const inserted = (Database.insertSession as jest.Mock).mock.calls[0][0];
+    expect(inserted.notes).toContain('Steps: 996');
+    expect(inserted.notes).toContain('GPS geofence exit/return');
+  });
+
+  it('does not duplicate notes when merging sessions with identical notes', () => {
+    const existing = makeSession({ id: 1, notes: 'GPS periodic', userConfirmed: null });
+    (Database.getSessionsForRange as jest.Mock).mockReturnValue([existing]);
+
+    const candidate = makeSession({ notes: 'GPS periodic', userConfirmed: null });
+    submitSession(candidate);
+
+    const inserted = (Database.insertSession as jest.Mock).mock.calls[0][0];
+    expect(inserted.notes).toBe('GPS periodic');
+  });
+
+  it('produces undefined notes when no session has notes', () => {
+    const existing = makeSession({ id: 1, notes: undefined, userConfirmed: null });
+    (Database.getSessionsForRange as jest.Mock).mockReturnValue([existing]);
+
+    const candidate = makeSession({ notes: undefined, userConfirmed: null });
+    submitSession(candidate);
+
+    const inserted = (Database.insertSession as jest.Mock).mock.calls[0][0];
+    expect(inserted.notes).toBeUndefined();
+  });
+
   it('does not merge a new GPS session with an existing confirmed GPS session', () => {
     // Both cover the same time range — the confirmed session should stay intact,
     // and the candidate (fully covered by the confirmed session) produces no new segment.

@@ -41,6 +41,13 @@ export function submitSession(candidate: OutsideSession): void {
   const mergedEnd   = Math.max(...allUnconfirmed.map(s => s.endTime));
   const mergedConfidence = Math.max(...allUnconfirmed.map(s => s.confidence));
 
+  // Combine unique notes from all merging sessions so source-specific data
+  // (e.g. Health Connect step counts) is not lost when sessions from different
+  // detection sources overlap.
+  const allNotesList = allUnconfirmed.map(s => s.notes).filter((n): n is string => !!n);
+  const uniqueNotes = [...new Set(allNotesList)];
+  const mergedNotes = uniqueNotes.length > 0 ? uniqueNotes.join('; ') : undefined;
+
   // Preserve a denied (userConfirmed=0) status from existing unconfirmed sessions
   // so that a re-detection never silently un-denies a session.
   const deniedSession = unconfirmedSessions.find(s => s.userConfirmed === 0);
@@ -91,6 +98,7 @@ export function submitSession(candidate: OutsideSession): void {
       confidence: mergedConfidence,
       userConfirmed: deniedSession ? 0 : null,
       discarded: 0,
+      notes: mergedNotes,
     };
     const score = computeSessionScore(segSession);
     // Only discard sessions that have no user feedback yet (userConfirmed === null).
