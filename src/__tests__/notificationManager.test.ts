@@ -11,6 +11,7 @@ jest.mock('../calendar/calendarService', () => ({
 }));
 
 import * as Notifications from 'expo-notifications';
+import { Platform } from 'react-native';
 import * as Database from '../storage/database';
 import * as ReminderAlgorithm from '../notifications/reminderAlgorithm';
 import * as ScheduledNotifications from '../notifications/scheduledNotifications';
@@ -103,6 +104,28 @@ describe('notificationManager', () => {
       await scheduleNextReminder();
 
       expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledTimes(1);
+    });
+
+    it('includes channelId in the trigger to avoid fallback channel on Android', async () => {
+      (Database.getTodayMinutes as jest.Mock).mockReturnValue(10);
+      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
+        if (key === 'reminders_enabled') return '1';
+        if (key === 'currently_outside') return '0';
+        if (key === 'last_reminder_ms') return '0';
+        return fallback;
+      });
+      (ReminderAlgorithm.shouldRemindNow as jest.Mock).mockReturnValue({
+        should: true,
+        reason: 'score 0.65: baseline',
+      });
+
+      await scheduleNextReminder();
+
+      expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledWith(
+        expect.objectContaining({
+          trigger: expect.objectContaining({ channelId: 'touchgrass_reminders' }),
+        }),
+      );
     });
 
     it('does nothing when reminders are disabled', async () => {
@@ -394,6 +417,39 @@ describe('notificationManager', () => {
       // Both taps produce an in-place update; Android replaces with the last one
       expect(confirmCalls).toHaveLength(2);
       expect(confirmCalls[1][0].content.body).toBe('notif_confirm_less_often');
+    });
+  });
+
+  describe('handleNotificationResponse confirmation notifications on Android', () => {
+    let capturedListener: ((response: any) => Promise<void>) | null = null;
+
+    beforeEach(async () => {
+      Object.defineProperty(Platform, 'OS', { value: 'android', configurable: true });
+      capturedListener = null;
+      (Notifications.addNotificationResponseReceivedListener as jest.Mock)
+        .mockImplementation((listener) => {
+          capturedListener = listener;
+          return { remove: jest.fn() };
+        });
+      await setupNotificationInfrastructure();
+    });
+
+    afterEach(() => {
+      Object.defineProperty(Platform, 'OS', { value: 'ios', configurable: true });
+    });
+
+    it('uses ChannelAwareTriggerInput (channelId) instead of null to avoid fallback channel', async () => {
+      await capturedListener!({
+        notification: { request: { identifier: 'notif-android' } },
+        actionIdentifier: 'went_outside',
+      });
+      expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledWith(
+        expect.objectContaining({
+          identifier: 'notif-android',
+          content: expect.objectContaining({ body: 'notif_confirm_went_outside' }),
+          trigger: { channelId: 'touchgrass_reminders' },
+        }),
+      );
     });
   });
 });

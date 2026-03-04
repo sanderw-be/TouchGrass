@@ -211,7 +211,7 @@ export async function scheduleNextReminder(): Promise<void> {
       categoryIdentifier: 'reminder',
       color: '#4A7C59',
     },
-    trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: 1 },
+    trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: 1, channelId: CHANNEL_ID },
   });
 
   // Add a future outdoor time slot to the calendar alongside the reminder
@@ -357,7 +357,10 @@ async function handleNotificationResponse(response: Notifications.NotificationRe
         body: t(confirmBodyKey),
         // No categoryIdentifier: the rebuilt notification has no action buttons
       },
-      trigger: null,
+      // On Android, trigger: null does not carry a channel ID, causing expo to fall back to the
+      // system default channel. Use ChannelAwareTriggerInput to deliver immediately on the
+      // correct channel. On iOS channels do not exist so null is used.
+      trigger: Platform.OS === 'android' ? { channelId: CHANNEL_ID } : null,
     });
   }
 
