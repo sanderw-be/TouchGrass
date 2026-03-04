@@ -25,6 +25,19 @@ export const ACTION_SNOOZE = 'snoozed';
 export const ACTION_LESS_OFTEN = 'less_often';
 
 const CHANNEL_ID = 'touchgrass_reminders';
+const DEFAULT_ANDROID_CHANNEL_ID = 'default';
+
+async function createReminderChannels(): Promise<void> {
+  const reminderChannelConfig = {
+    name: t('notif_channel_name'),
+    importance: Notifications.AndroidImportance.DEFAULT,
+    vibrationPattern: [0, 250, 250, 250],
+    lightColor: '#4A7C59',
+  };
+
+  await Notifications.setNotificationChannelAsync(CHANNEL_ID, reminderChannelConfig);
+  await Notifications.setNotificationChannelAsync(DEFAULT_ANDROID_CHANNEL_ID, reminderChannelConfig);
+}
 
 /**
  * Set up notification infrastructure without requesting permissions.
@@ -60,6 +73,14 @@ export async function setupNotificationInfrastructure(): Promise<void> {
       console.log('TouchGrass: Scheduled notification channel created');
     } catch (e) {
       console.warn('TouchGrass: Failed to create scheduled channel:', e);
+    }
+
+    // Create channels for reminders (default + explicit)
+    try {
+      await createReminderChannels();
+      console.log('TouchGrass: Reminder notification channels created');
+    } catch (e) {
+      console.warn('TouchGrass: Failed to create reminder channels:', e);
     }
   }
 
@@ -117,12 +138,7 @@ export async function requestNotificationPermissions(): Promise<boolean> {
 
   // Android notification channel for reminders
   if (Platform.OS === 'android') {
-    await Notifications.setNotificationChannelAsync(CHANNEL_ID, {
-      name: t('notif_channel_name'),
-      importance: Notifications.AndroidImportance.DEFAULT,
-      vibrationPattern: [0, 250, 250, 250],
-      lightColor: '#4A7C59',
-    });
+    await createReminderChannels();
   }
 
   // Register action categories (the quick-reply buttons)
@@ -211,7 +227,11 @@ export async function scheduleNextReminder(): Promise<void> {
       categoryIdentifier: 'reminder',
       color: '#4A7C59',
     },
-    trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: 1 },
+    trigger: {
+      type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+      seconds: 1,
+      channelId: CHANNEL_ID,
+    },
   });
 
   // Add a future outdoor time slot to the calendar alongside the reminder
