@@ -105,6 +105,30 @@ describe('notificationManager', () => {
       expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledTimes(1);
     });
 
+    it('includes channelId in the notification trigger', async () => {
+      (Database.getTodayMinutes as jest.Mock).mockReturnValue(10);
+      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
+        if (key === 'reminders_enabled') return '1';
+        if (key === 'currently_outside') return '0';
+        if (key === 'last_reminder_ms') return '0';
+        return fallback;
+      });
+      (ReminderAlgorithm.shouldRemindNow as jest.Mock).mockReturnValue({
+        should: true,
+        reason: 'score 0.65: baseline',
+      });
+
+      await scheduleNextReminder();
+
+      expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledWith(
+        expect.objectContaining({
+          trigger: expect.objectContaining({
+            channelId: 'touchgrass_reminders',
+          }),
+        }),
+      );
+    });
+
     it('does nothing when reminders are disabled', async () => {
       (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
         if (key === 'reminders_enabled') return '0';

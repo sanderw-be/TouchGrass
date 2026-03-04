@@ -211,7 +211,11 @@ export async function scheduleNextReminder(): Promise<void> {
       categoryIdentifier: 'reminder',
       color: '#4A7C59',
     },
-    trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: 1 },
+    trigger: {
+      type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+      seconds: 1,
+      channelId: CHANNEL_ID,
+    },
   });
 
   // Add a future outdoor time slot to the calendar alongside the reminder
