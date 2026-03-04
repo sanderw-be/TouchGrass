@@ -164,6 +164,7 @@ function WeekDots() {
 function SessionRow({ session }: { session: any }) {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
+  const isPending = session.userConfirmed === null;
   const sourceIcon: Record<string, string> = {
     health_connect: '👟',
     gps: '📍',
@@ -173,14 +174,16 @@ function SessionRow({ session }: { session: any }) {
 
   return (
     <View style={styles.sessionRow}>
-      <Text style={styles.sessionIcon}>{sourceIcon[session.source] ?? '🌿'}</Text>
-      <View style={styles.sessionInfo}>
+      <Text style={[styles.sessionIcon, isPending && styles.sessionPending]}>
+        {sourceIcon[session.source] ?? '🌿'}
+      </Text>
+      <View style={[styles.sessionInfo, isPending && styles.sessionPending]}>
         <Text style={styles.sessionTime}>
           {formatTime(session.startTime)} – {formatTime(session.endTime)}
         </Text>
         <Text style={styles.sessionDuration}>{formatMinutes(session.durationMinutes)}</Text>
       </View>
-      {session.userConfirmed === null && (
+      {isPending && (
         <View style={styles.reviewBadge}>
           <Text style={styles.reviewText}>{t('review')}</Text>
         </View>
@@ -281,6 +284,7 @@ function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
   },
   sessionIcon: { fontSize: 20, marginRight: spacing.sm },
   sessionInfo: { flex: 1 },
+  sessionPending: { opacity: 0.5 },
   sessionTime: { fontSize: 14, color: colors.textSecondary },
   sessionDuration: { fontSize: 16, fontWeight: '600', color: colors.textPrimary, marginTop: 2 },
   reviewBadge: {
