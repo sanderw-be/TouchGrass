@@ -23,7 +23,7 @@ import * as NotificationManager from '../notifications/notificationManager';
 import * as WeatherService from '../weather/weatherService';
 
 // Import the module to register the background task
-import '../detection/index';
+import * as Detection from '../detection/index';
 
 describe('detection background task', () => {
   let taskCallback: (...args: any[]) => Promise<any>;
@@ -92,5 +92,26 @@ describe('detection background task', () => {
     const result = await taskCallback();
 
     expect(result).toBe(BackgroundTask.BackgroundTaskResult.Failed);
+  });
+
+  describe('registerBackgroundTask', () => {
+    it('registers the task with a 15 minute interval when not registered', async () => {
+      (TaskManager.isTaskRegisteredAsync as jest.Mock).mockResolvedValue(false);
+
+      await Detection.initDetection();
+
+      expect(BackgroundTask.registerTaskAsync).toHaveBeenCalledWith(
+        'TOUCHGRASS_BACKGROUND_TASK',
+        { minimumInterval: 15 }
+      );
+    });
+
+    it('does not register the task when already registered', async () => {
+      (TaskManager.isTaskRegisteredAsync as jest.Mock).mockResolvedValue(true);
+
+      await Detection.initDetection();
+
+      expect(BackgroundTask.registerTaskAsync).not.toHaveBeenCalled();
+    });
   });
 });
