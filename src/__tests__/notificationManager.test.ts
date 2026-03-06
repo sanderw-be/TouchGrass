@@ -10,6 +10,7 @@ jest.mock('../calendar/calendarService', () => ({
   maybeAddOutdoorTimeToCalendar: jest.fn(() => Promise.resolve()),
 }));
 
+import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import * as Database from '../storage/database';
 import * as ReminderAlgorithm from '../notifications/reminderAlgorithm';
@@ -40,6 +41,34 @@ describe('notificationManager', () => {
     (Notifications.scheduleNotificationAsync as jest.Mock).mockResolvedValue('notif-id');
     (Notifications.dismissNotificationAsync as jest.Mock).mockResolvedValue(undefined);
     (CalendarService.maybeAddOutdoorTimeToCalendar as jest.Mock).mockResolvedValue(undefined);
+  });
+
+  describe('setupNotificationInfrastructure', () => {
+    it('creates Android channels including the default reminder channel', async () => {
+      const originalOS = Platform.OS;
+      (Platform as any).OS = 'android';
+
+      await setupNotificationInfrastructure();
+
+      expect(Notifications.setNotificationChannelAsync).toHaveBeenCalledWith(
+        'touchgrass_background',
+        expect.objectContaining({ name: 'notif_channel_background_name' }),
+      );
+      expect(Notifications.setNotificationChannelAsync).toHaveBeenCalledWith(
+        'touchgrass_scheduled',
+        expect.objectContaining({ name: 'notif_channel_scheduled_name' }),
+      );
+      expect(Notifications.setNotificationChannelAsync).toHaveBeenCalledWith(
+        'touchgrass_reminders',
+        expect.objectContaining({ name: 'notif_channel_name' }),
+      );
+      expect(Notifications.setNotificationChannelAsync).toHaveBeenCalledWith(
+        'default',
+        expect.objectContaining({ name: 'notif_channel_name' }),
+      );
+
+      (Platform as any).OS = originalOS;
+    });
   });
 
   describe('scheduleNextReminder', () => {
@@ -103,6 +132,12 @@ describe('notificationManager', () => {
       await scheduleNextReminder();
 
       expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledTimes(1);
+      expect((Notifications.scheduleNotificationAsync as jest.Mock).mock.calls[0][0].trigger)
+        .toEqual(expect.objectContaining({
+          type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+          seconds: 1,
+          channelId: 'touchgrass_reminders',
+        }));
     });
 
     it('does nothing when reminders are disabled', async () => {
