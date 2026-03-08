@@ -69,6 +69,19 @@ describe('notificationManager', () => {
 
       (Platform as any).OS = originalOS;
     });
+
+    it('registers all notification action buttons with opensAppToForeground: true', async () => {
+      await setupNotificationInfrastructure();
+
+      expect(Notifications.setNotificationCategoryAsync).toHaveBeenCalledWith(
+        'reminder',
+        expect.arrayContaining([
+          expect.objectContaining({ options: { opensAppToForeground: true } }),
+          expect.objectContaining({ options: { opensAppToForeground: true } }),
+          expect.objectContaining({ options: { opensAppToForeground: true } }),
+        ]),
+      );
+    });
   });
 
   describe('scheduleNextReminder', () => {
