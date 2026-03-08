@@ -15,12 +15,16 @@ jest.mock('../detection/gpsDetection', () => ({
   startLocationTracking: jest.fn().mockResolvedValue(undefined),
   autoDetectLocations: jest.fn().mockResolvedValue(undefined),
 }));
+jest.mock('../calendar/calendarService', () => ({
+  processPendingCalendarEvents: jest.fn().mockResolvedValue(true),
+}));
 
 import * as BackgroundTask from 'expo-background-task';
 import * as TaskManager from 'expo-task-manager';
 import * as Database from '../storage/database';
 import * as NotificationManager from '../notifications/notificationManager';
 import * as WeatherService from '../weather/weatherService';
+import { processPendingCalendarEvents } from '../calendar/calendarService';
 
 // Import the module to register the background task
 import * as Detection from '../detection/index';
@@ -41,6 +45,7 @@ describe('detection background task', () => {
     (NotificationManager.scheduleNextReminder as jest.Mock).mockResolvedValue(undefined);
     (NotificationManager.scheduleDayReminders as jest.Mock).mockResolvedValue(undefined);
     (WeatherService.fetchWeatherForecast as jest.Mock).mockResolvedValue({ success: true });
+    (processPendingCalendarEvents as jest.Mock).mockResolvedValue(true);
   });
 
   it('defines the TOUCHGRASS_BACKGROUND_TASK on module load', () => {
@@ -77,6 +82,11 @@ describe('detection background task', () => {
     await taskCallback();
 
     expect(NotificationManager.scheduleNextReminder).toHaveBeenCalledTimes(1);
+  });
+
+  it('processes pending calendar events on each run', async () => {
+    await taskCallback();
+    expect(processPendingCalendarEvents).toHaveBeenCalledTimes(1);
   });
 
   it('returns Success on successful run', async () => {

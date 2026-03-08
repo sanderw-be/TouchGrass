@@ -7,6 +7,7 @@ import {
   maybeAddOutdoorTimeToCalendar,
   getWritableCalendars,
   getOrCreateTouchGrassCalendar,
+  processPendingCalendarEvents,
   cleanupTouchGrassCalendars,
   getSelectedCalendarId,
   setSelectedCalendarId,
@@ -32,7 +33,13 @@ const mockUpdateCalendar = Calendar.updateCalendarAsync as jest.Mock;
 
 describe('calendarService', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
+    mockGetCalendarPermissions.mockResolvedValue({ status: 'granted' });
+    mockGetCalendars.mockResolvedValue([]);
+    mockGetEvents.mockResolvedValue([]);
+    mockCreateEvent.mockResolvedValue('event-id');
+    mockCreateCalendar.mockResolvedValue('touchgrass-cal-id');
+    mockUpdateCalendar.mockResolvedValue(undefined);
     // Default: calendar integration disabled
     mockGetSetting.mockImplementation((key: string, fallback: string) => {
       if (key === 'calendar_integration_enabled') return '0';
@@ -265,7 +272,6 @@ describe('calendarService', () => {
       mockGetCalendars.mockResolvedValueOnce([localCal1, localCal2]);
       mockCreateEvent
         .mockRejectedValueOnce({ code: 'E_EVENT_NOT_SAVED' })
-        .mockRejectedValueOnce(new Error('fallback event creation failed'))
         .mockResolvedValueOnce('event-id-3');
 
       const result = await addOutdoorTimeToCalendar(new Date('2025-06-01T10:00:00'), 15);
@@ -346,6 +352,25 @@ describe('calendarService', () => {
       const result = await addOutdoorTimeToCalendar(new Date(), 15);
       expect(result).toBe(false);
     });
+
+    it('stores a pending event with attempts when a write fails', async () => {
+      mockGetCalendarPermissions.mockResolvedValueOnce({ status: 'granted' });
+      const writable = { id: 'cal1', allowsModifications: true, source: { isLocalAccount: true }, title: 'TouchGrass' };
+      mockGetCalendars.mockResolvedValueOnce([writable]);
+      mockCreateEvent.mockRejectedValueOnce(new Error('E_EVENT_NOT_SAVED'));
+      const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+
+      const start = new Date('2025-06-01T10:00:00Z');
+      const result = await addOutdoorTimeToCalendar(start, 15);
+
+      expect(result).toBe(false);
+      const pendingCalls = mockSetSetting.mock.calls.filter(([key]) => key === 'calendar_pending_event');
+      expect(pendingCalls.length).toBeGreaterThan(0);
+      const pendingPayload = JSON.parse(pendingCalls[pendingCalls.length - 1]?.[1] as string);
+      expect(pendingPayload.attempts).toBe(1);
+      expect(pendingPayload.fingerprint).toContain('outdoor time');
+      warnSpy.mockRestore();
+    });
   });
 
   describe('maybeAddOutdoorTimeToCalendar', () => {
@@ -413,6 +438,71 @@ describe('calendarService', () => {
           endDate: new Date(start.getTime() + 30 * 60 * 1000),
         }),
       );
+    });
+  });
+
+  describe('processPendingCalendarEvents', () => {
+    it('no-ops when there is no pending event', async () => {
+      mockGetSetting.mockImplementation((key: string, fallback: string) => {
+        if (key === 'calendar_pending_event') return '';
+        return fallback;
+      });
+
+      const result = await processPendingCalendarEvents();
+      expect(result).toBe(true);
+      expect(mockCreateEvent).not.toHaveBeenCalled();
+    });
+
+    it('clears pending state and records success when retry succeeds', async () => {
+      const start = new Date('2025-06-01T10:00:00Z');
+      const end = new Date(start.getTime() + 15 * 60 * 1000);
+      const fingerprint = 'outdoor|pending';
+      mockGetSetting.mockImplementation((key: string, fallback: string) => {
+        if (key === 'calendar_pending_event') {
+          return JSON.stringify({
+            fingerprint,
+            startMs: start.getTime(),
+            endMs: end.getTime(),
+            title: '🌿 Outdoor time',
+            attempts: 2,
+          });
+        }
+        return fallback;
+      });
+      mockGetCalendarPermissions.mockResolvedValue({ status: 'granted' });
+      const writable = { id: 'tg', allowsModifications: true, source: { isLocalAccount: true }, title: 'TouchGrass' };
+      mockGetCalendars.mockResolvedValueOnce([writable]);
+      mockGetEvents.mockResolvedValueOnce([]);
+      mockCreateEvent.mockResolvedValueOnce('event-id');
+
+      const result = await processPendingCalendarEvents();
+
+      expect(result).toBe(true);
+      expect(mockCreateEvent).toHaveBeenCalledTimes(1);
+      expect(mockSetSetting).toHaveBeenCalledWith('calendar_pending_event', '');
+      expect(mockSetSetting).toHaveBeenCalledWith('calendar_last_success_fingerprint', fingerprint);
+    });
+
+    it('clears stale pending when fingerprint already marked successful', async () => {
+      mockGetSetting.mockImplementation((key: string, fallback: string) => {
+        if (key === 'calendar_pending_event') {
+          return JSON.stringify({
+            fingerprint: 'done',
+            startMs: Date.now(),
+            endMs: Date.now() + 15 * 60 * 1000,
+            title: 'Outdoor',
+            attempts: 1,
+          });
+        }
+        if (key === 'calendar_last_success_fingerprint') return 'done';
+        return fallback;
+      });
+
+      const result = await processPendingCalendarEvents();
+
+      expect(result).toBe(true);
+      expect(mockCreateEvent).not.toHaveBeenCalled();
+      expect(mockSetSetting).toHaveBeenCalledWith('calendar_pending_event', '');
     });
   });
 
@@ -623,7 +713,7 @@ describe('calendarService', () => {
       mockCreateEvent.mockRejectedValueOnce(new Error('hard failure'));
 
       const result = await addOutdoorTimeToCalendar(new Date('2025-06-01T10:00:00'), 15);
-      expect(result).toBe(true);
+      expect(result).toBe(false);
       expect(mockSetSetting).not.toHaveBeenCalledWith('calendar_touchgrass_id', '');
     });
 

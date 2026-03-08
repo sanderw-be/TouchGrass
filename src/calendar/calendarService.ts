@@ -4,8 +4,20 @@ import { t } from '../i18n';
 
 const TOUCHGRASS_CALENDAR_SETTING = 'calendar_touchgrass_id';
 const SELECTED_CALENDAR_SETTING = 'calendar_selected_id';
+const PENDING_EVENT_SETTING = 'calendar_pending_event';
+const LAST_SUCCESS_FINGERPRINT_SETTING = 'calendar_last_success_fingerprint';
 const TOUCHGRASS_CALENDAR_COLOR = '#4CAF50';
 const TOUCHGRASS_CALENDAR_NAME = 'TouchGrass';
+
+type PendingCalendarEvent = {
+  fingerprint: string;
+  startMs: number;
+  endMs: number;
+  title: string;
+  attempts: number;
+  lastError?: string;
+  lastAttemptMs?: number;
+};
 
 function matchesTouchGrassCalendar(calendar: Calendar.Calendar): boolean {
   const title = (calendar.title || '').trim().toLowerCase();
@@ -38,6 +50,52 @@ function eventFingerprint(title: string, startMs: number, endMs: number): string
   const startMinute = Math.floor(startMs / 60000);
   const endMinute = Math.floor(endMs / 60000);
   return `${normalizedTitle}|${startMinute}|${endMinute}`;
+}
+
+function readPendingEvent(): PendingCalendarEvent | null {
+  const raw = getSetting(PENDING_EVENT_SETTING, '');
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as Partial<PendingCalendarEvent>;
+    if (
+      typeof parsed.fingerprint === 'string'
+      && typeof parsed.startMs === 'number'
+      && typeof parsed.endMs === 'number'
+      && typeof parsed.title === 'string'
+      && typeof parsed.attempts === 'number'
+    ) {
+      return {
+        fingerprint: parsed.fingerprint,
+        startMs: parsed.startMs,
+        endMs: parsed.endMs,
+        title: parsed.title,
+        attempts: parsed.attempts,
+        lastError: typeof parsed.lastError === 'string' ? parsed.lastError : undefined,
+        lastAttemptMs: typeof parsed.lastAttemptMs === 'number' ? parsed.lastAttemptMs : undefined,
+      };
+    }
+  } catch {
+    // Ignore malformed persisted pending state
+  }
+  return null;
+}
+
+function savePendingEvent(event: PendingCalendarEvent): void {
+  setSetting(PENDING_EVENT_SETTING, JSON.stringify(event));
+}
+
+function clearPendingEvent(): void {
+  setSetting(PENDING_EVENT_SETTING, '');
+}
+
+function serializeError(error: unknown): string {
+  if (error instanceof Error) return `${error.name}: ${error.message}`;
+  if (typeof error === 'string') return error;
+  if (error && typeof error === 'object' && 'code' in (error as Record<string, unknown>)) {
+    const code = (error as { code?: unknown }).code;
+    return `code:${String(code)}`;
+  }
+  return String(error);
 }
 
 async function hasDuplicateEvent(
@@ -399,10 +457,16 @@ export async function maybeAddOutdoorTimeToCalendar(startTime: Date): Promise<vo
  * @param durationMinutes  Length of the session in minutes (5/10/15/20/30)
  * @param title  Optional custom title; falls back to a localised default
  */
+type AddOutdoorTimeOptions = {
+  retryingPending?: boolean;
+  pending?: PendingCalendarEvent | null;
+};
+
 export async function addOutdoorTimeToCalendar(
   startTime: Date,
   durationMinutes: number,
   title?: string,
+  options?: AddOutdoorTimeOptions,
 ): Promise<boolean> {
   const permissionGranted = await hasCalendarPermissions();
   if (!permissionGranted) {
@@ -410,32 +474,71 @@ export async function addOutdoorTimeToCalendar(
     if (!granted) return false;
   }
 
+  const endTime = new Date(startTime.getTime() + durationMinutes * 60 * 1000);
+  const eventTitle = title ?? t('calendar_event_title');
+  const fingerprint = eventFingerprint(eventTitle, startTime.getTime(), endTime.getTime());
+  const lastSuccessFingerprint = getSetting(LAST_SUCCESS_FINGERPRINT_SETTING, '');
+  if (lastSuccessFingerprint === fingerprint) {
+    logCalendarWriteDebug('skipping calendar write — fingerprint already recorded as success', {
+      fingerprint,
+    });
+    clearPendingEvent();
+    return true;
+  }
+
+  const existingPending =
+    options?.pending?.fingerprint === fingerprint
+      ? options.pending
+      : (() => {
+          const pending = readPendingEvent();
+          return pending?.fingerprint === fingerprint ? pending : null;
+        })();
+
+  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'; // fallback: Hermes can return '' on some Android builds
+
+  const eventDetails = {
+    title: eventTitle,
+    startDate: startTime,
+    endDate: endTime,
+    allDay: false, // prevents some Android CalendarProviders from treating events as all-day
+    timeZone,
+    // Do not pass alarms: [] — an empty array can cause saveEventAsync to fail
+    // on some Android ROM variants. Omitting the field means no reminders.
+  };
+  const fallbackEventDetails = {
+    title: eventTitle,
+    startDate: startTime,
+    endDate: endTime,
+    allDay: false,
+  };
+
+  const basePending: PendingCalendarEvent = {
+    fingerprint,
+    startMs: startTime.getTime(),
+    endMs: endTime.getTime(),
+    title: eventTitle,
+    attempts: existingPending?.attempts ?? 0,
+    lastError: existingPending?.lastError,
+    lastAttemptMs: existingPending?.lastAttemptMs,
+  };
+
+  if (!options?.retryingPending) {
+    savePendingEvent(basePending);
+  }
+
   try {
     const touchGrassId = await getOrCreateTouchGrassCalendar();
     if (!touchGrassId) {
       console.warn('TouchGrass: Could not obtain TouchGrass calendar for writing');
+      const pendingFailure: PendingCalendarEvent = {
+        ...basePending,
+        attempts: basePending.attempts + 1,
+        lastError: 'no_calendar_id',
+        lastAttemptMs: Date.now(),
+      };
+      savePendingEvent(pendingFailure);
       return false;
     }
-
-    const endTime = new Date(startTime.getTime() + durationMinutes * 60 * 1000);
-    const eventTitle = title ?? t('calendar_event_title');
-    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'; // fallback: Hermes can return '' on some Android builds
-
-    const eventDetails = {
-      title: eventTitle,
-      startDate: startTime,
-      endDate: endTime,
-      allDay: false, // prevents some Android CalendarProviders from treating events as all-day
-      timeZone,
-      // Do not pass alarms: [] — an empty array can cause saveEventAsync to fail
-      // on some Android ROM variants. Omitting the field means no reminders.
-    };
-    const fallbackEventDetails = {
-      title: eventTitle,
-      startDate: startTime,
-      endDate: endTime,
-      allDay: false,
-    };
 
     const createEventWithFallback = async (calendarId: string, calendarLabel: string): Promise<void> => {
       const duplicate = await hasDuplicateEvent(calendarId, startTime, endTime, eventTitle);
@@ -446,23 +549,50 @@ export async function addOutdoorTimeToCalendar(
           startTime: startTime.toISOString(),
           endTime: endTime.toISOString(),
           eventTitle,
+          fingerprint,
         });
+        clearPendingEvent();
+        setSetting(LAST_SUCCESS_FINGERPRINT_SETTING, fingerprint);
         return;
       }
 
-      logCalendarWriteDebug('attempting primary event payload', { calendarId, calendarLabel });
+      logCalendarWriteDebug('attempting primary event payload', {
+        calendarId,
+        calendarLabel,
+        fingerprint,
+        attempts: basePending.attempts,
+      });
       try {
         await Calendar.createEventAsync(calendarId, eventDetails);
-        logCalendarWriteDebug('event write succeeded', { calendarId, calendarLabel, payload: 'primary' });
+        logCalendarWriteDebug('event write succeeded', {
+          calendarId,
+          calendarLabel,
+          payload: 'primary',
+          fingerprint,
+        });
+        clearPendingEvent();
+        setSetting(LAST_SUCCESS_FINGERPRINT_SETTING, fingerprint);
       } catch (eventError) {
         if (isEventNotSavedError(eventError)) {
           logCalendarWriteDebug('primary payload rejected; retrying fallback payload', { calendarId, calendarLabel });
           try {
             await Calendar.createEventAsync(calendarId, fallbackEventDetails);
-            logCalendarWriteDebug('event write succeeded', { calendarId, calendarLabel, payload: 'fallback' });
+            logCalendarWriteDebug('event write succeeded', {
+              calendarId,
+              calendarLabel,
+              payload: 'fallback',
+              fingerprint,
+            });
+            clearPendingEvent();
+            setSetting(LAST_SUCCESS_FINGERPRINT_SETTING, fingerprint);
             return;
           } catch (fallbackError) {
-            logCalendarWriteDebug('fallback payload failed', { calendarId, calendarLabel });
+            logCalendarWriteDebug('fallback payload failed', {
+              calendarId,
+              calendarLabel,
+              fingerprint,
+              error: serializeError(fallbackError),
+            });
             throw fallbackError;
           }
         }
@@ -473,7 +603,68 @@ export async function addOutdoorTimeToCalendar(
     await createEventWithFallback(touchGrassId, TOUCHGRASS_CALENDAR_NAME);
     return true;
   } catch (e) {
-    console.warn('TouchGrass: Failed to add event to calendar:', e);
+    const pendingFailure: PendingCalendarEvent = {
+      ...basePending,
+      attempts: basePending.attempts + 1,
+      lastError: serializeError(e),
+      lastAttemptMs: Date.now(),
+    };
+    savePendingEvent(pendingFailure);
+    logCalendarWriteDebug('calendar write failed; pending event retained', {
+      fingerprint,
+      attempts: pendingFailure.attempts,
+      lastError: pendingFailure.lastError,
+    });
+    console.warn('TouchGrass: Failed to add event to calendar:', e, {
+      fingerprint,
+      attempts: pendingFailure.attempts,
+      lastError: pendingFailure.lastError,
+    });
     return false;
   }
+}
+
+export async function processPendingCalendarEvents(): Promise<boolean> {
+  const pending = readPendingEvent();
+  if (!pending) {
+    logCalendarWriteDebug('no pending calendar events to process');
+    return true;
+  }
+
+  const lastSuccessFingerprint = getSetting(LAST_SUCCESS_FINGERPRINT_SETTING, '');
+  if (lastSuccessFingerprint === pending.fingerprint) {
+    logCalendarWriteDebug('clearing stale pending calendar event — already marked successful', {
+      fingerprint: pending.fingerprint,
+    });
+    clearPendingEvent();
+    return true;
+  }
+
+  logCalendarWriteDebug('processing pending calendar event', {
+    fingerprint: pending.fingerprint,
+    attempts: pending.attempts,
+    lastError: pending.lastError,
+  });
+
+  const start = new Date(pending.startMs);
+  const durationMinutes = Math.max(1, Math.round((pending.endMs - pending.startMs) / 60000));
+
+  const success = await addOutdoorTimeToCalendar(start, durationMinutes, pending.title, {
+    retryingPending: true,
+    pending,
+  });
+
+  if (success) {
+    clearPendingEvent();
+    setSetting(LAST_SUCCESS_FINGERPRINT_SETTING, pending.fingerprint);
+  } else {
+    logCalendarWriteDebug('pending calendar event retry failed', {
+      fingerprint: pending.fingerprint,
+      attempts: pending.attempts + 1,
+      lastError: pending.lastError,
+    });
+  }
+
+  // Returning true avoids treating calendar write issues as fatal for the background task loop.
+  return true;
 }

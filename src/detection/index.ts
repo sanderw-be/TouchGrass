@@ -5,6 +5,7 @@ import { syncHealthConnect, requestHealthPermissions, isHealthConnectAvailable, 
 import { verifyHealthConnectPermissions } from './healthConnectIntent';
 import { startLocationTracking, autoDetectLocations } from './gpsDetection';
 import { getSetting, setSetting } from '../storage/database';
+import { processPendingCalendarEvents } from '../calendar/calendarService';
 import { scheduleNextReminder, scheduleDayReminders } from '../notifications/notificationManager';
 import { fetchWeatherForecast } from '../weather/weatherService';
 
@@ -37,6 +38,11 @@ TaskManager.defineTask(BACKGROUND_TASK_NAME, async () => {
     const lastPlanned = getSetting('reminders_last_planned_date', '');
     if (lastPlanned !== today) {
       await scheduleDayReminders();
+    }
+    
+    const pendingResult = await processPendingCalendarEvents();
+    if (!pendingResult) {
+      console.warn('TouchGrass: Pending calendar event retry failed; will retry later');
     }
 
     return BackgroundTask.BackgroundTaskResult.Success;
