@@ -93,9 +93,12 @@ export async function initDetection(): Promise<DetectionStatus> {
  */
 async function registerBackgroundTask(): Promise<void> {
   try {
-    await BackgroundTask.registerTaskAsync(BACKGROUND_TASK_NAME, {
-      minimumInterval: 15 * 60, // 15 minutes
-    });
+    const isRegistered = await TaskManager.isTaskRegisteredAsync(BACKGROUND_TASK_NAME);
+    if (!isRegistered) {
+      await BackgroundTask.registerTaskAsync(BACKGROUND_TASK_NAME, {
+        minimumInterval: 15, // minutes
+      });
+    }
   } catch (e) {
     console.warn('Background task registration error:', e);
   }
