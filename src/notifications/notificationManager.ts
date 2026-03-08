@@ -93,17 +93,17 @@ export async function setupNotificationInfrastructure(): Promise<void> {
       {
         identifier: ACTION_WENT_OUTSIDE,
         buttonTitle: t('notif_action_went_outside'),
-        options: { opensAppToForeground: false },
+        options: { opensAppToForeground: true },
       },
       {
         identifier: ACTION_SNOOZE,
         buttonTitle: t('notif_action_snooze'),
-        options: { opensAppToForeground: false },
+        options: { opensAppToForeground: true },
       },
       {
         identifier: ACTION_LESS_OFTEN,
         buttonTitle: t('notif_action_less_often'),
-        options: { opensAppToForeground: false },
+        options: { opensAppToForeground: true },
       },
     ]);
   } catch (e) {
@@ -146,17 +146,17 @@ export async function requestNotificationPermissions(): Promise<boolean> {
     {
       identifier: ACTION_WENT_OUTSIDE,
       buttonTitle: t('notif_action_went_outside'),
-      options: { opensAppToForeground: false },
+      options: { opensAppToForeground: true },
     },
     {
       identifier: ACTION_SNOOZE,
       buttonTitle: t('notif_action_snooze'),
-      options: { opensAppToForeground: false },
+      options: { opensAppToForeground: true },
     },
     {
       identifier: ACTION_LESS_OFTEN,
       buttonTitle: t('notif_action_less_often'),
-      options: { opensAppToForeground: false },
+      options: { opensAppToForeground: true },
     },
   ]);
 
