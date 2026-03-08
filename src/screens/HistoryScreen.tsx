@@ -137,7 +137,7 @@ function StatBox({ label, value }: { label: string; value: string }) {
   );
 }
 
-function BarChart({
+export function BarChart({
   data,
   target,
   maxValue,
@@ -152,8 +152,10 @@ function BarChart({
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const CHART_HEIGHT = 160;
   const targetY = CHART_HEIGHT - (target / maxValue) * CHART_HEIGHT;
+  const [chartWidth, setChartWidth] = useState(BAR_AREA_WIDTH);
   const barCount = data.length || 1;
-  const barWidth = Math.max(4, (BAR_AREA_WIDTH / barCount) - 4);
+  const effectiveWidth = Math.max(chartWidth, 1);
+  const barWidth = Math.max(4, (effectiveWidth / barCount) - 4);
 
   if (data.length === 0) {
     return (
@@ -165,7 +167,15 @@ function BarChart({
 
   return (
     <View>
-      <View style={[styles.chartArea, { height: CHART_HEIGHT }]}>
+      <View
+        testID="history-chart-area"
+        style={[styles.chartArea, { height: CHART_HEIGHT }]}
+        onLayout={({ nativeEvent: { layout } }) => {
+          if (layout.width && Math.abs(layout.width - chartWidth) > 0.5) {
+            setChartWidth(layout.width);
+          }
+        }}
+      >
         {/* Target line */}
         <View style={[styles.targetLine, { top: targetY }]} />
 
@@ -178,7 +188,7 @@ function BarChart({
             const isToday = startOfDay(d.date) === startOfDay(Date.now());
 
             return (
-              <View key={i} style={[styles.barWrapper, { width: barWidth }]}>
+              <View key={i} testID="history-bar-wrapper" style={[styles.barWrapper, { width: barWidth }]}>
                 <View
                   style={[
                     styles.bar,
@@ -293,10 +303,12 @@ function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
     backgroundColor: colors.card,
     borderRadius: radius.lg,
     padding: spacing.lg,
+    width: '100%',
     ...shadows.soft,
   },
   chartArea: {
     position: 'relative',
+    width: '100%',
     marginBottom: spacing.xs,
   },
   targetLine: {
@@ -310,12 +322,13 @@ function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
   barsRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',
+    width: '100%',
     height: '100%',
   },
   barWrapper: { alignItems: 'center', justifyContent: 'flex-end', height: '100%' },
   bar: { borderRadius: 3 },
 
-  xLabels: { flexDirection: 'row', marginTop: spacing.xs },
+  xLabels: { flexDirection: 'row', marginTop: spacing.xs, width: '100%' },
   xLabel: { alignItems: 'center' },
   xLabelText: { fontSize: 10, color: colors.textMuted },
 
