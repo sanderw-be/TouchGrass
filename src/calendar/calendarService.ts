@@ -250,7 +250,7 @@ function isEventNotSavedError(error: unknown): boolean {
 }
 
 function isCalendarWriteDebugEnabled(): boolean {
-  return getSetting('calendar_debug_logging', '0') === '1';
+  return getSetting('calendar_debug_logging', '1') === '1';
 }
 
 function logCalendarWriteDebug(message: string, details?: Record<string, unknown>): void {
