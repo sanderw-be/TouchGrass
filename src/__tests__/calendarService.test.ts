@@ -315,10 +315,6 @@ describe('calendarService', () => {
 
     it('returns false and logs full error when all four write stages fail', async () => {
       mockGetCalendarPermissions.mockResolvedValueOnce({ status: 'granted' });
-      mockGetSetting.mockImplementation((key: string, fallback: string) => {
-        if (key === 'calendar_debug_logging') return '1';
-        return fallback;
-      });
       mockGetCalendars
         .mockResolvedValueOnce([])
         .mockResolvedValueOnce([])
@@ -332,17 +328,17 @@ describe('calendarService', () => {
         .mockRejectedValueOnce({ code: 'E_EVENT_NOT_SAVED' })
         .mockRejectedValueOnce({ code: 'E_EVENT_NOT_SAVED' })
         .mockRejectedValueOnce({ code: 'E_EVENT_NOT_SAVED', message: 'final failure', nativeDescription: 'CalendarProvider rejected' });
-      const logSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+      const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
 
       const result = await addOutdoorTimeToCalendar(new Date('2025-06-01T10:00:00'), 15);
 
       expect(result).toBe(false);
       expect(mockCreateEvent).toHaveBeenCalledTimes(4);
-      expect(logSpy).toHaveBeenCalledWith(
-        expect.stringContaining('all write stages failed'),
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('All write stages exhausted'),
         expect.objectContaining({ errorCode: 'E_EVENT_NOT_SAVED', nativeDescription: 'CalendarProvider rejected' }),
       );
-      logSpy.mockRestore();
+      warnSpy.mockRestore();
     });
 
     it('includes fingerprint in the attempting primary event payload debug log', async () => {

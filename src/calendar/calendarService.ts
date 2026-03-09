@@ -470,13 +470,13 @@ export async function addOutdoorTimeToCalendar(
       }
 
       // Stage 2: fallback payload (no timeZone)
-      logCalendarWriteDebug('primary payload rejected; retrying fallback payload', { calendarId, calendarLabel });
+      console.warn('TouchGrass: Primary event payload rejected (E_EVENT_NOT_SAVED); retrying without timeZone', { calendarId, calendarLabel });
       try {
         await Calendar.createEventAsync(calendarId, fallbackEventDetails);
         logCalendarWriteDebug('event write succeeded', { calendarId, calendarLabel, payload: 'fallback' });
         return;
       } catch (e2) {
-        logCalendarWriteDebug('fallback payload failed; retrying ultra-minimal payload', {
+        console.warn('TouchGrass: Fallback payload failed; retrying ultra-minimal payload', {
           calendarId,
           calendarLabel,
           errorCode: (e2 as { code?: string })?.code,
@@ -485,13 +485,12 @@ export async function addOutdoorTimeToCalendar(
       }
 
       // Stage 3: ultra-minimal payload (title, startDate, endDate only — no allDay, no timeZone)
-      logCalendarWriteDebug('retrying ultra-minimal payload', { calendarId, calendarLabel });
       try {
         await Calendar.createEventAsync(calendarId, ultraMinimalEventDetails);
         logCalendarWriteDebug('event write succeeded', { calendarId, calendarLabel, payload: 'ultra-minimal' });
         return;
       } catch (e3) {
-        logCalendarWriteDebug('ultra-minimal payload failed; recreating calendar', {
+        console.warn('TouchGrass: Ultra-minimal payload failed; will recreate calendar and retry', {
           calendarId,
           calendarLabel,
           errorCode: (e3 as { code?: string })?.code,
@@ -500,7 +499,6 @@ export async function addOutdoorTimeToCalendar(
       }
 
       // Stage 4: calendar ID may be stale/corrupted — recreate it and retry once
-      logCalendarWriteDebug('all payload variants rejected; recreating calendar and retrying', { calendarId, calendarLabel });
       setSetting(TOUCHGRASS_CALENDAR_SETTING, ''); // clear stale cached ID
       const freshCalendarId = await getOrCreateTouchGrassCalendar();
       if (!freshCalendarId) {
@@ -510,7 +508,7 @@ export async function addOutdoorTimeToCalendar(
         await Calendar.createEventAsync(freshCalendarId, ultraMinimalEventDetails);
         logCalendarWriteDebug('event write succeeded after calendar recreation', { calendarId: freshCalendarId, calendarLabel, payload: 'ultra-minimal' });
       } catch (e4) {
-        logCalendarWriteDebug('all write stages failed', {
+        console.warn('TouchGrass: All write stages exhausted', {
           calendarId: freshCalendarId,
           calendarLabel,
           errorCode: (e4 as { code?: string })?.code,
