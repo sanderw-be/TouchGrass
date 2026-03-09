@@ -417,6 +417,30 @@ export async function addOutdoorTimeToCalendar(
       return false;
     }
 
+    // Log calendar metadata so that "all stages failed" logs are always accompanied by
+    // the calendar's actual state — this reveals whether allowsModifications/accessLevel
+    // are the true root cause even when all payload variants are rejected.
+    try {
+      const allCals = await Calendar.getCalendarsAsync(Calendar.EntityTypes.EVENT);
+      const tgCal = allCals.find((c) => c.id === touchGrassId);
+      if (tgCal) {
+        console.log('TouchGrass: Calendar target', {
+          id: tgCal.id,
+          title: tgCal.title,
+          allowsModifications: tgCal.allowsModifications,
+          accessLevel: tgCal.accessLevel,
+          sourceType: tgCal.source?.type,
+          isLocalAccount: tgCal.source?.isLocalAccount,
+          isSynced: (tgCal as unknown as { isSynced?: boolean }).isSynced,
+          isVisible: (tgCal as unknown as { isVisible?: boolean }).isVisible,
+        });
+      } else {
+        console.warn('TouchGrass: Calendar target not found in calendar list', { touchGrassId });
+      }
+    } catch {
+      // Non-critical diagnostic — never block the write attempt
+    }
+
     const endTime = new Date(startTime.getTime() + durationMinutes * 60 * 1000);
     const eventTitle = title ?? t('calendar_event_title');
     const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'; // fallback: Hermes can return '' on some Android builds
