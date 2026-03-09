@@ -186,10 +186,8 @@ describe('calendarService', () => {
       const localCal1 = { id: 'local-cal-1', allowsModifications: true, source: { isLocalAccount: true } };
       const localCal2 = { id: 'local-cal-2', allowsModifications: true, source: { isLocalAccount: true } };
       mockGetCalendars.mockResolvedValueOnce([localCal1, localCal2]);
-      // Non-fallback write error should fail this call.
-      mockCreateEvent
-        .mockRejectedValueOnce(new Error('E_EVENT_NOT_SAVED'))
-        .mockResolvedValueOnce('event-id-2');
+      // Non-fallback write error (no .code property) — Stage 1 throws immediately, no retry.
+      mockCreateEvent.mockRejectedValueOnce(new Error('E_EVENT_NOT_SAVED'));
 
       const result = await addOutdoorTimeToCalendar(new Date('2025-06-01T10:00:00'), 15);
 
@@ -274,16 +272,105 @@ describe('calendarService', () => {
       expect(mockCreateEvent).toHaveBeenCalled();
     });
 
+    it('succeeds on ultra-minimal payload when primary and fallback are both rejected', async () => {
+      mockGetCalendarPermissions.mockResolvedValueOnce({ status: 'granted' });
+      mockGetCalendars.mockResolvedValueOnce([]);
+      mockCreateEvent
+        .mockRejectedValueOnce({ code: 'E_EVENT_NOT_SAVED' })
+        .mockRejectedValueOnce({ code: 'E_EVENT_NOT_SAVED' })
+        .mockResolvedValueOnce('event-id-ultra');
+
+      const result = await addOutdoorTimeToCalendar(new Date('2025-06-01T10:00:00'), 15);
+
+      expect(result).toBe(true);
+      expect(mockCreateEvent).toHaveBeenCalledTimes(3);
+      // ultra-minimal payload omits allDay and timeZone
+      const [, ultraMinimalPayload] = mockCreateEvent.mock.calls[2];
+      expect(ultraMinimalPayload).not.toHaveProperty('timeZone');
+      expect(ultraMinimalPayload).not.toHaveProperty('allDay');
+    });
+
+    it('recreates calendar and retries when all payload variants are rejected', async () => {
+      mockGetCalendarPermissions.mockResolvedValueOnce({ status: 'granted' });
+      mockGetCalendars
+        .mockResolvedValueOnce([]) // initial getOrCreateTouchGrassCalendar
+        .mockResolvedValueOnce([]) // verify newly created calendar
+        .mockResolvedValueOnce([]) // recreate: getOrCreateTouchGrassCalendar
+        .mockResolvedValueOnce([]); // verify newly recreated calendar
+      mockCreateCalendar
+        .mockResolvedValueOnce('touchgrass-cal-id') // initial create
+        .mockResolvedValueOnce('touchgrass-cal-id-fresh'); // recreate
+      mockCreateEvent
+        .mockRejectedValueOnce({ code: 'E_EVENT_NOT_SAVED' }) // stage 1
+        .mockRejectedValueOnce({ code: 'E_EVENT_NOT_SAVED' }) // stage 2
+        .mockRejectedValueOnce({ code: 'E_EVENT_NOT_SAVED' }) // stage 3
+        .mockResolvedValueOnce('event-id-after-recreate'); // stage 4
+
+      const result = await addOutdoorTimeToCalendar(new Date('2025-06-01T10:00:00'), 15);
+
+      expect(result).toBe(true);
+      expect(mockCreateCalendar).toHaveBeenCalledTimes(2);
+      expect(mockCreateEvent).toHaveBeenCalledTimes(4);
+    });
+
+    it('returns false and logs full error when all four write stages fail', async () => {
+      mockGetCalendarPermissions.mockResolvedValueOnce({ status: 'granted' });
+      mockGetSetting.mockImplementation((key: string, fallback: string) => {
+        if (key === 'calendar_debug_logging') return '1';
+        return fallback;
+      });
+      mockGetCalendars
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([]);
+      mockCreateCalendar
+        .mockResolvedValueOnce('touchgrass-cal-id')
+        .mockResolvedValueOnce('touchgrass-cal-id-fresh');
+      mockCreateEvent
+        .mockRejectedValueOnce({ code: 'E_EVENT_NOT_SAVED' })
+        .mockRejectedValueOnce({ code: 'E_EVENT_NOT_SAVED' })
+        .mockRejectedValueOnce({ code: 'E_EVENT_NOT_SAVED' })
+        .mockRejectedValueOnce({ code: 'E_EVENT_NOT_SAVED', message: 'final failure', nativeDescription: 'CalendarProvider rejected' });
+      const logSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+
+      const result = await addOutdoorTimeToCalendar(new Date('2025-06-01T10:00:00'), 15);
+
+      expect(result).toBe(false);
+      expect(mockCreateEvent).toHaveBeenCalledTimes(4);
+      expect(logSpy).toHaveBeenCalledWith(
+        expect.stringContaining('all write stages failed'),
+        expect.objectContaining({ errorCode: 'E_EVENT_NOT_SAVED', nativeDescription: 'CalendarProvider rejected' }),
+      );
+      logSpy.mockRestore();
+    });
+
+    it('includes fingerprint in the attempting primary event payload debug log', async () => {
+      mockGetCalendarPermissions.mockResolvedValueOnce({ status: 'granted' });
+      mockGetSetting.mockImplementation((key: string, fallback: string) => {
+        if (key === 'calendar_debug_logging') return '1';
+        return fallback;
+      });
+      mockGetCalendars.mockResolvedValueOnce([]);
+      mockCreateEvent.mockResolvedValueOnce('event-id-1');
+      const logSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+
+      await addOutdoorTimeToCalendar(new Date('2025-06-01T10:00:00'), 15);
+
+      expect(logSpy).toHaveBeenCalledWith(
+        expect.stringContaining('attempting primary event payload'),
+        expect.objectContaining({ fingerprint: expect.stringContaining('|') }),
+      );
+      logSpy.mockRestore();
+    });
+
     it('returns false when all calendars reject and local TouchGrass calendar cannot be created', async () => {
       mockGetCalendarPermissions.mockResolvedValueOnce({ status: 'granted' });
-      // Only local-account calendars are tried; sync-account ones are skipped
+      // No matching TouchGrass calendar found; createCalendarAsync throws, so getOrCreateTouchGrassCalendar
+      // returns null and addOutdoorTimeToCalendar returns false before ever calling createEventAsync.
       const cal1 = { id: 'cal1', allowsModifications: true, source: { isLocalAccount: true } };
       const cal2 = { id: 'cal2', allowsModifications: true, source: { isLocalAccount: true } };
-      // No saved TouchGrass ID → getOrCreateTouchGrassCalendar skips the getCalendarsAsync call.
       mockGetCalendars.mockResolvedValueOnce([cal1, cal2]);
-      mockCreateEvent
-        .mockRejectedValueOnce(new Error('E_EVENT_NOT_SAVED'))
-        .mockRejectedValueOnce(new Error('E_EVENT_NOT_SAVED'));
       mockCreateCalendar.mockRejectedValueOnce(new Error('cannot create calendar'));
 
       const result = await addOutdoorTimeToCalendar(new Date(), 15);
@@ -619,8 +706,8 @@ describe('calendarService', () => {
       // getOrCreateTouchGrassCalendar creates a new calendar
       mockCreateCalendar.mockResolvedValueOnce('tg-id');
       mockGetEvents.mockResolvedValueOnce([]);
-      // But the write to it also fails
-      mockCreateEvent.mockRejectedValueOnce(new Error('hard failure'));
+      // Write succeeds — calendar ID must NOT be cleared by the write path
+      mockCreateEvent.mockResolvedValueOnce('event-id-1');
 
       const result = await addOutdoorTimeToCalendar(new Date('2025-06-01T10:00:00'), 15);
       expect(result).toBe(true);

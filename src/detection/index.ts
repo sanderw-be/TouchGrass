@@ -98,6 +98,7 @@ async function registerBackgroundTask(): Promise<void> {
       await BackgroundTask.registerTaskAsync(BACKGROUND_TASK_NAME, {
         minimumInterval: 15, // minutes
       });
+      console.log('TouchGrass: background task registered with minimumInterval 15 min');
     }
   } catch (e) {
     console.warn('Background task registration error:', e);

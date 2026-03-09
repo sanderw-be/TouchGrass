@@ -1,11 +1,12 @@
-import React, { useEffect, useState } from 'react';
-import { View, ActivityIndicator } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, ActivityIndicator, AppState, AppStateStatus } from 'react-native';
 import { enableScreens } from 'react-native-screens';
 import 'expo-dev-client';
 import { initDatabase, getSetting, setSetting } from './src/storage/database';
 import i18n from './src/i18n';
 import { initDetection } from './src/detection/index';
 import { setupNotificationInfrastructure, scheduleDayReminders } from './src/notifications/notificationManager';
+import { cleanupTouchGrassCalendars, maybeAddOutdoorTimeToCalendar } from './src/calendar/calendarService';
 
 import AppNavigator from './src/navigation/AppNavigator';
 import IntroScreen from './src/screens/IntroScreen';
@@ -18,6 +19,22 @@ function AppContent() {
   const { colors } = useTheme();
   const [ready, setReady] = useState(false);
   const [showIntro, setShowIntro] = useState(false);
+  const appState = useRef(AppState.currentState);
+
+  // On app foreground: run calendar cleanup and write as a fallback for missed background tasks
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextAppState: AppStateStatus) => {
+      if (appState.current !== 'active' && nextAppState === 'active') {
+        const hasCompletedIntro = getSetting('hasCompletedIntro', '0') === '1';
+        if (hasCompletedIntro) {
+          cleanupTouchGrassCalendars().catch((e) => console.warn('TouchGrass: foreground calendar cleanup error:', e));
+          maybeAddOutdoorTimeToCalendar(new Date()).catch((e) => console.warn('TouchGrass: foreground calendar write error:', e));
+        }
+      }
+      appState.current = nextAppState;
+    });
+    return () => subscription.remove();
+  }, []);
 
   useEffect(() => {
     async function init() {

@@ -437,6 +437,14 @@ export async function addOutdoorTimeToCalendar(
       allDay: false,
     };
 
+    const ultraMinimalEventDetails = {
+      title: eventTitle,
+      startDate: startTime,
+      endDate: endTime,
+    };
+
+    const fingerprint = eventFingerprint(eventTitle, startTime.getTime(), endTime.getTime());
+
     const createEventWithFallback = async (calendarId: string, calendarLabel: string): Promise<void> => {
       const duplicate = await hasDuplicateEvent(calendarId, startTime, endTime, eventTitle);
       if (duplicate) {
@@ -450,23 +458,57 @@ export async function addOutdoorTimeToCalendar(
         return;
       }
 
-      logCalendarWriteDebug('attempting primary event payload', { calendarId, calendarLabel });
+      // Stage 1: primary payload (with timeZone)
+      logCalendarWriteDebug('attempting primary event payload', { calendarId, calendarLabel, fingerprint, attempts: 0 });
       try {
         await Calendar.createEventAsync(calendarId, eventDetails);
         logCalendarWriteDebug('event write succeeded', { calendarId, calendarLabel, payload: 'primary' });
-      } catch (eventError) {
-        if (isEventNotSavedError(eventError)) {
-          logCalendarWriteDebug('primary payload rejected; retrying fallback payload', { calendarId, calendarLabel });
-          try {
-            await Calendar.createEventAsync(calendarId, fallbackEventDetails);
-            logCalendarWriteDebug('event write succeeded', { calendarId, calendarLabel, payload: 'fallback' });
-            return;
-          } catch (fallbackError) {
-            logCalendarWriteDebug('fallback payload failed', { calendarId, calendarLabel });
-            throw fallbackError;
-          }
-        }
-        throw eventError;
+        return;
+      } catch (e1) {
+        if (!isEventNotSavedError(e1)) throw e1;
+        // E_EVENT_NOT_SAVED — continue to next stage
+      }
+
+      // Stage 2: fallback payload (no timeZone)
+      logCalendarWriteDebug('primary payload rejected; retrying fallback payload', { calendarId, calendarLabel });
+      try {
+        await Calendar.createEventAsync(calendarId, fallbackEventDetails);
+        logCalendarWriteDebug('event write succeeded', { calendarId, calendarLabel, payload: 'fallback' });
+        return;
+      } catch {
+        // Any failure here — try ultra-minimal next
+      }
+
+      // Stage 3: ultra-minimal payload (title, startDate, endDate only — no allDay, no timeZone)
+      logCalendarWriteDebug('fallback payload rejected; retrying ultra-minimal payload', { calendarId, calendarLabel });
+      try {
+        await Calendar.createEventAsync(calendarId, ultraMinimalEventDetails);
+        logCalendarWriteDebug('event write succeeded', { calendarId, calendarLabel, payload: 'ultra-minimal' });
+        return;
+      } catch {
+        // Any failure here — try recreating the calendar next
+      }
+
+      // Stage 4: calendar ID may be stale/corrupted — recreate it and retry once
+      logCalendarWriteDebug('all payload variants rejected; recreating calendar and retrying', { calendarId, calendarLabel });
+      setSetting(TOUCHGRASS_CALENDAR_SETTING, ''); // clear stale cached ID
+      const freshCalendarId = await getOrCreateTouchGrassCalendar();
+      if (!freshCalendarId) {
+        throw new Error('TouchGrass: Could not recreate TouchGrass calendar for retry');
+      }
+      try {
+        await Calendar.createEventAsync(freshCalendarId, ultraMinimalEventDetails);
+        logCalendarWriteDebug('event write succeeded after calendar recreation', { calendarId: freshCalendarId, calendarLabel, payload: 'ultra-minimal' });
+      } catch (e4) {
+        logCalendarWriteDebug('all write stages failed', {
+          calendarId: freshCalendarId,
+          calendarLabel,
+          errorCode: (e4 as { code?: string })?.code,
+          errorMessage: (e4 as { message?: string })?.message,
+          nativeDescription: (e4 as { nativeDescription?: string })?.nativeDescription,
+          error: String(e4),
+        });
+        throw e4;
       }
     };
 
