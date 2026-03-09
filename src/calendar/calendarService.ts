@@ -254,48 +254,56 @@ export async function getWritableCalendars(): Promise<Calendar.Calendar[]> {
  * On Android, Google/Exchange sync-account calendars reject direct ContentProvider
  * inserts. A local-account calendar is the only guaranteed writable target.
  * The calendar ID is cached in app_settings to avoid creating duplicates.
+ *
+ * @param forceCreate  When true, skip all existing-calendar lookups and always
+ *   create a brand-new calendar.  Use this when write attempts to the currently
+ *   cached calendar have all failed — e.g. because that calendar was created by a
+ *   different build of the app (different signing keys) and the Android
+ *   CalendarProvider is silently rejecting inserts from the new UID.
  */
-export async function getOrCreateTouchGrassCalendar(): Promise<string | null> {
+export async function getOrCreateTouchGrassCalendar(forceCreate = false): Promise<string | null> {
   try {
-    const calendars = await Calendar.getCalendarsAsync(Calendar.EntityTypes.EVENT);
-    const savedId = getSetting(TOUCHGRASS_CALENDAR_SETTING, '');
-    if (savedId) {
-      const existing = calendars.find((c) => c.id === savedId);
-      if (existing) {
-        if (!existing.allowsModifications) {
-          console.warn('TouchGrass: Cached TouchGrass calendar is read-only — recreating', {
-            allowsModifications: existing.allowsModifications,
-            accessLevel: existing.accessLevel,
-            sourceType: existing.source?.type,
-            isLocal: existing.source?.isLocalAccount,
-          });
-          // Fall through to recreate
-        } else {
-          // Ensure isSynced/isVisible are set for calendars created before this fix —
-          // without SYNC_EVENTS=1 some Android CalendarProviders reject event inserts.
-          try {
-            await Calendar.updateCalendarAsync(savedId, { isSynced: true, isVisible: true });
-          } catch {
-            // Non-critical: best-effort update for legacy calendars
+    if (!forceCreate) {
+      const calendars = await Calendar.getCalendarsAsync(Calendar.EntityTypes.EVENT);
+      const savedId = getSetting(TOUCHGRASS_CALENDAR_SETTING, '');
+      if (savedId) {
+        const existing = calendars.find((c) => c.id === savedId);
+        if (existing) {
+          if (!existing.allowsModifications) {
+            console.warn('TouchGrass: Cached TouchGrass calendar is read-only — recreating', {
+              allowsModifications: existing.allowsModifications,
+              accessLevel: existing.accessLevel,
+              sourceType: existing.source?.type,
+              isLocal: existing.source?.isLocalAccount,
+            });
+            // Fall through to recreate
+          } else {
+            // Ensure isSynced/isVisible are set for calendars created before this fix —
+            // without SYNC_EVENTS=1 some Android CalendarProviders reject event inserts.
+            try {
+              await Calendar.updateCalendarAsync(savedId, { isSynced: true, isVisible: true });
+            } catch {
+              // Non-critical: best-effort update for legacy calendars
+            }
+            return savedId;
           }
-          return savedId;
         }
       }
-    }
 
-    const reusable = calendars.find(
-      (calendar) => calendar.allowsModifications
-        && calendar.source?.isLocalAccount
-        && matchesTouchGrassCalendar(calendar),
-    );
-    if (reusable) {
-      try {
-        await Calendar.updateCalendarAsync(reusable.id, { isSynced: true, isVisible: true });
-      } catch {
-        // Non-critical: best-effort update for legacy calendars
+      const reusable = calendars.find(
+        (calendar) => calendar.allowsModifications
+          && calendar.source?.isLocalAccount
+          && matchesTouchGrassCalendar(calendar),
+      );
+      if (reusable) {
+        try {
+          await Calendar.updateCalendarAsync(reusable.id, { isSynced: true, isVisible: true });
+        } catch {
+          // Non-critical: best-effort update for legacy calendars
+        }
+        setSetting(TOUCHGRASS_CALENDAR_SETTING, reusable.id);
+        return reusable.id;
       }
-      setSetting(TOUCHGRASS_CALENDAR_SETTING, reusable.id);
-      return reusable.id;
     }
 
     const id = await Calendar.createCalendarAsync({
@@ -522,9 +530,19 @@ export async function addOutdoorTimeToCalendar(
         });
       }
 
-      // Stage 4: calendar ID may be stale/corrupted — recreate it and retry once
+      // Stage 4: force-create a brand-new calendar and retry once.
+      // All three payload variants failed against the same calendar, which can happen when
+      // the calendar was created by a different build of the app (e.g. signed with different
+      // keys): on some Android ROMs the CalendarProvider silently rejects inserts from a UID
+      // that does not match the one that originally created the calendar.  By passing
+      // forceCreate=true we bypass any existing TouchGrass calendar and always create a
+      // genuinely new one owned by the current app UID.
+      console.warn(
+        'TouchGrass: All payload variants rejected; force-creating a new calendar (possible signing-key mismatch from a different build)',
+        { calendarId, calendarLabel },
+      );
       setSetting(TOUCHGRASS_CALENDAR_SETTING, ''); // clear stale cached ID
-      const freshCalendarId = await getOrCreateTouchGrassCalendar();
+      const freshCalendarId = await getOrCreateTouchGrassCalendar(true); // forceCreate: bypass any existing calendar
       if (!freshCalendarId) {
         throw new Error('TouchGrass: Could not recreate TouchGrass calendar for retry');
       }

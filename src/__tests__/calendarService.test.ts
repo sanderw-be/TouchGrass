@@ -293,13 +293,13 @@ describe('calendarService', () => {
     it('recreates calendar and retries when all payload variants are rejected', async () => {
       mockGetCalendarPermissions.mockResolvedValueOnce({ status: 'granted' });
       mockGetCalendars
-        .mockResolvedValueOnce([]) // initial getOrCreateTouchGrassCalendar
+        .mockResolvedValueOnce([]) // initial getOrCreateTouchGrassCalendar lookup
         .mockResolvedValueOnce([]) // verify newly created calendar
-        .mockResolvedValueOnce([]) // recreate: getOrCreateTouchGrassCalendar
-        .mockResolvedValueOnce([]); // verify newly recreated calendar
+        .mockResolvedValueOnce([]) // metadata log (addOutdoorTimeToCalendar)
+        .mockResolvedValueOnce([]); // verify newly force-created calendar (stage 4, forceCreate=true)
       mockCreateCalendar
         .mockResolvedValueOnce('touchgrass-cal-id') // initial create
-        .mockResolvedValueOnce('touchgrass-cal-id-fresh'); // recreate
+        .mockResolvedValueOnce('touchgrass-cal-id-fresh'); // stage 4 force-create
       mockCreateEvent
         .mockRejectedValueOnce({ code: 'E_EVENT_NOT_SAVED' }) // stage 1
         .mockRejectedValueOnce({ code: 'E_EVENT_NOT_SAVED' }) // stage 2
@@ -311,6 +311,50 @@ describe('calendarService', () => {
       expect(result).toBe(true);
       expect(mockCreateCalendar).toHaveBeenCalledTimes(2);
       expect(mockCreateEvent).toHaveBeenCalledTimes(4);
+      // Stage 4 must write to the freshly created calendar, not the original one
+      const [stage4CalId] = mockCreateEvent.mock.calls[3];
+      expect(stage4CalId).toBe('touchgrass-cal-id-fresh');
+      // 4 getCalendarsAsync calls: initial lookup, initial verify, metadata log, stage-4 verify
+      // (stage 4 uses forceCreate=true so its lookup is skipped — hence only 4, not 5)
+      expect(mockGetCalendars).toHaveBeenCalledTimes(4);
+    });
+
+    it('stage 4 force-creates a new calendar when existing TouchGrass calendar rejects all writes (signing-key mismatch scenario)', async () => {
+      // Simulates a calendar that was created by a different build of the app (e.g. signed
+      // with a developer key on a laptop).  The calendar appears writable according to its
+      // metadata, but the Android CalendarProvider rejects every insert because the calling
+      // UID no longer matches the UID that originally created the calendar.
+      mockGetCalendarPermissions.mockResolvedValueOnce({ status: 'granted' });
+      const oldBuildCal = {
+        id: 'old-build-cal-id',
+        title: 'TouchGrass',
+        allowsModifications: true,
+        source: { isLocalAccount: true, name: 'TouchGrass' },
+      };
+      mockGetCalendars
+        .mockResolvedValueOnce([oldBuildCal]) // getOrCreateTouchGrassCalendar: finds & reuses existing
+        .mockResolvedValueOnce([oldBuildCal]) // metadata log
+        // stage 4: getOrCreateTouchGrassCalendar(forceCreate=true) — no lookup call
+        .mockResolvedValueOnce([{ id: 'fresh-cal-id', allowsModifications: true }]); // verify fresh calendar
+      mockCreateCalendar.mockResolvedValueOnce('fresh-cal-id'); // stage 4 force-create
+      mockCreateEvent
+        .mockRejectedValueOnce({ code: 'E_EVENT_NOT_SAVED' }) // stage 1
+        .mockRejectedValueOnce({ code: 'E_EVENT_NOT_SAVED' }) // stage 2
+        .mockRejectedValueOnce({ code: 'E_EVENT_NOT_SAVED' }) // stage 3
+        .mockResolvedValueOnce('event-id-on-fresh'); // stage 4 succeeds on fresh calendar
+
+      const result = await addOutdoorTimeToCalendar(new Date('2025-06-01T10:00:00'), 15);
+
+      expect(result).toBe(true);
+      // One calendar was created (the fresh one; the old-build calendar was not recreated)
+      expect(mockCreateCalendar).toHaveBeenCalledTimes(1);
+      expect(mockCreateEvent).toHaveBeenCalledTimes(4);
+      // Stage 4 must write to the freshly created calendar, NOT the old broken one
+      const [stage4CalId] = mockCreateEvent.mock.calls[3];
+      expect(stage4CalId).toBe('fresh-cal-id');
+      // 3 getCalendarsAsync calls: initial lookup, metadata log, stage-4 verify
+      // (forceCreate=true skips the stage-4 lookup — proving the existing calendar is bypassed)
+      expect(mockGetCalendars).toHaveBeenCalledTimes(3);
     });
 
     it('returns false and logs full error when all four write stages fail', async () => {
@@ -608,12 +652,33 @@ describe('calendarService', () => {
     });
 
     it('returns null when createCalendarAsync throws', async () => {
-      // savedId = '' → skips getCalendarsAsync
+      // savedId = '' → no existing calendar found, falls through to create
       mockGetSetting.mockImplementation((_key: string, fallback: string) => fallback);
       mockCreateCalendar.mockRejectedValueOnce(new Error('create failed'));
 
       const id = await getOrCreateTouchGrassCalendar();
       expect(id).toBeNull();
+    });
+
+    it('forceCreate=true bypasses existing TouchGrass calendar and always creates a new one', async () => {
+      // Even though a writable TouchGrass calendar exists, forceCreate must ignore it.
+      // This simulates the signing-key mismatch scenario: the existing calendar was created
+      // by a different build, and we need a fresh calendar owned by the current app UID.
+      mockGetSetting.mockImplementation((key: string, fallback: string) => {
+        if (key === 'calendar_touchgrass_id') return 'old-build-id';
+        return fallback;
+      });
+      mockCreateCalendar.mockResolvedValueOnce('brand-new-id');
+      // forceCreate skips the lookup getCalendarsAsync, so only the verification call happens
+      mockGetCalendars.mockResolvedValueOnce([{ id: 'brand-new-id', allowsModifications: true }]);
+
+      const id = await getOrCreateTouchGrassCalendar(true);
+
+      expect(id).toBe('brand-new-id');
+      expect(mockCreateCalendar).toHaveBeenCalledTimes(1);
+      // Lookup call is skipped (only the post-creation verification call happens)
+      expect(mockGetCalendars).toHaveBeenCalledTimes(1);
+      expect(mockSetSetting).toHaveBeenCalledWith('calendar_touchgrass_id', 'brand-new-id');
     });
   });
 
