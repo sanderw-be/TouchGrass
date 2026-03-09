@@ -366,8 +366,9 @@ describe('calendarService', () => {
 
     it('returns false when all calendars reject and local TouchGrass calendar cannot be created', async () => {
       mockGetCalendarPermissions.mockResolvedValueOnce({ status: 'granted' });
-      // No matching TouchGrass calendar found; createCalendarAsync throws, so getOrCreateTouchGrassCalendar
-      // returns null and addOutdoorTimeToCalendar returns false before ever calling createEventAsync.
+      // No matching TouchGrass calendar found; createCalendarAsync fails (rejects), so
+      // getOrCreateTouchGrassCalendar returns null and addOutdoorTimeToCalendar returns false
+      // before ever calling createEventAsync.
       const cal1 = { id: 'cal1', allowsModifications: true, source: { isLocalAccount: true } };
       const cal2 = { id: 'cal2', allowsModifications: true, source: { isLocalAccount: true } };
       mockGetCalendars.mockResolvedValueOnce([cal1, cal2]);

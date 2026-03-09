@@ -475,18 +475,28 @@ export async function addOutdoorTimeToCalendar(
         await Calendar.createEventAsync(calendarId, fallbackEventDetails);
         logCalendarWriteDebug('event write succeeded', { calendarId, calendarLabel, payload: 'fallback' });
         return;
-      } catch {
-        // Any failure here — try ultra-minimal next
+      } catch (e2) {
+        logCalendarWriteDebug('fallback payload failed; retrying ultra-minimal payload', {
+          calendarId,
+          calendarLabel,
+          errorCode: (e2 as { code?: string })?.code,
+          errorMessage: (e2 as { message?: string })?.message,
+        });
       }
 
       // Stage 3: ultra-minimal payload (title, startDate, endDate only — no allDay, no timeZone)
-      logCalendarWriteDebug('fallback payload rejected; retrying ultra-minimal payload', { calendarId, calendarLabel });
+      logCalendarWriteDebug('retrying ultra-minimal payload', { calendarId, calendarLabel });
       try {
         await Calendar.createEventAsync(calendarId, ultraMinimalEventDetails);
         logCalendarWriteDebug('event write succeeded', { calendarId, calendarLabel, payload: 'ultra-minimal' });
         return;
-      } catch {
-        // Any failure here — try recreating the calendar next
+      } catch (e3) {
+        logCalendarWriteDebug('ultra-minimal payload failed; recreating calendar', {
+          calendarId,
+          calendarLabel,
+          errorCode: (e3 as { code?: string })?.code,
+          errorMessage: (e3 as { message?: string })?.message,
+        });
       }
 
       // Stage 4: calendar ID may be stale/corrupted — recreate it and retry once
