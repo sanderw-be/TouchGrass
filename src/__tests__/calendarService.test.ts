@@ -361,14 +361,15 @@ describe('calendarService', () => {
       expect(mockGetCalendars).toHaveBeenCalledTimes(4);
     });
 
-    it('returns false and logs full error when all four write stages fail', async () => {
+    it('returns false and logs full error when all stages including stage 5 fail', async () => {
       mockGetCalendarPermissions.mockResolvedValueOnce({ status: 'granted' });
       mockGetCalendars
-        .mockResolvedValueOnce([])
-        .mockResolvedValueOnce([])
-        .mockResolvedValueOnce([])
-        .mockResolvedValueOnce([])
-        .mockResolvedValueOnce([]); // stage-4 fresh-calendar metadata log
+        .mockResolvedValueOnce([])  // initial getOrCreateTouchGrassCalendar lookup
+        .mockResolvedValueOnce([])  // verify newly created calendar
+        .mockResolvedValueOnce([])  // metadata log (addOutdoorTimeToCalendar)
+        .mockResolvedValueOnce([])  // verify newly force-created calendar (stage 4, forceCreate=true)
+        .mockResolvedValueOnce([])  // stage-4 fresh-calendar metadata log
+        .mockResolvedValueOnce([]); // stage 5: getPrimaryCalendarId (no calendars → null)
       mockCreateCalendar
         .mockResolvedValueOnce('touchgrass-cal-id')
         .mockResolvedValueOnce('touchgrass-cal-id-fresh');
@@ -386,9 +387,94 @@ describe('calendarService', () => {
       expect(result).toBe(false);
       expect(mockCreateEvent).toHaveBeenCalledTimes(6);
       expect(warnSpy).toHaveBeenCalledWith(
-        expect.stringContaining('All write stages exhausted'),
+        expect.stringContaining('All TouchGrass-specific write stages exhausted'),
         expect.objectContaining({ errorCode: 'E_EVENT_NOT_SAVED', nativeDescription: 'CalendarProvider rejected' }),
       );
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('No primary calendar found'),
+      );
+      warnSpy.mockRestore();
+    });
+
+    it('stage 5 succeeds by writing to the isPrimary calendar when stages 1–4 all fail', async () => {
+      mockGetCalendarPermissions.mockResolvedValueOnce({ status: 'granted' });
+      const primaryCal = {
+        id: 'primary-cal-id',
+        title: 'Personal',
+        isPrimary: true,
+        allowsModifications: true,
+        source: { isLocalAccount: false, type: 'com.google' },
+      };
+      mockGetCalendars
+        .mockResolvedValueOnce([])                 // initial getOrCreateTouchGrassCalendar lookup
+        .mockResolvedValueOnce([])                 // verify newly created calendar
+        .mockResolvedValueOnce([])                 // metadata log (addOutdoorTimeToCalendar)
+        .mockResolvedValueOnce([])                 // verify newly force-created calendar (stage 4)
+        .mockResolvedValueOnce([])                 // stage-4 fresh-calendar metadata log
+        .mockResolvedValueOnce([primaryCal]);      // stage 5: getPrimaryCalendarId finds primary
+      mockCreateCalendar
+        .mockResolvedValueOnce('touchgrass-cal-id')
+        .mockResolvedValueOnce('touchgrass-cal-id-fresh');
+      mockCreateEvent
+        .mockRejectedValueOnce({ code: 'E_EVENT_NOT_SAVED' }) // stage 1
+        .mockRejectedValueOnce({ code: 'E_EVENT_NOT_SAVED' }) // stage 2
+        .mockRejectedValueOnce({ code: 'E_EVENT_NOT_SAVED' }) // stage 3
+        .mockRejectedValueOnce({ code: 'E_EVENT_NOT_SAVED' }) // stage 4 primary payload
+        .mockRejectedValueOnce({ code: 'E_EVENT_NOT_SAVED' }) // stage 4 fallback payload
+        .mockRejectedValueOnce({ code: 'E_EVENT_NOT_SAVED' }) // stage 4 ultra-minimal
+        .mockResolvedValueOnce('event-on-primary'); // stage 5 succeeds
+      const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+
+      const result = await addOutdoorTimeToCalendar(new Date('2025-06-01T10:00:00'), 15);
+
+      expect(result).toBe(true);
+      expect(mockCreateEvent).toHaveBeenCalledTimes(7);
+      // Stage 5 must write to the primary calendar
+      const [stage5CalId] = mockCreateEvent.mock.calls[6];
+      expect(stage5CalId).toBe('primary-cal-id');
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Stage 5: attempting write to primary calendar'),
+        expect.objectContaining({ primaryCalId: 'primary-cal-id' }),
+      );
+      warnSpy.mockRestore();
+    });
+
+    it('stage 5 falls back to first writable calendar when no isPrimary calendar exists', async () => {
+      mockGetCalendarPermissions.mockResolvedValueOnce({ status: 'granted' });
+      // A writable calendar with isPrimary=false — stage 5 should pick it as writable[0]
+      const nonPrimaryCal = {
+        id: 'other-cal-id',
+        title: 'Work',
+        isPrimary: false,
+        allowsModifications: true,
+        source: { isLocalAccount: false, type: 'com.google' },
+      };
+      mockGetCalendars
+        .mockResolvedValueOnce([])               // initial getOrCreateTouchGrassCalendar lookup
+        .mockResolvedValueOnce([])               // verify newly created calendar
+        .mockResolvedValueOnce([])               // metadata log
+        .mockResolvedValueOnce([])               // verify newly force-created calendar (stage 4)
+        .mockResolvedValueOnce([])               // stage-4 fresh-calendar metadata log
+        .mockResolvedValueOnce([nonPrimaryCal]); // stage 5: no isPrimary, falls back to writable[0]
+      mockCreateCalendar
+        .mockResolvedValueOnce('touchgrass-cal-id')
+        .mockResolvedValueOnce('touchgrass-cal-id-fresh');
+      mockCreateEvent
+        .mockRejectedValueOnce({ code: 'E_EVENT_NOT_SAVED' })
+        .mockRejectedValueOnce({ code: 'E_EVENT_NOT_SAVED' })
+        .mockRejectedValueOnce({ code: 'E_EVENT_NOT_SAVED' })
+        .mockRejectedValueOnce({ code: 'E_EVENT_NOT_SAVED' })
+        .mockRejectedValueOnce({ code: 'E_EVENT_NOT_SAVED' })
+        .mockRejectedValueOnce({ code: 'E_EVENT_NOT_SAVED' })
+        .mockResolvedValueOnce('event-on-fallback');
+      const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+
+      const result = await addOutdoorTimeToCalendar(new Date('2025-06-01T10:00:00'), 15);
+
+      expect(result).toBe(true);
+      expect(mockCreateEvent).toHaveBeenCalledTimes(7);
+      const [stage5CalId] = mockCreateEvent.mock.calls[6];
+      expect(stage5CalId).toBe('other-cal-id');
       warnSpy.mockRestore();
     });
 

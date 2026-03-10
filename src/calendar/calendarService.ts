@@ -387,6 +387,36 @@ export async function hasUpcomingEvent(windowMinutes: number): Promise<boolean> 
 }
 
 /**
+ * Find the ID of the device's primary calendar (isPrimary === true).
+ * Falls back to the first writable calendar if no primary is found.
+ * Calendars in `excludeIds` are skipped (already tried and failed).
+ * Returns null when no usable calendar is found.
+ */
+async function getPrimaryCalendarId(excludeIds: string[]): Promise<string | null> {
+  try {
+    const calendars = await Calendar.getCalendarsAsync(Calendar.EntityTypes.EVENT);
+    const writable = calendars.filter(
+      (c) => c.allowsModifications && !excludeIds.includes(c.id),
+    );
+    // Prefer a calendar explicitly marked as primary; fall back to the first writable one.
+    const candidate = writable.find((c) => c.isPrimary === true) ?? writable[0] ?? null;
+    if (candidate) {
+      console.warn('TouchGrass: Stage 5 primary calendar candidate', {
+        id: candidate.id,
+        title: candidate.title,
+        isPrimary: candidate.isPrimary,
+        allowsModifications: candidate.allowsModifications,
+        sourceType: candidate.source?.type,
+        isLocalAccount: candidate.source?.isLocalAccount,
+      });
+    }
+    return candidate?.id ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Conditionally add an outdoor time slot to the calendar based on the user's
  * settings.  Does nothing when calendar integration is disabled or the default
  * duration is set to Off (0).  Safe to call fire-and-forget.
@@ -588,7 +618,7 @@ export async function addOutdoorTimeToCalendar(
           if (!isEventNotSavedError(err)) break; // non-recoverable error — stop trying
         }
       }
-      console.warn('TouchGrass: All write stages exhausted', {
+      console.warn('TouchGrass: All TouchGrass-specific write stages exhausted; trying device primary calendar', {
         calendarId: freshCalendarId,
         calendarLabel,
         errorCode: (stage4Error as { code?: string })?.code,
@@ -598,7 +628,21 @@ export async function addOutdoorTimeToCalendar(
         endDateMs: endTime.getTime(),
         error: String(stage4Error),
       });
-      throw stage4Error;
+
+      // Stage 5: try the device's primary calendar (isPrimary=true), or as a last
+      // resort the first other writable calendar found.  The primary calendar is
+      // typically the user's main Google/Exchange calendar; it uses a proper sync
+      // adapter which means our CALLER_IS_SYNCADAPTER patch builds the correct
+      // insert URI for it.  This is a best-effort attempt — if it also fails the
+      // error is thrown and addOutdoorTimeToCalendar returns false as before.
+      const primaryCalId = await getPrimaryCalendarId([calendarId, freshCalendarId]);
+      if (!primaryCalId) {
+        console.warn('TouchGrass: No primary calendar found for stage 5 fallback');
+        throw stage4Error;
+      }
+      console.warn('TouchGrass: Stage 5: attempting write to primary calendar', { primaryCalId });
+      await Calendar.createEventAsync(primaryCalId, ultraMinimalEventDetails);
+      logCalendarWriteDebug('event write succeeded on primary calendar (stage 5)', { calendarId: primaryCalId, calendarLabel });
     };
 
     await createEventWithFallback(touchGrassId, TOUCHGRASS_CALENDAR_NAME);

@@ -18,12 +18,15 @@ jest.mock('../detection/gpsDetection', () => ({
 
 import * as BackgroundTask from 'expo-background-task';
 import * as TaskManager from 'expo-task-manager';
+import * as Calendar from 'expo-calendar';
 import * as Database from '../storage/database';
 import * as NotificationManager from '../notifications/notificationManager';
 import * as WeatherService from '../weather/weatherService';
 
 // Import the module to register the background task
 import * as Detection from '../detection/index';
+
+const mockGetCalendarPermissions = Calendar.getCalendarPermissionsAsync as jest.Mock;
 
 describe('detection background task', () => {
   let taskCallback: (...args: any[]) => Promise<any>;
@@ -41,10 +44,39 @@ describe('detection background task', () => {
     (NotificationManager.scheduleNextReminder as jest.Mock).mockResolvedValue(undefined);
     (NotificationManager.scheduleDayReminders as jest.Mock).mockResolvedValue(undefined);
     (WeatherService.fetchWeatherForecast as jest.Mock).mockResolvedValue({ success: true });
+    mockGetCalendarPermissions.mockResolvedValue({ status: 'granted', granted: true, canAskAgain: false });
   });
 
   it('defines the TOUCHGRASS_BACKGROUND_TASK on module load', () => {
     expect(taskCallback).toBeDefined();
+  });
+
+  it('logs calendar permission status on every background task run', async () => {
+    mockGetCalendarPermissions.mockResolvedValueOnce({ status: 'granted', granted: true, canAskAgain: false });
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+
+    await taskCallback();
+
+    expect(mockGetCalendarPermissions).toHaveBeenCalledTimes(1);
+    expect(warnSpy).toHaveBeenCalledWith(
+      'TouchGrass: Background task calendar permission',
+      expect.objectContaining({ status: 'granted', granted: true }),
+    );
+    warnSpy.mockRestore();
+  });
+
+  it('logs a warning when calendar permission check throws', async () => {
+    mockGetCalendarPermissions.mockRejectedValueOnce(new Error('permission API unavailable'));
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+
+    const result = await taskCallback();
+
+    expect(result).toBe(BackgroundTask.BackgroundTaskResult.Success);
+    expect(warnSpy).toHaveBeenCalledWith(
+      'TouchGrass: Failed to check calendar permission in background task',
+      expect.any(Error),
+    );
+    warnSpy.mockRestore();
   });
 
   it('calls scheduleDayReminders when reminders_last_planned_date is a different day', async () => {
