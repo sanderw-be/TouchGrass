@@ -361,7 +361,7 @@ describe('calendarService', () => {
       expect(mockGetCalendars).toHaveBeenCalledTimes(4);
     });
 
-    it('returns false and logs full error when all stages including stage 4 fail', async () => {
+    it('returns false and logs full error when all stages fail', async () => {
       mockGetCalendarPermissions.mockResolvedValueOnce({ status: 'granted' });
       mockGetCalendars
         .mockResolvedValueOnce([])  // initial getOrCreateTouchGrassCalendar lookup
