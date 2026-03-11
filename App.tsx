@@ -12,6 +12,8 @@ import AppNavigator from './src/navigation/AppNavigator';
 import IntroScreen from './src/screens/IntroScreen';
 import { IntroContext } from './src/context/IntroContext';
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
+import { ReminderFeedbackProvider } from './src/context/ReminderFeedbackContext';
+import ReminderFeedbackModal from './src/components/ReminderFeedbackModal';
 
 enableScreens();
 
@@ -156,7 +158,10 @@ function AppContent() {
 export default function App() {
   return (
     <ThemeProvider>
-      <AppContent />
+      <ReminderFeedbackProvider>
+        <AppContent />
+        <ReminderFeedbackModal />
+      </ReminderFeedbackProvider>
     </ThemeProvider>
   );
 }

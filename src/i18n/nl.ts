@@ -132,6 +132,8 @@ export default {
   location_delete_confirm_body: 'Weet je zeker dat je deze locatie wilt verwijderen? Dit kan niet ongedaan worden gemaakt.',
   settings_reminders_label: 'Slimme herinneringen',
   settings_reminders_sublabel: 'Leert je patronen over tijd',
+  settings_reminders_count_off: 'Uit',
+  settings_reminders_count_per_day: '{{count}}/dag',
   settings_background_tracking_label: 'Achtergrondtracking melding',
   settings_background_tracking_sublabel: 'De permanente melding die zichtbaar is terwijl GPS actief is. Uitschakelen via Android Instellingen → Apps → TouchGrass → Meldingen → Achtergrondtracking.',
   settings_app_sublabel: 'Jouw buitentijd-assistent',
@@ -282,8 +284,14 @@ export default {
   // Bevestigingsberichten na het tikken op een meldingsknop
   notif_confirm_title: 'TouchGrass',
   notif_confirm_went_outside: '✅ Begrepen! Goed bezig.',
-  notif_confirm_snoozed: '⏰ Ik herinner je over 45 minuten.',
+  notif_confirm_snoozed: '⏰ Ik herinner je over 30 minuten.',
   notif_confirm_less_often: '🔕 Begrepen! Ik herinner je minder vaak.',
+
+  // Herinneringsmodal uitlegberichten
+  notif_feedback_dismiss: 'Begrepen',
+  notif_feedback_went_outside_detail: 'We herinneren je vaker rond {{time}}.',
+  notif_feedback_snoozed_detail: 'We herinneren je over 30 minuten, minder vaak om {{time}} en vaker om {{snoozeTime}}.',
+  notif_feedback_less_often_detail: 'We herinneren je minder vaak om {{time}}.',
 
   // Weather settings
   settings_weather_title: 'Weer',
