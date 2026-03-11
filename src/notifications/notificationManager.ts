@@ -181,11 +181,21 @@ export async function setupNotifications(): Promise<void> {
 export async function scheduleNextReminder(): Promise<void> {
   const todayMinutes = getTodayMinutes();
   const dailyTarget = getCurrentDailyGoal()?.targetMinutes ?? 30;
-  const lastReminderMs = parseInt(getSetting('last_reminder_ms', '0'), 10);
-  const isCurrentlyOutside = getSetting('currently_outside', '0') === '1';
   const remindersCount = parseInt(getSetting('smart_reminders_count', '2'), 10);
 
   if (remindersCount === 0) return;
+
+  // Cancel all remaining smart reminders as soon as the daily goal is reached.
+  // This check must come before the other early-returns so that a nearby
+  // scheduled notification or calendar event cannot prevent the cancellation.
+  if (todayMinutes >= dailyTarget) {
+    console.log('TouchGrass: daily goal reached — cancelling remaining smart reminders');
+    await cancelAutomaticReminders();
+    return;
+  }
+
+  const lastReminderMs = parseInt(getSetting('last_reminder_ms', '0'), 10);
+  const isCurrentlyOutside = getSetting('currently_outside', '0') === '1';
 
   // Skip if there's a scheduled notification nearby
   if (hasScheduledNotificationNearby(60)) {
@@ -209,9 +219,6 @@ export async function scheduleNextReminder(): Promise<void> {
 
   if (!should) {
     console.log('TouchGrass: no reminder needed:', reason);
-    if (reason === 'daily goal reached') {
-      await cancelAutomaticReminders();
-    }
     return;
   }
 
@@ -392,6 +399,13 @@ export async function maybeScheduleCatchUpReminder(): Promise<void> {
   const todayMinutes = getTodayMinutes();
   const dailyTarget = getCurrentDailyGoal()?.targetMinutes ?? 30;
   const targetPercent = Math.min(todayMinutes / dailyTarget, 1);
+
+  // If the daily goal is already met, cancel any remaining smart reminders and stop.
+  if (targetPercent >= 1) {
+    console.log('TouchGrass: daily goal reached — cancelling remaining smart reminders (catch-up check)');
+    await cancelAutomaticReminders();
+    return;
+  }
 
   // Only schedule a catch-up if more reminders have passed than target % reached
   if (passedPercent <= targetPercent) return;
