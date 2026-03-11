@@ -1,20 +1,22 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useRef } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
   TouchableOpacity, RefreshControl, StatusBar,
 } from 'react-native';
+import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { useFocusEffect } from '@react-navigation/native';
 import ManualSessionSheet from '../components/ManualSessionSheet';
 import ProgressRing from '../components/ProgressRing';
 import {
   getTodayMinutes, getWeekMinutes,
   getCurrentDailyGoal, getCurrentWeeklyGoal,
-  getSessionsForDay,
+  getSessionsForDay, confirmSession,
 } from '../storage/database';
 import { spacing, radius, shadows } from '../utils/theme';
 import { useTheme } from '../context/ThemeContext';
 import { formatMinutes, formatTime } from '../utils/helpers';
 import { t, formatLocalDate } from '../i18n';
+import { updateTimeSlotProbability } from '../detection/sessionConfidence';
 
 export default function HomeScreen() {
   const { colors, isDark } = useTheme();
@@ -41,6 +43,13 @@ export default function HomeScreen() {
     setRefreshing(true);
     loadData();
     setRefreshing(false);
+  };
+
+  const handleConfirm = (id: number, startTime: number, confirmed: boolean) => {
+    confirmSession(id, confirmed);
+    const d = new Date(startTime);
+    updateTimeSlotProbability(d.getHours(), d.getDay(), confirmed);
+    loadData();
   };
 
   const dailyPercent = Math.min(todayMinutes / dailyTarget, 1);
@@ -119,7 +128,11 @@ export default function HomeScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('todays_sessions')}</Text>
           {todaySessions.map((session) => (
-            <SessionRow key={session.id} session={session} />
+            <SessionRow
+              key={session.id}
+              session={session}
+              onConfirm={(confirmed) => handleConfirm(session.id, session.startTime, confirmed)}
+            />
           ))}
         </View>
       )}
@@ -161,10 +174,11 @@ function WeekDots() {
   );
 }
 
-function SessionRow({ session }: { session: any }) {
+function SessionRow({ session, onConfirm }: { session: any; onConfirm: (confirmed: boolean) => void }) {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
-  const isPending = session.userConfirmed === null;
+  const swipeableRef = useRef<Swipeable>(null);
+  const isPending = session.userConfirmed === null && session.discarded !== 1;
   const sourceIcon: Record<string, string> = {
     health_connect: '👟',
     gps: '📍',
@@ -172,7 +186,29 @@ function SessionRow({ session }: { session: any }) {
     timeline: '🗓️',
   };
 
-  return (
+  const renderConfirmAction = () => (
+    <TouchableOpacity
+      style={[styles.swipeAction, styles.swipeConfirm]}
+      onPress={() => { swipeableRef.current?.close(); onConfirm(true); }}
+      testID="home-swipe-confirm-action"
+    >
+      <Text style={styles.swipeConfirmIcon}>✓</Text>
+      <Text style={styles.swipeConfirmLabel}>{t('events_confirm')}</Text>
+    </TouchableOpacity>
+  );
+
+  const renderRejectAction = () => (
+    <TouchableOpacity
+      style={[styles.swipeAction, styles.swipeReject]}
+      onPress={() => { swipeableRef.current?.close(); onConfirm(false); }}
+      testID="home-swipe-reject-action"
+    >
+      <Text style={styles.swipeRejectIcon}>✕</Text>
+      <Text style={styles.swipeRejectLabel}>{t('events_not_outside')}</Text>
+    </TouchableOpacity>
+  );
+
+  const rowContent = (
     <View style={styles.sessionRow}>
       <Text style={[styles.sessionIcon, isPending && styles.sessionPending]}>
         {sourceIcon[session.source] ?? '🌿'}
@@ -189,6 +225,29 @@ function SessionRow({ session }: { session: any }) {
         </View>
       )}
     </View>
+  );
+
+  if (!isPending) {
+    return rowContent;
+  }
+
+  return (
+    <Swipeable
+      ref={swipeableRef}
+      renderRightActions={renderConfirmAction}
+      renderLeftActions={renderRejectAction}
+      onSwipeableOpen={(direction) => {
+        // direction 'right' = right panel opened = user swiped left = accept
+        // direction 'left' = left panel opened = user swiped right = reject
+        if (direction === 'right') {
+          onConfirm(true);
+        } else {
+          onConfirm(false);
+        }
+      }}
+    >
+      {rowContent}
+    </Swipeable>
   );
 }
 
@@ -294,6 +353,20 @@ function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
     paddingVertical: 3,
   },
   reviewText: { fontSize: 11, color: colors.grass, fontWeight: '600' },
+
+  swipeAction: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 88,
+    borderRadius: radius.md,
+    marginBottom: spacing.xs,
+  },
+  swipeConfirm: { backgroundColor: colors.grass },
+  swipeConfirmIcon: { fontSize: 22, color: colors.textInverse, fontWeight: '700' },
+  swipeConfirmLabel: { fontSize: 11, color: colors.textInverse, fontWeight: '600', marginTop: 2 },
+  swipeReject: { backgroundColor: colors.fog },
+  swipeRejectIcon: { fontSize: 22, color: colors.textSecondary, fontWeight: '700' },
+  swipeRejectLabel: { fontSize: 11, color: colors.textSecondary, fontWeight: '600', marginTop: 2 },
 
   emptyState: { alignItems: 'center', paddingVertical: spacing.xxl },
   emptyIcon: { fontSize: 48, marginBottom: spacing.md },

@@ -1,8 +1,9 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useRef } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
   TouchableOpacity, RefreshControl, Alert,
 } from 'react-native';
+import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { useFocusEffect } from '@react-navigation/native';
 import {
   getApprovedSessions, getStandardSessions, getAllSessionsIncludingDiscarded,
@@ -215,6 +216,7 @@ function SessionRow({
 }) {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
+  const swipeableRef = useRef<Swipeable>(null);
   const sourceIcon: Record<string, string> = {
     health_connect: '👟',
     gps: '📍',
@@ -258,7 +260,31 @@ function SessionRow({
     ? styles.badgeRejectedText
     : styles.badgeProposedText;
 
-  return (
+  const isPending = !isConfirmed && !isRejected && !isDiscarded;
+
+  const renderConfirmAction = () => (
+    <TouchableOpacity
+      style={[styles.swipeAction, styles.swipeConfirm]}
+      onPress={() => { swipeableRef.current?.close(); onConfirm(true); }}
+      testID="swipe-confirm-action"
+    >
+      <Text style={styles.swipeConfirmIcon}>✓</Text>
+      <Text style={styles.swipeConfirmLabel}>{t('events_confirm')}</Text>
+    </TouchableOpacity>
+  );
+
+  const renderRejectAction = () => (
+    <TouchableOpacity
+      style={[styles.swipeAction, styles.swipeReject]}
+      onPress={() => { swipeableRef.current?.close(); onConfirm(false); }}
+      testID="swipe-reject-action"
+    >
+      <Text style={styles.swipeRejectIcon}>✕</Text>
+      <Text style={styles.swipeRejectLabel}>{t('events_not_outside')}</Text>
+    </TouchableOpacity>
+  );
+
+  const rowContent = (
     <View style={[styles.rowCard, (isRejected || isDiscarded) && styles.rowCardMuted]}>
       {/* Collapsed row */}
       <TouchableOpacity style={styles.rowSummary} onPress={onToggle} activeOpacity={0.7}>
@@ -314,7 +340,7 @@ function SessionRow({
           </TouchableOpacity>
 
           {/* Actions for pending sessions */}
-          {!isConfirmed && !isRejected && !isDiscarded && (
+          {isPending && (
             <View style={styles.actions}>
               <TouchableOpacity
                 style={[styles.actionBtn, styles.actionReject]}
@@ -369,6 +395,29 @@ function SessionRow({
         </View>
       )}
     </View>
+  );
+
+  if (!isPending) {
+    return rowContent;
+  }
+
+  return (
+    <Swipeable
+      ref={swipeableRef}
+      renderRightActions={renderConfirmAction}
+      renderLeftActions={renderRejectAction}
+      onSwipeableOpen={(direction) => {
+        // direction 'right' = right panel opened = user swiped left = accept
+        // direction 'left' = left panel opened = user swiped right = reject
+        if (direction === 'right') {
+          onConfirm(true);
+        } else {
+          onConfirm(false);
+        }
+      }}
+    >
+      {rowContent}
+    </Swipeable>
   );
 }
 
@@ -511,5 +560,18 @@ function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
   actionConfirmText: { fontSize: 14, color: colors.textInverse, fontWeight: '600' },
   actionSecondaryText: { fontSize: 14, color: colors.error, fontWeight: '600' },
   actionEditTimesText: { fontSize: 14, color: colors.textPrimary, fontWeight: '600' },
+
+  swipeAction: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 88,
+    borderRadius: radius.md,
+  },
+  swipeConfirm: { backgroundColor: colors.grass },
+  swipeConfirmIcon: { fontSize: 22, color: colors.textInverse, fontWeight: '700' },
+  swipeConfirmLabel: { fontSize: 11, color: colors.textInverse, fontWeight: '600', marginTop: 2 },
+  swipeReject: { backgroundColor: colors.fog },
+  swipeRejectIcon: { fontSize: 22, color: colors.textSecondary, fontWeight: '700' },
+  swipeRejectLabel: { fontSize: 11, color: colors.textSecondary, fontWeight: '600', marginTop: 2 },
   });
 }
