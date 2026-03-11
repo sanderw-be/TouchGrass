@@ -51,9 +51,8 @@ TaskManager.defineTask(BACKGROUND_TASK_NAME, async () => {
     // notifications are not cancelled by the fallback path.
     await scheduleDayReminders();
 
-    // Fallback: fire an immediate reminder if the day hasn't been planned
-    // yet.  When scheduleDayReminders() has already set today's date,
-    // scheduleNextReminder() returns early to avoid cancelling the plan.
+    // Attempt to fire an immediate reminder.  Returns early if the day's
+    // reminders have already been planned by scheduleDayReminders().
     await scheduleNextReminder();
 
     // Check if a catch-up reminder is needed (user behind on daily goal)

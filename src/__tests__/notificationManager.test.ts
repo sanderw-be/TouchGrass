@@ -722,7 +722,7 @@ describe('notificationManager', () => {
   });
 
   describe('calendar integration in scheduleNextReminder', () => {
-    it('does not create a calendar event even when a reminder is sent (calendar events only from scheduleDayReminders)', async () => {
+    it('does not create a calendar event when a reminder is sent (delegated to scheduleDayReminders)', async () => {
       (Database.getTodayMinutes as jest.Mock).mockReturnValue(10);
       (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
         if (key === 'smart_reminders_count') return '2';
