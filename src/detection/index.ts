@@ -1,6 +1,7 @@
 import * as BackgroundTask from 'expo-background-task';
 import * as TaskManager from 'expo-task-manager';
 import * as Location from 'expo-location';
+import * as Calendar from 'expo-calendar';
 import { syncHealthConnect, requestHealthPermissions, isHealthConnectAvailable, openHealthConnectForManagement } from './healthConnect';
 import { verifyHealthConnectPermissions } from './healthConnectIntent';
 import { startLocationTracking, autoDetectLocations } from './gpsDetection';
@@ -16,6 +17,21 @@ const BACKGROUND_TASK_NAME = 'TOUCHGRASS_BACKGROUND_TASK';
  */
 TaskManager.defineTask(BACKGROUND_TASK_NAME, async () => {
   try {
+    // Check calendar permission from within the background task context and log it.
+    // On Android the foreground app and background task share the same process/UID so
+    // permissions granted in the foreground should be visible here too — but this log
+    // makes that assumption observable in logcat so we can confirm it.
+    try {
+      const calPerm = await Calendar.getCalendarPermissionsAsync();
+      console.warn('TouchGrass: Background task calendar permission', {
+        status: calPerm.status,
+        granted: calPerm.granted,
+        canAskAgain: calPerm.canAskAgain,
+      });
+    } catch (calPermError) {
+      console.warn('TouchGrass: Failed to check calendar permission in background task', calPermError);
+    }
+
     await syncHealthConnect();
     await autoDetectLocations();
     
@@ -98,6 +114,7 @@ async function registerBackgroundTask(): Promise<void> {
       await BackgroundTask.registerTaskAsync(BACKGROUND_TASK_NAME, {
         minimumInterval: 15, // minutes
       });
+      console.log('TouchGrass: background task registered with minimumInterval 15 min');
     }
   } catch (e) {
     console.warn('Background task registration error:', e);

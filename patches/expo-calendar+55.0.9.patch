@@ -1,0 +1,39 @@
+diff --git a/node_modules/expo-calendar/android/src/main/java/expo/modules/calendar/domain/event/EventRepository.kt b/node_modules/expo-calendar/android/src/main/java/expo/modules/calendar/domain/event/EventRepository.kt
+index 25a50cb..f0d37f8 100644
+--- a/node_modules/expo-calendar/android/src/main/java/expo/modules/calendar/domain/event/EventRepository.kt
++++ b/node_modules/expo-calendar/android/src/main/java/expo/modules/calendar/domain/event/EventRepository.kt
+@@ -76,7 +76,33 @@ class EventRepository(context: Context) {
+       put(CalendarContract.Events.CALENDAR_ID, eventInput.calendarId.toLong())
+     }
+ 
+-    val eventsUri = CalendarContract.Events.CONTENT_URI
++    // Look up the calendar's ACCOUNT_NAME and ACCOUNT_TYPE so we can use the
++    // sync-adapter URI (CALLER_IS_SYNCADAPTER=true).  On some Android OEMs (e.g.
++    // Samsung One UI) the CalendarProvider silently rejects inserts via the plain
++    // Events.CONTENT_URI even when WRITE_CALENDAR is granted, but accepts the same
++    // insert when the sync-adapter parameters are present — mirroring how
++    // CalendarRepository.createCalendar() constructs its own insert URI.
++    // Fall back to the plain URI if the calendar lookup fails for any reason.
++    val syncAdapterUri = contentResolver.query(
++      ContentUris.withAppendedId(CalendarContract.Calendars.CONTENT_URI, eventInput.calendarId.toLong()),
++      arrayOf(CalendarContract.Calendars.ACCOUNT_NAME, CalendarContract.Calendars.ACCOUNT_TYPE),
++      null, null, null
++    )?.use { cursor ->
++      if (cursor.moveToFirst()) {
++        val accountName = cursor.getString(0)
++        val accountType = cursor.getString(1)
++        if (accountName != null && accountType != null) {
++          CalendarContract.Events.CONTENT_URI
++            .buildUpon()
++            .appendQueryParameter(CalendarContract.CALLER_IS_SYNCADAPTER, "true")
++            .appendQueryParameter(CalendarContract.Calendars.ACCOUNT_NAME, accountName)
++            .appendQueryParameter(CalendarContract.Calendars.ACCOUNT_TYPE, accountType)
++            .build()
++        } else null
++      } else null
++    }
++
++    val eventsUri = syncAdapterUri ?: CalendarContract.Events.CONTENT_URI
+     val eventUri = contentResolver.insert(eventsUri, payload)
+       ?: throw EventNotSavedException()
+ 

@@ -254,48 +254,56 @@ export async function getWritableCalendars(): Promise<Calendar.Calendar[]> {
  * On Android, Google/Exchange sync-account calendars reject direct ContentProvider
  * inserts. A local-account calendar is the only guaranteed writable target.
  * The calendar ID is cached in app_settings to avoid creating duplicates.
+ *
+ * @param forceCreate  When true, skip all existing-calendar lookups and always
+ *   create a brand-new calendar.  Use this when write attempts to the currently
+ *   cached calendar have all failed — e.g. because that calendar was created by a
+ *   different build of the app (different signing keys) and the Android
+ *   CalendarProvider is silently rejecting inserts from the new UID.
  */
-export async function getOrCreateTouchGrassCalendar(): Promise<string | null> {
+export async function getOrCreateTouchGrassCalendar(forceCreate = false): Promise<string | null> {
   try {
-    const calendars = await Calendar.getCalendarsAsync(Calendar.EntityTypes.EVENT);
-    const savedId = getSetting(TOUCHGRASS_CALENDAR_SETTING, '');
-    if (savedId) {
-      const existing = calendars.find((c) => c.id === savedId);
-      if (existing) {
-        if (!existing.allowsModifications) {
-          console.warn('TouchGrass: Cached TouchGrass calendar is read-only — recreating', {
-            allowsModifications: existing.allowsModifications,
-            accessLevel: existing.accessLevel,
-            sourceType: existing.source?.type,
-            isLocal: existing.source?.isLocalAccount,
-          });
-          // Fall through to recreate
-        } else {
-          // Ensure isSynced/isVisible are set for calendars created before this fix —
-          // without SYNC_EVENTS=1 some Android CalendarProviders reject event inserts.
-          try {
-            await Calendar.updateCalendarAsync(savedId, { isSynced: true, isVisible: true });
-          } catch {
-            // Non-critical: best-effort update for legacy calendars
+    if (!forceCreate) {
+      const calendars = await Calendar.getCalendarsAsync(Calendar.EntityTypes.EVENT);
+      const savedId = getSetting(TOUCHGRASS_CALENDAR_SETTING, '');
+      if (savedId) {
+        const existing = calendars.find((c) => c.id === savedId);
+        if (existing) {
+          if (!existing.allowsModifications) {
+            console.warn('TouchGrass: Cached TouchGrass calendar is read-only — recreating', {
+              allowsModifications: existing.allowsModifications,
+              accessLevel: existing.accessLevel,
+              sourceType: existing.source?.type,
+              isLocal: existing.source?.isLocalAccount,
+            });
+            // Fall through to recreate
+          } else {
+            // Ensure isSynced/isVisible are set for calendars created before this fix —
+            // without SYNC_EVENTS=1 some Android CalendarProviders reject event inserts.
+            try {
+              await Calendar.updateCalendarAsync(savedId, { isSynced: true, isVisible: true });
+            } catch {
+              // Non-critical: best-effort update for legacy calendars
+            }
+            return savedId;
           }
-          return savedId;
         }
       }
-    }
 
-    const reusable = calendars.find(
-      (calendar) => calendar.allowsModifications
-        && calendar.source?.isLocalAccount
-        && matchesTouchGrassCalendar(calendar),
-    );
-    if (reusable) {
-      try {
-        await Calendar.updateCalendarAsync(reusable.id, { isSynced: true, isVisible: true });
-      } catch {
-        // Non-critical: best-effort update for legacy calendars
+      const reusable = calendars.find(
+        (calendar) => calendar.allowsModifications
+          && calendar.source?.isLocalAccount
+          && matchesTouchGrassCalendar(calendar),
+      );
+      if (reusable) {
+        try {
+          await Calendar.updateCalendarAsync(reusable.id, { isSynced: true, isVisible: true });
+        } catch {
+          // Non-critical: best-effort update for legacy calendars
+        }
+        setSetting(TOUCHGRASS_CALENDAR_SETTING, reusable.id);
+        return reusable.id;
       }
-      setSetting(TOUCHGRASS_CALENDAR_SETTING, reusable.id);
-      return reusable.id;
     }
 
     const id = await Calendar.createCalendarAsync({
@@ -417,6 +425,31 @@ export async function addOutdoorTimeToCalendar(
       return false;
     }
 
+    // Log calendar metadata so that "all stages failed" logs are always accompanied by
+    // the calendar's actual state — this reveals whether allowsModifications/accessLevel
+    // are the true root cause even when all payload variants are rejected.
+    // Emitted as console.warn so it is visible in logcat W/ReactNativeJS filter.
+    try {
+      const allCals = await Calendar.getCalendarsAsync(Calendar.EntityTypes.EVENT);
+      const tgCal = allCals.find((c) => c.id === touchGrassId);
+      if (tgCal) {
+        console.warn('TouchGrass: Calendar target', {
+          id: tgCal.id,
+          title: tgCal.title,
+          allowsModifications: tgCal.allowsModifications,
+          accessLevel: tgCal.accessLevel,
+          sourceType: tgCal.source?.type,
+          isLocalAccount: tgCal.source?.isLocalAccount,
+          isSynced: (tgCal as unknown as { isSynced?: boolean }).isSynced,
+          isVisible: (tgCal as unknown as { isVisible?: boolean }).isVisible,
+        });
+      } else {
+        console.warn('TouchGrass: Calendar target not found in calendar list', { touchGrassId });
+      }
+    } catch {
+      // Non-critical diagnostic — never block the write attempt
+    }
+
     const endTime = new Date(startTime.getTime() + durationMinutes * 60 * 1000);
     const eventTitle = title ?? t('calendar_event_title');
     const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'; // fallback: Hermes can return '' on some Android builds
@@ -437,6 +470,14 @@ export async function addOutdoorTimeToCalendar(
       allDay: false,
     };
 
+    const ultraMinimalEventDetails = {
+      title: eventTitle,
+      startDate: startTime,
+      endDate: endTime,
+    };
+
+    const fingerprint = eventFingerprint(eventTitle, startTime.getTime(), endTime.getTime());
+
     const createEventWithFallback = async (calendarId: string, calendarLabel: string): Promise<void> => {
       const duplicate = await hasDuplicateEvent(calendarId, startTime, endTime, eventTitle);
       if (duplicate) {
@@ -450,24 +491,114 @@ export async function addOutdoorTimeToCalendar(
         return;
       }
 
-      logCalendarWriteDebug('attempting primary event payload', { calendarId, calendarLabel });
+      // Stage 1: primary payload (with timeZone)
+      logCalendarWriteDebug('attempting primary event payload', { calendarId, calendarLabel, fingerprint, attempts: 0 });
       try {
         await Calendar.createEventAsync(calendarId, eventDetails);
         logCalendarWriteDebug('event write succeeded', { calendarId, calendarLabel, payload: 'primary' });
-      } catch (eventError) {
-        if (isEventNotSavedError(eventError)) {
-          logCalendarWriteDebug('primary payload rejected; retrying fallback payload', { calendarId, calendarLabel });
-          try {
-            await Calendar.createEventAsync(calendarId, fallbackEventDetails);
-            logCalendarWriteDebug('event write succeeded', { calendarId, calendarLabel, payload: 'fallback' });
-            return;
-          } catch (fallbackError) {
-            logCalendarWriteDebug('fallback payload failed', { calendarId, calendarLabel });
-            throw fallbackError;
-          }
-        }
-        throw eventError;
+        return;
+      } catch (e1) {
+        if (!isEventNotSavedError(e1)) throw e1;
+        // E_EVENT_NOT_SAVED — continue to next stage
       }
+
+      // Stage 2: fallback payload (no timeZone)
+      console.warn('TouchGrass: Primary event payload rejected (E_EVENT_NOT_SAVED); retrying without timeZone', { calendarId, calendarLabel });
+      try {
+        await Calendar.createEventAsync(calendarId, fallbackEventDetails);
+        logCalendarWriteDebug('event write succeeded', { calendarId, calendarLabel, payload: 'fallback' });
+        return;
+      } catch (e2) {
+        console.warn('TouchGrass: Fallback payload failed; retrying ultra-minimal payload', {
+          calendarId,
+          calendarLabel,
+          errorCode: (e2 as { code?: string })?.code,
+          errorMessage: (e2 as { message?: string })?.message,
+        });
+      }
+
+      // Stage 3: ultra-minimal payload (title, startDate, endDate only — no allDay, no timeZone)
+      try {
+        await Calendar.createEventAsync(calendarId, ultraMinimalEventDetails);
+        logCalendarWriteDebug('event write succeeded', { calendarId, calendarLabel, payload: 'ultra-minimal' });
+        return;
+      } catch (e3) {
+        console.warn('TouchGrass: Ultra-minimal payload failed; will recreate calendar and retry', {
+          calendarId,
+          calendarLabel,
+          errorCode: (e3 as { code?: string })?.code,
+          errorMessage: (e3 as { message?: string })?.message,
+        });
+      }
+
+      // Stage 4: force-create a brand-new calendar and retry with all payload variants.
+      // All three payload variants failed against the same calendar.  One known cause is
+      // a signing-key mismatch: a calendar created by a different build (different UID) can
+      // silently reject inserts from the new UID on some Android ROMs.  We also reach this
+      // stage when the CalendarProvider has a broader restriction — the metadata logs above
+      // will reveal which case we're in.  By passing forceCreate=true we always create a
+      // genuinely new calendar owned by the current app UID; then we retry all payload
+      // variants in case the fresh calendar accepts a different form.
+      console.warn(
+        'TouchGrass: All payload variants rejected; force-creating a new calendar',
+        { calendarId, calendarLabel },
+      );
+      setSetting(TOUCHGRASS_CALENDAR_SETTING, ''); // clear stale cached ID
+      const freshCalendarId = await getOrCreateTouchGrassCalendar(true); // forceCreate: bypass any existing calendar
+      if (!freshCalendarId) {
+        throw new Error('TouchGrass: Could not recreate TouchGrass calendar for retry');
+      }
+
+      // Log fresh-calendar metadata so we can diagnose why writes still fail if they do.
+      try {
+        const freshCals = await Calendar.getCalendarsAsync(Calendar.EntityTypes.EVENT);
+        const freshCal = freshCals.find((c) => c.id === freshCalendarId);
+        if (freshCal) {
+          console.warn('TouchGrass: Fresh calendar target (post-recreate)', {
+            id: freshCal.id,
+            title: freshCal.title,
+            allowsModifications: freshCal.allowsModifications,
+            accessLevel: freshCal.accessLevel,
+            sourceType: freshCal.source?.type,
+            isLocalAccount: freshCal.source?.isLocalAccount,
+            isSynced: (freshCal as unknown as { isSynced?: boolean }).isSynced,
+            isVisible: (freshCal as unknown as { isVisible?: boolean }).isVisible,
+          });
+        } else {
+          console.warn('TouchGrass: Fresh calendar not found in calendar list after creation', { freshCalendarId });
+        }
+      } catch {
+        // Non-critical diagnostic — never block the write attempt
+      }
+
+      // Try all three payload variants on the fresh calendar (not just ultra-minimal),
+      // since the fresh calendar is genuinely new and may accept a different payload form.
+      let stage4Error: unknown;
+      for (const [label, payload] of [
+        ['primary', eventDetails],
+        ['fallback', fallbackEventDetails],
+        ['ultra-minimal', ultraMinimalEventDetails],
+      ] as const) {
+        try {
+          await Calendar.createEventAsync(freshCalendarId, payload);
+          logCalendarWriteDebug('event write succeeded after calendar recreation', { calendarId: freshCalendarId, calendarLabel, payload: label });
+          return;
+        } catch (err) {
+          stage4Error = err;
+          if (!isEventNotSavedError(err)) break; // non-recoverable error — stop trying
+        }
+      }
+      console.warn('TouchGrass: All write stages exhausted', {
+        calendarId: freshCalendarId,
+        calendarLabel,
+        errorCode: (stage4Error as { code?: string })?.code,
+        errorMessage: (stage4Error as { message?: string })?.message,
+        nativeDescription: (stage4Error as { nativeDescription?: string })?.nativeDescription,
+        startDateMs: startTime.getTime(),
+        endDateMs: endTime.getTime(),
+        error: String(stage4Error),
+      });
+      throw stage4Error;
     };
 
     await createEventWithFallback(touchGrassId, TOUCHGRASS_CALENDAR_NAME);
