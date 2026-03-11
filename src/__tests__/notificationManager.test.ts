@@ -47,6 +47,7 @@ describe('notificationManager', () => {
     (Notifications.scheduleNotificationAsync as jest.Mock).mockResolvedValue('notif-id');
     (Notifications.dismissNotificationAsync as jest.Mock).mockResolvedValue(undefined);
     (CalendarService.maybeAddOutdoorTimeToCalendar as jest.Mock).mockResolvedValue(undefined);
+    (CalendarService.hasUpcomingEvent as jest.Mock).mockResolvedValue(false);
   });
 
   describe('setupNotificationInfrastructure', () => {
@@ -169,6 +170,46 @@ describe('notificationManager', () => {
 
       expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
       expect(Notifications.cancelScheduledNotificationAsync).not.toHaveBeenCalled();
+    });
+
+    it('cancels remaining smart reminders when goal is reached even if a scheduled notification is nearby', async () => {
+      (Database.getTodayMinutes as jest.Mock).mockReturnValue(30);
+      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
+      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
+        if (key === 'smart_reminders_count') return '2';
+        return fallback;
+      });
+      // Simulates the path that previously bypassed the goal-reached cancel
+      (ScheduledNotifications.hasScheduledNotificationNearby as jest.Mock).mockReturnValue(true);
+      (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([
+        { identifier: 'auto_reminder_1' },
+        { identifier: 'scheduled_1_2' },
+      ]);
+
+      await scheduleNextReminder();
+
+      // Must still cancel the automatic reminder despite the scheduled-notification-nearby flag
+      expect(Notifications.cancelScheduledNotificationAsync).toHaveBeenCalledWith('auto_reminder_1');
+      expect(Notifications.cancelScheduledNotificationAsync).not.toHaveBeenCalledWith('scheduled_1_2');
+      expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
+    });
+
+    it('cancels remaining smart reminders when goal is reached even if a calendar event is upcoming', async () => {
+      (Database.getTodayMinutes as jest.Mock).mockReturnValue(30);
+      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
+      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
+        if (key === 'smart_reminders_count') return '2';
+        return fallback;
+      });
+      (CalendarService.hasUpcomingEvent as jest.Mock).mockResolvedValue(true);
+      (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([
+        { identifier: 'auto_morning_reminder' },
+      ]);
+
+      await scheduleNextReminder();
+
+      expect(Notifications.cancelScheduledNotificationAsync).toHaveBeenCalledWith('auto_morning_reminder');
+      expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
     });
   });
 
@@ -506,6 +547,36 @@ describe('notificationManager', () => {
       await maybeScheduleCatchUpReminder();
 
       expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
+    });
+
+    it('cancels remaining smart reminders and stops when daily goal is met', async () => {
+      const todayStr = new Date().toDateString();
+      (Database.getTodayMinutes as jest.Mock).mockReturnValue(30);
+      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
+      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
+        if (key === 'smart_reminders_count') return '2';
+        if (key === 'reminders_last_planned_date') return todayStr;
+        if (key === 'additional_reminders_today') return '0';
+        if (key === 'reminders_planned_slots') return JSON.stringify([{ hour: 9, minute: 0 }, { hour: 11, minute: 0 }]);
+        return fallback;
+      });
+      jest.spyOn(Date.prototype, 'getHours').mockReturnValue(12);
+      jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
+      (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([
+        { identifier: 'auto_reminder_14_30' },
+        { identifier: 'scheduled_1_3' },
+      ]);
+
+      await maybeScheduleCatchUpReminder();
+
+      // No new catch-up reminder scheduled
+      expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
+      // Remaining automatic reminder cancelled
+      expect(Notifications.cancelScheduledNotificationAsync).toHaveBeenCalledWith('auto_reminder_14_30');
+      // User-configured scheduled notification preserved
+      expect(Notifications.cancelScheduledNotificationAsync).not.toHaveBeenCalledWith('scheduled_1_3');
+
+      jest.restoreAllMocks();
     });
 
     it('does nothing when target is already met', async () => {
