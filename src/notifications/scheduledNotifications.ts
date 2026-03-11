@@ -4,6 +4,7 @@ import { t } from '../i18n';
 
 // Prefix for scheduled notification identifiers
 const SCHEDULED_NOTIF_PREFIX = 'scheduled_';
+const MINUTES_IN_DAY = 24 * 60;
 
 /**
  * Schedule all enabled scheduled notifications using WEEKLY triggers.
@@ -130,7 +131,7 @@ export function isSlotNearScheduledNotification(
     const scheduledMinutesOfDay = schedule.hour * 60 + schedule.minute;
     const diff = Math.abs(slotMinutesOfDay - scheduledMinutesOfDay);
 
-    if (diff <= windowMinutes || diff >= (24 * 60 - windowMinutes)) {
+    if (diff <= windowMinutes || diff >= (MINUTES_IN_DAY - windowMinutes)) {
       // Second condition handles day-boundary wraparound (e.g. slot at 23:30 near a notification at 00:10)
       return true;
     }

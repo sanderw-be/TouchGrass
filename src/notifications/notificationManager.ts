@@ -27,6 +27,7 @@ export const ACTION_LESS_OFTEN = 'less_often';
 
 const CHANNEL_ID = 'touchgrass_reminders';
 const DEFAULT_ANDROID_CHANNEL_ID = 'default';
+const SNOOZE_DURATION_MINUTES = 30;
 
 async function createReminderChannels(): Promise<void> {
   const reminderChannelConfig = {
@@ -392,7 +393,7 @@ export async function maybeScheduleCatchUpReminder(): Promise<void> {
   if (passedCount === 0) return;
 
   // % of planned reminders that have passed
-  // remindersCount is guaranteed > 0 (we returned early when it was 0)
+  // remindersCount is guaranteed >= 1 (we returned early when it was 0)
   const passedPercent = passedCount / remindersCount;
 
   // % of daily target already reached
@@ -497,8 +498,8 @@ async function handleNotificationResponse(response: Notifications.NotificationRe
   }
 
   if (action === 'snoozed') {
-    // Reschedule for 30 minutes later
-    const snoozeDate = new Date(now + 30 * 60 * 1000);
+    // Reschedule for SNOOZE_DURATION_MINUTES later
+    const snoozeDate = new Date(now + SNOOZE_DURATION_MINUTES * 60 * 1000);
     const snoozeHour = snoozeDate.getHours();
     const { title, body } = buildReminderMessage(
       getTodayMinutes(),
@@ -509,7 +510,7 @@ async function handleNotificationResponse(response: Notifications.NotificationRe
       content: { title, body, categoryIdentifier: 'reminder', color: '#4A7C59' },
       trigger: {
         type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-        seconds: 30 * 60,
+        seconds: SNOOZE_DURATION_MINUTES * 60,
         channelId: CHANNEL_ID,
       },
     });
