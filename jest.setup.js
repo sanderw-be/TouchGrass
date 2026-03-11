@@ -1,3 +1,6 @@
+// Setup react-native-gesture-handler mocks
+import 'react-native-gesture-handler/jestSetup';
+
 // Mock expo-sqlite
 jest.mock('expo-sqlite', () => ({
   openDatabaseSync: jest.fn(() => ({
