@@ -195,6 +195,16 @@ export async function scheduleNextReminder(): Promise<void> {
     return;
   }
 
+  // When scheduleDayReminders() has already planned today's reminders, let them
+  // handle the schedule. scheduleNextReminder() must not cancel or override the
+  // planned notifications (it calls cancelAutomaticReminders which would wipe
+  // them out).
+  const todayStr = new Date().toDateString();
+  const lastPlannedDate = getSetting('reminders_last_planned_date', '');
+  if (lastPlannedDate === todayStr) {
+    return;
+  }
+
   const lastReminderMs = parseInt(getSetting('last_reminder_ms', '0'), 10);
   const isCurrentlyOutside = getSetting('currently_outside', '0') === '1';
 
@@ -243,10 +253,9 @@ export async function scheduleNextReminder(): Promise<void> {
     },
   });
 
-  // Add a future outdoor time slot to the calendar alongside the reminder
-  maybeAddOutdoorTimeToCalendar(new Date()).catch((e) =>
-    console.warn('TouchGrass: Failed to add reminder time to calendar:', e),
-  );
+  // Calendar events are only created by scheduleDayReminders() at planned
+  // half-hour slots. scheduleNextReminder() is a fallback that fires at
+  // arbitrary background-task wake times, so it must not create calendar events.
 
   setSetting('last_reminder_ms', String(Date.now()));
   console.log('TouchGrass: reminder sent, reason:', reason);

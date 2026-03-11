@@ -211,6 +211,27 @@ describe('notificationManager', () => {
       expect(Notifications.cancelScheduledNotificationAsync).toHaveBeenCalledWith('auto_morning_reminder');
       expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
     });
+
+    it('skips entirely when day reminders are already planned for today', async () => {
+      const today = new Date().toDateString();
+      (Database.getTodayMinutes as jest.Mock).mockReturnValue(10);
+      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
+        if (key === 'smart_reminders_count') return '2';
+        if (key === 'reminders_last_planned_date') return today;
+        return fallback;
+      });
+      (ReminderAlgorithm.shouldRemindNow as jest.Mock).mockReturnValue({
+        should: true,
+        reason: 'score 0.65: baseline',
+      });
+
+      await scheduleNextReminder();
+
+      // Must not schedule, cancel, or create calendar events when day reminders are active
+      expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
+      expect(Notifications.cancelScheduledNotificationAsync).not.toHaveBeenCalled();
+      expect(CalendarService.maybeAddOutdoorTimeToCalendar).not.toHaveBeenCalled();
+    });
   });
 
   describe('scheduleDayReminders', () => {
@@ -701,7 +722,7 @@ describe('notificationManager', () => {
   });
 
   describe('calendar integration in scheduleNextReminder', () => {
-    it('creates a calendar event when a reminder is sent', async () => {
+    it('does not create a calendar event even when a reminder is sent (calendar events only from scheduleDayReminders)', async () => {
       (Database.getTodayMinutes as jest.Mock).mockReturnValue(10);
       (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
         if (key === 'smart_reminders_count') return '2';
@@ -716,7 +737,10 @@ describe('notificationManager', () => {
 
       await scheduleNextReminder();
 
-      expect(CalendarService.maybeAddOutdoorTimeToCalendar).toHaveBeenCalledTimes(1);
+      // scheduleNextReminder fires at arbitrary background-task wake times,
+      // so it must never create calendar events (only scheduleDayReminders
+      // does, at planned half-hour slots).
+      expect(CalendarService.maybeAddOutdoorTimeToCalendar).not.toHaveBeenCalled();
     });
 
     it('does not create a calendar event when no reminder is sent', async () => {

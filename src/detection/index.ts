@@ -46,14 +46,15 @@ TaskManager.defineTask(BACKGROUND_TASK_NAME, async () => {
       // Continue with reminder scheduling even if weather fails
     }
     
-    await scheduleNextReminder();
+    // Plan the day's reminders once per new day (at/after midnight).
+    // This must run before scheduleNextReminder() so that the planned
+    // notifications are not cancelled by the fallback path.
+    await scheduleDayReminders();
 
-    // Plan the day's reminders once per new day (at/after midnight)
-    const today = new Date().toDateString();
-    const lastPlanned = getSetting('reminders_last_planned_date', '');
-    if (lastPlanned !== today) {
-      await scheduleDayReminders();
-    }
+    // Fallback: fire an immediate reminder if the day hasn't been planned
+    // yet.  When scheduleDayReminders() has already set today's date,
+    // scheduleNextReminder() returns early to avoid cancelling the plan.
+    await scheduleNextReminder();
 
     // Check if a catch-up reminder is needed (user behind on daily goal)
     await maybeScheduleCatchUpReminder();
