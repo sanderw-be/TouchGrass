@@ -820,6 +820,22 @@ describe('notificationManager', () => {
       expect(inPlaceConfirmationCalls).toHaveLength(0);
     });
 
+    it('dismisses the notification from the tray when an action is tapped', async () => {
+      await capturedListener!({
+        notification: { request: { identifier: 'notif-abc' } },
+        actionIdentifier: 'went_outside',
+      });
+      expect(Notifications.dismissNotificationAsync).toHaveBeenCalledWith('notif-abc');
+    });
+
+    it('dismisses the notification from the tray even when the body is tapped (dismissed)', async () => {
+      await capturedListener!({
+        notification: { request: { identifier: 'notif-xyz' } },
+        actionIdentifier: 'com.apple.UNNotificationDefaultActionIdentifier',
+      });
+      expect(Notifications.dismissNotificationAsync).toHaveBeenCalledWith('notif-xyz');
+    });
+
     it('does not trigger the modal when the body is tapped (dismissed)', async () => {
       await capturedListener!({
         notification: { request: { identifier: 'notif-abc' } },

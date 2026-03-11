@@ -477,8 +477,16 @@ async function cancelAutomaticReminders(): Promise<void> {
  */
 async function handleNotificationResponse(response: Notifications.NotificationResponse): Promise<void> {
   const actionId = response.actionIdentifier;
+  const notificationId = response.notification.request.identifier;
   const now = Date.now();
   const d = new Date(now);
+
+  // Dismiss the notification from the tray so it doesn't linger after the user acts
+  try {
+    await Notifications.dismissNotificationAsync(notificationId);
+  } catch (e) {
+    console.warn('TouchGrass: Failed to dismiss notification:', e);
+  }
 
   const action = actionId === ACTION_WENT_OUTSIDE ? 'went_outside'
     : actionId === ACTION_SNOOZE ? 'snoozed'
