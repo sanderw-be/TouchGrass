@@ -7,8 +7,9 @@ import {
 import { shouldRemindNow, scoreReminderHours } from './reminderAlgorithm';
 import { getWeatherForHour, isWeatherDataAvailable } from '../weather/weatherService';
 import { getWeatherDescription, getWeatherEmoji, getWeatherPreferences } from '../weather/weatherAlgorithm';
-import { hasScheduledNotificationNearby } from './scheduledNotifications';
+import { hasScheduledNotificationNearby, isSlotNearScheduledNotification } from './scheduledNotifications';
 import { hasUpcomingEvent, maybeAddOutdoorTimeToCalendar } from '../calendar/calendarService';
+import { triggerReminderFeedbackModal } from '../context/ReminderFeedbackContext';
 import { t } from '../i18n';
 
 const NOTIF_TITLES = [
@@ -182,9 +183,9 @@ export async function scheduleNextReminder(): Promise<void> {
   const dailyTarget = getCurrentDailyGoal()?.targetMinutes ?? 30;
   const lastReminderMs = parseInt(getSetting('last_reminder_ms', '0'), 10);
   const isCurrentlyOutside = getSetting('currently_outside', '0') === '1';
-  const remindersEnabled = getSetting('reminders_enabled', '1') === '1';
+  const remindersCount = parseInt(getSetting('smart_reminders_count', '2'), 10);
 
-  if (!remindersEnabled) return;
+  if (remindersCount === 0) return;
 
   // Skip if there's a scheduled notification nearby
   if (hasScheduledNotificationNearby(60)) {
@@ -256,10 +257,12 @@ export async function scheduleDayReminders(): Promise<void> {
     return;
   }
 
-  const remindersEnabled = getSetting('reminders_enabled', '1') === '1';
+  const remindersCount = parseInt(getSetting('smart_reminders_count', '2'), 10);
 
-  if (!remindersEnabled) {
+  if (remindersCount === 0) {
     setSetting('reminders_last_planned_date', todayStr);
+    setSetting('reminders_planned_slots', '[]');
+    setSetting('additional_reminders_today', '0');
     return;
   }
 
@@ -271,33 +274,49 @@ export async function scheduleDayReminders(): Promise<void> {
   // Don't schedule reminders if daily goal is already reached
   if (todayMinutes >= dailyTarget) {
     setSetting('reminders_last_planned_date', todayStr);
+    setSetting('reminders_planned_slots', '[]');
+    setSetting('additional_reminders_today', '0');
     return;
   }
 
-  const currentHour = new Date().getHours();
-  const scores = scoreReminderHours(todayMinutes, dailyTarget, currentHour);
+  const now = new Date();
+  const currentHour = now.getHours();
+  const currentMinute = now.getMinutes();
+  const scores = scoreReminderHours(todayMinutes, dailyTarget, currentHour, currentMinute);
 
-  // Pick the top 2 scoring hours for the day
-  const topHours = scores
-    .filter((s) => s.score >= 0.4 && s.hour > currentHour)
-    .slice(0, 2);
+  // Pick the top N scoring slots for the day, ensuring:
+  //   - score >= 0.4
+  //   - slot is in the future
+  //   - no duplicate hour:minute combinations
+  //   - not near a user-defined scheduled notification
+  const seenSlots = new Set<string>();
+  const topSlots: Array<{ hour: number; minute: 0 | 30 }> = [];
+  const currentSlotMinutes = currentHour * 60 + currentMinute;
 
-  for (const slot of topHours) {
-    // Skip this hour if there's a scheduled notification nearby
-    const testDate = new Date();
-    testDate.setHours(slot.hour, 0, 0, 0);
-    const slotMinutes = slot.hour * 60;
-    const currentMinutes = new Date().getHours() * 60 + new Date().getMinutes();
-    
-    // Simple check: if the slot is within 60 minutes of any scheduled notification
-    // We'll do a more precise check in hasScheduledNotificationNearby
-    if (hasScheduledNotificationNearby(60)) {
-      console.log(`Skipping reminder at ${slot.hour}:00 - scheduled notification nearby`);
+  for (const slot of scores) {
+    if (topSlots.length >= remindersCount) break;
+    if (slot.score < 0.4) continue;
+    const slotMinutes = slot.hour * 60 + slot.minute;
+    if (slotMinutes <= currentSlotMinutes) continue;
+
+    const slotKey = `${slot.hour}:${slot.minute}`;
+    if (seenSlots.has(slotKey)) continue;
+
+    // Skip slots near user-defined scheduled notifications for today
+    if (isSlotNearScheduledNotification(slot.hour, slot.minute, 30)) {
+      console.log(`TouchGrass: Skipping reminder at ${slot.hour}:${slot.minute.toString().padStart(2, '0')} - scheduled notification nearby`);
       continue;
     }
 
+    seenSlots.add(slotKey);
+    topSlots.push({ hour: slot.hour, minute: slot.minute });
+  }
+
+  const scheduledSlots: Array<{ hour: number; minute: number }> = [];
+
+  for (const slot of topSlots) {
     const triggerDate = new Date();
-    triggerDate.setHours(slot.hour, 0, 0, 0);
+    triggerDate.setHours(slot.hour, slot.minute, 0, 0);
 
     const { title, body } = buildReminderMessage(todayMinutes, dailyTarget, slot.hour);
 
@@ -315,14 +334,104 @@ export async function scheduleDayReminders(): Promise<void> {
       },
     });
 
-    // Add a future outdoor time slot to the calendar for this reminder time
+    scheduledSlots.push({ hour: slot.hour, minute: slot.minute });
+
+    // Add a future outdoor time slot to the calendar for each planned reminder
     maybeAddOutdoorTimeToCalendar(triggerDate).catch((e) =>
       console.warn('TouchGrass: Failed to add reminder slot to calendar:', e),
     );
   }
 
+  // Store the planned slots so catch-up logic can reference them
+  setSetting('reminders_planned_slots', JSON.stringify(scheduledSlots));
+  setSetting('additional_reminders_today', '0');
+
   // Record that planning has been done for today
   setSetting('reminders_last_planned_date', todayStr);
+}
+
+/**
+ * Schedule a catch-up reminder if the user is behind on their outdoor time goal.
+ * Called from the background task after planned reminder times have passed.
+ * At most 2 additional reminders per day; these never create calendar events.
+ */
+export async function maybeScheduleCatchUpReminder(): Promise<void> {
+  const remindersCount = parseInt(getSetting('smart_reminders_count', '2'), 10);
+  if (remindersCount === 0) return;
+
+  const todayStr = new Date().toDateString();
+  const lastPlannedDate = getSetting('reminders_last_planned_date', '');
+  if (lastPlannedDate !== todayStr) return;
+
+  const additionalCount = parseInt(getSetting('additional_reminders_today', '0'), 10);
+  if (additionalCount >= 2) return;
+
+  // Load the planned slots for today
+  let plannedSlots: Array<{ hour: number; minute: number }> = [];
+  try {
+    plannedSlots = JSON.parse(getSetting('reminders_planned_slots', '[]'));
+  } catch {
+    return;
+  }
+  if (plannedSlots.length === 0) return;
+
+  const now = new Date();
+  const currentMinutesOfDay = now.getHours() * 60 + now.getMinutes();
+
+  // How many planned reminders have their time already passed?
+  const passedCount = plannedSlots.filter(
+    (s) => s.hour * 60 + s.minute <= currentMinutesOfDay,
+  ).length;
+  if (passedCount === 0) return;
+
+  // % of planned reminders that have passed
+  // remindersCount is guaranteed > 0 (we returned early when it was 0)
+  const passedPercent = passedCount / remindersCount;
+
+  // % of daily target already reached
+  const todayMinutes = getTodayMinutes();
+  const dailyTarget = getCurrentDailyGoal()?.targetMinutes ?? 30;
+  const targetPercent = Math.min(todayMinutes / dailyTarget, 1);
+
+  // Only schedule a catch-up if more reminders have passed than target % reached
+  if (passedPercent <= targetPercent) return;
+
+  // Find the best remaining future slot
+  const scores = scoreReminderHours(todayMinutes, dailyTarget, now.getHours(), now.getMinutes());
+  const candidateSlots = scores.filter((s) => {
+    const slotMin = s.hour * 60 + s.minute;
+    return slotMin > currentMinutesOfDay
+      && s.score >= 0.3
+      && !isSlotNearScheduledNotification(s.hour, s.minute, 30);
+  });
+
+  if (candidateSlots.length === 0) return;
+
+  const best = candidateSlots[0]; // sorted best first
+  const triggerDate = new Date();
+  triggerDate.setHours(best.hour, best.minute, 0, 0);
+
+  const { title, body } = buildReminderMessage(todayMinutes, dailyTarget, best.hour);
+
+  await Notifications.scheduleNotificationAsync({
+    content: {
+      title,
+      body,
+      categoryIdentifier: 'reminder',
+      color: '#4A7C59',
+    },
+    trigger: {
+      type: Notifications.SchedulableTriggerInputTypes.DATE,
+      date: triggerDate,
+      channelId: CHANNEL_ID,
+    },
+  });
+
+  // Additional reminders never create calendar events
+  setSetting('additional_reminders_today', String(additionalCount + 1));
+  console.log(
+    `TouchGrass: catch-up reminder scheduled at ${best.hour}:${best.minute.toString().padStart(2, '0')}`,
+  );
 }
 
 /**
@@ -343,7 +452,6 @@ async function cancelAutomaticReminders(): Promise<void> {
  * Handle user tapping a notification action button.
  */
 async function handleNotificationResponse(response: Notifications.NotificationResponse): Promise<void> {
-  const notificationId = response.notification.request.identifier;
   const actionId = response.actionIdentifier;
   const now = Date.now();
   const d = new Date(now);
@@ -360,30 +468,23 @@ async function handleNotificationResponse(response: Notifications.NotificationRe
     dayOfWeek: d.getDay(),
   });
 
-  // Update the notification in-place: re-post with the same identifier using a
-  // confirmation message and no categoryIdentifier (which removes the action buttons).
-  // On Android, re-posting with the same tag/ID causes NotificationManagerCompat to
-  // replace the existing notification entirely — no native reflection needed.
-  // The user can swipe to dismiss when ready.
   if (action !== 'dismissed') {
     const confirmBodyKey = action === 'went_outside' ? 'notif_confirm_went_outside'
       : action === 'snoozed' ? 'notif_confirm_snoozed'
       : 'notif_confirm_less_often';
 
-    await Notifications.scheduleNotificationAsync({
-      identifier: notificationId,
-      content: {
-        title: t('notif_confirm_title'),
-        body: t(confirmBodyKey),
-        // No categoryIdentifier: the rebuilt notification has no action buttons
-      },
-      trigger: null,
+    // Show an in-app modal instead of re-posting the notification
+    triggerReminderFeedbackModal({
+      action,
+      hour: d.getHours(),
+      minute: d.getMinutes(),
+      confirmBodyKey,
     });
   }
 
   if (action === 'snoozed') {
-    // Reschedule for 45 minutes later
-    const snoozeDate = new Date(now + 45 * 60 * 1000);
+    // Reschedule for 30 minutes later
+    const snoozeDate = new Date(now + 30 * 60 * 1000);
     const snoozeHour = snoozeDate.getHours();
     const { title, body } = buildReminderMessage(
       getTodayMinutes(),
@@ -394,7 +495,7 @@ async function handleNotificationResponse(response: Notifications.NotificationRe
       content: { title, body, categoryIdentifier: 'reminder', color: '#4A7C59' },
       trigger: {
         type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-        seconds: 45 * 60,
+        seconds: 30 * 60,
         channelId: CHANNEL_ID,
       },
     });

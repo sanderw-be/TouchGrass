@@ -2,42 +2,48 @@ import { getReminderFeedback, getSessionsForRange, startOfDay, startOfWeek } fro
 import { getWeatherForHour } from '../weather/weatherService';
 import { scoreWeatherCondition, getWeatherPreferences } from '../weather/weatherAlgorithm';
 
-const HOURS_IN_DAY = 24;
+// Active hours: 7:00 – 22:30 (slots at :00 and :30)
+const SLOT_START_MINUTES = 7 * 60;  // 7:00
+const SLOT_END_MINUTES = 23 * 60;   // exclusive end, last slot is 22:30
+const SLOT_STEP = 30;
 
 export interface HourScore {
   hour: number;
+  minute: 0 | 30;
   score: number;
   reason: string;
 }
 
 /**
- * Score each hour of the day for how good a time it is to send a reminder.
+ * Score each half-hour slot of the day for how good a time it is to send a reminder.
  * Higher score = better time to remind.
- * Returns scores for all 24 hours, sorted best first.
+ * Returns scores for all 48 half-hour slots (7:00–22:30), sorted best first.
+ *
+ * @param currentHour - Current hour of day (used to skip past slots)
+ * @param currentMinute - Current minute of day (default 0); combined with currentHour to skip past slots
  */
 export function scoreReminderHours(
   todayMinutes: number,
   dailyTargetMinutes: number,
   currentHour: number,
+  currentMinute: number = 0,
 ): HourScore[] {
   const feedback = getReminderFeedback();
   const scores: HourScore[] = [];
+  const currentSlotMinutes = currentHour * 60 + currentMinute;
 
   // How urgent is the reminder? Grows as day progresses without hitting goal
   const progressRatio = Math.min(todayMinutes / dailyTargetMinutes, 1);
   const dayProgressRatio = currentHour / 21; // normalize to end of reasonable day (9pm)
   const urgency = Math.max(0, dayProgressRatio - progressRatio); // 0 = no urgency, 1 = very urgent
 
-  for (let hour = 0; hour < HOURS_IN_DAY; hour++) {
-    // Skip sleeping hours (11pm–7am)
-    if (hour < 7 || hour >= 23) {
-      scores.push({ hour, score: 0, reason: 'sleeping hours' });
-      continue;
-    }
+  for (let slotMinutes = SLOT_START_MINUTES; slotMinutes < SLOT_END_MINUTES; slotMinutes += SLOT_STEP) {
+    const hour = Math.floor(slotMinutes / 60);
+    const minute = (slotMinutes % 60) as 0 | 30;
 
-    // Skip past hours
-    if (hour <= currentHour) {
-      scores.push({ hour, score: 0, reason: 'already passed' });
+    // Skip past slots (strictly less than: current slot itself is included)
+    if (slotMinutes < currentSlotMinutes) {
+      scores.push({ hour, minute, score: 0, reason: 'already passed' });
       continue;
     }
 
@@ -54,6 +60,7 @@ export function scoreReminderHours(
     }
 
     // ── Feedback penalties and bonuses ───────────────────
+    // Feedback is keyed by hour; both :00 and :30 slots share the same hour's feedback
     const hourFeedback = feedback.filter((f) => f.scheduledHour === hour);
 
     const snoozeCount = hourFeedback.filter((f) => f.action === 'snoozed').length;
@@ -128,6 +135,7 @@ export function scoreReminderHours(
 
     scores.push({
       hour,
+      minute,
       score: Math.max(0, Math.min(1, score)),
       reason: reasons.join(', ') || 'baseline',
     });
@@ -147,7 +155,9 @@ export function shouldRemindNow(
   isCurrentlyOutside: boolean,
 ): { should: boolean; reason: string } {
   const now = Date.now();
-  const hour = new Date().getHours();
+  const d = new Date(now);
+  const hour = d.getHours();
+  const minute = d.getMinutes();
 
   // Hard stops
   if (isCurrentlyOutside) {
@@ -167,9 +177,11 @@ export function shouldRemindNow(
     return { should: false, reason: 'reminded recently' };
   }
 
-  // Score the current hour
-  const scores = scoreReminderHours(todayMinutes, dailyTargetMinutes, hour - 1);
-  const currentHourScore = scores.find((s) => s.hour === hour);
+  // Score slots starting from the current slot
+  const scores = scoreReminderHours(todayMinutes, dailyTargetMinutes, hour, minute);
+  // The current half-hour slot (either :00 or :30)
+  const currentSlotMinute = (minute >= 30 ? 30 : 0) as 0 | 30;
+  const currentHourScore = scores.find((s) => s.hour === hour && s.minute === currentSlotMinute);
 
   if (!currentHourScore || currentHourScore.score < 0.35) {
     return { should: false, reason: `score too low (${currentHourScore?.score.toFixed(2) ?? '0'})` };

@@ -6,7 +6,7 @@ import { syncHealthConnect, requestHealthPermissions, isHealthConnectAvailable, 
 import { verifyHealthConnectPermissions } from './healthConnectIntent';
 import { startLocationTracking, autoDetectLocations } from './gpsDetection';
 import { getSetting, setSetting } from '../storage/database';
-import { scheduleNextReminder, scheduleDayReminders } from '../notifications/notificationManager';
+import { scheduleNextReminder, scheduleDayReminders, maybeScheduleCatchUpReminder } from '../notifications/notificationManager';
 import { fetchWeatherForecast } from '../weather/weatherService';
 
 const BACKGROUND_TASK_NAME = 'TOUCHGRASS_BACKGROUND_TASK';
@@ -54,6 +54,9 @@ TaskManager.defineTask(BACKGROUND_TASK_NAME, async () => {
     if (lastPlanned !== today) {
       await scheduleDayReminders();
     }
+
+    // Check if a catch-up reminder is needed (user behind on daily goal)
+    await maybeScheduleCatchUpReminder();
 
     return BackgroundTask.BackgroundTaskResult.Success;
   } catch (e) {
