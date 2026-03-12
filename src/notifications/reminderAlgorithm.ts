@@ -60,14 +60,14 @@ export function scoreReminderHours(
     }
 
     // ── Feedback penalties and bonuses ───────────────────
-    // Feedback is keyed by hour; both :00 and :30 slots share the same hour's feedback
-    const hourFeedback = feedback.filter((f) => f.scheduledHour === hour);
+    // Feedback is keyed by half-hour slot (hour + minute) for precise per-slot scoring
+    const slotFeedback = feedback.filter((f) => f.scheduledHour === hour && (f.scheduledMinute ?? 0) === minute);
 
-    const snoozeCount = hourFeedback.filter((f) => f.action === 'snoozed').length;
-    const dismissCount = hourFeedback.filter((f) => f.action === 'dismissed').length;
-    const actedCount = hourFeedback.filter((f) => f.action === 'went_outside').length;
-    const lessCount = hourFeedback.filter((f) => f.action === 'less_often').length;
-    const moreCount = hourFeedback.filter((f) => f.action === 'more_often').length;
+    const snoozeCount = slotFeedback.filter((f) => f.action === 'snoozed').length;
+    const dismissCount = slotFeedback.filter((f) => f.action === 'dismissed').length;
+    const actedCount = slotFeedback.filter((f) => f.action === 'went_outside').length;
+    const lessCount = slotFeedback.filter((f) => f.action === 'less_often').length;
+    const moreCount = slotFeedback.filter((f) => f.action === 'more_often').length;
 
     if (snoozeCount > 0) {
       const penalty = Math.min(snoozeCount * 0.08, 0.25);

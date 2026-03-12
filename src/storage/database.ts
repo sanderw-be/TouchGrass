@@ -33,6 +33,7 @@ export interface ReminderFeedback {
   timestamp: number;
   action: 'snoozed' | 'dismissed' | 'went_outside' | 'less_often' | 'more_often';
   scheduledHour: number;   // 0-23, what hour the reminder fired
+  scheduledMinute: number; // 0 or 30, which half-hour slot the reminder fired in
   dayOfWeek: number;       // 0-6
 }
 
@@ -181,6 +182,14 @@ export function initDatabase(): void {
   try {
     db.execSync(`ALTER TABLE outside_sessions ADD COLUMN steps INTEGER`);
     console.log('Database migration: Added steps column to outside_sessions');
+  } catch {
+    // Column already exists — safe to ignore
+  }
+
+  // Add scheduledMinute column to reminder_feedback if it doesn't exist (migration)
+  try {
+    db.execSync(`ALTER TABLE reminder_feedback ADD COLUMN scheduledMinute INTEGER NOT NULL DEFAULT 0`);
+    console.log('Database migration: Added scheduledMinute column to reminder_feedback');
   } catch {
     // Column already exists — safe to ignore
   }
@@ -413,10 +422,12 @@ export function setWeeklyGoal(minutes: number): void {
 
 export function insertReminderFeedback(feedback: ReminderFeedback): void {
   const d = new Date(feedback.timestamp);
+  const minute = d.getMinutes();
+  const slotMinute = minute >= 30 ? 30 : 0;
   db.runSync(
-    `INSERT INTO reminder_feedback (timestamp, action, scheduledHour, dayOfWeek)
-     VALUES (?, ?, ?, ?)`,
-    [feedback.timestamp, feedback.action, d.getHours(), d.getDay()]
+    `INSERT INTO reminder_feedback (timestamp, action, scheduledHour, scheduledMinute, dayOfWeek)
+     VALUES (?, ?, ?, ?, ?)`,
+    [feedback.timestamp, feedback.action, d.getHours(), slotMinute, d.getDay()]
   );
 }
 

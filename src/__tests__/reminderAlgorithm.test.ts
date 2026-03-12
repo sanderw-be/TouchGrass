@@ -91,21 +91,21 @@ describe('reminderAlgorithm', () => {
       expect(slot1730.reason).toContain('after-work');
     });
 
-    it('applies less_often feedback penalty to both :00 and :30 slots of the same hour', () => {
+    it('applies less_often feedback penalty only to the matching half-hour slot', () => {
       (Database.getReminderFeedback as jest.Mock).mockReturnValue([
-        { action: 'less_often', scheduledHour: 10, dayOfWeek: 1, timestamp: Date.now() },
+        { action: 'less_often', scheduledHour: 10, scheduledMinute: 0, dayOfWeek: 1, timestamp: Date.now() },
       ]);
       const scores = scoreReminderHours(0, 30, 0, 0);
       const slot1000 = scores.find((s) => s.hour === 10 && s.minute === 0)!;
       const slot1030 = scores.find((s) => s.hour === 10 && s.minute === 30)!;
-      // Both should be penalised (feedback is keyed by hour)
+      // Only the :00 slot should be penalised (feedback is keyed by half-hour)
       expect(slot1000.score).toBeLessThan(0.5);
-      expect(slot1030.score).toBeLessThan(0.5);
+      expect(slot1030.score).toBe(0.5); // unaffected baseline
     });
 
     it('applies more_often feedback bonus', () => {
       (Database.getReminderFeedback as jest.Mock).mockReturnValue([
-        { action: 'more_often', scheduledHour: 15, dayOfWeek: 1, timestamp: Date.now() },
+        { action: 'more_often', scheduledHour: 15, scheduledMinute: 0, dayOfWeek: 1, timestamp: Date.now() },
       ]);
       const scores = scoreReminderHours(0, 30, 0, 0);
       const slot1500 = scores.find((s) => s.hour === 15 && s.minute === 0)!;
@@ -158,10 +158,10 @@ describe('reminderAlgorithm', () => {
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
       // All feedback penalises 10:00 heavily
       (Database.getReminderFeedback as jest.Mock).mockReturnValue([
-        { action: 'less_often', scheduledHour: 10, dayOfWeek: 1, timestamp: 1 },
-        { action: 'less_often', scheduledHour: 10, dayOfWeek: 1, timestamp: 2 },
-        { action: 'less_often', scheduledHour: 10, dayOfWeek: 1, timestamp: 3 },
-        { action: 'dismissed', scheduledHour: 10, dayOfWeek: 1, timestamp: 4 },
+        { action: 'less_often', scheduledHour: 10, scheduledMinute: 0, dayOfWeek: 1, timestamp: 1 },
+        { action: 'less_often', scheduledHour: 10, scheduledMinute: 0, dayOfWeek: 1, timestamp: 2 },
+        { action: 'less_often', scheduledHour: 10, scheduledMinute: 0, dayOfWeek: 1, timestamp: 3 },
+        { action: 'dismissed', scheduledHour: 10, scheduledMinute: 0, dayOfWeek: 1, timestamp: 4 },
       ]);
       const result = shouldRemindNow(0, 30, 0, false);
       expect(result.should).toBe(false);

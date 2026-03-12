@@ -497,6 +497,7 @@ async function handleNotificationResponse(response: Notifications.NotificationRe
     timestamp: now,
     action,
     scheduledHour: d.getHours(),
+    scheduledMinute: d.getMinutes() >= 30 ? 30 : 0,
     dayOfWeek: d.getDay(),
   });
 
