@@ -7,7 +7,7 @@ import { initDatabase, getSetting, setSetting } from './src/storage/database';
 import i18n from './src/i18n';
 import { initDetection } from './src/detection/index';
 import { setupNotificationInfrastructure, scheduleDayReminders } from './src/notifications/notificationManager';
-import { cleanupTouchGrassCalendars, maybeAddOutdoorTimeToCalendar } from './src/calendar/calendarService';
+import { cleanupTouchGrassCalendars } from './src/calendar/calendarService';
 
 import AppNavigator from './src/navigation/AppNavigator';
 import IntroScreen from './src/screens/IntroScreen';
@@ -24,14 +24,16 @@ function AppContent() {
   const [showIntro, setShowIntro] = useState(false);
   const appState = useRef(AppState.currentState);
 
-  // On app foreground: run calendar cleanup and write as a fallback for missed background tasks
+  // On app foreground: run calendar cleanup as a fallback for missed background tasks
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (nextAppState: AppStateStatus) => {
       if (appState.current !== 'active' && nextAppState === 'active') {
         const hasCompletedIntro = getSetting('hasCompletedIntro', '0') === '1';
         if (hasCompletedIntro) {
           cleanupTouchGrassCalendars().catch((e) => console.warn('TouchGrass: foreground calendar cleanup error:', e));
-          maybeAddOutdoorTimeToCalendar(new Date()).catch((e) => console.warn('TouchGrass: foreground calendar write error:', e));
+          // Calendar events are only created by scheduleDayReminders() at planned
+          // half-hour slots. Do NOT call maybeAddOutdoorTimeToCalendar(new Date())
+          // here — it would create events at arbitrary foreground-wake times.
         }
       }
       appState.current = nextAppState;
