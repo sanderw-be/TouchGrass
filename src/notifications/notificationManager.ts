@@ -5,7 +5,7 @@ import {
   getSetting, setSetting, insertReminderFeedback,
 } from '../storage/database';
 import { shouldRemindNow, scoreReminderHours } from './reminderAlgorithm';
-import { getWeatherForHour, isWeatherDataAvailable } from '../weather/weatherService';
+import { fetchWeatherForecast, getWeatherForHour, isWeatherDataAvailable } from '../weather/weatherService';
 import { getWeatherDescription, getWeatherEmoji, getWeatherPreferences } from '../weather/weatherAlgorithm';
 import { hasScheduledNotificationNearby, isSlotNearScheduledNotification } from './scheduledNotifications';
 import { hasUpcomingEvent, maybeAddOutdoorTimeToCalendar } from '../calendar/calendarService';
@@ -299,6 +299,14 @@ export async function scheduleDayReminders(): Promise<void> {
   const now = new Date();
   const currentHour = now.getHours();
   const currentMinute = now.getMinutes();
+
+  // Ensure weather data is current before scoring so that rain/sun forecasts
+  // properly influence which slots are chosen.
+  const weatherPrefs = getWeatherPreferences();
+  if (weatherPrefs.enabled) {
+    await fetchWeatherForecast({ allowPermissionPrompt: false });
+  }
+
   const scores = scoreReminderHours(todayMinutes, dailyTarget, currentHour, currentMinute);
 
   // Pick the top N scoring slots for the day, ensuring:
@@ -421,6 +429,12 @@ export async function maybeScheduleCatchUpReminder(): Promise<void> {
   if (passedPercent <= targetPercent) return;
 
   // Find the best remaining future slot
+  // Ensure weather data is current before scoring so catch-up picks the best
+  // remaining slot accounting for current conditions.
+  const weatherPrefs = getWeatherPreferences();
+  if (weatherPrefs.enabled) {
+    await fetchWeatherForecast({ allowPermissionPrompt: false });
+  }
   const scores = scoreReminderHours(todayMinutes, dailyTarget, now.getHours(), now.getMinutes());
   const candidateSlots = scores.filter((s) => {
     const slotMin = s.hour * 60 + s.minute;
@@ -571,9 +585,10 @@ function buildReminderMessage(
       if (weather) {
         const emoji = getWeatherEmoji(weather);
         const temp = Math.round(weather.temperature);
+        const desc = getWeatherDescription(weather);
         
         // Add weather hint to body
-        body += ` ${emoji} ${temp}°C outside.`;
+        body += ` ${emoji} ${desc}, ${temp}°C outside.`;
       }
     }
   }
