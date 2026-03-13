@@ -4,6 +4,7 @@ import { t } from '../i18n';
 
 // Prefix for scheduled notification identifiers
 const SCHEDULED_NOTIF_PREFIX = 'scheduled_';
+const MINUTES_IN_DAY = 24 * 60;
 
 /**
  * Schedule all enabled scheduled notifications using WEEKLY triggers.
@@ -101,6 +102,42 @@ export async function cancelAllScheduledNotifications(): Promise<void> {
       await Notifications.cancelScheduledNotificationAsync(notif.identifier);
     }
   }
+}
+
+/**
+ * Check if a candidate slot (hour, minute) is within the given window (in minutes)
+ * of any user-defined scheduled notification that applies to today.
+ *
+ * @param slotHour - The hour of the candidate slot (0-23)
+ * @param slotMinute - The minute of the candidate slot (0 or 30)
+ * @param windowMinutes - How many minutes before/after to consider "nearby"
+ * @returns true if the slot is near a scheduled notification for today
+ */
+export function isSlotNearScheduledNotification(
+  slotHour: number,
+  slotMinute: number,
+  windowMinutes: number,
+): boolean {
+  const today = new Date();
+  const todayDayOfWeek = today.getDay(); // 0=Sunday, 6=Saturday
+  const slotMinutesOfDay = slotHour * 60 + slotMinute;
+
+  const schedules = getScheduledNotifications();
+  const enabled = schedules.filter(s => s.enabled === 1);
+
+  for (const schedule of enabled) {
+    if (!schedule.daysOfWeek.includes(todayDayOfWeek)) continue;
+
+    const scheduledMinutesOfDay = schedule.hour * 60 + schedule.minute;
+    const diff = Math.abs(slotMinutesOfDay - scheduledMinutesOfDay);
+
+    if (diff <= windowMinutes || diff >= (MINUTES_IN_DAY - windowMinutes)) {
+      // Second condition handles day-boundary wraparound (e.g. slot at 23:30 near a notification at 00:10)
+      return true;
+    }
+  }
+
+  return false;
 }
 
 /**

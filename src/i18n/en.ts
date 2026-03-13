@@ -132,6 +132,8 @@ export default {
   location_delete_confirm_body: 'Are you sure you want to delete this location? This cannot be undone.',
   settings_reminders_label: 'Smart reminders',
   settings_reminders_sublabel: 'Learns your patterns over time',
+  settings_reminders_count_off: 'Off',
+  settings_reminders_count_per_day: '{{count}}/day',
   settings_background_tracking_label: 'Background tracking notification',
   settings_background_tracking_sublabel: "The persistent notification showing while GPS is active. Disable it via Android Settings → Apps → TouchGrass → Notifications → Background tracking.",
   settings_app_sublabel: 'Your outdoor time companion',
@@ -282,8 +284,14 @@ export default {
   // Notification action confirmation messages (shown briefly after tapping an action button)
   notif_confirm_title: 'TouchGrass',
   notif_confirm_went_outside: '✅ Got it! Nice work getting outside.',
-  notif_confirm_snoozed: "⏰ I'll remind you again in 45 minutes.",
+  notif_confirm_snoozed: "⏰ I'll remind you again in 30 minutes.",
   notif_confirm_less_often: "🔕 Got it! I'll remind you less often.",
+
+  // Reminder feedback modal explanation messages
+  notif_feedback_dismiss: 'Got it',
+  notif_feedback_went_outside_detail: "We'll remind you more around {{time}}.",
+  notif_feedback_snoozed_detail: "We'll remind you in 30 minutes, remind you less at {{time}} and more at {{snoozeTime}}.",
+  notif_feedback_less_often_detail: "We'll remind you less at {{time}}.",
 
   // Weather settings
   settings_weather_title: 'Weather',

@@ -91,7 +91,7 @@ describe('detection background task', () => {
     expect(result).toBe(BackgroundTask.BackgroundTaskResult.Success);
   });
 
-  it('does not call scheduleDayReminders when reminders_last_planned_date matches today', async () => {
+  it('always calls scheduleDayReminders (function has its own same-day guard)', async () => {
     const today = new Date().toDateString();
     (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
       if (key === 'reminders_last_planned_date') return today;
@@ -100,7 +100,9 @@ describe('detection background task', () => {
 
     await taskCallback();
 
-    expect(NotificationManager.scheduleDayReminders).not.toHaveBeenCalled();
+    // scheduleDayReminders is always invoked; it returns early internally
+    // when reminders_last_planned_date already matches today.
+    expect(NotificationManager.scheduleDayReminders).toHaveBeenCalledTimes(1);
   });
 
   it('always calls scheduleNextReminder regardless of day planning', async () => {

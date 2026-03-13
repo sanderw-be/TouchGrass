@@ -6,7 +6,7 @@ import { syncHealthConnect, requestHealthPermissions, isHealthConnectAvailable, 
 import { verifyHealthConnectPermissions } from './healthConnectIntent';
 import { startLocationTracking, autoDetectLocations } from './gpsDetection';
 import { getSetting, setSetting } from '../storage/database';
-import { scheduleNextReminder, scheduleDayReminders } from '../notifications/notificationManager';
+import { scheduleNextReminder, scheduleDayReminders, maybeScheduleCatchUpReminder } from '../notifications/notificationManager';
 import { fetchWeatherForecast } from '../weather/weatherService';
 
 const BACKGROUND_TASK_NAME = 'TOUCHGRASS_BACKGROUND_TASK';
@@ -46,14 +46,17 @@ TaskManager.defineTask(BACKGROUND_TASK_NAME, async () => {
       // Continue with reminder scheduling even if weather fails
     }
     
+    // Plan the day's reminders once per new day (at/after midnight).
+    // This must run before scheduleNextReminder() so that the planned
+    // notifications are not cancelled by the fallback path.
+    await scheduleDayReminders();
+
+    // Attempt to fire an immediate reminder.  Returns early if the day's
+    // reminders have already been planned by scheduleDayReminders().
     await scheduleNextReminder();
 
-    // Plan the day's reminders once per new day (at/after midnight)
-    const today = new Date().toDateString();
-    const lastPlanned = getSetting('reminders_last_planned_date', '');
-    if (lastPlanned !== today) {
-      await scheduleDayReminders();
-    }
+    // Check if a catch-up reminder is needed (user behind on daily goal)
+    await maybeScheduleCatchUpReminder();
 
     return BackgroundTask.BackgroundTaskResult.Success;
   } catch (e) {

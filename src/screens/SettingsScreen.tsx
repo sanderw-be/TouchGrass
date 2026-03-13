@@ -34,7 +34,7 @@ export default function SettingsScreen() {
   const { colors, themePreference, setThemePreference } = useTheme();
   const navigation = useNavigation<StackNavigationProp<SettingsStackParamList>>();
   const insets = useSafeAreaInsets();
-  const [remindersEnabled, setRemindersEnabled] = useState(true);
+  const [smartRemindersCount, setSmartRemindersCount] = useState(2);
   const [detectionStatus, setDetectionStatus] = useState({ healthConnect: false, gps: false });
   const [knownLocations, setKnownLocations] = useState<KnownLocation[]>([]);
   const [suggestedCount, setSuggestedCount] = useState(0);
@@ -55,7 +55,7 @@ export default function SettingsScreen() {
   const styles = useMemo(() => makeStyles(colors), [colors]);
 
   const loadStatus = useCallback(() => {
-    setRemindersEnabled(getSetting('reminders_enabled', '1') === '1');
+    setSmartRemindersCount(parseInt(getSetting('smart_reminders_count', '2'), 10));
     setDetectionStatus(getDetectionStatus());
     setKnownLocations(getKnownLocations());
     setSuggestedCount(getSuggestedLocations().length);
@@ -173,9 +173,13 @@ export default function SettingsScreen() {
     }
   };
 
-  const toggleReminders = (value: boolean) => {
-    setSetting('reminders_enabled', value ? '1' : '0');
-    setRemindersEnabled(value);
+  const SMART_REMINDERS_OPTIONS = [0, 1, 2, 3];
+
+  const cycleSmartRemindersCount = () => {
+    const idx = SMART_REMINDERS_OPTIONS.indexOf(smartRemindersCount);
+    const next = SMART_REMINDERS_OPTIONS[(idx + 1) % SMART_REMINDERS_OPTIONS.length];
+    setSetting('smart_reminders_count', String(next));
+    setSmartRemindersCount(next);
   };
 
   const changeLanguage = (code: string) => {
@@ -391,19 +395,20 @@ export default function SettingsScreen() {
 
       <Text style={styles.sectionHeader}>{t('settings_section_reminders')}</Text>
       <View style={styles.card}>
-        <SettingRow
-          icon="🔔"
-          label={t('settings_reminders_label')}
-          sublabel={t('settings_reminders_sublabel')}
-          right={
-            <Switch
-              value={remindersEnabled}
-              onValueChange={toggleReminders}
-              trackColor={{ false: colors.fog, true: colors.grassLight }}
-              thumbColor={remindersEnabled ? colors.grass : colors.inactive}
-            />
-          }
-        />
+        <TouchableOpacity onPress={cycleSmartRemindersCount}>
+          <SettingRow
+            icon="🔔"
+            label={t('settings_reminders_label')}
+            sublabel={t('settings_reminders_sublabel')}
+            right={
+              <Text style={styles.valueChip}>
+                {smartRemindersCount === 0
+                  ? t('settings_reminders_count_off')
+                  : t('settings_reminders_count_per_day', { count: smartRemindersCount })}
+              </Text>
+            }
+          />
+        </TouchableOpacity>
         <Divider />
         <TouchableOpacity onPress={() => navigation.navigate('ScheduledNotifications')}>
           <SettingRow
