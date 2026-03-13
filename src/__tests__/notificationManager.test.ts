@@ -42,6 +42,9 @@ describe('notificationManager', () => {
     (ScheduledNotifications.isSlotNearScheduledNotification as jest.Mock).mockReturnValue(false);
     (WeatherService.isWeatherDataAvailable as jest.Mock).mockReturnValue(false);
     (WeatherAlgorithm.getWeatherPreferences as jest.Mock).mockReturnValue({ enabled: false });
+    (WeatherAlgorithm.getWeatherEmoji as jest.Mock).mockReturnValue('🌡️');
+    (WeatherAlgorithm.getWeatherDescription as jest.Mock).mockReturnValue('weather_unknown');
+    (WeatherService.fetchWeatherForecast as jest.Mock).mockResolvedValue({ success: true, conditions: [] });
     (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([]);
     (Notifications.cancelScheduledNotificationAsync as jest.Mock).mockResolvedValue(undefined);
     (Notifications.scheduleNotificationAsync as jest.Mock).mockResolvedValue('notif-id');
@@ -870,6 +873,166 @@ describe('notificationManager', () => {
       expect(FeedbackContext.triggerReminderFeedbackModal).toHaveBeenCalledWith(
         expect.objectContaining({ hour: 14, minute: 30 }),
       );
+
+      jest.restoreAllMocks();
+    });
+  });
+
+  describe('weather integration', () => {
+    it('scheduleDayReminders fetches fresh weather before scoring when weather is enabled', async () => {
+      (Database.getTodayMinutes as jest.Mock).mockReturnValue(10);
+      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
+      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
+        if (key === 'smart_reminders_count') return '1';
+        return fallback;
+      });
+      (WeatherAlgorithm.getWeatherPreferences as jest.Mock).mockReturnValue({ enabled: true });
+      (WeatherService.fetchWeatherForecast as jest.Mock).mockResolvedValue({ success: true, conditions: [] });
+      jest.spyOn(Date.prototype, 'getHours').mockReturnValue(9);
+      jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
+      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockReturnValue([
+        { hour: 12, minute: 0, score: 0.8, reason: 'lunch' },
+      ]);
+
+      await scheduleDayReminders();
+
+      expect(WeatherService.fetchWeatherForecast).toHaveBeenCalledWith({ allowPermissionPrompt: false });
+
+      jest.restoreAllMocks();
+    });
+
+    it('scheduleDayReminders does not fetch weather when weather is disabled', async () => {
+      (Database.getTodayMinutes as jest.Mock).mockReturnValue(10);
+      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
+      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
+        if (key === 'smart_reminders_count') return '1';
+        return fallback;
+      });
+      (WeatherAlgorithm.getWeatherPreferences as jest.Mock).mockReturnValue({ enabled: false });
+      jest.spyOn(Date.prototype, 'getHours').mockReturnValue(9);
+      jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
+      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockReturnValue([
+        { hour: 12, minute: 0, score: 0.8, reason: 'lunch' },
+      ]);
+
+      await scheduleDayReminders();
+
+      expect(WeatherService.fetchWeatherForecast).not.toHaveBeenCalled();
+
+      jest.restoreAllMocks();
+    });
+
+    it('maybeScheduleCatchUpReminder fetches fresh weather before scoring when weather is enabled', async () => {
+      const todayStr = new Date().toDateString();
+      (Database.getTodayMinutes as jest.Mock).mockReturnValue(0);
+      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
+      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
+        if (key === 'smart_reminders_count') return '2';
+        if (key === 'reminders_last_planned_date') return todayStr;
+        if (key === 'additional_reminders_today') return '0';
+        if (key === 'reminders_planned_slots') return JSON.stringify([{ hour: 9, minute: 0 }, { hour: 11, minute: 0 }]);
+        return fallback;
+      });
+      (WeatherAlgorithm.getWeatherPreferences as jest.Mock).mockReturnValue({ enabled: true });
+      (WeatherService.fetchWeatherForecast as jest.Mock).mockResolvedValue({ success: true, conditions: [] });
+      jest.spyOn(Date.prototype, 'getHours').mockReturnValue(12);
+      jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
+      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockReturnValue([
+        { hour: 14, minute: 30, score: 0.7, reason: 'afternoon' },
+      ]);
+
+      await maybeScheduleCatchUpReminder();
+
+      expect(WeatherService.fetchWeatherForecast).toHaveBeenCalledWith({ allowPermissionPrompt: false });
+
+      jest.restoreAllMocks();
+    });
+
+    it('maybeScheduleCatchUpReminder does not fetch weather when weather is disabled', async () => {
+      const todayStr = new Date().toDateString();
+      (Database.getTodayMinutes as jest.Mock).mockReturnValue(0);
+      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
+      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
+        if (key === 'smart_reminders_count') return '2';
+        if (key === 'reminders_last_planned_date') return todayStr;
+        if (key === 'additional_reminders_today') return '0';
+        if (key === 'reminders_planned_slots') return JSON.stringify([{ hour: 9, minute: 0 }, { hour: 11, minute: 0 }]);
+        return fallback;
+      });
+      (WeatherAlgorithm.getWeatherPreferences as jest.Mock).mockReturnValue({ enabled: false });
+      jest.spyOn(Date.prototype, 'getHours').mockReturnValue(12);
+      jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
+      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockReturnValue([
+        { hour: 14, minute: 30, score: 0.7, reason: 'afternoon' },
+      ]);
+
+      await maybeScheduleCatchUpReminder();
+
+      expect(WeatherService.fetchWeatherForecast).not.toHaveBeenCalled();
+
+      jest.restoreAllMocks();
+    });
+
+    it('includes weather description and temperature in notification body when weather is enabled and available', async () => {
+      (Database.getTodayMinutes as jest.Mock).mockReturnValue(0);
+      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
+      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
+        if (key === 'smart_reminders_count') return '1';
+        return fallback;
+      });
+      (WeatherService.isWeatherDataAvailable as jest.Mock).mockReturnValue(true);
+      (WeatherAlgorithm.getWeatherPreferences as jest.Mock).mockReturnValue({ enabled: true });
+      (WeatherService.getWeatherForHour as jest.Mock).mockReturnValue({
+        temperature: 18,
+        weatherCode: 0,
+        precipitationProbability: 5,
+        cloudCover: 10,
+        uvIndex: 3,
+        windSpeed: 10,
+        isDay: true,
+        forecastHour: 12,
+        forecastDate: 0,
+        timestamp: 0,
+      });
+      (WeatherAlgorithm.getWeatherEmoji as jest.Mock).mockReturnValue('☀️');
+      (WeatherAlgorithm.getWeatherDescription as jest.Mock).mockReturnValue('weather_clear_sky');
+      (WeatherService.fetchWeatherForecast as jest.Mock).mockResolvedValue({ success: true, conditions: [] });
+      jest.spyOn(Date.prototype, 'getHours').mockReturnValue(9);
+      jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
+      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockReturnValue([
+        { hour: 12, minute: 0, score: 0.8, reason: 'lunch' },
+      ]);
+
+      await scheduleDayReminders();
+
+      const call = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls[0][0];
+      // Body should include emoji, description, and temperature
+      expect(call.content.body).toContain('☀️');
+      expect(call.content.body).toContain('weather_clear_sky');
+      expect(call.content.body).toContain('18°C');
+
+      jest.restoreAllMocks();
+    });
+
+    it('does not append weather to notification body when weather is disabled', async () => {
+      (Database.getTodayMinutes as jest.Mock).mockReturnValue(0);
+      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
+      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
+        if (key === 'smart_reminders_count') return '1';
+        return fallback;
+      });
+      (WeatherService.isWeatherDataAvailable as jest.Mock).mockReturnValue(false);
+      (WeatherAlgorithm.getWeatherPreferences as jest.Mock).mockReturnValue({ enabled: false });
+      jest.spyOn(Date.prototype, 'getHours').mockReturnValue(9);
+      jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
+      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockReturnValue([
+        { hour: 12, minute: 0, score: 0.8, reason: 'lunch' },
+      ]);
+
+      await scheduleDayReminders();
+
+      const call = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls[0][0];
+      expect(call.content.body).not.toContain('°C');
 
       jest.restoreAllMocks();
     });
