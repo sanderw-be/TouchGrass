@@ -6,7 +6,7 @@ import 'expo-dev-client';
 import { initDatabase, getSetting, setSetting } from './src/storage/database';
 import i18n from './src/i18n';
 import { initDetection } from './src/detection/index';
-import { setupNotificationInfrastructure, scheduleDayReminders } from './src/notifications/notificationManager';
+import { setupNotificationInfrastructure, scheduleDayReminders, scheduleDailyPlannerWakeup } from './src/notifications/notificationManager';
 import { cleanupTouchGrassCalendars } from './src/calendar/calendarService';
 
 import AppNavigator from './src/navigation/AppNavigator';
@@ -88,7 +88,14 @@ function AppContent() {
         } catch (e) {
           console.warn('Scheduled notifications init error:', e);
         }
-        
+
+        // Schedule the 3 AM daily planner wake-up (survives force-close via AlarmManager)
+        try {
+          await scheduleDailyPlannerWakeup();
+        } catch (e) {
+          console.warn('Daily planner wakeup scheduling error:', e);
+        }
+
         // Register weather background fetch for hourly updates
         try {
           const { registerWeatherBackgroundFetch } = await import('./src/weather/weatherBackgroundTask');
@@ -129,7 +136,14 @@ function AppContent() {
     } catch (e) {
       console.warn('Scheduled notifications init error:', e);
     }
-    
+
+    // Schedule the 3 AM daily planner wake-up (survives force-close via AlarmManager)
+    try {
+      await scheduleDailyPlannerWakeup();
+    } catch (e) {
+      console.warn('Daily planner wakeup scheduling error:', e);
+    }
+
     // Register weather background fetch for hourly updates
     try {
       const { registerWeatherBackgroundFetch } = await import('./src/weather/weatherBackgroundTask');

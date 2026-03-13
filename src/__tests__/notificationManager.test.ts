@@ -27,6 +27,8 @@ import {
   scheduleDayReminders,
   maybeScheduleCatchUpReminder,
   setupNotificationInfrastructure,
+  scheduleDailyPlannerWakeup,
+  DAILY_PLANNER_NOTIF_PREFIX,
 } from '../notifications/notificationManager';
 
 describe('notificationManager', () => {
@@ -1035,6 +1037,188 @@ describe('notificationManager', () => {
       expect(call.content.body).not.toContain('°C');
 
       jest.restoreAllMocks();
+    });
+  });
+
+  describe('setupNotificationInfrastructure — daily planner channel', () => {
+    it('creates the touchgrass_daily_planner channel with MIN importance on Android', async () => {
+      const originalOS = Platform.OS;
+      (Platform as any).OS = 'android';
+
+      await setupNotificationInfrastructure();
+
+      expect(Notifications.setNotificationChannelAsync).toHaveBeenCalledWith(
+        'touchgrass_daily_planner',
+        expect.objectContaining({
+          name: 'notif_channel_daily_planner_name',
+          importance: Notifications.AndroidImportance.MIN,
+        }),
+      );
+
+      (Platform as any).OS = originalOS;
+    });
+
+    it('registers the daily planner background task on Android', async () => {
+      const originalOS = Platform.OS;
+      (Platform as any).OS = 'android';
+
+      await setupNotificationInfrastructure();
+
+      expect(Notifications.registerTaskAsync).toHaveBeenCalledWith(
+        'TOUCHGRASS_DAILY_PLANNER_TASK',
+      );
+
+      (Platform as any).OS = originalOS;
+    });
+
+    it('does not register the daily planner task on non-Android platforms', async () => {
+      const originalOS = Platform.OS;
+      (Platform as any).OS = 'ios';
+
+      await setupNotificationInfrastructure();
+
+      expect(Notifications.registerTaskAsync).not.toHaveBeenCalled();
+
+      (Platform as any).OS = originalOS;
+    });
+
+    it('registers the foreground notification received listener', async () => {
+      await setupNotificationInfrastructure();
+
+      expect(Notifications.addNotificationReceivedListener).toHaveBeenCalled();
+    });
+  });
+
+  describe('scheduleDailyPlannerWakeup', () => {
+    beforeEach(() => {
+      (Notifications.getPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'granted' });
+      (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([]);
+      (Notifications.scheduleNotificationAsync as jest.Mock).mockResolvedValue('planner-id');
+      (Notifications.cancelScheduledNotificationAsync as jest.Mock).mockResolvedValue(undefined);
+    });
+
+    it('does nothing on non-Android platforms', async () => {
+      const originalOS = Platform.OS;
+      (Platform as any).OS = 'ios';
+
+      await scheduleDailyPlannerWakeup();
+
+      expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
+
+      (Platform as any).OS = originalOS;
+    });
+
+    it('does nothing when notification permissions are not granted', async () => {
+      const originalOS = Platform.OS;
+      (Platform as any).OS = 'android';
+      (Notifications.getPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'denied' });
+
+      await scheduleDailyPlannerWakeup();
+
+      expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
+
+      (Platform as any).OS = originalOS;
+    });
+
+    it('schedules exactly 7 WEEKLY notifications on Android when permissions granted', async () => {
+      const originalOS = Platform.OS;
+      (Platform as any).OS = 'android';
+
+      await scheduleDailyPlannerWakeup();
+
+      expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledTimes(7);
+
+      (Platform as any).OS = originalOS;
+    });
+
+    it('schedules all notifications at 03:00 via WEEKLY trigger on the daily planner channel', async () => {
+      const originalOS = Platform.OS;
+      (Platform as any).OS = 'android';
+
+      await scheduleDailyPlannerWakeup();
+
+      const calls = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls;
+      for (const [arg] of calls) {
+        expect(arg.trigger).toEqual(
+          expect.objectContaining({
+            type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
+            hour: 3,
+            minute: 0,
+            channelId: 'touchgrass_daily_planner',
+          }),
+        );
+      }
+
+      (Platform as any).OS = originalOS;
+    });
+
+    it('covers all 7 weekdays (expo weekdays 1–7)', async () => {
+      const originalOS = Platform.OS;
+      (Platform as any).OS = 'android';
+
+      await scheduleDailyPlannerWakeup();
+
+      const calls = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls;
+      const weekdays = calls.map(([arg]: [any]) => arg.trigger.weekday).sort();
+      expect(weekdays).toEqual([1, 2, 3, 4, 5, 6, 7]);
+
+      (Platform as any).OS = originalOS;
+    });
+
+    it('uses the daily_planner_ identifier prefix for all scheduled notifications', async () => {
+      const originalOS = Platform.OS;
+      (Platform as any).OS = 'android';
+
+      await scheduleDailyPlannerWakeup();
+
+      const calls = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls;
+      for (const [arg] of calls) {
+        expect(arg.identifier).toMatch(new RegExp(`^${DAILY_PLANNER_NOTIF_PREFIX}`));
+      }
+
+      (Platform as any).OS = originalOS;
+    });
+
+    it('cancels existing daily planner notifications before rescheduling', async () => {
+      const originalOS = Platform.OS;
+      (Platform as any).OS = 'android';
+      (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([
+        { identifier: 'daily_planner_3' },
+        { identifier: 'daily_planner_5' },
+        { identifier: 'scheduled_some_notif' },
+      ]);
+
+      await scheduleDailyPlannerWakeup();
+
+      expect(Notifications.cancelScheduledNotificationAsync).toHaveBeenCalledWith('daily_planner_3');
+      expect(Notifications.cancelScheduledNotificationAsync).toHaveBeenCalledWith('daily_planner_5');
+      // Must not cancel unrelated scheduled notifications
+      expect(Notifications.cancelScheduledNotificationAsync).not.toHaveBeenCalledWith('scheduled_some_notif');
+
+      (Platform as any).OS = originalOS;
+    });
+  });
+
+  describe('cancelAutomaticReminders — preserves daily planner', () => {
+    it('does not cancel daily_planner_ notifications when cancelling automatic reminders', async () => {
+      (Database.getTodayMinutes as jest.Mock).mockReturnValue(30);
+      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
+      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
+        if (key === 'smart_reminders_count') return '2';
+        return fallback;
+      });
+      (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([
+        { identifier: 'auto_reminder_1' },
+        { identifier: 'scheduled_1_2' },
+        { identifier: 'daily_planner_4' },
+      ]);
+
+      // Trigger cancelAutomaticReminders via scheduleNextReminder goal-reached path
+      await scheduleNextReminder();
+
+      expect(Notifications.cancelScheduledNotificationAsync).toHaveBeenCalledWith('auto_reminder_1');
+      expect(Notifications.cancelScheduledNotificationAsync).not.toHaveBeenCalledWith('scheduled_1_2');
+      expect(Notifications.cancelScheduledNotificationAsync).not.toHaveBeenCalledWith('daily_planner_4');
     });
   });
 });

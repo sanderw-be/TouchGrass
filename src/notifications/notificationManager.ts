@@ -1,4 +1,5 @@
 import * as Notifications from 'expo-notifications';
+import * as TaskManager from 'expo-task-manager';
 import { Platform } from 'react-native';
 import {
   getTodayMinutes, getCurrentDailyGoal,
@@ -7,7 +8,10 @@ import {
 import { shouldRemindNow, scoreReminderHours } from './reminderAlgorithm';
 import { fetchWeatherForecast, getWeatherForHour, isWeatherDataAvailable } from '../weather/weatherService';
 import { getWeatherDescription, getWeatherEmoji, getWeatherPreferences } from '../weather/weatherAlgorithm';
-import { hasScheduledNotificationNearby, isSlotNearScheduledNotification } from './scheduledNotifications';
+import {
+  hasScheduledNotificationNearby, isSlotNearScheduledNotification,
+  scheduleAllScheduledNotifications,
+} from './scheduledNotifications';
 import { hasUpcomingEvent, maybeAddOutdoorTimeToCalendar } from '../calendar/calendarService';
 import { triggerReminderFeedbackModal } from '../context/ReminderFeedbackContext';
 import { t } from '../i18n';
@@ -28,6 +32,66 @@ export const ACTION_LESS_OFTEN = 'less_often';
 const CHANNEL_ID = 'touchgrass_reminders';
 const DEFAULT_ANDROID_CHANNEL_ID = 'default';
 const SNOOZE_DURATION_MINUTES = 30;
+
+const DAILY_PLANNER_CHANNEL_ID = 'touchgrass_daily_planner';
+export const DAILY_PLANNER_NOTIF_PREFIX = 'daily_planner_';
+const DAILY_PLANNER_TASK_NAME = 'TOUCHGRASS_DAILY_PLANNER_TASK';
+
+// ---------------------------------------------------------------------------
+// Background notification task for the 3 AM daily planner wake-up.
+// Defined at module scope so expo-task-manager can invoke it in a headless
+// JS context (killed app state on Android).
+// ---------------------------------------------------------------------------
+TaskManager.defineTask<Notifications.NotificationTaskPayload>(
+  DAILY_PLANNER_TASK_NAME,
+  async ({ data, error }) => {
+    if (error) {
+      console.error('TouchGrass: Daily planner background task error:', error);
+      return Notifications.BackgroundNotificationTaskResult.Failed;
+    }
+
+    // Extract the notification identifier from the task payload.
+    // For local scheduled notifications on Android the payload arrives as
+    // { notification: { request: { identifier: '...' } } }.
+    const notifPayload = data as any;
+    const identifier: string =
+      notifPayload?.notification?.request?.identifier ?? '';
+
+    if (!identifier.startsWith(DAILY_PLANNER_NOTIF_PREFIX)) {
+      // Not our wake-up — let other handlers deal with it.
+      return Notifications.BackgroundNotificationTaskResult.NoData;
+    }
+
+    console.log('TouchGrass: Daily planner background task fired, rescheduling notifications');
+    await runDailyPlannerWork(identifier);
+    return Notifications.BackgroundNotificationTaskResult.NewData;
+  },
+);
+
+/**
+ * Perform the work triggered by the daily planner wake-up notification:
+ * reschedule smart reminders and scheduled notifications, then dismiss the
+ * wake-up notification so it doesn't linger in the notification tray.
+ */
+async function runDailyPlannerWork(notificationId: string): Promise<void> {
+  try {
+    await scheduleDayReminders();
+  } catch (e) {
+    console.warn('TouchGrass: Daily planner — scheduleDayReminders failed:', e);
+  }
+
+  try {
+    await scheduleAllScheduledNotifications();
+  } catch (e) {
+    console.warn('TouchGrass: Daily planner — scheduleAllScheduledNotifications failed:', e);
+  }
+
+  try {
+    await Notifications.dismissNotificationAsync(notificationId);
+  } catch (e) {
+    console.warn('TouchGrass: Daily planner — failed to dismiss notification:', e);
+  }
+}
 
 async function createReminderChannels(): Promise<void> {
   const reminderChannelConfig = {
@@ -84,6 +148,29 @@ export async function setupNotificationInfrastructure(): Promise<void> {
     } catch (e) {
       console.warn('TouchGrass: Failed to create reminder channels:', e);
     }
+
+    // Create the silent daily planner channel used for the 3 AM wake-up
+    try {
+      await Notifications.setNotificationChannelAsync(DAILY_PLANNER_CHANNEL_ID, {
+        name: t('notif_channel_daily_planner_name'),
+        description: t('notif_channel_daily_planner_desc'),
+        importance: Notifications.AndroidImportance.MIN, // no sound, no peek, no badge
+        showBadge: false,
+        enableVibrate: false,
+      });
+      console.log('TouchGrass: Daily planner notification channel created');
+    } catch (e) {
+      console.warn('TouchGrass: Failed to create daily planner channel:', e);
+    }
+
+    // Register the background notification task so the OS can run scheduling
+    // code when the 3 AM wake-up fires even if the app is fully terminated.
+    try {
+      await Notifications.registerTaskAsync(DAILY_PLANNER_TASK_NAME);
+      console.log('TouchGrass: Daily planner background task registered');
+    } catch (e) {
+      console.warn('TouchGrass: Failed to register daily planner background task:', e);
+    }
   }
 
   // Re-register notification action categories on every app start.
@@ -112,19 +199,35 @@ export async function setupNotificationInfrastructure(): Promise<void> {
     console.warn('TouchGrass: Failed to register notification categories:', e);
   }
 
-  // Set handler for foreground notifications
+  // Set handler for foreground notifications.
+  // Suppress display of the daily planner wake-up — it is only a silent
+  // background trigger, not something the user should see in the tray.
   Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-      shouldShowAlert: true,
-      shouldPlaySound: true,
-      shouldSetBadge: false,
-      shouldShowBanner: true,
-      shouldShowList: true,
-    }),
+    handleNotification: async (notification) => {
+      const isDailyPlanner = notification.request.identifier.startsWith(DAILY_PLANNER_NOTIF_PREFIX);
+      return {
+        shouldShowAlert: !isDailyPlanner,
+        shouldPlaySound: !isDailyPlanner,
+        shouldSetBadge: false,
+        shouldShowBanner: !isDailyPlanner,
+        shouldShowList: !isDailyPlanner,
+      };
+    },
   });
 
   // Handle notification responses (button taps)
   Notifications.addNotificationResponseReceivedListener(handleNotificationResponse);
+
+  // Handle the daily planner notification arriving while the app is in foreground.
+  // This is the foreground counterpart to the background task defined at module top level.
+  Notifications.addNotificationReceivedListener((notification) => {
+    if (notification.request.identifier.startsWith(DAILY_PLANNER_NOTIF_PREFIX)) {
+      console.log('TouchGrass: Daily planner notification received in foreground, running scheduling');
+      runDailyPlannerWork(notification.request.identifier).catch((e) =>
+        console.warn('TouchGrass: Daily planner foreground work failed:', e),
+      );
+    }
+  });
 }
 
 /**
@@ -473,16 +576,79 @@ export async function maybeScheduleCatchUpReminder(): Promise<void> {
 }
 
 /**
- * Cancel only automatic/smart reminders, preserving scheduled notifications.
+ * Cancel only automatic/smart reminders, preserving scheduled notifications
+ * and the daily planner wake-up notifications.
  */
 async function cancelAutomaticReminders(): Promise<void> {
   const all = await Notifications.getAllScheduledNotificationsAsync();
   
   for (const notif of all) {
-    // Only cancel if it's NOT a scheduled notification (those have 'scheduled_' prefix)
-    if (!notif.identifier.startsWith('scheduled_')) {
+    // Preserve scheduled notifications ('scheduled_' prefix) and the daily
+    // planner wake-up notifications (DAILY_PLANNER_NOTIF_PREFIX).
+    if (
+      !notif.identifier.startsWith('scheduled_') &&
+      !notif.identifier.startsWith(DAILY_PLANNER_NOTIF_PREFIX)
+    ) {
       await Notifications.cancelScheduledNotificationAsync(notif.identifier);
     }
+  }
+}
+
+/**
+ * Schedule (or reschedule) the daily 3 AM wake-up notifications.
+ * Creates one WEEKLY trigger per day of the week so that the notification
+ * fires every day at 03:00, using AlarmManager directly.  This survives
+ * app force-close because WEEKLY triggers bypass WorkManager.
+ *
+ * The notification is shown on a MIN-importance channel (no sound, no
+ * vibration, no heads-up).  The background task (TOUCHGRASS_DAILY_PLANNER_TASK)
+ * immediately runs scheduleDayReminders() + scheduleAllScheduledNotifications()
+ * and then dismisses the notification, so the user never sees it linger.
+ *
+ * Call this once on app startup and after the intro is completed.
+ */
+export async function scheduleDailyPlannerWakeup(): Promise<void> {
+  if (Platform.OS !== 'android') return;
+
+  try {
+    const { status } = await Notifications.getPermissionsAsync();
+    if (status !== 'granted') {
+      console.warn('TouchGrass: Cannot schedule daily planner — notification permission not granted');
+      return;
+    }
+
+    // Cancel any previously scheduled daily planner notifications first so we
+    // don't accumulate duplicates across app restarts.
+    const all = await Notifications.getAllScheduledNotificationsAsync();
+    for (const notif of all) {
+      if (notif.identifier.startsWith(DAILY_PLANNER_NOTIF_PREFIX)) {
+        await Notifications.cancelScheduledNotificationAsync(notif.identifier);
+      }
+    }
+
+    // Schedule one WEEKLY notification per day of the week at 03:00.
+    // expo-notifications weekday: 1 = Sunday … 7 = Saturday.
+    for (let expoWeekday = 1; expoWeekday <= 7; expoWeekday++) {
+      await Notifications.scheduleNotificationAsync({
+        identifier: `${DAILY_PLANNER_NOTIF_PREFIX}${expoWeekday}`,
+        content: {
+          title: 'TouchGrass',
+          body: '',
+          // No category — this notification should never be tapped by the user.
+        },
+        trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
+          weekday: expoWeekday,
+          hour: 3,
+          minute: 0,
+          channelId: DAILY_PLANNER_CHANNEL_ID,
+        },
+      });
+    }
+
+    console.log('TouchGrass: Daily planner wake-up notifications scheduled (3 AM, every day)');
+  } catch (e) {
+    console.warn('TouchGrass: Failed to schedule daily planner wake-up:', e);
   }
 }
 
