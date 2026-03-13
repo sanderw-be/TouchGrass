@@ -632,7 +632,7 @@ export async function scheduleDailyPlannerWakeup(): Promise<void> {
       await Notifications.scheduleNotificationAsync({
         identifier: `${DAILY_PLANNER_NOTIF_PREFIX}${expoWeekday}`,
         content: {
-          title: 'TouchGrass',
+          title: t('notif_daily_planner_title'),
           body: '',
           // No category — this notification should never be tapped by the user.
         },
