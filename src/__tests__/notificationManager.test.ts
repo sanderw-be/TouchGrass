@@ -30,6 +30,7 @@ import {
   scheduleDailyPlannerWakeup,
   dismissDailyPlannerNotifications,
   DAILY_PLANNER_NOTIF_PREFIX,
+  FAILSAFE_REMINDER_PREFIX,
 } from '../notifications/notificationManager';
 
 describe('notificationManager', () => {
@@ -320,7 +321,10 @@ describe('notificationManager', () => {
 
       await scheduleDayReminders();
 
-      expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledTimes(2);
+      // Count only today's reminders (exclude failsafe_ pre-scheduled triggers for future days)
+      const todayCalls = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls
+        .filter(([arg]: [any]) => !arg.identifier?.startsWith(FAILSAFE_REMINDER_PREFIX));
+      expect(todayCalls).toHaveLength(2);
 
       jest.restoreAllMocks();
     });
@@ -341,7 +345,9 @@ describe('notificationManager', () => {
 
       await scheduleDayReminders();
 
-      expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledTimes(1);
+      const todayCalls = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls
+        .filter(([arg]: [any]) => !arg.identifier?.startsWith(FAILSAFE_REMINDER_PREFIX));
+      expect(todayCalls).toHaveLength(1);
 
       jest.restoreAllMocks();
     });
@@ -364,7 +370,9 @@ describe('notificationManager', () => {
 
       await scheduleDayReminders();
 
-      expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledTimes(3);
+      const todayCalls = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls
+        .filter(([arg]: [any]) => !arg.identifier?.startsWith(FAILSAFE_REMINDER_PREFIX));
+      expect(todayCalls).toHaveLength(3);
 
       jest.restoreAllMocks();
     });
@@ -416,8 +424,10 @@ describe('notificationManager', () => {
 
       await scheduleDayReminders();
 
-      // Should skip 12:00 and schedule 17:30 and 19:00
-      expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledTimes(2);
+      // Should skip 12:00 and schedule 17:30 and 19:00 (exclude failsafe_ calls)
+      const todayCalls = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls
+        .filter(([arg]: [any]) => !arg.identifier?.startsWith(FAILSAFE_REMINDER_PREFIX));
+      expect(todayCalls).toHaveLength(2);
 
       jest.restoreAllMocks();
     });
@@ -1285,8 +1295,8 @@ describe('notificationManager', () => {
     });
   });
 
-  describe('cancelAutomaticReminders — preserves daily planner', () => {
-    it('does not cancel daily_planner_ notifications when cancelling automatic reminders', async () => {
+  describe('cancelAutomaticReminders — preserves daily planner and failsafe', () => {
+    it('does not cancel daily_planner_ or failsafe_reminder_ notifications when cancelling automatic reminders', async () => {
       (Database.getTodayMinutes as jest.Mock).mockReturnValue(30);
       (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
       (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
@@ -1297,6 +1307,8 @@ describe('notificationManager', () => {
         { identifier: 'auto_reminder_1' },
         { identifier: 'scheduled_1_2' },
         { identifier: 'daily_planner_4' },
+        { identifier: 'failsafe_reminder_2026-03-15_0' },
+        { identifier: 'failsafe_reminder_2026-03-16_0' },
       ]);
 
       // Trigger cancelAutomaticReminders via scheduleNextReminder goal-reached path
@@ -1305,6 +1317,122 @@ describe('notificationManager', () => {
       expect(Notifications.cancelScheduledNotificationAsync).toHaveBeenCalledWith('auto_reminder_1');
       expect(Notifications.cancelScheduledNotificationAsync).not.toHaveBeenCalledWith('scheduled_1_2');
       expect(Notifications.cancelScheduledNotificationAsync).not.toHaveBeenCalledWith('daily_planner_4');
+      expect(Notifications.cancelScheduledNotificationAsync).not.toHaveBeenCalledWith('failsafe_reminder_2026-03-15_0');
+      expect(Notifications.cancelScheduledNotificationAsync).not.toHaveBeenCalledWith('failsafe_reminder_2026-03-16_0');
+    });
+  });
+
+  describe('scheduleDayReminders — failsafe pre-scheduling', () => {
+    beforeEach(() => {
+      jest.useFakeTimers();
+      jest.setSystemTime(new Date('2026-03-14T08:00:00'));
+
+      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
+        if (key === 'smart_reminders_count') return '2';
+        return fallback; // lastPlannedDate returns '' → not today
+      });
+      (Database.getTodayMinutes as jest.Mock).mockReturnValue(0);
+      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
+      (WeatherAlgorithm.getWeatherPreferences as jest.Mock).mockReturnValue({ enabled: false });
+      (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([]);
+    });
+
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
+    it('schedules failsafe DATE triggers for the next 3 days using the chosen slots', async () => {
+      await scheduleDayReminders();
+
+      const calls = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls;
+      const failsafeCalls = calls.filter(([arg]: [any]) =>
+        arg.identifier?.startsWith(FAILSAFE_REMINDER_PREFIX),
+      );
+
+      // At most 2 slots × 3 days = up to 6 failsafe notifications
+      expect(failsafeCalls.length).toBeGreaterThan(0);
+      expect(failsafeCalls.length).toBeLessThanOrEqual(6);
+    });
+
+    it('failsafe notifications use DATE trigger type', async () => {
+      await scheduleDayReminders();
+
+      const calls = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls;
+      const failsafeCalls = calls.filter(([arg]: [any]) =>
+        arg.identifier?.startsWith(FAILSAFE_REMINDER_PREFIX),
+      );
+
+      for (const [arg] of failsafeCalls) {
+        expect(arg.trigger.type).toBe(Notifications.SchedulableTriggerInputTypes.DATE);
+      }
+    });
+
+    it('failsafe notification identifiers encode the target date', async () => {
+      await scheduleDayReminders();
+
+      const calls = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls;
+      const failsafeIds = calls
+        .filter(([arg]: [any]) => arg.identifier?.startsWith(FAILSAFE_REMINDER_PREFIX))
+        .map(([arg]: [any]) => arg.identifier as string);
+
+      // All identifiers should have a date component in them
+      for (const id of failsafeIds) {
+        expect(id).toMatch(/^failsafe_reminder_\d{4}-\d{2}-\d{2}_\d+$/);
+      }
+    });
+
+    it('failsafe notifications cover days 1, 2, and 3 ahead', async () => {
+      await scheduleDayReminders();
+
+      const calls = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls;
+      const failsafeIds = calls
+        .filter(([arg]: [any]) => arg.identifier?.startsWith(FAILSAFE_REMINDER_PREFIX))
+        .map(([arg]: [any]) => arg.identifier as string);
+
+      const dates = [...new Set(failsafeIds.map((id) => id.split('_')[2]))];
+      expect(dates).toContain('2026-03-15');
+      expect(dates).toContain('2026-03-16');
+      expect(dates).toContain('2026-03-17');
+    });
+
+    it('failsafe notifications do NOT create calendar events', async () => {
+      await scheduleDayReminders();
+
+      // maybeAddOutdoorTimeToCalendar is only called for today's auto_reminder_ slots
+      const calendarCalls = (CalendarService.maybeAddOutdoorTimeToCalendar as jest.Mock).mock.calls;
+      // None of the calendar calls should have a date in the next 3 future days
+      const tomorrow = new Date('2026-03-15');
+      for (const [date] of calendarCalls) {
+        expect((date as Date).getTime()).toBeLessThan(tomorrow.getTime());
+      }
+    });
+
+    it('cancels stale failsafe reminders from previous days before scheduling', async () => {
+      (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([
+        { identifier: 'failsafe_reminder_2026-03-10_0' }, // old
+        { identifier: 'failsafe_reminder_2026-03-11_0' }, // old
+        { identifier: 'auto_reminder_existing' },
+      ]);
+
+      await scheduleDayReminders();
+
+      expect(Notifications.cancelScheduledNotificationAsync).toHaveBeenCalledWith('failsafe_reminder_2026-03-10_0');
+      expect(Notifications.cancelScheduledNotificationAsync).toHaveBeenCalledWith('failsafe_reminder_2026-03-11_0');
+    });
+
+    it('does not schedule failsafe reminders when reminders are disabled', async () => {
+      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
+        if (key === 'smart_reminders_count') return '0';
+        return fallback;
+      });
+
+      await scheduleDayReminders();
+
+      const calls = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls;
+      const failsafeCalls = calls.filter(([arg]: [any]) =>
+        arg.identifier?.startsWith(FAILSAFE_REMINDER_PREFIX),
+      );
+      expect(failsafeCalls).toHaveLength(0);
     });
   });
 });

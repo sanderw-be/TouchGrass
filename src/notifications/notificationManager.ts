@@ -37,6 +37,13 @@ const DAILY_PLANNER_CHANNEL_ID = 'touchgrass_daily_planner';
 export const DAILY_PLANNER_NOTIF_PREFIX = 'daily_planner_';
 const DAILY_PLANNER_TASK_NAME = 'TOUCHGRASS_DAILY_PLANNER_TASK';
 
+// Prefix for "failsafe" reminders — DATE triggers scheduled for the next
+// FAILSAFE_DAYS_AHEAD days whenever scheduleDayReminders() runs.
+// Because DATE triggers go through AlarmManager, they survive app force-close
+// and fire even if JS never runs at 3 AM.
+export const FAILSAFE_REMINDER_PREFIX = 'failsafe_reminder_';
+const FAILSAFE_DAYS_AHEAD = 3;
+
 // ---------------------------------------------------------------------------
 // Background notification task for the 3 AM daily planner wake-up.
 // Defined at module scope so expo-task-manager can invoke it in a headless
@@ -163,8 +170,13 @@ export async function setupNotificationInfrastructure(): Promise<void> {
       console.warn('TouchGrass: Failed to create daily planner channel:', e);
     }
 
-    // Register the background notification task so the OS can run scheduling
-    // code when the 3 AM wake-up fires even if the app is fully terminated.
+    // Register the background notification task.
+    // NOTE: On Android, registerTaskAsync / TaskManager.defineTask only fires
+    // for *remote* FCM push notifications — it does NOT run for local WEEKLY
+    // scheduled notifications in the killed-app state.  The failsafe DATE
+    // triggers scheduled by scheduleDayReminders() are the reliable fallback
+    // for that case.  We keep this registration as a best-effort layer for
+    // future Expo versions or the background/foreground states.
     try {
       await Notifications.registerTaskAsync(DAILY_PLANNER_TASK_NAME);
       console.log('TouchGrass: Daily planner background task registered');
@@ -379,6 +391,12 @@ export async function scheduleDayReminders(): Promise<void> {
 
   const remindersCount = parseInt(getSetting('smart_reminders_count', '2'), 10);
 
+  // Always cancel stale failsafe reminders at the start of a new planning
+  // cycle, regardless of whether reminders are enabled.  This clears out
+  // any leftover failsafe triggers from the previous days before we either
+  // skip (reminders=0 / goal reached) or schedule fresh ones.
+  await cancelFailsafeReminders();
+
   if (remindersCount === 0) {
     setSetting('reminders_last_planned_date', todayStr);
     setSetting('reminders_planned_slots', '[]');
@@ -473,6 +491,12 @@ export async function scheduleDayReminders(): Promise<void> {
   // Store the planned slots so catch-up logic can reference them
   setSetting('reminders_planned_slots', JSON.stringify(scheduledSlots));
   setSetting('additional_reminders_today', '0');
+
+  // Pre-schedule the same time slots for the next FAILSAFE_DAYS_AHEAD days so
+  // that reminders fire even if the app is force-closed and no JS runs at 3 AM.
+  // The failsafe notifications use a generic message (we don't know tomorrow's
+  // progress) and do NOT create calendar events.
+  await scheduleFailsafeReminders(topSlots);
 
   // Record that planning has been done for today
   setSetting('reminders_last_planned_date', todayStr);
@@ -576,18 +600,104 @@ export async function maybeScheduleCatchUpReminder(): Promise<void> {
 }
 
 /**
- * Cancel only automatic/smart reminders, preserving scheduled notifications
- * and the daily planner wake-up notifications.
+ * Format a Date as a local-time YYYY-MM-DD key (used as part of failsafe
+ * reminder identifiers).  Uses local date methods deliberately — toISOString()
+ * returns UTC which can be a different date than the local calendar day near
+ * midnight in non-zero UTC offsets.
+ */
+function formatLocalDateKey(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+/**
+ * Cancel all failsafe reminder notifications that were pre-scheduled for
+ * future days.  Called at the start of each new planning cycle so that stale
+ * failsafe triggers from previous days are replaced with fresh ones.
+ */
+async function cancelFailsafeReminders(): Promise<void> {
+  const all = await Notifications.getAllScheduledNotificationsAsync();
+  for (const notif of all) {
+    if (notif.identifier.startsWith(FAILSAFE_REMINDER_PREFIX)) {
+      await Notifications.cancelScheduledNotificationAsync(notif.identifier);
+    }
+  }
+}
+
+/**
+ * Pre-schedule "failsafe" DATE triggers for the same time slots on each of
+ * the next FAILSAFE_DAYS_AHEAD days.
+ *
+ * Why: DATE triggers go through Android's AlarmManager and survive app
+ * force-close.  If JS never runs at 3 AM (because registerTaskAsync only
+ * works for remote FCM notifications, not local WEEKLY ones), these failsafe
+ * triggers ensure the user still receives a reminder the next morning at the
+ * previously calculated optimal time.
+ *
+ * When the user opens the app, scheduleDayReminders() cancels these failsafe
+ * triggers and schedules fresh optimal ones for the new day.
+ *
+ * @param slots  The time slots chosen by scheduleDayReminders() for today.
+ */
+async function scheduleFailsafeReminders(
+  slots: Array<{ hour: number; minute: 0 | 30 }>,
+): Promise<void> {
+  if (slots.length === 0) return;
+
+  const dailyTarget = getCurrentDailyGoal()?.targetMinutes ?? 30;
+
+  for (let daysAhead = 1; daysAhead <= FAILSAFE_DAYS_AHEAD; daysAhead++) {
+    const futureDate = new Date();
+    futureDate.setDate(futureDate.getDate() + daysAhead);
+    const dateKey = futureDate.toISOString().slice(0, 10); // YYYY-MM-DD
+
+    for (let i = 0; i < slots.length; i++) {
+      const slot = slots[i];
+      const triggerDate = new Date(futureDate);
+      triggerDate.setHours(slot.hour, slot.minute, 0, 0);
+
+      // Use 0 progress since we don't know tomorrow's outdoor minutes.
+      const { title, body } = buildReminderMessage(0, dailyTarget, slot.hour);
+
+      await Notifications.scheduleNotificationAsync({
+        identifier: `${FAILSAFE_REMINDER_PREFIX}${dateKey}_${i}`,
+        content: {
+          title,
+          body,
+          categoryIdentifier: 'reminder',
+          color: '#4A7C59',
+        },
+        trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.DATE,
+          date: triggerDate,
+          channelId: CHANNEL_ID,
+        },
+      });
+    }
+  }
+
+  console.log(`TouchGrass: Failsafe reminders pre-scheduled for next ${FAILSAFE_DAYS_AHEAD} days`);
+}
+
+/**
+ * Cancel only automatic/smart reminders for today, preserving scheduled
+ * notifications, the daily planner wake-up notifications, and failsafe
+ * reminders for future days.
  */
 async function cancelAutomaticReminders(): Promise<void> {
   const all = await Notifications.getAllScheduledNotificationsAsync();
   
   for (const notif of all) {
-    // Preserve scheduled notifications ('scheduled_' prefix) and the daily
-    // planner wake-up notifications (DAILY_PLANNER_NOTIF_PREFIX).
+    // Preserve:
+    //  - scheduled notifications ('scheduled_' prefix)
+    //  - the daily planner wake-up notifications (DAILY_PLANNER_NOTIF_PREFIX)
+    //  - failsafe reminders for future days (FAILSAFE_REMINDER_PREFIX)
     if (
       !notif.identifier.startsWith('scheduled_') &&
-      !notif.identifier.startsWith(DAILY_PLANNER_NOTIF_PREFIX)
+      !notif.identifier.startsWith(DAILY_PLANNER_NOTIF_PREFIX) &&
+      !notif.identifier.startsWith(FAILSAFE_REMINDER_PREFIX)
     ) {
       await Notifications.cancelScheduledNotificationAsync(notif.identifier);
     }
