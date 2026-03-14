@@ -13,6 +13,7 @@ import SettingsScreen from '../screens/SettingsScreen';
 const WeatherSettingsScreen = lazy(() => import('../screens/WeatherSettingsScreen'));
 const ScheduledNotificationsScreen = lazy(() => import('../screens/ScheduledNotificationsScreen'));
 const KnownLocationsScreen = lazy(() => import('../screens/KnownLocationsScreen'));
+const FeedbackSupportScreen = lazy(() => import('../screens/FeedbackSupportScreen'));
 import { fetchWeatherForecast, isWeatherDataAvailable } from '../weather/weatherService';
 import { getSetting } from '../storage/database';
 import { spacing } from '../utils/theme';
@@ -24,6 +25,7 @@ export type SettingsStackParamList = {
   WeatherSettings: undefined;
   ScheduledNotifications: undefined;
   KnownLocations: undefined;
+  FeedbackSupport: undefined;
 };
 
 const Tab = createBottomTabNavigator();
@@ -89,6 +91,16 @@ function SettingsStackNavigator() {
         {() => (
           <Suspense fallback={<ScreenFallback />}>
             <KnownLocationsScreen />
+          </Suspense>
+        )}
+      </SettingsStack.Screen>
+      <SettingsStack.Screen
+        name="FeedbackSupport"
+        options={{ title: t('nav_feedback_support') }}
+      >
+        {() => (
+          <Suspense fallback={<ScreenFallback />}>
+            <FeedbackSupportScreen />
           </Suspense>
         )}
       </SettingsStack.Screen>

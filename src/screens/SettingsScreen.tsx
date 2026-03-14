@@ -589,6 +589,15 @@ export default function SettingsScreen() {
           }
         />
         <Divider />
+        <TouchableOpacity onPress={() => navigation.navigate('FeedbackSupport')}>
+          <SettingRow
+            icon="☕"
+            label={t('settings_feedback_support')}
+            sublabel={t('settings_feedback_support_sublabel')}
+            right={<Text style={styles.chevron}>›</Text>}
+          />
+        </TouchableOpacity>
+        <Divider />
         <SettingRow
           icon="🗑️"
           label={t('settings_clear_data')}
