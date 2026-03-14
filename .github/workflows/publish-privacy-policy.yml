@@ -1,0 +1,38 @@
+name: Publish Privacy Policy
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'docs/privacy-policy.html'
+
+jobs:
+  publish:
+    name: Push to TouchGrass-Legal
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout TouchGrass
+        uses: actions/checkout@v4
+
+      - name: Checkout TouchGrass-Legal
+        uses: actions/checkout@v4
+        with:
+          repository: sanderw-be/TouchGrass-Legal
+          token: ${{ secrets.LEGAL_REPO_PAT }}
+          path: legal-repo
+
+      - name: Copy privacy policy
+        run: cp docs/privacy-policy.html legal-repo/privacy-policy.html
+
+      - name: Commit and push
+        working-directory: legal-repo
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add privacy-policy.html
+          git diff --staged --quiet || git commit -m "chore: update privacy policy from TouchGrass"
+          git push
