@@ -331,6 +331,10 @@ export default {
   notif_channel_background_desc: 'Shows while TouchGrass is tracking your outside time. Can be disabled without affecting reminders.',
   notif_channel_scheduled_name: 'Scheduled reminders',
   notif_channel_scheduled_desc: 'Your custom scheduled reminders to go outside',
+  notif_channel_daily_planner_name: 'Daily planner',
+  notif_channel_daily_planner_desc: 'Silent 3 AM wake-up used to reschedule your daily reminders. Can be fully disabled in Android notification settings.',
+  notif_daily_planner_title: 'TouchGrass',
+  notif_daily_planner_body: 'Planning smart reminders for today, will close when done.',
 
   // Scheduled notifications
   scheduled_notif_body: 'Your scheduled reminder to go outside.',

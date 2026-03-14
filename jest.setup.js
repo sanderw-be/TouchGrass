@@ -28,6 +28,8 @@ jest.mock('expo-notifications', () => ({
   setNotificationChannelAsync: jest.fn(),
   setNotificationCategoryAsync: jest.fn(),
   addNotificationResponseReceivedListener: jest.fn(() => ({ remove: jest.fn() })),
+  addNotificationReceivedListener: jest.fn(() => ({ remove: jest.fn() })),
+  registerTaskAsync: jest.fn(() => Promise.resolve()),
   dismissNotificationAsync: jest.fn(() => Promise.resolve()),
   SchedulableTriggerInputTypes: {
     TIME_INTERVAL: 'timeInterval',
@@ -40,6 +42,11 @@ jest.mock('expo-notifications', () => ({
     LOW: 2,
     DEFAULT: 3,
     HIGH: 4,
+  },
+  BackgroundNotificationTaskResult: {
+    NewData: 0,
+    NoData: 1,
+    Failed: 2,
   },
 }));
 

@@ -5,6 +5,7 @@ import {
   hasUpcomingEvent,
   addOutdoorTimeToCalendar,
   maybeAddOutdoorTimeToCalendar,
+  deleteFutureTouchGrassEvents,
   getWritableCalendars,
   getOrCreateTouchGrassCalendar,
   cleanupTouchGrassCalendars,
@@ -847,6 +848,105 @@ describe('calendarService', () => {
 
       expect(result).toEqual({ primaryCalendarId: null, removedCalendars: 0, removedEvents: 0 });
       expect(mockGetCalendars).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('deleteFutureTouchGrassEvents', () => {
+    const mockDeleteEvent = jest.fn(() => Promise.resolve());
+
+    beforeEach(() => {
+      (Calendar as any).deleteEventAsync = mockDeleteEvent;
+      mockDeleteEvent.mockReset();
+      mockGetCalendarPermissions.mockResolvedValue({ status: 'granted' });
+    });
+
+    it('does nothing when calendar integration is disabled', async () => {
+      mockGetSetting.mockImplementation((key: string, fallback: string) => {
+        if (key === 'calendar_integration_enabled') return '0';
+        return fallback;
+      });
+
+      await deleteFutureTouchGrassEvents(new Date(), 3);
+
+      expect(mockGetEvents).not.toHaveBeenCalled();
+      expect(mockDeleteEvent).not.toHaveBeenCalled();
+    });
+
+    it('does nothing when no TouchGrass calendar ID is stored', async () => {
+      mockGetSetting.mockImplementation((key: string, fallback: string) => {
+        if (key === 'calendar_integration_enabled') return '1';
+        // calendar_touchgrass_id returns '' (fallback)
+        return fallback;
+      });
+
+      await deleteFutureTouchGrassEvents(new Date(), 3);
+
+      expect(mockGetEvents).not.toHaveBeenCalled();
+    });
+
+    it('does nothing when calendar permission is not granted', async () => {
+      mockGetCalendarPermissions.mockResolvedValue({ status: 'denied' });
+      mockGetSetting.mockImplementation((key: string, fallback: string) => {
+        if (key === 'calendar_integration_enabled') return '1';
+        if (key === 'calendar_touchgrass_id') return 'cal-123';
+        return fallback;
+      });
+
+      await deleteFutureTouchGrassEvents(new Date(), 3);
+
+      expect(mockGetEvents).not.toHaveBeenCalled();
+    });
+
+    it('deletes all events returned by getEventsAsync in the given window', async () => {
+      mockGetSetting.mockImplementation((key: string, fallback: string) => {
+        if (key === 'calendar_integration_enabled') return '1';
+        if (key === 'calendar_touchgrass_id') return 'cal-123';
+        return fallback;
+      });
+      mockGetEvents.mockResolvedValue([
+        { id: 'ev-1', title: '🌿 Outdoor time' },
+        { id: 'ev-2', title: '🌿 Outdoor time' },
+      ]);
+
+      const from = new Date('2026-03-14T08:00:00');
+      await deleteFutureTouchGrassEvents(from, 3);
+
+      expect(mockGetEvents).toHaveBeenCalledWith(
+        ['cal-123'],
+        from,
+        expect.any(Date),
+      );
+      expect(mockDeleteEvent).toHaveBeenCalledWith('ev-1');
+      expect(mockDeleteEvent).toHaveBeenCalledWith('ev-2');
+    });
+
+    it('queries the correct end time (from + daysAhead * 24h)', async () => {
+      mockGetSetting.mockImplementation((key: string, fallback: string) => {
+        if (key === 'calendar_integration_enabled') return '1';
+        if (key === 'calendar_touchgrass_id') return 'cal-123';
+        return fallback;
+      });
+      mockGetEvents.mockResolvedValue([]);
+
+      const from = new Date('2026-03-14T08:00:00');
+      await deleteFutureTouchGrassEvents(from, 3);
+
+      const [, , to] = mockGetEvents.mock.calls[0];
+      const expectedTo = from.getTime() + 3 * 24 * 60 * 60 * 1000;
+      expect((to as Date).getTime()).toBe(expectedTo);
+    });
+
+    it('silently ignores errors when deleting individual events', async () => {
+      mockGetSetting.mockImplementation((key: string, fallback: string) => {
+        if (key === 'calendar_integration_enabled') return '1';
+        if (key === 'calendar_touchgrass_id') return 'cal-123';
+        return fallback;
+      });
+      mockGetEvents.mockResolvedValue([{ id: 'ev-gone', title: '🌿 Outdoor time' }]);
+      mockDeleteEvent.mockRejectedValue(new Error('already deleted'));
+
+      // Should not throw
+      await expect(deleteFutureTouchGrassEvents(new Date(), 3)).resolves.toBeUndefined();
     });
   });
 });

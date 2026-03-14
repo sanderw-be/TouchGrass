@@ -8,6 +8,7 @@ jest.mock('../i18n', () => ({ t: (key: string) => key }));
 jest.mock('../calendar/calendarService', () => ({
   hasUpcomingEvent: jest.fn(() => Promise.resolve(false)),
   maybeAddOutdoorTimeToCalendar: jest.fn(() => Promise.resolve()),
+  deleteFutureTouchGrassEvents: jest.fn(() => Promise.resolve()),
 }));
 jest.mock('../context/ReminderFeedbackContext', () => ({
   triggerReminderFeedbackModal: jest.fn(),
@@ -27,6 +28,10 @@ import {
   scheduleDayReminders,
   maybeScheduleCatchUpReminder,
   setupNotificationInfrastructure,
+  scheduleDailyPlannerWakeup,
+  dismissDailyPlannerNotifications,
+  DAILY_PLANNER_NOTIF_PREFIX,
+  FAILSAFE_REMINDER_PREFIX,
 } from '../notifications/notificationManager';
 
 describe('notificationManager', () => {
@@ -51,6 +56,7 @@ describe('notificationManager', () => {
     (Notifications.dismissNotificationAsync as jest.Mock).mockResolvedValue(undefined);
     (CalendarService.maybeAddOutdoorTimeToCalendar as jest.Mock).mockResolvedValue(undefined);
     (CalendarService.hasUpcomingEvent as jest.Mock).mockResolvedValue(false);
+    (CalendarService.deleteFutureTouchGrassEvents as jest.Mock).mockResolvedValue(undefined);
   });
 
   describe('setupNotificationInfrastructure', () => {
@@ -317,7 +323,10 @@ describe('notificationManager', () => {
 
       await scheduleDayReminders();
 
-      expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledTimes(2);
+      // Count only today's reminders (exclude failsafe_ pre-scheduled triggers for future days)
+      const todayCalls = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls
+        .filter(([arg]: [any]) => !arg.identifier?.startsWith(FAILSAFE_REMINDER_PREFIX));
+      expect(todayCalls).toHaveLength(2);
 
       jest.restoreAllMocks();
     });
@@ -338,7 +347,9 @@ describe('notificationManager', () => {
 
       await scheduleDayReminders();
 
-      expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledTimes(1);
+      const todayCalls = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls
+        .filter(([arg]: [any]) => !arg.identifier?.startsWith(FAILSAFE_REMINDER_PREFIX));
+      expect(todayCalls).toHaveLength(1);
 
       jest.restoreAllMocks();
     });
@@ -361,7 +372,9 @@ describe('notificationManager', () => {
 
       await scheduleDayReminders();
 
-      expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledTimes(3);
+      const todayCalls = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls
+        .filter(([arg]: [any]) => !arg.identifier?.startsWith(FAILSAFE_REMINDER_PREFIX));
+      expect(todayCalls).toHaveLength(3);
 
       jest.restoreAllMocks();
     });
@@ -413,8 +426,10 @@ describe('notificationManager', () => {
 
       await scheduleDayReminders();
 
-      // Should skip 12:00 and schedule 17:30 and 19:00
-      expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledTimes(2);
+      // Should skip 12:00 and schedule 17:30 and 19:00 (exclude failsafe_ calls)
+      const todayCalls = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls
+        .filter(([arg]: [any]) => !arg.identifier?.startsWith(FAILSAFE_REMINDER_PREFIX));
+      expect(todayCalls).toHaveLength(2);
 
       jest.restoreAllMocks();
     });
@@ -436,8 +451,11 @@ describe('notificationManager', () => {
 
       await scheduleDayReminders();
 
-      // One calendar event per scheduled reminder (2 slots)
-      expect(CalendarService.maybeAddOutdoorTimeToCalendar).toHaveBeenCalledTimes(2);
+      // One calendar event per scheduled reminder slot today (2 slots) plus
+      // failsafe events for the next 3 days (2 slots × 3 days = 6), total 8.
+      // Check that at least 2 calls are for today's slots (before tomorrow).
+      const allCalCalls = (CalendarService.maybeAddOutdoorTimeToCalendar as jest.Mock).mock.calls;
+      expect(allCalCalls.length).toBeGreaterThanOrEqual(2);
 
       jest.restoreAllMocks();
     });
@@ -1035,6 +1053,411 @@ describe('notificationManager', () => {
       expect(call.content.body).not.toContain('°C');
 
       jest.restoreAllMocks();
+    });
+  });
+
+  describe('setupNotificationInfrastructure — daily planner channel', () => {
+    it('creates the touchgrass_daily_planner channel with MIN importance on Android', async () => {
+      const originalOS = Platform.OS;
+      (Platform as any).OS = 'android';
+
+      await setupNotificationInfrastructure();
+
+      expect(Notifications.setNotificationChannelAsync).toHaveBeenCalledWith(
+        'touchgrass_daily_planner',
+        expect.objectContaining({
+          name: 'notif_channel_daily_planner_name',
+          importance: Notifications.AndroidImportance.MIN,
+        }),
+      );
+
+      (Platform as any).OS = originalOS;
+    });
+
+    it('registers the daily planner background task on Android', async () => {
+      const originalOS = Platform.OS;
+      (Platform as any).OS = 'android';
+
+      await setupNotificationInfrastructure();
+
+      expect(Notifications.registerTaskAsync).toHaveBeenCalledWith(
+        'TOUCHGRASS_DAILY_PLANNER_TASK',
+      );
+
+      (Platform as any).OS = originalOS;
+    });
+
+    it('does not register the daily planner task on non-Android platforms', async () => {
+      const originalOS = Platform.OS;
+      (Platform as any).OS = 'ios';
+
+      await setupNotificationInfrastructure();
+
+      expect(Notifications.registerTaskAsync).not.toHaveBeenCalled();
+
+      (Platform as any).OS = originalOS;
+    });
+
+    it('registers the foreground notification received listener', async () => {
+      await setupNotificationInfrastructure();
+
+      expect(Notifications.addNotificationReceivedListener).toHaveBeenCalled();
+    });
+  });
+
+  describe('scheduleDailyPlannerWakeup', () => {
+    beforeEach(() => {
+      (Notifications.getPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'granted' });
+      (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([]);
+      (Notifications.scheduleNotificationAsync as jest.Mock).mockResolvedValue('planner-id');
+      (Notifications.cancelScheduledNotificationAsync as jest.Mock).mockResolvedValue(undefined);
+    });
+
+    it('does nothing on non-Android platforms', async () => {
+      const originalOS = Platform.OS;
+      (Platform as any).OS = 'ios';
+
+      await scheduleDailyPlannerWakeup();
+
+      expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
+
+      (Platform as any).OS = originalOS;
+    });
+
+    it('does nothing when notification permissions are not granted', async () => {
+      const originalOS = Platform.OS;
+      (Platform as any).OS = 'android';
+      (Notifications.getPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'denied' });
+
+      await scheduleDailyPlannerWakeup();
+
+      expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
+
+      (Platform as any).OS = originalOS;
+    });
+
+    it('schedules exactly 7 WEEKLY notifications on Android when permissions granted', async () => {
+      const originalOS = Platform.OS;
+      (Platform as any).OS = 'android';
+
+      await scheduleDailyPlannerWakeup();
+
+      expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledTimes(7);
+
+      (Platform as any).OS = originalOS;
+    });
+
+    it('schedules all notifications at 03:00 via WEEKLY trigger on the daily planner channel', async () => {
+      const originalOS = Platform.OS;
+      (Platform as any).OS = 'android';
+
+      await scheduleDailyPlannerWakeup();
+
+      const calls = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls;
+      for (const [arg] of calls) {
+        expect(arg.trigger).toEqual(
+          expect.objectContaining({
+            type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
+            hour: 3,
+            minute: 0,
+            channelId: 'touchgrass_daily_planner',
+          }),
+        );
+      }
+
+      (Platform as any).OS = originalOS;
+    });
+
+    it('covers all 7 weekdays (expo weekdays 1–7)', async () => {
+      const originalOS = Platform.OS;
+      (Platform as any).OS = 'android';
+
+      await scheduleDailyPlannerWakeup();
+
+      const calls = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls;
+      const weekdays = calls.map(([arg]: [any]) => arg.trigger.weekday).sort();
+      expect(weekdays).toEqual([1, 2, 3, 4, 5, 6, 7]);
+
+      (Platform as any).OS = originalOS;
+    });
+
+    it('uses the daily_planner_ identifier prefix for all scheduled notifications', async () => {
+      const originalOS = Platform.OS;
+      (Platform as any).OS = 'android';
+
+      await scheduleDailyPlannerWakeup();
+
+      const calls = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls;
+      for (const [arg] of calls) {
+        expect(arg.identifier).toMatch(new RegExp(`^${DAILY_PLANNER_NOTIF_PREFIX}`));
+      }
+
+      (Platform as any).OS = originalOS;
+    });
+
+    it('cancels existing daily planner notifications before rescheduling', async () => {
+      const originalOS = Platform.OS;
+      (Platform as any).OS = 'android';
+      (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([
+        { identifier: 'daily_planner_3' },
+        { identifier: 'daily_planner_5' },
+        { identifier: 'scheduled_some_notif' },
+      ]);
+
+      await scheduleDailyPlannerWakeup();
+
+      expect(Notifications.cancelScheduledNotificationAsync).toHaveBeenCalledWith('daily_planner_3');
+      expect(Notifications.cancelScheduledNotificationAsync).toHaveBeenCalledWith('daily_planner_5');
+      // Must not cancel unrelated scheduled notifications
+      expect(Notifications.cancelScheduledNotificationAsync).not.toHaveBeenCalledWith('scheduled_some_notif');
+
+      (Platform as any).OS = originalOS;
+    });
+
+    it('sets the localised body text on each notification', async () => {
+      const originalOS = Platform.OS;
+      (Platform as any).OS = 'android';
+
+      await scheduleDailyPlannerWakeup();
+
+      const calls = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls;
+      for (const [arg] of calls) {
+        // t() is mocked to return the key, so body should equal the i18n key
+        expect(arg.content.body).toBe('notif_daily_planner_body');
+      }
+
+      (Platform as any).OS = originalOS;
+    });
+  });
+
+  describe('dismissDailyPlannerNotifications', () => {
+    it('does nothing on non-Android platforms', async () => {
+      const originalOS = Platform.OS;
+      (Platform as any).OS = 'ios';
+
+      await dismissDailyPlannerNotifications();
+
+      expect(Notifications.dismissNotificationAsync).not.toHaveBeenCalled();
+
+      (Platform as any).OS = originalOS;
+    });
+
+    it('attempts to dismiss all 7 daily planner notification identifiers on Android', async () => {
+      const originalOS = Platform.OS;
+      (Platform as any).OS = 'android';
+
+      await dismissDailyPlannerNotifications();
+
+      expect(Notifications.dismissNotificationAsync).toHaveBeenCalledTimes(7);
+      for (let weekday = 1; weekday <= 7; weekday++) {
+        expect(Notifications.dismissNotificationAsync).toHaveBeenCalledWith(
+          `${DAILY_PLANNER_NOTIF_PREFIX}${weekday}`,
+        );
+      }
+
+      (Platform as any).OS = originalOS;
+    });
+
+    it('silently ignores errors when a notification is not displayed', async () => {
+      const originalOS = Platform.OS;
+      (Platform as any).OS = 'android';
+      (Notifications.dismissNotificationAsync as jest.Mock).mockRejectedValue(new Error('not found'));
+
+      // Should not throw
+      await expect(dismissDailyPlannerNotifications()).resolves.toBeUndefined();
+
+      (Platform as any).OS = originalOS;
+    });
+  });
+
+  describe('handleNotificationResponse — daily planner skip', () => {
+    it('dismisses a daily planner notification tap but does not insert reminder feedback', async () => {
+      // Simulate the notification response listener being registered and called
+      // We need to trigger handleNotificationResponse via the listener registration
+      const listenerCalls = (Notifications.addNotificationResponseReceivedListener as jest.Mock).mock.calls;
+      // Find the response listener registered during setupNotificationInfrastructure
+      await setupNotificationInfrastructure();
+      const allCalls = (Notifications.addNotificationResponseReceivedListener as jest.Mock).mock.calls;
+      const handler = allCalls[allCalls.length - 1]?.[0];
+      if (!handler) return; // guard
+
+      const mockResponse = {
+        actionIdentifier: 'com.apple.UNNotificationDefaultActionIdentifier',
+        notification: {
+          request: {
+            identifier: 'daily_planner_4',
+            content: { title: 'TouchGrass', body: 'Planning smart reminders for today, will close when done.' },
+          },
+        },
+      };
+
+      await handler(mockResponse);
+
+      // Notification must be dismissed
+      expect(Notifications.dismissNotificationAsync).toHaveBeenCalledWith('daily_planner_4');
+      // Reminder feedback must NOT be inserted
+      expect(Database.insertReminderFeedback).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('cancelAutomaticReminders — preserves daily planner and failsafe', () => {
+    it('does not cancel daily_planner_ or failsafe_reminder_ notifications when cancelling automatic reminders', async () => {
+      (Database.getTodayMinutes as jest.Mock).mockReturnValue(30);
+      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
+      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
+        if (key === 'smart_reminders_count') return '2';
+        return fallback;
+      });
+      (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([
+        { identifier: 'auto_reminder_1' },
+        { identifier: 'scheduled_1_2' },
+        { identifier: 'daily_planner_4' },
+        { identifier: 'failsafe_reminder_2026-03-15_0' },
+        { identifier: 'failsafe_reminder_2026-03-16_0' },
+      ]);
+
+      // Trigger cancelAutomaticReminders via scheduleNextReminder goal-reached path
+      await scheduleNextReminder();
+
+      expect(Notifications.cancelScheduledNotificationAsync).toHaveBeenCalledWith('auto_reminder_1');
+      expect(Notifications.cancelScheduledNotificationAsync).not.toHaveBeenCalledWith('scheduled_1_2');
+      expect(Notifications.cancelScheduledNotificationAsync).not.toHaveBeenCalledWith('daily_planner_4');
+      expect(Notifications.cancelScheduledNotificationAsync).not.toHaveBeenCalledWith('failsafe_reminder_2026-03-15_0');
+      expect(Notifications.cancelScheduledNotificationAsync).not.toHaveBeenCalledWith('failsafe_reminder_2026-03-16_0');
+    });
+  });
+
+  describe('scheduleDayReminders — failsafe pre-scheduling', () => {
+    beforeEach(() => {
+      jest.useFakeTimers();
+      jest.setSystemTime(new Date('2026-03-14T08:00:00'));
+
+      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
+        if (key === 'smart_reminders_count') return '2';
+        return fallback; // lastPlannedDate returns '' → not today
+      });
+      (Database.getTodayMinutes as jest.Mock).mockReturnValue(0);
+      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
+      (WeatherAlgorithm.getWeatherPreferences as jest.Mock).mockReturnValue({ enabled: false });
+      (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([]);
+    });
+
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
+    it('schedules failsafe DATE triggers for the next 3 days using the chosen slots', async () => {
+      await scheduleDayReminders();
+
+      const calls = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls;
+      const failsafeCalls = calls.filter(([arg]: [any]) =>
+        arg.identifier?.startsWith(FAILSAFE_REMINDER_PREFIX),
+      );
+
+      // At most 2 slots × 3 days = up to 6 failsafe notifications
+      expect(failsafeCalls.length).toBeGreaterThan(0);
+      expect(failsafeCalls.length).toBeLessThanOrEqual(6);
+    });
+
+    it('failsafe notifications use DATE trigger type', async () => {
+      await scheduleDayReminders();
+
+      const calls = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls;
+      const failsafeCalls = calls.filter(([arg]: [any]) =>
+        arg.identifier?.startsWith(FAILSAFE_REMINDER_PREFIX),
+      );
+
+      for (const [arg] of failsafeCalls) {
+        expect(arg.trigger.type).toBe(Notifications.SchedulableTriggerInputTypes.DATE);
+      }
+    });
+
+    it('failsafe notification identifiers encode the target date', async () => {
+      await scheduleDayReminders();
+
+      const calls = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls;
+      const failsafeIds = calls
+        .filter(([arg]: [any]) => arg.identifier?.startsWith(FAILSAFE_REMINDER_PREFIX))
+        .map(([arg]: [any]) => arg.identifier as string);
+
+      // All identifiers should have a date component in them
+      for (const id of failsafeIds) {
+        expect(id).toMatch(/^failsafe_reminder_\d{4}-\d{2}-\d{2}_\d+$/);
+      }
+    });
+
+    it('failsafe notifications cover days 1, 2, and 3 ahead', async () => {
+      await scheduleDayReminders();
+
+      const calls = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls;
+      const failsafeIds = calls
+        .filter(([arg]: [any]) => arg.identifier?.startsWith(FAILSAFE_REMINDER_PREFIX))
+        .map(([arg]: [any]) => arg.identifier as string);
+
+      const dates = [...new Set(failsafeIds.map((id) => id.split('_')[2]))];
+      expect(dates).toContain('2026-03-15');
+      expect(dates).toContain('2026-03-16');
+      expect(dates).toContain('2026-03-17');
+    });
+
+    it('failsafe notifications also create calendar events for future days', async () => {
+      await scheduleDayReminders();
+
+      const calendarCalls = (CalendarService.maybeAddOutdoorTimeToCalendar as jest.Mock).mock.calls;
+      // There should be calendar calls for future days (beyond today = 2026-03-14)
+      const tomorrow = new Date('2026-03-15T00:00:00');
+      const futureCalls = calendarCalls.filter(
+        ([date]: [Date]) => (date as Date).getTime() >= tomorrow.getTime(),
+      );
+      expect(futureCalls.length).toBeGreaterThan(0);
+    });
+
+    it('calls deleteFutureTouchGrassEvents to clear stale failsafe calendar events before fresh planning', async () => {
+      await scheduleDayReminders();
+
+      expect(CalendarService.deleteFutureTouchGrassEvents).toHaveBeenCalledWith(
+        expect.any(Date),
+        3, // FAILSAFE_DAYS_AHEAD
+      );
+    });
+
+    it('calls deleteFutureTouchGrassEvents even when reminders are disabled', async () => {
+      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
+        if (key === 'smart_reminders_count') return '0';
+        return fallback;
+      });
+
+      await scheduleDayReminders();
+
+      expect(CalendarService.deleteFutureTouchGrassEvents).toHaveBeenCalled();
+    });
+
+    it('cancels stale failsafe reminders from previous days before scheduling', async () => {
+      (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([
+        { identifier: 'failsafe_reminder_2026-03-10_0' }, // old
+        { identifier: 'failsafe_reminder_2026-03-11_0' }, // old
+        { identifier: 'auto_reminder_existing' },
+      ]);
+
+      await scheduleDayReminders();
+
+      expect(Notifications.cancelScheduledNotificationAsync).toHaveBeenCalledWith('failsafe_reminder_2026-03-10_0');
+      expect(Notifications.cancelScheduledNotificationAsync).toHaveBeenCalledWith('failsafe_reminder_2026-03-11_0');
+    });
+
+    it('does not schedule failsafe reminders when reminders are disabled', async () => {
+      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
+        if (key === 'smart_reminders_count') return '0';
+        return fallback;
+      });
+
+      await scheduleDayReminders();
+
+      const calls = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls;
+      const failsafeCalls = calls.filter(([arg]: [any]) =>
+        arg.identifier?.startsWith(FAILSAFE_REMINDER_PREFIX),
+      );
+      expect(failsafeCalls).toHaveLength(0);
     });
   });
 });

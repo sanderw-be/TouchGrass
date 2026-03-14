@@ -331,6 +331,10 @@ export default {
   notif_channel_background_desc: 'Zichtbaar terwijl TouchGrass je buitentijd bijhoudt. Kan worden uitgeschakeld zonder invloed op herinneringen.',
   notif_channel_scheduled_name: 'Geplande herinneringen',
   notif_channel_scheduled_desc: 'Je aangepaste geplande herinneringen om naar buiten te gaan',
+  notif_channel_daily_planner_name: 'Dagelijkse planner',
+  notif_channel_daily_planner_desc: 'Stille 3 uur-wekker om je dagelijkse herinneringen opnieuw in te plannen. Kan volledig worden uitgeschakeld in de Android-notificatie-instellingen.',
+  notif_daily_planner_title: 'TouchGrass',
+  notif_daily_planner_body: 'Slimme herinneringen voor vandaag inplannen, sluit zodra het klaar is.',
 
   // Scheduled notifications
   scheduled_notif_body: 'Je geplande herinnering om naar buiten te gaan.',

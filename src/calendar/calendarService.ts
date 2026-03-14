@@ -387,6 +387,40 @@ export async function hasUpcomingEvent(windowMinutes: number): Promise<boolean> 
 }
 
 /**
+ * Delete all TouchGrass calendar events in the window [from, from + daysAhead days).
+ * Used by scheduleDayReminders() to remove stale failsafe calendar events before
+ * replacing them with freshly calculated ones.
+ * Safe to call when calendar integration is disabled or no events exist.
+ */
+export async function deleteFutureTouchGrassEvents(from: Date, daysAhead: number): Promise<void> {
+  const enabled = getSetting('calendar_integration_enabled', '0') === '1';
+  if (!enabled) return;
+
+  const calendarId = getSetting(TOUCHGRASS_CALENDAR_SETTING, '');
+  if (!calendarId) return;
+
+  const permissionGranted = await hasCalendarPermissions();
+  if (!permissionGranted) return;
+
+  try {
+    const to = new Date(from.getTime() + daysAhead * 24 * 60 * 60 * 1000);
+    const events = await Calendar.getEventsAsync([calendarId], from, to);
+    for (const event of events) {
+      try {
+        await Calendar.deleteEventAsync(event.id);
+      } catch {
+        // Best-effort deletion — a missing event is not an error.
+      }
+    }
+    if (events.length > 0) {
+      console.log(`TouchGrass: Deleted ${events.length} stale planned calendar event(s) before fresh planning`);
+    }
+  } catch (e) {
+    console.warn('TouchGrass: Failed to delete future TouchGrass events:', e);
+  }
+}
+
+/**
  * Conditionally add an outdoor time slot to the calendar based on the user's
  * settings.  Does nothing when calendar integration is disabled or the default
  * duration is set to Off (0).  Safe to call fire-and-forget.
