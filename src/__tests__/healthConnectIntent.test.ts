@@ -44,7 +44,7 @@ describe('openHealthConnectPermissionsViaIntent', () => {
         expect.stringContaining('android.health.connect.action.MANAGE_HEALTH_PERMISSIONS'),
       );
       expect(Linking.openURL).toHaveBeenCalledWith(
-        expect.stringContaining('com.sanderwubben.touchgrass'),
+        expect.stringContaining('com.jollyheron.touchgrass'),
       );
       expect(HealthConnect.openHealthConnectSettings).not.toHaveBeenCalled();
     });

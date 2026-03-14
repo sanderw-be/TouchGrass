@@ -5,7 +5,7 @@ import {
   readRecords,
 } from 'react-native-health-connect';
 
-const APP_PACKAGE_NAME = 'com.sanderwubben.touchgrass';
+const APP_PACKAGE_NAME = 'com.jollyheron.touchgrass';
 const HEALTH_CONNECT_PLAY_STORE_ID = 'com.google.android.apps.healthdata';
 
 /**
