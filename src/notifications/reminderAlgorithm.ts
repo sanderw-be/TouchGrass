@@ -7,6 +7,13 @@ const SLOT_START_MINUTES = 7 * 60;  // 7:00
 const SLOT_END_MINUTES = 23 * 60;   // exclusive end, last slot is 22:30
 const SLOT_STEP = 30;
 
+// Proximity: slots ≥ 3 hours from a planned reminder are unaffected (multiplier 1.0);
+// closer slots are penalised linearly down to 0.0 at the same slot.
+const PROXIMITY_FULL_MINUTES = 180; // 3 hours → multiplier = 1.0
+
+// Maximum random jitter applied to each slot score to help escape local optima.
+const MAX_JITTER = 0.05;
+
 export interface HourScore {
   hour: number;
   minute: 0 | 30;
@@ -21,12 +28,14 @@ export interface HourScore {
  *
  * @param currentHour - Current hour of day (used to skip past slots)
  * @param currentMinute - Current minute of day (default 0); combined with currentHour to skip past slots
+ * @param plannedSlots - Already-selected reminder slots for today; nearby slots are penalised
  */
 export function scoreReminderHours(
   todayMinutes: number,
   dailyTargetMinutes: number,
   currentHour: number,
   currentMinute: number = 0,
+  plannedSlots: Array<{ hour: number; minute: 0 | 30 }> = [],
 ): HourScore[] {
   const feedback = getReminderFeedback();
   const scores: HourScore[] = [];
@@ -131,6 +140,37 @@ export function scoreReminderHours(
           reasons.push(`weather ${weatherScore > 0 ? '+' : ''}${weatherScore.toFixed(2)}`);
         }
       }
+    }
+
+    // ── Proximity penalty ─────────────────────────────────
+    // Penalise slots that are close to an already-planned reminder so that
+    // reminders are spread out across the day. A slot within 3 hours of a
+    // planned slot gets a multiplier that scales linearly from 0.0 (same slot)
+    // to 1.0 (≥ 3 hours away). When there are multiple planned slots the most
+    // restrictive (smallest) multiplier is used.
+    if (plannedSlots.length > 0) {
+      let minMultiplier = 1.0;
+      for (const planned of plannedSlots) {
+        const plannedMinutes = planned.hour * 60 + planned.minute;
+        const distanceMinutes = Math.abs(slotMinutes - plannedMinutes);
+        const multiplier = Math.min(distanceMinutes / PROXIMITY_FULL_MINUTES, 1.0);
+        if (multiplier < minMultiplier) {
+          minMultiplier = multiplier;
+        }
+      }
+      if (minMultiplier < 1.0) {
+        score *= minMultiplier;
+        reasons.push(`proximity ×${minMultiplier.toFixed(2)}`);
+      }
+    }
+
+    // ── Random jitter ─────────────────────────────────────
+    // Small random perturbation so the algorithm can escape local optima and
+    // surface time slots that are occasionally good but not historically dominant.
+    const jitter = (Math.random() - 0.5) * 2 * MAX_JITTER;
+    score += jitter;
+    if (Math.abs(jitter) >= 0.001) {
+      reasons.push(`jitter ${jitter >= 0 ? '+' : ''}${jitter.toFixed(2)}`);
     }
 
     scores.push({

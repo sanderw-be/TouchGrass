@@ -434,34 +434,45 @@ export async function scheduleDayReminders(): Promise<void> {
     await fetchWeatherForecast({ allowPermissionPrompt: false });
   }
 
-  const scores = scoreReminderHours(todayMinutes, dailyTarget, currentHour, currentMinute);
-
-  // Pick the top N scoring slots for the day, ensuring:
-  //   - score >= 0.4
-  //   - slot is in the future
-  //   - no duplicate hour:minute combinations
-  //   - not near a user-defined scheduled notification
   const seenSlots = new Set<string>();
   const topSlots: Array<{ hour: number; minute: 0 | 30 }> = [];
   const currentSlotMinutes = currentHour * 60 + currentMinute;
 
-  for (const slot of scores) {
-    if (topSlots.length >= remindersCount) break;
-    if (slot.score < 0.4) continue;
-    const slotMinutes = slot.hour * 60 + slot.minute;
-    if (slotMinutes <= currentSlotMinutes) continue;
+  // Pick slots one at a time. After each pick, re-score with the chosen slots as
+  // plannedSlots so that the proximity penalty is applied to subsequent candidates,
+  // discouraging reminders that are too close together.
+  while (topSlots.length < remindersCount) {
+    const scores = scoreReminderHours(
+      todayMinutes,
+      dailyTarget,
+      currentHour,
+      currentMinute,
+      topSlots as Array<{ hour: number; minute: 0 | 30 }>,
+    );
 
-    const slotKey = `${slot.hour}:${slot.minute}`;
-    if (seenSlots.has(slotKey)) continue;
+    let picked = false;
+    for (const slot of scores) {
+      if (slot.score < 0.4) continue;
+      const slotMinutes = slot.hour * 60 + slot.minute;
+      if (slotMinutes <= currentSlotMinutes) continue;
 
-    // Skip slots near user-defined scheduled notifications for today
-    if (isSlotNearScheduledNotification(slot.hour, slot.minute, 30)) {
-      console.log(`TouchGrass: Skipping reminder at ${slot.hour}:${slot.minute.toString().padStart(2, '0')} - scheduled notification nearby`);
-      continue;
+      const slotKey = `${slot.hour}:${slot.minute}`;
+      if (seenSlots.has(slotKey)) continue;
+
+      // Skip slots near user-defined scheduled notifications for today
+      if (isSlotNearScheduledNotification(slot.hour, slot.minute, 30)) {
+        console.log(`TouchGrass: Skipping reminder at ${slot.hour}:${slot.minute.toString().padStart(2, '0')} - scheduled notification nearby`);
+        continue;
+      }
+
+      seenSlots.add(slotKey);
+      topSlots.push({ hour: slot.hour, minute: slot.minute as 0 | 30 });
+      picked = true;
+      break;
     }
 
-    seenSlots.add(slotKey);
-    topSlots.push({ hour: slot.hour, minute: slot.minute });
+    // No valid slot found in this round — stop looking
+    if (!picked) break;
   }
 
   const scheduledSlots: Array<{ hour: number; minute: number }> = [];
