@@ -15,6 +15,13 @@ describe('reminderAlgorithm', () => {
     (Database.startOfWeek as jest.Mock).mockReturnValue(0);
     (WeatherService.getWeatherForHour as jest.Mock).mockReturnValue(null);
     (WeatherAlgorithm.getWeatherPreferences as jest.Mock).mockReturnValue({ enabled: false });
+    // Neutralise random jitter so score assertions are deterministic.
+    // jitter = (Math.random() - 0.5) * 2 * MAX_JITTER → with 0.5 the jitter is exactly 0.
+    jest.spyOn(Math, 'random').mockReturnValue(0.5);
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   describe('scoreReminderHours', () => {
@@ -115,6 +122,86 @@ describe('reminderAlgorithm', () => {
     it('clamps scores to [0, 1]', () => {
       const scores = scoreReminderHours(0, 30, 0, 0);
       for (const s of scores) {
+        expect(s.score).toBeGreaterThanOrEqual(0);
+        expect(s.score).toBeLessThanOrEqual(1);
+      }
+    });
+
+    it('applies proximity penalty to slots near a planned reminder', () => {
+      // Planned slot at 12:00 (720 min); slot at 12:30 (750 min) is 30 min away
+      // multiplier = 30 / 180 ≈ 0.167; score should be (0.5 + 0.10) * 0.167 ≈ 0.10
+      const planned = [{ hour: 12, minute: 0 as 0 | 30 }];
+      const scores = scoreReminderHours(0, 30, 0, 0, planned);
+      const slot1200 = scores.find((s) => s.hour === 12 && s.minute === 0)!;
+      const slot1230 = scores.find((s) => s.hour === 12 && s.minute === 30)!;
+      const slot1800 = scores.find((s) => s.hour === 18 && s.minute === 0)!;
+      // slot at the same time as the planned slot gets multiplier 0 → score 0
+      expect(slot1200.score).toBe(0);
+      // slot 30 min away should be penalised compared to an unplanned scenario
+      expect(slot1230.score).toBeLessThan(0.5);
+      expect(slot1230.reason).toContain('proximity');
+      // slot 6 hours away (≥ 3 h threshold) should NOT be penalised
+      expect(slot1800.score).toBeGreaterThanOrEqual(0.5);
+      expect(slot1800.reason).not.toContain('proximity');
+    });
+
+    it('slots exactly 3 hours or more away are not penalised by proximity', () => {
+      // Planned at 10:00 (600 min); 13:00 (780 min) is exactly 180 min away → multiplier 1.0
+      const planned = [{ hour: 10, minute: 0 as 0 | 30 }];
+      const scores = scoreReminderHours(0, 30, 0, 0, planned);
+      const slot1300 = scores.find((s) => s.hour === 13 && s.minute === 0)!;
+      expect(slot1300.reason).not.toContain('proximity');
+    });
+
+    it('uses the most restrictive proximity multiplier when multiple slots are planned', () => {
+      // Two planned slots at 10:00 and 16:00; slot at 13:00 is 180 min from 10:00 and
+      // 180 min from 16:00 → both multipliers = 1.0, so no penalty
+      const planned = [
+        { hour: 10, minute: 0 as 0 | 30 },
+        { hour: 16, minute: 0 as 0 | 30 },
+      ];
+      const scores = scoreReminderHours(0, 30, 0, 0, planned);
+      const slot1300 = scores.find((s) => s.hour === 13 && s.minute === 0)!;
+      expect(slot1300.reason).not.toContain('proximity');
+
+      // slot at 14:00 is 240 min from 10:00 (ok) but only 120 min from 16:00 → penalised
+      const slot1400 = scores.find((s) => s.hour === 14 && s.minute === 0)!;
+      expect(slot1400.reason).toContain('proximity');
+    });
+
+    it('adds random jitter to slot scores', () => {
+      // Mock Math.random to return two different values across the two score calls
+      // so that the expected jitter difference is deterministic.
+      // jitter = (randomValue - 0.5) * 2 * 0.05
+      // With 0.3 → jitter = (0.3 - 0.5) * 0.10 = -0.02
+      // With 0.7 → jitter = (0.7 - 0.5) * 0.10 = +0.02
+      let callCount = 0;
+      jest.spyOn(Math, 'random').mockImplementation(() => (callCount++ % 2 === 0 ? 0.3 : 0.7));
+
+      const scores1 = scoreReminderHours(0, 30, 0, 0);
+      callCount = 0; // reset counter so second call mirrors first but with different random sequence
+      jest.spyOn(Math, 'random').mockImplementation(() => (callCount++ % 2 === 0 ? 0.7 : 0.3));
+      const scores2 = scoreReminderHours(0, 30, 0, 0);
+
+      const slot700a = scores1.find((s) => s.hour === 7 && s.minute === 0)!;
+      const slot700b = scores2.find((s) => s.hour === 7 && s.minute === 0)!;
+      expect(slot700a.score).not.toBe(slot700b.score);
+    });
+
+    it('jitter does not push scores outside [0, 1]', () => {
+      // Test with extreme jitter values: Math.random() = 0 → jitter = -0.05 (max negative)
+      //                                  Math.random() = 1 → jitter = +0.05 (max positive)
+      // Verify clamping holds for both extremes.
+      jest.spyOn(Math, 'random').mockReturnValue(0); // max negative jitter
+      const scoresLow = scoreReminderHours(0, 30, 0, 0);
+      for (const s of scoresLow) {
+        expect(s.score).toBeGreaterThanOrEqual(0);
+        expect(s.score).toBeLessThanOrEqual(1);
+      }
+
+      jest.spyOn(Math, 'random').mockReturnValue(1); // max positive jitter
+      const scoresHigh = scoreReminderHours(0, 30, 0, 0);
+      for (const s of scoresHigh) {
         expect(s.score).toBeGreaterThanOrEqual(0);
         expect(s.score).toBeLessThanOrEqual(1);
       }
