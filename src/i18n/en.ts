@@ -395,6 +395,12 @@ export default {
   settings_feedback_support: 'Feedback & Support',
   settings_feedback_support_sublabel: 'Share feedback or support the developer',
 
+  // Error boundary crash screen
+  error_boundary_title: 'Something went wrong',
+  error_boundary_subtitle: 'The app encountered an unexpected error. You can try restarting it or report the issue to help us fix it.',
+  error_boundary_restart: 'Restart app',
+  error_boundary_report: 'Report this issue',
+
   // Time/date formatting locale tag
   locale_tag: 'en-GB',
 };
