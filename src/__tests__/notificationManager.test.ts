@@ -28,6 +28,7 @@ import {
   maybeScheduleCatchUpReminder,
   setupNotificationInfrastructure,
   scheduleDailyPlannerWakeup,
+  dismissDailyPlannerNotifications,
   DAILY_PLANNER_NOTIF_PREFIX,
 } from '../notifications/notificationManager';
 
@@ -1196,6 +1197,91 @@ describe('notificationManager', () => {
       expect(Notifications.cancelScheduledNotificationAsync).not.toHaveBeenCalledWith('scheduled_some_notif');
 
       (Platform as any).OS = originalOS;
+    });
+
+    it('sets the localised body text on each notification', async () => {
+      const originalOS = Platform.OS;
+      (Platform as any).OS = 'android';
+
+      await scheduleDailyPlannerWakeup();
+
+      const calls = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls;
+      for (const [arg] of calls) {
+        // t() is mocked to return the key, so body should equal the i18n key
+        expect(arg.content.body).toBe('notif_daily_planner_body');
+      }
+
+      (Platform as any).OS = originalOS;
+    });
+  });
+
+  describe('dismissDailyPlannerNotifications', () => {
+    it('does nothing on non-Android platforms', async () => {
+      const originalOS = Platform.OS;
+      (Platform as any).OS = 'ios';
+
+      await dismissDailyPlannerNotifications();
+
+      expect(Notifications.dismissNotificationAsync).not.toHaveBeenCalled();
+
+      (Platform as any).OS = originalOS;
+    });
+
+    it('attempts to dismiss all 7 daily planner notification identifiers on Android', async () => {
+      const originalOS = Platform.OS;
+      (Platform as any).OS = 'android';
+
+      await dismissDailyPlannerNotifications();
+
+      expect(Notifications.dismissNotificationAsync).toHaveBeenCalledTimes(7);
+      for (let weekday = 1; weekday <= 7; weekday++) {
+        expect(Notifications.dismissNotificationAsync).toHaveBeenCalledWith(
+          `${DAILY_PLANNER_NOTIF_PREFIX}${weekday}`,
+        );
+      }
+
+      (Platform as any).OS = originalOS;
+    });
+
+    it('silently ignores errors when a notification is not displayed', async () => {
+      const originalOS = Platform.OS;
+      (Platform as any).OS = 'android';
+      (Notifications.dismissNotificationAsync as jest.Mock).mockRejectedValue(new Error('not found'));
+
+      // Should not throw
+      await expect(dismissDailyPlannerNotifications()).resolves.toBeUndefined();
+
+      (Platform as any).OS = originalOS;
+    });
+  });
+
+  describe('handleNotificationResponse — daily planner skip', () => {
+    it('dismisses a daily planner notification tap but does not insert reminder feedback', async () => {
+      // Simulate the notification response listener being registered and called
+      // We need to trigger handleNotificationResponse via the listener registration
+      const listenerCalls = (Notifications.addNotificationResponseReceivedListener as jest.Mock).mock.calls;
+      // Find the response listener registered during setupNotificationInfrastructure
+      await setupNotificationInfrastructure();
+      const allCalls = (Notifications.addNotificationResponseReceivedListener as jest.Mock).mock.calls;
+      const handler = allCalls[allCalls.length - 1]?.[0];
+      if (!handler) return; // guard
+
+      const mockResponse = {
+        actionIdentifier: 'com.apple.UNNotificationDefaultActionIdentifier',
+        notification: {
+          request: {
+            identifier: 'daily_planner_4',
+            content: { title: 'TouchGrass', body: 'Planning smart reminders for today, will close when done.' },
+          },
+        },
+      };
+
+      await handler(mockResponse);
+
+      // Notification must be dismissed
+      expect(Notifications.dismissNotificationAsync).toHaveBeenCalledWith('daily_planner_4');
+      // Reminder feedback must NOT be inserted
+      expect(Database.insertReminderFeedback).not.toHaveBeenCalled();
     });
   });
 

@@ -633,7 +633,7 @@ export async function scheduleDailyPlannerWakeup(): Promise<void> {
         identifier: `${DAILY_PLANNER_NOTIF_PREFIX}${expoWeekday}`,
         content: {
           title: t('notif_daily_planner_title'),
-          body: '',
+          body: t('notif_daily_planner_body'),
           // No category — this notification should never be tapped by the user.
         },
         trigger: {
@@ -653,6 +653,27 @@ export async function scheduleDailyPlannerWakeup(): Promise<void> {
 }
 
 /**
+ * Dismiss any daily planner wake-up notifications currently displayed in the
+ * Android notification tray.  Call this after scheduling work is complete so
+ * the notification is removed once the app has done its job.
+ * Safe to call when no daily planner notification is displayed — dismissing a
+ * notification that is not present is a no-op on Android.
+ */
+export async function dismissDailyPlannerNotifications(): Promise<void> {
+  if (Platform.OS !== 'android') return;
+  // There is one notification per weekday (identifiers daily_planner_1…7).
+  // We try to dismiss all of them; any that are not currently displayed are
+  // silently ignored.
+  for (let weekday = 1; weekday <= 7; weekday++) {
+    try {
+      await Notifications.dismissNotificationAsync(`${DAILY_PLANNER_NOTIF_PREFIX}${weekday}`);
+    } catch {
+      // Not displayed — ignore.
+    }
+  }
+}
+
+/**
  * Handle user tapping a notification action button.
  */
 async function handleNotificationResponse(response: Notifications.NotificationResponse): Promise<void> {
@@ -666,6 +687,12 @@ async function handleNotificationResponse(response: Notifications.NotificationRe
     await Notifications.dismissNotificationAsync(notificationId);
   } catch (e) {
     console.warn('TouchGrass: Failed to dismiss notification:', e);
+  }
+
+  // Daily planner notifications are not smart reminders — skip feedback tracking
+  // so the reminder-learning algorithm is not corrupted by a 3 AM "dismissed" entry.
+  if (notificationId.startsWith(DAILY_PLANNER_NOTIF_PREFIX)) {
+    return;
   }
 
   const action = actionId === ACTION_WENT_OUTSIDE ? 'went_outside'

@@ -334,6 +334,7 @@ export default {
   notif_channel_daily_planner_name: 'Dagelijkse planner',
   notif_channel_daily_planner_desc: 'Stille 3 uur-wekker om je dagelijkse herinneringen opnieuw in te plannen. Kan volledig worden uitgeschakeld in de Android-notificatie-instellingen.',
   notif_daily_planner_title: 'TouchGrass',
+  notif_daily_planner_body: 'Slimme herinneringen voor vandaag inplannen, sluit zodra het klaar is.',
 
   // Scheduled notifications
   scheduled_notif_body: 'Je geplande herinnering om naar buiten te gaan.',
