@@ -5,14 +5,14 @@ Track your outdoor time with smart reminders and automatic GPS detection. 🌿
 TouchGrass helps you spend more time outside by automatically tracking your outdoor activity using GPS and Health Connect.
 
 🌿 Features:
-• Automatic outdoor detection via GPS and Health Connect
-• Customizable daily and weekly outdoor goals
-• Smart reminders that learn your schedule
-• Weather-aware suggestions
-• Calendar integration for planning outdoor time
-• Progress tracking with daily, weekly, and monthly stats
-• Privacy-first: all data stays on your device
-• Available in English and Dutch
+- Automatic outdoor detection via GPS and Health Connect
+- Customizable daily and weekly outdoor goals
+- Smart reminders that learn your schedule
+- Weather-aware suggestions
+- Calendar integration for planning outdoor time
+- Progress tracking with daily, weekly, and monthly stats
+- Privacy-first: all data stays on your device
+- Available in English and Dutch
 
 Set a goal, get gentle nudges, and watch your outdoor time grow.
 
