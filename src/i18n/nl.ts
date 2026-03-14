@@ -386,6 +386,15 @@ export default {
   calendar_event_notes: 'Gepland door TouchGrass',
   calendar_touchgrass_name: 'TouchGrass',
 
+  // Feedback & ondersteuning scherm
+  nav_feedback_support: 'Feedback & Ondersteuning',
+  feedback_send_feedback: 'Feedback sturen',
+  feedback_send_feedback_sublabel: 'Deel een bugrapport, idee of algemene feedback',
+  feedback_support_kofi: 'Jolly Heron steunen',
+  feedback_support_kofi_sublabel: 'Trakteer me op een kopje koffie — elke bijdrage helpt ☕',
+  settings_feedback_support: 'Feedback & Ondersteuning',
+  settings_feedback_support_sublabel: 'Stuur feedback of steun de ontwikkelaar',
+
   // Taal-/datumopmaak
   locale_tag: 'nl-NL',
 };

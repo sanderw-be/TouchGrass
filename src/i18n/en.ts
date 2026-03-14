@@ -386,6 +386,15 @@ export default {
   calendar_event_notes: 'Scheduled by TouchGrass',
   calendar_touchgrass_name: 'TouchGrass',
 
+  // Feedback & Support screen
+  nav_feedback_support: 'Feedback & Support',
+  feedback_send_feedback: 'Send feedback',
+  feedback_send_feedback_sublabel: 'Share a bug report, feature idea, or general feedback',
+  feedback_support_kofi: 'Support Jolly Heron',
+  feedback_support_kofi_sublabel: 'Buy me a coffee — every bit helps ☕',
+  settings_feedback_support: 'Feedback & Support',
+  settings_feedback_support_sublabel: 'Share feedback or support the developer',
+
   // Time/date formatting locale tag
   locale_tag: 'en-GB',
 };
