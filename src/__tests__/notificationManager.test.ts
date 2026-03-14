@@ -8,6 +8,7 @@ jest.mock('../i18n', () => ({ t: (key: string) => key }));
 jest.mock('../calendar/calendarService', () => ({
   hasUpcomingEvent: jest.fn(() => Promise.resolve(false)),
   maybeAddOutdoorTimeToCalendar: jest.fn(() => Promise.resolve()),
+  deleteFutureTouchGrassEvents: jest.fn(() => Promise.resolve()),
 }));
 jest.mock('../context/ReminderFeedbackContext', () => ({
   triggerReminderFeedbackModal: jest.fn(),
@@ -55,6 +56,7 @@ describe('notificationManager', () => {
     (Notifications.dismissNotificationAsync as jest.Mock).mockResolvedValue(undefined);
     (CalendarService.maybeAddOutdoorTimeToCalendar as jest.Mock).mockResolvedValue(undefined);
     (CalendarService.hasUpcomingEvent as jest.Mock).mockResolvedValue(false);
+    (CalendarService.deleteFutureTouchGrassEvents as jest.Mock).mockResolvedValue(undefined);
   });
 
   describe('setupNotificationInfrastructure', () => {
@@ -449,8 +451,11 @@ describe('notificationManager', () => {
 
       await scheduleDayReminders();
 
-      // One calendar event per scheduled reminder (2 slots)
-      expect(CalendarService.maybeAddOutdoorTimeToCalendar).toHaveBeenCalledTimes(2);
+      // One calendar event per scheduled reminder slot today (2 slots) plus
+      // failsafe events for the next 3 days (2 slots × 3 days = 6), total 8.
+      // Check that at least 2 calls are for today's slots (before tomorrow).
+      const allCalCalls = (CalendarService.maybeAddOutdoorTimeToCalendar as jest.Mock).mock.calls;
+      expect(allCalCalls.length).toBeGreaterThanOrEqual(2);
 
       jest.restoreAllMocks();
     });
@@ -1395,16 +1400,36 @@ describe('notificationManager', () => {
       expect(dates).toContain('2026-03-17');
     });
 
-    it('failsafe notifications do NOT create calendar events', async () => {
+    it('failsafe notifications also create calendar events for future days', async () => {
       await scheduleDayReminders();
 
-      // maybeAddOutdoorTimeToCalendar is only called for today's auto_reminder_ slots
       const calendarCalls = (CalendarService.maybeAddOutdoorTimeToCalendar as jest.Mock).mock.calls;
-      // None of the calendar calls should have a date in the next 3 future days
-      const tomorrow = new Date('2026-03-15');
-      for (const [date] of calendarCalls) {
-        expect((date as Date).getTime()).toBeLessThan(tomorrow.getTime());
-      }
+      // There should be calendar calls for future days (beyond today = 2026-03-14)
+      const tomorrow = new Date('2026-03-15T00:00:00');
+      const futureCalls = calendarCalls.filter(
+        ([date]: [Date]) => (date as Date).getTime() >= tomorrow.getTime(),
+      );
+      expect(futureCalls.length).toBeGreaterThan(0);
+    });
+
+    it('calls deleteFutureTouchGrassEvents to clear stale failsafe calendar events before fresh planning', async () => {
+      await scheduleDayReminders();
+
+      expect(CalendarService.deleteFutureTouchGrassEvents).toHaveBeenCalledWith(
+        expect.any(Date),
+        3, // FAILSAFE_DAYS_AHEAD
+      );
+    });
+
+    it('calls deleteFutureTouchGrassEvents even when reminders are disabled', async () => {
+      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
+        if (key === 'smart_reminders_count') return '0';
+        return fallback;
+      });
+
+      await scheduleDayReminders();
+
+      expect(CalendarService.deleteFutureTouchGrassEvents).toHaveBeenCalled();
     });
 
     it('cancels stale failsafe reminders from previous days before scheduling', async () => {

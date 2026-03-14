@@ -12,7 +12,7 @@ import {
   hasScheduledNotificationNearby, isSlotNearScheduledNotification,
   scheduleAllScheduledNotifications,
 } from './scheduledNotifications';
-import { hasUpcomingEvent, maybeAddOutdoorTimeToCalendar } from '../calendar/calendarService';
+import { hasUpcomingEvent, maybeAddOutdoorTimeToCalendar, deleteFutureTouchGrassEvents } from '../calendar/calendarService';
 import { triggerReminderFeedbackModal } from '../context/ReminderFeedbackContext';
 import { t } from '../i18n';
 
@@ -397,6 +397,12 @@ export async function scheduleDayReminders(): Promise<void> {
   // skip (reminders=0 / goal reached) or schedule fresh ones.
   await cancelFailsafeReminders();
 
+  // Delete stale failsafe calendar events created on a previous planning cycle
+  // so they don't persist alongside the freshly planned events.
+  deleteFutureTouchGrassEvents(new Date(), FAILSAFE_DAYS_AHEAD).catch((e) =>
+    console.warn('TouchGrass: Failed to delete stale failsafe calendar events:', e),
+  );
+
   if (remindersCount === 0) {
     setSetting('reminders_last_planned_date', todayStr);
     setSetting('reminders_planned_slots', '[]');
@@ -493,9 +499,10 @@ export async function scheduleDayReminders(): Promise<void> {
   setSetting('additional_reminders_today', '0');
 
   // Pre-schedule the same time slots for the next FAILSAFE_DAYS_AHEAD days so
-  // that reminders fire even if the app is force-closed and no JS runs at 3 AM.
-  // The failsafe notifications use a generic message (we don't know tomorrow's
-  // progress) and do NOT create calendar events.
+  // that reminders (and calendar events) fire even if the app is force-closed
+  // and no JS runs at 3 AM.  When this function runs again on a future day,
+  // deleteFutureTouchGrassEvents() will first remove the stale calendar events
+  // before the fresh ones are created.
   await scheduleFailsafeReminders(topSlots);
 
   // Record that planning has been done for today
@@ -628,16 +635,18 @@ async function cancelFailsafeReminders(): Promise<void> {
 
 /**
  * Pre-schedule "failsafe" DATE triggers for the same time slots on each of
- * the next FAILSAFE_DAYS_AHEAD days.
+ * the next FAILSAFE_DAYS_AHEAD days, and create a calendar event for each.
  *
  * Why: DATE triggers go through Android's AlarmManager and survive app
  * force-close.  If JS never runs at 3 AM (because registerTaskAsync only
  * works for remote FCM notifications, not local WEEKLY ones), these failsafe
- * triggers ensure the user still receives a reminder the next morning at the
- * previously calculated optimal time.
+ * triggers ensure the user still receives a reminder and sees planned outdoor
+ * time in their calendar on the next day(s), at the previously calculated
+ * optimal time.
  *
- * When the user opens the app, scheduleDayReminders() cancels these failsafe
- * triggers and schedules fresh optimal ones for the new day.
+ * When the user opens the app, scheduleDayReminders() calls
+ * deleteFutureTouchGrassEvents() to remove the stale calendar events, then
+ * creates fresh ones after recalculating the optimal slots.
  *
  * @param slots  The time slots chosen by scheduleDayReminders() for today.
  */
@@ -651,7 +660,7 @@ async function scheduleFailsafeReminders(
   for (let daysAhead = 1; daysAhead <= FAILSAFE_DAYS_AHEAD; daysAhead++) {
     const futureDate = new Date();
     futureDate.setDate(futureDate.getDate() + daysAhead);
-    const dateKey = futureDate.toISOString().slice(0, 10); // YYYY-MM-DD
+    const dateKey = formatLocalDateKey(futureDate);
 
     for (let i = 0; i < slots.length; i++) {
       const slot = slots[i];
@@ -675,6 +684,14 @@ async function scheduleFailsafeReminders(
           channelId: CHANNEL_ID,
         },
       });
+
+      // Add a calendar event for this failsafe slot so the user sees planned
+      // outdoor time even on days when the app was never opened.  When fresh
+      // planning runs on that day, deleteFutureTouchGrassEvents() removes these
+      // stale events before creating updated ones.
+      maybeAddOutdoorTimeToCalendar(triggerDate).catch((e) =>
+        console.warn('TouchGrass: Failed to add failsafe reminder slot to calendar:', e),
+      );
     }
   }
 
