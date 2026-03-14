@@ -15,6 +15,7 @@ import { IntroContext } from './src/context/IntroContext';
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
 import { ReminderFeedbackProvider } from './src/context/ReminderFeedbackContext';
 import ReminderFeedbackModal from './src/components/ReminderFeedbackModal';
+import ErrorBoundary from './src/components/ErrorBoundary';
 
 enableScreens();
 
@@ -191,12 +192,14 @@ function AppContent() {
 export default function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <ThemeProvider>
-        <ReminderFeedbackProvider>
-          <AppContent />
-          <ReminderFeedbackModal />
-        </ReminderFeedbackProvider>
-      </ThemeProvider>
+      <ErrorBoundary>
+        <ThemeProvider>
+          <ReminderFeedbackProvider>
+            <AppContent />
+            <ReminderFeedbackModal />
+          </ReminderFeedbackProvider>
+        </ThemeProvider>
+      </ErrorBoundary>
     </GestureHandlerRootView>
   );
 }

@@ -395,6 +395,12 @@ export default {
   settings_feedback_support: 'Feedback & Ondersteuning',
   settings_feedback_support_sublabel: 'Stuur feedback of steun de ontwikkelaar',
 
+  // Foutgrens crashscherm
+  error_boundary_title: 'Er is iets misgegaan',
+  error_boundary_subtitle: 'De app is vastgelopen door een onverwachte fout. Probeer de app opnieuw te starten of meld het probleem zodat we het kunnen oplossen.',
+  error_boundary_restart: 'App herstarten',
+  error_boundary_report: 'Probleem melden',
+
   // Taal-/datumopmaak
   locale_tag: 'nl-NL',
 };
