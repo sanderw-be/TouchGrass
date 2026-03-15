@@ -334,7 +334,7 @@ export default {
   notif_channel_daily_planner_name: 'Daily planner',
   notif_channel_daily_planner_desc: 'Silent 3 AM wake-up used to reschedule your daily reminders. Can be fully disabled in Android notification settings.',
   notif_daily_planner_title: 'TouchGrass',
-  notif_daily_planner_body: 'Planning smart reminders for today, will close when done.',
+  notif_daily_planner_body: 'Open the app to complete planning for today.',
 
   // Scheduled notifications
   scheduled_notif_body: 'Your scheduled reminder to go outside.',

@@ -389,6 +389,14 @@ export async function scheduleDayReminders(): Promise<void> {
     return;
   }
 
+  // Mark planning as started BEFORE the first await so that concurrent callers
+  // (e.g. foreground init and background task both waking at 3 AM) immediately
+  // see today's date and return early rather than racing through the rest of
+  // this function and scheduling duplicate notifications and calendar events.
+  // JavaScript is single-threaded, so this assignment is visible to the next
+  // synchronous caller that runs while this function is suspended at an await.
+  setSetting('reminders_last_planned_date', todayStr);
+
   const remindersCount = parseInt(getSetting('smart_reminders_count', '2'), 10);
 
   // Always cancel stale failsafe reminders at the start of a new planning
@@ -404,7 +412,6 @@ export async function scheduleDayReminders(): Promise<void> {
   );
 
   if (remindersCount === 0) {
-    setSetting('reminders_last_planned_date', todayStr);
     setSetting('reminders_planned_slots', '[]');
     setSetting('additional_reminders_today', '0');
     return;
@@ -417,7 +424,6 @@ export async function scheduleDayReminders(): Promise<void> {
 
   // Don't schedule reminders if daily goal is already reached
   if (todayMinutes >= dailyTarget) {
-    setSetting('reminders_last_planned_date', todayStr);
     setSetting('reminders_planned_slots', '[]');
     setSetting('additional_reminders_today', '0');
     return;
@@ -515,9 +521,6 @@ export async function scheduleDayReminders(): Promise<void> {
   // deleteFutureTouchGrassEvents() will first remove the stale calendar events
   // before the fresh ones are created.
   await scheduleFailsafeReminders(topSlots);
-
-  // Record that planning has been done for today
-  setSetting('reminders_last_planned_date', todayStr);
 }
 
 /**

@@ -562,6 +562,42 @@ describe('notificationManager', () => {
 
       jest.restoreAllMocks();
     });
+
+    it('prevents duplicate scheduling when called concurrently (race condition guard)', async () => {
+      // Simulate the race: foreground init and background task both call
+      // scheduleDayReminders() before either has a chance to persist the date.
+      // The fix sets reminders_last_planned_date synchronously (before the first
+      // await) so the second concurrent call sees the date and exits early.
+      const settingsStore: Record<string, string> = {};
+      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
+        if (key in settingsStore) return settingsStore[key];
+        if (key === 'smart_reminders_count') return '1';
+        return fallback;
+      });
+      (Database.setSetting as jest.Mock).mockImplementation((key: string, value: string) => {
+        settingsStore[key] = value;
+      });
+
+      (Database.getTodayMinutes as jest.Mock).mockReturnValue(10);
+      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
+      jest.spyOn(Date.prototype, 'getHours').mockReturnValue(9);
+      jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
+      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockReturnValue([
+        { hour: 12, minute: 0, score: 0.8, reason: 'lunch' },
+      ]);
+
+      // Fire both calls before either has awaited anything.
+      const call1 = scheduleDayReminders();
+      const call2 = scheduleDayReminders();
+      await Promise.all([call1, call2]);
+
+      // Only one notification should have been scheduled for today (not two).
+      const todayCalls = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls
+        .filter(([arg]: [any]) => !arg.identifier?.startsWith(FAILSAFE_REMINDER_PREFIX));
+      expect(todayCalls).toHaveLength(1);
+
+      jest.restoreAllMocks();
+    });
   });
 
   describe('maybeScheduleCatchUpReminder', () => {
