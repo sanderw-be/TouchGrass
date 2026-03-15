@@ -5,7 +5,7 @@ export default {
   greeting_evening: 'Good evening 🌙',
 
   // Home screen
-  goal_reached: 'Goal reached! Nice work getting outside today.',
+  goal_reached: 'Goal reached! Nice work going outside today.',
   outside_time_awaits: '{{amount}} of outside time awaits today.',
   remaining_for_goal: '{{amount}} more to hit your daily goal.',
   this_week: 'This week',
@@ -277,8 +277,8 @@ export default {
   notif_body_done: 'Goal reached! Feel like a bonus walk? 🌿',
 
   // Notification action buttons
-  notif_action_went_outside: '✅ I went outside!',
-  notif_action_snooze: '⏰ Remind me later',
+  notif_action_went_outside: '✅ Went outside!',
+  notif_action_snooze: '⏰ Snooze',
   notif_action_less_often: '🔕 Less often',
 
   // Notification action confirmation messages (shown briefly after tapping an action button)
