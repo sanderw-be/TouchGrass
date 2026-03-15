@@ -5,7 +5,7 @@ export default {
   greeting_evening: 'Goedenavond 🌙',
 
   // Startscherm
-  goal_reached: 'Doel bereikt! Goed gedaan om vandaag naar buiten te gaan.',
+  goal_reached: 'Doel bereikt! Goed buiten geweest vandaag.',
   outside_time_awaits: 'Nog {{amount}} buiten te gaan vandaag.',
   remaining_for_goal: 'Nog {{amount}} om je dagdoel te halen.',
   this_week: 'Deze week',
@@ -119,10 +119,10 @@ export default {
   settings_location_outdoor: 'Buiten',
   settings_location_edit_title: 'Locatie bewerken',
   location_edit_label: 'Locatie naam',
-  location_edit_label_placeholder: 'bijv. Thuis, Werk, Park',
+  location_edit_label_placeholder: 'bijv. Thuis, Werk, Sportschool',
   location_edit_radius: 'Geofence straal',
-  location_edit_radius_hint: 'Afstand vanaf locatie centrum (10-1000 meter)',
-  location_edit_type: 'Locatie type',
+  location_edit_radius_hint: 'Afstand vanaf locatie (10-1000 meter)',
+  location_edit_type: 'Locatietype',
   location_edit_error_title: 'Ongeldige invoer',
   location_edit_error_label: 'Voer een locatienaam in.',
   location_edit_error_save: 'Locatie opslaan mislukt. Probeer opnieuw.',
@@ -216,7 +216,7 @@ export default {
   intro_next: 'Volgende',
   intro_get_started: 'Aan de slag',
   intro_welcome_title: 'Welkom bij TouchGrass',
-  intro_welcome_body: 'Je metgezel voor het volgen en bereiken van buitentijd doelen.',
+  intro_welcome_body: 'Je hulp voor het volgen en bereiken van buitentijddoelen.',
   intro_welcome_feature_1: 'Volg buitentijd automatisch',
   intro_welcome_feature_2: 'Stel dagelijkse doelen in en monitor ze',
   intro_welcome_feature_3: 'Ontvang slimme herinneringen',
@@ -277,8 +277,8 @@ export default {
   notif_body_done: 'Doel bereikt! Zin in een extra rondje? 🌿',
 
   // Meldingsacties
-  notif_action_went_outside: '✅ Ik ben buiten geweest!',
-  notif_action_snooze: '⏰ Herinner me later',
+  notif_action_went_outside: '✅ Gegaan!',
+  notif_action_snooze: '⏰ Snooze',
   notif_action_less_often: '🔕 Minder vaak',
 
   // Bevestigingsberichten na het tikken op een meldingsknop
@@ -308,7 +308,7 @@ export default {
   settings_weather_consider_uv: 'Houd rekening met UV-index',
   settings_weather_current: 'Huidig weer',
   settings_weather_unavailable: 'Weergegevens niet beschikbaar',
-  settings_weather_error: 'Ophalen weer mislukt',
+  settings_weather_error: 'Weer ophalen mislukt',
   settings_weather_refresh: 'Weer verversen',
 
   // Weersomstandigheden
