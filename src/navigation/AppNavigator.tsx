@@ -4,7 +4,6 @@ import type { InitialState } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { Text, AppState, ActivityIndicator, View } from 'react-native';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import HomeScreen from '../screens/HomeScreen';
 import HistoryScreen from '../screens/HistoryScreen';
@@ -199,10 +198,8 @@ export default function AppNavigator({
   }, []);
 
   return (
-    <SafeAreaProvider>
-      <NavigationContainer initialState={initialState} onStateChange={onStateChange}>
-        <TabNavigator />
-      </NavigationContainer>
-    </SafeAreaProvider>
+    <NavigationContainer initialState={initialState} onStateChange={onStateChange}>
+      <TabNavigator />
+    </NavigationContainer>
   );
 }
