@@ -40,12 +40,14 @@ interface Props {
   location: KnownLocation | null;
   /** Coordinates to use when creating a new location (location === null). */
   initialCoords?: Coords;
+  /** Label to pre-fill when creating a new location (location === null). */
+  initialLabel?: string;
   onClose: () => void;
   onSave: () => void;
 }
 
 export default function EditLocationSheet({
-  visible, location, initialCoords, onClose, onSave,
+  visible, location, initialCoords, initialLabel, onClose, onSave,
 }: Props) {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
@@ -78,7 +80,7 @@ export default function EditLocationSheet({
   // Populate fields when the sheet opens or location changes
   useEffect(() => {
     if (visible) {
-      setLabel(location?.label ?? '');
+      setLabel(location?.label ?? initialLabel ?? '');
       setRadiusIdx(findRadiusIdx(location?.radiusMeters ?? 100));
       setIsIndoor(location?.isIndoor ?? true);
       setAddress(null);
@@ -87,7 +89,7 @@ export default function EditLocationSheet({
       setAddressQuery('');
       setAddressSuggestions([]);
     }
-  }, [visible, location]);
+  }, [visible, location, initialLabel]);
 
   // Reverse-geocode coordinates to a human-readable address
   useEffect(() => {

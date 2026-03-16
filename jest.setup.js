@@ -1,6 +1,15 @@
 // Setup react-native-gesture-handler mocks
 import 'react-native-gesture-handler/jestSetup';
 
+// Mock react-native-safe-area-context
+jest.mock('react-native-safe-area-context', () => ({
+  useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
+  SafeAreaProvider: ({ children }) => children,
+  SafeAreaView: ({ children }) => children,
+  SafeAreaConsumer: ({ children }) => children({ top: 0, bottom: 0, left: 0, right: 0 }),
+  initialWindowMetrics: { frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 0, bottom: 0, left: 0, right: 0 } },
+}));
+
 // Mock expo-sqlite
 jest.mock('expo-sqlite', () => ({
   openDatabaseSync: jest.fn(() => ({
