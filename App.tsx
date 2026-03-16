@@ -25,7 +25,7 @@ function AppContent() {
   const [ready, setReady] = useState(false);
   const [showIntro, setShowIntro] = useState(false);
   const [locale, setLocaleState] = useState(i18n.locale);
-  const initialLocale = useRef(i18n.locale);
+  const savedNavState = useRef<object | undefined>(undefined);
   const appState = useRef(AppState.currentState);
 
   const setLocale = useCallback((code: string) => {
@@ -199,7 +199,11 @@ function AppContent() {
   return (
     <LanguageContext.Provider value={{ locale, setLocale }}>
       <IntroContext.Provider value={handleShowIntro}>
-        <AppNavigator key={locale} returnToSettings={locale !== initialLocale.current} />
+        <AppNavigator
+          key={locale}
+          initialState={savedNavState.current}
+          onStateChange={(state) => { savedNavState.current = state; }}
+        />
       </IntroContext.Provider>
     </LanguageContext.Provider>
   );
