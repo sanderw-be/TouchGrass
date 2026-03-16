@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import type { InitialState } from '@react-navigation/native';
 import { View, ActivityIndicator, AppState, AppStateStatus } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { enableScreens } from 'react-native-screens';
@@ -25,7 +26,7 @@ function AppContent() {
   const [ready, setReady] = useState(false);
   const [showIntro, setShowIntro] = useState(false);
   const [locale, setLocaleState] = useState(i18n.locale);
-  const savedNavState = useRef<object | undefined>(undefined);
+  const savedNavState = useRef<InitialState | undefined>(undefined);
   const appState = useRef(AppState.currentState);
 
   const setLocale = useCallback((code: string) => {
