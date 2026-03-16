@@ -149,8 +149,6 @@ export default {
   settings_clear_data_success_body: 'All data has been successfully cleared.',
   settings_clear_data_error_title: 'Error',
   settings_clear_data_error_body: 'An error occurred while clearing data. Please try again.',
-  settings_language_changed_title: 'Language changed',
-  settings_language_changed_body: 'Restart the app to apply the language change fully.',
   settings_rerun_tutorial: 'Re-run tutorial',
   settings_rerun_tutorial_sublabel: 'Review the setup guide again',
 

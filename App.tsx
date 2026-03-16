@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { View, ActivityIndicator, AppState, AppStateStatus } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { enableScreens } from 'react-native-screens';
@@ -13,6 +13,7 @@ import AppNavigator from './src/navigation/AppNavigator';
 import IntroScreen from './src/screens/IntroScreen';
 import { IntroContext } from './src/context/IntroContext';
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
+import { LanguageContext } from './src/context/LanguageContext';
 import { ReminderFeedbackProvider } from './src/context/ReminderFeedbackContext';
 import ReminderFeedbackModal from './src/components/ReminderFeedbackModal';
 import ErrorBoundary from './src/components/ErrorBoundary';
@@ -23,7 +24,14 @@ function AppContent() {
   const { colors } = useTheme();
   const [ready, setReady] = useState(false);
   const [showIntro, setShowIntro] = useState(false);
+  const [locale, setLocaleState] = useState(i18n.locale);
   const appState = useRef(AppState.currentState);
+
+  const setLocale = useCallback((code: string) => {
+    i18n.locale = code;
+    setSetting('language', code);
+    setLocaleState(code);
+  }, []);
 
   // On app foreground: run calendar cleanup as a fallback for missed background tasks
   useEffect(() => {
@@ -51,6 +59,7 @@ function AppContent() {
       const storedLanguage = getSetting('language', '');
       if (['en', 'nl'].includes(storedLanguage)) {
         i18n.locale = storedLanguage;
+        setLocaleState(storedLanguage);
       } else if (!storedLanguage) {
         setSetting('language', i18n.locale);
       }
@@ -179,13 +188,19 @@ function AppContent() {
   }
 
   if (showIntro) {
-    return <IntroScreen onComplete={handleIntroComplete} />;
+    return (
+      <LanguageContext.Provider value={{ locale, setLocale }}>
+        <IntroScreen key={locale} onComplete={handleIntroComplete} />
+      </LanguageContext.Provider>
+    );
   }
 
   return (
-    <IntroContext.Provider value={handleShowIntro}>
-      <AppNavigator />
-    </IntroContext.Provider>
+    <LanguageContext.Provider value={{ locale, setLocale }}>
+      <IntroContext.Provider value={handleShowIntro}>
+        <AppNavigator key={locale} />
+      </IntroContext.Provider>
+    </LanguageContext.Provider>
   );
 }
 
