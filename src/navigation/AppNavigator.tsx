@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, Suspense, lazy } from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, useNavigationContainerRef } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { Text, AppState, ActivityIndicator, View } from 'react-native';
@@ -167,8 +167,15 @@ function TabNavigator() {
   );
 }
 
-export default function AppNavigator() {
+export default function AppNavigator({ returnToSettings }: { returnToSettings?: boolean }) {
   const appState = useRef(AppState.currentState);
+  const navigationRef = useNavigationContainerRef();
+
+  const handleReady = () => {
+    if (returnToSettings) {
+      navigationRef.navigate('Settings' as never);
+    }
+  };
 
   useEffect(() => {
     const subscription = AppState.addEventListener('change', async (nextAppState) => {
@@ -193,7 +200,7 @@ export default function AppNavigator() {
 
   return (
     <SafeAreaProvider>
-      <NavigationContainer>
+      <NavigationContainer ref={navigationRef} onReady={handleReady}>
         <TabNavigator />
       </NavigationContainer>
     </SafeAreaProvider>
