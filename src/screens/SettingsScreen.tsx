@@ -11,8 +11,8 @@ import { getDetectionStatus, requestHealthConnect, recheckHealthConnect, checkGP
 import { AppState, AppStateStatus } from 'react-native';
 import { spacing, radius, shadows } from '../utils/theme';
 import { useTheme, ThemePreference } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 import { t } from '../i18n';
-import i18n from '../i18n';
 import type { SettingsStackParamList } from '../navigation/AppNavigator';
 import {
   requestCalendarPermissions,
@@ -32,13 +32,13 @@ const LANGUAGES = [
 export default function SettingsScreen() {
   const showIntro = useShowIntro();
   const { colors, themePreference, setThemePreference } = useTheme();
+  const { locale, setLocale } = useLanguage();
   const navigation = useNavigation<StackNavigationProp<SettingsStackParamList>>();
   const insets = useSafeAreaInsets();
   const [smartRemindersCount, setSmartRemindersCount] = useState(2);
   const [detectionStatus, setDetectionStatus] = useState({ healthConnect: false, gps: false });
   const [knownLocations, setKnownLocations] = useState<KnownLocation[]>([]);
   const [suggestedCount, setSuggestedCount] = useState(0);
-  const [language, setLanguage] = useState(i18n.locale);
   const [connectingHC, setConnectingHC] = useState(false);
   
   // Weather state - only the main toggle
@@ -59,7 +59,6 @@ export default function SettingsScreen() {
     setDetectionStatus(getDetectionStatus());
     setKnownLocations(getKnownLocations());
     setSuggestedCount(getSuggestedLocations().length);
-    setLanguage(i18n.locale);
     
     // Load weather settings
     setWeatherEnabled(getSetting('weather_enabled', '1') === '1');
@@ -183,13 +182,8 @@ export default function SettingsScreen() {
   };
 
   const changeLanguage = (code: string) => {
-    i18n.locale = code;
-    setSetting('language', code);
-    setLanguage(code);
-    Alert.alert(
-      t('settings_language_changed_title'),
-      t('settings_language_changed_body'),
-    );
+    // Delegates to context's setLocale which updates i18n, saves to storage, and triggers re-render
+    setLocale(code);
   };
 
   const handleClearData = () => {
@@ -561,7 +555,7 @@ export default function SettingsScreen() {
               onPress={() => changeLanguage(lang.code)}
             >
               <Text style={styles.rowLabel}>{lang.label}</Text>
-              {language === lang.code && (
+              {locale === lang.code && (
                 <Text style={styles.checkmark}>✓</Text>
               )}
             </TouchableOpacity>

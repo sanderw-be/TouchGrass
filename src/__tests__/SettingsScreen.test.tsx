@@ -65,6 +65,15 @@ jest.mock('../context/IntroContext', () => ({
   IntroContext: { Provider: ({ children }: { children: React.ReactNode }) => children },
 }));
 
+// Mock LanguageContext so useLanguage returns a stable locale in tests
+const mockSetLocale = jest.fn();
+jest.mock('../context/LanguageContext', () => ({
+  useLanguage: () => ({ locale: 'en', setLocale: mockSetLocale }),
+  LanguageContext: {
+    Provider: ({ children }: { children: React.ReactNode }) => children,
+  },
+}));
+
 import SettingsScreen from '../screens/SettingsScreen';
 import * as CalendarService from '../calendar/calendarService';
 

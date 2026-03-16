@@ -149,8 +149,6 @@ export default {
   settings_clear_data_success_body: 'Alle gegevens zijn succesvol gewist.',
   settings_clear_data_error_title: 'Fout',
   settings_clear_data_error_body: 'Er is een fout opgetreden bij het wissen van gegevens. Probeer het opnieuw.',
-  settings_language_changed_title: 'Taal gewijzigd',
-  settings_language_changed_body: 'Start de app opnieuw op om de taalwijziging volledig toe te passen.',
   settings_rerun_tutorial: 'Tutorial opnieuw starten',
   settings_rerun_tutorial_sublabel: 'Bekijk de installatiegids opnieuw',
 
