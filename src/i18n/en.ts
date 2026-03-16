@@ -239,7 +239,7 @@ export default {
   intro_location_known_set_work: 'Set Work',
   intro_location_known_set_home_done: '🏠 Home set ✓',
   intro_location_known_set_work_done: '🏢 Work set ✓',
-  intro_location_known_hint: 'You can adjust radii and add more locations in Settings → Known Locations.',
+  intro_location_known_hint: 'You can adjust and add locations in Settings → Known Locations.',
   intro_notifications_title: 'Reminders',
   intro_notifications_body: 'Get gentle nudges to go outside when you need them most.',
   intro_notifications_why_title: 'Why do we need this?',

@@ -12,7 +12,8 @@ import { requestHealthConnect, recheckHealthConnect } from '../detection/index';
 import { requestGPSPermissions, checkGPSPermissions } from '../detection/index';
 import { requestNotificationPermissions } from '../notifications/notificationManager';
 import { requestCalendarPermissions, hasCalendarPermissions } from '../calendar/calendarService';
-import { getSetting, setSetting, upsertKnownLocation } from '../storage/database';
+import { getSetting, setSetting } from '../storage/database';
+import EditLocationSheet from '../components/EditLocationSheet';
 
 interface Props {
   onComplete: () => void;
@@ -33,7 +34,11 @@ export default function IntroScreen({ onComplete }: Props) {
   const [requestingPermission, setRequestingPermission] = useState(false);
   const [homeSet, setHomeSet] = useState(false);
   const [workSet, setWorkSet] = useState(false);
-  const [settingLocation, setSettingLocation] = useState<'home' | 'work' | null>(null);
+  const [fetchingLocationType, setFetchingLocationType] = useState<'home' | 'work' | null>(null);
+  const [introSheetVisible, setIntroSheetVisible] = useState(false);
+  const [introSheetCoords, setIntroSheetCoords] = useState<{ latitude: number; longitude: number } | undefined>();
+  const [introSheetLabel, setIntroSheetLabel] = useState('');
+  const [pendingLocationType, setPendingLocationType] = useState<'home' | 'work' | null>(null);
 
   const steps: Step[] = ['welcome', 'health-connect', 'location', 'notifications', 'calendar', 'ready'];
   const currentIndex = steps.indexOf(currentStep);
@@ -140,7 +145,7 @@ export default function IntroScreen({ onComplete }: Props) {
   };
 
   const handleSetKnownLocation = async (type: 'home' | 'work') => {
-    setSettingLocation(type);
+    setFetchingLocationType(type);
     try {
       const cachedPosition = await Location.getLastKnownPositionAsync();
       const pos = cachedPosition ?? await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
@@ -148,25 +153,31 @@ export default function IntroScreen({ onComplete }: Props) {
         Alert.alert(t('location_position_error_title'), t('location_position_error_body'));
         return;
       }
-      upsertKnownLocation({
-        label: type === 'home' ? 'Home' : 'Work',
-        latitude: pos.coords.latitude,
-        longitude: pos.coords.longitude,
-        radiusMeters: 100,
-        isIndoor: true,
-        status: 'active',
-      });
-      if (type === 'home') {
-        setHomeSet(true);
-      } else {
-        setWorkSet(true);
-      }
+      setIntroSheetCoords({ latitude: pos.coords.latitude, longitude: pos.coords.longitude });
+      setIntroSheetLabel(type === 'home' ? 'Home' : 'Work');
+      setPendingLocationType(type);
+      setIntroSheetVisible(true);
     } catch (error) {
-      console.error('Error setting known location:', error);
+      console.error('Error getting location:', error);
       Alert.alert(t('location_position_error_title'), t('location_position_error_body'));
     } finally {
-      setSettingLocation(null);
+      setFetchingLocationType(null);
     }
+  };
+
+  const handleIntroSheetSave = () => {
+    if (pendingLocationType === 'home') {
+      setHomeSet(true);
+    } else if (pendingLocationType === 'work') {
+      setWorkSet(true);
+    }
+    setPendingLocationType(null);
+    setIntroSheetVisible(false);
+  };
+
+  const handleIntroSheetClose = () => {
+    setPendingLocationType(null);
+    setIntroSheetVisible(false);
   };
 
   const handleRequestNotifications = async () => {
@@ -214,74 +225,84 @@ export default function IntroScreen({ onComplete }: Props) {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Progress bar */}
-      <View style={styles.progressBar}>
-        <View style={[styles.progressFill, { width: `${progress}%` }]} />
-      </View>
+    <>
+      <EditLocationSheet
+        visible={introSheetVisible}
+        location={null}
+        initialCoords={introSheetCoords}
+        initialLabel={introSheetLabel}
+        onClose={handleIntroSheetClose}
+        onSave={handleIntroSheetSave}
+      />
+      <SafeAreaView style={styles.container}>
+        {/* Progress bar */}
+        <View style={styles.progressBar}>
+          <View style={[styles.progressFill, { width: `${progress}%` }]} />
+        </View>
 
-      <ScrollView style={styles.content} contentContainerStyle={styles.contentInner}>
-        {currentStep === 'welcome' && <WelcomeStep />}
-        {currentStep === 'health-connect' && (
-          <HealthConnectStep
-            onRequest={handleRequestHealthConnect}
-            granted={healthConnectGranted}
-            requesting={requestingPermission}
-          />
-        )}
-        {currentStep === 'location' && (
-          <LocationStep
-            onRequest={handleRequestLocation}
-            granted={locationGranted}
-            requesting={requestingPermission}
-            homeSet={homeSet}
-            workSet={workSet}
-            settingLocation={settingLocation}
-            onSetLocation={handleSetKnownLocation}
-          />
-        )}
-        {currentStep === 'notifications' && (
-          <NotificationsStep
-            onRequest={handleRequestNotifications}
-            granted={notificationsGranted}
-            requesting={requestingPermission}
-          />
-        )}
-        {currentStep === 'calendar' && (
-          <CalendarStep
-            onRequest={handleRequestCalendar}
-            granted={calendarGranted}
-            requesting={requestingPermission}
-            calendarBuffer={calendarBuffer}
-            calendarDuration={calendarDuration}
-            onCycleBuffer={handleCycleCalendarBuffer}
-            onCycleDuration={handleCycleCalendarDuration}
-          />
-        )}
-        {currentStep === 'ready' && (
-          <ReadyStep
-            healthConnectGranted={healthConnectGranted}
-            locationGranted={locationGranted}
-            notificationsGranted={notificationsGranted}
-            calendarGranted={calendarGranted}
-          />
-        )}
-      </ScrollView>
+        <ScrollView style={styles.content} contentContainerStyle={styles.contentInner}>
+          {currentStep === 'welcome' && <WelcomeStep />}
+          {currentStep === 'health-connect' && (
+            <HealthConnectStep
+              onRequest={handleRequestHealthConnect}
+              granted={healthConnectGranted}
+              requesting={requestingPermission}
+            />
+          )}
+          {currentStep === 'location' && (
+            <LocationStep
+              onRequest={handleRequestLocation}
+              granted={locationGranted}
+              requesting={requestingPermission}
+              homeSet={homeSet}
+              workSet={workSet}
+              settingLocation={fetchingLocationType}
+              onSetLocation={handleSetKnownLocation}
+            />
+          )}
+          {currentStep === 'notifications' && (
+            <NotificationsStep
+              onRequest={handleRequestNotifications}
+              granted={notificationsGranted}
+              requesting={requestingPermission}
+            />
+          )}
+          {currentStep === 'calendar' && (
+            <CalendarStep
+              onRequest={handleRequestCalendar}
+              granted={calendarGranted}
+              requesting={requestingPermission}
+              calendarBuffer={calendarBuffer}
+              calendarDuration={calendarDuration}
+              onCycleBuffer={handleCycleCalendarBuffer}
+              onCycleDuration={handleCycleCalendarDuration}
+            />
+          )}
+          {currentStep === 'ready' && (
+            <ReadyStep
+              healthConnectGranted={healthConnectGranted}
+              locationGranted={locationGranted}
+              notificationsGranted={notificationsGranted}
+              calendarGranted={calendarGranted}
+            />
+          )}
+        </ScrollView>
 
-      {/* Bottom buttons */}
-      <View style={styles.footer}>
-        {currentStep !== 'ready' && (
-          <TouchableOpacity onPress={handleSkip}>
-            <Text style={styles.skipBtn}>{t('intro_skip')}</Text>
+        {/* Bottom buttons */}
+        <View style={styles.footer}>
+          {currentStep !== 'ready' && (
+            <TouchableOpacity onPress={handleSkip}>
+              <Text style={styles.skipBtn}>{t('intro_skip')}</Text>
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity style={styles.nextBtn} onPress={handleNext}>
+            <Text style={styles.nextBtnText}>
+              {currentStep === 'ready' ? t('intro_get_started') : t('intro_next')}
+            </Text>
           </TouchableOpacity>
-        )}
-        <TouchableOpacity style={styles.nextBtn} onPress={handleNext}>
-          <Text style={styles.nextBtnText}>
-            {currentStep === 'ready' ? t('intro_get_started') : t('intro_next')}
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </SafeAreaView>
+        </View>
+      </SafeAreaView>
+    </>
   );
 }
 

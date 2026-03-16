@@ -239,7 +239,7 @@ export default {
   intro_location_known_set_work: 'Werk instellen',
   intro_location_known_set_home_done: '🏠 Thuis ingesteld ✓',
   intro_location_known_set_work_done: '🏢 Werk ingesteld ✓',
-  intro_location_known_hint: 'Je kunt stralen aanpassen en meer locaties toevoegen via Instellingen → Bekende locaties.',
+  intro_location_known_hint: 'Je kunt locaties aanpassen en toevoegen via Instellingen → Bekende locaties.',
   intro_notifications_title: 'Herinneringen',
   intro_notifications_body: 'Ontvang zachte aansporingen om naar buiten te gaan wanneer je ze het meest nodig hebt.',
   intro_notifications_why_title: 'Waarom hebben we dit nodig?',
