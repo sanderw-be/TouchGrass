@@ -1,0 +1,58 @@
+name: Generate Play Console App Signing Key
+
+on:
+  workflow_dispatch: # Allows you to manually trigger this workflow from the Actions tab
+
+jobs:
+  generate-encrypted-key:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          # Java 21 is highly recommended here over 11/17 to prevent AES BadPaddingExceptions 
+          # when the PEPK tool interacts with older JKS files.
+          java-version: '21' 
+          distribution: 'temurin'
+
+      - name: Decode Keystore from Secrets
+        env:
+          ENCODED_KEYSTORE: ${{ secrets.TOUCHGRASS_UPLOAD_STORE_FILE }}
+        # Decodes the base64 string back into a binary keystore file
+        run: echo "$ENCODED_KEYSTORE" | base64 --decode > upload_keystore.jks
+
+      - name: Create Encryption Public Key PEM
+        env:
+          ENCRYPTION_KEY_PEM: ${{ secrets.PLAY_CONSOLE_ENCRYPTION_KEY }}
+        run: echo "$ENCRYPTION_KEY_PEM" > encryption_public_key.pem
+
+      - name: Download PEPK Tool
+        # Fetches the official PEPK jar directly from Google's static servers
+        run: curl -L -o pepk.jar https://www.gstatic.com/play-apps-publisher-rapid/signing-tool/prod/pepk.jar
+
+      - name: Export and Encrypt Key
+        env:
+          KEY_ALIAS: ${{ secrets.TOUCHGRASS_UPLOAD_KEY_ALIAS }}
+          STORE_PASS: ${{ secrets.TOUCHGRASS_UPLOAD_STORE_PASSWORD }}
+          KEY_PASS: ${{ secrets.TOUCHGRASS_UPLOAD_KEY_PASSWORD }}
+        run: |
+          # We pass the passwords directly using the pass: flag to bypass the interactive prompt
+          java -jar pepk.jar \
+            --keystore=upload_keystore.jks \
+            --alias="$KEY_ALIAS" \
+            --output=output.zip \
+            --include-cert \
+            --rsa-aes-encryption \
+            --encryption-key-path=encryption_public_key.pem \
+            --keystore-pass="pass:$STORE_PASS" \
+            --key-pass="pass:$KEY_PASS"
+
+      - name: Upload Encrypted Key Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: play-console-encrypted-key
+          path: output.zip
+          retention-days: 1 # Automatically deletes from GitHub servers after 1 day for security
