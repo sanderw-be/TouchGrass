@@ -93,7 +93,7 @@ jobs:
 
       - name: Decode Keystore from Secrets
         env:
-          ENCODED_KEYSTORE: ${{ secrets.TOUCHGRASS_UPLOAD_STORE_FILE }}
+          ENCODED_KEYSTORE: ${{ secrets.TOUCHGRASS_UPLOAD_STORE }}
         run: |
           # Create the credentials/android directory if it doesn't exist
           mkdir -p credentials/android
