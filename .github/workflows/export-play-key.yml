@@ -27,10 +27,7 @@ jobs:
       - name: Retrieve Keystore from EAS Credentials
         env:
           EAS_TOKEN: ${{ secrets.EAS_TOKEN }}
-        run: |
-          echo "Retrieving Android keystore from EAS credentials..."
-          eas credentials show --platform android
-          
+        run: |          
           # Create credentials directory
           mkdir -p credentials/android
           
