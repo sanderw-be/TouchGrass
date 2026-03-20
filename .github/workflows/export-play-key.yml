@@ -1,7 +1,7 @@
 name: Generate Play Console App Signing Key
 
 on:
-  workflow_dispatch: 
+  workflow_dispatch: # Allows you to manually trigger this workflow from the Actions tab
 
 jobs:
   generate-encrypted-key:
@@ -10,29 +10,80 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
-          java-version: '21' 
+          java-version: '21'
           distribution: 'temurin'
+
+      - name: Install EAS CLI
+        run: npm install -g eas-cli
+
+      - name: Retrieve Keystore from EAS Credentials
+        env:
+          EAS_TOKEN: ${{ secrets.EAS_TOKEN }}
+        run: |
+          echo "Retrieving Android keystore from EAS credentials..."
+          eas credentials show --platform android
+          
+          # Create credentials directory
+          mkdir -p credentials/android
+          
+          # Export the keystore from EAS
+          eas credentials export --platform android --keystore-path credentials/android/keystore.jks
+          
+          if [ ! -f credentials/android/keystore.jks ]; then
+            echo "ERROR: Keystore file was not retrieved from EAS"
+            exit 1
+          fi
+          
+          echo "✓ Keystore successfully retrieved to credentials/android/keystore.jks"
+          ls -lh credentials/android/keystore.jks
 
       - name: Create Encryption Public Key PEM
         env:
           ENCRYPTION_KEY_PEM: ${{ secrets.PLAY_CONSOLE_ENCRYPTION_KEY }}
-        run: echo "$ENCRYPTION_KEY_PEM" > encryption_public_key.pem
+        run: |
+          if [ -z "$ENCRYPTION_KEY_PEM" ]; then
+            echo "ERROR: PLAY_CONSOLE_ENCRYPTION_KEY secret is not set!"
+            exit 1
+          fi
+          echo "Creating encryption public key PEM..."
+          echo "$ENCRYPTION_KEY_PEM" > encryption_public_key.pem
+          if [ ! -f encryption_public_key.pem ]; then
+            echo "ERROR: PEM file was not created."
+            exit 1
+          fi
+          echo "✓ PEM file created successfully."
 
       - name: Download PEPK Tool
-        run: curl -L -o pepk.jar https://www.gstatic.com/play-apps-publisher-rapid/signing-tool/prod/pepk.jar
+        run: |
+          echo "Downloading PEPK tool..."
+          curl -L -o pepk.jar https://www.gstatic.com/play-apps-publisher-rapid/signing-tool/prod/pepk.jar
+          if [ $? -ne 0 ]; then
+            echo "ERROR: Failed to download PEPK tool."
+            exit 1
+          fi
+          echo "✓ PEPK tool downloaded successfully."
 
       - name: Export and Encrypt Key
         env:
-          KEYSTORE_PATH: ${{ secrets.TOUCHGRASS_UPLOAD_STORE_FILE }} # This is now treated as a file path
           KEY_ALIAS: ${{ secrets.TOUCHGRASS_UPLOAD_KEY_ALIAS }}
           STORE_PASS: ${{ secrets.TOUCHGRASS_UPLOAD_STORE_PASSWORD }}
           KEY_PASS: ${{ secrets.TOUCHGRASS_UPLOAD_KEY_PASSWORD }}
         run: |
+          if [ -z "$KEY_ALIAS" ] || [ -z "$STORE_PASS" ] || [ -z "$KEY_PASS" ]; then
+            echo "ERROR: One or more required secrets are not set (KEY_ALIAS, STORE_PASS, KEY_PASS)"
+            exit 1
+          fi
+          echo "Running PEPK tool to export and encrypt key..."
           java -jar pepk.jar \
-            --keystore="$KEYSTORE_PATH" \
+            --keystore=credentials/android/keystore.jks \
             --alias="$KEY_ALIAS" \
             --output=output.zip \
             --include-cert \
@@ -40,10 +91,23 @@ jobs:
             --encryption-key-path=encryption_public_key.pem \
             --keystore-pass="pass:$STORE_PASS" \
             --key-pass="pass:$KEY_PASS"
+          
+          if [ $? -ne 0 ]; then
+            echo "ERROR: PEPK tool failed to export and encrypt the key."
+            exit 1
+          fi
+          echo "✓ Key encrypted successfully."
 
       - name: Upload Encrypted Key Artifact
         uses: actions/upload-artifact@v4
         with:
           name: play-console-encrypted-key
           path: output.zip
-          retention-days: 1
+          retention-days: 1 # Automatically deletes from GitHub servers after 1 day for security
+
+      - name: Cleanup Sensitive Files
+        if: always()
+        run: |
+          echo "Cleaning up sensitive files..."
+          rm -rf credentials/android/keystore.jks encryption_public_key.pem pepk.jar output.zip
+          echo "✓ Cleanup completed."
