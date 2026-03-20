@@ -1,4 +1,4 @@
-name: CI
+name: Build Pixel 10 Pro APK
 
 on:
   pull_request:
@@ -90,6 +90,26 @@ jobs:
 
       - name: Install EAS CLI
         run: npm install -g eas-cli@latest
+
+      - name: Decode Keystore from Secrets
+        env:
+          ENCODED_KEYSTORE: ${{ secrets.TOUCHGRASS_UPLOAD_STORE_FILE }}
+        run: |
+          # Create the credentials/android directory if it doesn't exist
+          mkdir -p credentials/android
+          
+          # Decode the base64 string and save to the target location
+          echo "$ENCODED_KEYSTORE" | base64 --decode > credentials/android/keystore.jks
+          
+          # Verify the file was created successfully
+          if [ ! -f credentials/android/keystore.jks ]; then
+            echo "ERROR: Keystore file was not created at credentials/android/keystore.jks"
+            exit 1
+          fi
+          
+          # Show file size to confirm it's not empty
+          ls -lh credentials/android/keystore.jks
+          echo "✓ Keystore successfully decoded and saved to credentials/android/keystore.jks"
 
       - name: Setup EAS Credentials
         run: |
