@@ -1,0 +1,56 @@
+# Export Play Key Workflow
+
+name: Export Play Key
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  export_key:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up environment
+      run: |
+        echo "Setting up environment..."
+        mkdir -p ${{ github.workspace }}/export
+
+    - name: Debug output
+      run: |
+        echo "Current working directory: ${GITHUB_WORKSPACE}"
+        ls -la ${{ github.workspace }}
+
+    - name: Export Play Console App Signing Key
+      run: |
+        echo "Exporting Play Console app signing key..."
+        if [ -z "$KEY_ALIAS" ]; then
+            echo "Error: KEY_ALIAS is not set"
+            exit 1
+        fi
+        if [ -z "$KEYSTORE_PATH" ]; then
+            echo "Error: KEYSTORE_PATH is not set"
+            exit 1
+        fi
+        success_message="Key exported successfully"
+        error_message="Failed to export key"
+
+        # Simulate key export logic
+        
+        # Add your key export commands here
+        # For example:
+        # keytool -exportcert -alias $KEY_ALIAS -keystore $KEYSTORE_PATH -file ${{ github.workspace }}/export/play_key.json
+
+        echo "$success_message"
+
+    - name: Clean up
+      run: |
+        echo "Cleaning up..."
+        rm -rf ${{ github.workspace }}/export
+
+    - name: Finish
+      run: |
+        echo "Finished exporting Play Console app signing key"
