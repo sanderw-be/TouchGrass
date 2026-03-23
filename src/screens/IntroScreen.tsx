@@ -9,7 +9,7 @@ import * as Location from 'expo-location';
 import { spacing, radius, shadows } from '../utils/theme';
 import { useTheme } from '../context/ThemeContext';
 import { t } from '../i18n';
-import { requestHealthConnect, recheckHealthConnect } from '../detection/index';
+import { toggleHealthConnect, toggleGPS, recheckHealthConnect, openHealthConnectSettings } from '../detection/index';
 import { requestGPSPermissions, checkGPSPermissions } from '../detection/index';
 import { requestNotificationPermissions } from '../notifications/notificationManager';
 import { requestCalendarPermissions, hasCalendarPermissions } from '../calendar/calendarService';
@@ -125,8 +125,16 @@ export default function IntroScreen({ onComplete }: Props) {
   const handleRequestHealthConnect = async () => {
     setRequestingPermission(true);
     try {
-      const granted = await requestHealthConnect();
-      setHealthConnectGranted(granted);
+      // Enable the user toggle and check current permissions.
+      const result = await toggleHealthConnect(true);
+      if (result.needsPermissions) {
+        // Permissions not yet granted — open Health Connect so the user can allow them.
+        // When the user returns, the AppState listener fires checkPermissions() which
+        // calls recheckHealthConnect() and updates healthConnectGranted.
+        await openHealthConnectSettings();
+      } else {
+        setHealthConnectGranted(true);
+      }
     } catch (error) {
       console.error('Error requesting Health Connect:', error);
     } finally {
@@ -137,8 +145,15 @@ export default function IntroScreen({ onComplete }: Props) {
   const handleRequestLocation = async () => {
     setRequestingPermission(true);
     try {
-      const granted = await requestGPSPermissions();
-      setLocationGranted(granted);
+      // Enable the user toggle and check current permissions.
+      const result = await toggleGPS(true);
+      if (result.needsPermissions) {
+        // Permissions not yet granted — request them inline via the OS dialog.
+        const granted = await requestGPSPermissions();
+        setLocationGranted(granted);
+      } else {
+        setLocationGranted(true);
+      }
     } catch (error) {
       console.error('Error requesting location:', error);
     } finally {

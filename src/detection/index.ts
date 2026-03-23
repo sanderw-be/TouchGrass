@@ -9,6 +9,12 @@ import { getSetting, setSetting } from '../storage/database';
 import { scheduleNextReminder, scheduleDayReminders, maybeScheduleCatchUpReminder } from '../notifications/notificationManager';
 import { fetchWeatherForecast } from '../weather/weatherService';
 
+// Setting keys for the user's explicit intent (independent of OS permission state)
+const HC_USER_KEY = 'healthconnect_user_enabled';
+const GPS_USER_KEY = 'gps_user_enabled';
+// Sentinel used to detect whether the one-time settings migration has run.
+const UNSET_MARKER = '__unset__';
+
 const BACKGROUND_TASK_NAME = 'TOUCHGRASS_BACKGROUND_TASK';
 
 /**
@@ -68,37 +74,49 @@ TaskManager.defineTask(BACKGROUND_TASK_NAME, async () => {
 /**
  * Initialize all detection sources.
  * Call this once on app startup.
+ *
+ * Migrates existing users: if the explicit user-toggle settings are not yet
+ * stored we infer the user's intent from the legacy enabled flags so that
+ * users who already set up HC / GPS keep their experience unchanged.
  */
 export async function initDetection(): Promise<DetectionStatus> {
+  // One-time migration: copy old enabled flags to the new user-toggle keys.
+  if (getSetting(HC_USER_KEY, UNSET_MARKER) === UNSET_MARKER) {
+    setSetting(HC_USER_KEY, getSetting('healthconnect_enabled', '0'));
+  }
+  if (getSetting(GPS_USER_KEY, UNSET_MARKER) === UNSET_MARKER) {
+    setSetting(GPS_USER_KEY, getSetting('gps_enabled', '0'));
+  }
+
   const status: DetectionStatus = {
-    healthConnect: false,
-    gps: false,
+    healthConnect: getSetting(HC_USER_KEY, '0') === '1',
+    healthConnectPermission: false,
+    gps: getSetting(GPS_USER_KEY, '0') === '1',
+    gpsPermission: false,
   };
 
-  // Health Connect
+  // Health Connect — only run if the user has explicitly enabled it.
   const hcAvailable = await isHealthConnectAvailable();
-  if (hcAvailable) {
-    const hcEnabled = getSetting('healthconnect_enabled', '0') === '1';
-    if (hcEnabled) {
-      const ok = await syncHealthConnect();
-      status.healthConnect = ok;
-      // Only disable Health Connect when syncHealthConnect explicitly detects a
-      // permission error (it already calls setSetting inside).  A transient
-      // failure (network, API unavailable, etc.) must not permanently turn off
-      // the integration — the next background task will retry automatically.
-      if (ok) {
-        setSetting('healthconnect_enabled', '1');
-      }
+  if (hcAvailable && status.healthConnect) {
+    const ok = await syncHealthConnect();
+    status.healthConnectPermission = ok;
+    // Only mark permission as granted when sync explicitly succeeds.
+    // A transient failure must not permanently turn off the integration.
+    if (ok) {
+      setSetting('healthconnect_enabled', '1');
     }
   }
 
-  // GPS
-  try {
-    await startLocationTracking();
-    status.gps = true;
-    setSetting('gps_enabled', '1');
-  } catch (e) {
-    console.warn('GPS init error:', e);
+  // GPS — only run if the user has explicitly enabled it.
+  if (status.gps) {
+    try {
+      await startLocationTracking();
+      status.gpsPermission = true;
+      setSetting('gps_enabled', '1');
+    } catch (e) {
+      console.warn('GPS init error:', e);
+      setSetting('gps_enabled', '0');
+    }
   }
 
   // Background task
@@ -138,6 +156,7 @@ export async function requestHealthConnect(): Promise<boolean> {
     }
     const granted = await requestHealthPermissions();
     if (granted) {
+      setSetting(HC_USER_KEY, '1');
       setSetting('healthconnect_enabled', '1');
     }
     return granted;
@@ -148,17 +167,24 @@ export async function requestHealthConnect(): Promise<boolean> {
 }
 
 /**
- * Re-check Health Connect status without requesting permissions.
+ * Re-check Health Connect permission status without requesting permissions.
+ * Only runs if the user has explicitly enabled the HC toggle.
  * Call this when the app comes back to foreground.
- * Uses verification via data read instead of sync to be more reliable.
+ * Updates the permission status setting but never touches the user-toggle.
  */
 export async function recheckHealthConnect(): Promise<boolean> {
   try {
+    // Skip the check entirely when the user has not enabled the toggle.
+    if (getSetting(HC_USER_KEY, '0') !== '1') {
+      return false;
+    }
+
     const available = await isHealthConnectAvailable();
     if (!available) return false;
     
     // Verify permissions by attempting to read data
     const hasPermissions = await verifyHealthConnectPermissions();
+    // Update permission status but leave the user-toggle unchanged.
     setSetting('healthconnect_enabled', hasPermissions ? '1' : '0');
     
     // If permissions are granted, try to sync data
@@ -195,13 +221,16 @@ export async function openHealthConnectSettings(): Promise<boolean> {
 
 export function getDetectionStatus(): DetectionStatus {
   return {
-    healthConnect: getSetting('healthconnect_enabled', '0') === '1',
-    gps: getSetting('gps_enabled', '0') === '1',
+    healthConnect: getSetting(HC_USER_KEY, '0') === '1',
+    healthConnectPermission: getSetting('healthconnect_enabled', '0') === '1',
+    gps: getSetting(GPS_USER_KEY, '0') === '1',
+    gpsPermission: getSetting('gps_enabled', '0') === '1',
   };
 }
 
 /**
  * Check GPS permission status (foreground + background).
+ * Updates the permission-status setting but never touches the user-toggle.
  * Returns true if both permissions are granted.
  */
 export async function checkGPSPermissions(): Promise<boolean> {
@@ -210,7 +239,7 @@ export async function checkGPSPermissions(): Promise<boolean> {
     const { status: bgStatus } = await Location.getBackgroundPermissionsAsync();
     const granted = fgStatus === 'granted' && bgStatus === 'granted';
     
-    // Update the setting to reflect actual permission status
+    // Update the permission status but leave the user-toggle unchanged.
     setSetting('gps_enabled', granted ? '1' : '0');
     
     return granted;
@@ -261,7 +290,91 @@ export async function requestGPSPermissions(): Promise<boolean> {
   }
 }
 
+/**
+ * Explicitly enable the Health Connect toggle.
+ * Sets the user-intent flag, then checks whether OS permissions are already
+ * granted.  Returns whether HC is now fully operational and whether the caller
+ * still needs to open the permissions page.
+ *
+ * Call this when the user flips the HC switch ON (Settings or Intro).
+ */
+export async function toggleHealthConnect(enabled: boolean): Promise<{ needsPermissions: boolean }> {
+  if (!enabled) {
+    setSetting(HC_USER_KEY, '0');
+    setSetting('healthconnect_enabled', '0');
+    return { needsPermissions: false };
+  }
+
+  // Record the user's intent immediately so background rechecks can run.
+  setSetting(HC_USER_KEY, '1');
+
+  try {
+    const available = await isHealthConnectAvailable();
+    if (!available) {
+      // HC not installed on this device — flag stays on so the user can see
+      // the error state, but there is nothing to open.
+      setSetting('healthconnect_enabled', '0');
+      return { needsPermissions: false };
+    }
+
+    const hasPermissions = await verifyHealthConnectPermissions();
+    setSetting('healthconnect_enabled', hasPermissions ? '1' : '0');
+
+    if (hasPermissions) {
+      await syncHealthConnect();
+    }
+
+    return { needsPermissions: !hasPermissions };
+  } catch (e) {
+    console.warn('Health Connect toggle error:', e);
+    setSetting('healthconnect_enabled', '0');
+    return { needsPermissions: true };
+  }
+}
+
+/**
+ * Explicitly enable or disable the GPS toggle.
+ * Sets the user-intent flag, then checks current OS permissions.
+ * Returns whether the caller still needs to request permissions from the OS.
+ *
+ * Call this when the user flips the GPS switch ON/OFF (Settings or Intro).
+ */
+export async function toggleGPS(enabled: boolean): Promise<{ needsPermissions: boolean }> {
+  if (!enabled) {
+    setSetting(GPS_USER_KEY, '0');
+    setSetting('gps_enabled', '0');
+    return { needsPermissions: false };
+  }
+
+  // Record the user's intent immediately.
+  setSetting(GPS_USER_KEY, '1');
+
+  try {
+    const { status: fgStatus } = await Location.getForegroundPermissionsAsync();
+    const { status: bgStatus } = await Location.getBackgroundPermissionsAsync();
+    const granted = fgStatus === 'granted' && bgStatus === 'granted';
+
+    setSetting('gps_enabled', granted ? '1' : '0');
+
+    if (granted) {
+      await startLocationTracking();
+    }
+
+    return { needsPermissions: !granted };
+  } catch (e) {
+    console.warn('GPS toggle error:', e);
+    setSetting('gps_enabled', '0');
+    return { needsPermissions: true };
+  }
+}
+
 export interface DetectionStatus {
+  /** Whether the user has explicitly enabled the Health Connect toggle. */
   healthConnect: boolean;
+  /** Whether Health Connect OS permissions are actually granted (meaningful when healthConnect=true). */
+  healthConnectPermission: boolean;
+  /** Whether the user has explicitly enabled the GPS toggle. */
   gps: boolean;
+  /** Whether GPS OS permissions are actually granted (meaningful when gps=true). */
+  gpsPermission: boolean;
 }
