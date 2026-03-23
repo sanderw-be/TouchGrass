@@ -253,7 +253,7 @@ export default function IntroScreen({ onComplete }: Props) {
       />
       <SafeAreaView style={styles.container}>
         {/* Progress bar */}
-        <View style={styles.progressBar}>
+        <View style={[styles.progressBar, { marginTop: insets.top + spacing.md }]}>
           <View style={[styles.progressFill, { width: `${progress}%` }]} />
         </View>
 
