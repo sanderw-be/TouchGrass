@@ -3,6 +3,7 @@ import {
   View, Text, StyleSheet, ScrollView,
   TouchableOpacity, SafeAreaView, Platform, ActivityIndicator, AppState, AppStateStatus, Alert,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Notifications from 'expo-notifications';
 import * as Location from 'expo-location';
 import { spacing, radius, shadows } from '../utils/theme';
@@ -24,6 +25,7 @@ type Step = 'welcome' | 'health-connect' | 'location' | 'notifications' | 'calen
 export default function IntroScreen({ onComplete }: Props) {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
+  const insets = useSafeAreaInsets();
   const [currentStep, setCurrentStep] = useState<Step>('welcome');
   const [healthConnectGranted, setHealthConnectGranted] = useState(false);
   const [locationGranted, setLocationGranted] = useState(false);
@@ -289,7 +291,7 @@ export default function IntroScreen({ onComplete }: Props) {
         </ScrollView>
 
         {/* Bottom buttons */}
-        <View style={styles.footer}>
+        <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, spacing.md) }]}>
           {currentStep !== 'ready' && (
             <TouchableOpacity onPress={handleSkip}>
               <Text style={styles.skipBtn}>{t('intro_skip')}</Text>

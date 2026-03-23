@@ -3,6 +3,7 @@ import {
   View, Text, StyleSheet, Modal, TouchableOpacity,
   ScrollView, Platform, Alert,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { updateSessionTimes, OutsideSession } from '../storage/database';
 import { spacing, radius, shadows } from '../utils/theme';
@@ -20,6 +21,7 @@ interface Props {
 export default function EditSessionSheet({ visible, session, onClose, onSessionUpdated }: Props) {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
+  const insets = useSafeAreaInsets();
   const [startTime, setStartTime] = useState(new Date());
   const [endTime, setEndTime] = useState(new Date());
   const [showStartPicker, setShowStartPicker] = useState(false);
@@ -85,7 +87,7 @@ export default function EditSessionSheet({ visible, session, onClose, onSessionU
     >
       <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onClose} />
 
-      <View style={styles.sheet}>
+      <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, spacing.sm) }]}>
         {/* Handle */}
         <View style={styles.handle} />
 

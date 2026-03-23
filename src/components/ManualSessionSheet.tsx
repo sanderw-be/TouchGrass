@@ -3,6 +3,7 @@ import {
   View, Text, StyleSheet, Modal, TouchableOpacity,
   ScrollView, TextInput, Platform, Alert,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { logManualSession, startManualSession } from '../detection/manualCheckin';
 import { spacing, radius, shadows } from '../utils/theme';
@@ -23,6 +24,7 @@ const DURATION_PRESETS = [15, 20, 30, 45, 60, 90];
 export default function ManualSessionSheet({ visible, onClose, onSessionLogged }: Props) {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
+  const insets = useSafeAreaInsets();
   const [tab, setTab] = useState<Tab>('log');
 
   // Log past session state
@@ -175,7 +177,7 @@ export default function ManualSessionSheet({ visible, onClose, onSessionLogged }
     >
       <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onClose} />
 
-      <View style={styles.sheet}>
+      <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, spacing.sm) }]}>
         {/* Handle */}
         <View style={styles.handle} />
 
