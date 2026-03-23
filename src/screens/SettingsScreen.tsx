@@ -7,7 +7,7 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getSetting, setSetting, getKnownLocations, getSuggestedLocations, KnownLocation, clearAllData } from '../storage/database';
-import { getDetectionStatus, requestHealthConnect, recheckHealthConnect, checkGPSPermissions, requestGPSPermissions, openHealthConnectSettings } from '../detection/index';
+import { getDetectionStatus, toggleHealthConnect, toggleGPS, recheckHealthConnect, checkGPSPermissions, requestGPSPermissions, openHealthConnectSettings } from '../detection/index';
 import { AppState, AppStateStatus } from 'react-native';
 import { spacing, radius, shadows } from '../utils/theme';
 import { useTheme, ThemePreference } from '../context/ThemeContext';
@@ -36,10 +36,11 @@ export default function SettingsScreen() {
   const navigation = useNavigation<StackNavigationProp<SettingsStackParamList>>();
   const insets = useSafeAreaInsets();
   const [smartRemindersCount, setSmartRemindersCount] = useState(2);
-  const [detectionStatus, setDetectionStatus] = useState({ healthConnect: false, gps: false });
+  const [detectionStatus, setDetectionStatus] = useState({ healthConnect: false, healthConnectPermission: false, gps: false, gpsPermission: false });
   const [knownLocations, setKnownLocations] = useState<KnownLocation[]>([]);
   const [suggestedCount, setSuggestedCount] = useState(0);
-  const [connectingHC, setConnectingHC] = useState(false);
+  const [togglingHC, setTogglingHC] = useState(false);
+  const [togglingGPS, setTogglingGPS] = useState(false);
   
   // Weather state - only the main toggle
   const [weatherEnabled, setWeatherEnabled] = useState(true);
@@ -70,26 +71,14 @@ export default function SettingsScreen() {
     setCalendarSelectedIdState(getSelectedCalendarId());
   }, []);
 
-  // Check permissions and show success message if Health Connect was just enabled
+  // Re-check permission status silently (no popups) when the screen regains focus
+  // or the app returns to the foreground.  The UI shows an error indicator on
+  // the toggle row when the user has enabled a source but permissions are gone.
   const checkAndUpdatePermissions = useCallback(async () => {
-    // Get current status before rechecking
-    const currentStatus = getDetectionStatus();
-    const previousHCStatus = currentStatus.healthConnect;
-    
     await recheckHealthConnect();
     await checkGPSPermissions();
     
-    // Reload status after permission checks complete
-    const newStatus = getDetectionStatus();
-    setDetectionStatus(newStatus);
-    
-    // If Health Connect was just enabled, show success message
-    if (!previousHCStatus && newStatus.healthConnect) {
-      Alert.alert(
-        t('settings_hc_verified_title'),
-        t('settings_hc_verified_body'),
-      );
-    }
+    setDetectionStatus(getDetectionStatus());
 
     // Refresh calendar permission status
     const calGranted = await hasCalendarPermissions();
@@ -116,59 +105,59 @@ export default function SettingsScreen() {
     return () => sub.remove();
   }, [loadStatus, checkAndUpdatePermissions]));
 
-  const handleConnectHealthConnect = async () => {
-    setConnectingHC(true);
-    
+  const handleToggleHC = async (value: boolean) => {
+    if (togglingHC) return;
+    setTogglingHC(true);
     try {
-      // Request Health Connect (this will open the Health Connect app)
-      const opened = await requestHealthConnect();
-      
-      if (!opened) {
-        // If we couldn't open Health Connect, show instructions
-        setConnectingHC(false);
-        Alert.alert(
-          t('settings_hc_failed_title'),
-          t('settings_hc_failed_body'),
-        );
-        return;
+      const result = await toggleHealthConnect(value);
+      setDetectionStatus(getDetectionStatus());
+
+      if (value && result.needsPermissions) {
+        // Permissions are not yet granted — open Health Connect so the user can allow them.
+        const opened = await openHealthConnectSettings();
+        if (!opened) {
+          Alert.alert(
+            t('settings_hc_open_error_title'),
+            t('settings_hc_open_error_body'),
+          );
+        }
+        // When the user returns from HC, AppState 'active' fires and
+        // checkAndUpdatePermissions silently refreshes the permission status.
       }
-      
-      // Health Connect was opened - user will grant permissions there
-      // We'll verify when they return (via AppState listener)
-      // For now, just reset the connecting state after a delay
-      setTimeout(() => {
-        setConnectingHC(false);
-        // Recheck will happen automatically when app comes to foreground
-      }, 1000);
-      
     } catch (error) {
-      console.error('Error connecting to Health Connect:', error);
-      setConnectingHC(false);
-      Alert.alert(
-        t('settings_hc_failed_title'),
-        t('settings_hc_failed_body'),
-      );
+      console.error('Error toggling Health Connect:', error);
+      Alert.alert(t('settings_hc_open_error_title'), t('settings_hc_open_error_body'));
+    } finally {
+      setTogglingHC(false);
     }
   };
 
-  const handleOpenHealthConnectSettings = async () => {
+  const handleToggleGPS = async (value: boolean) => {
+    if (togglingGPS) return;
+    setTogglingGPS(true);
     try {
-      // Use the dedicated function for managing existing permissions
-      // This always tries to open Health Connect, even when already connected
-      const opened = await openHealthConnectSettings();
-      
-      if (!opened) {
-        Alert.alert(
-          t('settings_hc_open_error_title'),
-          t('settings_hc_open_error_body'),
-        );
+      const result = await toggleGPS(value);
+      setDetectionStatus(getDetectionStatus());
+
+      if (value && result.needsPermissions) {
+        // OS permissions not granted — request them inline.
+        const granted = await requestGPSPermissions();
+        setDetectionStatus(getDetectionStatus());
+        if (!granted) {
+          Alert.alert(
+            t('settings_gps_permission_required_title'),
+            t('settings_gps_permission_required_body'),
+            [
+              { text: t('settings_permission_cancel'), style: 'cancel' },
+              { text: t('settings_permission_open'), onPress: handleOpenAppSettings },
+            ]
+          );
+        }
       }
     } catch (error) {
-      console.error('Error opening Health Connect settings:', error);
-      Alert.alert(
-        t('settings_hc_open_error_title'),
-        t('settings_hc_open_error_body'),
-      );
+      console.error('Error toggling GPS:', error);
+    } finally {
+      setTogglingGPS(false);
     }
   };
 
@@ -228,21 +217,6 @@ export default function SettingsScreen() {
       Alert.alert(
         t('settings_error_title'),
         t('settings_error_open_settings_failed'),
-      );
-    }
-  };
-
-  const handleRequestGPSPermission = async () => {
-    const granted = await requestGPSPermissions();
-    setDetectionStatus(getDetectionStatus());
-    if (!granted) {
-      Alert.alert(
-        t('settings_gps_permission_required_title'),
-        t('settings_gps_permission_required_body'),
-        [
-          { text: t('settings_permission_cancel'), style: 'cancel' },
-          { text: t('settings_permission_open'), onPress: handleOpenAppSettings },
-        ]
       );
     }
   };
@@ -346,18 +320,29 @@ export default function SettingsScreen() {
         <Text style={styles.sectionHeader}>{t('settings_section_detection')}</Text>
         <View style={styles.card}>
           <DetectionSettingRow
-            active={detectionStatus.healthConnect}
+            enabled={detectionStatus.healthConnect}
+            permissionGranted={detectionStatus.healthConnectPermission}
             icon="👟"
             label={t('settings_health_connect')}
-            onPress={detectionStatus.healthConnect ? handleOpenHealthConnectSettings : handleConnectHealthConnect}
-            isLoading={connectingHC}
+            desc={t('settings_health_connect_desc')}
+            permissionMissingLabel={t('settings_hc_permission_missing')}
+            onToggle={handleToggleHC}
+            isLoading={togglingHC}
+            onPermissionFix={openHealthConnectSettings}
+            testID="hc-toggle"
           />
           <Divider />
           <DetectionSettingRow
-            active={detectionStatus.gps}
+            enabled={detectionStatus.gps}
+            permissionGranted={detectionStatus.gpsPermission}
             icon="📍"
             label={t('settings_gps')}
-            onPress={handleOpenAppSettings}
+            desc={t('settings_gps_desc')}
+            permissionMissingLabel={t('settings_gps_permission_missing')}
+            onToggle={handleToggleGPS}
+            isLoading={togglingGPS}
+            onPermissionFix={handleOpenAppSettings}
+            testID="gps-toggle"
           />
         </View>
 
@@ -649,36 +634,63 @@ function StatusDot({ active }: { active: boolean }) {
 }
 
 function DetectionSettingRow({
-  active,
+  enabled,
+  permissionGranted,
   icon,
   label,
-  onPress,
+  desc,
+  permissionMissingLabel,
+  onToggle,
   isLoading,
+  onPermissionFix,
+  testID,
 }: {
-  active: boolean;
+  enabled: boolean;
+  permissionGranted: boolean;
   icon: string;
   label: string;
-  onPress: () => void;
+  desc: string;
+  permissionMissingLabel: string;
+  onToggle: (value: boolean) => void;
   isLoading?: boolean;
+  onPermissionFix?: () => void;
+  testID?: string;
 }) {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
+  const hasError = enabled && !permissionGranted;
+
   return (
-    <View style={styles.row}>
-      {active && <StatusDot active={true} />}
-      <Text style={[styles.rowIcon, active && styles.rowIconWithDot]}>{icon}</Text>
-      <View style={styles.rowContent}>
-        <Text style={styles.rowLabel}>{label}</Text>
+    <View>
+      <View style={styles.row}>
+        <Text style={styles.rowIcon}>{icon}</Text>
+        <View style={styles.rowContent}>
+          <Text style={styles.rowLabel}>{label}</Text>
+          {hasError ? (
+            <TouchableOpacity
+              onPress={onPermissionFix}
+              disabled={!onPermissionFix}
+              accessibilityRole="button"
+              accessibilityLabel={permissionMissingLabel}
+              accessibilityHint={t('settings_permission_open')}
+            >
+              <Text style={[styles.rowSublabel, { color: colors.error }]}>
+                {permissionMissingLabel}
+              </Text>
+            </TouchableOpacity>
+          ) : (
+            <Text style={styles.rowSublabel}>{desc}</Text>
+          )}
+        </View>
+        <Switch
+          value={enabled}
+          onValueChange={onToggle}
+          disabled={isLoading}
+          trackColor={{ false: colors.fog, true: colors.grassLight }}
+          thumbColor={enabled ? colors.grass : colors.inactive}
+          testID={testID}
+        />
       </View>
-      <TouchableOpacity
-        style={styles.settingsBtn}
-        onPress={onPress}
-        disabled={isLoading}
-      >
-        <Text style={styles.settingsBtnText}>
-          {isLoading ? '...' : '⚙️'}
-        </Text>
-      </TouchableOpacity>
     </View>
   );
 }

@@ -8,11 +8,15 @@ jest.mock('../i18n', () => ({
 }));
 
 // Mock detection module
+const mockToggleHealthConnect = jest.fn<Promise<{ needsPermissions: boolean }>, [boolean]>(() => Promise.resolve({ needsPermissions: false }));
+const mockToggleGPS = jest.fn<Promise<{ needsPermissions: boolean }>, [boolean]>(() => Promise.resolve({ needsPermissions: false }));
 jest.mock('../detection/index', () => ({
-  requestHealthConnect: jest.fn(),
+  toggleHealthConnect: (enabled: boolean) => mockToggleHealthConnect(enabled),
+  toggleGPS: (enabled: boolean) => mockToggleGPS(enabled),
   recheckHealthConnect: jest.fn(() => Promise.resolve(false)),
-  requestGPSPermissions: jest.fn(),
+  requestGPSPermissions: jest.fn(() => Promise.resolve(false)),
   checkGPSPermissions: jest.fn(() => Promise.resolve(false)),
+  openHealthConnectSettings: jest.fn(() => Promise.resolve(true)),
 }));
 
 // Mock notification manager
@@ -42,6 +46,8 @@ describe('IntroScreen', () => {
     mockGetSetting.mockImplementation((key: string, fallback: string) => fallback);
     mockHasCalendarPermissions.mockResolvedValue(false);
     mockRequestCalendarPermissions.mockResolvedValue(false);
+    mockToggleHealthConnect.mockResolvedValue({ needsPermissions: false });
+    mockToggleGPS.mockResolvedValue({ needsPermissions: false });
   });
 
   it('renders without crashing', () => {
@@ -190,6 +196,108 @@ describe('IntroScreen', () => {
         'calendar_default_duration',
         expect.any(String),
       );
+    });
+  });
+
+  describe('Health Connect step', () => {
+    let originalPlatformOS: string;
+
+    beforeAll(() => {
+      const Platform = require('react-native').Platform;
+      originalPlatformOS = Platform.OS;
+      Platform.OS = 'android';
+    });
+
+    afterAll(() => {
+      const Platform = require('react-native').Platform;
+      Platform.OS = originalPlatformOS;
+    });
+
+    async function navigateToHCStep() {
+      const onComplete = jest.fn();
+      const utils = render(<IntroScreen onComplete={onComplete} />);
+      // welcome → health-connect
+      fireEvent.press(utils.getByText('intro_next'));
+      await waitFor(() => expect(utils.getByText('intro_hc_title')).toBeTruthy());
+      return { ...utils, onComplete };
+    }
+
+    it('calls toggleHealthConnect(true) when connect button is pressed', async () => {
+      const { getByText } = await navigateToHCStep();
+
+      await act(async () => {
+        fireEvent.press(getByText('intro_hc_button'));
+      });
+
+      expect(mockToggleHealthConnect).toHaveBeenCalledWith(true);
+    });
+
+    it('shows granted state when toggleHealthConnect returns needsPermissions=false', async () => {
+      mockToggleHealthConnect.mockResolvedValueOnce({ needsPermissions: false });
+      const { getByText } = await navigateToHCStep();
+
+      await act(async () => {
+        fireEvent.press(getByText('intro_hc_button'));
+      });
+
+      await waitFor(() => expect(getByText('intro_hc_button_granted')).toBeTruthy());
+    });
+
+    it('opens Health Connect settings when permissions are needed', async () => {
+      const { openHealthConnectSettings } = require('../detection/index');
+      mockToggleHealthConnect.mockResolvedValueOnce({ needsPermissions: true });
+      const { getByText } = await navigateToHCStep();
+
+      await act(async () => {
+        fireEvent.press(getByText('intro_hc_button'));
+      });
+
+      await waitFor(() => expect(openHealthConnectSettings).toHaveBeenCalled());
+    });
+  });
+
+  describe('Location step', () => {
+    async function navigateToLocationStep() {
+      const onComplete = jest.fn();
+      const utils = render(<IntroScreen onComplete={onComplete} />);
+      // welcome → hc → location
+      fireEvent.press(utils.getByText('intro_next'));
+      fireEvent.press(utils.getByText('intro_next'));
+      await waitFor(() => expect(utils.getByText('intro_location_title')).toBeTruthy());
+      return { ...utils, onComplete };
+    }
+
+    it('calls toggleGPS(true) when grant button is pressed', async () => {
+      const { getByText } = await navigateToLocationStep();
+
+      await act(async () => {
+        fireEvent.press(getByText('intro_location_button'));
+      });
+
+      expect(mockToggleGPS).toHaveBeenCalledWith(true);
+    });
+
+    it('shows granted state when toggleGPS returns needsPermissions=false', async () => {
+      mockToggleGPS.mockResolvedValueOnce({ needsPermissions: false });
+      const { getByText } = await navigateToLocationStep();
+
+      await act(async () => {
+        fireEvent.press(getByText('intro_location_button'));
+      });
+
+      await waitFor(() => expect(getByText('intro_location_button_granted')).toBeTruthy());
+    });
+
+    it('requests GPS permissions when permissions are needed', async () => {
+      const { requestGPSPermissions } = require('../detection/index');
+      mockToggleGPS.mockResolvedValueOnce({ needsPermissions: true });
+      const { getByText } = await navigateToLocationStep();
+
+      await act(async () => {
+        fireEvent.press(getByText('intro_location_button'));
+      });
+
+      await waitFor(() => expect(requestGPSPermissions).toHaveBeenCalled());
     });
   });
 

@@ -21,13 +21,16 @@ jest.mock('../storage/database', () => ({
 }));
 
 // Mock detection
+const mockToggleHealthConnect = jest.fn<Promise<{ needsPermissions: boolean }>, [boolean]>(() => Promise.resolve({ needsPermissions: false }));
+const mockToggleGPS = jest.fn<Promise<{ needsPermissions: boolean }>, [boolean]>(() => Promise.resolve({ needsPermissions: false }));
 jest.mock('../detection/index', () => ({
-  getDetectionStatus: jest.fn(() => ({ healthConnect: false, gps: false })),
-  requestHealthConnect: jest.fn(),
+  getDetectionStatus: jest.fn(() => ({ healthConnect: false, healthConnectPermission: false, gps: false, gpsPermission: false })),
+  toggleHealthConnect: (enabled: boolean) => mockToggleHealthConnect(enabled),
+  toggleGPS: (enabled: boolean) => mockToggleGPS(enabled),
   recheckHealthConnect: jest.fn(() => Promise.resolve()),
   checkGPSPermissions: jest.fn(() => Promise.resolve()),
-  requestGPSPermissions: jest.fn(),
-  openHealthConnectSettings: jest.fn(),
+  requestGPSPermissions: jest.fn(() => Promise.resolve(false)),
+  openHealthConnectSettings: jest.fn(() => Promise.resolve(true)),
 }));
 
 // Mock calendar service
@@ -76,6 +79,7 @@ jest.mock('../context/LanguageContext', () => ({
 
 import SettingsScreen from '../screens/SettingsScreen';
 import * as CalendarService from '../calendar/calendarService';
+import * as DetectionModule from '../detection/index';
 
 describe('SettingsScreen calendar duration', () => {
   beforeEach(() => {
@@ -191,5 +195,95 @@ describe('SettingsScreen calendar duration', () => {
 
     expect(alertSpy).not.toHaveBeenCalled();
     alertSpy.mockRestore();
+  });
+});
+
+describe('SettingsScreen detection toggles', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockGetSetting.mockImplementation((key: string, def: string) => def);
+  });
+
+  it('renders Health Connect and GPS switch rows', async () => {
+    const { getByText } = render(<SettingsScreen />);
+    await waitFor(() => {
+      expect(getByText('settings_health_connect')).toBeTruthy();
+      expect(getByText('settings_gps')).toBeTruthy();
+    });
+  });
+
+  it('calls toggleHealthConnect(true) when HC switch is turned on', async () => {
+    (DetectionModule.getDetectionStatus as jest.Mock).mockReturnValue({
+      healthConnect: false, healthConnectPermission: false, gps: false, gpsPermission: false,
+    });
+    mockToggleHealthConnect.mockResolvedValueOnce({ needsPermissions: false });
+
+    const { getByTestId } = render(<SettingsScreen />);
+    await waitFor(() => expect(getByTestId('hc-toggle')).toBeTruthy());
+
+    await act(async () => {
+      fireEvent(getByTestId('hc-toggle'), 'valueChange', true);
+    });
+
+    await waitFor(() => expect(mockToggleHealthConnect).toHaveBeenCalledWith(true));
+  });
+
+  it('calls toggleGPS(true) when GPS switch is turned on', async () => {
+    (DetectionModule.getDetectionStatus as jest.Mock).mockReturnValue({
+      healthConnect: false, healthConnectPermission: false, gps: false, gpsPermission: false,
+    });
+    mockToggleGPS.mockResolvedValueOnce({ needsPermissions: false });
+
+    const { getByTestId } = render(<SettingsScreen />);
+    await waitFor(() => expect(getByTestId('gps-toggle')).toBeTruthy());
+
+    await act(async () => {
+      fireEvent(getByTestId('gps-toggle'), 'valueChange', true);
+    });
+
+    await waitFor(() => expect(mockToggleGPS).toHaveBeenCalledWith(true));
+  });
+
+  it('calls toggleHealthConnect(false) when HC switch is turned off', async () => {
+    (DetectionModule.getDetectionStatus as jest.Mock).mockReturnValue({
+      healthConnect: true, healthConnectPermission: true, gps: false, gpsPermission: false,
+    });
+    mockToggleHealthConnect.mockResolvedValueOnce({ needsPermissions: false });
+
+    const { getByTestId } = render(<SettingsScreen />);
+    await waitFor(() => expect(getByTestId('hc-toggle')).toBeTruthy());
+
+    await act(async () => {
+      fireEvent(getByTestId('hc-toggle'), 'valueChange', false);
+    });
+
+    await waitFor(() => expect(mockToggleHealthConnect).toHaveBeenCalledWith(false));
+  });
+
+  it('shows permission-missing label when HC is enabled but permissions are missing', async () => {
+    (DetectionModule.getDetectionStatus as jest.Mock).mockReturnValue({
+      healthConnect: true, healthConnectPermission: false, gps: false, gpsPermission: false,
+    });
+
+    const { getByText } = render(<SettingsScreen />);
+    await waitFor(() => expect(getByText('settings_hc_permission_missing')).toBeTruthy());
+  });
+
+  it('shows permission-missing label when GPS is enabled but permissions are missing', async () => {
+    (DetectionModule.getDetectionStatus as jest.Mock).mockReturnValue({
+      healthConnect: false, healthConnectPermission: false, gps: true, gpsPermission: false,
+    });
+
+    const { getByText } = render(<SettingsScreen />);
+    await waitFor(() => expect(getByText('settings_gps_permission_missing')).toBeTruthy());
+  });
+
+  it('does not show permission-missing label when HC toggle is off', async () => {
+    (DetectionModule.getDetectionStatus as jest.Mock).mockReturnValue({
+      healthConnect: false, healthConnectPermission: false, gps: false, gpsPermission: false,
+    });
+
+    const { queryByText } = render(<SettingsScreen />);
+    await waitFor(() => expect(queryByText('settings_hc_permission_missing')).toBeNull());
   });
 });
