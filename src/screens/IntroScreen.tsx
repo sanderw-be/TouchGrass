@@ -291,7 +291,7 @@ export default function IntroScreen({ onComplete }: Props) {
         </ScrollView>
 
         {/* Bottom buttons */}
-        <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, spacing.md) }]}>
+        <View style={[styles.footer, { paddingBottom: spacing.md + insets.bottom }]}>
           {currentStep !== 'ready' && (
             <TouchableOpacity onPress={handleSkip}>
               <Text style={styles.skipBtn}>{t('intro_skip')}</Text>
