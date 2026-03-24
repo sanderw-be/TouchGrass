@@ -16,3 +16,12 @@ export function formatTime(ms: number): string {
 export function formatDate(ms: number): string {
   return new Date(ms).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
 }
+
+// Format elapsed seconds as MM:SS or H:MM:SS
+export function formatTimer(seconds: number): string {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = seconds % 60;
+  if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}

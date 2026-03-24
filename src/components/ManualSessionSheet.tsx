@@ -8,7 +8,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { logManualSession, startManualSession } from '../detection/manualCheckin';
 import { spacing, radius, shadows } from '../utils/theme';
 import { useTheme } from '../context/ThemeContext';
-import { formatMinutes } from '../utils/helpers';
+import { formatMinutes, formatTimer } from '../utils/helpers';
 import { t, formatLocalDate, formatLocalTime } from '../i18n';
 
 interface Props {
@@ -155,14 +155,6 @@ export default function ManualSessionSheet({ visible, onClose, onSessionLogged }
     stopTimerRef.current = null;
     setTimerRunning(false);
     setTimerSeconds(0);
-  };
-
-  const formatTimer = (seconds: number) => {
-    const h = Math.floor(seconds / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    const s = seconds % 60;
-    if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
   };
 
   // Calculate duration from start and end times

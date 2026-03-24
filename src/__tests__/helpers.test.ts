@@ -1,4 +1,4 @@
-import { formatMinutes, formatTime, formatDate } from '../utils/helpers';
+import { formatMinutes, formatTime, formatDate, formatTimer } from '../utils/helpers';
 
 describe('formatMinutes', () => {
   it('formats minutes less than 60', () => {
@@ -51,5 +51,19 @@ describe('formatDate', () => {
     const formatted = formatDate(timestamp);
     // The exact format may vary by locale, but it should contain date components
     expect(formatted).toMatch(/\w+/);
+  });
+});
+
+describe('formatTimer', () => {
+  it('formats seconds as MM:SS', () => {
+    expect(formatTimer(0)).toBe('00:00');
+    expect(formatTimer(65)).toBe('01:05');
+    expect(formatTimer(599)).toBe('09:59');
+  });
+
+  it('formats seconds as H:MM:SS when >= 1 hour', () => {
+    expect(formatTimer(3600)).toBe('1:00:00');
+    expect(formatTimer(3661)).toBe('1:01:01');
+    expect(formatTimer(7325)).toBe('2:02:05');
   });
 });

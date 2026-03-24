@@ -14,6 +14,11 @@ export default {
   no_sessions_sub: 'Ga naar buiten of log het handmatig!',
   todays_sessions: 'Sessies vandaag',
 
+  // Timer in voortgangsring
+  ring_timer_start: 'tik om te starten',
+  ring_timer_tap_stop: 'tik om te stoppen',
+  ring_timer_outside: 'buiten',
+
   // Sessiebronnen
   source_health_connect: 'Activiteit',
   source_gps: 'GPS',

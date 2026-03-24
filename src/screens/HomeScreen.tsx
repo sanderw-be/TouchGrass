@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
   TouchableOpacity, RefreshControl, StatusBar,
@@ -17,6 +17,7 @@ import { useTheme } from '../context/ThemeContext';
 import { formatMinutes, formatTime } from '../utils/helpers';
 import { t, formatLocalDate } from '../i18n';
 import { updateTimeSlotProbability } from '../detection/sessionConfidence';
+import { startManualSession } from '../detection/manualCheckin';
 
 export default function HomeScreen() {
   const { colors, isDark } = useTheme();
@@ -28,6 +29,32 @@ export default function HomeScreen() {
   const [todaySessions, setTodaySessions] = useState<any[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [sheetVisible, setSheetVisible] = useState(false);
+
+  // Inline ring timer
+  const [timerRunning, setTimerRunning] = useState(false);
+  const [timerSeconds, setTimerSeconds] = useState(0);
+  const timerStartRef = useRef<number>(0);
+  const stopTimerRef = useRef<(() => void) | null>(null);
+  const timerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    if (timerRunning) {
+      timerIntervalRef.current = setInterval(() => {
+        setTimerSeconds(Math.floor((Date.now() - timerStartRef.current) / 1000));
+      }, 1000);
+    } else {
+      if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current);
+        timerIntervalRef.current = null;
+      }
+    }
+    return () => {
+      if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current);
+        timerIntervalRef.current = null;
+      }
+    };
+  }, [timerRunning]);
 
   const loadData = useCallback(() => {
     setTodayMinutes(getTodayMinutes());
@@ -50,6 +77,28 @@ export default function HomeScreen() {
     const d = new Date(startTime);
     updateTimeSlotProbability(d.getHours(), d.getDay(), confirmed);
     loadData();
+  };
+
+  const handleTimerPress = () => {
+    if (timerRunning) {
+      // Stop timer — auto-save and refresh
+      if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current);
+        timerIntervalRef.current = null;
+      }
+      if (stopTimerRef.current) stopTimerRef.current();
+      stopTimerRef.current = null;
+      setTimerRunning(false);
+      setTimerSeconds(0);
+      loadData();
+    } else {
+      // Start timer
+      const stop = startManualSession();
+      stopTimerRef.current = stop;
+      timerStartRef.current = Date.now();
+      setTimerSeconds(0);
+      setTimerRunning(true);
+    }
   };
 
   const dailyPercent = Math.min(todayMinutes / dailyTarget, 1);
@@ -104,6 +153,9 @@ export default function HomeScreen() {
           size={200}
           strokeWidth={16}
           label={t('today')}
+          onTimerPress={handleTimerPress}
+          timerRunning={timerRunning}
+          timerSeconds={timerSeconds}
         />
         <Text style={styles.motivation}>{motivationText()}</Text>
       </View>
