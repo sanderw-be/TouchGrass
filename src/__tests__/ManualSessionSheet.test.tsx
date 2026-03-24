@@ -16,6 +16,7 @@ jest.mock('../detection/manualCheckin', () => ({
 
 jest.mock('../utils/helpers', () => ({
   formatMinutes: (mins: number) => `${mins} min`,
+  formatTimer: (secs: number) => `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`,
 }));
 
 // Import component AFTER mocks

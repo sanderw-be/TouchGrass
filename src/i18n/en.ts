@@ -14,6 +14,11 @@ export default {
   no_sessions_sub: 'Head out or log it manually!',
   todays_sessions: "Today's sessions",
 
+  // Progress ring inline timer
+  ring_timer_start: '▶ tap to start',
+  ring_timer_tap_stop: 'tap to stop',
+  ring_timer_outside: 'outside',
+
   // Session sources
   source_health_connect: 'Activity',
   source_gps: 'GPS',
