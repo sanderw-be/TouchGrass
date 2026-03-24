@@ -80,12 +80,6 @@ import HomeScreen from '../screens/HomeScreen';
 describe('HomeScreen inline timer', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    jest.useFakeTimers();
-  });
-
-  afterEach(() => {
-    jest.clearAllTimers();
-    jest.useRealTimers();
   });
 
   it('renders the progress ring with start hint when timer is idle', () => {
@@ -104,6 +98,11 @@ describe('HomeScreen inline timer', () => {
     // After starting, the stop hint should appear
     expect(getByText('ring_timer_tap_stop')).toBeTruthy();
     expect(queryByText('ring_timer_start')).toBeNull();
+
+    // Clean up: stop the timer so the interval does not outlive this test
+    act(() => {
+      fireEvent.press(getByText('ring_timer_tap_stop'));
+    });
   });
 
   it('stops and saves the session when the running timer is pressed', () => {
@@ -127,18 +126,20 @@ describe('HomeScreen inline timer', () => {
     expect(getByText('ring_timer_start')).toBeTruthy();
   });
 
-  it('increments timerSeconds via the interval', () => {
+  it('shows the running state indicator immediately when timer starts', () => {
+    // ring_timer_outside badge appears as soon as timerRunning=true — no need to advance
+    // fake timers, which would interfere with React's scheduler and cause cleanup hangs.
     const { getByText } = render(<HomeScreen />);
 
     act(() => {
       fireEvent.press(getByText('ring_timer_start'));
     });
 
-    act(() => {
-      jest.advanceTimersByTime(5000);
-    });
-
-    // formatTimer mock returns '00:XX' - after 5s the text should reflect elapsed time
     expect(getByText('ring_timer_outside')).toBeTruthy();
+
+    // Clean up: stop the timer so the interval does not outlive this test
+    act(() => {
+      fireEvent.press(getByText('ring_timer_tap_stop'));
+    });
   });
 });
