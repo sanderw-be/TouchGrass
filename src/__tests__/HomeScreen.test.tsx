@@ -84,6 +84,7 @@ describe('HomeScreen inline timer', () => {
   });
 
   afterEach(() => {
+    jest.clearAllTimers();
     jest.useRealTimers();
   });
 
@@ -95,7 +96,9 @@ describe('HomeScreen inline timer', () => {
   it('starts the timer when the ring centre is pressed', () => {
     const { getByText, queryByText } = render(<HomeScreen />);
 
-    fireEvent.press(getByText('ring_timer_start'));
+    act(() => {
+      fireEvent.press(getByText('ring_timer_start'));
+    });
 
     expect(mockStartManualSession).toHaveBeenCalledTimes(1);
     // After starting, the stop hint should appear
@@ -107,11 +110,15 @@ describe('HomeScreen inline timer', () => {
     const { getByText } = render(<HomeScreen />);
 
     // Start the timer
-    fireEvent.press(getByText('ring_timer_start'));
+    act(() => {
+      fireEvent.press(getByText('ring_timer_start'));
+    });
     expect(mockStartManualSession).toHaveBeenCalledTimes(1);
 
     // Stop the timer
-    fireEvent.press(getByText('ring_timer_tap_stop'));
+    act(() => {
+      fireEvent.press(getByText('ring_timer_tap_stop'));
+    });
 
     expect(mockStopFn).toHaveBeenCalledTimes(1);
     // Data should be refreshed (getTodayMinutes is called on loadData)
