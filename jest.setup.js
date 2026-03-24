@@ -25,6 +25,11 @@ jest.mock('expo-localization', () => ({
   getLocales: jest.fn(() => [{ languageCode: 'en', regionCode: 'US' }]),
 }));
 
+// Mock react-native-localize
+jest.mock('react-native-localize', () => ({
+  uses24HourClock: jest.fn(() => true),
+}));
+
 // Mock expo-notifications
 jest.mock('expo-notifications', () => ({
   getPermissionsAsync: jest.fn(() => Promise.resolve({ status: 'denied' })),

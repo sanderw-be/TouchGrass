@@ -8,7 +8,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { updateSessionTimes, OutsideSession } from '../storage/database';
 import { spacing, radius, shadows } from '../utils/theme';
 import { useTheme } from '../context/ThemeContext';
-import { formatMinutes } from '../utils/helpers';
+import { formatMinutes, uses24HourClock } from '../utils/helpers';
 import { t, formatLocalDate, formatLocalTime } from '../i18n';
 
 interface Props {
@@ -129,7 +129,7 @@ export default function EditSessionSheet({ visible, session, onClose, onSessionU
                 <DateTimePicker
                   value={startTime}
                   mode="time"
-                  is24Hour={true}
+                  is24Hour={uses24HourClock()}
                   display="default"
                   onChange={onStartTimeChange}
                 />
@@ -161,7 +161,7 @@ export default function EditSessionSheet({ visible, session, onClose, onSessionU
                 <DateTimePicker
                   value={endTime}
                   mode="time"
-                  is24Hour={true}
+                  is24Hour={uses24HourClock()}
                   display="default"
                   onChange={onEndTimeChange}
                 />

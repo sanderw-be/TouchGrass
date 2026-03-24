@@ -1,4 +1,10 @@
-import { formatMinutes, formatTime, formatDate, formatTimer } from '../utils/helpers';
+import { formatMinutes, formatTime, formatDate, formatTimer, uses24HourClock } from '../utils/helpers';
+
+// Mock react-native-localize for helpers tests
+const mockUses24HourClock = jest.fn(() => true);
+jest.mock('react-native-localize', () => ({
+  uses24HourClock: () => mockUses24HourClock(),
+}));
 
 describe('formatMinutes', () => {
   it('formats minutes less than 60', () => {
@@ -65,5 +71,17 @@ describe('formatTimer', () => {
     expect(formatTimer(3600)).toBe('1:00:00');
     expect(formatTimer(3661)).toBe('1:01:01');
     expect(formatTimer(7325)).toBe('2:02:05');
+  });
+});
+
+describe('uses24HourClock', () => {
+  it('returns true when device uses 24-hour clock', () => {
+    mockUses24HourClock.mockReturnValue(true);
+    expect(uses24HourClock()).toBe(true);
+  });
+
+  it('returns false when device uses 12-hour clock', () => {
+    mockUses24HourClock.mockReturnValue(false);
+    expect(uses24HourClock()).toBe(false);
   });
 });

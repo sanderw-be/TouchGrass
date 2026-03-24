@@ -1,3 +1,10 @@
+import * as RNLocalize from 'react-native-localize';
+
+// Detect whether the device is set to 24-hour clock format
+export function uses24HourClock(): boolean {
+  return RNLocalize.uses24HourClock();
+}
+
 // Format minutes as human-readable
 export function formatMinutes(minutes: number): string {
   const rounded = Math.round(minutes);
