@@ -95,13 +95,13 @@ describe('HomeScreen inline timer', () => {
     });
 
     expect(mockStartManualSession).toHaveBeenCalledTimes(1);
-    // After starting, the stop hint should appear
-    expect(getByText('ring_timer_tap_stop')).toBeTruthy();
+    // After starting, the large stop icon should appear instead of the play icon
+    expect(getByText('⏹')).toBeTruthy();
     expect(queryByText('ring_timer_start')).toBeNull();
 
     // Clean up: stop the timer so the interval does not outlive this test
     act(() => {
-      fireEvent.press(getByText('ring_timer_tap_stop'));
+      fireEvent.press(getByText('⏹'));
     });
   });
 
@@ -114,32 +114,34 @@ describe('HomeScreen inline timer', () => {
     });
     expect(mockStartManualSession).toHaveBeenCalledTimes(1);
 
-    // Stop the timer
+    // Stop the timer via the stop icon
     act(() => {
-      fireEvent.press(getByText('ring_timer_tap_stop'));
+      fireEvent.press(getByText('⏹'));
     });
 
     expect(mockStopFn).toHaveBeenCalledTimes(1);
     // Data should be refreshed (getTodayMinutes is called on loadData)
     expect(mockGetTodayMinutes).toHaveBeenCalled();
-    // Ring should be back to idle state
+    // Ring should be back to idle state showing the play icon
+    expect(getByText('▶')).toBeTruthy();
     expect(getByText('ring_timer_start')).toBeTruthy();
   });
 
-  it('shows the running state indicator immediately when timer starts', () => {
-    // ring_timer_outside badge appears as soon as timerRunning=true — no need to advance
+  it('shows the stop icon immediately when timer starts', () => {
+    // The ⏹ stop icon renders as soon as timerRunning=true — no need to advance
     // fake timers, which would interfere with React's scheduler and cause cleanup hangs.
-    const { getByText } = render(<HomeScreen />);
+    const { getByText, queryByText } = render(<HomeScreen />);
 
     act(() => {
       fireEvent.press(getByText('ring_timer_start'));
     });
 
-    expect(getByText('ring_timer_outside')).toBeTruthy();
+    expect(getByText('⏹')).toBeTruthy();
+    expect(queryByText('▶')).toBeNull();
 
     // Clean up: stop the timer so the interval does not outlive this test
     act(() => {
-      fireEvent.press(getByText('ring_timer_tap_stop'));
+      fireEvent.press(getByText('⏹'));
     });
   });
 });

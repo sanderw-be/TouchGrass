@@ -15,7 +15,7 @@ export default {
   todays_sessions: "Today's sessions",
 
   // Progress ring inline timer
-  ring_timer_start: '▶ tap to start',
+  ring_timer_start: 'tap to start',
   ring_timer_tap_stop: 'tap to stop',
   ring_timer_outside: 'outside',
 

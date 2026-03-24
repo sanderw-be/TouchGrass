@@ -89,19 +89,20 @@ export default function ProgressRing({
           style={[styles.center, { width: size, height: size }]}
           onPress={onTimerPress}
           activeOpacity={0.7}
+          testID="ring-timer-center"
         >
           {timerRunning ? (
-            <>
+            <View style={styles.innerBlock}>
               <Text style={styles.timerValue}>{formatTimer(timerSeconds)}</Text>
-              <Text style={styles.timerOutside}>{t('ring_timer_outside')}</Text>
-              <Text style={styles.timerHint}>{t('ring_timer_tap_stop')}</Text>
-            </>
+              <Text style={styles.stopIcon}>⏹</Text>
+            </View>
           ) : (
-            <>
+            <View style={styles.innerBlock}>
               <Text style={styles.value}>{formatMinutes(current)}</Text>
               <Text style={styles.target}>{t('of')} {formatMinutes(target)}</Text>
               <Text style={styles.startHint}>{t('ring_timer_start')}</Text>
-            </>
+              <Text style={styles.playIcon}>▶</Text>
+            </View>
           )}
         </TouchableOpacity>
       ) : (
@@ -126,6 +127,12 @@ function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
     alignItems: 'center',
     justifyContent: 'center',
   },
+  // Inner block is shifted slightly upward so the play/stop icon below the text
+  // doesn't make the group feel bottom-heavy inside the ring.
+  innerBlock: {
+    alignItems: 'center',
+    marginTop: -8,
+  },
   value: {
     fontSize: 32,
     fontWeight: '700',
@@ -147,10 +154,15 @@ function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
   startHint: {
     fontSize: 11,
     color: colors.grass,
-    textTransform: 'lowercase',
     letterSpacing: 0.5,
     marginTop: 6,
     fontWeight: '600',
+  },
+  playIcon: {
+    fontSize: 28,
+    color: colors.grass,
+    marginTop: 6,
+    lineHeight: 32,
   },
   timerValue: {
     fontSize: 36,
@@ -158,18 +170,11 @@ function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
     color: colors.textPrimary,
     letterSpacing: -1,
   },
-  timerOutside: {
-    fontSize: 12,
+  stopIcon: {
+    fontSize: 28,
     color: colors.grass,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 1.5,
-    marginTop: 2,
-  },
-  timerHint: {
-    fontSize: 11,
-    color: colors.textMuted,
-    marginTop: 4,
+    marginTop: 8,
+    lineHeight: 32,
   },
   });
 }
