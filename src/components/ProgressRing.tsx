@@ -94,6 +94,8 @@ export default function ProgressRing({
           {timerRunning ? (
             <View style={styles.innerBlock}>
               <Text style={styles.timerValue}>{formatTimer(timerSeconds)}</Text>
+              <Text style={styles.timerOutside}>{t('ring_timer_outside')}</Text>
+              <Text style={styles.timerHint}>{t('ring_timer_tap_stop')}</Text>
               <Text style={styles.stopIcon}>⏹</Text>
             </View>
           ) : (
@@ -169,6 +171,19 @@ function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
     fontWeight: '200',
     color: colors.textPrimary,
     letterSpacing: -1,
+  },
+  timerOutside: {
+    fontSize: 12,
+    color: colors.grass,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 1.5,
+    marginTop: 2,
+  },
+  timerHint: {
+    fontSize: 11,
+    color: colors.textMuted,
+    marginTop: 4,
   },
   stopIcon: {
     fontSize: 28,
