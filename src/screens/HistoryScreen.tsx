@@ -16,6 +16,7 @@ import { t } from '../i18n';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const BAR_AREA_WIDTH = SCREEN_WIDTH - spacing.md * 2 - spacing.lg * 2;
+const DAY_MS = 86400000;
 
 type Period = 'week' | 'month';
 
@@ -37,8 +38,8 @@ export default function HistoryScreen() {
       const weekStart = startOfWeek(date);
       const days: { date: number; minutes: number }[] = [];
       for (let i = 0; i < 7; i++) {
-        const dayStart = weekStart + i * 86400000;
-        const sessions = getSessionsForRange(dayStart, dayStart + 86400000);
+        const dayStart = weekStart + i * DAY_MS;
+        const sessions = getSessionsForRange(dayStart, dayStart + DAY_MS);
         // Filter out declined sessions (userConfirmed === 0)
         const minutes = sessions
           .filter(s => s.userConfirmed !== 0)
@@ -53,22 +54,26 @@ export default function HistoryScreen() {
 
   const navigate = (dir: -1 | 1) => {
     const delta = period === 'week'
-      ? dir * 7 * 86400000
-      : dir * 30 * 86400000;
+      ? dir * 7 * DAY_MS
+      : dir * 30 * DAY_MS;
     setViewDate((v) => v + delta);
   };
 
   const periodLabel = () => {
     if (period === 'week') {
       const weekStart = startOfWeek(viewDate);
-      const weekEnd = weekStart + 6 * 86400000;
+      const weekEnd = weekStart + 6 * DAY_MS;
       return `${formatLocalDate(weekStart, { month: 'short', day: 'numeric' })} – ${formatLocalDate(weekEnd, { month: 'short', day: 'numeric' })}`;
     }
     return formatLocalDate(viewDate, { month: 'long', year: 'numeric' });
   };
 
   const totalMinutes = dailyData.reduce((sum, d) => sum + d.minutes, 0);
-  const avgMinutes = dailyData.length > 0 ? totalMinutes / dailyData.length : 0;
+  const isCurrentWeek = period === 'week' && startOfWeek(viewDate) === startOfWeek(Date.now());
+  const daysElapsed = isCurrentWeek
+    ? Math.floor((startOfDay(Date.now()) - startOfWeek(Date.now())) / DAY_MS) + 1
+    : dailyData.length;
+  const avgMinutes = dailyData.length > 0 ? totalMinutes / daysElapsed : 0;
   const daysGoalMet = dailyData.filter((d) => d.minutes >= dailyTarget).length;
   const maxMinutes = Math.max(...dailyData.map((d) => d.minutes), dailyTarget, 1);
 
