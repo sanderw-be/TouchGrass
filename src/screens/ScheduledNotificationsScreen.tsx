@@ -17,6 +17,7 @@ import { scheduleAllScheduledNotifications } from '../notifications/scheduledNot
 import { spacing, radius, shadows } from '../utils/theme';
 import { useTheme } from '../context/ThemeContext';
 import { t } from '../i18n';
+import { uses24HourClock } from '../utils/helpers';
 
 const DAY_LABELS = ['day_sun', 'day_mon', 'day_tue', 'day_wed', 'day_thu', 'day_fri', 'day_sat'];
 
@@ -283,7 +284,7 @@ export default function ScheduledNotificationsScreen() {
                     <DateTimePicker
                       value={selectedTime}
                       mode="time"
-                      is24Hour={true}
+                      is24Hour={uses24HourClock()}
                       display="default"
                       onChange={onTimeChange}
                     />
