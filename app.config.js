@@ -6,8 +6,8 @@
 const { withAndroidManifest } = require('@expo/config-plugins');
 
 const withDailyPlannerNative = (config) => {
-  return withAndroidManifest(config, (config) => {
-    const androidManifest = config.modResults.manifest;
+  return withAndroidManifest(config, (modConfig) => {
+    const androidManifest = modConfig.modResults.manifest;
     const mainApplication = androidManifest.application[0];
 
     // 1. Add Permissions
@@ -30,21 +30,21 @@ const withDailyPlannerNative = (config) => {
     if (!mainApplication.service) mainApplication.service = [];
     if (!mainApplication.receiver) mainApplication.receiver = [];
 
-    const pkg = 'expo.modules.dailyplannernative';
+    const nativePackage = 'expo.modules.dailyplannernative';
 
-    const services = [`${pkg}.DailyPlannerHeadlessService`];
-    const receivers = [`${pkg}.ExactAlarmReceiver`, `${pkg}.BootReceiver`];
+    const services = [`${nativePackage}.DailyPlannerHeadlessService`];
+    const receivers = [`${nativePackage}.ExactAlarmReceiver`, `${nativePackage}.BootReceiver`];
 
-    services.forEach((s) => {
-      if (!mainApplication.service.find((item) => item.$['android:name'] === s)) {
-        mainApplication.service.push({ $: { 'android:name': s, 'android:exported': 'false' } });
+    services.forEach((serviceName) => {
+      if (!mainApplication.service.find((item) => item.$['android:name'] === serviceName)) {
+        mainApplication.service.push({ $: { 'android:name': serviceName, 'android:exported': 'false' } });
       }
     });
 
-    receivers.forEach((r) => {
-      if (!mainApplication.receiver.find((item) => item.$['android:name'] === r)) {
-        const receiverNode = { $: { 'android:name': r, 'android:exported': 'false' } };
-        if (r.includes('BootReceiver')) {
+    receivers.forEach((receiverName) => {
+      if (!mainApplication.receiver.find((item) => item.$['android:name'] === receiverName)) {
+        const receiverNode = { $: { 'android:name': receiverName, 'android:exported': 'false' } };
+        if (receiverName.includes('BootReceiver')) {
           receiverNode['intent-filter'] = [
             { action: [{ $: { 'android:name': 'android.intent.action.BOOT_COMPLETED' } }] },
           ];
@@ -55,7 +55,7 @@ const withDailyPlannerNative = (config) => {
       }
     });
 
-    return config;
+    return modConfig;
   });
 };
 
