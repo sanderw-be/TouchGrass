@@ -1,5 +1,4 @@
 import * as Notifications from 'expo-notifications';
-import * as TaskManager from 'expo-task-manager';
 import { Platform } from 'react-native';
 import {
   getTodayMinutes, getCurrentDailyGoal,
@@ -35,7 +34,6 @@ const SNOOZE_DURATION_MINUTES = 30;
 
 const DAILY_PLANNER_CHANNEL_ID = 'touchgrass_daily_planner';
 export const DAILY_PLANNER_NOTIF_PREFIX = 'daily_planner_';
-const DAILY_PLANNER_TASK_NAME = 'TOUCHGRASS_DAILY_PLANNER_TASK';
 
 // Prefix for "failsafe" reminders — DATE triggers scheduled for the next
 // FAILSAFE_DAYS_AHEAD days whenever scheduleDayReminders() runs.
@@ -43,37 +41,6 @@ const DAILY_PLANNER_TASK_NAME = 'TOUCHGRASS_DAILY_PLANNER_TASK';
 // and fire even if JS never runs at 3 AM.
 export const FAILSAFE_REMINDER_PREFIX = 'failsafe_reminder_';
 const FAILSAFE_DAYS_AHEAD = 3;
-
-// ---------------------------------------------------------------------------
-// Background notification task for the 3 AM daily planner wake-up.
-// Defined at module scope so expo-task-manager can invoke it in a headless
-// JS context (killed app state on Android).
-// ---------------------------------------------------------------------------
-TaskManager.defineTask<Notifications.NotificationTaskPayload>(
-  DAILY_PLANNER_TASK_NAME,
-  async ({ data, error }) => {
-    if (error) {
-      console.error('TouchGrass: Daily planner background task error:', error);
-      return Notifications.BackgroundNotificationTaskResult.Failed;
-    }
-
-    // Extract the notification identifier from the task payload.
-    // For local scheduled notifications on Android the payload arrives as
-    // { notification: { request: { identifier: '...' } } }.
-    const notifPayload = data as any;
-    const identifier: string =
-      notifPayload?.notification?.request?.identifier ?? '';
-
-    if (!identifier.startsWith(DAILY_PLANNER_NOTIF_PREFIX)) {
-      // Not our wake-up — let other handlers deal with it.
-      return Notifications.BackgroundNotificationTaskResult.NoData;
-    }
-
-    console.log('TouchGrass: Daily planner background task fired, rescheduling notifications');
-    await runDailyPlannerWork(identifier);
-    return Notifications.BackgroundNotificationTaskResult.NewData;
-  },
-);
 
 /**
  * Perform the work triggered by the daily planner wake-up notification:
@@ -169,19 +136,6 @@ export async function setupNotificationInfrastructure(): Promise<void> {
       console.log('TouchGrass: Daily planner notification channel created');
     } catch (e) {
       console.warn('TouchGrass: Failed to create daily planner channel:', e);
-    }
-
-    // Register the background notification task.
-    // NOTE: With the native WorkManager approach the 3 AM wake-up no longer
-    // relies on this task.  We keep it registered as a best-effort layer for
-    // any remaining daily planner notifications from prior app versions and
-    // for foreground/background states where expo-notifications delivers the
-    // payload to JS.
-    try {
-      await Notifications.registerTaskAsync(DAILY_PLANNER_TASK_NAME);
-      console.log('TouchGrass: Daily planner background task registered');
-    } catch (e) {
-      console.warn('TouchGrass: Failed to register daily planner background task:', e);
     }
   }
 

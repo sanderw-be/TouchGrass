@@ -2,3 +2,6 @@
 # strip or rename them.  Expo modules are discovered reflectively at runtime
 # and must retain their original class names.
 -keep class expo.modules.dailyplannernative.** { *; }
+
+# Keep WorkManager workers — WorkManager instantiates them by class name.
+-keep class * extends androidx.work.ListenableWorker { *; }
