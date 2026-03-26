@@ -1,6 +1,6 @@
 import * as Notifications from 'expo-notifications';
-import * as TaskManager from 'expo-task-manager';
 import { Platform } from 'react-native';
+import { scheduleDailyPlanner } from '../../modules/daily-planner-native';
 import {
   getTodayMinutes, getCurrentDailyGoal,
   getSetting, setSetting, insertReminderFeedback,
@@ -35,7 +35,6 @@ const SNOOZE_DURATION_MINUTES = 30;
 
 const DAILY_PLANNER_CHANNEL_ID = 'touchgrass_daily_planner';
 export const DAILY_PLANNER_NOTIF_PREFIX = 'daily_planner_';
-const DAILY_PLANNER_TASK_NAME = 'TOUCHGRASS_DAILY_PLANNER_TASK';
 
 // Prefix for "failsafe" reminders — DATE triggers scheduled for the next
 // FAILSAFE_DAYS_AHEAD days whenever scheduleDayReminders() runs.
@@ -43,62 +42,6 @@ const DAILY_PLANNER_TASK_NAME = 'TOUCHGRASS_DAILY_PLANNER_TASK';
 // and fire even if JS never runs at 3 AM.
 export const FAILSAFE_REMINDER_PREFIX = 'failsafe_reminder_';
 const FAILSAFE_DAYS_AHEAD = 3;
-
-// ---------------------------------------------------------------------------
-// Background notification task for the 3 AM daily planner wake-up.
-// Defined at module scope so expo-task-manager can invoke it in a headless
-// JS context (killed app state on Android).
-// ---------------------------------------------------------------------------
-TaskManager.defineTask<Notifications.NotificationTaskPayload>(
-  DAILY_PLANNER_TASK_NAME,
-  async ({ data, error }) => {
-    if (error) {
-      console.error('TouchGrass: Daily planner background task error:', error);
-      return Notifications.BackgroundNotificationTaskResult.Failed;
-    }
-
-    // Extract the notification identifier from the task payload.
-    // For local scheduled notifications on Android the payload arrives as
-    // { notification: { request: { identifier: '...' } } }.
-    const notifPayload = data as any;
-    const identifier: string =
-      notifPayload?.notification?.request?.identifier ?? '';
-
-    if (!identifier.startsWith(DAILY_PLANNER_NOTIF_PREFIX)) {
-      // Not our wake-up — let other handlers deal with it.
-      return Notifications.BackgroundNotificationTaskResult.NoData;
-    }
-
-    console.log('TouchGrass: Daily planner background task fired, rescheduling notifications');
-    await runDailyPlannerWork(identifier);
-    return Notifications.BackgroundNotificationTaskResult.NewData;
-  },
-);
-
-/**
- * Perform the work triggered by the daily planner wake-up notification:
- * reschedule smart reminders and scheduled notifications, then dismiss the
- * wake-up notification so it doesn't linger in the notification tray.
- */
-async function runDailyPlannerWork(notificationId: string): Promise<void> {
-  try {
-    await scheduleDayReminders();
-  } catch (e) {
-    console.warn('TouchGrass: Daily planner — scheduleDayReminders failed:', e);
-  }
-
-  try {
-    await scheduleAllScheduledNotifications();
-  } catch (e) {
-    console.warn('TouchGrass: Daily planner — scheduleAllScheduledNotifications failed:', e);
-  }
-
-  try {
-    await Notifications.dismissNotificationAsync(notificationId);
-  } catch (e) {
-    console.warn('TouchGrass: Daily planner — failed to dismiss notification:', e);
-  }
-}
 
 async function createReminderChannels(): Promise<void> {
   const reminderChannelConfig = {
@@ -170,18 +113,13 @@ export async function setupNotificationInfrastructure(): Promise<void> {
       console.warn('TouchGrass: Failed to create daily planner channel:', e);
     }
 
-    // Register the background notification task.
-    // NOTE: On Android, registerTaskAsync / TaskManager.defineTask only fires
-    // for *remote* FCM push notifications — it does NOT run for local WEEKLY
-    // scheduled notifications in the killed-app state.  The failsafe DATE
-    // triggers scheduled by scheduleDayReminders() are the reliable fallback
-    // for that case.  We keep this registration as a best-effort layer for
-    // future Expo versions or the background/foreground states.
+    // Schedule the native WorkManager-based daily planner (fires at 3 AM,
+    // survives app force-close and device reboot).
     try {
-      await Notifications.registerTaskAsync(DAILY_PLANNER_TASK_NAME);
-      console.log('TouchGrass: Daily planner background task registered');
+      await scheduleDailyPlanner();
+      console.log('TouchGrass: Native daily planner scheduled via WorkManager');
     } catch (e) {
-      console.warn('TouchGrass: Failed to register daily planner background task:', e);
+      console.warn('TouchGrass: Failed to schedule native daily planner:', e);
     }
   }
 
@@ -231,13 +169,21 @@ export async function setupNotificationInfrastructure(): Promise<void> {
   Notifications.addNotificationResponseReceivedListener(handleNotificationResponse);
 
   // Handle the daily planner notification arriving while the app is in foreground.
-  // This is the foreground counterpart to the background task defined at module top level.
+  // This is the foreground counterpart to the native HeadlessJS task.
   Notifications.addNotificationReceivedListener((notification) => {
     if (notification.request.identifier.startsWith(DAILY_PLANNER_NOTIF_PREFIX)) {
       console.log('TouchGrass: Daily planner notification received in foreground, running scheduling');
-      runDailyPlannerWork(notification.request.identifier).catch((e) =>
-        console.warn('TouchGrass: Daily planner foreground work failed:', e),
-      );
+      (async () => {
+        try { await scheduleDayReminders(); } catch (e: any) {
+          console.warn('TouchGrass: Daily planner — scheduleDayReminders failed:', e);
+        }
+        try { await scheduleAllScheduledNotifications(); } catch (e: any) {
+          console.warn('TouchGrass: Daily planner — scheduleAllScheduledNotifications failed:', e);
+        }
+        try { await Notifications.dismissNotificationAsync(notification.request.identifier); } catch (e: any) {
+          console.warn('TouchGrass: Daily planner — failed to dismiss notification:', e);
+        }
+      })();
     }
   });
 }
@@ -741,15 +687,26 @@ async function cancelAutomaticReminders(): Promise<void> {
  * fires every day at 03:00, using AlarmManager directly.  This survives
  * app force-close because WEEKLY triggers bypass WorkManager.
  *
+ * Additionally schedules a native WorkManager job via the daily-planner-native
+ * module as a defense-in-depth layer that fires the HeadlessJS task at 3 AM.
+ *
  * The notification is shown on a MIN-importance channel (no sound, no
- * vibration, no heads-up).  The background task (TOUCHGRASS_DAILY_PLANNER_TASK)
- * immediately runs scheduleDayReminders() + scheduleAllScheduledNotifications()
- * and then dismisses the notification, so the user never sees it linger.
+ * vibration, no heads-up).  The foreground listener immediately runs
+ * scheduleDayReminders() + scheduleAllScheduledNotifications() and then
+ * dismisses the notification, so the user never sees it linger.
  *
  * Call this once on app startup and after the intro is completed.
  */
 export async function scheduleDailyPlannerWakeup(): Promise<void> {
   if (Platform.OS !== 'android') return;
+
+  // Always (re-)register the native WorkManager job regardless of
+  // notification permission — WorkManager + HeadlessJS does not need it.
+  try {
+    await scheduleDailyPlanner();
+  } catch (e) {
+    console.warn('TouchGrass: Failed to schedule native daily planner:', e);
+  }
 
   try {
     const { status } = await Notifications.getPermissionsAsync();

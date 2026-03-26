@@ -23,6 +23,7 @@ import * as WeatherService from '../weather/weatherService';
 import * as WeatherAlgorithm from '../weather/weatherAlgorithm';
 import * as CalendarService from '../calendar/calendarService';
 import * as FeedbackContext from '../context/ReminderFeedbackContext';
+import * as DailyPlannerNative from '../../modules/daily-planner-native';
 import {
   scheduleNextReminder,
   scheduleDayReminders,
@@ -1110,26 +1111,24 @@ describe('notificationManager', () => {
       (Platform as any).OS = originalOS;
     });
 
-    it('registers the daily planner background task on Android', async () => {
+    it('schedules the native daily planner via WorkManager on Android', async () => {
       const originalOS = Platform.OS;
       (Platform as any).OS = 'android';
 
       await setupNotificationInfrastructure();
 
-      expect(Notifications.registerTaskAsync).toHaveBeenCalledWith(
-        'TOUCHGRASS_DAILY_PLANNER_TASK',
-      );
+      expect(DailyPlannerNative.scheduleDailyPlanner).toHaveBeenCalled();
 
       (Platform as any).OS = originalOS;
     });
 
-    it('does not register the daily planner task on non-Android platforms', async () => {
+    it('does not schedule the native daily planner on non-Android platforms', async () => {
       const originalOS = Platform.OS;
       (Platform as any).OS = 'ios';
 
       await setupNotificationInfrastructure();
 
-      expect(Notifications.registerTaskAsync).not.toHaveBeenCalled();
+      expect(DailyPlannerNative.scheduleDailyPlanner).not.toHaveBeenCalled();
 
       (Platform as any).OS = originalOS;
     });
@@ -1156,18 +1155,33 @@ describe('notificationManager', () => {
       await scheduleDailyPlannerWakeup();
 
       expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
+      expect(DailyPlannerNative.scheduleDailyPlanner).not.toHaveBeenCalled();
 
       (Platform as any).OS = originalOS;
     });
 
-    it('does nothing when notification permissions are not granted', async () => {
+    it('still calls native scheduleDailyPlanner when notification permissions are not granted', async () => {
       const originalOS = Platform.OS;
       (Platform as any).OS = 'android';
       (Notifications.getPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'denied' });
 
       await scheduleDailyPlannerWakeup();
 
+      // WEEKLY expo-notifications are skipped without permission…
       expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
+      // …but the native WorkManager job does not need notification permission.
+      expect(DailyPlannerNative.scheduleDailyPlanner).toHaveBeenCalled();
+
+      (Platform as any).OS = originalOS;
+    });
+
+    it('calls native scheduleDailyPlanner on Android', async () => {
+      const originalOS = Platform.OS;
+      (Platform as any).OS = 'android';
+
+      await scheduleDailyPlannerWakeup();
+
+      expect(DailyPlannerNative.scheduleDailyPlanner).toHaveBeenCalled();
 
       (Platform as any).OS = originalOS;
     });
