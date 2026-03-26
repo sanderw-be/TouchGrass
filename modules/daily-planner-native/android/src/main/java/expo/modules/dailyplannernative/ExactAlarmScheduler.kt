@@ -13,7 +13,7 @@ import java.util.Calendar
  * Schedules exact alarms via [AlarmManager.setExactAndAllowWhileIdle].
  * Each alarm is identified by an integer [requestCode] so it can be cancelled
  * later.  When the alarm fires, [ExactAlarmReceiver] starts the
- * [DailyPlannerHeadlessService] to execute JS‑side logic.
+ * [DailyPlannerHeadlessService] to execute JS-side logic.
  */
 object ExactAlarmScheduler {
 
@@ -26,7 +26,7 @@ object ExactAlarmScheduler {
   fun scheduleExact(context: Context, requestCode: Int, hour: Int, minute: Int): Boolean {
     val am = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager ?: return false
 
-    // On Android 12+ check the exact‑alarm permission
+    // On Android 12+ check the exact-alarm permission
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !am.canScheduleExactAlarms()) {
       Log.w(TAG, "Exact alarms not permitted; falling back to inexact")
       return false
@@ -44,7 +44,7 @@ object ExactAlarmScheduler {
 
     val pi = buildPendingIntent(context, requestCode)
     am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, calendar.timeInMillis, pi)
-    Log.i(TAG, "Exact alarm scheduled: id=$requestCode at $hour:${minute.toString().padStart(2, '0')}")
+    Log.i(TAG, "exact alarm scheduled: id=$requestCode at $hour:${minute.toString().padStart(2, '0')}")
     return true
   }
 
@@ -54,7 +54,7 @@ object ExactAlarmScheduler {
   fun cancel(context: Context, requestCode: Int) {
     val am = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager ?: return
     am.cancel(buildPendingIntent(context, requestCode))
-    Log.i(TAG, "Exact alarm cancelled: id=$requestCode")
+    Log.i(TAG, "exact alarm cancelled: id=$requestCode")
   }
 
   private fun buildPendingIntent(context: Context, requestCode: Int): PendingIntent {
@@ -69,7 +69,7 @@ object ExactAlarmScheduler {
 }
 
 /**
- * Receives exact‑alarm broadcasts and delegates to the headless JS service.
+ * Receives exact-alarm broadcasts and delegates to the headless JS service.
  */
 class ExactAlarmReceiver : BroadcastReceiver() {
   override fun onReceive(context: Context, intent: Intent?) {

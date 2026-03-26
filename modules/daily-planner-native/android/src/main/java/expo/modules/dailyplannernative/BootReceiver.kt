@@ -8,9 +8,9 @@ import android.util.Log
 /**
  * Receives [Intent.ACTION_BOOT_COMPLETED] after the device restarts.
  *
- * Re‑enqueues the daily 3 AM WorkManager job and starts the headless JS
+ * Re-enqueues the daily 3 AM WorkManager job and starts the headless JS
  * service so that any reminders missed during the reboot window are
- * immediately re‑planned.
+ * immediately re-planned.
  */
 class BootReceiver : BroadcastReceiver() {
   override fun onReceive(context: Context, intent: Intent?) {
@@ -23,7 +23,7 @@ class BootReceiver : BroadcastReceiver() {
       Log.e(TAG, "Failed to reschedule WorkManager job after boot", e)
     }
 
-    Log.i(TAG, "Running headless task to re‑plan reminders after reboot")
+    Log.i(TAG, "Running headless task to re-plan reminders after reboot")
     try {
       DailyPlannerHeadlessService.start(context)
     } catch (e: Exception) {

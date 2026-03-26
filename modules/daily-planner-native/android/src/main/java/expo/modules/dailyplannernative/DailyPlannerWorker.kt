@@ -12,8 +12,8 @@ import kotlin.coroutines.resume
  *
  * When invoked it starts [DailyPlannerHeadlessService] which boots the React
  * Native JS engine (if not already running) and executes the HeadlessJS task
- * named "DailyPlannerTask".  That JS function performs smart‑reminder
- * planning, scheduled‑notification rescheduling, and calendar‑event creation.
+ * named "DailyPlannerTask".  That JS function performs smart-reminder
+ * planning, scheduled-notification rescheduling, and calendar-event creation.
  */
 class DailyPlannerWorker(
   context: Context,
@@ -36,7 +36,7 @@ class DailyPlannerWorker(
       DailyPlannerHeadlessService.start(applicationContext)
       cont.resume(Unit)
     } catch (e: Exception) {
-      cont.resume(Unit) // Don't crash; the service start is best‑effort
+      cont.resume(Unit) // Don't crash; the service start is best-effort
       Log.w(TAG, "Could not start headless service", e)
     }
   }
