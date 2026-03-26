@@ -42,7 +42,8 @@
     "react-native-localize": "^3.7.0",
     "react-native-safe-area-context": "~5.6.2",
     "react-native-screens": "~4.23.0",
-    "react-native-svg": "15.15.3"
+    "react-native-svg": "15.15.3",
+    "daily-planner-native": "file:./modules/daily-planner-native"
   },
   "devDependencies": {
     "@testing-library/jest-native": "^5.4.3",
