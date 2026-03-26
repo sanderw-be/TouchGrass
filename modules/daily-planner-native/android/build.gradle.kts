@@ -1,6 +1,7 @@
 plugins {
   id("com.android.library")
   id("org.jetbrains.kotlin.android")
+  id("expo-module")
 }
 
 android {
@@ -23,7 +24,6 @@ android {
 }
 
 dependencies {
-  implementation(project(":expo-modules-core"))
   implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.9.25")
   implementation("androidx.work:work-runtime-ktx:2.9.1")
   implementation("com.facebook.react:react-android")
