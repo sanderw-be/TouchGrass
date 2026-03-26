@@ -156,7 +156,8 @@ export async function setupNotificationInfrastructure(): Promise<void> {
       console.warn('TouchGrass: Failed to create reminder channels:', e);
     }
 
-    // Create the silent daily planner channel used for the 3 AM wake-up
+    // Create the silent daily planner channel — kept for backwards compatibility
+    // in case any legacy scheduled notifications reference it.
     try {
       await Notifications.setNotificationChannelAsync(DAILY_PLANNER_CHANNEL_ID, {
         name: t('notif_channel_daily_planner_name'),
@@ -171,12 +172,11 @@ export async function setupNotificationInfrastructure(): Promise<void> {
     }
 
     // Register the background notification task.
-    // NOTE: On Android, registerTaskAsync / TaskManager.defineTask only fires
-    // for *remote* FCM push notifications — it does NOT run for local WEEKLY
-    // scheduled notifications in the killed-app state.  The failsafe DATE
-    // triggers scheduled by scheduleDayReminders() are the reliable fallback
-    // for that case.  We keep this registration as a best-effort layer for
-    // future Expo versions or the background/foreground states.
+    // NOTE: With the native WorkManager approach the 3 AM wake-up no longer
+    // relies on this task.  We keep it registered as a best-effort layer for
+    // any remaining daily planner notifications from prior app versions and
+    // for foreground/background states where expo-notifications delivers the
+    // payload to JS.
     try {
       await Notifications.registerTaskAsync(DAILY_PLANNER_TASK_NAME);
       console.log('TouchGrass: Daily planner background task registered');
@@ -736,15 +736,14 @@ async function cancelAutomaticReminders(): Promise<void> {
 }
 
 /**
- * Schedule (or reschedule) the daily 3 AM wake-up notifications.
- * Creates one WEEKLY trigger per day of the week so that the notification
- * fires every day at 03:00, using AlarmManager directly.  This survives
- * app force-close because WEEKLY triggers bypass WorkManager.
+ * Schedule (or reschedule) the daily 3 AM planning cycle.
  *
- * The notification is shown on a MIN-importance channel (no sound, no
- * vibration, no heads-up).  The background task (TOUCHGRASS_DAILY_PLANNER_TASK)
- * immediately runs scheduleDayReminders() + scheduleAllScheduledNotifications()
- * and then dismisses the notification, so the user never sees it linger.
+ * Uses the native WorkManager job provided by the `daily-planner-native`
+ * Expo module.  WorkManager persists across app restarts, device reboots,
+ * and force-close — no user-visible notification is required.
+ *
+ * Any legacy WEEKLY notification triggers (`daily_planner_*`) are cancelled
+ * so they don't fire alongside the new native worker.
  *
  * Call this once on app startup and after the intro is completed.
  */
@@ -752,14 +751,8 @@ export async function scheduleDailyPlannerWakeup(): Promise<void> {
   if (Platform.OS !== 'android') return;
 
   try {
-    const { status } = await Notifications.getPermissionsAsync();
-    if (status !== 'granted') {
-      console.warn('TouchGrass: Cannot schedule daily planner — notification permission not granted');
-      return;
-    }
-
-    // Cancel any previously scheduled daily planner notifications first so we
-    // don't accumulate duplicates across app restarts.
+    // Cancel any legacy WEEKLY daily planner notifications that may still be
+    // scheduled from a previous version of the app.
     const all = await Notifications.getAllScheduledNotificationsAsync();
     for (const notif of all) {
       if (notif.identifier.startsWith(DAILY_PLANNER_NOTIF_PREFIX)) {
@@ -767,44 +760,25 @@ export async function scheduleDailyPlannerWakeup(): Promise<void> {
       }
     }
 
-    // Schedule one WEEKLY notification per day of the week at 03:00.
-    // expo-notifications weekday: 1 = Sunday … 7 = Saturday.
-    for (let expoWeekday = 1; expoWeekday <= 7; expoWeekday++) {
-      await Notifications.scheduleNotificationAsync({
-        identifier: `${DAILY_PLANNER_NOTIF_PREFIX}${expoWeekday}`,
-        content: {
-          title: t('notif_daily_planner_title'),
-          body: t('notif_daily_planner_body'),
-          // No category — this notification should never be tapped by the user.
-        },
-        trigger: {
-          type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
-          weekday: expoWeekday,
-          hour: 3,
-          minute: 0,
-          channelId: DAILY_PLANNER_CHANNEL_ID,
-        },
-      });
-    }
+    // Schedule the native WorkManager job for ~3 AM daily.
+    const { scheduleDailyPlanner } = require('../../modules/daily-planner-native');
+    await scheduleDailyPlanner();
 
-    console.log('TouchGrass: Daily planner wake-up notifications scheduled (3 AM, every day)');
+    console.log('TouchGrass: Native daily planner WorkManager job scheduled (3 AM, every day)');
   } catch (e) {
-    console.warn('TouchGrass: Failed to schedule daily planner wake-up:', e);
+    console.warn('TouchGrass: Failed to schedule native daily planner:', e);
   }
 }
 
 /**
- * Dismiss any daily planner wake-up notifications currently displayed in the
- * Android notification tray.  Call this after scheduling work is complete so
- * the notification is removed once the app has done its job.
- * Safe to call when no daily planner notification is displayed — dismissing a
- * notification that is not present is a no-op on Android.
+ * Dismiss any legacy daily planner wake-up notifications currently displayed
+ * in the Android notification tray.  With the native WorkManager approach no
+ * new daily planner notifications are created, but older versions of the app
+ * may have left some behind.  Safe to call at any time.
  */
 export async function dismissDailyPlannerNotifications(): Promise<void> {
   if (Platform.OS !== 'android') return;
-  // There is one notification per weekday (identifiers daily_planner_1…7).
-  // We try to dismiss all of them; any that are not currently displayed are
-  // silently ignored.
+  // Legacy identifiers daily_planner_1…7.
   for (let weekday = 1; weekday <= 7; weekday++) {
     try {
       await Notifications.dismissNotificationAsync(`${DAILY_PLANNER_NOTIF_PREFIX}${weekday}`);

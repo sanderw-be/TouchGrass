@@ -40,6 +40,7 @@ export default function IntroScreen({ onComplete }: Props) {
   const [introSheetCoords, setIntroSheetCoords] = useState<{ latitude: number; longitude: number } | undefined>();
   const [introSheetLabel, setIntroSheetLabel] = useState('');
   const [pendingLocationType, setPendingLocationType] = useState<'home' | 'work' | null>(null);
+  const [batteryOptIgnored, setBatteryOptIgnored] = useState(false);
 
   const steps: Step[] = ['welcome', 'health-connect', 'location', 'notifications', 'calendar', 'ready'];
   const currentIndex = steps.indexOf(currentStep);
@@ -70,6 +71,15 @@ export default function IntroScreen({ onComplete }: Props) {
       // Check notification permissions
       const { status } = await Notifications.getPermissionsAsync();
       setNotificationsGranted(status === 'granted');
+      // Check battery optimization status (Android only)
+      if (Platform.OS === 'android') {
+        try {
+          const { isBatteryOptimizationIgnored: checkBattery } = require('../../modules/daily-planner-native');
+          setBatteryOptIgnored(checkBattery());
+        } catch {
+          // Module not available — ignore.
+        }
+      }
     } else if (currentStep === 'calendar') {
       const calGranted = await hasCalendarPermissions();
       setCalendarGranted(calGranted);
@@ -208,6 +218,15 @@ export default function IntroScreen({ onComplete }: Props) {
     }
   };
 
+  const handleRequestBatteryOptimization = () => {
+    try {
+      const { requestIgnoreBatteryOptimizations } = require('../../modules/daily-planner-native');
+      requestIgnoreBatteryOptimizations();
+    } catch (e) {
+      console.warn('Could not open battery optimization settings:', e);
+    }
+  };
+
   const CALENDAR_BUFFER_OPTIONS = [10, 20, 30, 45, 60];
   const CALENDAR_DURATION_OPTIONS = [0, 5, 10, 15, 20, 30];
 
@@ -281,6 +300,8 @@ export default function IntroScreen({ onComplete }: Props) {
               onRequest={handleRequestNotifications}
               granted={notificationsGranted}
               requesting={requestingPermission}
+              onRequestBattery={handleRequestBatteryOptimization}
+              batteryIgnored={batteryOptIgnored}
             />
           )}
           {currentStep === 'calendar' && (
@@ -453,7 +474,7 @@ function LocationStep({
   );
 }
 
-function NotificationsStep({ onRequest, granted, requesting }: { onRequest: () => void; granted: boolean; requesting: boolean }) {
+function NotificationsStep({ onRequest, granted, requesting, onRequestBattery, batteryIgnored }: { onRequest: () => void; granted: boolean; requesting: boolean; onRequestBattery?: () => void; batteryIgnored?: boolean }) {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   return (
@@ -478,6 +499,23 @@ function NotificationsStep({ onRequest, granted, requesting }: { onRequest: () =
           </Text>
         )}
       </TouchableOpacity>
+      {Platform.OS === 'android' && onRequestBattery && (
+        <>
+          <View style={styles.permissionCard}>
+            <Text style={styles.permissionTitle}>{t('intro_battery_why_title')}</Text>
+            <Text style={styles.permissionBody}>{t('intro_battery_why_body')}</Text>
+          </View>
+          <TouchableOpacity
+            style={[styles.permissionButton, batteryIgnored && styles.permissionButtonGranted]}
+            onPress={onRequestBattery}
+            disabled={batteryIgnored}
+          >
+            <Text style={styles.permissionButtonText}>
+              {batteryIgnored ? t('intro_battery_button_granted') : t('intro_battery_button')}
+            </Text>
+          </TouchableOpacity>
+        </>
+      )}
       <Text style={styles.hint}>{t('intro_notifications_hint')}</Text>
     </View>
   );

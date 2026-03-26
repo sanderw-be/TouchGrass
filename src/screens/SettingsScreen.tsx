@@ -53,6 +53,8 @@ export default function SettingsScreen() {
   const [calendarSelectedId, setCalendarSelectedIdState] = useState('');
   const [calendarOptions, setCalendarOptions] = useState<{ id: string; title: string }[]>([]);
 
+  // Battery optimization state (Android only)
+  const [batteryOptIgnored, setBatteryOptIgnored] = useState(false);
   const styles = useMemo(() => makeStyles(colors), [colors]);
 
   const loadStatus = useCallback(() => {
@@ -69,6 +71,16 @@ export default function SettingsScreen() {
     setCalendarBuffer(parseInt(getSetting('calendar_buffer_minutes', '30'), 10));
     setCalendarDuration(parseInt(getSetting('calendar_default_duration', '0'), 10));
     setCalendarSelectedIdState(getSelectedCalendarId());
+
+    // Battery optimization check (Android only)
+    if (Platform.OS === 'android') {
+      try {
+        const { isBatteryOptimizationIgnored: checkBattery } = require('../../modules/daily-planner-native');
+        setBatteryOptIgnored(checkBattery());
+      } catch {
+        // Module not available (e.g. in tests or on iOS) — ignore.
+      }
+    }
   }, []);
 
   // Re-check permission status silently (no popups) when the screen regains focus
@@ -86,6 +98,16 @@ export default function SettingsScreen() {
     if (calGranted) {
       const cals = await getWritableCalendars();
       setCalendarOptions(cals.map((c) => ({ id: c.id, title: c.title })));
+    }
+
+    // Refresh battery optimization status (Android only)
+    if (Platform.OS === 'android') {
+      try {
+        const { isBatteryOptimizationIgnored: checkBattery } = require('../../modules/daily-planner-native');
+        setBatteryOptIgnored(checkBattery());
+      } catch {
+        // Module not available — ignore.
+      }
     }
   }, []);
 
@@ -168,6 +190,15 @@ export default function SettingsScreen() {
     const next = SMART_REMINDERS_OPTIONS[(idx + 1) % SMART_REMINDERS_OPTIONS.length];
     setSetting('smart_reminders_count', String(next));
     setSmartRemindersCount(next);
+  };
+
+  const handleBatteryOptimization = () => {
+    try {
+      const { requestIgnoreBatteryOptimizations } = require('../../modules/daily-planner-native');
+      requestIgnoreBatteryOptimizations();
+    } catch (e) {
+      console.warn('Could not open battery optimization settings:', e);
+    }
   };
 
   const changeLanguage = (code: string) => {
@@ -403,6 +434,25 @@ export default function SettingsScreen() {
           label={t('settings_background_tracking_label')}
           sublabel={t('settings_background_tracking_sublabel')}
         />
+        {Platform.OS === 'android' && (
+          <>
+            <Divider />
+            <TouchableOpacity onPress={handleBatteryOptimization}>
+              <SettingRow
+                icon="🔋"
+                label={t('settings_battery_optimization_label')}
+                sublabel={t('settings_battery_optimization_sublabel')}
+                right={
+                  <Text style={styles.valueChip}>
+                    {batteryOptIgnored
+                      ? t('settings_battery_optimization_exempt')
+                      : t('settings_battery_optimization_not_exempt')}
+                  </Text>
+                }
+              />
+            </TouchableOpacity>
+          </>
+        )}
       </View>
 
       {/* Weather settings */}

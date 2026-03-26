@@ -1,0 +1,31 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+  <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+  <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+  <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+
+  <application>
+
+    <service
+      android:name="expo.modules.dailyplannernative.DailyPlannerHeadlessService"
+      android:enabled="true"
+      android:exported="false"
+      android:permission="android.permission.BIND_JOB_SERVICE" />
+
+    <receiver
+      android:name="expo.modules.dailyplannernative.BootReceiver"
+      android:enabled="true"
+      android:exported="true">
+      <intent-filter>
+        <action android:name="android.intent.action.BOOT_COMPLETED" />
+      </intent-filter>
+    </receiver>
+
+    <receiver
+      android:name="expo.modules.dailyplannernative.ExactAlarmReceiver"
+      android:enabled="true"
+      android:exported="false" />
+
+  </application>
+
+</manifest>

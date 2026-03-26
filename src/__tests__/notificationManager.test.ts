@@ -1160,78 +1160,45 @@ describe('notificationManager', () => {
       (Platform as any).OS = originalOS;
     });
 
-    it('does nothing when notification permissions are not granted', async () => {
+    it('schedules native daily planner even without notification permissions', async () => {
       const originalOS = Platform.OS;
       (Platform as any).OS = 'android';
       (Notifications.getPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'denied' });
+      const { scheduleDailyPlanner } = require('../../modules/daily-planner-native');
 
       await scheduleDailyPlannerWakeup();
 
+      // WorkManager does not require notification permissions
+      expect(scheduleDailyPlanner).toHaveBeenCalled();
+
+      (Platform as any).OS = originalOS;
+    });
+
+    it('calls native scheduleDailyPlanner on Android', async () => {
+      const originalOS = Platform.OS;
+      (Platform as any).OS = 'android';
+      const { scheduleDailyPlanner } = require('../../modules/daily-planner-native');
+
+      await scheduleDailyPlannerWakeup();
+
+      expect(scheduleDailyPlanner).toHaveBeenCalledTimes(1);
+
+      (Platform as any).OS = originalOS;
+    });
+
+    it('does not schedule WEEKLY notifications (legacy approach removed)', async () => {
+      const originalOS = Platform.OS;
+      (Platform as any).OS = 'android';
+
+      await scheduleDailyPlannerWakeup();
+
+      // No WEEKLY notification scheduling — the native WorkManager handles the 3 AM trigger.
       expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
 
       (Platform as any).OS = originalOS;
     });
 
-    it('schedules exactly 7 WEEKLY notifications on Android when permissions granted', async () => {
-      const originalOS = Platform.OS;
-      (Platform as any).OS = 'android';
-
-      await scheduleDailyPlannerWakeup();
-
-      expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledTimes(7);
-
-      (Platform as any).OS = originalOS;
-    });
-
-    it('schedules all notifications at 03:00 via WEEKLY trigger on the daily planner channel', async () => {
-      const originalOS = Platform.OS;
-      (Platform as any).OS = 'android';
-
-      await scheduleDailyPlannerWakeup();
-
-      const calls = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls;
-      for (const [arg] of calls) {
-        expect(arg.trigger).toEqual(
-          expect.objectContaining({
-            type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
-            hour: 3,
-            minute: 0,
-            channelId: 'touchgrass_daily_planner',
-          }),
-        );
-      }
-
-      (Platform as any).OS = originalOS;
-    });
-
-    it('covers all 7 weekdays (expo weekdays 1–7)', async () => {
-      const originalOS = Platform.OS;
-      (Platform as any).OS = 'android';
-
-      await scheduleDailyPlannerWakeup();
-
-      const calls = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls;
-      const weekdays = calls.map(([arg]: [any]) => arg.trigger.weekday).sort();
-      expect(weekdays).toEqual([1, 2, 3, 4, 5, 6, 7]);
-
-      (Platform as any).OS = originalOS;
-    });
-
-    it('uses the daily_planner_ identifier prefix for all scheduled notifications', async () => {
-      const originalOS = Platform.OS;
-      (Platform as any).OS = 'android';
-
-      await scheduleDailyPlannerWakeup();
-
-      const calls = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls;
-      for (const [arg] of calls) {
-        expect(arg.identifier).toMatch(new RegExp(`^${DAILY_PLANNER_NOTIF_PREFIX}`));
-      }
-
-      (Platform as any).OS = originalOS;
-    });
-
-    it('cancels existing daily planner notifications before rescheduling', async () => {
+    it('cancels existing legacy daily planner notifications', async () => {
       const originalOS = Platform.OS;
       (Platform as any).OS = 'android';
       (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([
@@ -1246,21 +1213,6 @@ describe('notificationManager', () => {
       expect(Notifications.cancelScheduledNotificationAsync).toHaveBeenCalledWith('daily_planner_5');
       // Must not cancel unrelated scheduled notifications
       expect(Notifications.cancelScheduledNotificationAsync).not.toHaveBeenCalledWith('scheduled_some_notif');
-
-      (Platform as any).OS = originalOS;
-    });
-
-    it('sets the localised body text on each notification', async () => {
-      const originalOS = Platform.OS;
-      (Platform as any).OS = 'android';
-
-      await scheduleDailyPlannerWakeup();
-
-      const calls = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls;
-      for (const [arg] of calls) {
-        // t() is mocked to return the key, so body should equal the i18n key
-        expect(arg.content.body).toBe('notif_daily_planner_body');
-      }
 
       (Platform as any).OS = originalOS;
     });

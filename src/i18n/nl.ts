@@ -350,6 +350,16 @@ export default {
   notif_daily_planner_title: 'TouchGrass',
   notif_daily_planner_body: 'Open de app om de planning voor vandaag te voltooien.',
 
+  // Batterijoptimalisatie
+  settings_battery_optimization_label: 'Batterijoptimalisatie',
+  settings_battery_optimization_sublabel: 'Stel TouchGrass vrij zodat achtergrondherinneringen altijd op tijd aankomen',
+  settings_battery_optimization_exempt: 'Vrijgesteld ✓',
+  settings_battery_optimization_not_exempt: 'Niet vrijgesteld',
+  intro_battery_why_title: 'Waarom batterijoptimalisatie uitschakelen?',
+  intro_battery_why_body: 'Android kan achtergrondtaken (zoals je dagelijkse herinnering om 3 uur) vertragen of overslaan om de batterij te sparen. Door TouchGrass vrij te stellen komen herinneringen altijd op tijd aan.',
+  intro_battery_button: 'Batterijoptimalisatie uitschakelen',
+  intro_battery_button_granted: 'Vrijgesteld ✓',
+
   // Scheduled notifications
   scheduled_notif_body: 'Je geplande herinnering om naar buiten te gaan.',
   scheduled_empty: 'Nog geen geplande herinneringen',

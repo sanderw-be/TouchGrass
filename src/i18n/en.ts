@@ -350,6 +350,16 @@ export default {
   notif_daily_planner_title: 'TouchGrass',
   notif_daily_planner_body: 'Open the app to complete planning for today.',
 
+  // Battery optimization
+  settings_battery_optimization_label: 'Battery optimization',
+  settings_battery_optimization_sublabel: 'Exempt TouchGrass so background reminders always fire on time',
+  settings_battery_optimization_exempt: 'Exempt ✓',
+  settings_battery_optimization_not_exempt: 'Not exempt',
+  intro_battery_why_title: 'Why disable battery optimization?',
+  intro_battery_why_body: 'Android may delay or skip background tasks (like your 3 AM reminder planning) to save battery. Exempting TouchGrass ensures reminders always arrive on time.',
+  intro_battery_button: 'Disable Battery Optimization',
+  intro_battery_button_granted: 'Exempt ✓',
+
   // Scheduled notifications
   scheduled_notif_body: 'Your scheduled reminder to go outside.',
   scheduled_empty: 'No scheduled reminders yet',
