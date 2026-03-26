@@ -93,7 +93,6 @@
     }
   }
       ],
-      "./withDailyPlannerNative",
       "expo-health-connect",
       "expo-sqlite",
       "expo-background-task",
