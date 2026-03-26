@@ -3,13 +3,18 @@ import { AppRegistry } from 'react-native';
 import { registerRootComponent } from 'expo';
 
 import App from './App';
-import { HEADLESS_TASK_NAME } from './modules/daily-planner-native';
+
+// Task name must match DailyPlannerHeadlessService.TASK_NAME on the native side.
+// Deliberately NOT imported from modules/daily-planner-native to avoid triggering
+// requireNativeModule() at bundle init time — the native module host may not be
+// ready yet in a HeadlessJS context.
+const DAILY_PLANNER_TASK_NAME = 'DailyPlannerTask';
 
 // Register the HeadlessJS task that the native DailyPlannerWorker (WorkManager)
 // and BootReceiver invoke at 3 AM or after a device reboot.  This bootstraps
 // the React Native JS engine and runs the planning logic even when the app has
 // been force-closed.
-AppRegistry.registerHeadlessTask(HEADLESS_TASK_NAME, () => async () => {
+AppRegistry.registerHeadlessTask(DAILY_PLANNER_TASK_NAME, () => async () => {
   // Dynamic import keeps the critical path small when the full app isn't loaded.
   const { scheduleDayReminders } = await import('./src/notifications/notificationManager');
   const { scheduleAllScheduledNotifications } = await import('./src/notifications/scheduledNotifications');

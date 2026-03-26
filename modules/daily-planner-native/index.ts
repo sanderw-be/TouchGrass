@@ -1,5 +1,18 @@
 import { Platform } from 'react-native';
-import DailyPlannerNativeModule from './src/DailyPlannerNativeModule';
+import { requireNativeModule } from 'expo-modules-core';
+
+// ---------------------------------------------------------------------------
+// Lazy accessor — avoids calling requireNativeModule() at module scope so
+// that importing this barrel file does not crash when the native host has not
+// finished initialising (e.g. HeadlessJS context).
+// ---------------------------------------------------------------------------
+let _mod: any;
+function getNativeModule() {
+  if (!_mod) {
+    _mod = requireNativeModule('DailyPlannerNative');
+  }
+  return _mod;
+}
 
 /**
  * Schedule the native WorkManager job that fires at ~3 AM daily.
@@ -10,7 +23,7 @@ import DailyPlannerNativeModule from './src/DailyPlannerNativeModule';
  */
 export async function scheduleDailyPlanner(): Promise<void> {
   if (Platform.OS !== 'android') return;
-  await DailyPlannerNativeModule.scheduleDailyPlanner();
+  await getNativeModule().scheduleDailyPlanner();
 }
 
 /**
@@ -20,7 +33,7 @@ export async function scheduleDailyPlanner(): Promise<void> {
  */
 export async function cancelDailyPlanner(): Promise<void> {
   if (Platform.OS !== 'android') return;
-  await DailyPlannerNativeModule.cancelDailyPlanner();
+  await getNativeModule().cancelDailyPlanner();
 }
 
 /**
@@ -40,7 +53,7 @@ export async function scheduleExactAlarm(
   minute: number,
 ): Promise<boolean> {
   if (Platform.OS !== 'android') return false;
-  return DailyPlannerNativeModule.scheduleExactAlarm(id, hour, minute);
+  return getNativeModule().scheduleExactAlarm(id, hour, minute);
 }
 
 /**
@@ -50,7 +63,7 @@ export async function scheduleExactAlarm(
  */
 export async function cancelExactAlarm(id: number): Promise<void> {
   if (Platform.OS !== 'android') return;
-  await DailyPlannerNativeModule.cancelExactAlarm(id);
+  await getNativeModule().cancelExactAlarm(id);
 }
 
 /**
@@ -62,7 +75,7 @@ export async function cancelExactAlarm(id: number): Promise<void> {
  */
 export function isBatteryOptimizationIgnored(): boolean {
   if (Platform.OS !== 'android') return false;
-  return DailyPlannerNativeModule.isBatteryOptimizationIgnored();
+  return getNativeModule().isBatteryOptimizationIgnored();
 }
 
 /**
@@ -74,7 +87,7 @@ export function isBatteryOptimizationIgnored(): boolean {
  */
 export function requestIgnoreBatteryOptimizations(): void {
   if (Platform.OS !== 'android') return;
-  DailyPlannerNativeModule.requestIgnoreBatteryOptimizations();
+  getNativeModule().requestIgnoreBatteryOptimizations();
 }
 
 /** Name of the HeadlessJS task registered on the JS side. */
