@@ -8,13 +8,10 @@ import android.net.Uri
 import android.os.Build
 import android.os.PowerManager
 import android.provider.Settings
-import androidx.work.ExistingPeriodicWorkPolicy
-import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 import java.util.Calendar
-import java.util.concurrent.TimeUnit
 
 class DailyPlannerNativeModule : Module() {
 
@@ -30,7 +27,7 @@ class DailyPlannerNativeModule : Module() {
 
         AsyncFunction("scheduleDailyPlanner") {
             val context = appContext.reactContext ?: throw Exception("React context is null")
-            scheduleDailyWork(context)
+            DailyPlannerScheduler.schedule(context)
         }
 
         AsyncFunction("cancelDailyPlanner") {
@@ -47,31 +44,6 @@ class DailyPlannerNativeModule : Module() {
             val context = appContext.reactContext ?: throw Exception("React context is null")
             requestBatteryOptimizationExemption(context)
         }
-    }
-
-    private fun scheduleDailyWork(context: Context) {
-        val now = Calendar.getInstance()
-        val target = Calendar.getInstance().apply {
-            set(Calendar.HOUR_OF_DAY, TARGET_HOUR)
-            set(Calendar.MINUTE, TARGET_MINUTE)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-            if (before(now)) add(Calendar.DAY_OF_MONTH, 1)
-        }
-
-        val initialDelayMs = target.timeInMillis - now.timeInMillis
-
-        val workRequest = PeriodicWorkRequestBuilder<DailyPlannerWorker>(
-            1, TimeUnit.DAYS
-        )
-            .setInitialDelay(initialDelayMs, TimeUnit.MILLISECONDS)
-            .build()
-
-        WorkManager.getInstance(context).enqueueUniquePeriodicWork(
-            WORK_NAME,
-            ExistingPeriodicWorkPolicy.UPDATE,
-            workRequest
-        )
     }
 
     private fun scheduleExact(context: Context, hour: Int, minute: Int) {

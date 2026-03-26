@@ -6,7 +6,9 @@ import App from './App';
 
 // Headless JS task name – duplicated as a plain string to avoid importing the
 // native module barrel (which may crash in a headless JS context before the
-// Expo runtime is ready).
+// Expo runtime is ready).  Must match HEADLESS_TASK_NAME in
+// modules/daily-planner-native/index.ts and the Kotlin companion constant
+// DailyPlannerNativeModule.HEADLESS_TASK_NAME.
 const DAILY_PLANNER_TASK = 'DailyPlannerTask';
 
 AppRegistry.registerHeadlessTask(DAILY_PLANNER_TASK, () => async () => {

@@ -45,7 +45,7 @@ class DailyPlannerHeadlessTaskService : HeadlessJsTaskService() {
         return HeadlessJsTaskConfig(
             DailyPlannerNativeModule.HEADLESS_TASK_NAME,
             Arguments.createMap(),
-            5000L, // timeout in ms
+            30000L, // timeout in ms — allow time for DB queries + notification scheduling
             true   // allow task to run in foreground
         )
     }

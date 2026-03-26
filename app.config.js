@@ -37,7 +37,7 @@ const withDailyPlannerNative = (config) => {
             'android:name': svcName,
             'android:enabled': 'true',
             'android:exported': 'false',
-            'android:foregroundServiceType': 'shortService',
+            'android:foregroundServiceType': 'dataSync',
           },
         });
       }
