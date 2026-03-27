@@ -8,9 +8,11 @@ import { getSetting } from '../storage/database';
 
 const INTERVAL_MS = 15 * 60 * 1000; // 15 minutes
 
+const sleep = (ms: number): Promise<void> => new Promise(resolve => setTimeout(resolve, ms));
+
 // This is the entry point for the foreground service.
 // It is called by react-native-background-actions and MUST loop indefinitely
-// using BackgroundActions.sleep() to keep the foreground service alive.
+// to keep the foreground service alive.
 const reminderTask = async (taskData?: { delay?: number }): Promise<void> => {
   const delay = taskData?.delay ?? INTERVAL_MS;
 
@@ -36,7 +38,7 @@ const reminderTask = async (taskData?: { delay?: number }): Promise<void> => {
       console.error('TouchGrass: [BackgroundTask] Tick failed', error);
     }
 
-    await BackgroundActions.sleep(delay);
+    await sleep(delay);
   }
 };
 
