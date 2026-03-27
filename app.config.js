@@ -20,9 +20,14 @@ const withBackgroundService = (config) => {
     }
 
     // Add the background service
+    // android:foregroundServiceType is required on targetSdkVersion >= 34 (Android 14+).
+    // 'dataSync' is appropriate for a short-lived task that schedules/syncs reminders.
     if (!application.service) application.service = [];
     application.service.push({
-      $: { 'android:name': 'com.asterinet.react.bgactions.RNBackgroundActionsTask' },
+      $: {
+        'android:name': 'com.asterinet.react.bgactions.RNBackgroundActionsTask',
+        'android:foregroundServiceType': 'dataSync',
+      },
     });
 
     // Add the boot receiver
