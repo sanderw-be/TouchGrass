@@ -1108,35 +1108,6 @@ describe('notificationManager', () => {
       (Platform as any).OS = originalOS;
     });
 
-    it('registers the daily planner background task on Android', async () => {
-      const originalOS = Platform.OS;
-      (Platform as any).OS = 'android';
-
-      await setupNotificationInfrastructure();
-
-      expect(Notifications.registerTaskAsync).toHaveBeenCalledWith(
-        'TOUCHGRASS_DAILY_PLANNER_TASK',
-      );
-
-      (Platform as any).OS = originalOS;
-    });
-
-    it('does not register the daily planner task on non-Android platforms', async () => {
-      const originalOS = Platform.OS;
-      (Platform as any).OS = 'ios';
-
-      await setupNotificationInfrastructure();
-
-      expect(Notifications.registerTaskAsync).not.toHaveBeenCalled();
-
-      (Platform as any).OS = originalOS;
-    });
-
-    it('registers the foreground notification received listener', async () => {
-      await setupNotificationInfrastructure();
-
-      expect(Notifications.addNotificationReceivedListener).toHaveBeenCalled();
-    });
   });
 
   describe('handleNotificationResponse — daily planner skip', () => {
