@@ -1,9 +1,57 @@
 // app.config.js extends app.json.
+const { withAndroidManifest } = require('@expo/config-plugins');
+
+// Plugin to add permissions and services for the background task
+const withBackgroundService = (config) => {
+  return withAndroidManifest(config, (config) => {
+    const androidManifest = config.modResults;
+
+    // Add required permissions
+    androidManifest.manifest['uses-permission'] = [
+      ...(androidManifest.manifest['uses-permission'] || []),
+      { $: { 'android:name': 'android.permission.FOREGROUND_SERVICE' } },
+      { $: { 'android:name': 'android.permission.RECEIVE_BOOT_COMPLETED' } },
+    ];
+
+    const application = androidManifest.manifest.application[0];
+    if (!application) {
+      console.warn('Warning: No application element found in AndroidManifest.xml');
+      return config;
+    }
+
+    // Add the background service
+    if (!application.service) application.service = [];
+    application.service.push({
+      $: { 'android:name': 'com.asterinet.react.bgactions.RNBackgroundActionsTask' },
+    });
+
+    // Add the boot receiver
+    if (!application.receiver) application.receiver = [];
+    application.receiver.push({
+      $: {
+        'android:name': 'com.asterinet.react.bgactions.RNBackgroundActionsBootReceiver',
+        'android:exported': 'true',
+      },
+      'intent-filter': [
+        {
+          action: [{ $: { 'android:name': 'android.intent.action.BOOT_COMPLETED' } }],
+        },
+      ],
+    });
+
+    return config;
+  });
+};
+
+
 // For production EAS builds, ABI filters are removed so that Google Play can handle
 // architecture splitting from the AAB. All other profiles keep the arm64-v8a restriction
 // to produce smaller preview/development APKs.
 module.exports = ({ config }) => {
   const isProduction = process.env.EAS_BUILD_PROFILE === 'production';
+
+  // Apply the new background service plugin to all configurations
+  config = withBackgroundService(config);
 
   if (!isProduction) {
     return config;

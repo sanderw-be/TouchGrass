@@ -415,6 +415,10 @@ export default {
   error_boundary_restart: 'Restart app',
   error_boundary_report: 'Report this issue',
 
+  // Background Task
+  background_task_title: 'Smart Reminders',
+  background_task_desc: 'Checking for the best time to remind you to go outside.',
+
   // Time/date formatting locale tag
   locale_tag: 'en-GB',
 };
