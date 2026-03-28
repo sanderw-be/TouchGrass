@@ -1,4 +1,4 @@
-import { formatMinutes, formatTime, formatDate, formatTimer, uses24HourClock } from '../utils/helpers';
+import { formatMinutes, formatTime, formatDate, formatTimer, uses24HourClock, normalizeAmPm } from '../utils/helpers';
 
 // Mock react-native-localize for helpers tests
 const mockUses24HourClock = jest.fn(() => true);
@@ -54,14 +54,14 @@ describe('formatTime', () => {
     mockUses24HourClock.mockReturnValue(true);
     const timestamp = new Date('2024-01-15T14:30:00').getTime();
     const formatted = formatTime(timestamp);
-    expect(formatted).not.toMatch(/AM|PM/i);
+    expect(formatted).not.toMatch(/am|pm/i);
   });
 
-  it('includes AM/PM in 12-hour mode', () => {
+  it('uses compact lowercase am/pm without spaces or dots in 12-hour mode', () => {
     mockUses24HourClock.mockReturnValue(false);
     const timestamp = new Date('2024-01-15T14:30:00').getTime();
     const formatted = formatTime(timestamp);
-    expect(formatted).toMatch(/AM|PM/i);
+    expect(formatted).toMatch(/\d+:\d+(am|pm)/);
   });
 });
 
@@ -97,5 +97,27 @@ describe('uses24HourClock', () => {
   it('returns false when device uses 12-hour clock', () => {
     mockUses24HourClock.mockReturnValue(false);
     expect(uses24HourClock()).toBe(false);
+  });
+});
+
+describe('normalizeAmPm', () => {
+  it('strips space and dots from "a.m."', () => {
+    expect(normalizeAmPm('10:02 a.m.')).toBe('10:02am');
+  });
+
+  it('strips space and dots from "p.m."', () => {
+    expect(normalizeAmPm('2:30 p.m.')).toBe('2:30pm');
+  });
+
+  it('strips space from uppercase "AM"', () => {
+    expect(normalizeAmPm('10:02 AM')).toBe('10:02am');
+  });
+
+  it('strips space from uppercase "PM"', () => {
+    expect(normalizeAmPm('2:30 PM')).toBe('2:30pm');
+  });
+
+  it('leaves 24h strings unchanged', () => {
+    expect(normalizeAmPm('14:30')).toBe('14:30');
   });
 });

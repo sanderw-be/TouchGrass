@@ -14,9 +14,15 @@ export function formatMinutes(minutes: number): string {
   return m > 0 ? `${h}h ${m}m` : `${h}h`;
 }
 
+// Normalize AM/PM notation: removes leading space and dots → "10:02am" / "2:30pm"
+export function normalizeAmPm(s: string): string {
+  return s.replace(/\s*([ap])\.?m\.?/i, (_, period) => period.toLowerCase() + 'm');
+}
+
 // Format a timestamp as a readable time, respecting the device's 12/24h setting
 export function formatTime(ms: number): string {
-  return new Date(ms).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: !uses24HourClock() });
+  const raw = new Date(ms).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: !uses24HourClock() });
+  return uses24HourClock() ? raw : normalizeAmPm(raw);
 }
 
 // Format a timestamp as a readable date

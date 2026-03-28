@@ -16,14 +16,14 @@ describe('formatLocalTime', () => {
     mockUses24HourClock.mockReturnValue(true);
     const timestamp = new Date('2024-01-15T14:30:00').getTime();
     const formatted = formatLocalTime(timestamp);
-    expect(formatted).not.toMatch(/AM|PM/i);
+    expect(formatted).not.toMatch(/am|pm/i);
   });
 
-  it('includes AM/PM in 12-hour mode', () => {
+  it('uses compact lowercase am/pm without spaces or dots in 12-hour mode', () => {
     mockUses24HourClock.mockReturnValue(false);
     const timestamp = new Date('2024-01-15T14:30:00').getTime();
     const formatted = formatLocalTime(timestamp);
-    expect(formatted).toMatch(/AM|PM/i);
+    expect(formatted).toMatch(/\d+:\d+(am|pm)/);
   });
 
   it('always includes hours and minutes', () => {

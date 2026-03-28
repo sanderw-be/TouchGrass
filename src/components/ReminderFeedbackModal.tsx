@@ -6,7 +6,7 @@ import { useReminderFeedback } from '../context/ReminderFeedbackContext';
 import { useTheme } from '../context/ThemeContext';
 import { spacing, radius, shadows } from '../utils/theme';
 import { t } from '../i18n';
-import { uses24HourClock } from '../utils/helpers';
+import { uses24HourClock, normalizeAmPm } from '../utils/helpers';
 
 export default function ReminderFeedbackModal() {
   const { visible, data, dismiss } = useReminderFeedback();
@@ -21,7 +21,8 @@ export default function ReminderFeedbackModal() {
   const formatTime = (h: number, m: number) => {
     const d = new Date();
     d.setHours(h, m, 0, 0);
-    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: !uses24HourClock() });
+    const raw = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: !uses24HourClock() });
+    return uses24HourClock() ? raw : normalizeAmPm(raw);
   };
 
   const time = formatTime(data.hour, data.minute);
