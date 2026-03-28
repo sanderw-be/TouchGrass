@@ -815,6 +815,127 @@ describe('notificationManager', () => {
 
       expect(triggerDate.getHours()).toBe(16);
     });
+
+    it('does not schedule a catch-up within 60 minutes of the last planned reminder', async () => {
+      const todayStr = new Date().toDateString();
+      (Database.getTodayMinutes as jest.Mock).mockReturnValue(0);
+      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
+      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
+        if (key === 'smart_reminders_count') return '2';
+        if (key === 'reminders_last_planned_date') return todayStr;
+        if (key === 'additional_reminders_today') return '0';
+        // Planned slot at 11:00; current time is 11:30 (30 min after)
+        if (key === 'reminders_planned_slots') return JSON.stringify([{ hour: 11, minute: 0 }]);
+        return fallback;
+      });
+      jest.spyOn(Date.prototype, 'getHours').mockReturnValue(11);
+      jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(30);
+
+      await maybeScheduleCatchUpReminder();
+
+      expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
+
+      jest.restoreAllMocks();
+    });
+
+    it('schedules a catch-up after 60 minutes have passed since the last planned reminder', async () => {
+      const todayStr = new Date().toDateString();
+      (Database.getTodayMinutes as jest.Mock).mockReturnValue(0);
+      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
+      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
+        if (key === 'smart_reminders_count') return '2';
+        if (key === 'reminders_last_planned_date') return todayStr;
+        if (key === 'additional_reminders_today') return '0';
+        // Planned slot at 11:00; current time is 12:01 (61 min after)
+        if (key === 'reminders_planned_slots') return JSON.stringify([{ hour: 11, minute: 0 }]);
+        return fallback;
+      });
+      jest.spyOn(Date.prototype, 'getHours').mockReturnValue(12);
+      jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(1);
+      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockReturnValue([
+        { hour: 14, minute: 0, score: 0.8, reason: 'afternoon' },
+      ]);
+
+      await maybeScheduleCatchUpReminder();
+
+      expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledTimes(1);
+
+      jest.restoreAllMocks();
+    });
+
+    it('schedules the earliest of the top-n best-scored slots to spread reminders across the day', async () => {
+      const todayStr = new Date().toDateString();
+      (Database.getTodayMinutes as jest.Mock).mockReturnValue(0);
+      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
+      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
+        if (key === 'smart_reminders_count') return '2';
+        if (key === 'smart_catchup_reminders_count') return '3'; // 3 remaining
+        if (key === 'reminders_last_planned_date') return todayStr;
+        if (key === 'additional_reminders_today') return '0'; // 3 remaining
+        if (key === 'reminders_planned_slots') return JSON.stringify([{ hour: 9, minute: 0 }, { hour: 11, minute: 0 }]);
+        return fallback;
+      });
+      jest.spyOn(Date.prototype, 'getHours').mockReturnValue(12);
+      jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
+      // Candidates sorted best-first: 17:00 (0.9), 14:00 (0.8), 15:00 (0.7), 20:00 (0.6)
+      // Top-3 = [17:00, 14:00, 15:00]; earliest = 14:00
+      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockReturnValue([
+        { hour: 17, minute: 0, score: 0.9, reason: 'evening' },
+        { hour: 14, minute: 0, score: 0.8, reason: 'afternoon' },
+        { hour: 15, minute: 0, score: 0.7, reason: 'afternoon' },
+        { hour: 20, minute: 0, score: 0.6, reason: 'evening' },
+      ]);
+
+      await maybeScheduleCatchUpReminder();
+
+      expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledTimes(1);
+      const triggerDate: Date = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls[0][0].trigger.date;
+
+      jest.restoreAllMocks();
+
+      // Should pick 14:00 (earliest of top-3) not 17:00 (highest score)
+      expect(triggerDate.getHours()).toBe(14);
+    });
+
+    it('clears planned slots and catch-up slot settings when daily goal is reached (maybeScheduleCatchUpReminder)', async () => {
+      const todayStr = new Date().toDateString();
+      (Database.getTodayMinutes as jest.Mock).mockReturnValue(30);
+      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
+      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
+        if (key === 'smart_reminders_count') return '2';
+        if (key === 'reminders_last_planned_date') return todayStr;
+        if (key === 'additional_reminders_today') return '0';
+        if (key === 'reminders_planned_slots') return JSON.stringify([{ hour: 9, minute: 0 }, { hour: 11, minute: 0 }]);
+        return fallback;
+      });
+      jest.spyOn(Date.prototype, 'getHours').mockReturnValue(12);
+      jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
+      (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([]);
+
+      await maybeScheduleCatchUpReminder();
+
+      expect(Database.setSetting).toHaveBeenCalledWith('reminders_planned_slots', '[]');
+      expect(Database.setSetting).toHaveBeenCalledWith('catchup_reminder_slot_minutes', '');
+
+      jest.restoreAllMocks();
+    });
+  });
+
+  describe('scheduleNextReminder — goal-reached clears slot settings', () => {
+    it('clears planned slots and catch-up slot settings when daily goal is reached', async () => {
+      (Database.getTodayMinutes as jest.Mock).mockReturnValue(30);
+      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
+      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
+        if (key === 'smart_reminders_count') return '2';
+        return fallback;
+      });
+      (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([]);
+
+      await scheduleNextReminder();
+
+      expect(Database.setSetting).toHaveBeenCalledWith('reminders_planned_slots', '[]');
+      expect(Database.setSetting).toHaveBeenCalledWith('catchup_reminder_slot_minutes', '');
+    });
   });
 
   describe('calendar integration in scheduleNextReminder', () => {

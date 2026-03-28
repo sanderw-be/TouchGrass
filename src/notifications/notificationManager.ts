@@ -233,6 +233,8 @@ export async function scheduleNextReminder(): Promise<void> {
   if (todayMinutes >= dailyTarget) {
     console.log('TouchGrass: daily goal reached — cancelling remaining smart reminders');
     await cancelAutomaticReminders();
+    setSetting('reminders_planned_slots', '[]');
+    setSetting('catchup_reminder_slot_minutes', '');
     return;
   }
 
@@ -489,6 +491,17 @@ export async function maybeScheduleCatchUpReminder(): Promise<void> {
   ).length;
   if (passedCount === 0) return;
 
+  // Don't schedule a catch-up within 60 minutes of the last planned reminder —
+  // give the user time to go outside before sending a follow-up.
+  const mostRecentPassedMin = plannedSlots
+    .map(s => s.hour * 60 + s.minute)
+    .filter(m => m <= currentMinutesOfDay)
+    .reduce((max, m) => Math.max(max, m), -1);
+  if (mostRecentPassedMin >= 0 && currentMinutesOfDay - mostRecentPassedMin < 60) {
+    console.log('TouchGrass: catch-up postponed — waiting 60 min after last planned reminder');
+    return;
+  }
+
   // % of planned reminders that have passed
   // remindersCount is guaranteed >= 1 (we returned early when it was 0)
   const passedPercent = passedCount / remindersCount;
@@ -502,6 +515,8 @@ export async function maybeScheduleCatchUpReminder(): Promise<void> {
   if (targetPercent >= 1) {
     console.log('TouchGrass: daily goal reached — cancelling remaining smart reminders (catch-up check)');
     await cancelAutomaticReminders();
+    setSetting('reminders_planned_slots', '[]');
+    setSetting('catchup_reminder_slot_minutes', '');
     return;
   }
 
@@ -525,7 +540,14 @@ export async function maybeScheduleCatchUpReminder(): Promise<void> {
 
   if (candidateSlots.length === 0) return;
 
-  const best = candidateSlots[0]; // sorted best first
+  // Take the top (remaining catch-ups) best-scored slots, then schedule the
+  // earliest of those — this spreads reminders across the rest of the day and
+  // leaves room in the day for subsequent catch-up reminders.
+  const remainingCatchups = catchupLimit - additionalCount;
+  const topCandidates = candidateSlots.slice(0, remainingCatchups);
+  const best = topCandidates.reduce((earliest, s) =>
+    s.hour * 60 + s.minute < earliest.hour * 60 + earliest.minute ? s : earliest
+  );
   const triggerDate = new Date();
   triggerDate.setHours(best.hour, best.minute, 0, 0);
 

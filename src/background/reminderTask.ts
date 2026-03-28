@@ -10,6 +10,11 @@ import { getSetting } from '../storage/database';
 // the daily goal was already reached (so we can cancel the reminder on time).
 const LEAD_MINUTES = 5;
 
+// How long after a planned reminder fires before we are allowed to schedule a
+// catch-up reminder.  The background task adds a virtual "check" slot at
+// lastPlannedSlot + CATCHUP_WAIT_MINUTES so it wakes up at the right time.
+const CATCHUP_WAIT_MINUTES = 60;
+
 // Fallback used when the planned-slots data is unavailable or parsing fails.
 const FALLBACK_INTERVAL_MS = 15 * 60 * 1000; // 15 minutes
 
@@ -19,14 +24,17 @@ const sleep = (ms: number): Promise<void> => new Promise(resolve => setTimeout(r
  * Compute the optimal sleep duration (ms) before the next background-task tick.
  *
  * Adaptive, event-driven strategy that minimises active running:
- * 1. There is an upcoming planned slot  → sleep until LEAD_MINUTES before it,
- *    so we can cancel the notification if the daily goal was already met.
- * 2. All planned slots have passed and a catch-up reminder is scheduled → sleep
- *    until LEAD_MINUTES before that catch-up slot, so we can cancel it if the
- *    daily goal was already met by then.
- * 3. No planned slots today, or all slots have passed with no catch-up scheduled
- *    → sleep until midnight so the service only wakes up once for the next day's
- *    planning.
+ * 1. Combine planned slots and the scheduled catch-up slot into one list, then
+ *    sleep until LEAD_MINUTES before the next upcoming slot in that combined
+ *    list.  This ensures a catch-up slot that falls between two planned slots
+ *    is not skipped.
+ * 2. When no catch-up is scheduled yet but a planned slot fired recently
+ *    (< CATCHUP_WAIT_MINUTES ago), add a virtual "check" slot at
+ *    lastPlannedSlot + CATCHUP_WAIT_MINUTES.  This gives the user time to go
+ *    outside after a planned reminder before the background task decides
+ *    whether to schedule a catch-up.
+ * 3. No upcoming slot of any kind — sleep until midnight so the service only
+ *    wakes up once for the next day's planning.
  */
 export function computeNextSleepMs(
   plannedSlots: Array<{ hour: number; minute: number }>,
@@ -35,32 +43,42 @@ export function computeNextSleepMs(
 ): number {
   const currentMinutesOfDay = now.getHours() * 60 + now.getMinutes();
 
-  if (plannedSlots.length > 0) {
-    const sorted = [...plannedSlots].sort(
-      (a, b) => a.hour * 60 + a.minute - (b.hour * 60 + b.minute),
-    );
+  // Build a combined list of all upcoming reminder slots (planned + catch-up).
+  const allSlots: Array<{ hour: number; minute: number }> = [...plannedSlots];
 
-    // Find the next upcoming planned slot
-    const nextSlot = sorted.find((s) => s.hour * 60 + s.minute > currentMinutesOfDay);
-
-    if (nextSlot) {
-      const minutesUntilSlot = nextSlot.hour * 60 + nextSlot.minute - currentMinutesOfDay;
-      // Sleep until LEAD_MINUTES before the slot; wake up at least 1 minute from now.
-      const sleepMinutes = Math.max(minutesUntilSlot - LEAD_MINUTES, 1);
-      return sleepMinutes * 60 * 1000;
+  if (catchupSlot !== null) {
+    // Include the scheduled catch-up slot so we wake up before it fires even
+    // if a later planned slot exists.
+    allSlots.push(catchupSlot);
+  } else {
+    // No catch-up is scheduled yet.  If a planned slot fired recently
+    // (< CATCHUP_WAIT_MINUTES ago), add a virtual "check" slot at
+    // mostRecentPassed + CATCHUP_WAIT_MINUTES.  The background task will wake
+    // up at that point and run maybeScheduleCatchUpReminder() to decide whether
+    // a catch-up is needed.
+    const passedSlotMinutes = plannedSlots
+      .map(s => s.hour * 60 + s.minute)
+      .filter(m => m <= currentMinutesOfDay);
+    if (passedSlotMinutes.length > 0) {
+      const mostRecentPassed = Math.max(...passedSlotMinutes);
+      const checkAt = mostRecentPassed + CATCHUP_WAIT_MINUTES;
+      if (checkAt > currentMinutesOfDay) {
+        allSlots.push({ hour: Math.floor(checkAt / 60), minute: checkAt % 60 });
+      }
     }
   }
 
-  // All planned slots have passed (or there were none).
-  // If a catch-up reminder has been scheduled, sleep until just before it fires
-  // so we can cancel it if the daily goal has since been reached.
-  if (catchupSlot !== null) {
-    const catchupMinutesOfDay = catchupSlot.hour * 60 + catchupSlot.minute;
-    if (catchupMinutesOfDay > currentMinutesOfDay) {
-      const minutesUntilCatchup = catchupMinutesOfDay - currentMinutesOfDay;
-      const sleepMinutes = Math.max(minutesUntilCatchup - LEAD_MINUTES, 1);
-      return sleepMinutes * 60 * 1000;
-    }
+  // Find the next upcoming slot among all combined slots.
+  const sorted = [...allSlots].sort(
+    (a, b) => a.hour * 60 + a.minute - (b.hour * 60 + b.minute),
+  );
+  const nextSlot = sorted.find((s) => s.hour * 60 + s.minute > currentMinutesOfDay);
+
+  if (nextSlot) {
+    const minutesUntilSlot = nextSlot.hour * 60 + nextSlot.minute - currentMinutesOfDay;
+    // Sleep until LEAD_MINUTES before the slot; wake up at least 1 minute from now.
+    const sleepMinutes = Math.max(minutesUntilSlot - LEAD_MINUTES, 1);
+    return sleepMinutes * 60 * 1000;
   }
 
   // No upcoming slot of any kind — sleep until midnight.
