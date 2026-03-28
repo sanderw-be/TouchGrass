@@ -110,6 +110,39 @@ describe('reminderAlgorithm', () => {
       expect(slot1030.score).toBe(0.5); // unaffected baseline
     });
 
+    it('applies bad_time feedback with a significant penalty to the matching half-hour slot', () => {
+      (Database.getReminderFeedback as jest.Mock).mockReturnValue([
+        { action: 'bad_time', scheduledHour: 10, scheduledMinute: 0, dayOfWeek: 1, timestamp: Date.now() },
+      ]);
+      const scores = scoreReminderHours(0, 30, 0, 0);
+      const slot1000 = scores.find((s) => s.hour === 10 && s.minute === 0)!;
+      const slot1030 = scores.find((s) => s.hour === 10 && s.minute === 30)!;
+      // bad_time applies a 0.30 penalty — larger than less_often (0.15)
+      expect(slot1000.score).toBeLessThan(0.5);
+      expect(slot1000.reason).toContain('bad_time');
+      // Other slots are unaffected
+      expect(slot1030.score).toBe(0.5);
+    });
+
+    it('bad_time penalty is larger than less_often penalty for the same count', () => {
+      const badTimeFeedback = [
+        { action: 'bad_time', scheduledHour: 10, scheduledMinute: 0, dayOfWeek: 1, timestamp: Date.now() },
+      ];
+      const lessOftenFeedback = [
+        { action: 'less_often', scheduledHour: 10, scheduledMinute: 0, dayOfWeek: 1, timestamp: Date.now() },
+      ];
+
+      (Database.getReminderFeedback as jest.Mock).mockReturnValue(badTimeFeedback);
+      const scoresWithBadTime = scoreReminderHours(0, 30, 0, 0);
+      const badTimeSlot = scoresWithBadTime.find((s) => s.hour === 10 && s.minute === 0)!;
+
+      (Database.getReminderFeedback as jest.Mock).mockReturnValue(lessOftenFeedback);
+      const scoresWithLessOften = scoreReminderHours(0, 30, 0, 0);
+      const lessOftenSlot = scoresWithLessOften.find((s) => s.hour === 10 && s.minute === 0)!;
+
+      expect(badTimeSlot.score).toBeLessThan(lessOftenSlot.score);
+    });
+
     it('applies more_often feedback bonus', () => {
       (Database.getReminderFeedback as jest.Mock).mockReturnValue([
         { action: 'more_often', scheduledHour: 15, scheduledMinute: 0, dayOfWeek: 1, timestamp: Date.now() },

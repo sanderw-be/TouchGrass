@@ -143,6 +143,12 @@ export default {
   settings_reminders_sublabel: 'Learns your patterns over time',
   settings_reminders_count_off: 'Off',
   settings_reminders_count_per_day: '{{count}}/day',
+  settings_catchup_label: 'Help me reach my goal',
+  settings_catchup_sublabel: 'Extra reminders when you\'re falling behind',
+  settings_catchup_off: 'Off',
+  settings_catchup_mellow: 'Mellow',
+  settings_catchup_medium: 'Medium',
+  settings_catchup_aggressive: 'Aggressive',
   settings_background_tracking_label: 'Background tracking notification',
   settings_background_tracking_sublabel: "The persistent notification showing while GPS is active. Disable it via Android Settings → Apps → TouchGrass → Notifications → Background tracking.",
   settings_app_sublabel: 'Your outdoor time companion',
@@ -306,6 +312,13 @@ export default {
   notif_feedback_went_outside_detail: "We'll remind you more around {{time}}.",
   notif_feedback_snoozed_detail: "We'll remind you in 30 minutes, remind you less at {{time}} and more at {{snoozeTime}}.",
   notif_feedback_less_often_detail: "We'll remind you less at {{time}}.",
+
+  // Less-often granular feedback modal
+  notif_less_often_title: 'What would you like?',
+  notif_less_often_bad_time: '🕐 This was a bad time',
+  notif_less_often_fewer_reminders: '🔕 Send me fewer reminders',
+  notif_fewer_reminders_confirm: "Okay, I'll send you {{newCount}} reminder(s) per day instead of {{oldCount}}.",
+  notif_fewer_reminders_confirm_generic: "Okay, I'll send you fewer reminders.",
 
   // Weather settings
   settings_weather_title: 'Weather',

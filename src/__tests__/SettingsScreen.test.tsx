@@ -287,3 +287,83 @@ describe('SettingsScreen detection toggles', () => {
     await waitFor(() => expect(queryByText('settings_hc_permission_missing')).toBeNull());
   });
 });
+
+describe('SettingsScreen catch-up reminders setting', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockGetSetting.mockImplementation((key: string, def: string) => def);
+  });
+
+  it('renders the catch-up reminders setting row', async () => {
+    const { findByText } = render(<SettingsScreen />);
+    await expect(findByText('settings_catchup_label')).resolves.toBeTruthy();
+  });
+
+  it('shows "Medium" label when smart_catchup_reminders_count is 2 (default)', async () => {
+    mockGetSetting.mockImplementation((key: string, def: string) => {
+      if (key === 'smart_catchup_reminders_count') return '2';
+      return def;
+    });
+    const { findByText } = render(<SettingsScreen />);
+    await expect(findByText('settings_catchup_medium')).resolves.toBeTruthy();
+  });
+
+  it('shows "Off" when smart_catchup_reminders_count is 0', async () => {
+    mockGetSetting.mockImplementation((key: string, def: string) => {
+      if (key === 'smart_catchup_reminders_count') return '0';
+      return def;
+    });
+    const { findByText } = render(<SettingsScreen />);
+    await expect(findByText('settings_catchup_off')).resolves.toBeTruthy();
+  });
+
+  it('shows "Mellow" when smart_catchup_reminders_count is 1', async () => {
+    mockGetSetting.mockImplementation((key: string, def: string) => {
+      if (key === 'smart_catchup_reminders_count') return '1';
+      return def;
+    });
+    const { findByText } = render(<SettingsScreen />);
+    await expect(findByText('settings_catchup_mellow')).resolves.toBeTruthy();
+  });
+
+  it('shows "Aggressive" when smart_catchup_reminders_count is 3', async () => {
+    mockGetSetting.mockImplementation((key: string, def: string) => {
+      if (key === 'smart_catchup_reminders_count') return '3';
+      return def;
+    });
+    const { findByText } = render(<SettingsScreen />);
+    await expect(findByText('settings_catchup_aggressive')).resolves.toBeTruthy();
+  });
+
+  it('cycles from Off (0) → Mellow (1) when tapped', async () => {
+    mockGetSetting.mockImplementation((key: string, def: string) => {
+      if (key === 'smart_catchup_reminders_count') return '0';
+      return def;
+    });
+
+    const { findByText } = render(<SettingsScreen />);
+    const labelRow = await findByText('settings_catchup_label');
+
+    await act(async () => {
+      fireEvent.press(labelRow);
+    });
+
+    expect(mockSetSetting).toHaveBeenCalledWith('smart_catchup_reminders_count', '1');
+  });
+
+  it('cycles from Aggressive (3) back to Off (0)', async () => {
+    mockGetSetting.mockImplementation((key: string, def: string) => {
+      if (key === 'smart_catchup_reminders_count') return '3';
+      return def;
+    });
+
+    const { findByText } = render(<SettingsScreen />);
+    const labelRow = await findByText('settings_catchup_label');
+
+    await act(async () => {
+      fireEvent.press(labelRow);
+    });
+
+    expect(mockSetSetting).toHaveBeenCalledWith('smart_catchup_reminders_count', '0');
+  });
+});
