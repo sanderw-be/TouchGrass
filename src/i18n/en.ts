@@ -307,6 +307,12 @@ export default {
   notif_feedback_snoozed_detail: "We'll remind you in 30 minutes, remind you less at {{time}} and more at {{snoozeTime}}.",
   notif_feedback_less_often_detail: "We'll remind you less at {{time}}.",
 
+  // Less-often granular feedback modal
+  notif_less_often_title: 'What would you like?',
+  notif_less_often_bad_time: '🕐 This was a bad time',
+  notif_less_often_fewer_reminders: '🔕 Send me fewer reminders',
+  notif_fewer_reminders_confirm: "Okay, I'll send you {{newCount}} reminder(s) per day instead of {{oldCount}}.",
+
   // Weather settings
   settings_weather_title: 'Weather',
   settings_weather_enabled: 'Weather-aware reminders',

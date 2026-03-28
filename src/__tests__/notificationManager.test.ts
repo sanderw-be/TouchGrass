@@ -849,7 +849,7 @@ describe('notificationManager', () => {
       );
     });
 
-    it('triggers the feedback modal with less_often action', async () => {
+    it('triggers the feedback modal with less_often action (without confirmBodyKey)', async () => {
       await capturedListener!({
         notification: { request: { identifier: 'notif-abc' } },
         actionIdentifier: 'less_often',
@@ -857,8 +857,38 @@ describe('notificationManager', () => {
       expect(FeedbackContext.triggerReminderFeedbackModal).toHaveBeenCalledWith(
         expect.objectContaining({
           action: 'less_often',
-          confirmBodyKey: 'notif_confirm_less_often',
         }),
+      );
+      // confirmBodyKey must NOT be present for less_often — the modal shows a choice picker
+      const call = (FeedbackContext.triggerReminderFeedbackModal as jest.Mock).mock.calls[0][0];
+      expect(call).not.toHaveProperty('confirmBodyKey');
+    });
+
+    it('does NOT insert reminder feedback immediately when less_often is tapped', async () => {
+      await capturedListener!({
+        notification: { request: { identifier: 'notif-abc' } },
+        actionIdentifier: 'less_often',
+      });
+      expect(Database.insertReminderFeedback).not.toHaveBeenCalled();
+    });
+
+    it('inserts reminder feedback immediately for went_outside action', async () => {
+      await capturedListener!({
+        notification: { request: { identifier: 'notif-abc' } },
+        actionIdentifier: 'went_outside',
+      });
+      expect(Database.insertReminderFeedback).toHaveBeenCalledWith(
+        expect.objectContaining({ action: 'went_outside' }),
+      );
+    });
+
+    it('inserts reminder feedback immediately for snoozed action', async () => {
+      await capturedListener!({
+        notification: { request: { identifier: 'notif-abc' } },
+        actionIdentifier: 'snoozed',
+      });
+      expect(Database.insertReminderFeedback).toHaveBeenCalledWith(
+        expect.objectContaining({ action: 'snoozed' }),
       );
     });
 

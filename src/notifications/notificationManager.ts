@@ -692,25 +692,30 @@ async function handleNotificationResponse(response: Notifications.NotificationRe
     : actionId === ACTION_LESS_OFTEN ? 'less_often'
     : 'dismissed';
 
-  insertReminderFeedback({
-    timestamp: now,
-    action,
-    scheduledHour: d.getHours(),
-    scheduledMinute: d.getMinutes() >= 30 ? 30 : 0,
-    dayOfWeek: d.getDay(),
-  });
+  // For 'less_often', feedback is NOT inserted immediately — the in-app modal lets
+  // the user choose between "bad time" (inserts bad_time feedback) or
+  // "fewer reminders" (adjusts settings). Dismissing the modal records nothing.
+  if (action !== 'less_often') {
+    insertReminderFeedback({
+      timestamp: now,
+      action,
+      scheduledHour: d.getHours(),
+      scheduledMinute: d.getMinutes() >= 30 ? 30 : 0,
+      dayOfWeek: d.getDay(),
+    });
+  }
 
   if (action !== 'dismissed') {
     const confirmBodyKey = action === 'went_outside' ? 'notif_confirm_went_outside'
       : action === 'snoozed' ? 'notif_confirm_snoozed'
-      : 'notif_confirm_less_often';
+      : undefined;
 
     // Show an in-app modal instead of re-posting the notification
     triggerReminderFeedbackModal({
       action,
       hour: d.getHours(),
       minute: d.getMinutes(),
-      confirmBodyKey,
+      ...(confirmBodyKey ? { confirmBodyKey } : {}),
     });
   }
 

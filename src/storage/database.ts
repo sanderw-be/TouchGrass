@@ -31,7 +31,7 @@ export interface WeeklyGoal {
 export interface ReminderFeedback {
   id?: number;
   timestamp: number;
-  action: 'snoozed' | 'dismissed' | 'went_outside' | 'less_often' | 'more_often';
+  action: 'snoozed' | 'dismissed' | 'went_outside' | 'less_often' | 'more_often' | 'bad_time';
   scheduledHour: number;   // 0-23, what hour the reminder fired
   scheduledMinute: number; // 0 or 30, which half-hour slot the reminder fired in
   dayOfWeek: number;       // 0-6
