@@ -18,8 +18,6 @@ export default function ReminderFeedbackModal() {
 
   if (!visible || !data) return null;
 
-  const confirmBody = t(data.confirmBodyKey);
-
   // Format a time respecting the device's 12/24h setting
   const formatTime = (h: number, m: number) => {
     const d = new Date();
