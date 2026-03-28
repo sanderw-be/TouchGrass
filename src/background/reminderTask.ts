@@ -10,11 +10,6 @@ import { getSetting } from '../storage/database';
 // the daily goal was already reached (so we can cancel the reminder on time).
 const LEAD_MINUTES = 5;
 
-// After all planned slots have passed we still check periodically in case a
-// catch-up reminder needs to be scheduled.
-const CATCHUP_WINDOW_MINUTES = 120; // 2 hours
-const CATCHUP_CHECK_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
-
 // Fallback used when the planned-slots data is unavailable or parsing fails.
 const FALLBACK_INTERVAL_MS = 15 * 60 * 1000; // 15 minutes
 
@@ -26,44 +21,49 @@ const sleep = (ms: number): Promise<void> => new Promise(resolve => setTimeout(r
  * Adaptive, event-driven strategy that minimises active running:
  * 1. There is an upcoming planned slot  → sleep until LEAD_MINUTES before it,
  *    so we can cancel the notification if the daily goal was already met.
- * 2. All planned slots have passed, but we are still within CATCHUP_WINDOW_MINUTES
- *    of the last one → poll every CATCHUP_CHECK_INTERVAL_MS to schedule catch-up
- *    reminders as soon as they are needed.
- * 3. No planned slots for today, or past the catch-up window → sleep until
- *    midnight so the service only wakes up once for the next day's planning.
+ * 2. All planned slots have passed and a catch-up reminder is scheduled → sleep
+ *    until LEAD_MINUTES before that catch-up slot, so we can cancel it if the
+ *    daily goal was already met by then.
+ * 3. No planned slots today, or all slots have passed with no catch-up scheduled
+ *    → sleep until midnight so the service only wakes up once for the next day's
+ *    planning.
  */
 export function computeNextSleepMs(
   plannedSlots: Array<{ hour: number; minute: number }>,
+  catchupSlot: { hour: number; minute: number } | null,
   now: Date,
 ): number {
-  if (plannedSlots.length === 0) {
-    return msUntilMidnight(now);
-  }
-
   const currentMinutesOfDay = now.getHours() * 60 + now.getMinutes();
-  const sorted = [...plannedSlots].sort(
-    (a, b) => a.hour * 60 + a.minute - (b.hour * 60 + b.minute),
-  );
 
-  // Find the next upcoming planned slot
-  const nextSlot = sorted.find((s) => s.hour * 60 + s.minute > currentMinutesOfDay);
+  if (plannedSlots.length > 0) {
+    const sorted = [...plannedSlots].sort(
+      (a, b) => a.hour * 60 + a.minute - (b.hour * 60 + b.minute),
+    );
 
-  if (nextSlot) {
-    const minutesUntilSlot = nextSlot.hour * 60 + nextSlot.minute - currentMinutesOfDay;
-    // Sleep until LEAD_MINUTES before the slot; wake up at least 1 minute from now.
-    const sleepMinutes = Math.max(minutesUntilSlot - LEAD_MINUTES, 1);
-    return sleepMinutes * 60 * 1000;
+    // Find the next upcoming planned slot
+    const nextSlot = sorted.find((s) => s.hour * 60 + s.minute > currentMinutesOfDay);
+
+    if (nextSlot) {
+      const minutesUntilSlot = nextSlot.hour * 60 + nextSlot.minute - currentMinutesOfDay;
+      // Sleep until LEAD_MINUTES before the slot; wake up at least 1 minute from now.
+      const sleepMinutes = Math.max(minutesUntilSlot - LEAD_MINUTES, 1);
+      return sleepMinutes * 60 * 1000;
+    }
   }
 
-  // All planned slots have passed — are we still within the catch-up window?
-  const lastSlot = sorted[sorted.length - 1];
-  const minutesSinceLastSlot = currentMinutesOfDay - (lastSlot.hour * 60 + lastSlot.minute);
-
-  if (minutesSinceLastSlot < CATCHUP_WINDOW_MINUTES) {
-    return CATCHUP_CHECK_INTERVAL_MS;
+  // All planned slots have passed (or there were none).
+  // If a catch-up reminder has been scheduled, sleep until just before it fires
+  // so we can cancel it if the daily goal has since been reached.
+  if (catchupSlot !== null) {
+    const catchupMinutesOfDay = catchupSlot.hour * 60 + catchupSlot.minute;
+    if (catchupMinutesOfDay > currentMinutesOfDay) {
+      const minutesUntilCatchup = catchupMinutesOfDay - currentMinutesOfDay;
+      const sleepMinutes = Math.max(minutesUntilCatchup - LEAD_MINUTES, 1);
+      return sleepMinutes * 60 * 1000;
+    }
   }
 
-  // Past the catch-up window — sleep until midnight.
+  // No upcoming slot of any kind — sleep until midnight.
   return msUntilMidnight(now);
 }
 
@@ -107,7 +107,14 @@ const reminderTask = async (): Promise<void> => {
     try {
       const raw = getSetting('reminders_planned_slots', '[]');
       const slots = JSON.parse(raw) as Array<{ hour: number; minute: number }>;
-      sleepMs = computeNextSleepMs(slots, new Date());
+
+      const catchupRaw = getSetting('catchup_reminder_slot_minutes', '');
+      const catchupTotalMinutes = catchupRaw !== '' ? parseInt(catchupRaw, 10) : NaN;
+      const catchupSlot = !isNaN(catchupTotalMinutes)
+        ? { hour: Math.floor(catchupTotalMinutes / 60), minute: catchupTotalMinutes % 60 }
+        : null;
+
+      sleepMs = computeNextSleepMs(slots, catchupSlot, new Date());
     } catch (e) {
       // Parsing failed; fall back to the fixed interval.
       console.warn('TouchGrass: [BackgroundTask] Failed to compute dynamic sleep interval:', e);

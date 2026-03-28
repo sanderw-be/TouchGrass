@@ -22,17 +22,17 @@ function todayAt(hour: number, minute: number, second = 0): Date {
 }
 
 describe('computeNextSleepMs', () => {
-  describe('no planned slots', () => {
-    it('sleeps until midnight when there are no planned slots', () => {
+  describe('no planned slots, no catch-up slot', () => {
+    it('sleeps until midnight', () => {
       const now = todayAt(9, 0);
-      const result = computeNextSleepMs([], now);
+      const result = computeNextSleepMs([], null, now);
 
       const tomorrow = new Date(now);
       tomorrow.setDate(tomorrow.getDate() + 1);
       tomorrow.setHours(0, 0, 0, 0);
       const expectedMs = tomorrow.getTime() - now.getTime();
 
-      expect(result).toBeCloseTo(expectedMs, -3); // within ~1 second
+      expect(result).toBeCloseTo(expectedMs, -3);
     });
   });
 
@@ -41,7 +41,7 @@ describe('computeNextSleepMs', () => {
       // Now is 09:00, slot is at 10:00 → 60 minutes away → sleep 55 min
       const now = todayAt(9, 0);
       const slots = [{ hour: 10, minute: 0 }];
-      const result = computeNextSleepMs(slots, now);
+      const result = computeNextSleepMs(slots, null, now);
 
       expect(result).toBe(55 * 60 * 1000);
     });
@@ -53,7 +53,7 @@ describe('computeNextSleepMs', () => {
         { hour: 14, minute: 0 },
         { hour: 10, minute: 0 },
       ];
-      const result = computeNextSleepMs(slots, now);
+      const result = computeNextSleepMs(slots, null, now);
 
       expect(result).toBe(55 * 60 * 1000);
     });
@@ -62,7 +62,7 @@ describe('computeNextSleepMs', () => {
       // Now is 09:57, slot is at 10:00 → 3 min away, less than LEAD_MINUTES (5)
       const now = todayAt(9, 57);
       const slots = [{ hour: 10, minute: 0 }];
-      const result = computeNextSleepMs(slots, now);
+      const result = computeNextSleepMs(slots, null, now);
 
       expect(result).toBe(1 * 60 * 1000);
     });
@@ -74,38 +74,49 @@ describe('computeNextSleepMs', () => {
         { hour: 10, minute: 0 },
         { hour: 14, minute: 0 },
       ];
-      const result = computeNextSleepMs(slots, now);
+      const result = computeNextSleepMs(slots, null, now);
+
+      expect(result).toBe(175 * 60 * 1000);
+    });
+
+    it('ignores a catch-up slot when a planned slot is still upcoming', () => {
+      // Planned slot at 14:00, catch-up slot at 16:00; now is 11:00 → sleep 175 min
+      const now = todayAt(11, 0);
+      const slots = [{ hour: 14, minute: 0 }];
+      const catchupSlot = { hour: 16, minute: 0 };
+      const result = computeNextSleepMs(slots, catchupSlot, now);
 
       expect(result).toBe(175 * 60 * 1000);
     });
   });
 
-  describe('all slots have passed — catch-up window', () => {
-    it('returns CATCHUP_CHECK_INTERVAL_MS when within 2 hours of last slot', () => {
-      // All slots have passed, last one was at 10:00, now is 10:30 (30 min after)
+  describe('all planned slots have passed — catch-up slot scheduled', () => {
+    it('sleeps until 5 minutes before the catch-up slot', () => {
+      // Planned slot at 10:00 has passed; catch-up at 13:00; now is 10:30 → 150 min until catch-up → sleep 145 min
       const now = todayAt(10, 30);
       const slots = [{ hour: 10, minute: 0 }];
-      const result = computeNextSleepMs(slots, now);
+      const catchupSlot = { hour: 13, minute: 0 };
+      const result = computeNextSleepMs(slots, catchupSlot, now);
 
-      expect(result).toBe(5 * 60 * 1000);
+      expect(result).toBe(145 * 60 * 1000);
     });
 
-    it('still returns CATCHUP_CHECK_INTERVAL_MS right before the window ends', () => {
-      // Last slot at 10:00, now 11:59 → 119 min after → still in window
-      const now = todayAt(11, 59);
+    it('applies the 1-minute floor when catch-up is within the lead window', () => {
+      // Catch-up at 10:30, now is 10:27 → 3 min away < LEAD_MINUTES(5)
+      const now = todayAt(10, 27);
       const slots = [{ hour: 10, minute: 0 }];
-      const result = computeNextSleepMs(slots, now);
+      const catchupSlot = { hour: 10, minute: 30 };
+      const result = computeNextSleepMs(slots, catchupSlot, now);
 
-      expect(result).toBe(5 * 60 * 1000);
+      expect(result).toBe(1 * 60 * 1000);
     });
-  });
 
-  describe('all slots have passed — past catch-up window', () => {
-    it('sleeps until midnight when past the catch-up window', () => {
-      // Last slot at 10:00, now 12:05 → 125 min after → outside the 120-min window
-      const now = todayAt(12, 5);
+    it('sleeps until midnight when the catch-up slot has already passed', () => {
+      // Planned slot at 10:00, catch-up at 11:00, now is 12:00 — catch-up already fired
+      const now = todayAt(12, 0);
       const slots = [{ hour: 10, minute: 0 }];
-      const result = computeNextSleepMs(slots, now);
+      const catchupSlot = { hour: 11, minute: 0 };
+      const result = computeNextSleepMs(slots, catchupSlot, now);
 
       const tomorrow = new Date(now);
       tomorrow.setDate(tomorrow.getDate() + 1);
@@ -114,15 +125,13 @@ describe('computeNextSleepMs', () => {
 
       expect(result).toBeCloseTo(expectedMs, -3);
     });
+  });
 
-    it('uses the latest slot to determine the catch-up window', () => {
-      // Slots at 10:00 and 14:00, both passed, now is 16:05 → 125 min after 14:00 → outside window
-      const now = todayAt(16, 5);
-      const slots = [
-        { hour: 10, minute: 0 },
-        { hour: 14, minute: 0 },
-      ];
-      const result = computeNextSleepMs(slots, now);
+  describe('all planned slots have passed — no catch-up scheduled', () => {
+    it('sleeps until midnight', () => {
+      const now = todayAt(10, 30);
+      const slots = [{ hour: 10, minute: 0 }];
+      const result = computeNextSleepMs(slots, null, now);
 
       const tomorrow = new Date(now);
       tomorrow.setDate(tomorrow.getDate() + 1);
@@ -135,9 +144,8 @@ describe('computeNextSleepMs', () => {
 
   describe('near midnight edge cases', () => {
     it('returns at least 60 000 ms so the loop never busy-spins near midnight', () => {
-      // 23:59 with no slots → msUntilMidnight ≈ 60 s, but minimum is 1 min
       const now = todayAt(23, 59, 30);
-      const result = computeNextSleepMs([], now);
+      const result = computeNextSleepMs([], null, now);
 
       expect(result).toBeGreaterThanOrEqual(60 * 1000);
     });

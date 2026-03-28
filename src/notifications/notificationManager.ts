@@ -340,6 +340,7 @@ export async function scheduleDayReminders(): Promise<void> {
   if (remindersCount === 0) {
     setSetting('reminders_planned_slots', '[]');
     setSetting('additional_reminders_today', '0');
+    setSetting('catchup_reminder_slot_minutes', '');
     return;
   }
 
@@ -352,6 +353,7 @@ export async function scheduleDayReminders(): Promise<void> {
   if (todayMinutes >= dailyTarget) {
     setSetting('reminders_planned_slots', '[]');
     setSetting('additional_reminders_today', '0');
+    setSetting('catchup_reminder_slot_minutes', '');
     return;
   }
 
@@ -440,6 +442,7 @@ export async function scheduleDayReminders(): Promise<void> {
   // Store the planned slots so catch-up logic can reference them
   setSetting('reminders_planned_slots', JSON.stringify(scheduledSlots));
   setSetting('additional_reminders_today', '0');
+  setSetting('catchup_reminder_slot_minutes', '');
 
   // Pre-schedule the same time slots for the next FAILSAFE_DAYS_AHEAD days so
   // that reminders (and calendar events) fire even if the app is force-closed
@@ -541,6 +544,7 @@ export async function maybeScheduleCatchUpReminder(): Promise<void> {
 
   // Additional reminders never create calendar events
   setSetting('additional_reminders_today', String(additionalCount + 1));
+  setSetting('catchup_reminder_slot_minutes', String(best.hour * 60 + best.minute));
   console.log(
     `TouchGrass: catch-up reminder scheduled at ${best.hour}:${best.minute.toString().padStart(2, '0')}`,
   );
