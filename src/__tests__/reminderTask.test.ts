@@ -79,14 +79,25 @@ describe('computeNextSleepMs', () => {
       expect(result).toBe(175 * 60 * 1000);
     });
 
-    it('ignores a catch-up slot when a planned slot is still upcoming', () => {
-      // Planned slot at 14:00, catch-up slot at 16:00; now is 11:00 → sleep 175 min
+    it('ignores a catch-up slot when a planned slot is still upcoming and comes first', () => {
+      // Planned slot at 14:00, catch-up slot at 16:00; now is 11:00 → next is 14:00 → 175 min
       const now = todayAt(11, 0);
       const slots = [{ hour: 14, minute: 0 }];
       const catchupSlot = { hour: 16, minute: 0 };
       const result = computeNextSleepMs(slots, catchupSlot, now);
 
       expect(result).toBe(175 * 60 * 1000);
+    });
+
+    it('wakes before a catch-up slot that falls between two planned slots', () => {
+      // planned=[9:00, 13:00], catch-up=11:00, now=9:01
+      // next combined slot > 9:01 is 11:00 (catch-up), sleep = (660-541-5) = 114 min → wake ~10:55
+      const now = todayAt(9, 1);
+      const slots = [{ hour: 9, minute: 0 }, { hour: 13, minute: 0 }];
+      const catchupSlot = { hour: 11, minute: 0 };
+      const result = computeNextSleepMs(slots, catchupSlot, now);
+
+      expect(result).toBe(114 * 60 * 1000);
     });
   });
 
@@ -128,8 +139,9 @@ describe('computeNextSleepMs', () => {
   });
 
   describe('all planned slots have passed — no catch-up scheduled', () => {
-    it('sleeps until midnight', () => {
-      const now = todayAt(10, 30);
+    it('sleeps until midnight once all planned slots and the 60-min catch-up check window have passed', () => {
+      // Planned at 10:00, now is 12:00 — 2 hours after the slot; check window elapsed
+      const now = todayAt(12, 0);
       const slots = [{ hour: 10, minute: 0 }];
       const result = computeNextSleepMs(slots, null, now);
 
@@ -139,6 +151,26 @@ describe('computeNextSleepMs', () => {
       const expectedMs = tomorrow.getTime() - now.getTime();
 
       expect(result).toBeCloseTo(expectedMs, -3);
+    });
+
+    it('wakes for a catch-up check 60 minutes after the last planned slot fires', () => {
+      // Planned at 10:00, now is 10:30 → catch-up check slot is at 11:00 → sleep until 10:55
+      const now = todayAt(10, 30);
+      const slots = [{ hour: 10, minute: 0 }];
+      const result = computeNextSleepMs(slots, null, now);
+
+      // next slot = 11:00 (virtual check), sleep = (660 - 630 - 5) = 25 min
+      expect(result).toBe(25 * 60 * 1000);
+    });
+
+    it('wakes for a catch-up check on the most recently passed slot when multiple have fired', () => {
+      // Planned at 9:00 and 11:00, now is 11:30 → check slot at 12:00 → sleep 25 min
+      const now = todayAt(11, 30);
+      const slots = [{ hour: 9, minute: 0 }, { hour: 11, minute: 0 }];
+      const result = computeNextSleepMs(slots, null, now);
+
+      // mostRecentPassed = 11:00 (660), checkAt = 720, sleep = (720 - 690 - 5) = 25 min
+      expect(result).toBe(25 * 60 * 1000);
     });
   });
 
