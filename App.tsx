@@ -8,8 +8,9 @@ import 'expo-dev-client';
 import { initDatabase, getSetting, setSetting } from './src/storage/database';
 import i18n from './src/i18n';
 import { initDetection } from './src/detection/index';
-import { setupNotificationInfrastructure, scheduleDayReminders, scheduleDailyPlannerWakeup, dismissDailyPlannerNotifications } from './src/notifications/notificationManager';
+import { setupNotificationInfrastructure, scheduleDayReminders } from './src/notifications/notificationManager';
 import { cleanupTouchGrassCalendars } from './src/calendar/calendarService';
+import { startBackgroundTask } from './src/background/backgroundService';
 
 import AppNavigator from './src/navigation/AppNavigator';
 import IntroScreen from './src/screens/IntroScreen';
@@ -102,19 +103,11 @@ function AppContent() {
           console.warn('Scheduled notifications init error:', e);
         }
 
-        // Schedule the 3 AM daily planner wake-up (survives force-close via AlarmManager)
+        // Start the persistent background task
         try {
-          await scheduleDailyPlannerWakeup();
+          await startBackgroundTask();
         } catch (e) {
-          console.warn('Daily planner wakeup scheduling error:', e);
-        }
-
-        // Dismiss any daily planner notification still in the tray — scheduling
-        // work is now complete so the notification has served its purpose.
-        try {
-          await dismissDailyPlannerNotifications();
-        } catch (e) {
-          console.warn('Daily planner dismiss error:', e);
+          console.warn('Background service start error:', e);
         }
 
         // Register weather background fetch for hourly updates
@@ -158,19 +151,11 @@ function AppContent() {
       console.warn('Scheduled notifications init error:', e);
     }
 
-    // Schedule the 3 AM daily planner wake-up (survives force-close via AlarmManager)
+    // Start the persistent background task
     try {
-      await scheduleDailyPlannerWakeup();
+      await startBackgroundTask();
     } catch (e) {
-      console.warn('Daily planner wakeup scheduling error:', e);
-    }
-
-    // Dismiss any daily planner notification still in the tray — scheduling
-    // work is now complete so the notification has served its purpose.
-    try {
-      await dismissDailyPlannerNotifications();
-    } catch (e) {
-      console.warn('Daily planner dismiss error:', e);
+      console.warn('Background service start error:', e);
     }
 
     // Register weather background fetch for hourly updates

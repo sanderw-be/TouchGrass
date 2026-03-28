@@ -37,6 +37,11 @@ jest.mock('../notifications/scheduledNotifications', () => ({
   scheduleAllScheduledNotifications: jest.fn().mockResolvedValue(undefined),
 }));
 
+// Mock background service
+jest.mock('../background/backgroundService', () => ({
+  startBackgroundTask: jest.fn().mockResolvedValue(undefined),
+}));
+
 // Mock weather background task
 jest.mock('../weather/weatherBackgroundTask', () => ({
   registerWeatherBackgroundFetch: jest.fn().mockResolvedValue(undefined),

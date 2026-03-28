@@ -415,6 +415,10 @@ export default {
   error_boundary_restart: 'App herstarten',
   error_boundary_report: 'Probleem melden',
 
+  // Background Task
+  background_task_title: 'Slimme Herinneringen',
+  background_task_desc: 'Controleren wat de beste tijd is om je te herinneren om naar buiten te gaan.',
+
   // Taal-/datumopmaak
   locale_tag: 'nl-NL',
 };

@@ -1,75 +1,14 @@
-import * as BackgroundTask from 'expo-background-task';
-import * as TaskManager from 'expo-task-manager';
 import * as Location from 'expo-location';
-import * as Calendar from 'expo-calendar';
 import { syncHealthConnect, requestHealthPermissions, isHealthConnectAvailable, openHealthConnectForManagement } from './healthConnect';
 import { verifyHealthConnectPermissions } from './healthConnectIntent';
 import { startLocationTracking, autoDetectLocations } from './gpsDetection';
 import { getSetting, setSetting } from '../storage/database';
-import { scheduleNextReminder, scheduleDayReminders, maybeScheduleCatchUpReminder } from '../notifications/notificationManager';
-import { fetchWeatherForecast } from '../weather/weatherService';
 
 // Setting keys for the user's explicit intent (independent of OS permission state)
 const HC_USER_KEY = 'healthconnect_user_enabled';
 const GPS_USER_KEY = 'gps_user_enabled';
 // Sentinel used to detect whether the one-time settings migration has run.
 const UNSET_MARKER = '__unset__';
-
-const BACKGROUND_TASK_NAME = 'TOUCHGRASS_BACKGROUND_TASK';
-
-/**
- * Register the background task.
- * This runs periodically when the app is in the background.
- */
-TaskManager.defineTask(BACKGROUND_TASK_NAME, async () => {
-  try {
-    // Check calendar permission from within the background task context and log it.
-    // On Android the foreground app and background task share the same process/UID so
-    // permissions granted in the foreground should be visible here too — but this log
-    // makes that assumption observable in logcat so we can confirm it.
-    try {
-      const calPerm = await Calendar.getCalendarPermissionsAsync();
-      console.warn('TouchGrass: Background task calendar permission', {
-        status: calPerm.status,
-        granted: calPerm.granted,
-        canAskAgain: calPerm.canAskAgain,
-      });
-    } catch (calPermError) {
-      console.warn('TouchGrass: Failed to check calendar permission in background task', calPermError);
-    }
-
-    await syncHealthConnect();
-    await autoDetectLocations();
-    
-    // Fetch weather data for smart reminders (graceful fallback if it fails)
-    try {
-      const weatherEnabled = getSetting('weather_enabled', '1') === '1';
-      if (weatherEnabled) {
-        await fetchWeatherForecast({ allowPermissionPrompt: false });
-      }
-    } catch (weatherError) {
-      console.warn('Weather fetch failed in background task:', weatherError);
-      // Continue with reminder scheduling even if weather fails
-    }
-    
-    // Plan the day's reminders once per new day (at/after midnight).
-    // This must run before scheduleNextReminder() so that the planned
-    // notifications are not cancelled by the fallback path.
-    await scheduleDayReminders();
-
-    // Attempt to fire an immediate reminder.  Returns early if the day's
-    // reminders have already been planned by scheduleDayReminders().
-    await scheduleNextReminder();
-
-    // Check if a catch-up reminder is needed (user behind on daily goal)
-    await maybeScheduleCatchUpReminder();
-
-    return BackgroundTask.BackgroundTaskResult.Success;
-  } catch (e) {
-    console.warn('Background task error:', e);
-    return BackgroundTask.BackgroundTaskResult.Failed;
-  }
-});
 
 /**
  * Initialize all detection sources.
@@ -119,27 +58,7 @@ export async function initDetection(): Promise<DetectionStatus> {
     }
   }
 
-  // Background task
-  await registerBackgroundTask();
-
   return status;
-}
-
-/**
- * Register background task for periodic sync and reminders.
- */
-async function registerBackgroundTask(): Promise<void> {
-  try {
-    const isRegistered = await TaskManager.isTaskRegisteredAsync(BACKGROUND_TASK_NAME);
-    if (!isRegistered) {
-      await BackgroundTask.registerTaskAsync(BACKGROUND_TASK_NAME, {
-        minimumInterval: 15, // minutes
-      });
-      console.log('TouchGrass: background task registered with minimumInterval 15 min');
-    }
-  } catch (e) {
-    console.warn('Background task registration error:', e);
-  }
 }
 
 /**
