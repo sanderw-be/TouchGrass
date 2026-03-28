@@ -77,6 +77,7 @@ export function scoreReminderHours(
     const actedCount = slotFeedback.filter((f) => f.action === 'went_outside').length;
     const lessCount = slotFeedback.filter((f) => f.action === 'less_often').length;
     const moreCount = slotFeedback.filter((f) => f.action === 'more_often').length;
+    const badTimeCount = slotFeedback.filter((f) => f.action === 'bad_time').length;
 
     if (snoozeCount > 0) {
       const penalty = Math.min(snoozeCount * 0.08, 0.25);
@@ -106,6 +107,14 @@ export function scoreReminderHours(
       const bonus = Math.min(moreCount * 0.15, 0.35);
       score += bonus;
       reasons.push(`more_often +${bonus.toFixed(2)}`);
+    }
+
+    if (badTimeCount > 0) {
+      // "Bad time" is an explicit, deliberate signal — apply a larger and
+      // long-lasting penalty so the algorithm avoids this slot in the future.
+      const penalty = Math.min(badTimeCount * 0.30, 0.70);
+      score -= penalty;
+      reasons.push(`bad_time -${penalty.toFixed(2)}`);
     }
 
     // ── Urgency boost ─────────────────────────────────────

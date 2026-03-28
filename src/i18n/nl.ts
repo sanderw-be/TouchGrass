@@ -143,6 +143,12 @@ export default {
   settings_reminders_sublabel: 'Leert je patronen over tijd',
   settings_reminders_count_off: 'Uit',
   settings_reminders_count_per_day: '{{count}}/dag',
+  settings_catchup_label: 'Help me mijn doel halen',
+  settings_catchup_sublabel: 'Extra herinneringen als je achterloopt',
+  settings_catchup_off: 'Uit',
+  settings_catchup_mellow: 'Rustig',
+  settings_catchup_medium: 'Gemiddeld',
+  settings_catchup_aggressive: 'Intensief',
   settings_background_tracking_label: 'Achtergrondtracking melding',
   settings_background_tracking_sublabel: 'De permanente melding die zichtbaar is terwijl GPS actief is. Uitschakelen via Android Instellingen → Apps → TouchGrass → Meldingen → Achtergrondtracking.',
   settings_app_sublabel: 'Jouw buitentijd-assistent',
@@ -306,6 +312,13 @@ export default {
   notif_feedback_went_outside_detail: 'We herinneren je vaker rond {{time}}.',
   notif_feedback_snoozed_detail: 'We herinneren je over 30 minuten, minder vaak om {{time}} en vaker om {{snoozeTime}}.',
   notif_feedback_less_often_detail: 'We herinneren je minder vaak om {{time}}.',
+
+  // Minder-vaak granulaire feedbackmodal
+  notif_less_often_title: 'Wat wil je doen?',
+  notif_less_often_bad_time: '🕐 Dit was een slecht moment',
+  notif_less_often_fewer_reminders: '🔕 Stuur me minder herinneringen',
+  notif_fewer_reminders_confirm: 'Oké, ik stuur je {{newCount}} herinnering(en) per dag in plaats van {{oldCount}}.',
+  notif_fewer_reminders_confirm_generic: 'Oké, ik stuur je minder herinneringen.',
 
   // Weather settings
   settings_weather_title: 'Weer',

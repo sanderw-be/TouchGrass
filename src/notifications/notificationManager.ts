@@ -455,7 +455,9 @@ export async function scheduleDayReminders(): Promise<void> {
 /**
  * Schedule a catch-up reminder if the user is behind on their outdoor time goal.
  * Called from the background task after planned reminder times have passed.
- * At most 2 additional reminders per day; these never create calendar events.
+ * The number of additional reminders per day is controlled by the
+ * smart_catchup_reminders_count setting (0 = Off, 1 = Mellow, 2 = Medium, 3 = Aggressive).
+ * These never create calendar events.
  */
 export async function maybeScheduleCatchUpReminder(): Promise<void> {
   const remindersCount = parseInt(getSetting('smart_reminders_count', '2'), 10);
@@ -466,7 +468,8 @@ export async function maybeScheduleCatchUpReminder(): Promise<void> {
   if (lastPlannedDate !== todayStr) return;
 
   const additionalCount = parseInt(getSetting('additional_reminders_today', '0'), 10);
-  if (additionalCount >= 2) return;
+  const catchupLimit = parseInt(getSetting('smart_catchup_reminders_count', '2'), 10);
+  if (additionalCount >= catchupLimit) return;
 
   // Load the planned slots for today
   let plannedSlots: Array<{ hour: number; minute: number }> = [];
@@ -692,25 +695,30 @@ async function handleNotificationResponse(response: Notifications.NotificationRe
     : actionId === ACTION_LESS_OFTEN ? 'less_often'
     : 'dismissed';
 
-  insertReminderFeedback({
-    timestamp: now,
-    action,
-    scheduledHour: d.getHours(),
-    scheduledMinute: d.getMinutes() >= 30 ? 30 : 0,
-    dayOfWeek: d.getDay(),
-  });
+  // For 'less_often', feedback is NOT inserted immediately — the in-app modal lets
+  // the user choose between "bad time" (inserts bad_time feedback) or
+  // "fewer reminders" (adjusts settings). Dismissing the modal records nothing.
+  if (action !== 'less_often') {
+    insertReminderFeedback({
+      timestamp: now,
+      action,
+      scheduledHour: d.getHours(),
+      scheduledMinute: d.getMinutes() >= 30 ? 30 : 0,
+      dayOfWeek: d.getDay(),
+    });
+  }
 
   if (action !== 'dismissed') {
     const confirmBodyKey = action === 'went_outside' ? 'notif_confirm_went_outside'
       : action === 'snoozed' ? 'notif_confirm_snoozed'
-      : 'notif_confirm_less_often';
+      : undefined;
 
     // Show an in-app modal instead of re-posting the notification
     triggerReminderFeedbackModal({
       action,
       hour: d.getHours(),
       minute: d.getMinutes(),
-      confirmBodyKey,
+      ...(confirmBodyKey ? { confirmBodyKey } : {}),
     });
   }
 

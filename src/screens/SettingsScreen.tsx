@@ -36,6 +36,7 @@ export default function SettingsScreen() {
   const navigation = useNavigation<StackNavigationProp<SettingsStackParamList>>();
   const insets = useSafeAreaInsets();
   const [smartRemindersCount, setSmartRemindersCount] = useState(2);
+  const [catchupRemindersCount, setCatchupRemindersCount] = useState(2);
   const [detectionStatus, setDetectionStatus] = useState({ healthConnect: false, healthConnectPermission: false, gps: false, gpsPermission: false });
   const [knownLocations, setKnownLocations] = useState<KnownLocation[]>([]);
   const [suggestedCount, setSuggestedCount] = useState(0);
@@ -57,6 +58,7 @@ export default function SettingsScreen() {
 
   const loadStatus = useCallback(() => {
     setSmartRemindersCount(parseInt(getSetting('smart_reminders_count', '2'), 10));
+    setCatchupRemindersCount(parseInt(getSetting('smart_catchup_reminders_count', '2'), 10));
     setDetectionStatus(getDetectionStatus());
     setKnownLocations(getKnownLocations());
     setSuggestedCount(getSuggestedLocations().length);
@@ -168,6 +170,21 @@ export default function SettingsScreen() {
     const next = SMART_REMINDERS_OPTIONS[(idx + 1) % SMART_REMINDERS_OPTIONS.length];
     setSetting('smart_reminders_count', String(next));
     setSmartRemindersCount(next);
+  };
+
+  const CATCHUP_REMINDERS_OPTIONS = [0, 1, 2, 3] as const;
+  const CATCHUP_REMINDERS_LABELS: Record<number, string> = {
+    0: t('settings_catchup_off'),
+    1: t('settings_catchup_mellow'),
+    2: t('settings_catchup_medium'),
+    3: t('settings_catchup_aggressive'),
+  };
+
+  const cycleCatchupRemindersCount = () => {
+    const idx = CATCHUP_REMINDERS_OPTIONS.indexOf(catchupRemindersCount as 0 | 1 | 2 | 3);
+    const next = CATCHUP_REMINDERS_OPTIONS[(idx + 1) % CATCHUP_REMINDERS_OPTIONS.length];
+    setSetting('smart_catchup_reminders_count', String(next));
+    setCatchupRemindersCount(next);
   };
 
   const changeLanguage = (code: string) => {
@@ -384,6 +401,19 @@ export default function SettingsScreen() {
                 {smartRemindersCount === 0
                   ? t('settings_reminders_count_off')
                   : t('settings_reminders_count_per_day', { count: smartRemindersCount })}
+              </Text>
+            }
+          />
+        </TouchableOpacity>
+        <Divider />
+        <TouchableOpacity onPress={cycleCatchupRemindersCount}>
+          <SettingRow
+            icon="🎯"
+            label={t('settings_catchup_label')}
+            sublabel={t('settings_catchup_sublabel')}
+            right={
+              <Text style={styles.valueChip}>
+                {CATCHUP_REMINDERS_LABELS[catchupRemindersCount] ?? t('settings_catchup_medium')}
               </Text>
             }
           />

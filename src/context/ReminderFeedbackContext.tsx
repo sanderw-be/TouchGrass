@@ -6,7 +6,8 @@ export interface FeedbackModalData {
   action: FeedbackAction;
   hour: number;
   minute: number;
-  confirmBodyKey: 'notif_confirm_went_outside' | 'notif_confirm_snoozed' | 'notif_confirm_less_often';
+  /** Not required for 'less_often' — that action shows a two-choice picker instead of a confirmation. */
+  confirmBodyKey?: 'notif_confirm_went_outside' | 'notif_confirm_snoozed';
 }
 
 interface ReminderFeedbackContextValue {

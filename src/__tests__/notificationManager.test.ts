@@ -726,14 +726,55 @@ describe('notificationManager', () => {
       jest.restoreAllMocks();
     });
 
-    it('caps at 2 additional reminders per day', async () => {
+    it('caps at smart_catchup_reminders_count additional reminders per day (default 2)', async () => {
       const todayStr = new Date().toDateString();
       (Database.getTodayMinutes as jest.Mock).mockReturnValue(0);
       (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
       (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
         if (key === 'smart_reminders_count') return '2';
+        if (key === 'smart_catchup_reminders_count') return '2'; // default limit
         if (key === 'reminders_last_planned_date') return todayStr;
         if (key === 'additional_reminders_today') return '2'; // already at max
+        if (key === 'reminders_planned_slots') return JSON.stringify([{ hour: 9, minute: 0 }, { hour: 11, minute: 0 }]);
+        return fallback;
+      });
+
+      await maybeScheduleCatchUpReminder();
+
+      expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
+    });
+
+    it('sends no catch-up reminders when smart_catchup_reminders_count is 0', async () => {
+      const todayStr = new Date().toDateString();
+      (Database.getTodayMinutes as jest.Mock).mockReturnValue(0);
+      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
+      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
+        if (key === 'smart_reminders_count') return '2';
+        if (key === 'smart_catchup_reminders_count') return '0'; // user reduced to 0
+        if (key === 'reminders_last_planned_date') return todayStr;
+        if (key === 'additional_reminders_today') return '0';
+        if (key === 'reminders_planned_slots') return JSON.stringify([{ hour: 9, minute: 0 }, { hour: 11, minute: 0 }]);
+        return fallback;
+      });
+      jest.spyOn(Date.prototype, 'getHours').mockReturnValue(12);
+      jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
+
+      await maybeScheduleCatchUpReminder();
+
+      expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
+
+      jest.restoreAllMocks();
+    });
+
+    it('caps at 1 additional reminder when smart_catchup_reminders_count is 1', async () => {
+      const todayStr = new Date().toDateString();
+      (Database.getTodayMinutes as jest.Mock).mockReturnValue(0);
+      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
+      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
+        if (key === 'smart_reminders_count') return '2';
+        if (key === 'smart_catchup_reminders_count') return '1'; // user reduced to 1
+        if (key === 'reminders_last_planned_date') return todayStr;
+        if (key === 'additional_reminders_today') return '1'; // already at the new max
         if (key === 'reminders_planned_slots') return JSON.stringify([{ hour: 9, minute: 0 }, { hour: 11, minute: 0 }]);
         return fallback;
       });
@@ -849,7 +890,7 @@ describe('notificationManager', () => {
       );
     });
 
-    it('triggers the feedback modal with less_often action', async () => {
+    it('triggers the feedback modal with less_often action (without confirmBodyKey)', async () => {
       await capturedListener!({
         notification: { request: { identifier: 'notif-abc' } },
         actionIdentifier: 'less_often',
@@ -857,8 +898,38 @@ describe('notificationManager', () => {
       expect(FeedbackContext.triggerReminderFeedbackModal).toHaveBeenCalledWith(
         expect.objectContaining({
           action: 'less_often',
-          confirmBodyKey: 'notif_confirm_less_often',
         }),
+      );
+      // confirmBodyKey must NOT be present for less_often — the modal shows a choice picker
+      const call = (FeedbackContext.triggerReminderFeedbackModal as jest.Mock).mock.calls[0][0];
+      expect(call).not.toHaveProperty('confirmBodyKey');
+    });
+
+    it('does NOT insert reminder feedback immediately when less_often is tapped', async () => {
+      await capturedListener!({
+        notification: { request: { identifier: 'notif-abc' } },
+        actionIdentifier: 'less_often',
+      });
+      expect(Database.insertReminderFeedback).not.toHaveBeenCalled();
+    });
+
+    it('inserts reminder feedback immediately for went_outside action', async () => {
+      await capturedListener!({
+        notification: { request: { identifier: 'notif-abc' } },
+        actionIdentifier: 'went_outside',
+      });
+      expect(Database.insertReminderFeedback).toHaveBeenCalledWith(
+        expect.objectContaining({ action: 'went_outside' }),
+      );
+    });
+
+    it('inserts reminder feedback immediately for snoozed action', async () => {
+      await capturedListener!({
+        notification: { request: { identifier: 'notif-abc' } },
+        actionIdentifier: 'snoozed',
+      });
+      expect(Database.insertReminderFeedback).toHaveBeenCalledWith(
+        expect.objectContaining({ action: 'snoozed' }),
       );
     });
 
