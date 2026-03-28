@@ -466,7 +466,8 @@ export async function maybeScheduleCatchUpReminder(): Promise<void> {
   if (lastPlannedDate !== todayStr) return;
 
   const additionalCount = parseInt(getSetting('additional_reminders_today', '0'), 10);
-  if (additionalCount >= 2) return;
+  const catchupLimit = parseInt(getSetting('smart_catchup_reminders_count', '2'), 10);
+  if (additionalCount >= catchupLimit) return;
 
   // Load the planned slots for today
   let plannedSlots: Array<{ hour: number; minute: number }> = [];

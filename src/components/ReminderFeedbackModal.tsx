@@ -12,7 +12,8 @@ export default function ReminderFeedbackModal() {
   const { visible, data, dismiss } = useReminderFeedback();
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
-  const [fewerRemindersConfirm, setFewerRemindersConfirm] = useState<string | null>(null);
+  const [showFewerConfirmation, setShowFewerConfirmation] = useState(false);
+  const [fewerConfirmationMessage, setFewerConfirmationMessage] = useState('');
 
   if (!visible || !data) return null;
 
@@ -26,21 +27,21 @@ export default function ReminderFeedbackModal() {
   if (data.action === 'less_often') {
     // After choosing "fewer reminders" we show a brief confirmation before the
     // user manually dismisses.
-    if (fewerRemindersConfirm !== null) {
+    if (showFewerConfirmation) {
       return (
         <Modal
           visible={visible}
           transparent
           animationType="fade"
-          onRequestClose={() => { setFewerRemindersConfirm(null); dismiss(); }}
+          onRequestClose={() => { setShowFewerConfirmation(false); dismiss(); }}
         >
           <View style={styles.overlay}>
             <View style={styles.card}>
               <Text style={styles.title}>{t('notif_confirm_title')}</Text>
-              <Text style={styles.confirmBody}>{fewerRemindersConfirm}</Text>
+              <Text style={styles.confirmBody}>{fewerConfirmationMessage}</Text>
               <TouchableOpacity
                 style={styles.button}
-                onPress={() => { setFewerRemindersConfirm(null); dismiss(); }}
+                onPress={() => { setShowFewerConfirmation(false); dismiss(); }}
                 accessibilityRole="button"
               >
                 <Text style={styles.buttonText}>{t('notif_feedback_dismiss')}</Text>
@@ -63,10 +64,17 @@ export default function ReminderFeedbackModal() {
     };
 
     const handleFewerReminders = () => {
-      const currentCount = parseInt(getSetting('smart_reminders_count', '3'), 10);
-      const newCount = Math.max(1, currentCount - 1);
-      setSetting('smart_reminders_count', String(newCount));
-      setFewerRemindersConfirm(t('notif_fewer_reminders_confirm', { newCount, oldCount: currentCount }));
+      const catchupCount = parseInt(getSetting('smart_catchup_reminders_count', '2'), 10);
+      if (catchupCount > 0) {
+        setSetting('smart_catchup_reminders_count', String(catchupCount - 1));
+        setFewerConfirmationMessage(t('notif_fewer_reminders_confirm_generic'));
+      } else {
+        const currentCount = parseInt(getSetting('smart_reminders_count', '3'), 10);
+        const newCount = Math.max(1, currentCount - 1);
+        setSetting('smart_reminders_count', String(newCount));
+        setFewerConfirmationMessage(t('notif_fewer_reminders_confirm', { newCount, oldCount: currentCount }));
+      }
+      setShowFewerConfirmation(true);
     };
 
     return (

@@ -308,10 +308,11 @@ export default {
   notif_feedback_less_often_detail: 'We herinneren je minder vaak om {{time}}.',
 
   // Minder-vaak granulaire feedbackmodal
-  notif_less_often_title: 'Wat wil je?',
+  notif_less_often_title: 'Wat wil je doen?',
   notif_less_often_bad_time: '🕐 Dit was een slecht moment',
   notif_less_often_fewer_reminders: '🔕 Stuur me minder herinneringen',
   notif_fewer_reminders_confirm: 'Oké, ik stuur je {{newCount}} herinnering(en) per dag in plaats van {{oldCount}}.',
+  notif_fewer_reminders_confirm_generic: 'Oké, ik stuur je minder herinneringen.',
 
   // Weather settings
   settings_weather_title: 'Weer',
