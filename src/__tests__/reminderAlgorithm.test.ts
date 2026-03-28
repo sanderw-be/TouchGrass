@@ -1,11 +1,12 @@
 jest.mock('../storage/database');
 jest.mock('../weather/weatherService');
 jest.mock('../weather/weatherAlgorithm');
+jest.mock('../i18n', () => ({ t: (key: string) => key }));
 
 import * as Database from '../storage/database';
 import * as WeatherService from '../weather/weatherService';
 import * as WeatherAlgorithm from '../weather/weatherAlgorithm';
-import { scoreReminderHours, shouldRemindNow, HourScore } from '../notifications/reminderAlgorithm';
+import { scoreReminderHours, shouldRemindNow, HourScore, ScoreContributor } from '../notifications/reminderAlgorithm';
 
 describe('reminderAlgorithm', () => {
   beforeEach(() => {
@@ -32,13 +33,15 @@ describe('reminderAlgorithm', () => {
       expect(scores).toHaveLength(32);
     });
 
-    it('each score has hour, minute, score, and reason fields', () => {
+    it('each score has hour, minute, score, reason, and contributors fields', () => {
       const scores = scoreReminderHours(0, 30, 0, 0);
       for (const s of scores) {
         expect(s).toHaveProperty('hour');
         expect(s).toHaveProperty('minute');
         expect(s).toHaveProperty('score');
         expect(s).toHaveProperty('reason');
+        expect(s).toHaveProperty('contributors');
+        expect(Array.isArray(s.contributors)).toBe(true);
         expect([0, 30]).toContain(s.minute);
       }
     });
@@ -241,6 +244,159 @@ describe('reminderAlgorithm', () => {
     });
   });
 
+  describe('ScoreContributor — structured reason data', () => {
+    it('past slots have empty contributors array', () => {
+      const scores = scoreReminderHours(0, 30, 14, 0);
+      const slot900 = scores.find((s) => s.hour === 9 && s.minute === 0)!;
+      expect(slot900.contributors).toEqual([]);
+    });
+
+    it('baseline slots with no bonuses have empty contributors', () => {
+      const scores = scoreReminderHours(0, 30, 0, 0);
+      // 8:00 has no bonuses (not lunch, not after-work, no weather, no pattern)
+      const slot800 = scores.find((s) => s.hour === 8 && s.minute === 0)!;
+      expect(slot800.contributors).toEqual([]);
+    });
+
+    it('lunch slot has a lunch contributor', () => {
+      const scores = scoreReminderHours(0, 30, 0, 0);
+      const slot1200 = scores.find((s) => s.hour === 12 && s.minute === 0)!;
+      const lunchContributor = slot1200.contributors.find((c) => c.reason === 'lunch');
+      expect(lunchContributor).toBeDefined();
+      expect(lunchContributor!.score).toBeCloseTo(0.1);
+      expect(lunchContributor!.description).toBe('notif_reason_lunch');
+    });
+
+    it('after-work slot has an after_work contributor', () => {
+      const scores = scoreReminderHours(0, 30, 0, 0);
+      const slot1800 = scores.find((s) => s.hour === 18 && s.minute === 0)!;
+      const afterWorkContributor = slot1800.contributors.find((c) => c.reason === 'after_work');
+      expect(afterWorkContributor).toBeDefined();
+      expect(afterWorkContributor!.score).toBeCloseTo(0.15);
+      expect(afterWorkContributor!.description).toBe('notif_reason_after_work');
+    });
+
+    it('pattern boost creates a pattern contributor', () => {
+      (Database.getSessionsForRange as jest.Mock).mockReturnValue([
+        { startTime: new Date().setHours(10, 0, 0, 0) },
+      ]);
+      const scores = scoreReminderHours(0, 30, 0, 0);
+      const slot1000 = scores.find((s) => s.hour === 10 && s.minute === 0)!;
+      const patternContributor = slot1000.contributors.find((c) => c.reason === 'pattern');
+      expect(patternContributor).toBeDefined();
+      expect(patternContributor!.score).toBeGreaterThan(0);
+      expect(patternContributor!.description).toBe('notif_reason_pattern');
+    });
+
+    it('acted feedback creates an acted contributor', () => {
+      (Database.getReminderFeedback as jest.Mock).mockReturnValue([
+        { action: 'went_outside', scheduledHour: 10, scheduledMinute: 0, dayOfWeek: 1, timestamp: Date.now() },
+      ]);
+      const scores = scoreReminderHours(0, 30, 0, 0);
+      const slot1000 = scores.find((s) => s.hour === 10 && s.minute === 0)!;
+      const actedContributor = slot1000.contributors.find((c) => c.reason === 'acted');
+      expect(actedContributor).toBeDefined();
+      expect(actedContributor!.description).toBe('notif_reason_acted');
+    });
+
+    it('more_often feedback creates a more_often contributor', () => {
+      (Database.getReminderFeedback as jest.Mock).mockReturnValue([
+        { action: 'more_often', scheduledHour: 10, scheduledMinute: 0, dayOfWeek: 1, timestamp: Date.now() },
+      ]);
+      const scores = scoreReminderHours(0, 30, 0, 0);
+      const slot1000 = scores.find((s) => s.hour === 10 && s.minute === 0)!;
+      const moreOftenContributor = slot1000.contributors.find((c) => c.reason === 'more_often');
+      expect(moreOftenContributor).toBeDefined();
+      expect(moreOftenContributor!.description).toBe('notif_reason_more_often');
+    });
+
+    it('positive weather score creates a weather contributor with emoji and temperature', () => {
+      (WeatherAlgorithm.getWeatherPreferences as jest.Mock).mockReturnValue({ enabled: true });
+      (WeatherService.getWeatherForHour as jest.Mock).mockReturnValue({
+        temperature: 20,
+        weatherCode: 0,
+        precipitationProbability: 0,
+        cloudCover: 0,
+        uvIndex: 2,
+        windSpeed: 5,
+        isDay: true,
+        forecastHour: 12,
+        forecastDate: 0,
+        timestamp: 0,
+      });
+      (WeatherAlgorithm.scoreWeatherCondition as jest.Mock).mockReturnValue(0.2);
+      (WeatherAlgorithm.getWeatherEmoji as jest.Mock).mockReturnValue('☀️');
+      (WeatherAlgorithm.getWeatherDescription as jest.Mock).mockReturnValue('Clear sky');
+
+      const scores = scoreReminderHours(0, 30, 0, 0);
+      const slot1200 = scores.find((s) => s.hour === 12 && s.minute === 0)!;
+      const weatherContributor = slot1200.contributors.find((c) => c.reason === 'weather');
+      expect(weatherContributor).toBeDefined();
+      expect(weatherContributor!.score).toBeCloseTo(0.2);
+      expect(weatherContributor!.description).toContain('☀️');
+      expect(weatherContributor!.description).toContain('Clear sky');
+      expect(weatherContributor!.description).toContain('20°C');
+    });
+
+    it('negative weather score does not create a weather contributor', () => {
+      (WeatherAlgorithm.getWeatherPreferences as jest.Mock).mockReturnValue({ enabled: true });
+      (WeatherService.getWeatherForHour as jest.Mock).mockReturnValue({
+        temperature: 5, weatherCode: 61, precipitationProbability: 90,
+        cloudCover: 100, uvIndex: 0, windSpeed: 20, isDay: true,
+        forecastHour: 12, forecastDate: 0, timestamp: 0,
+      });
+      (WeatherAlgorithm.scoreWeatherCondition as jest.Mock).mockReturnValue(-0.3);
+      (WeatherAlgorithm.getWeatherEmoji as jest.Mock).mockReturnValue('🌧️');
+      (WeatherAlgorithm.getWeatherDescription as jest.Mock).mockReturnValue('Rain');
+
+      const scores = scoreReminderHours(0, 30, 0, 0);
+      const slot1200 = scores.find((s) => s.hour === 12 && s.minute === 0)!;
+      const weatherContributor = slot1200.contributors.find((c) => c.reason === 'weather');
+      expect(weatherContributor).toBeUndefined();
+    });
+
+    it('contributors are sorted by descending score', () => {
+      // after-work (0.15) > lunch (0.10) for hour 13 which has lunch but not after-work
+      // Set up pattern boost AND lunch for 12:00 to verify ordering
+      (Database.getSessionsForRange as jest.Mock).mockReturnValue([
+        { startTime: new Date().setHours(12, 0, 0, 0) },
+        { startTime: new Date().setHours(12, 0, 0, 0) },
+        { startTime: new Date().setHours(12, 0, 0, 0) },
+      ]);
+      const scores = scoreReminderHours(0, 30, 0, 0);
+      const slot1200 = scores.find((s) => s.hour === 12 && s.minute === 0)!;
+      // pattern boost (3 * 0.1 = 0.3 capped) should be >= lunch (0.1)
+      for (let i = 1; i < slot1200.contributors.length; i++) {
+        expect(slot1200.contributors[i - 1].score).toBeGreaterThanOrEqual(slot1200.contributors[i].score);
+      }
+    });
+
+    it('penalties (dismissed, snoozed, less_often, bad_time) do not create contributors', () => {
+      (Database.getReminderFeedback as jest.Mock).mockReturnValue([
+        { action: 'dismissed', scheduledHour: 10, scheduledMinute: 0, dayOfWeek: 1, timestamp: 1 },
+        { action: 'snoozed', scheduledHour: 10, scheduledMinute: 0, dayOfWeek: 1, timestamp: 2 },
+        { action: 'less_often', scheduledHour: 10, scheduledMinute: 0, dayOfWeek: 1, timestamp: 3 },
+        { action: 'bad_time', scheduledHour: 10, scheduledMinute: 0, dayOfWeek: 1, timestamp: 4 },
+      ]);
+      const scores = scoreReminderHours(0, 30, 0, 0);
+      const slot1000 = scores.find((s) => s.hour === 10 && s.minute === 0)!;
+      expect(slot1000.contributors).toEqual([]);
+    });
+
+    it('each contributor has reason, score, and description fields', () => {
+      const scores = scoreReminderHours(0, 30, 0, 0);
+      const slot1200 = scores.find((s) => s.hour === 12 && s.minute === 0)!;
+      for (const c of slot1200.contributors) {
+        expect(c).toHaveProperty('reason');
+        expect(c).toHaveProperty('score');
+        expect(c).toHaveProperty('description');
+        expect(typeof c.reason).toBe('string');
+        expect(typeof c.score).toBe('number');
+        expect(typeof c.description).toBe('string');
+      }
+    });
+  });
+
   describe('shouldRemindNow', () => {
     it('returns false when currently outside', () => {
       const result = shouldRemindNow(0, 30, 0, true);
@@ -295,6 +451,23 @@ describe('reminderAlgorithm', () => {
       const result = shouldRemindNow(0, 30, 0, false);
       // With default baseline 0.5 and lunch bonus, score should be > 0.35
       expect(result.should).toBe(true);
+      jest.restoreAllMocks();
+    });
+
+    it('returns empty contributors array for all false outcomes', () => {
+      expect(shouldRemindNow(0, 30, 0, true).contributors).toEqual([]);
+      expect(shouldRemindNow(30, 30, 0, false).contributors).toEqual([]);
+    });
+
+    it('returns contributors from the current slot when should is true', () => {
+      jest.spyOn(Date.prototype, 'getHours').mockReturnValue(12);
+      jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
+      const result = shouldRemindNow(0, 30, 0, false);
+      expect(result.should).toBe(true);
+      expect(Array.isArray(result.contributors)).toBe(true);
+      // 12:00 has a lunch contributor
+      const lunchContributor = result.contributors.find((c: ScoreContributor) => c.reason === 'lunch');
+      expect(lunchContributor).toBeDefined();
       jest.restoreAllMocks();
     });
   });

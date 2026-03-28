@@ -5,7 +5,7 @@ import {
   getTodayMinutes, getCurrentDailyGoal,
   getSetting, setSetting, insertReminderFeedback,
 } from '../storage/database';
-import { shouldRemindNow, scoreReminderHours } from './reminderAlgorithm';
+import { shouldRemindNow, scoreReminderHours, ScoreContributor } from './reminderAlgorithm';
 import { fetchWeatherForecast, getWeatherForHour, isWeatherDataAvailable } from '../weather/weatherService';
 import { getWeatherDescription, getWeatherEmoji, getWeatherPreferences } from '../weather/weatherAlgorithm';
 import {
@@ -264,7 +264,7 @@ export async function scheduleNextReminder(): Promise<void> {
     return;
   }
 
-  const { should, reason } = shouldRemindNow(
+  const { should, reason, contributors } = shouldRemindNow(
     todayMinutes,
     dailyTarget,
     lastReminderMs,
@@ -280,7 +280,7 @@ export async function scheduleNextReminder(): Promise<void> {
   await cancelAutomaticReminders();
 
   // Build message based on progress
-  const { title, body } = buildReminderMessage(todayMinutes, dailyTarget);
+  const { title, body } = buildReminderMessage(todayMinutes, dailyTarget, undefined, contributors);
 
   await Notifications.scheduleNotificationAsync({
     content: {
@@ -371,7 +371,7 @@ export async function scheduleDayReminders(): Promise<void> {
   }
 
   const seenSlots = new Set<string>();
-  const topSlots: Array<{ hour: number; minute: 0 | 30 }> = [];
+  const topSlots: Array<{ hour: number; minute: 0 | 30; contributors: ScoreContributor[] }> = [];
   const currentSlotMinutes = currentHour * 60 + currentMinute;
 
   // Pick slots one at a time. After each pick, re-score with the chosen slots as
@@ -402,7 +402,7 @@ export async function scheduleDayReminders(): Promise<void> {
       }
 
       seenSlots.add(slotKey);
-      topSlots.push({ hour: slot.hour, minute: slot.minute as 0 | 30 });
+      topSlots.push({ hour: slot.hour, minute: slot.minute as 0 | 30, contributors: slot.contributors ?? [] });
       picked = true;
       break;
     }
@@ -417,7 +417,7 @@ export async function scheduleDayReminders(): Promise<void> {
     const triggerDate = new Date();
     triggerDate.setHours(slot.hour, slot.minute, 0, 0);
 
-    const { title, body } = buildReminderMessage(todayMinutes, dailyTarget, slot.hour);
+    const { title, body } = buildReminderMessage(todayMinutes, dailyTarget, slot.hour, slot.contributors);
 
     await Notifications.scheduleNotificationAsync({
       content: {
@@ -551,7 +551,7 @@ export async function maybeScheduleCatchUpReminder(): Promise<void> {
   const triggerDate = new Date();
   triggerDate.setHours(best.hour, best.minute, 0, 0);
 
-  const { title, body } = buildReminderMessage(todayMinutes, dailyTarget, best.hour);
+  const { title, body } = buildReminderMessage(todayMinutes, dailyTarget, best.hour, best.contributors ?? []);
 
   await Notifications.scheduleNotificationAsync({
     content: {
@@ -772,6 +772,7 @@ function buildReminderMessage(
   todayMinutes: number,
   dailyTarget: number,
   hour?: number,
+  contributors?: ScoreContributor[],
 ): { title: string; body: string } {
   const remaining = Math.max(0, Math.round(dailyTarget - todayMinutes));
   const percent = todayMinutes / dailyTarget;
@@ -790,20 +791,32 @@ function buildReminderMessage(
     body = t('notif_body_done');
   }
 
-  // Add weather context if available and enabled
-  if (isWeatherDataAvailable()) {
-    const weatherPrefs = getWeatherPreferences();
-    if (weatherPrefs.enabled) {
-      const currentHour = hour ?? new Date().getHours();
-      const weather = getWeatherForHour(currentHour);
-      
-      if (weather) {
-        const emoji = getWeatherEmoji(weather);
-        const temp = Math.round(weather.temperature);
-        const desc = getWeatherDescription(weather);
-        
-        // Add weather hint to body
-        body += ` ${emoji} ${desc}, ${temp}°C outside.`;
+  // Append top 2 contributor reason descriptions when available ("Why this time?" transparency)
+  if (contributors && contributors.length > 0) {
+    const top2 = contributors.slice(0, 2);
+    const descriptions = top2.map((c) => c.description);
+    const first = `${descriptions[0].charAt(0).toUpperCase()}${descriptions[0].slice(1)}`;
+    if (descriptions.length === 1) {
+      body += ` ${first}.`;
+    } else {
+      body += ` ${first}, and ${descriptions[1]}.`;
+    }
+  } else {
+    // Fallback: add weather context if available and enabled (used when no contributors provided)
+    if (isWeatherDataAvailable()) {
+      const weatherPrefs = getWeatherPreferences();
+      if (weatherPrefs.enabled) {
+        const currentHour = hour ?? new Date().getHours();
+        const weather = getWeatherForHour(currentHour);
+
+        if (weather) {
+          const emoji = getWeatherEmoji(weather);
+          const temp = Math.round(weather.temperature);
+          const desc = getWeatherDescription(weather);
+
+          // Add weather hint to body
+          body += ` ${emoji} ${desc}, ${temp}°C outside.`;
+        }
       }
     }
   }

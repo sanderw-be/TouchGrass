@@ -296,6 +296,14 @@ export default {
   notif_body_almost: 'Almost there — just {{remaining}} more minutes outside.',
   notif_body_done: 'Goal reached! Feel like a bonus walk? 🌿',
 
+  // Reminder reason descriptions ("Why this time?" explanations appended to notification body)
+  notif_reason_pattern: 'you often go outside around this time',
+  notif_reason_lunch: "it's a great time for a lunchtime walk",
+  notif_reason_after_work: 'after work is a great time to go outside',
+  notif_reason_urgent: "you haven't reached your goal yet today",
+  notif_reason_acted: "you've gone outside around this time before",
+  notif_reason_more_often: 'you prefer reminders around this time',
+
   // Notification action buttons
   notif_action_went_outside: '✅ Went outside!',
   notif_action_snooze: '⏰ Snooze',
