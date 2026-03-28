@@ -2,8 +2,6 @@ import BackgroundJob from 'react-native-background-actions';
 import reminderTask from './reminderTask';
 import { t } from '../i18n';
 
-const INTERVAL_MS = 15 * 60 * 1000; // 15 minutes
-
 const options = {
     taskName: 'TouchGrassReminder',
     taskTitle: t('background_task_title'),
@@ -14,9 +12,6 @@ const options = {
     },
     color: '#4A7C59',
     linkingURI: 'touchgrass://',
-    parameters: {
-        delay: INTERVAL_MS,
-    },
 };
 
 export const startBackgroundTask = async () => {
