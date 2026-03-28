@@ -455,7 +455,9 @@ export async function scheduleDayReminders(): Promise<void> {
 /**
  * Schedule a catch-up reminder if the user is behind on their outdoor time goal.
  * Called from the background task after planned reminder times have passed.
- * At most 2 additional reminders per day; these never create calendar events.
+ * The number of additional reminders per day is controlled by the
+ * smart_catchup_reminders_count setting (0 = Off, 1 = Mellow, 2 = Medium, 3 = Aggressive).
+ * These never create calendar events.
  */
 export async function maybeScheduleCatchUpReminder(): Promise<void> {
   const remindersCount = parseInt(getSetting('smart_reminders_count', '2'), 10);

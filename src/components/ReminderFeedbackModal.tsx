@@ -69,7 +69,7 @@ export default function ReminderFeedbackModal() {
         setSetting('smart_catchup_reminders_count', String(catchupCount - 1));
         setFewerConfirmationMessage(t('notif_fewer_reminders_confirm_generic'));
       } else {
-        const currentCount = parseInt(getSetting('smart_reminders_count', '3'), 10);
+        const currentCount = parseInt(getSetting('smart_reminders_count', '2'), 10);
         const newCount = Math.max(1, currentCount - 1);
         setSetting('smart_reminders_count', String(newCount));
         setFewerConfirmationMessage(t('notif_fewer_reminders_confirm', { newCount, oldCount: currentCount }));
