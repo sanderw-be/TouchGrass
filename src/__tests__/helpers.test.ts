@@ -49,6 +49,20 @@ describe('formatTime', () => {
     // The exact format may vary by locale, but it should contain time components
     expect(formatted).toMatch(/\d+/);
   });
+
+  it('omits AM/PM in 24-hour mode', () => {
+    mockUses24HourClock.mockReturnValue(true);
+    const timestamp = new Date('2024-01-15T14:30:00').getTime();
+    const formatted = formatTime(timestamp);
+    expect(formatted).not.toMatch(/AM|PM/i);
+  });
+
+  it('includes AM/PM in 12-hour mode', () => {
+    mockUses24HourClock.mockReturnValue(false);
+    const timestamp = new Date('2024-01-15T14:30:00').getTime();
+    const formatted = formatTime(timestamp);
+    expect(formatted).toMatch(/AM|PM/i);
+  });
 });
 
 describe('formatDate', () => {
