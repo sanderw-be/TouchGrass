@@ -1,5 +1,6 @@
 import { I18n } from 'i18n-js';
 import * as ExpoLocalization from 'expo-localization';
+import { uses24HourClock, normalizeAmPm } from '../utils/helpers';
 import en from './en';
 import nl from './nl';
 
@@ -28,12 +29,14 @@ export function formatLocalDate(ms: number, options?: Intl.DateTimeFormatOptions
   return new Date(ms).toLocaleDateString(localeTag(), options);
 }
 
-// Format a time using the current locale
+// Format a time using the current locale, respecting the device's 12/24h setting
 export function formatLocalTime(ms: number): string {
-  return new Date(ms).toLocaleTimeString(localeTag(), {
+  const raw = new Date(ms).toLocaleTimeString(localeTag(), {
     hour: '2-digit',
     minute: '2-digit',
+    hour12: !uses24HourClock(),
   });
+  return uses24HourClock() ? raw : normalizeAmPm(raw);
 }
 
 // To add a new language:

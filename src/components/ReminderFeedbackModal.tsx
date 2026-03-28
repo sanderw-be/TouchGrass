@@ -6,6 +6,7 @@ import { useReminderFeedback } from '../context/ReminderFeedbackContext';
 import { useTheme } from '../context/ThemeContext';
 import { spacing, radius, shadows } from '../utils/theme';
 import { t } from '../i18n';
+import { uses24HourClock, normalizeAmPm } from '../utils/helpers';
 import { insertReminderFeedback, getSetting, setSetting } from '../storage/database';
 
 export default function ReminderFeedbackModal() {
@@ -17,9 +18,13 @@ export default function ReminderFeedbackModal() {
 
   if (!visible || !data) return null;
 
-  // Format a time as zero-padded HH:MM
-  const formatTime = (h: number, m: number) =>
-    `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+  // Format a time respecting the device's 12/24h setting
+  const formatTime = (h: number, m: number) => {
+    const d = new Date();
+    d.setHours(h, m, 0, 0);
+    const raw = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: !uses24HourClock() });
+    return uses24HourClock() ? raw : normalizeAmPm(raw);
+  };
 
   const time = formatTime(data.hour, data.minute);
 

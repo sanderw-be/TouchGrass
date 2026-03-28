@@ -17,7 +17,7 @@ import { scheduleAllScheduledNotifications } from '../notifications/scheduledNot
 import { spacing, radius, shadows } from '../utils/theme';
 import { useTheme } from '../context/ThemeContext';
 import { t } from '../i18n';
-import { uses24HourClock } from '../utils/helpers';
+import { uses24HourClock, normalizeAmPm } from '../utils/helpers';
 
 const DAY_LABELS = ['day_sun', 'day_mon', 'day_tue', 'day_wed', 'day_thu', 'day_fri', 'day_sat'];
 
@@ -171,9 +171,10 @@ export default function ScheduledNotificationsScreen() {
   };
 
   const formatTime = (hour: number, minute: number): string => {
-    const h = hour.toString().padStart(2, '0');
-    const m = minute.toString().padStart(2, '0');
-    return `${h}:${m}`;
+    const d = new Date();
+    d.setHours(hour, minute, 0, 0);
+    const raw = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: !uses24HourClock() });
+    return uses24HourClock() ? raw : normalizeAmPm(raw);
   };
 
   const formatDays = (days: number[]): string => {
