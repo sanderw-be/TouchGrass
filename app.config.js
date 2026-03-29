@@ -12,6 +12,10 @@ const withBackgroundService = (config) => {
       { $: { 'android:name': 'android.permission.FOREGROUND_SERVICE' } },
       { $: { 'android:name': 'android.permission.FOREGROUND_SERVICE_SHORT_SERVICE' } },
       { $: { 'android:name': 'android.permission.RECEIVE_BOOT_COMPLETED' } },
+      // Required for AlarmManager.setExactAndAllowWhileIdle on Android 12+.
+      // USE_EXACT_ALARM (already in app.json) is the privileged alternative;
+      // SCHEDULE_EXACT_ALARM is the user-grantable fallback.
+      { $: { 'android:name': 'android.permission.SCHEDULE_EXACT_ALARM' } },
     ];
 
     const application = androidManifest.manifest.application[0];
@@ -33,11 +37,43 @@ const withBackgroundService = (config) => {
       },
     });
 
-    // Add the boot receiver
+    // AlarmPulseService: HeadlessJS foreground service started by PulseAlarmReceiver.
+    // Runs the JS "PulseTask" that performs reminder scheduling then chains the next alarm.
+    application.service.push({
+      $: {
+        'android:name': 'expo.modules.alarmbridgenative.AlarmPulseService',
+        'android:foregroundServiceType': 'shortService',
+        'android:exported': 'false',
+      },
+    });
+
     if (!application.receiver) application.receiver = [];
+
+    // PulseAlarmReceiver: receives the exact alarm ACTION_PULSE and starts AlarmPulseService.
+    // Not exported — only reachable via PendingIntent created by this app.
     application.receiver.push({
       $: {
-        'android:name': 'com.asterinet.react.bgactions.RNBackgroundActionsBootReceiver',
+        'android:name': 'expo.modules.alarmbridgenative.PulseAlarmReceiver',
+        'android:exported': 'false',
+      },
+      'intent-filter': [
+        {
+          action: [
+            {
+              $: {
+                'android:name': 'expo.modules.alarmbridgenative.ACTION_PULSE',
+              },
+            },
+          ],
+        },
+      ],
+    });
+
+    // PulseBootReceiver: re-initiates the alarm chain after device reboot.
+    // Must be exported so the system can deliver BOOT_COMPLETED.
+    application.receiver.push({
+      $: {
+        'android:name': 'expo.modules.alarmbridgenative.PulseBootReceiver',
         'android:exported': 'true',
       },
       'intent-filter': [

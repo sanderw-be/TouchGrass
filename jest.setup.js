@@ -116,6 +116,11 @@ jest.mock('expo-background-task', () => ({
   unregisterTaskAsync: jest.fn(),
 }));
 
+// Mock alarm-bridge-native (local Expo native module)
+jest.mock('alarm-bridge-native', () => ({
+  scheduleNextPulse: jest.fn(),
+}));
+
 // Mock @react-native-community/datetimepicker
 jest.mock('@react-native-community/datetimepicker', () => {
   const React = require('react');

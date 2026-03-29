@@ -17,6 +17,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "alarm-bridge-native": "file:./modules/alarm-bridge-native",
     "@react-native-community/datetimepicker": "8.6.0",
     "@react-navigation/bottom-tabs": "^7.13.0",
     "@react-navigation/native": "^7.1.28",
