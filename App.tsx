@@ -30,6 +30,13 @@ function AppContent() {
   const [locale, setLocaleState] = useState(i18n.locale);
   const savedNavState = useRef<InitialState | undefined>(undefined);
   const appState = useRef(AppState.currentState);
+  // Timestamp of the last background-task tick triggered from the foreground
+  // handler. Used to throttle rapid successive foreground events (e.g. the user
+  // quickly switching between apps) so we don't start dozens of shortService
+  // instances in a short window.
+  const lastBgTaskMs = useRef<number>(0);
+  // Minimum gap (ms) between foreground-triggered background task runs.
+  const BG_TASK_MIN_INTERVAL_MS = 2 * 60 * 1000; // 2 minutes
 
   const setLocale = useCallback((code: string) => {
     i18n.locale = code;
@@ -47,6 +54,16 @@ function AppContent() {
           // Calendar events are only created by scheduleDayReminders() at planned
           // half-hour slots. Do NOT call maybeAddOutdoorTimeToCalendar(new Date())
           // here — it would create events at arbitrary foreground-wake times.
+
+          // Run a background task tick on foreground resume. The service uses
+          // shortService type (no 6-hour quota), performs a single tick, then stops.
+          // Throttled to at most once per BG_TASK_MIN_INTERVAL_MS to prevent rapid
+          // successive starts when the user quickly switches between apps.
+          const now = Date.now();
+          if (now - lastBgTaskMs.current >= BG_TASK_MIN_INTERVAL_MS) {
+            lastBgTaskMs.current = now;
+            startBackgroundTask().catch((e) => console.warn('TouchGrass: foreground background task error:', e));
+          }
         }
       }
       appState.current = nextAppState;

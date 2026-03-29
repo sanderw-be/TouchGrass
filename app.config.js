@@ -10,6 +10,7 @@ const withBackgroundService = (config) => {
     androidManifest.manifest['uses-permission'] = [
       ...(androidManifest.manifest['uses-permission'] || []),
       { $: { 'android:name': 'android.permission.FOREGROUND_SERVICE' } },
+      { $: { 'android:name': 'android.permission.FOREGROUND_SERVICE_SHORT_SERVICE' } },
       { $: { 'android:name': 'android.permission.RECEIVE_BOOT_COMPLETED' } },
     ];
 
@@ -21,12 +22,14 @@ const withBackgroundService = (config) => {
 
     // Add the background service
     // android:foregroundServiceType is required on targetSdkVersion >= 34 (Android 14+).
-    // 'dataSync' is appropriate for a short-lived task that schedules/syncs reminders.
+    // 'shortService' avoids the 6-hour dataSync quota exhaustion by design: it has no
+    // cumulative quota, only a ~3-minute per-run hard limit. The task performs one quick
+    // scheduling tick and then stops, so the time limit is never reached.
     if (!application.service) application.service = [];
     application.service.push({
       $: {
         'android:name': 'com.asterinet.react.bgactions.RNBackgroundActionsTask',
-        'android:foregroundServiceType': 'dataSync',
+        'android:foregroundServiceType': 'shortService',
       },
     });
 

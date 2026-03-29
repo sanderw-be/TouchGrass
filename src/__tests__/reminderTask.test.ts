@@ -1,5 +1,6 @@
 jest.mock('react-native-background-actions', () => ({
   isRunning: jest.fn(),
+  stop: jest.fn(),
 }));
 
 jest.mock('../notifications/notificationManager', () => ({
