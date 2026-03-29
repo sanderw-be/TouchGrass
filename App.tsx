@@ -10,7 +10,6 @@ import i18n from './src/i18n';
 import { initDetection } from './src/detection/index';
 import { setupNotificationInfrastructure, scheduleDayReminders } from './src/notifications/notificationManager';
 import { cleanupTouchGrassCalendars } from './src/calendar/calendarService';
-import { startBackgroundTask } from './src/background/backgroundService';
 
 import AppNavigator from './src/navigation/AppNavigator';
 import IntroScreen from './src/screens/IntroScreen';
@@ -103,13 +102,6 @@ function AppContent() {
           console.warn('Scheduled notifications init error:', e);
         }
 
-        // Start the persistent background task
-        try {
-          await startBackgroundTask();
-        } catch (e) {
-          console.warn('Background service start error:', e);
-        }
-
         // Register weather background fetch for hourly updates
         try {
           const { registerWeatherBackgroundFetch } = await import('./src/weather/weatherBackgroundTask');
@@ -149,13 +141,6 @@ function AppContent() {
       await scheduleAllScheduledNotifications();
     } catch (e) {
       console.warn('Scheduled notifications init error:', e);
-    }
-
-    // Start the persistent background task
-    try {
-      await startBackgroundTask();
-    } catch (e) {
-      console.warn('Background service start error:', e);
     }
 
     // Register weather background fetch for hourly updates

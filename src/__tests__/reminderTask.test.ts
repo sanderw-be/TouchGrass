@@ -1,7 +1,3 @@
-jest.mock('react-native-background-actions', () => ({
-  isRunning: jest.fn(),
-}));
-
 jest.mock('../notifications/notificationManager', () => ({
   scheduleDayReminders: jest.fn(),
   maybeScheduleCatchUpReminder: jest.fn(),
