@@ -8,7 +8,7 @@ variables:
   GRADLE_OPTS: '-Xmx3072m'
 
 # Use Docker image with Node, Java, and Android SDK pre-installed
-image: node:20-eclipse-temurin
+image: node:20
 
 test:
   stage: test
