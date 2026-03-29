@@ -1,6 +1,7 @@
 import { getReminderFeedback, getSessionsForRange, startOfDay, startOfWeek } from '../storage/database';
 import { getWeatherForHour } from '../weather/weatherService';
-import { scoreWeatherCondition, getWeatherPreferences } from '../weather/weatherAlgorithm';
+import { scoreWeatherCondition, getWeatherPreferences, getWeatherDescription, getWeatherEmoji } from '../weather/weatherAlgorithm';
+import { t } from '../i18n';
 
 // Active hours: 7:00 – 22:30 (slots at :00 and :30)
 const SLOT_START_MINUTES = 7 * 60;  // 7:00
@@ -14,11 +15,18 @@ const PROXIMITY_FULL_MINUTES = 180; // 3 hours → multiplier = 1.0
 // Maximum random jitter applied to each slot score to help escape local optima.
 const MAX_JITTER = 0.05;
 
+export interface ScoreContributor {
+  reason: string;
+  score: number;
+  description: string;
+}
+
 export interface HourScore {
   hour: number;
   minute: 0 | 30;
   score: number;
   reason: string;
+  contributors: ScoreContributor[];
 }
 
 /**
@@ -52,12 +60,13 @@ export function scoreReminderHours(
 
     // Skip past slots (strictly less than: current slot itself is included)
     if (slotMinutes < currentSlotMinutes) {
-      scores.push({ hour, minute, score: 0, reason: 'already passed' });
+      scores.push({ hour, minute, score: 0, reason: 'already passed', contributors: [] });
       continue;
     }
 
     let score = 0.5; // baseline
     const reasons: string[] = [];
+    const contributors: ScoreContributor[] = [];
 
     // ── Historical pattern boost ──────────────────────────
     // Did you go outside around this hour in the past?
@@ -66,6 +75,7 @@ export function scoreReminderHours(
       const patternBoost = Math.min(outsideAtHour * 0.1, 0.3);
       score += patternBoost;
       reasons.push(`pattern +${patternBoost.toFixed(2)}`);
+      contributors.push({ reason: 'pattern', score: patternBoost, description: t('notif_reason_pattern') });
     }
 
     // ── Feedback penalties and bonuses ───────────────────
@@ -95,6 +105,7 @@ export function scoreReminderHours(
       const bonus = Math.min(actedCount * 0.15, 0.35);
       score += bonus;
       reasons.push(`acted +${bonus.toFixed(2)}`);
+      contributors.push({ reason: 'acted', score: bonus, description: t('notif_reason_acted') });
     }
 
     if (lessCount > 0) {
@@ -107,6 +118,7 @@ export function scoreReminderHours(
       const bonus = Math.min(moreCount * 0.15, 0.35);
       score += bonus;
       reasons.push(`more_often +${bonus.toFixed(2)}`);
+      contributors.push({ reason: 'more_often', score: bonus, description: t('notif_reason_more_often') });
     }
 
     if (badTimeCount > 0) {
@@ -124,6 +136,7 @@ export function scoreReminderHours(
       const urgencyBoost = urgency * 0.3;
       score += urgencyBoost;
       reasons.push(`urgent +${urgencyBoost.toFixed(2)}`);
+      contributors.push({ reason: 'urgent', score: urgencyBoost, description: t('notif_reason_urgent') });
     }
 
     // ── Prime outdoor hours bonus ─────────────────────────
@@ -131,10 +144,12 @@ export function scoreReminderHours(
     if (hour === 12 || hour === 13) {
       score += 0.1;
       reasons.push('lunch +0.10');
+      contributors.push({ reason: 'lunch', score: 0.1, description: t('notif_reason_lunch') });
     }
     if (hour >= 17 && hour <= 19) {
       score += 0.15;
       reasons.push('after-work +0.15');
+      contributors.push({ reason: 'after_work', score: 0.15, description: t('notif_reason_after_work') });
     }
 
     // ── Weather score ─────────────────────────────────────
@@ -147,6 +162,12 @@ export function scoreReminderHours(
         if (weatherScore !== 0) {
           score += weatherScore;
           reasons.push(`weather ${weatherScore > 0 ? '+' : ''}${weatherScore.toFixed(2)}`);
+        }
+        if (weatherScore > 0) {
+          const emoji = getWeatherEmoji(weather);
+          const temp = Math.round(weather.temperature);
+          const desc = getWeatherDescription(weather);
+          contributors.push({ reason: 'weather', score: weatherScore, description: `${emoji} ${desc}, ${temp}°C` });
         }
       }
     }
@@ -182,11 +203,15 @@ export function scoreReminderHours(
       reasons.push(`jitter ${jitter >= 0 ? '+' : ''}${jitter.toFixed(2)}`);
     }
 
+    // Sort contributors by descending score so the highest-value reasons come first
+    contributors.sort((a, b) => b.score - a.score);
+
     scores.push({
       hour,
       minute,
       score: Math.max(0, Math.min(1, score)),
       reason: reasons.join(', ') || 'baseline',
+      contributors,
     });
   }
 
@@ -202,7 +227,7 @@ export function shouldRemindNow(
   dailyTargetMinutes: number,
   lastReminderMs: number,
   isCurrentlyOutside: boolean,
-): { should: boolean; reason: string } {
+): { should: boolean; reason: string; contributors: ScoreContributor[] } {
   const now = Date.now();
   const d = new Date(now);
   const hour = d.getHours();
@@ -210,20 +235,20 @@ export function shouldRemindNow(
 
   // Hard stops
   if (isCurrentlyOutside) {
-    return { should: false, reason: 'currently outside' };
+    return { should: false, reason: 'currently outside', contributors: [] };
   }
 
   if (todayMinutes >= dailyTargetMinutes) {
-    return { should: false, reason: 'daily goal reached' };
+    return { should: false, reason: 'daily goal reached', contributors: [] };
   }
 
   if (hour < 7 || hour >= 23) {
-    return { should: false, reason: 'outside quiet hours' };
+    return { should: false, reason: 'outside quiet hours', contributors: [] };
   }
 
   const msSinceLastReminder = now - lastReminderMs;
   if (msSinceLastReminder < 60 * 60 * 1000) {
-    return { should: false, reason: 'reminded recently' };
+    return { should: false, reason: 'reminded recently', contributors: [] };
   }
 
   // Score slots starting from the current slot
@@ -233,10 +258,14 @@ export function shouldRemindNow(
   const currentHourScore = scores.find((s) => s.hour === hour && s.minute === currentSlotMinute);
 
   if (!currentHourScore || currentHourScore.score < 0.35) {
-    return { should: false, reason: `score too low (${currentHourScore?.score.toFixed(2) ?? '0'})` };
+    return { should: false, reason: `score too low (${currentHourScore?.score.toFixed(2) ?? '0'})`, contributors: [] };
   }
 
-  return { should: true, reason: `score ${currentHourScore.score.toFixed(2)}: ${currentHourScore.reason}` };
+  return {
+    should: true,
+    reason: `score ${currentHourScore.score.toFixed(2)}: ${currentHourScore.reason}`,
+    contributors: currentHourScore.contributors,
+  };
 }
 
 // ── Helpers ───────────────────────────────────────────────

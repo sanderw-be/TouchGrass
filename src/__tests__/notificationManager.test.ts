@@ -1280,6 +1280,94 @@ describe('notificationManager', () => {
 
       jest.restoreAllMocks();
     });
+
+    it('appends top contributor description to notification body when contributors are provided', async () => {
+      (Database.getTodayMinutes as jest.Mock).mockReturnValue(0);
+      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
+      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
+        if (key === 'smart_reminders_count') return '1';
+        return fallback;
+      });
+      jest.spyOn(Date.prototype, 'getHours').mockReturnValue(9);
+      jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
+      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockReturnValue([
+        {
+          hour: 12, minute: 0, score: 0.8, reason: 'lunch',
+          contributors: [{ reason: 'lunch', score: 0.1, description: 'notif_reason_lunch' }],
+        },
+      ]);
+
+      await scheduleDayReminders();
+
+      const call = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls[0][0];
+      // First contributor description has its first letter capitalized
+      expect(call.content.body).toMatch(/notif_reason_lunch/i);
+
+      jest.restoreAllMocks();
+    });
+
+    it('appends top 2 contributor descriptions joined with "and" when 2 contributors are provided', async () => {
+      (Database.getTodayMinutes as jest.Mock).mockReturnValue(0);
+      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
+      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
+        if (key === 'smart_reminders_count') return '1';
+        return fallback;
+      });
+      jest.spyOn(Date.prototype, 'getHours').mockReturnValue(9);
+      jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
+      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockReturnValue([
+        {
+          hour: 18, minute: 0, score: 0.9, reason: 'after-work, pattern',
+          contributors: [
+            { reason: 'after_work', score: 0.15, description: 'notif_reason_after_work' },
+            { reason: 'pattern', score: 0.1, description: 'notif_reason_pattern' },
+          ],
+        },
+      ]);
+
+      await scheduleDayReminders();
+
+      const call = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls[0][0];
+      // First contributor has its first letter capitalized; second is unchanged
+      expect(call.content.body).toMatch(/notif_reason_after_work/i);
+      expect(call.content.body).toContain('notif_reason_pattern');
+      expect(call.content.body).toContain(', and ');
+
+      jest.restoreAllMocks();
+    });
+
+    it('uses weather fallback when no contributors are provided', async () => {
+      (Database.getTodayMinutes as jest.Mock).mockReturnValue(0);
+      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
+      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
+        if (key === 'smart_reminders_count') return '1';
+        return fallback;
+      });
+      (WeatherService.isWeatherDataAvailable as jest.Mock).mockReturnValue(true);
+      (WeatherAlgorithm.getWeatherPreferences as jest.Mock).mockReturnValue({ enabled: true });
+      (WeatherService.getWeatherForHour as jest.Mock).mockReturnValue({
+        temperature: 22, weatherCode: 0, precipitationProbability: 0,
+        cloudCover: 5, uvIndex: 3, windSpeed: 5, isDay: true,
+        forecastHour: 17, forecastDate: 0, timestamp: 0,
+      });
+      (WeatherAlgorithm.getWeatherEmoji as jest.Mock).mockReturnValue('☀️');
+      (WeatherAlgorithm.getWeatherDescription as jest.Mock).mockReturnValue('weather_clear_sky');
+      jest.spyOn(Date.prototype, 'getHours').mockReturnValue(9);
+      jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
+      // No contributors field in mock → falls back to weather context block
+      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockReturnValue([
+        { hour: 17, minute: 0, score: 0.8, reason: 'after-work' },
+      ]);
+
+      await scheduleDayReminders();
+
+      const call = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls[0][0];
+      expect(call.content.body).toContain('☀️');
+      expect(call.content.body).toContain('22°C');
+
+      jest.restoreAllMocks();
+    });
+
   });
 
   describe('setupNotificationInfrastructure — daily planner channel', () => {

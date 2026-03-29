@@ -296,6 +296,14 @@ export default {
   notif_body_almost: 'Bijna! Nog maar {{remaining}} minuten buiten.',
   notif_body_done: 'Doel bereikt! Zin in een extra rondje? 🌿',
 
+  // Reden-beschrijvingen voor herinneringen ("Waarom nu?" uitleg toegevoegd aan meldingstekst)
+  notif_reason_pattern: 'je gaat vaak buiten rond deze tijd',
+  notif_reason_lunch: 'lunchtime is een goed moment voor een wandeling',
+  notif_reason_after_work: 'na het werk is een goed moment om buiten te gaan',
+  notif_reason_urgent: 'je hebt je doel nog niet bereikt vandaag',
+  notif_reason_acted: 'je bent eerder buiten geweest rond deze tijd',
+  notif_reason_more_often: 'je geeft de voorkeur aan herinneringen rond deze tijd',
+
   // Meldingsacties
   notif_action_went_outside: '✅ Gegaan!',
   notif_action_snooze: '⏰ Snooze',
