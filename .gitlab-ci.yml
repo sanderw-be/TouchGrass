@@ -1,0 +1,78 @@
+stages:
+  - test
+  - build
+
+variables:
+  NODE_VERSION: '20'
+  JAVA_VERSION: '17'
+  GRADLE_OPTS: '-Xmx3072m'
+
+# Use Docker image with Node, Java, and Android SDK pre-installed
+image: node:20-eclipse-temurin
+
+test:
+  stage: test
+  script:
+    - npm ci --legacy-peer-deps
+    - npm run type-check
+    - npm test -- --coverage --passWithNoTests
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage/cobertura-coverage.xml
+    paths:
+      - coverage/
+    expire_in: 30 days
+  coverage: '/Lines\s*:\s*(\d+\.\d+)%/'
+  only:
+    - merge_requests
+    - main
+
+build-android:
+  stage: build
+  image: reactnativecommunity/react-native-android:latest
+  needs:
+    - test
+  script:
+    # Setup Node and dependencies
+    - npm ci --legacy-peer-deps
+
+    # Install EAS CLI
+    - npm install -g eas-cli@latest
+
+    # Decode keystore from base64
+    - mkdir -p credentials/android
+    - echo "$TOUCHGRASS_UPLOAD_STORE" | base64 --decode > credentials/android/keystore.jks
+    - ls -lh credentials/android/keystore.jks
+
+    # Setup Gradle properties with signing credentials
+    - mkdir -p .gradle
+    - |
+      cat > .gradle/gradle.properties << EOF
+      TOUCHGRASS_UPLOAD_STORE_FILE=$TOUCHGRASS_UPLOAD_STORE_FILE
+      TOUCHGRASS_UPLOAD_STORE_PASSWORD=$TOUCHGRASS_UPLOAD_STORE_PASSWORD
+      TOUCHGRASS_UPLOAD_KEY_ALIAS=$TOUCHGRASS_UPLOAD_KEY_ALIAS
+      TOUCHGRASS_UPLOAD_KEY_PASSWORD=$TOUCHGRASS_UPLOAD_KEY_PASSWORD
+      EOF
+
+    # Build APK
+    - mkdir -p ./build-artifacts
+    - eas build --platform android --profile preview --local --non-interactive --output ./build-artifacts/app-arm64.apk
+
+    # Cleanup sensitive files
+    - rm -f .gradle/gradle.properties
+    - rm -f credentials/android/keystore.jks
+  artifacts:
+    paths:
+      - ./build-artifacts/app-arm64.apk
+    expire_in: 30 days
+    name: android-preview-apk
+  environment:
+    name: preview
+  only:
+    - merge_requests
+  after_script:
+    # Cleanup sensitive files even if build fails
+    - rm -f .gradle/gradle.properties
+    - rm -f credentials/android/keystore.jks
