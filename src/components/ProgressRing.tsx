@@ -96,7 +96,7 @@ export default function ProgressRing({
               <Text style={styles.timerValue}>{formatTimer(timerSeconds)}</Text>
               <Text style={styles.timerOutside}>{t('ring_timer_outside')}</Text>
               <Text style={styles.timerHint}>{t('ring_timer_tap_stop')}</Text>
-              <Text style={styles.stopIcon}>⏹</Text>
+              <Text style={styles.stopIcon}>⬛</Text>
             </View>
           ) : (
             <View style={styles.innerBlock}>
