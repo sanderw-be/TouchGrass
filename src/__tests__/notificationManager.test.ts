@@ -84,6 +84,39 @@ describe('notificationManager', () => {
       (Platform as any).OS = originalOS;
     });
 
+    it('sets showBadge: false for silent channels and showBadge: true for user-facing channels', async () => {
+      const originalOS = Platform.OS;
+      (Platform as any).OS = 'android';
+
+      await setupNotificationInfrastructure();
+
+      // Silent channels must NOT show a badge dot
+      expect(Notifications.setNotificationChannelAsync).toHaveBeenCalledWith(
+        'touchgrass_background',
+        expect.objectContaining({ showBadge: false, importance: Notifications.AndroidImportance.MIN }),
+      );
+      expect(Notifications.setNotificationChannelAsync).toHaveBeenCalledWith(
+        'touchgrass_daily_planner',
+        expect.objectContaining({ showBadge: false, importance: Notifications.AndroidImportance.MIN }),
+      );
+
+      // User-facing channels MUST show a badge dot
+      expect(Notifications.setNotificationChannelAsync).toHaveBeenCalledWith(
+        'touchgrass_scheduled',
+        expect.objectContaining({ showBadge: true, importance: Notifications.AndroidImportance.DEFAULT }),
+      );
+      expect(Notifications.setNotificationChannelAsync).toHaveBeenCalledWith(
+        'touchgrass_reminders',
+        expect.objectContaining({ showBadge: true, importance: Notifications.AndroidImportance.DEFAULT }),
+      );
+      expect(Notifications.setNotificationChannelAsync).toHaveBeenCalledWith(
+        'default',
+        expect.objectContaining({ showBadge: true, importance: Notifications.AndroidImportance.DEFAULT }),
+      );
+
+      (Platform as any).OS = originalOS;
+    });
+
     it('registers all notification action buttons with opensAppToForeground: true', async () => {
       await setupNotificationInfrastructure();
 

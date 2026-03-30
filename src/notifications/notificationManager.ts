@@ -57,6 +57,7 @@ async function createReminderChannels(): Promise<void> {
     importance: Notifications.AndroidImportance.DEFAULT,
     vibrationPattern: [0, 250, 250, 250],
     lightColor: '#4A7C59',
+    showBadge: true,
   };
 
   await Notifications.setNotificationChannelAsync(CHANNEL_ID, reminderChannelConfig);
@@ -93,6 +94,7 @@ export async function setupNotificationInfrastructure(): Promise<void> {
         importance: Notifications.AndroidImportance.DEFAULT,
         vibrationPattern: [0, 250, 250, 250],
         lightColor: '#4A7C59',
+        showBadge: true,
       });
       console.log('TouchGrass: Scheduled notification channel created');
     } catch (e) {
