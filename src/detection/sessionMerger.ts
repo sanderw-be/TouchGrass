@@ -3,6 +3,13 @@ import { computeSessionScore, DISCARD_CONFIDENCE_THRESHOLD } from './sessionConf
 
 const MERGE_GAP_MS = 5 * 60 * 1000; // sessions within 5 min of each other get merged
 
+// Step-to-speed constants shared with healthConnect.ts (kept local to avoid circular imports).
+// 110 steps/min ≈ 5 km/h at an average walking cadence.
+const STEPS_PER_MIN_AT_BASELINE = 110;
+const BASELINE_SPEED_KMH = 5;
+const MS_PER_HOUR = 3_600_000;
+const METERS_PER_KM = 1_000;
+
 /**
  * Submit a candidate session from any detection source.
  * Manual sessions are always inserted as standalone entries — the user is the
@@ -44,9 +51,21 @@ export function submitSession(candidate: OutsideSession): void {
   // Combine unique notes from all merging sessions so source-specific data
   // (e.g. exercise type) is not lost when sessions from different detection
   // sources overlap.  Step counts are stored in the `steps` column instead.
-  const allNotesList = allUnconfirmed.map(s => s.notes).filter((n): n is string => !!n);
-  const uniqueNotes = [...new Set(allNotesList)];
-  const mergedNotes = uniqueNotes.length > 0 ? uniqueNotes.join(' ') : undefined;
+  //
+  // For Health Connect steps sessions, notes are regenerated from the aggregated
+  // step total and merged duration instead of concatenating the per-record
+  // strings — this avoids ugly note blobs when many tiny records merge together.
+  const mergedDurationMs = mergedEnd - mergedStart;
+
+  // GPS notes are already aggregated per session (distance + speed baked in),
+  // so we just deduplicate them.
+  const uniqueGpsNotes = [
+    ...new Set(
+      allUnconfirmed
+        .filter(s => s.source === 'gps' && s.notes)
+        .map(s => s.notes as string),
+    ),
+  ];
 
   // Sum step counts so the merged session reflects the total steps walked
   // across all contributing Health Connect steps records.
@@ -57,9 +76,52 @@ export function submitSession(candidate: OutsideSession): void {
   const distanceTotal = allUnconfirmed.reduce((sum, s) => sum + (s.distanceMeters ?? 0), 0);
   const mergedDistance = distanceTotal > 0 ? distanceTotal : undefined;
 
-  // Use the highest speed recorded across contributing sessions.
-  const speedValues = allUnconfirmed.map(s => s.averageSpeedKmh).filter((v): v is number => v != null);
-  const mergedSpeed = speedValues.length > 0 ? Math.max(...speedValues) : undefined;
+  // Compute average speed from aggregated data rather than taking the max of
+  // per-record speeds.  GPS speed = distance / time; HC speed = derived from
+  // aggregated steps using the same 110 steps/min ≈ 5 km/h baseline used in
+  // healthConnect.ts.
+  let mergedSpeed: number | undefined;
+  if (mergedDistance != null && mergedDurationMs > 0) {
+    // km / h from metres and milliseconds
+    mergedSpeed = (mergedDistance / mergedDurationMs) * MS_PER_HOUR / METERS_PER_KM;
+  } else if (mergedSteps != null && mergedDurationMs > 0) {
+    const durationMin = mergedDurationMs / 60_000;
+    const stepsPerMin = mergedSteps / durationMin;
+    mergedSpeed = (stepsPerMin / STEPS_PER_MIN_AT_BASELINE) * BASELINE_SPEED_KMH;
+  }
+
+  // Build HC description from aggregated steps rather than joining per-record notes.
+  const hcNotesParts: string[] = [];
+  if (mergedSteps != null && mergedDurationMs > 0) {
+    const durationMin = mergedDurationMs / 60_000;
+    const stepsPerMin = mergedSteps / durationMin;
+    const speedKmh = (stepsPerMin / STEPS_PER_MIN_AT_BASELINE) * BASELINE_SPEED_KMH;
+    hcNotesParts.push(
+      `Health Connect, ${mergedSteps.toLocaleString()} steps at ${speedKmh.toFixed(1)} km/h.`,
+    );
+  } else {
+    // HC sessions without step data (exercise-only records) — keep unique notes.
+    const uniqueHcNotes = [
+      ...new Set(
+        allUnconfirmed
+          .filter(s => s.source === 'health_connect' && s.notes)
+          .map(s => s.notes as string),
+      ),
+    ];
+    hcNotesParts.push(...uniqueHcNotes);
+  }
+
+  // Also carry through any non-GPS, non-HC notes (e.g. timeline) unchanged.
+  const otherNotes = [
+    ...new Set(
+      allUnconfirmed
+        .filter(s => s.source !== 'gps' && s.source !== 'health_connect' && s.notes)
+        .map(s => s.notes as string),
+    ),
+  ];
+
+  const allParts = [...uniqueGpsNotes, ...hcNotesParts, ...otherNotes];
+  const mergedNotes = allParts.length > 0 ? allParts.join(' ') : undefined;
 
   // Preserve a denied (userConfirmed=0) status from existing unconfirmed sessions
   // so that a re-detection never silently un-denies a session.
