@@ -1,5 +1,5 @@
 // Mock expo-localization
-const mockGetLocales = jest.fn(() => [{ languageCode: 'en', regionCode: 'US' }]);
+const mockGetLocales = jest.fn(() => [{ languageCode: 'en', regionCode: 'US' as string | null }]);
 jest.mock('expo-localization', () => ({
   getLocales: () => mockGetLocales(),
 }));
