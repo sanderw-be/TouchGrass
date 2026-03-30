@@ -31,62 +31,42 @@ A React Native mobile app that encourages users to spend more time outdoors by t
 - Expo CLI
 - Android Studio (for Android development) or Xcode (for iOS development)
 
-### Installation
+### Quick Start
 
-1. Clone the repository:
 ```bash
-git clone https://github.com/sanderw-be/TouchGrass.git
+# Clone and install
+git clone https://gitlab.com/JollyHeron2/TouchGrass.git
 cd TouchGrass
-```
-
-2. Install dependencies:
-```bash
 npm install
-```
 
-3. Start the development server:
-```bash
+# Start development server
 npm start
-```
 
-4. Run on a device or simulator:
-```bash
-# Android
+# Run on Android
 npm run android
-
-# iOS
-npm run ios
 ```
+
+For detailed setup and development workflow, see [DEVELOPMENT.md](DEVELOPMENT.md).
 
 ## Testing
 
-The project includes comprehensive automated tests. See [TESTING.md](docs/TESTING.md) for detailed information.
-
-### Quick Test Commands
+The project includes comprehensive automated tests.
 
 ```bash
 # Run all tests
 npm test
 
-# Run tests in watch mode
+# Watch mode
 npm run test:watch
 
-# Run tests with coverage
+# Coverage report
 npm run test:coverage
 
 # Type checking
 npm run type-check
 ```
 
-### CI/CD Build Artifacts
-
-Every PR builds an Android APK automatically via GitHub Actions. After the workflow completes:
-1. Go to the **Actions** tab
-2. Select the workflow run
-3. Download the **touchgrass-android-apk** artifact
-4. Install on your test device
-
-This allows you to test builds directly from PRs without building locally.
+See [TESTING.md](docs/TESTING.md) for detailed testing guidelines.
 
 ## Project Structure
 
@@ -131,21 +111,28 @@ In short: **confirmed and manual sessions are never overwritten.** Automated ses
 
 ## Development
 
+See [DEVELOPMENT.md](DEVELOPMENT.md) for setup, workflow, and common tasks.
+
 ### Code Style
 
-- TypeScript strict mode is enabled
-- Use functional components with hooks
-- Follow existing naming conventions (see [copilot-instructions.md](.github/copilot-instructions.md))
+- TypeScript strict mode enabled
+- Functional components with hooks
+- PascalCase for components, camelCase for functions
 - All user-facing strings must be internationalized
 
 ### Building
 
 ```bash
-# Development build
+# Local development build (APK)
 npm run android:dev
 
-# Release build
+# Local release build (APK)
 npm run android:release
+
+# Cloud build via EAS
+eas build --platform android --profile development  # APK
+eas build --platform android --profile preview      # APK
+eas build --platform android --profile production   # AAB for Play Store
 ```
 
 ## Documentation
@@ -156,12 +143,15 @@ npm run android:release
 
 ## Contributing
 
-Contributions are welcome! Please ensure:
+Contributions are welcome! Before submitting a merge request:
 
-1. All tests pass (`npm test`)
-2. TypeScript compiles without errors (`npm run type-check`)
-3. Follow the existing code style and conventions
+1. Run tests: `npm test`
+2. Type check: `npm run type-check`
+3. Follow code style (see [DEVELOPMENT.md](DEVELOPMENT.md))
 4. Add tests for new functionality
+5. Update i18n strings for user-facing text
+
+For AI-assisted development, see [.gitlab/duo/agents.md](.gitlab/duo/agents.md).
 
 ## License
 
