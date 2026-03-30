@@ -10,6 +10,7 @@ import { useTheme } from '../context/ThemeContext';
 import { t } from '../i18n';
 import { fetchWeatherForecast, isWeatherDataAvailable, getWeatherForHour } from '../weather/weatherService';
 import { getWeatherDescription, getWeatherEmoji } from '../weather/weatherAlgorithm';
+import { formatTemperature } from '../utils/temperature';
 
 export default function WeatherSettingsScreen() {
   const { colors } = useTheme();
@@ -48,7 +49,7 @@ export default function WeatherSettingsScreen() {
           if (weather) {
             const description = getWeatherDescription(weather);
             const emoji = getWeatherEmoji(weather);
-            setCurrentWeather(`${emoji} ${description}, ${Math.round(weather.temperature)}°C`);
+            setCurrentWeather(`${emoji} ${description}, ${formatTemperature(weather.temperature)}`);
           }
         }
       }).catch((error) => {
@@ -61,7 +62,7 @@ export default function WeatherSettingsScreen() {
       if (weather) {
         const description = getWeatherDescription(weather);
         const emoji = getWeatherEmoji(weather);
-        setCurrentWeather(`${emoji} ${description}, ${Math.round(weather.temperature)}°C`);
+        setCurrentWeather(`${emoji} ${description}, ${formatTemperature(weather.temperature)}`);
       } else {
         setCurrentWeather(null);
       }
@@ -102,7 +103,7 @@ export default function WeatherSettingsScreen() {
         if (weather) {
           const description = getWeatherDescription(weather);
           const emoji = getWeatherEmoji(weather);
-          setCurrentWeather(`${emoji} ${description}, ${Math.round(weather.temperature)}°C`);
+          setCurrentWeather(`${emoji} ${description}, ${formatTemperature(weather.temperature)}`);
         }
         setWeatherSuccess(true);
         successTimerRef.current = setTimeout(() => {
