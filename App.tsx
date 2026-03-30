@@ -8,7 +8,7 @@ import 'expo-dev-client';
 import { initDatabase, getSetting, setSetting } from './src/storage/database';
 import i18n from './src/i18n';
 import { initDetection } from './src/detection/index';
-import { setupNotificationInfrastructure, scheduleDayReminders, scheduleNextReminder } from './src/notifications/notificationManager';
+import { setupNotificationInfrastructure, scheduleDayReminders, processReminderQueue } from './src/notifications/notificationManager';
 import { cleanupTouchGrassCalendars } from './src/calendar/calendarService';
 import { registerUnifiedBackgroundTask } from './src/background/unifiedBackgroundTask';
 
@@ -45,7 +45,7 @@ function AppContent() {
         const hasCompletedIntro = getSetting('hasCompletedIntro', '0') === '1';
         if (hasCompletedIntro) {
           scheduleDayReminders().catch((e) => console.warn('TouchGrass: foreground scheduleDayReminders error:', e));
-          scheduleNextReminder().catch((e) => console.warn('TouchGrass: foreground scheduleNextReminder error:', e));
+          processReminderQueue().catch((e) => console.warn('TouchGrass: foreground processReminderQueue error:', e));
           cleanupTouchGrassCalendars().catch((e) => console.warn('TouchGrass: foreground calendar cleanup error:', e));
           // Calendar events are only created by scheduleDayReminders() at planned
           // half-hour slots. Do NOT call maybeAddOutdoorTimeToCalendar(new Date())
