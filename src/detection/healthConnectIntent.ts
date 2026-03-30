@@ -2,7 +2,7 @@ import { Platform, Linking } from 'react-native';
 import {
   initialize,
   openHealthConnectSettings,
-  readRecords,
+  getGrantedPermissions,
 } from 'react-native-health-connect';
 
 const APP_PACKAGE_NAME = 'com.jollyheron.touchgrass';
@@ -109,52 +109,21 @@ export async function openHealthConnectPermissionsViaIntent(): Promise<boolean> 
 }
 
 /**
- * Verify Health Connect permissions by attempting to read data.
- * This is the most reliable way to check if permissions are granted,
- * as the library's permission check API doesn't work properly.
- * 
- * @returns true if permissions are granted and data can be read, false otherwise
+ * Verify Health Connect permissions using the granted-permissions API.
+ * This is a fast check that does not read any health data.
+ *
+ * @returns true if the required read permissions are granted, false otherwise
  */
 export async function verifyHealthConnectPermissions(): Promise<boolean> {
   try {
     await initialize();
-    
-    // Try to read a small dataset (last 1 day of exercise sessions)
-    // If this succeeds, we have permissions
-    const now = new Date();
-    const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-    
-    const result = await readRecords('ExerciseSession', {
-      timeRangeFilter: {
-        operator: 'between',
-        startTime: oneDayAgo.toISOString(),
-        endTime: now.toISOString(),
-      },
-    });
-    
-    // If we got here without an error, permissions are granted
-    // (even if there are no records, the read was successful)
-    return true;
+    const granted = await getGrantedPermissions();
+    // Require at least ExerciseSession read access (the primary data source).
+    return granted.some(
+      (p) => p.accessType === 'read' && p.recordType === 'ExerciseSession',
+    );
   } catch (error) {
-    // If read fails, check if it's a permission error
-    // Note: react-native-health-connect throws string errors, not structured error objects
-    const errorMessage = String(error);
-    const errorLower = errorMessage.toLowerCase();
-    
-    // Check for common permission-related error patterns
-    const isPermissionError = 
-      errorLower.includes('securityexception') ||
-      errorLower.includes('permission') ||
-      errorLower.includes('read_');
-    
-    if (isPermissionError) {
-      console.log('Health Connect permissions not granted');
-      return false;
-    }
-    
-    // Other errors (e.g., Health Connect not available, network issues)
-    // We treat these as "no permission" to be safe
-    console.warn('Health Connect verification error:', error);
+    console.warn('Health Connect permission check error:', error);
     return false;
   }
 }

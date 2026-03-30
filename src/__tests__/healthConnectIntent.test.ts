@@ -9,7 +9,7 @@ jest.mock('react-native', () => ({
 
 import { Platform, Linking } from 'react-native';
 import * as HealthConnect from 'react-native-health-connect';
-import { openHealthConnectPermissionsViaIntent } from '../detection/healthConnectIntent';
+import { openHealthConnectPermissionsViaIntent, verifyHealthConnectPermissions } from '../detection/healthConnectIntent';
 
 describe('openHealthConnectPermissionsViaIntent', () => {
   beforeEach(() => {
@@ -167,5 +167,62 @@ describe('openHealthConnectPermissionsViaIntent', () => {
 
       expect(HealthConnect.openHealthConnectSettings).not.toHaveBeenCalled();
     });
+  });
+});
+
+describe('verifyHealthConnectPermissions', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    (HealthConnect.initialize as jest.Mock).mockResolvedValue(undefined);
+  });
+
+  it('returns true when ExerciseSession read permission is granted', async () => {
+    (HealthConnect.getGrantedPermissions as jest.Mock).mockResolvedValue([
+      { accessType: 'read', recordType: 'ExerciseSession' },
+      { accessType: 'read', recordType: 'Steps' },
+    ]);
+
+    const result = await verifyHealthConnectPermissions();
+
+    expect(result).toBe(true);
+    expect(HealthConnect.getGrantedPermissions).toHaveBeenCalled();
+  });
+
+  it('returns false when ExerciseSession read permission is not granted', async () => {
+    (HealthConnect.getGrantedPermissions as jest.Mock).mockResolvedValue([
+      { accessType: 'read', recordType: 'Steps' },
+    ]);
+
+    const result = await verifyHealthConnectPermissions();
+
+    expect(result).toBe(false);
+  });
+
+  it('returns false when no permissions are granted', async () => {
+    (HealthConnect.getGrantedPermissions as jest.Mock).mockResolvedValue([]);
+
+    const result = await verifyHealthConnectPermissions();
+
+    expect(result).toBe(false);
+  });
+
+  it('returns false when getGrantedPermissions throws', async () => {
+    (HealthConnect.getGrantedPermissions as jest.Mock).mockRejectedValue(
+      new Error('Health Connect not available'),
+    );
+
+    const result = await verifyHealthConnectPermissions();
+
+    expect(result).toBe(false);
+  });
+
+  it('does not call readRecords (no data read during permission check)', async () => {
+    (HealthConnect.getGrantedPermissions as jest.Mock).mockResolvedValue([
+      { accessType: 'read', recordType: 'ExerciseSession' },
+    ]);
+
+    await verifyHealthConnectPermissions();
+
+    expect(HealthConnect.readRecords).not.toHaveBeenCalled();
   });
 });

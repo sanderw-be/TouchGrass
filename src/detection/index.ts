@@ -37,12 +37,14 @@ export async function initDetection(): Promise<DetectionStatus> {
   // Health Connect — only run if the user has explicitly enabled it.
   const hcAvailable = await isHealthConnectAvailable();
   if (hcAvailable && status.healthConnect) {
-    const ok = await syncHealthConnect();
-    status.healthConnectPermission = ok;
-    // Only mark permission as granted when sync explicitly succeeds.
-    // A transient failure must not permanently turn off the integration.
-    if (ok) {
-      setSetting('healthconnect_enabled', '1');
+    // Fast permission check — does not read health data.
+    const hasPermissions = await verifyHealthConnectPermissions();
+    status.healthConnectPermission = hasPermissions;
+    setSetting('healthconnect_enabled', hasPermissions ? '1' : '0');
+
+    // Kick off a sync in the background so app startup is not blocked.
+    if (hasPermissions) {
+      syncHealthConnect().catch(e => console.warn('HC background sync error:', e));
     }
   }
 
@@ -101,14 +103,14 @@ export async function recheckHealthConnect(): Promise<boolean> {
     const available = await isHealthConnectAvailable();
     if (!available) return false;
     
-    // Verify permissions by attempting to read data
+    // Fast permission check — does not read health data.
     const hasPermissions = await verifyHealthConnectPermissions();
     // Update permission status but leave the user-toggle unchanged.
     setSetting('healthconnect_enabled', hasPermissions ? '1' : '0');
     
-    // If permissions are granted, try to sync data
+    // Kick off a sync in the background; do not block the foreground resume.
     if (hasPermissions) {
-      await syncHealthConnect();
+      syncHealthConnect().catch(e => console.warn('HC background sync error:', e));
     }
     
     return hasPermissions;
@@ -239,8 +241,9 @@ export async function toggleHealthConnect(enabled: boolean): Promise<{ needsPerm
     const hasPermissions = await verifyHealthConnectPermissions();
     setSetting('healthconnect_enabled', hasPermissions ? '1' : '0');
 
+    // Kick off a sync in the background; do not block the toggle response.
     if (hasPermissions) {
-      await syncHealthConnect();
+      syncHealthConnect().catch(e => console.warn('HC background sync error:', e));
     }
 
     return { needsPermissions: !hasPermissions };
