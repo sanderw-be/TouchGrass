@@ -27,6 +27,7 @@
     "expo-calendar": "~55.0.10",
     "expo-dev-client": "~55.0.19",
     "expo-health-connect": "^0.1.1",
+    "expo-intent-launcher": "^55.0.9",
     "expo-localization": "~55.0.9",
     "expo-location": "~55.1.4",
     "expo-notifications": "~55.0.14",

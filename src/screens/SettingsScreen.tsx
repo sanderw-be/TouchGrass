@@ -23,6 +23,7 @@ import {
   setSelectedCalendarId,
 } from '../calendar/calendarService';
 import { useShowIntro } from '../context/IntroContext';
+import * as IntentLauncher from 'expo-intent-launcher';
 
 const LANGUAGES = [
   { code: 'en', label: 'English' },
@@ -606,6 +607,29 @@ export default function SettingsScreen() {
             right={<Text style={styles.chevron}>›</Text>}
           />
         </TouchableOpacity>
+        {Platform.OS === 'android' && (
+          <>
+            <Divider />
+            <TouchableOpacity
+              onPress={async () => {
+                try {
+                  await IntentLauncher.startActivityAsync(
+                    'android.settings.IGNORE_BATTERY_OPTIMIZATION_SETTINGS',
+                  );
+                } catch (error) {
+                  console.error('Error opening battery settings:', error);
+                }
+              }}
+            >
+              <SettingRow
+                icon="🔋"
+                label={t('settings_battery_optimization')}
+                sublabel={t('settings_battery_optimization_sublabel')}
+                right={<Text style={styles.chevron}>›</Text>}
+              />
+            </TouchableOpacity>
+          </>
+        )}
         <Divider />
         <SettingRow
           icon="🗑️"

@@ -8,9 +8,9 @@ import 'expo-dev-client';
 import { initDatabase, getSetting, setSetting } from './src/storage/database';
 import i18n from './src/i18n';
 import { initDetection } from './src/detection/index';
-import { setupNotificationInfrastructure, scheduleDayReminders } from './src/notifications/notificationManager';
+import { setupNotificationInfrastructure, scheduleDayReminders, scheduleNextReminder } from './src/notifications/notificationManager';
 import { cleanupTouchGrassCalendars } from './src/calendar/calendarService';
-import { startBackgroundTask } from './src/background/backgroundService';
+import { registerUnifiedBackgroundTask } from './src/background/unifiedBackgroundTask';
 
 import AppNavigator from './src/navigation/AppNavigator';
 import IntroScreen from './src/screens/IntroScreen';
@@ -37,12 +37,15 @@ function AppContent() {
     setLocaleState(code);
   }, []);
 
-  // On app foreground: run calendar cleanup as a fallback for missed background tasks
+  // On app foreground: run day planning and goal-reached check as a catch-up
+  // for missed background wakes, plus calendar cleanup.
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (nextAppState: AppStateStatus) => {
       if (appState.current !== 'active' && nextAppState === 'active') {
         const hasCompletedIntro = getSetting('hasCompletedIntro', '0') === '1';
         if (hasCompletedIntro) {
+          scheduleDayReminders().catch((e) => console.warn('TouchGrass: foreground scheduleDayReminders error:', e));
+          scheduleNextReminder().catch((e) => console.warn('TouchGrass: foreground scheduleNextReminder error:', e));
           cleanupTouchGrassCalendars().catch((e) => console.warn('TouchGrass: foreground calendar cleanup error:', e));
           // Calendar events are only created by scheduleDayReminders() at planned
           // half-hour slots. Do NOT call maybeAddOutdoorTimeToCalendar(new Date())
@@ -103,19 +106,11 @@ function AppContent() {
           console.warn('Scheduled notifications init error:', e);
         }
 
-        // Start the persistent background task
+        // Register the unified background task (reminders + weather)
         try {
-          await startBackgroundTask();
+          await registerUnifiedBackgroundTask();
         } catch (e) {
-          console.warn('Background service start error:', e);
-        }
-
-        // Register weather background fetch for hourly updates
-        try {
-          const { registerWeatherBackgroundFetch } = await import('./src/weather/weatherBackgroundTask');
-          await registerWeatherBackgroundFetch();
-        } catch (e) {
-          console.warn('Weather background fetch error:', e);
+          console.warn('Background task registration error:', e);
         }
       }
     }
@@ -151,19 +146,11 @@ function AppContent() {
       console.warn('Scheduled notifications init error:', e);
     }
 
-    // Start the persistent background task
+    // Register the unified background task (reminders + weather)
     try {
-      await startBackgroundTask();
+      await registerUnifiedBackgroundTask();
     } catch (e) {
-      console.warn('Background service start error:', e);
-    }
-
-    // Register weather background fetch for hourly updates
-    try {
-      const { registerWeatherBackgroundFetch } = await import('./src/weather/weatherBackgroundTask');
-      await registerWeatherBackgroundFetch();
-    } catch (e) {
-      console.warn('Weather background fetch error:', e);
+      console.warn('Background task registration error:', e);
     }
   };
 

@@ -30,6 +30,7 @@ jest.mock('../detection/index', () => ({
 jest.mock('../notifications/notificationManager', () => ({
   setupNotificationInfrastructure: jest.fn().mockResolvedValue(undefined),
   scheduleDayReminders: jest.fn().mockResolvedValue(undefined),
+  scheduleNextReminder: jest.fn().mockResolvedValue(undefined),
 }));
 
 // Mock scheduled notifications
@@ -37,14 +38,9 @@ jest.mock('../notifications/scheduledNotifications', () => ({
   scheduleAllScheduledNotifications: jest.fn().mockResolvedValue(undefined),
 }));
 
-// Mock background service
-jest.mock('../background/backgroundService', () => ({
-  startBackgroundTask: jest.fn().mockResolvedValue(undefined),
-}));
-
-// Mock weather background task
-jest.mock('../weather/weatherBackgroundTask', () => ({
-  registerWeatherBackgroundFetch: jest.fn().mockResolvedValue(undefined),
+// Mock unified background task
+jest.mock('../background/unifiedBackgroundTask', () => ({
+  registerUnifiedBackgroundTask: jest.fn().mockResolvedValue(undefined),
 }));
 
 // Mock database module
