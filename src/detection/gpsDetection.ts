@@ -264,7 +264,10 @@ async function sendLocationSuggestionNotification(): Promise<void> {
       content: {
         title: t('notif_location_suggestion_title'),
         body: t('notif_location_suggestion_body'),
-        data: { type: 'location_suggestion' },
+        // Note: 'data' is intentionally omitted. Passing a 'data' object causes
+        // NotificationContent.mBody to be a JSONObject. On Android, R8/ProGuard can
+        // strip the private writeObject() method despite the keep rule, falling back to
+        // default Java serialization which cannot serialize JSONObject → NotSerializableException.
         color: '#4A7C59',
       },
       trigger: {
