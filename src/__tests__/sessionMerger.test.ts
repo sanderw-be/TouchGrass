@@ -157,15 +157,69 @@ describe('submitSession', () => {
     expect(inserted.steps).toBe(1000);
   });
 
-  it('does not duplicate notes when merging sessions with identical notes', () => {
-    const existing = makeSession({ id: 1, notes: 'GPS periodic', userConfirmed: null });
-    (Database.getSessionsForRange as jest.Mock).mockReturnValue([existing]);
+  it('generates a single aggregated HC note when many tiny steps records are merged', () => {
+    // Simulate 3 tiny HC records that all merge into one window (30 min total)
+    const hc1 = makeSession({
+      id: 1, source: 'health_connect', steps: 100,
+      notes: 'Health Connect, 100 steps at 1.5 km/h.',
+      userConfirmed: null,
+    });
+    const hc2 = makeSession({
+      id: 2, source: 'health_connect', steps: 200,
+      notes: 'Health Connect, 200 steps at 3.0 km/h.',
+      userConfirmed: null,
+      startTime: BASE_TIME + 10 * 60 * 1000,
+      endTime: BASE_TIME + 30 * 60 * 1000,
+    });
+    (Database.getSessionsForRange as jest.Mock).mockReturnValue([hc1, hc2]);
 
-    const candidate = makeSession({ notes: 'GPS periodic', userConfirmed: null });
+    const candidate = makeSession({
+      source: 'health_connect', steps: 700,
+      notes: 'Health Connect, 700 steps at 4.5 km/h.',
+      userConfirmed: null,
+    });
     submitSession(candidate);
 
     const inserted = (Database.insertSession as jest.Mock).mock.calls[0][0];
-    expect(inserted.notes).toBe('GPS periodic');
+    expect(inserted.steps).toBe(1000);
+    // Notes must be a SINGLE sentence with the aggregated total, not a concatenation
+    expect(inserted.notes).toMatch(/^Health Connect,\s*1,000 steps at \d+\.\d+ (?:km\/h|mph)\.$/);
+  });
+
+  it('combines GPS notes and aggregated HC steps note when sources are mixed', () => {
+    const hcSession = makeSession({
+      id: 1, source: 'health_connect', steps: 3000,
+      notes: 'Health Connect, 3,000 steps at 4.5 km/h.',
+      userConfirmed: null,
+    });
+    (Database.getSessionsForRange as jest.Mock).mockReturnValue([hcSession]);
+
+    const gpsCandidate = makeSession({
+      source: 'gps',
+      notes: 'GPS detection, 2.1 km at 4.2 km/h.',
+      steps: undefined,
+      userConfirmed: null,
+    });
+    submitSession(gpsCandidate);
+
+    const inserted = (Database.insertSession as jest.Mock).mock.calls[0][0];
+    // GPS note should appear first, followed by the aggregated HC note
+    expect(inserted.notes).toMatch(/GPS detection/);
+    expect(inserted.notes).toMatch(/Health Connect,.*steps at.*(?:km\/h|mph)/);
+    // Must be a combined single string, not duplicated per-record notes
+    const hcMatchCount = (inserted.notes.match(/Health Connect,/g) ?? []).length;
+    expect(hcMatchCount).toBe(1);
+  });
+
+  it('does not duplicate notes when merging sessions with identical notes', () => {
+    const existing = makeSession({ id: 1, notes: 'GPS detection, 1.0 km at 4.0 km/h.', userConfirmed: null });
+    (Database.getSessionsForRange as jest.Mock).mockReturnValue([existing]);
+
+    const candidate = makeSession({ notes: 'GPS detection, 1.0 km at 4.0 km/h.', userConfirmed: null });
+    submitSession(candidate);
+
+    const inserted = (Database.insertSession as jest.Mock).mock.calls[0][0];
+    expect(inserted.notes).toBe('GPS detection, 1.0 km at 4.0 km/h.');
   });
 
   it('produces undefined notes when no session has notes', () => {

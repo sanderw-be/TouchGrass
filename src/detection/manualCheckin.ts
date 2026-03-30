@@ -1,4 +1,5 @@
 import { submitSession, buildSession } from './sessionMerger';
+import { t } from '../i18n';
 
 const CONFIDENCE_MANUAL = 1.0; // user always knows best
 
@@ -18,7 +19,7 @@ export function logManualSession(durationMinutes: number, startTime?: number, en
     end,
     'manual',
     CONFIDENCE_MANUAL,
-    'Manually logged',
+    t('session_notes_manual'),
   );
 
   // Manual sessions are auto-confirmed — the user knows what they logged
@@ -44,7 +45,7 @@ export function startManualSession(): () => void {
       endTime,
       'manual',
       CONFIDENCE_MANUAL,
-      'Live manual session',
+      t('session_notes_manual'),
     );
 
     submitSession(session);

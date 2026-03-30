@@ -1,7 +1,16 @@
 import { OutsideSession, insertSession, getSessionsForRange, deleteSession } from '../storage/database';
 import { computeSessionScore, DISCARD_CONFIDENCE_THRESHOLD } from './sessionConfidence';
+import { t } from '../i18n';
+import { useImperialUnits, kmhToMph } from '../utils/units';
 
 const MERGE_GAP_MS = 5 * 60 * 1000; // sessions within 5 min of each other get merged
+
+// Step-to-speed constants shared with healthConnect.ts (kept local to avoid circular imports).
+// 110 steps/min ≈ 5 km/h at an average walking cadence.
+const STEPS_PER_MIN_AT_BASELINE = 110;
+const BASELINE_SPEED_KMH = 5;
+const MS_PER_HOUR = 3_600_000;
+const METERS_PER_KM = 1_000;
 
 /**
  * Submit a candidate session from any detection source.
@@ -44,14 +53,84 @@ export function submitSession(candidate: OutsideSession): void {
   // Combine unique notes from all merging sessions so source-specific data
   // (e.g. exercise type) is not lost when sessions from different detection
   // sources overlap.  Step counts are stored in the `steps` column instead.
-  const allNotesList = allUnconfirmed.map(s => s.notes).filter((n): n is string => !!n);
-  const uniqueNotes = [...new Set(allNotesList)];
-  const mergedNotes = uniqueNotes.length > 0 ? uniqueNotes.join('; ') : undefined;
+  //
+  // For Health Connect steps sessions, notes are regenerated from the aggregated
+  // step total and merged duration instead of concatenating the per-record
+  // strings — this avoids ugly note blobs when many tiny records merge together.
+  const mergedDurationMs = mergedEnd - mergedStart;
+
+  // GPS notes are already aggregated per session (distance + speed baked in),
+  // so we just deduplicate them.
+  const uniqueGpsNotes = [
+    ...new Set(
+      allUnconfirmed
+        .filter(s => s.source === 'gps' && s.notes)
+        .map(s => s.notes as string),
+    ),
+  ];
 
   // Sum step counts so the merged session reflects the total steps walked
   // across all contributing Health Connect steps records.
   const stepsTotal = allUnconfirmed.reduce((sum, s) => sum + (s.steps ?? 0), 0);
   const mergedSteps = stepsTotal > 0 ? stepsTotal : undefined;
+
+  // Sum distances from GPS sessions.
+  const distanceTotal = allUnconfirmed.reduce((sum, s) => sum + (s.distanceMeters ?? 0), 0);
+  const mergedDistance = distanceTotal > 0 ? distanceTotal : undefined;
+
+  // Compute average speed from aggregated data rather than taking the max of
+  // per-record speeds.  GPS speed = distance / time; HC speed = derived from
+  // aggregated steps using the same 110 steps/min ≈ 5 km/h baseline used in
+  // healthConnect.ts.
+  let mergedSpeed: number | undefined;
+  if (mergedDistance != null && mergedDurationMs > 0) {
+    // km / h from metres and milliseconds
+    mergedSpeed = (mergedDistance / mergedDurationMs) * MS_PER_HOUR / METERS_PER_KM;
+  } else if (mergedSteps != null && mergedDurationMs > 0) {
+    const durationMin = mergedDurationMs / 60_000;
+    const stepsPerMin = mergedSteps / durationMin;
+    mergedSpeed = (stepsPerMin / STEPS_PER_MIN_AT_BASELINE) * BASELINE_SPEED_KMH;
+  }
+
+  // Build HC description from aggregated steps rather than joining per-record notes.
+  const hcNotesParts: string[] = [];
+  if (mergedSteps != null && mergedDurationMs > 0) {
+    const durationMin = mergedDurationMs / 60_000;
+    const stepsPerMin = mergedSteps / durationMin;
+    const speedKmh = (stepsPerMin / STEPS_PER_MIN_AT_BASELINE) * BASELINE_SPEED_KMH;
+    const imperial = useImperialUnits();
+    const speed = imperial ? kmhToMph(speedKmh).toFixed(1) : speedKmh.toFixed(1);
+    const speedUnit = imperial ? t('unit_speed_imperial') : t('unit_speed_metric');
+    hcNotesParts.push(
+      t('session_notes_hc_steps', {
+        steps: mergedSteps.toLocaleString(),
+        speed,
+        speedUnit,
+      }),
+    );
+  } else {
+    // HC sessions without step data (exercise-only records) — keep unique notes.
+    const uniqueHcNotes = [
+      ...new Set(
+        allUnconfirmed
+          .filter(s => s.source === 'health_connect' && s.notes)
+          .map(s => s.notes as string),
+      ),
+    ];
+    hcNotesParts.push(...uniqueHcNotes);
+  }
+
+  // Also carry through any non-GPS, non-HC notes (e.g. timeline) unchanged.
+  const otherNotes = [
+    ...new Set(
+      allUnconfirmed
+        .filter(s => s.source !== 'gps' && s.source !== 'health_connect' && s.notes)
+        .map(s => s.notes as string),
+    ),
+  ];
+
+  const allParts = [...uniqueGpsNotes, ...hcNotesParts, ...otherNotes];
+  const mergedNotes = allParts.length > 0 ? allParts.join(' ') : undefined;
 
   // Preserve a denied (userConfirmed=0) status from existing unconfirmed sessions
   // so that a re-detection never silently un-denies a session.
@@ -105,6 +184,8 @@ export function submitSession(candidate: OutsideSession): void {
       discarded: 0,
       notes: mergedNotes,
       steps: mergedSteps,
+      distanceMeters: mergedDistance,
+      averageSpeedKmh: mergedSpeed,
     };
     const score = computeSessionScore(segSession);
     // Only discard sessions that have no user feedback yet (userConfirmed === null).
@@ -134,6 +215,8 @@ export function buildSession(
   confidence: number,
   notes?: string,
   steps?: number,
+  distanceMeters?: number,
+  averageSpeedKmh?: number,
 ): OutsideSession {
   const durationMinutes = (endTime - startTime) / 60000;
   return {
@@ -145,6 +228,8 @@ export function buildSession(
     userConfirmed: source === 'manual' ? 1 : null, // Auto-approve manual sessions
     notes,
     steps,
+    distanceMeters,
+    averageSpeedKmh,
     discarded: 0,
   };
 }

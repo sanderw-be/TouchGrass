@@ -7,6 +7,7 @@ import {
 } from '../storage/database';
 import { submitSession, buildSession } from './sessionMerger';
 import { t } from '../i18n';
+import { useImperialUnits, kmToMiles, kmhToMph } from '../utils/units';
 
 const GEOFENCE_TASK = 'TOUCHGRASS_GEOFENCE';
 const LOCATION_TRACK_TASK = 'TOUCHGRASS_LOCATION_TRACK';
@@ -15,10 +16,21 @@ const CONFIDENCE_GPS_ONLY = 0.80;
 const CONFIDENCE_GPS_AND_ACTIVITY = 0.95;
 export const MIN_OUTSIDE_DURATION_MS = 5 * 60 * 1000;
 
+// How many times the geofence radius to search for the departure/arrival location.
+// Using 2× the stored radius covers cases where the user was just outside the
+// geofence boundary when they began tracking but clearly departed from that location.
+const DEPARTURE_LOCATION_RADIUS_MULTIPLIER = 2;
+
 // In-memory state for the current outside session
 let outsideSessionStart: number | null = null;
 let lastKnownOutside = false;
 let gpsStateLoaded = false;
+let gpsSessionDistanceMeters = 0;
+let gpsSessionSpeedSum = 0;
+let gpsSessionSpeedCount = 0;
+let gpsSessionStartLocationLabel: string | null = null;
+let gpsSessionLastLat: number | null = null;
+let gpsSessionLastLon: number | null = null;
 
 // Persistence keys for GPS session state
 const GPS_SESSION_START_KEY = 'gps_session_start';
@@ -54,6 +66,12 @@ export function _resetGPSStateForTesting(): void {
   outsideSessionStart = null;
   lastKnownOutside = false;
   gpsStateLoaded = false;
+  gpsSessionDistanceMeters = 0;
+  gpsSessionSpeedSum = 0;
+  gpsSessionSpeedCount = 0;
+  gpsSessionStartLocationLabel = null;
+  gpsSessionLastLat = null;
+  gpsSessionLastLon = null;
 }
 
 /**
@@ -128,20 +146,76 @@ export function isAtKnownIndoorLocation(
 }
 
 /**
+ * Build a human-readable description for a GPS session.
+ * Example (metric):   "GPS detection, left Home and returned for 2.3 km at 4.5 km/h."
+ * Example (imperial): "GPS detection, left Home and returned for 1.4 mi at 2.8 mph."
+ */
+function buildGpsNotes(
+  startLocationLabel: string | null,
+  endLocationLabel: string | null,
+  distanceMeters: number,
+  averageSpeedKmh: number,
+): string {
+  const imperial = useImperialUnits();
+  const distKm = distanceMeters / 1000;
+  const dist = imperial ? kmToMiles(distKm).toFixed(1) : distKm.toFixed(1);
+  const distUnit = imperial ? 'mi' : 'km';
+  const speed = imperial ? kmhToMph(averageSpeedKmh).toFixed(1) : averageSpeedKmh.toFixed(1);
+  const speedUnit = imperial ? t('unit_speed_imperial') : t('unit_speed_metric');
+
+  if (startLocationLabel && endLocationLabel) {
+    if (startLocationLabel === endLocationLabel) {
+      return t('session_notes_gps_left_returned', { start: startLocationLabel, dist, distUnit, speed, speedUnit });
+    }
+    return t('session_notes_gps_left_went', { start: startLocationLabel, end: endLocationLabel, dist, distUnit, speed, speedUnit });
+  }
+  if (startLocationLabel) {
+    return t('session_notes_gps_left', { start: startLocationLabel, dist, distUnit, speed, speedUnit });
+  }
+  if (endLocationLabel) {
+    return t('session_notes_gps_returned', { end: endLocationLabel, dist, distUnit, speed, speedUnit });
+  }
+  return t('session_notes_gps_no_location', { dist, distUnit, speed, speedUnit });
+}
+
+/**
  * Process a new location update.
  * Called by the background task.
  */
-export function processLocationUpdate(lat: number, lon: number, timestamp: number): void {
+export function processLocationUpdate(lat: number, lon: number, timestamp: number, speedMs?: number): void {
   loadGPSState();
 
   const knownLocations = getKnownLocations();
   const isIndoor = isAtKnownIndoorLocation(lat, lon, knownLocations);
   const isOutside = !isIndoor;
 
+  // Accumulate distance between consecutive GPS points during an outdoor session.
+  if (lastKnownOutside && gpsSessionLastLat !== null && gpsSessionLastLon !== null) {
+    const segDist = haversineDistance(gpsSessionLastLat, gpsSessionLastLon, lat, lon);
+    gpsSessionDistanceMeters += segDist;
+  }
+
+  // Record speed sample (m/s → km/h) when valid.
+  if (speedMs != null && speedMs >= 0) {
+    gpsSessionSpeedSum += speedMs * 3.6;
+    gpsSessionSpeedCount++;
+  }
+
+  // Keep track of last position for distance calculation.
+  gpsSessionLastLat = lat;
+  gpsSessionLastLon = lon;
+
   if (isOutside && !lastKnownOutside) {
-    // Just went outside (or first update with no known indoor locations)
+    // Just went outside — record the departure location label if available.
+    const departureLocation = knownLocations.find(loc =>
+      loc.isIndoor && haversineDistance(lat, lon, loc.latitude, loc.longitude) <= loc.radiusMeters * DEPARTURE_LOCATION_RADIUS_MULTIPLIER,
+    );
+    gpsSessionStartLocationLabel = departureLocation?.label ?? null;
     outsideSessionStart = timestamp;
     lastKnownOutside = true;
+    gpsSessionDistanceMeters = 0;
+    gpsSessionSpeedSum = 0;
+    gpsSessionSpeedCount = 0;
     console.log('TouchGrass: GPS update - now outside, session started');
   } else if (!isOutside && lastKnownOutside && outsideSessionStart !== null) {
     // Just came back inside
@@ -153,17 +227,31 @@ export function processLocationUpdate(lat: number, lon: number, timestamp: numbe
     const locationLabel = matchedLocation?.label || `(${lat.toFixed(4)}, ${lon.toFixed(4)})`;
     console.log(`TouchGrass: GPS update - at known location "${locationLabel}", ended outside session of ${Math.round(duration / 60000)} min`);
     if (duration >= MIN_OUTSIDE_DURATION_MS) {
+      const avgSpeed = gpsSessionSpeedCount > 0 ? gpsSessionSpeedSum / gpsSessionSpeedCount : 0;
+      const notes = buildGpsNotes(
+        gpsSessionStartLocationLabel,
+        matchedLocation?.label ?? null,
+        gpsSessionDistanceMeters,
+        avgSpeed,
+      );
       const session = buildSession(
         outsideSessionStart,
         timestamp,
         'gps',
         CONFIDENCE_GPS_ONLY,
-        'GPS geofence exit/return',
+        notes,
+        undefined,
+        gpsSessionDistanceMeters > 0 ? gpsSessionDistanceMeters : undefined,
+        gpsSessionSpeedCount > 0 ? gpsSessionSpeedSum / gpsSessionSpeedCount : undefined,
       );
       submitSession(session);
     }
     outsideSessionStart = null;
     lastKnownOutside = false;
+    gpsSessionDistanceMeters = 0;
+    gpsSessionSpeedSum = 0;
+    gpsSessionSpeedCount = 0;
+    gpsSessionStartLocationLabel = null;
   } else if (isOutside && lastKnownOutside && outsideSessionStart !== null) {
     // Still outside without an indoor transition.
     // Flush periodically so sessions are logged even when no known indoor
@@ -171,15 +259,28 @@ export function processLocationUpdate(lat: number, lon: number, timestamp: numbe
     const duration = timestamp - outsideSessionStart;
     console.log(`TouchGrass: GPS update - still outside, current session length: ${Math.round(duration / 60000)} min`);
     if (duration >= MIN_OUTSIDE_DURATION_MS) {
+      const avgSpeed = gpsSessionSpeedCount > 0 ? gpsSessionSpeedSum / gpsSessionSpeedCount : 0;
+      const notes = buildGpsNotes(
+        gpsSessionStartLocationLabel,
+        null,
+        gpsSessionDistanceMeters,
+        avgSpeed,
+      );
       const session = buildSession(
         outsideSessionStart,
         timestamp,
         'gps',
         CONFIDENCE_GPS_ONLY,
-        'GPS periodic',
+        notes,
+        undefined,
+        gpsSessionDistanceMeters > 0 ? gpsSessionDistanceMeters : undefined,
+        gpsSessionSpeedCount > 0 ? gpsSessionSpeedSum / gpsSessionSpeedCount : undefined,
       );
       submitSession(session);
       outsideSessionStart = timestamp; // start next segment from now
+      gpsSessionDistanceMeters = 0;
+      gpsSessionSpeedSum = 0;
+      gpsSessionSpeedCount = 0;
     }
   }
 
@@ -400,6 +501,7 @@ TaskManager.defineTask(LOCATION_TRACK_TASK, async ({ data, error }: any) => {
       loc.coords.latitude,
       loc.coords.longitude,
       loc.timestamp,
+      loc.coords.speed ?? undefined,
     );
     // Run dwell-based location suggestion after processing
     await autoDetectLocations();

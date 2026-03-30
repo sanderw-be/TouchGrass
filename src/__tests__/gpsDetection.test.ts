@@ -119,9 +119,9 @@ describe('processLocationUpdate', () => {
       radiusMeters: 100, isIndoor: true, status: 'active' as const,
     };
 
-    // First update: user is outside (far from home)
+    // First update: user is outside (far from home — ~1 km away)
     (Database.getKnownLocations as jest.Mock).mockReturnValue([homeLocation]);
-    processLocationUpdate(51.51, 4.31, NOW); // ~1km from home → outside
+    processLocationUpdate(51.51, 4.31, NOW); // ~1km from home → outside, no start label
 
     // After MIN_OUTSIDE_DURATION_MS, user is back at home (indoor)
     (Database.getKnownLocations as jest.Mock).mockReturnValue([homeLocation]);
@@ -130,6 +130,56 @@ describe('processLocationUpdate', () => {
     expect(SessionMerger.submitSession).toHaveBeenCalledTimes(1);
     const call = (SessionMerger.buildSession as jest.Mock).mock.calls[0];
     expect(call[2]).toBe('gps');
+    // Notes should describe return to Home (start location unknown because user was far away at start)
+    const notes: string = call[4];
+    expect(notes).toMatch(/GPS detection/i);
+    expect(notes).toMatch(/Home/);
+  });
+
+  it('GPS notes include "left … and returned" when returning to same location', () => {
+    const homeLocation = {
+      id: 1, label: 'Home',
+      latitude: 51.5, longitude: 4.3,
+      radiusMeters: 100, isIndoor: true, status: 'active' as const,
+    };
+
+    // Start near Home (just left it)
+    (Database.getKnownLocations as jest.Mock).mockReturnValue([homeLocation]);
+    processLocationUpdate(51.501, 4.301, NOW); // just left Home — nearby within 2×radius
+
+    // Return to Home after minimum duration
+    (Database.getKnownLocations as jest.Mock).mockReturnValue([homeLocation]);
+    processLocationUpdate(51.5, 4.3, NOW + MIN_OUTSIDE_DURATION_MS);
+
+    expect(SessionMerger.buildSession).toHaveBeenCalledTimes(1);
+    const call = (SessionMerger.buildSession as jest.Mock).mock.calls[0];
+    const notes: string = call[4];
+    expect(notes).toMatch(/left Home and returned/i);
+    expect(notes).toMatch(/\d+\.?\d*\s*(?:km|mi)/);
+  });
+
+  it('GPS periodic notes include distance and speed info', () => {
+    // Speed provided: 1.39 m/s ≈ 5 km/h
+    processLocationUpdate(51.5, 4.3, NOW, 1.39);
+    processLocationUpdate(51.5001, 4.3001, NOW + MIN_OUTSIDE_DURATION_MS, 1.39);
+
+    expect(SessionMerger.buildSession).toHaveBeenCalledTimes(1);
+    const call = (SessionMerger.buildSession as jest.Mock).mock.calls[0];
+    const notes: string = call[4];
+    expect(notes).toMatch(/GPS detection/i);
+    expect(notes).toMatch(/(?:km|mi) at.*(?:km\/h|mph)/i);
+  });
+
+  it('GPS notes omit location when no known locations exist', () => {
+    // No known locations → always outside, no departure/arrival label
+    processLocationUpdate(51.5, 4.3, NOW);
+    processLocationUpdate(51.5001, 4.3001, NOW + MIN_OUTSIDE_DURATION_MS);
+
+    const call = (SessionMerger.buildSession as jest.Mock).mock.calls[0];
+    const notes: string = call[4];
+    expect(notes).toMatch(/GPS detection/i);
+    // No specific location name should appear
+    expect(notes).not.toMatch(/Home|Work/);
   });
 
   it('does not submit a session when coming inside after less than minimum duration', () => {

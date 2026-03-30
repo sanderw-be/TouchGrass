@@ -8,6 +8,8 @@ import {
 import { getSetting, setSetting, pruneShortDiscardedHealthConnectSessions, getKnownLocations } from '../storage/database';
 import { submitSession, buildSession } from './sessionMerger';
 import { openHealthConnectPermissionsViaIntent, verifyHealthConnectPermissions } from './healthConnectIntent';
+import { t } from '../i18n';
+import { useImperialUnits, kmhToMph } from '../utils/units';
 
 // Activities that strongly suggest being outside
 const OUTDOOR_ACTIVITY_TYPES = [
@@ -21,6 +23,8 @@ export const MIN_DURATION_MS = 5 * 60 * 1000; // ignore sessions under 5 minutes
 // duration from step count when the recorded time window is unreliably short
 // (e.g. batch-synced records from Google Fit).
 export const STEPS_PER_MINUTE_AT_5KMH = 110;
+// The walking speed (km/h) corresponding to the baseline cadence above.
+const BASELINE_SPEED_KMH = 5;
 // Speed-based step-rate thresholds. Below 2.5 km/h is too slow to be real
 // outdoor walking (skip the record entirely); between 2.5 and 4 km/h is slow
 // but plausible (submit with reduced confidence).
@@ -157,6 +161,62 @@ export async function openHealthConnectForManagement(): Promise<boolean> {
 }
 
 /**
+ * Compute average speed in km/h from step count and duration.
+ * Uses the average cadence of 110 steps/min ≈ 5 km/h as the baseline.
+ */
+function stepsToSpeedKmh(steps: number, durationMs: number): number {
+  const durationMin = durationMs / 60_000;
+  if (durationMin <= 0) return 0;
+  const stepsPerMin = steps / durationMin;
+  // Linear interpolation from 0 steps/min → 0 km/h, using STEPS_PER_MINUTE_AT_5KMH ≈ BASELINE_SPEED_KMH
+  return (stepsPerMin / STEPS_PER_MINUTE_AT_5KMH) * BASELINE_SPEED_KMH;
+}
+
+/**
+ * Build a human-readable description for a Health Connect steps session.
+ * Example (metric):   "Health Connect, 3,200 steps at 4.5 km/h."
+ * Example (imperial): "Health Connect, 3,200 steps at 2.8 mph."
+ */
+function buildHCStepsNotes(steps: number, speedKmh: number): string {
+  const stepsFormatted = steps.toLocaleString();
+  const imperial = useImperialUnits();
+  const speed = imperial ? kmhToMph(speedKmh).toFixed(1) : speedKmh.toFixed(1);
+  const speedUnit = imperial ? t('unit_speed_imperial') : t('unit_speed_metric');
+  return t('session_notes_hc_steps', { steps: stepsFormatted, speed, speedUnit });
+}
+
+/**
+ * Build a human-readable description for a Health Connect exercise session.
+ * Example: "Health Connect, walking at 4.5 km/h."
+ */
+function buildHCExerciseNotes(exerciseName: string, durationMs: number, steps?: number): string {
+  if (steps != null && steps > 0) {
+    const speedKmh = stepsToSpeedKmh(steps, durationMs);
+    return buildHCStepsNotes(steps, speedKmh);
+  }
+  return t('session_notes_hc_exercise', { exerciseName });
+}
+
+/**
+ * Returns a localised name for an exercise type number.
+ */
+function exerciseTypeName(type: number): string {
+  const keyMap: Record<number, string> = {
+    2: 'exercise_badminton', 4: 'exercise_baseball', 5: 'exercise_basketball', 8: 'exercise_biking',
+    14: 'exercise_cricket', 28: 'exercise_american_football', 29: 'exercise_australian_football',
+    31: 'exercise_frisbee', 32: 'exercise_golf', 35: 'exercise_handball', 37: 'exercise_hiking',
+    38: 'exercise_ice_hockey', 39: 'exercise_ice_skating', 46: 'exercise_paddling', 47: 'exercise_paragliding',
+    51: 'exercise_rock_climbing', 52: 'exercise_roller_hockey', 53: 'exercise_rowing', 55: 'exercise_rugby',
+    56: 'exercise_running', 58: 'exercise_sailing', 59: 'exercise_scuba_diving', 60: 'exercise_skating',
+    61: 'exercise_skiing', 62: 'exercise_snowboarding', 63: 'exercise_snowshoeing', 64: 'exercise_soccer',
+    65: 'exercise_softball', 72: 'exercise_surfing', 73: 'exercise_open_water_swimming', 76: 'exercise_tennis',
+    78: 'exercise_volleyball', 79: 'exercise_walking', 80: 'exercise_water_polo', 82: 'exercise_wheelchair',
+  };
+  const key = keyMap[type];
+  return key ? t(key) : t('exercise_unknown', { type });
+}
+
+/**
  * Returns true if every GPS cluster sample within [startMs, endMs] falls inside
  * a known indoor location — meaning the user was definitely not outside.
  * Returns false when there are no GPS samples for the period (cannot conclude).
@@ -243,7 +303,7 @@ export async function syncHealthConnect(): Promise<boolean> {
         end,
         'health_connect',
         confidence,
-        `Exercise type: ${record.exerciseType}`,
+        buildHCExerciseNotes(exerciseTypeName(record.exerciseType), duration),
       );
 
       submitSession(session);
@@ -299,13 +359,16 @@ export async function syncHealthConnect(): Promise<boolean> {
         // Use the recorded end time (when batch-sync writes the record) and
         // extend backwards so the session covers the full estimated walk.
         // Step count is stored in the `steps` field, not in notes.
+        const stepSpeedKmh = stepsToSpeedKmh(record.count, effectiveDurationMs);
         const session = buildSession(
           sessionStart,
           end,
           'health_connect',
           stepConfidence,
-          undefined,
+          buildHCStepsNotes(record.count, stepSpeedKmh),
           record.count,
+          undefined,
+          stepSpeedKmh > 0 ? stepSpeedKmh : undefined,
         );
 
         submitSession(session);

@@ -13,6 +13,8 @@ export interface OutsideSession {
   userConfirmed: number | null;  // 0, 1, or null — SQLite has no boolean, null = not reviewed, true/false = user feedback
   notes?: string;
   steps?: number;          // aggregated step count from Health Connect steps records
+  distanceMeters?: number; // total GPS distance travelled in metres
+  averageSpeedKmh?: number; // average speed during the session in km/h
   discarded: number;       // 1 = algorithmically discarded (too unreliable to propose), 0 = normal session
 }
 
@@ -67,7 +69,9 @@ export function initDatabase(): void {
       confidence REAL NOT NULL DEFAULT 0.8,
       userConfirmed INTEGER,
       notes TEXT,
-      steps INTEGER
+      steps INTEGER,
+      distanceMeters REAL,
+      averageSpeedKmh REAL
     );
 
     CREATE TABLE IF NOT EXISTS daily_goals (
@@ -193,14 +197,30 @@ export function initDatabase(): void {
   } catch {
     // Column already exists — safe to ignore
   }
+
+  // Add distanceMeters column to outside_sessions if it doesn't exist (migration)
+  try {
+    db.execSync(`ALTER TABLE outside_sessions ADD COLUMN distanceMeters REAL`);
+    console.log('Database migration: Added distanceMeters column to outside_sessions');
+  } catch {
+    // Column already exists — safe to ignore
+  }
+
+  // Add averageSpeedKmh column to outside_sessions if it doesn't exist (migration)
+  try {
+    db.execSync(`ALTER TABLE outside_sessions ADD COLUMN averageSpeedKmh REAL`);
+    console.log('Database migration: Added averageSpeedKmh column to outside_sessions');
+  } catch {
+    // Column already exists — safe to ignore
+  }
 }
 
 // ── Sessions ──────────────────────────────────────────────
 
 export function insertSession(session: OutsideSession): number {
   const result = db.runSync(
-    `INSERT INTO outside_sessions (startTime, endTime, durationMinutes, source, confidence, userConfirmed, notes, steps, discarded)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO outside_sessions (startTime, endTime, durationMinutes, source, confidence, userConfirmed, notes, steps, distanceMeters, averageSpeedKmh, discarded)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       session.startTime,
       session.endTime,
@@ -210,6 +230,8 @@ export function insertSession(session: OutsideSession): number {
       session.userConfirmed === null ? null : session.userConfirmed ? 1 : 0,
       session.notes ?? null,
       session.steps ?? null,
+      session.distanceMeters ?? null,
+      session.averageSpeedKmh ?? null,
       session.discarded ?? 0,
     ]
   );
