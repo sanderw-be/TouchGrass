@@ -270,6 +270,7 @@ async function sendLocationSuggestionNotification(): Promise<void> {
       trigger: {
         type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
         seconds: 1,
+        channelId: 'touchgrass_reminders',
       },
     });
   } catch (e) {
