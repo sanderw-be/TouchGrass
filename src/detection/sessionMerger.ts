@@ -1,5 +1,6 @@
 import { OutsideSession, insertSession, getSessionsForRange, deleteSession } from '../storage/database';
 import { computeSessionScore, DISCARD_CONFIDENCE_THRESHOLD } from './sessionConfidence';
+import { t } from '../i18n';
 
 const MERGE_GAP_MS = 5 * 60 * 1000; // sessions within 5 min of each other get merged
 
@@ -97,7 +98,10 @@ export function submitSession(candidate: OutsideSession): void {
     const stepsPerMin = mergedSteps / durationMin;
     const speedKmh = (stepsPerMin / STEPS_PER_MIN_AT_BASELINE) * BASELINE_SPEED_KMH;
     hcNotesParts.push(
-      `Health Connect, ${mergedSteps.toLocaleString()} steps at ${speedKmh.toFixed(1)} km/h.`,
+      t('session_notes_hc_steps', {
+        steps: mergedSteps.toLocaleString(),
+        speed: speedKmh.toFixed(1),
+      }),
     );
   } else {
     // HC sessions without step data (exercise-only records) — keep unique notes.

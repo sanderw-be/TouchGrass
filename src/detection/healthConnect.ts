@@ -8,6 +8,7 @@ import {
 import { getSetting, setSetting, pruneShortDiscardedHealthConnectSessions, getKnownLocations } from '../storage/database';
 import { submitSession, buildSession } from './sessionMerger';
 import { openHealthConnectPermissionsViaIntent, verifyHealthConnectPermissions } from './healthConnectIntent';
+import { t } from '../i18n';
 
 // Activities that strongly suggest being outside
 const OUTDOOR_ACTIVITY_TYPES = [
@@ -177,37 +178,38 @@ function stepsToSpeedKmh(steps: number, durationMs: number): number {
 function buildHCStepsNotes(steps: number, speedKmh: number): string {
   const stepsFormatted = steps.toLocaleString();
   const speedStr = speedKmh.toFixed(1);
-  return `Health Connect, ${stepsFormatted} steps at ${speedStr} km/h.`;
+  return t('session_notes_hc_steps', { steps: stepsFormatted, speed: speedStr });
 }
 
 /**
  * Build a human-readable description for a Health Connect exercise session.
  * Example: "Health Connect, walking at 4.5 km/h."
  */
-function buildHCExerciseNotes(exerciseTypeName: string, durationMs: number, steps?: number): string {
+function buildHCExerciseNotes(exerciseName: string, durationMs: number, steps?: number): string {
   if (steps != null && steps > 0) {
     const speedKmh = stepsToSpeedKmh(steps, durationMs);
     return buildHCStepsNotes(steps, speedKmh);
   }
-  return `Health Connect, ${exerciseTypeName}.`;
+  return t('session_notes_hc_exercise', { exerciseName });
 }
 
 /**
- * Returns a human-readable name for an exercise type number.
+ * Returns a localised name for an exercise type number.
  */
 function exerciseTypeName(type: number): string {
-  const names: Record<number, string> = {
-    2: 'badminton', 4: 'baseball', 5: 'basketball', 8: 'biking',
-    14: 'cricket', 28: 'American football', 29: 'Australian football',
-    31: 'frisbee', 32: 'golf', 35: 'handball', 37: 'hiking',
-    38: 'ice hockey', 39: 'ice skating', 46: 'paddling', 47: 'paragliding',
-    51: 'rock climbing', 52: 'roller hockey', 53: 'rowing', 55: 'rugby',
-    56: 'running', 58: 'sailing', 59: 'scuba diving', 60: 'skating',
-    61: 'skiing', 62: 'snowboarding', 63: 'snowshoeing', 64: 'soccer',
-    65: 'softball', 72: 'surfing', 73: 'open water swimming', 76: 'tennis',
-    78: 'volleyball', 79: 'walking', 80: 'water polo', 82: 'wheelchair',
+  const keyMap: Record<number, string> = {
+    2: 'exercise_badminton', 4: 'exercise_baseball', 5: 'exercise_basketball', 8: 'exercise_biking',
+    14: 'exercise_cricket', 28: 'exercise_american_football', 29: 'exercise_australian_football',
+    31: 'exercise_frisbee', 32: 'exercise_golf', 35: 'exercise_handball', 37: 'exercise_hiking',
+    38: 'exercise_ice_hockey', 39: 'exercise_ice_skating', 46: 'exercise_paddling', 47: 'exercise_paragliding',
+    51: 'exercise_rock_climbing', 52: 'exercise_roller_hockey', 53: 'exercise_rowing', 55: 'exercise_rugby',
+    56: 'exercise_running', 58: 'exercise_sailing', 59: 'exercise_scuba_diving', 60: 'exercise_skating',
+    61: 'exercise_skiing', 62: 'exercise_snowboarding', 63: 'exercise_snowshoeing', 64: 'exercise_soccer',
+    65: 'exercise_softball', 72: 'exercise_surfing', 73: 'exercise_open_water_swimming', 76: 'exercise_tennis',
+    78: 'exercise_volleyball', 79: 'exercise_walking', 80: 'exercise_water_polo', 82: 'exercise_wheelchair',
   };
-  return names[type] ?? `exercise type ${type}`;
+  const key = keyMap[type];
+  return key ? t(key) : t('exercise_unknown', { type });
 }
 
 /**

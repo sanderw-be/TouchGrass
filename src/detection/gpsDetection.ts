@@ -154,23 +154,22 @@ function buildGpsNotes(
   distanceMeters: number,
   averageSpeedKmh: number,
 ): string {
-  const distKm = (distanceMeters / 1000).toFixed(1);
-  const speedStr = averageSpeedKmh.toFixed(1);
-  const stats = `${distKm} km at ${speedStr} km/h`;
+  const dist = (distanceMeters / 1000).toFixed(1);
+  const speed = averageSpeedKmh.toFixed(1);
 
   if (startLocationLabel && endLocationLabel) {
     if (startLocationLabel === endLocationLabel) {
-      return `GPS detection, left ${startLocationLabel} and returned for ${stats}.`;
+      return t('session_notes_gps_left_returned', { start: startLocationLabel, dist, speed });
     }
-    return `GPS detection, left ${startLocationLabel} and went to ${endLocationLabel} for ${stats}.`;
+    return t('session_notes_gps_left_went', { start: startLocationLabel, end: endLocationLabel, dist, speed });
   }
   if (startLocationLabel) {
-    return `GPS detection, left ${startLocationLabel} for ${stats}.`;
+    return t('session_notes_gps_left', { start: startLocationLabel, dist, speed });
   }
   if (endLocationLabel) {
-    return `GPS detection, returned to ${endLocationLabel} for ${stats}.`;
+    return t('session_notes_gps_returned', { end: endLocationLabel, dist, speed });
   }
-  return `GPS detection, ${stats}.`;
+  return t('session_notes_gps_no_location', { dist, speed });
 }
 
 /**
