@@ -217,7 +217,11 @@ describe('autoDetectLocations', () => {
 
     await autoDetectLocations();
 
-    expect(Notifications.scheduleNotificationAsync).toHaveBeenCalled();
+    expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledWith(
+      expect.objectContaining({
+        trigger: expect.objectContaining({ channelId: 'touchgrass_reminders' }),
+      }),
+    );
   });
 
   it('does not send a notification when notification permission is denied', async () => {
