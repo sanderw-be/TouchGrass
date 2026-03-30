@@ -9,6 +9,7 @@ import { getSetting, setSetting, pruneShortDiscardedHealthConnectSessions, getKn
 import { submitSession, buildSession } from './sessionMerger';
 import { openHealthConnectPermissionsViaIntent, verifyHealthConnectPermissions } from './healthConnectIntent';
 import { t } from '../i18n';
+import { useImperialUnits, kmhToMph } from '../utils/units';
 
 // Activities that strongly suggest being outside
 const OUTDOOR_ACTIVITY_TYPES = [
@@ -173,12 +174,15 @@ function stepsToSpeedKmh(steps: number, durationMs: number): number {
 
 /**
  * Build a human-readable description for a Health Connect steps session.
- * Example: "Health Connect, 3,200 steps at 4.5 km/h."
+ * Example (metric):   "Health Connect, 3,200 steps at 4.5 km/h."
+ * Example (imperial): "Health Connect, 3,200 steps at 2.8 mph."
  */
 function buildHCStepsNotes(steps: number, speedKmh: number): string {
   const stepsFormatted = steps.toLocaleString();
-  const speedStr = speedKmh.toFixed(1);
-  return t('session_notes_hc_steps', { steps: stepsFormatted, speed: speedStr });
+  const imperial = useImperialUnits();
+  const speed = imperial ? kmhToMph(speedKmh).toFixed(1) : speedKmh.toFixed(1);
+  const speedUnit = imperial ? t('unit_speed_imperial') : t('unit_speed_metric');
+  return t('session_notes_hc_steps', { steps: stepsFormatted, speed, speedUnit });
 }
 
 /**

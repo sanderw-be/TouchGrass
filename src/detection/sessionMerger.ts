@@ -1,6 +1,7 @@
 import { OutsideSession, insertSession, getSessionsForRange, deleteSession } from '../storage/database';
 import { computeSessionScore, DISCARD_CONFIDENCE_THRESHOLD } from './sessionConfidence';
 import { t } from '../i18n';
+import { useImperialUnits, kmhToMph } from '../utils/units';
 
 const MERGE_GAP_MS = 5 * 60 * 1000; // sessions within 5 min of each other get merged
 
@@ -97,10 +98,14 @@ export function submitSession(candidate: OutsideSession): void {
     const durationMin = mergedDurationMs / 60_000;
     const stepsPerMin = mergedSteps / durationMin;
     const speedKmh = (stepsPerMin / STEPS_PER_MIN_AT_BASELINE) * BASELINE_SPEED_KMH;
+    const imperial = useImperialUnits();
+    const speed = imperial ? kmhToMph(speedKmh).toFixed(1) : speedKmh.toFixed(1);
+    const speedUnit = imperial ? t('unit_speed_imperial') : t('unit_speed_metric');
     hcNotesParts.push(
       t('session_notes_hc_steps', {
         steps: mergedSteps.toLocaleString(),
-        speed: speedKmh.toFixed(1),
+        speed,
+        speedUnit,
       }),
     );
   } else {

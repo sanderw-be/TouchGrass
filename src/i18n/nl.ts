@@ -461,15 +461,19 @@ export default {
 
   // Sessie-omschrijvingen (opgeslagen bij elke sessie om de detectiemethode te omschrijven)
   session_notes_manual: 'Handmatig ingevoerd.',
-  // GPS-omschrijvingen — {{dist}} = afstand in km, {{speed}} = snelheid in km/u
-  session_notes_gps_left_returned: 'GPS-detectie, vertrokken bij {{start}} en teruggekeerd na {{dist}} km bij {{speed}} km/u.',
-  session_notes_gps_left_went: 'GPS-detectie, vertrokken bij {{start}} en gegaan naar {{end}} na {{dist}} km bij {{speed}} km/u.',
-  session_notes_gps_left: 'GPS-detectie, vertrokken bij {{start}} na {{dist}} km bij {{speed}} km/u.',
-  session_notes_gps_returned: 'GPS-detectie, teruggekeerd bij {{end}} na {{dist}} km bij {{speed}} km/u.',
-  session_notes_gps_no_location: 'GPS-detectie, {{dist}} km bij {{speed}} km/u.',
-  // Health Connect-omschrijvingen — {{steps}} = opgemaakt getal, {{speed}} = km/u-waarde
-  session_notes_hc_steps: 'Health Connect, {{steps}} stappen bij {{speed}} km/u.',
+  // GPS-omschrijvingen — {{dist}} = numerieke afstand, {{distUnit}} = "km" of "mi",
+  //                      {{speed}} = numerieke snelheid, {{speedUnit}} = "km/u" of "mph"
+  session_notes_gps_left_returned: 'GPS-detectie, vertrokken bij {{start}} en teruggekeerd na {{dist}} {{distUnit}} bij {{speed}} {{speedUnit}}.',
+  session_notes_gps_left_went: 'GPS-detectie, vertrokken bij {{start}} en gegaan naar {{end}} na {{dist}} {{distUnit}} bij {{speed}} {{speedUnit}}.',
+  session_notes_gps_left: 'GPS-detectie, vertrokken bij {{start}} na {{dist}} {{distUnit}} bij {{speed}} {{speedUnit}}.',
+  session_notes_gps_returned: 'GPS-detectie, teruggekeerd bij {{end}} na {{dist}} {{distUnit}} bij {{speed}} {{speedUnit}}.',
+  session_notes_gps_no_location: 'GPS-detectie, {{dist}} {{distUnit}} bij {{speed}} {{speedUnit}}.',
+  // Health Connect-omschrijvingen — {{steps}} = opgemaakt getal, {{speed}} = numerieke snelheid, {{speedUnit}} = "km/u" of "mph"
+  session_notes_hc_steps: 'Health Connect, {{steps}} stappen bij {{speed}} {{speedUnit}}.',
   session_notes_hc_exercise: 'Health Connect, {{exerciseName}}.',
+  // Snelheidseenheid voor het meetsysteem van het apparaat (in de code vervangen door "mph" voor imperiale regio's)
+  unit_speed_metric: 'km/u',
+  unit_speed_imperial: 'mph',
   // Namen van activiteitstypen (Health Connect integer → weergavenaam)
   exercise_badminton: 'badminton',
   exercise_baseball: 'honkbal',

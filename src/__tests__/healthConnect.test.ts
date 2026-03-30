@@ -124,7 +124,7 @@ describe('syncHealthConnect', () => {
     // Step count is stored in the `steps` field
     expect(session.steps).toBe(3000);
     // Notes now describe the session
-    expect(session.notes).toMatch(/Health Connect,.*steps.*km\/h/);
+    expect(session.notes).toMatch(/Health Connect,.*steps.*(?:km\/h|mph)/);
   });
 
   it('submits steps records with walking speed below 2.5 km/h for later pruning (not skipped at ingestion)', async () => {

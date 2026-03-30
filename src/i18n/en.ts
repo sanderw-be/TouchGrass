@@ -461,15 +461,19 @@ export default {
 
   // Session description notes (stored with each session to describe how it was detected)
   session_notes_manual: 'Manual entry.',
-  // GPS descriptions — {{dist}} = distance in km, {{speed}} = speed in km/h
-  session_notes_gps_left_returned: 'GPS detection, left {{start}} and returned for {{dist}} km at {{speed}} km/h.',
-  session_notes_gps_left_went: 'GPS detection, left {{start}} and went to {{end}} for {{dist}} km at {{speed}} km/h.',
-  session_notes_gps_left: 'GPS detection, left {{start}} for {{dist}} km at {{speed}} km/h.',
-  session_notes_gps_returned: 'GPS detection, returned to {{end}} for {{dist}} km at {{speed}} km/h.',
-  session_notes_gps_no_location: 'GPS detection, {{dist}} km at {{speed}} km/h.',
-  // Health Connect descriptions — {{steps}} = formatted number, {{speed}} = km/h value
-  session_notes_hc_steps: 'Health Connect, {{steps}} steps at {{speed}} km/h.',
+  // GPS descriptions — {{dist}} = numeric distance, {{distUnit}} = "km" or "mi",
+  //                    {{speed}} = numeric speed,   {{speedUnit}} = "km/h" or "mph"
+  session_notes_gps_left_returned: 'GPS detection, left {{start}} and returned for {{dist}} {{distUnit}} at {{speed}} {{speedUnit}}.',
+  session_notes_gps_left_went: 'GPS detection, left {{start}} and went to {{end}} for {{dist}} {{distUnit}} at {{speed}} {{speedUnit}}.',
+  session_notes_gps_left: 'GPS detection, left {{start}} for {{dist}} {{distUnit}} at {{speed}} {{speedUnit}}.',
+  session_notes_gps_returned: 'GPS detection, returned to {{end}} for {{dist}} {{distUnit}} at {{speed}} {{speedUnit}}.',
+  session_notes_gps_no_location: 'GPS detection, {{dist}} {{distUnit}} at {{speed}} {{speedUnit}}.',
+  // Health Connect descriptions — {{steps}} = formatted number, {{speed}} = numeric speed, {{speedUnit}} = "km/h" or "mph"
+  session_notes_hc_steps: 'Health Connect, {{steps}} steps at {{speed}} {{speedUnit}}.',
   session_notes_hc_exercise: 'Health Connect, {{exerciseName}}.',
+  // Speed unit label for the device's measurement system (overridden to "mph" for imperial regions in code)
+  unit_speed_metric: 'km/h',
+  unit_speed_imperial: 'mph',
   // Exercise type names (Health Connect integer → display string)
   exercise_badminton: 'badminton',
   exercise_baseball: 'baseball',

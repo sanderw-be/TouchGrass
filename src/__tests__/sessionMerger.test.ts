@@ -183,7 +183,7 @@ describe('submitSession', () => {
     const inserted = (Database.insertSession as jest.Mock).mock.calls[0][0];
     expect(inserted.steps).toBe(1000);
     // Notes must be a SINGLE sentence with the aggregated total, not a concatenation
-    expect(inserted.notes).toMatch(/^Health Connect,\s*1,000 steps at \d+\.\d+ km\/h\.$/);
+    expect(inserted.notes).toMatch(/^Health Connect,\s*1,000 steps at \d+\.\d+ (?:km\/h|mph)\.$/);
   });
 
   it('combines GPS notes and aggregated HC steps note when sources are mixed', () => {
@@ -205,7 +205,7 @@ describe('submitSession', () => {
     const inserted = (Database.insertSession as jest.Mock).mock.calls[0][0];
     // GPS note should appear first, followed by the aggregated HC note
     expect(inserted.notes).toMatch(/GPS detection/);
-    expect(inserted.notes).toMatch(/Health Connect,.*steps at.*km\/h/);
+    expect(inserted.notes).toMatch(/Health Connect,.*steps at.*(?:km\/h|mph)/);
     // Must be a combined single string, not duplicated per-record notes
     const hcMatchCount = (inserted.notes.match(/Health Connect,/g) ?? []).length;
     expect(hcMatchCount).toBe(1);

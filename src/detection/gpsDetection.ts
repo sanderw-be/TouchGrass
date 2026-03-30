@@ -7,6 +7,7 @@ import {
 } from '../storage/database';
 import { submitSession, buildSession } from './sessionMerger';
 import { t } from '../i18n';
+import { useImperialUnits, kmToMiles, kmhToMph } from '../utils/units';
 
 const GEOFENCE_TASK = 'TOUCHGRASS_GEOFENCE';
 const LOCATION_TRACK_TASK = 'TOUCHGRASS_LOCATION_TRACK';
@@ -146,7 +147,8 @@ export function isAtKnownIndoorLocation(
 
 /**
  * Build a human-readable description for a GPS session.
- * Example: "GPS detection, left Home and returned for 2.3 km at 4.5 km/h."
+ * Example (metric):   "GPS detection, left Home and returned for 2.3 km at 4.5 km/h."
+ * Example (imperial): "GPS detection, left Home and returned for 1.4 mi at 2.8 mph."
  */
 function buildGpsNotes(
   startLocationLabel: string | null,
@@ -154,22 +156,26 @@ function buildGpsNotes(
   distanceMeters: number,
   averageSpeedKmh: number,
 ): string {
-  const dist = (distanceMeters / 1000).toFixed(1);
-  const speed = averageSpeedKmh.toFixed(1);
+  const imperial = useImperialUnits();
+  const distKm = distanceMeters / 1000;
+  const dist = imperial ? kmToMiles(distKm).toFixed(1) : distKm.toFixed(1);
+  const distUnit = imperial ? 'mi' : 'km';
+  const speed = imperial ? kmhToMph(averageSpeedKmh).toFixed(1) : averageSpeedKmh.toFixed(1);
+  const speedUnit = imperial ? t('unit_speed_imperial') : t('unit_speed_metric');
 
   if (startLocationLabel && endLocationLabel) {
     if (startLocationLabel === endLocationLabel) {
-      return t('session_notes_gps_left_returned', { start: startLocationLabel, dist, speed });
+      return t('session_notes_gps_left_returned', { start: startLocationLabel, dist, distUnit, speed, speedUnit });
     }
-    return t('session_notes_gps_left_went', { start: startLocationLabel, end: endLocationLabel, dist, speed });
+    return t('session_notes_gps_left_went', { start: startLocationLabel, end: endLocationLabel, dist, distUnit, speed, speedUnit });
   }
   if (startLocationLabel) {
-    return t('session_notes_gps_left', { start: startLocationLabel, dist, speed });
+    return t('session_notes_gps_left', { start: startLocationLabel, dist, distUnit, speed, speedUnit });
   }
   if (endLocationLabel) {
-    return t('session_notes_gps_returned', { end: endLocationLabel, dist, speed });
+    return t('session_notes_gps_returned', { end: endLocationLabel, dist, distUnit, speed, speedUnit });
   }
-  return t('session_notes_gps_no_location', { dist, speed });
+  return t('session_notes_gps_no_location', { dist, distUnit, speed, speedUnit });
 }
 
 /**

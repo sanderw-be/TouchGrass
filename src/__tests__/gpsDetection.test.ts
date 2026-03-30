@@ -155,7 +155,7 @@ describe('processLocationUpdate', () => {
     const call = (SessionMerger.buildSession as jest.Mock).mock.calls[0];
     const notes: string = call[4];
     expect(notes).toMatch(/left Home and returned/i);
-    expect(notes).toMatch(/km/);
+    expect(notes).toMatch(/\d+\.?\d*\s*(?:km|mi)/);
   });
 
   it('GPS periodic notes include distance and speed info', () => {
@@ -167,7 +167,7 @@ describe('processLocationUpdate', () => {
     const call = (SessionMerger.buildSession as jest.Mock).mock.calls[0];
     const notes: string = call[4];
     expect(notes).toMatch(/GPS detection/i);
-    expect(notes).toMatch(/km at.*km\/h/i);
+    expect(notes).toMatch(/(?:km|mi) at.*(?:km\/h|mph)/i);
   });
 
   it('GPS notes omit location when no known locations exist', () => {
