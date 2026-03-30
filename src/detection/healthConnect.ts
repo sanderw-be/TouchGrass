@@ -21,6 +21,8 @@ export const MIN_DURATION_MS = 5 * 60 * 1000; // ignore sessions under 5 minutes
 // duration from step count when the recorded time window is unreliably short
 // (e.g. batch-synced records from Google Fit).
 export const STEPS_PER_MINUTE_AT_5KMH = 110;
+// The walking speed (km/h) corresponding to the baseline cadence above.
+const BASELINE_SPEED_KMH = 5;
 // Speed-based step-rate thresholds. Below 2.5 km/h is too slow to be real
 // outdoor walking (skip the record entirely); between 2.5 and 4 km/h is slow
 // but plausible (submit with reduced confidence).
@@ -157,6 +159,58 @@ export async function openHealthConnectForManagement(): Promise<boolean> {
 }
 
 /**
+ * Compute average speed in km/h from step count and duration.
+ * Uses the average cadence of 110 steps/min ≈ 5 km/h as the baseline.
+ */
+function stepsToSpeedKmh(steps: number, durationMs: number): number {
+  const durationMin = durationMs / 60_000;
+  if (durationMin <= 0) return 0;
+  const stepsPerMin = steps / durationMin;
+  // Linear interpolation from 0 steps/min → 0 km/h, using STEPS_PER_MINUTE_AT_5KMH ≈ BASELINE_SPEED_KMH
+  return (stepsPerMin / STEPS_PER_MINUTE_AT_5KMH) * BASELINE_SPEED_KMH;
+}
+
+/**
+ * Build a human-readable description for a Health Connect steps session.
+ * Example: "Health Connect, 3,200 steps at 4.5 km/h."
+ */
+function buildHCStepsNotes(steps: number, speedKmh: number): string {
+  const stepsFormatted = steps.toLocaleString();
+  const speedStr = speedKmh.toFixed(1);
+  return `Health Connect, ${stepsFormatted} steps at ${speedStr} km/h.`;
+}
+
+/**
+ * Build a human-readable description for a Health Connect exercise session.
+ * Example: "Health Connect, walking at 4.5 km/h."
+ */
+function buildHCExerciseNotes(exerciseTypeName: string, durationMs: number, steps?: number): string {
+  if (steps != null && steps > 0) {
+    const speedKmh = stepsToSpeedKmh(steps, durationMs);
+    return buildHCStepsNotes(steps, speedKmh);
+  }
+  return `Health Connect, ${exerciseTypeName}.`;
+}
+
+/**
+ * Returns a human-readable name for an exercise type number.
+ */
+function exerciseTypeName(type: number): string {
+  const names: Record<number, string> = {
+    2: 'badminton', 4: 'baseball', 5: 'basketball', 8: 'biking',
+    14: 'cricket', 28: 'American football', 29: 'Australian football',
+    31: 'frisbee', 32: 'golf', 35: 'handball', 37: 'hiking',
+    38: 'ice hockey', 39: 'ice skating', 46: 'paddling', 47: 'paragliding',
+    51: 'rock climbing', 52: 'roller hockey', 53: 'rowing', 55: 'rugby',
+    56: 'running', 58: 'sailing', 59: 'scuba diving', 60: 'skating',
+    61: 'skiing', 62: 'snowboarding', 63: 'snowshoeing', 64: 'soccer',
+    65: 'softball', 72: 'surfing', 73: 'open water swimming', 76: 'tennis',
+    78: 'volleyball', 79: 'walking', 80: 'water polo', 82: 'wheelchair',
+  };
+  return names[type] ?? `exercise type ${type}`;
+}
+
+/**
  * Returns true if every GPS cluster sample within [startMs, endMs] falls inside
  * a known indoor location — meaning the user was definitely not outside.
  * Returns false when there are no GPS samples for the period (cannot conclude).
@@ -243,7 +297,7 @@ export async function syncHealthConnect(): Promise<boolean> {
         end,
         'health_connect',
         confidence,
-        `Exercise type: ${record.exerciseType}`,
+        buildHCExerciseNotes(exerciseTypeName(record.exerciseType), duration),
       );
 
       submitSession(session);
@@ -299,13 +353,16 @@ export async function syncHealthConnect(): Promise<boolean> {
         // Use the recorded end time (when batch-sync writes the record) and
         // extend backwards so the session covers the full estimated walk.
         // Step count is stored in the `steps` field, not in notes.
+        const stepSpeedKmh = stepsToSpeedKmh(record.count, effectiveDurationMs);
         const session = buildSession(
           sessionStart,
           end,
           'health_connect',
           stepConfidence,
-          undefined,
+          buildHCStepsNotes(record.count, stepSpeedKmh),
           record.count,
+          undefined,
+          stepSpeedKmh > 0 ? stepSpeedKmh : undefined,
         );
 
         submitSession(session);

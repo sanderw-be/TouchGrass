@@ -46,12 +46,20 @@ export function submitSession(candidate: OutsideSession): void {
   // sources overlap.  Step counts are stored in the `steps` column instead.
   const allNotesList = allUnconfirmed.map(s => s.notes).filter((n): n is string => !!n);
   const uniqueNotes = [...new Set(allNotesList)];
-  const mergedNotes = uniqueNotes.length > 0 ? uniqueNotes.join('; ') : undefined;
+  const mergedNotes = uniqueNotes.length > 0 ? uniqueNotes.join(' ') : undefined;
 
   // Sum step counts so the merged session reflects the total steps walked
   // across all contributing Health Connect steps records.
   const stepsTotal = allUnconfirmed.reduce((sum, s) => sum + (s.steps ?? 0), 0);
   const mergedSteps = stepsTotal > 0 ? stepsTotal : undefined;
+
+  // Sum distances from GPS sessions.
+  const distanceTotal = allUnconfirmed.reduce((sum, s) => sum + (s.distanceMeters ?? 0), 0);
+  const mergedDistance = distanceTotal > 0 ? distanceTotal : undefined;
+
+  // Use the highest speed recorded across contributing sessions.
+  const speedValues = allUnconfirmed.map(s => s.averageSpeedKmh).filter((v): v is number => v != null);
+  const mergedSpeed = speedValues.length > 0 ? Math.max(...speedValues) : undefined;
 
   // Preserve a denied (userConfirmed=0) status from existing unconfirmed sessions
   // so that a re-detection never silently un-denies a session.
@@ -105,6 +113,8 @@ export function submitSession(candidate: OutsideSession): void {
       discarded: 0,
       notes: mergedNotes,
       steps: mergedSteps,
+      distanceMeters: mergedDistance,
+      averageSpeedKmh: mergedSpeed,
     };
     const score = computeSessionScore(segSession);
     // Only discard sessions that have no user feedback yet (userConfirmed === null).
@@ -134,6 +144,8 @@ export function buildSession(
   confidence: number,
   notes?: string,
   steps?: number,
+  distanceMeters?: number,
+  averageSpeedKmh?: number,
 ): OutsideSession {
   const durationMinutes = (endTime - startTime) / 60000;
   return {
@@ -145,6 +157,8 @@ export function buildSession(
     userConfirmed: source === 'manual' ? 1 : null, // Auto-approve manual sessions
     notes,
     steps,
+    distanceMeters,
+    averageSpeedKmh,
     discarded: 0,
   };
 }

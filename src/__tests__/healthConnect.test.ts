@@ -62,6 +62,27 @@ describe('syncHealthConnect', () => {
     const session = (SessionMerger.submitSession as jest.Mock).mock.calls[0][0];
     expect(session.source).toBe('health_connect');
     expect(session.startTime).toBe(new Date(sessionStart).getTime());
+    // Notes should describe the HC exercise session
+    expect(session.notes).toMatch(/Health Connect/i);
+  });
+
+  it('exercise session notes include the exercise type name', async () => {
+    const sessionStart = new Date(NOW - 30 * 60 * 1000).toISOString();
+    const sessionEnd = new Date(NOW).toISOString();
+
+    (HealthConnect.readRecords as jest.Mock).mockImplementation((type: string) => {
+      if (type === 'ExerciseSession') {
+        return Promise.resolve({
+          records: [{ startTime: sessionStart, endTime: sessionEnd, exerciseType: 56 }], // RUNNING
+        });
+      }
+      return Promise.resolve({ records: [] });
+    });
+
+    await syncHealthConnect();
+
+    const session = (SessionMerger.submitSession as jest.Mock).mock.calls[0][0];
+    expect(session.notes).toMatch(/running/i);
   });
 
   it('skips exercise sessions shorter than minimum duration', async () => {
@@ -100,9 +121,10 @@ describe('syncHealthConnect', () => {
     expect(SessionMerger.submitSession).toHaveBeenCalledTimes(1);
     const session = (SessionMerger.submitSession as jest.Mock).mock.calls[0][0];
     expect(session.source).toBe('health_connect');
-    // Step count is stored in the `steps` field, not in notes
+    // Step count is stored in the `steps` field
     expect(session.steps).toBe(3000);
-    expect(session.notes).toBeUndefined();
+    // Notes now describe the session
+    expect(session.notes).toMatch(/Health Connect,.*steps.*km\/h/);
   });
 
   it('submits steps records with walking speed below 2.5 km/h for later pruning (not skipped at ingestion)', async () => {

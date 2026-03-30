@@ -18,7 +18,7 @@ export function logManualSession(durationMinutes: number, startTime?: number, en
     end,
     'manual',
     CONFIDENCE_MANUAL,
-    'Manually logged',
+    'Manual entry.',
   );
 
   // Manual sessions are auto-confirmed — the user knows what they logged
@@ -44,7 +44,7 @@ export function startManualSession(): () => void {
       endTime,
       'manual',
       CONFIDENCE_MANUAL,
-      'Live manual session',
+      'Manual entry.',
     );
 
     submitSession(session);
