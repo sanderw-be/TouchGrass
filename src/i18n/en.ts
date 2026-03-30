@@ -440,6 +440,22 @@ export default {
   background_task_title: 'Smart Reminders',
   background_task_desc: 'Checking for the best time to remind you to go outside.',
 
+  // Battery optimization (Android intro)
+  intro_battery_title: 'Background Activity',
+  intro_battery_body: 'For reliable reminders even when the app is closed, TouchGrass needs unrestricted background activity.',
+  intro_battery_why_title: 'Why is this needed?',
+  intro_battery_why_body: 'Some phone manufacturers aggressively limit background apps to save battery. Without this setting, your reminders may be delayed or missed entirely.',
+  intro_battery_button: 'Open Battery Settings',
+  intro_battery_button_done: 'Settings Opened ✓',
+  intro_battery_hint: 'Find TouchGrass in the list and select "Unrestricted". You can skip this and change it later in Settings.',
+
+  // Settings battery optimization
+  settings_battery_optimization: 'Battery optimization',
+  settings_battery_optimization_sublabel: 'Ensure reminders work reliably in the background',
+
+  // Intro checklist
+  intro_ready_checklist_item_battery: 'Set battery optimization to "Unrestricted".',
+
   // Time/date formatting locale tag
   locale_tag: 'en-GB',
 };

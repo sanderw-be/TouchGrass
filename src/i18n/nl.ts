@@ -440,6 +440,22 @@ export default {
   background_task_title: 'Slimme Herinneringen',
   background_task_desc: 'Controleren wat de beste tijd is om je te herinneren om naar buiten te gaan.',
 
+  // Batterij-optimalisatie (Android intro)
+  intro_battery_title: 'Achtergrondactiviteit',
+  intro_battery_body: 'Voor betrouwbare herinneringen, zelfs als de app gesloten is, heeft TouchGrass onbeperkte achtergrondactiviteit nodig.',
+  intro_battery_why_title: 'Waarom is dit nodig?',
+  intro_battery_why_body: 'Sommige telefoonfabrikanten beperken achtergrondapps agressief om batterij te besparen. Zonder deze instelling kunnen je herinneringen vertraagd worden of helemaal niet aankomen.',
+  intro_battery_button: 'Open batterij-instellingen',
+  intro_battery_button_done: 'Instellingen geopend ✓',
+  intro_battery_hint: 'Zoek TouchGrass in de lijst en selecteer "Onbeperkt". Je kunt dit overslaan en later wijzigen in Instellingen.',
+
+  // Instellingen batterij-optimalisatie
+  settings_battery_optimization: 'Batterij-optimalisatie',
+  settings_battery_optimization_sublabel: 'Zorg dat herinneringen betrouwbaar werken op de achtergrond',
+
+  // Intro checklist
+  intro_ready_checklist_item_battery: 'Stel batterij-optimalisatie in op "Onbeperkt".',
+
   // Taal-/datumopmaak
   locale_tag: 'nl-NL',
 };

@@ -6,6 +6,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Notifications from 'expo-notifications';
 import * as Location from 'expo-location';
+import * as IntentLauncher from 'expo-intent-launcher';
 import { spacing, radius, shadows } from '../utils/theme';
 import { useTheme } from '../context/ThemeContext';
 import { t } from '../i18n';
@@ -20,7 +21,7 @@ interface Props {
   onComplete: () => void;
 }
 
-type Step = 'welcome' | 'health-connect' | 'location' | 'notifications' | 'calendar' | 'ready';
+type Step = 'welcome' | 'health-connect' | 'location' | 'notifications' | 'battery' | 'calendar' | 'ready';
 
 export default function IntroScreen({ onComplete }: Props) {
   const { colors } = useTheme();
@@ -29,6 +30,7 @@ export default function IntroScreen({ onComplete }: Props) {
   const [healthConnectGranted, setHealthConnectGranted] = useState(false);
   const [locationGranted, setLocationGranted] = useState(false);
   const [notificationsGranted, setNotificationsGranted] = useState(false);
+  const [batteryVisited, setBatteryVisited] = useState(false);
   const [calendarGranted, setCalendarGranted] = useState(false);
   const [calendarBuffer, setCalendarBuffer] = useState(30);
   const [calendarDuration, setCalendarDuration] = useState(0);
@@ -41,7 +43,9 @@ export default function IntroScreen({ onComplete }: Props) {
   const [introSheetLabel, setIntroSheetLabel] = useState('');
   const [pendingLocationType, setPendingLocationType] = useState<'home' | 'work' | null>(null);
 
-  const steps: Step[] = ['welcome', 'health-connect', 'location', 'notifications', 'calendar', 'ready'];
+  const steps: Step[] = Platform.OS === 'android'
+    ? ['welcome', 'health-connect', 'location', 'notifications', 'battery', 'calendar', 'ready']
+    : ['welcome', 'health-connect', 'location', 'notifications', 'calendar', 'ready'];
   const currentIndex = steps.indexOf(currentStep);
   const progress = ((currentIndex + 1) / steps.length) * 100;
 
@@ -70,6 +74,8 @@ export default function IntroScreen({ onComplete }: Props) {
       // Check notification permissions
       const { status } = await Notifications.getPermissionsAsync();
       setNotificationsGranted(status === 'granted');
+    } else if (currentStep === 'battery') {
+      // Battery optimization cannot be detected programmatically — no-op.
     } else if (currentStep === 'calendar') {
       const calGranted = await hasCalendarPermissions();
       setCalendarGranted(calGranted);
@@ -103,7 +109,7 @@ export default function IntroScreen({ onComplete }: Props) {
 
   // Check permissions when entering permission-related steps
   useEffect(() => {
-    if (currentStep === 'health-connect' || currentStep === 'location' || currentStep === 'notifications' || currentStep === 'calendar' || currentStep === 'ready') {
+    if (currentStep === 'health-connect' || currentStep === 'location' || currentStep === 'notifications' || currentStep === 'battery' || currentStep === 'calendar' || currentStep === 'ready') {
       checkPermissions();
     }
   }, [currentStep, checkPermissions]);
@@ -283,6 +289,12 @@ export default function IntroScreen({ onComplete }: Props) {
               requesting={requestingPermission}
             />
           )}
+          {currentStep === 'battery' && (
+            <BatteryStep
+              visited={batteryVisited}
+              onOpen={() => setBatteryVisited(true)}
+            />
+          )}
           {currentStep === 'calendar' && (
             <CalendarStep
               onRequest={handleRequestCalendar}
@@ -299,6 +311,7 @@ export default function IntroScreen({ onComplete }: Props) {
               healthConnectGranted={healthConnectGranted}
               locationGranted={locationGranted}
               notificationsGranted={notificationsGranted}
+              batteryVisited={batteryVisited}
               calendarGranted={calendarGranted}
             />
           )}
@@ -483,10 +496,49 @@ function NotificationsStep({ onRequest, granted, requesting }: { onRequest: () =
   );
 }
 
-function ReadyStep({ healthConnectGranted, locationGranted, notificationsGranted, calendarGranted }: { 
+function BatteryStep({ visited, onOpen }: { visited: boolean; onOpen: () => void }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+
+  const handleOpenBatterySettings = async () => {
+    try {
+      await IntentLauncher.startActivityAsync(
+        'android.settings.IGNORE_BATTERY_OPTIMIZATION_SETTINGS',
+      );
+      onOpen();
+    } catch (error) {
+      console.error('Error opening battery settings:', error);
+    }
+  };
+
+  return (
+    <View style={styles.stepContainer}>
+      <Text style={styles.emoji}>🔋</Text>
+      <Text style={styles.title}>{t('intro_battery_title')}</Text>
+      <Text style={styles.body}>{t('intro_battery_body')}</Text>
+      <View style={styles.permissionCard}>
+        <Text style={styles.permissionTitle}>{t('intro_battery_why_title')}</Text>
+        <Text style={styles.permissionBody}>{t('intro_battery_why_body')}</Text>
+      </View>
+      <TouchableOpacity
+        style={[styles.permissionButton, visited && styles.permissionButtonGranted]}
+        onPress={handleOpenBatterySettings}
+        disabled={visited}
+      >
+        <Text style={styles.permissionButtonText}>
+          {visited ? t('intro_battery_button_done') : t('intro_battery_button')}
+        </Text>
+      </TouchableOpacity>
+      <Text style={styles.hint}>{t('intro_battery_hint')}</Text>
+    </View>
+  );
+}
+
+function ReadyStep({ healthConnectGranted, locationGranted, notificationsGranted, batteryVisited, calendarGranted }: { 
   healthConnectGranted: boolean; 
   locationGranted: boolean; 
   notificationsGranted: boolean;
+  batteryVisited: boolean;
   calendarGranted: boolean;
 }) {
   const { colors } = useTheme();
@@ -524,6 +576,14 @@ function ReadyStep({ healthConnectGranted, locationGranted, notificationsGranted
           </Text>
           <Text style={styles.checklistText}>{t('intro_ready_checklist_item_notifications')}</Text>
         </View>
+        {Platform.OS === 'android' && (
+          <View style={styles.checklistItem}>
+            <Text style={[styles.checklistBullet, { color: getStatusColor(batteryVisited) }]}>
+              {getStatusSymbol(batteryVisited)}
+            </Text>
+            <Text style={styles.checklistText}>{t('intro_ready_checklist_item_battery')}</Text>
+          </View>
+        )}
         <View style={styles.checklistItem}>
           <Text style={[styles.checklistBullet, { color: getStatusColor(calendarGranted) }]}>
             {getStatusSymbol(calendarGranted)}
