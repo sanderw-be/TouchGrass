@@ -98,7 +98,7 @@ describe('HomeScreen inline timer', () => {
     // After starting, the OUTSIDE badge and stop hint should appear
     expect(getByText('ring_timer_outside')).toBeTruthy();
     expect(getByText('ring_timer_tap_stop')).toBeTruthy();
-    expect(getByText('⏹')).toBeTruthy();
+    expect(getByText('⬛')).toBeTruthy();
     expect(queryByText('ring_timer_start')).toBeNull();
 
     // Clean up: stop the timer so the interval does not outlive this test
@@ -140,7 +140,7 @@ describe('HomeScreen inline timer', () => {
 
     expect(getByText('ring_timer_outside')).toBeTruthy();
     expect(getByText('ring_timer_tap_stop')).toBeTruthy();
-    expect(getByText('⏹')).toBeTruthy();
+    expect(getByText('⬛')).toBeTruthy();
     expect(queryByText('▶')).toBeNull();
 
     // Clean up: stop the timer so the interval does not outlive this test
