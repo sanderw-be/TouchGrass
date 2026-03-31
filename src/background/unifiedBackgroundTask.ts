@@ -14,6 +14,7 @@ import {
   scheduleDayReminders,
   maybeScheduleCatchUpReminder,
   processReminderQueue,
+  logReminderQueueSnapshot,
 } from '../notifications/notificationManager';
 import { fetchWeatherForecast } from '../weather/weatherService';
 import { getSetting } from '../storage/database';
@@ -32,6 +33,7 @@ TaskManager.defineTask(UNIFIED_BACKGROUND_TASK, async () => {
     // --- Reminder planning ---
     const remindersEnabled = parseInt(getSetting('smart_reminders_count', '0'), 10) > 0;
     if (remindersEnabled) {
+      logReminderQueueSnapshot();
       try {
         await scheduleDayReminders();
         await maybeScheduleCatchUpReminder();
