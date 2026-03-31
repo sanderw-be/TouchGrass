@@ -10,6 +10,7 @@ import { submitSession, buildSession } from './sessionMerger';
 import { openHealthConnectPermissionsViaIntent, verifyHealthConnectPermissions } from './healthConnectIntent';
 import { t } from '../i18n';
 import { useImperialUnits, kmhToMph } from '../utils/units';
+import { emitSessionsChanged } from '../utils/sessionsChangedEmitter';
 
 // Activities that strongly suggest being outside
 const OUTDOOR_ACTIVITY_TYPES = [
@@ -246,11 +247,19 @@ function wasDefinitelyAtKnownIndoorLocation(startMs: number, endMs: number): boo
   }
 }
 
+/** Prevents two concurrent syncs from processing the same HC records. */
+let syncInProgress = false;
+
 /**
  * Poll Health Connect for recent activity and submit any outside sessions found.
  * Called periodically by the background fetch task.
  */
 export async function syncHealthConnect(): Promise<boolean> {
+  if (syncInProgress) {
+    console.log('TouchGrass: HC sync already in progress, skipping duplicate call');
+    return false;
+  }
+  syncInProgress = true;
   try {
     const available = await isHealthConnectAvailable();
     if (!available) return false;
@@ -393,6 +402,8 @@ export async function syncHealthConnect(): Promise<boolean> {
 
     // Update last sync timestamp
     setSetting('healthconnect_last_sync', String(now));
+    // Notify UI screens so they can refresh without requiring navigation.
+    emitSessionsChanged();
     return true;
   } catch (e) {
     if (isPermissionError(e)) {
@@ -404,6 +415,8 @@ export async function syncHealthConnect(): Promise<boolean> {
     // disable Health Connect — just return false and retry next time.
     console.warn('Health Connect sync error:', e);
     return false;
+  } finally {
+    syncInProgress = false;
   }
 }
 

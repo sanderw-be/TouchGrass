@@ -30,7 +30,7 @@ jest.mock('../detection/index', () => ({
 jest.mock('../notifications/notificationManager', () => ({
   setupNotificationInfrastructure: jest.fn().mockResolvedValue(undefined),
   scheduleDayReminders: jest.fn().mockResolvedValue(undefined),
-  scheduleNextReminder: jest.fn().mockResolvedValue(undefined),
+  processReminderQueue: jest.fn().mockResolvedValue(undefined),
 }));
 
 // Mock scheduled notifications
@@ -60,12 +60,15 @@ jest.mock('react-native-screens', () => ({
 }));
 
 describe('App', () => {
-  it('renders loading state initially', () => {
-    const { getByTestId, UNSAFE_queryByType } = render(<App />);
-    
-    // ActivityIndicator should be present initially
-    const activityIndicator = UNSAFE_queryByType('ActivityIndicator' as any);
-    expect(activityIndicator).toBeTruthy();
+  it('renders the navigator quickly after initialization when intro is completed', async () => {
+    // The critical-path init is now synchronous (database + locale + intro check),
+    // so the app should reach the navigator without a noticeable loading state.
+    // AppNavigator is mocked above to render the literal text 'AppNavigator'.
+    const { getByText } = render(<App />);
+
+    await waitFor(() => {
+      expect(getByText('AppNavigator')).toBeTruthy();
+    }, { timeout: 3000 });
   });
 
   it('initializes the database on mount', async () => {
@@ -78,11 +81,15 @@ describe('App', () => {
     });
   });
 
-  it('renders AppNavigator after initialization when intro is completed', async () => {
-    const { getByText } = render(<App />);
+  it('renders AppNavigator (not IntroScreen) when intro is already completed', async () => {
+    // IntroScreen mock renders 'IntroScreen'; AppNavigator mock renders 'AppNavigator'.
+    // getSetting mock returns '1' for hasCompletedIntro, so the intro should be skipped.
+    const { getByText, queryByText } = render(<App />);
     
     await waitFor(() => {
       expect(getByText('AppNavigator')).toBeTruthy();
     }, { timeout: 3000 });
+
+    expect(queryByText('IntroScreen')).toBeNull();
   });
 });

@@ -8,6 +8,7 @@ import {
 import { submitSession, buildSession } from './sessionMerger';
 import { t } from '../i18n';
 import { useImperialUnits, kmToMiles, kmhToMph } from '../utils/units';
+import { emitSessionsChanged } from '../utils/sessionsChangedEmitter';
 
 const GEOFENCE_TASK = 'TOUCHGRASS_GEOFENCE';
 const LOCATION_TRACK_TASK = 'TOUCHGRASS_LOCATION_TRACK';
@@ -245,6 +246,7 @@ export function processLocationUpdate(lat: number, lon: number, timestamp: numbe
         gpsSessionSpeedCount > 0 ? gpsSessionSpeedSum / gpsSessionSpeedCount : undefined,
       );
       submitSession(session);
+      emitSessionsChanged();
     }
     outsideSessionStart = null;
     lastKnownOutside = false;
@@ -277,6 +279,7 @@ export function processLocationUpdate(lat: number, lon: number, timestamp: numbe
         gpsSessionSpeedCount > 0 ? gpsSessionSpeedSum / gpsSessionSpeedCount : undefined,
       );
       submitSession(session);
+      emitSessionsChanged();
       outsideSessionStart = timestamp; // start next segment from now
       gpsSessionDistanceMeters = 0;
       gpsSessionSpeedSum = 0;
