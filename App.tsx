@@ -48,7 +48,7 @@ function AppContent() {
         if (hasCompletedIntro) {
           InteractionManager.runAfterInteractions(() => {
             scheduleDayReminders().catch((e) => console.warn('TouchGrass: foreground scheduleDayReminders error:', e));
-            scheduleNextReminder().catch((e) => console.warn('TouchGrass: foreground scheduleNextReminder error:', e));
+            processReminderQueue().catch((e) => console.warn('TouchGrass: foreground processReminderQueue error:', e));
             cleanupTouchGrassCalendars().catch((e) => console.warn('TouchGrass: foreground calendar cleanup error:', e));
           });
           // Calendar events are only created by scheduleDayReminders() at planned

@@ -30,7 +30,7 @@ jest.mock('../detection/index', () => ({
 jest.mock('../notifications/notificationManager', () => ({
   setupNotificationInfrastructure: jest.fn().mockResolvedValue(undefined),
   scheduleDayReminders: jest.fn().mockResolvedValue(undefined),
-  scheduleNextReminder: jest.fn().mockResolvedValue(undefined),
+  processReminderQueue: jest.fn().mockResolvedValue(undefined),
 }));
 
 // Mock scheduled notifications
