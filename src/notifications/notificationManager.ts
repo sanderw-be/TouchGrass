@@ -44,6 +44,33 @@ export const FAILSAFE_REMINDER_PREFIX = 'failsafe_reminder_';
 const FAILSAFE_DAYS_AHEAD = 3;
 
 // ---------------------------------------------------------------------------
+// Stateful reminder queue — persisted in app_settings as 'smart_reminder_queue'
+// ---------------------------------------------------------------------------
+
+export type ReminderQueueStatus = 'date_planned' | 'tick_planned';
+
+export interface ReminderQueueEntry {
+  id: string;          // unique notification identifier, also used as the Expo notification identifier
+  slotMinutes: number; // minutes-of-day for this slot (e.g. 840 = 14:00)
+  status: ReminderQueueStatus;
+}
+
+/** Read and parse the reminder queue from settings. Returns [] on parse error. */
+function getQueue(): ReminderQueueEntry[] {
+  try {
+    const raw = getSetting('smart_reminder_queue', '[]');
+    return JSON.parse(raw) as ReminderQueueEntry[];
+  } catch {
+    return [];
+  }
+}
+
+/** Serialize and persist the reminder queue to settings. */
+function saveQueue(queue: ReminderQueueEntry[]): void {
+  setSetting('smart_reminder_queue', JSON.stringify(queue));
+}
+
+// ---------------------------------------------------------------------------
 // Background notification task for the 3 AM daily planner wake-up.
 // Defined at module scope so expo-task-manager can invoke it in a headless
 // JS context (killed app state on Android).
@@ -307,6 +334,100 @@ export async function scheduleNextReminder(): Promise<void> {
 }
 
 /**
+ * Process the stateful reminder queue on each background tick or foreground wake.
+ *
+ * Steps:
+ * 1. Goal reached → cancel all queued DATE triggers and clear the queue.
+ * 2. Look-ahead: `date_planned` entries firing within the next WINDOW minutes
+ *    → cancel their DATE trigger and promote to `tick_planned` so look-back
+ *    can fire them via JS.
+ * 3. Look-back: `tick_planned` entries whose slot is in the past WINDOW minutes
+ *    → fire immediately via TIME_INTERVAL: 1 and remove from queue.
+ * 4. Stale cleanup: entries more than WINDOW minutes past → drop silently
+ *    (DATE trigger already fired natively via AlarmManager, or was missed).
+ */
+export async function processReminderQueue(): Promise<void> {
+  const remindersCount = parseInt(getSetting('smart_reminders_count', '0'), 10);
+  if (remindersCount === 0) return;
+
+  const now = new Date();
+  const nowMinutes = now.getHours() * 60 + now.getMinutes();
+  const WINDOW = 15; // minutes
+
+  let queue = getQueue();
+  if (queue.length === 0) return;
+
+  const todayMinutes = getTodayMinutes();
+  const dailyTarget = getCurrentDailyGoal()?.targetMinutes ?? 30;
+
+  // --- Goal reached: cancel everything ---
+  if (todayMinutes >= dailyTarget) {
+    console.log('TouchGrass: [Queue] Daily goal reached — cancelling all queued reminders');
+    for (const entry of queue) {
+      await Notifications.cancelScheduledNotificationAsync(entry.id).catch(() => {});
+    }
+    saveQueue([]);
+    setSetting('reminders_planned_slots', '[]');
+    setSetting('catchup_reminder_slot_minutes', '');
+    return;
+  }
+
+  // --- Look-ahead: date_planned entries firing within next WINDOW minutes ---
+  // Cancel their DATE trigger; mark tick_planned so look-back fires them via JS
+  for (const entry of queue) {
+    if (entry.status !== 'date_planned') continue;
+    const minutesUntil = entry.slotMinutes - nowMinutes;
+    if (minutesUntil >= 0 && minutesUntil <= WINDOW) {
+      await Notifications.cancelScheduledNotificationAsync(entry.id).catch(() => {});
+      entry.status = 'tick_planned';
+      console.log(`TouchGrass: [Queue] Look-ahead: promoted ${entry.id} to tick_planned`);
+    }
+  }
+
+  // --- Look-back: tick_planned entries whose slot is in the past WINDOW minutes ---
+  const updatedQueue: ReminderQueueEntry[] = [];
+  for (const entry of queue) {
+    if (entry.status === 'tick_planned') {
+      const minutesSince = nowMinutes - entry.slotMinutes;
+      if (minutesSince >= 0 && minutesSince <= WINDOW) {
+        // Fire now
+        const { title, body } = buildReminderMessage(todayMinutes, dailyTarget, Math.floor(entry.slotMinutes / 60));
+        await Notifications.scheduleNotificationAsync({
+          content: {
+            title,
+            body,
+            categoryIdentifier: 'reminder',
+            color: '#4A7C59',
+          },
+          trigger: {
+            type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+            seconds: 1,
+            channelId: CHANNEL_ID,
+          },
+        });
+        setSetting('last_reminder_ms', String(Date.now()));
+        console.log(`TouchGrass: [Queue] Look-back: fired ${entry.id} via JS`);
+        // Do NOT add to updatedQueue — entry is consumed
+        continue;
+      } else if (minutesSince > WINDOW) {
+        // Window passed without JS running — entry is stale, drop it
+        console.log(`TouchGrass: [Queue] Stale tick_planned dropped: ${entry.id}`);
+        continue;
+      }
+    }
+    // --- Stale cleanup: date_planned whose slot passed more than WINDOW minutes ago ---
+    if (entry.status === 'date_planned' && nowMinutes - entry.slotMinutes > WINDOW) {
+      // DATE trigger fired natively (AlarmManager) or was missed — remove from queue
+      console.log(`TouchGrass: [Queue] Stale date_planned dropped: ${entry.id}`);
+      continue;
+    }
+    updatedQueue.push(entry);
+  }
+
+  saveQueue(updatedQueue);
+}
+
+/**
  * Schedule reminders for optimal times throughout the day.
  * Call this once at the start of each day to plan the day's reminders.
  * Records today's date in settings so the background task can call it
@@ -414,6 +535,9 @@ export async function scheduleDayReminders(): Promise<void> {
   }
 
   const scheduledSlots: Array<{ hour: number; minute: number }> = [];
+  // Clear queue before rebuilding for the new day
+  saveQueue([]);
+  const newQueueEntries: ReminderQueueEntry[] = [];
 
   for (const slot of topSlots) {
     const triggerDate = new Date();
@@ -421,7 +545,11 @@ export async function scheduleDayReminders(): Promise<void> {
 
     const { title, body } = buildReminderMessage(todayMinutes, dailyTarget, slot.hour, slot.contributors);
 
+    const dateKey = formatLocalDateKey(triggerDate);
+    const id = `smart_${dateKey}_${slot.hour}:${String(slot.minute).padStart(2, '0')}`;
+
     await Notifications.scheduleNotificationAsync({
+      identifier: id,
       content: {
         title,
         body,
@@ -436,6 +564,11 @@ export async function scheduleDayReminders(): Promise<void> {
     });
 
     scheduledSlots.push({ hour: slot.hour, minute: slot.minute });
+    newQueueEntries.push({
+      id,
+      slotMinutes: slot.hour * 60 + slot.minute,
+      status: 'date_planned',
+    });
 
     // Add a future outdoor time slot to the calendar for each planned reminder
     maybeAddOutdoorTimeToCalendar(triggerDate).catch((e) =>
@@ -447,6 +580,9 @@ export async function scheduleDayReminders(): Promise<void> {
   setSetting('reminders_planned_slots', JSON.stringify(scheduledSlots));
   setSetting('additional_reminders_today', '0');
   setSetting('catchup_reminder_slot_minutes', '');
+
+  // Persist the queue for this day's planned slots
+  saveQueue(newQueueEntries);
 
   // Pre-schedule the same time slots for the next FAILSAFE_DAYS_AHEAD days so
   // that reminders (and calendar events) fire even if the app is force-closed
@@ -555,7 +691,11 @@ export async function maybeScheduleCatchUpReminder(): Promise<void> {
 
   const { title, body } = buildReminderMessage(todayMinutes, dailyTarget, best.hour, best.contributors ?? []);
 
+  const dateKey = formatLocalDateKey(triggerDate);
+  const id = `catchup_${dateKey}_${best.hour}:${String(best.minute).padStart(2, '0')}_${Date.now()}`;
+
   await Notifications.scheduleNotificationAsync({
+    identifier: id,
     content: {
       title,
       body,
@@ -568,6 +708,15 @@ export async function maybeScheduleCatchUpReminder(): Promise<void> {
       channelId: CHANNEL_ID,
     },
   });
+
+  // Append catch-up entry to the queue
+  const queue = getQueue();
+  queue.push({
+    id,
+    slotMinutes: best.hour * 60 + best.minute,
+    status: 'date_planned',
+  });
+  saveQueue(queue);
 
   // Additional reminders never create calendar events
   setSetting('additional_reminders_today', String(additionalCount + 1));
