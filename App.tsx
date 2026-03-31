@@ -89,8 +89,9 @@ function AppContent() {
     if (!ready || showIntro || deferredInitDone.current) return;
 
     InteractionManager.runAfterInteractions(() => {
-      // Guard inside the callback too, in case the effect fires again before
-      // the callback runs (rapid state changes between ready/showIntro flips).
+      // Double-check inside the callback: if `ready` or `showIntro` changed between
+      // scheduling this callback and it executing (e.g. user tapped Show Intro quickly),
+      // skip to avoid a duplicate run after the next state transition.
       if (deferredInitDone.current) return;
       deferredInitDone.current = true;
 

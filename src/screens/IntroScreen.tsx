@@ -83,17 +83,16 @@ export default function IntroScreen({ onComplete }: Props) {
         setSetting('calendar_integration_enabled', '1');
       }
     } else if (currentStep === 'ready') {
-      // Refresh all permissions so the summary stays accurate
+      // Refresh all permissions in parallel so the summary stays accurate.
+      const checks: Promise<unknown>[] = [
+        checkGPSPermissions().then(setLocationGranted),
+        Notifications.getPermissionsAsync().then(({ status }) => setNotificationsGranted(status === 'granted')),
+        hasCalendarPermissions().then(setCalendarGranted),
+      ];
       if (Platform.OS === 'android') {
-        const hcGranted = await recheckHealthConnect();
-        setHealthConnectGranted(hcGranted);
+        checks.push(recheckHealthConnect().then(setHealthConnectGranted));
       }
-      const gpsGranted = await checkGPSPermissions();
-      setLocationGranted(gpsGranted);
-      const { status } = await Notifications.getPermissionsAsync();
-      setNotificationsGranted(status === 'granted');
-      const calGranted = await hasCalendarPermissions();
-      setCalendarGranted(calGranted);
+      await Promise.all(checks);
     }
   }, [currentStep]);
 

@@ -247,11 +247,19 @@ function wasDefinitelyAtKnownIndoorLocation(startMs: number, endMs: number): boo
   }
 }
 
+/** Prevents two concurrent syncs from processing the same HC records. */
+let syncInProgress = false;
+
 /**
  * Poll Health Connect for recent activity and submit any outside sessions found.
  * Called periodically by the background fetch task.
  */
 export async function syncHealthConnect(): Promise<boolean> {
+  if (syncInProgress) {
+    console.log('TouchGrass: HC sync already in progress, skipping duplicate call');
+    return false;
+  }
+  syncInProgress = true;
   try {
     const available = await isHealthConnectAvailable();
     if (!available) return false;
@@ -407,6 +415,8 @@ export async function syncHealthConnect(): Promise<boolean> {
     // disable Health Connect — just return false and retry next time.
     console.warn('Health Connect sync error:', e);
     return false;
+  } finally {
+    syncInProgress = false;
   }
 }
 

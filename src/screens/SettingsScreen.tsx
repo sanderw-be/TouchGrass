@@ -78,13 +78,14 @@ export default function SettingsScreen() {
   // or the app returns to the foreground.  The UI shows an error indicator on
   // the toggle row when the user has enabled a source but permissions are gone.
   const checkAndUpdatePermissions = useCallback(async () => {
-    await recheckHealthConnect();
-    await checkGPSPermissions();
-    
-    setDetectionStatus(getDetectionStatus());
+    // Run independent permission checks in parallel for faster response.
+    const [, , calGranted] = await Promise.all([
+      recheckHealthConnect(),
+      checkGPSPermissions(),
+      hasCalendarPermissions(),
+    ]);
 
-    // Refresh calendar permission status
-    const calGranted = await hasCalendarPermissions();
+    setDetectionStatus(getDetectionStatus());
     setCalendarPermissionGranted(calGranted);
     if (calGranted) {
       const cals = await getWritableCalendars();
