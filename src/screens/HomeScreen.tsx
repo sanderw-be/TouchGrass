@@ -18,6 +18,7 @@ import { formatMinutes, formatTime } from '../utils/helpers';
 import { t, formatLocalDate } from '../i18n';
 import { updateTimeSlotProbability } from '../detection/sessionConfidence';
 import { startManualSession } from '../detection/manualCheckin';
+import { onSessionsChanged } from '../utils/sessionsChangedEmitter';
 
 export default function HomeScreen() {
   const { colors, isDark } = useTheme();
@@ -65,6 +66,9 @@ export default function HomeScreen() {
   }, []);
 
   useFocusEffect(useCallback(() => { loadData(); }, [loadData]));
+
+  // Refresh whenever background work (e.g. Health Connect sync) inserts new sessions.
+  useEffect(() => onSessionsChanged(loadData), [loadData]);
 
   const onRefresh = () => {
     setRefreshing(true);

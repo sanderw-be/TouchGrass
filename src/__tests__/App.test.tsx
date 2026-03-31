@@ -60,12 +60,14 @@ jest.mock('react-native-screens', () => ({
 }));
 
 describe('App', () => {
-  it('renders loading state initially', () => {
-    const { getByTestId, UNSAFE_queryByType } = render(<App />);
-    
-    // ActivityIndicator should be present initially
-    const activityIndicator = UNSAFE_queryByType('ActivityIndicator' as any);
-    expect(activityIndicator).toBeTruthy();
+  it('renders the navigator quickly after initialization when intro is completed', async () => {
+    // The critical-path init is now synchronous (database + locale + intro check),
+    // so the app should reach the navigator without a noticeable loading state.
+    const { getByText } = render(<App />);
+
+    await waitFor(() => {
+      expect(getByText('AppNavigator')).toBeTruthy();
+    }, { timeout: 3000 });
   });
 
   it('initializes the database on mount', async () => {

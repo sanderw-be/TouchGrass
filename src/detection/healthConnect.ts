@@ -10,6 +10,7 @@ import { submitSession, buildSession } from './sessionMerger';
 import { openHealthConnectPermissionsViaIntent, verifyHealthConnectPermissions } from './healthConnectIntent';
 import { t } from '../i18n';
 import { useImperialUnits, kmhToMph } from '../utils/units';
+import { emitSessionsChanged } from '../utils/sessionsChangedEmitter';
 
 // Activities that strongly suggest being outside
 const OUTDOOR_ACTIVITY_TYPES = [
@@ -393,6 +394,8 @@ export async function syncHealthConnect(): Promise<boolean> {
 
     // Update last sync timestamp
     setSetting('healthconnect_last_sync', String(now));
+    // Notify UI screens so they can refresh without requiring navigation.
+    emitSessionsChanged();
     return true;
   } catch (e) {
     if (isPermissionError(e)) {

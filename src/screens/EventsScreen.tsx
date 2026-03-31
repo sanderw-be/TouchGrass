@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
   TouchableOpacity, RefreshControl, Alert,
@@ -16,6 +16,7 @@ import { t, formatLocalDate, formatLocalTime } from '../i18n';
 import ManualSessionSheet from '../components/ManualSessionSheet';
 import EditSessionSheet from '../components/EditSessionSheet';
 import { updateTimeSlotProbability } from '../detection/sessionConfidence';
+import { onSessionsChanged } from '../utils/sessionsChangedEmitter';
 
 type Tab = 'approved' | 'standard' | 'all';
 
@@ -56,6 +57,9 @@ export default function EventsScreen() {
   }, []);
 
   useFocusEffect(useCallback(() => { loadData(); }, [loadData]));
+
+  // Refresh whenever background work (e.g. Health Connect sync) inserts new sessions.
+  useEffect(() => onSessionsChanged(loadData), [loadData]);
 
   const onRefresh = () => {
     setRefreshing(true);

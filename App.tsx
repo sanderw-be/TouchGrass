@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import type { InitialState } from '@react-navigation/native';
-import { View, ActivityIndicator, AppState, AppStateStatus } from 'react-native';
+import { View, ActivityIndicator, AppState, AppStateStatus, InteractionManager } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { enableScreens } from 'react-native-screens';
@@ -30,6 +30,7 @@ function AppContent() {
   const [locale, setLocaleState] = useState(i18n.locale);
   const savedNavState = useRef<InitialState | undefined>(undefined);
   const appState = useRef(AppState.currentState);
+  const deferredInitDone = useRef(false);
 
   const setLocale = useCallback((code: string) => {
     i18n.locale = code;
@@ -39,14 +40,17 @@ function AppContent() {
 
   // On app foreground: run day planning and goal-reached check as a catch-up
   // for missed background wakes, plus calendar cleanup.
+  // Deferred via InteractionManager so the resumed UI frame renders first.
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (nextAppState: AppStateStatus) => {
       if (appState.current !== 'active' && nextAppState === 'active') {
         const hasCompletedIntro = getSetting('hasCompletedIntro', '0') === '1';
         if (hasCompletedIntro) {
-          scheduleDayReminders().catch((e) => console.warn('TouchGrass: foreground scheduleDayReminders error:', e));
-          scheduleNextReminder().catch((e) => console.warn('TouchGrass: foreground scheduleNextReminder error:', e));
-          cleanupTouchGrassCalendars().catch((e) => console.warn('TouchGrass: foreground calendar cleanup error:', e));
+          InteractionManager.runAfterInteractions(() => {
+            scheduleDayReminders().catch((e) => console.warn('TouchGrass: foreground scheduleDayReminders error:', e));
+            scheduleNextReminder().catch((e) => console.warn('TouchGrass: foreground scheduleNextReminder error:', e));
+            cleanupTouchGrassCalendars().catch((e) => console.warn('TouchGrass: foreground calendar cleanup error:', e));
+          });
           // Calendar events are only created by scheduleDayReminders() at planned
           // half-hour slots. Do NOT call maybeAddOutdoorTimeToCalendar(new Date())
           // here — it would create events at arbitrary foreground-wake times.
@@ -57,47 +61,62 @@ function AppContent() {
     return () => subscription.remove();
   }, []);
 
+  // Critical-path init: only what is required before the first render.
+  // Everything else is deferred to the post-render effect below.
   useEffect(() => {
-    async function init() {
-      // Database must be ready before anything else
-      initDatabase();
+    // Database must be ready before anything else
+    initDatabase();
 
-      // Apply stored language preference if available
-      const storedLanguage = getSetting('language', '');
-      if (['en', 'nl'].includes(storedLanguage)) {
-        i18n.locale = storedLanguage;
-        setLocaleState(storedLanguage);
-      } else if (!storedLanguage) {
-        setSetting('language', i18n.locale);
-      }
+    // Apply stored language preference if available
+    const storedLanguage = getSetting('language', '');
+    if (['en', 'nl'].includes(storedLanguage)) {
+      i18n.locale = storedLanguage;
+      setLocaleState(storedLanguage);
+    } else if (!storedLanguage) {
+      setSetting('language', i18n.locale);
+    }
 
-      // Check if user has completed intro
-      const hasCompletedIntro = getSetting('hasCompletedIntro', '0') === '1';
-      setShowIntro(!hasCompletedIntro);
+    // Check if user has completed intro
+    const hasCompletedIntro = getSetting('hasCompletedIntro', '0') === '1';
+    setShowIntro(!hasCompletedIntro);
 
-      // Always set up notification infrastructure (needed for GPS background tracking)
-      // but don't request permissions yet
-      try {
-        await setupNotificationInfrastructure();
-      } catch (e) {
-        console.warn('Notification infrastructure setup error:', e);
-      }
+    setReady(true);
+  }, []);
 
-      // Only initialize detection if tutorial is complete
-      // Otherwise, permissions will be requested during tutorial
-      if (hasCompletedIntro) {
+  // Non-critical init: runs after the first interactive frame so it does not
+  // block the loading spinner → navigator transition.
+  useEffect(() => {
+    if (!ready || showIntro || deferredInitDone.current) return;
+
+    InteractionManager.runAfterInteractions(() => {
+      // Guard inside the callback too, in case the effect fires again before
+      // the callback runs (rapid state changes between ready/showIntro flips).
+      if (deferredInitDone.current) return;
+      deferredInitDone.current = true;
+
+      (async () => {
+        // Always set up notification infrastructure (needed for GPS background tracking)
+        // but don't request permissions yet
+        try {
+          await setupNotificationInfrastructure();
+        } catch (e) {
+          console.warn('Notification infrastructure setup error:', e);
+        }
+
+        // Only initialize detection if tutorial is complete
+        // Otherwise, permissions will be requested during tutorial
         try {
           await initDetection();
         } catch (e) {
           console.warn('Detection init error:', e);
         }
-        
+
         try {
           await scheduleDayReminders();
         } catch (e) {
           console.warn('Day reminders error:', e);
         }
-        
+
         // Reschedule any scheduled notifications (handles past notifications and ensures they're set for next occurrence)
         try {
           const { scheduleAllScheduledNotifications } = await import('./src/notifications/scheduledNotifications');
@@ -112,46 +131,21 @@ function AppContent() {
         } catch (e) {
           console.warn('Background task registration error:', e);
         }
-      }
-    }
-    init().then(() => setReady(true));
-  }, []);
+      })();
+    });
+  }, [ready, showIntro]);
 
   const handleShowIntro = () => {
     setSetting('hasCompletedIntro', '0');
     setShowIntro(true);
   };
 
-  const handleIntroComplete = async () => {
+  const handleIntroComplete = () => {
     setSetting('hasCompletedIntro', '1');
     setShowIntro(false);
-    
-    // Initialize detection after tutorial is complete
-    try {
-      await initDetection();
-    } catch (e) {
-      console.warn('Detection init error:', e);
-    }
-    
-    try {
-      await scheduleDayReminders();
-    } catch (e) {
-      console.warn('Day reminders error:', e);
-    }
-    
-    try {
-      const { scheduleAllScheduledNotifications } = await import('./src/notifications/scheduledNotifications');
-      await scheduleAllScheduledNotifications();
-    } catch (e) {
-      console.warn('Scheduled notifications init error:', e);
-    }
-
-    // Register the unified background task (reminders + weather)
-    try {
-      await registerUnifiedBackgroundTask();
-    } catch (e) {
-      console.warn('Background task registration error:', e);
-    }
+    // deferredInitDone is still false because the deferred init effect was
+    // blocked while showIntro was true. It will fire automatically once
+    // showIntro becomes false and the navigator is visible.
   };
 
   if (!ready) {
