@@ -8,7 +8,7 @@ import 'expo-dev-client';
 import { initDatabase, getSetting, setSetting } from './src/storage/database';
 import i18n from './src/i18n';
 import { initDetection } from './src/detection/index';
-import { setupNotificationInfrastructure, scheduleDayReminders, scheduleNextReminder } from './src/notifications/notificationManager';
+import { setupNotificationInfrastructure, scheduleDayReminders, processReminderQueue } from './src/notifications/notificationManager';
 import { cleanupTouchGrassCalendars } from './src/calendar/calendarService';
 import { registerUnifiedBackgroundTask } from './src/background/unifiedBackgroundTask';
 

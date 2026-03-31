@@ -13,7 +13,7 @@ import * as TaskManager from 'expo-task-manager';
 import {
   scheduleDayReminders,
   maybeScheduleCatchUpReminder,
-  scheduleNextReminder,
+  processReminderQueue,
 } from '../notifications/notificationManager';
 import { fetchWeatherForecast } from '../weather/weatherService';
 import { getSetting } from '../storage/database';
@@ -35,7 +35,7 @@ TaskManager.defineTask(UNIFIED_BACKGROUND_TASK, async () => {
       try {
         await scheduleDayReminders();
         await maybeScheduleCatchUpReminder();
-        await scheduleNextReminder();
+        await processReminderQueue();
       } catch (reminderError) {
         console.error('TouchGrass: [UnifiedTask] Reminder operations failed', reminderError);
       }
