@@ -20,15 +20,20 @@ import { spacing } from '../utils/theme';
 import { useTheme } from '../context/ThemeContext';
 import { t } from '../i18n';
 
-export type SettingsStackParamList = {
-  SettingsMain: undefined;
+export type GoalsStackParamList = {
+  GoalsMain: undefined;
   WeatherSettings: undefined;
   ScheduledNotifications: undefined;
+};
+
+export type SettingsStackParamList = {
+  SettingsMain: undefined;
   KnownLocations: undefined;
   FeedbackSupport: undefined;
 };
 
 const Tab = createBottomTabNavigator();
+const GoalsStack = createStackNavigator<GoalsStackParamList>();
 const SettingsStack = createStackNavigator<SettingsStackParamList>();
 
 function ScreenFallback() {
@@ -48,6 +53,46 @@ const icons: Record<string, string> = {
   Settings: '⚙️',
 };
 
+function GoalsStackNavigator() {
+  const { colors } = useTheme();
+  return (
+    <GoalsStack.Navigator
+      screenOptions={{
+        headerStyle: { backgroundColor: colors.mist },
+        headerTitleStyle: { color: colors.textPrimary, fontWeight: '700' },
+        headerShadowVisible: false,
+        headerTintColor: colors.grass,
+      }}
+    >
+      <GoalsStack.Screen
+        name="GoalsMain"
+        component={GoalsScreen}
+        options={{ headerShown: false }}
+      />
+      <GoalsStack.Screen
+        name="WeatherSettings"
+        options={{ title: t('nav_weather_settings') }}
+      >
+        {() => (
+          <Suspense fallback={<ScreenFallback />}>
+            <WeatherSettingsScreen />
+          </Suspense>
+        )}
+      </GoalsStack.Screen>
+      <GoalsStack.Screen
+        name="ScheduledNotifications"
+        options={{ title: t('settings_scheduled_reminders') }}
+      >
+        {() => (
+          <Suspense fallback={<ScreenFallback />}>
+            <ScheduledNotificationsScreen />
+          </Suspense>
+        )}
+      </GoalsStack.Screen>
+    </GoalsStack.Navigator>
+  );
+}
+
 function SettingsStackNavigator() {
   const { colors } = useTheme();
   return (
@@ -64,26 +109,6 @@ function SettingsStackNavigator() {
         component={SettingsScreen}
         options={{ headerShown: false }}
       />
-      <SettingsStack.Screen
-        name="WeatherSettings"
-        options={{ title: t('nav_weather_settings') }}
-      >
-        {() => (
-          <Suspense fallback={<ScreenFallback />}>
-            <WeatherSettingsScreen />
-          </Suspense>
-        )}
-      </SettingsStack.Screen>
-      <SettingsStack.Screen
-        name="ScheduledNotifications"
-        options={{ title: t('settings_scheduled_reminders') }}
-      >
-        {() => (
-          <Suspense fallback={<ScreenFallback />}>
-            <ScheduledNotificationsScreen />
-          </Suspense>
-        )}
-      </SettingsStack.Screen>
       <SettingsStack.Screen
         name="KnownLocations"
         options={{ title: t('nav_known_locations') }}
@@ -155,8 +180,8 @@ function TabNavigator() {
       />
       <Tab.Screen
         name="Goals"
-        component={GoalsScreen}
-        options={{ title: t('nav_goals') }}
+        component={GoalsStackNavigator}
+        options={{ title: t('nav_goals'), headerShown: false }}
       />
       <Tab.Screen
         name="Settings"
