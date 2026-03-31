@@ -18,3 +18,13 @@
 - **Weekly average fix**: Weekly outdoor time average now divides by the number of days elapsed in the current week instead of always dividing by 7, giving a more accurate picture early in the week.
 - **Localized time format**: Time pickers now respect the device's 12h/24h system setting on Android.
 - **Improved outdoor timer UI**: The running outdoor timer has been moved inside the daily progress ring, with a prominent play/stop icon and an OUTSIDE badge for better visibility.
+
+## 1.0.1 (versionCode 2)
+
+- Fixed tutorial progress bar rendering using `SafeAreaView` from `react-native-safe-area-context`
+- Decoupled Health Connect / GPS tracking toggles from OS permission state; intro screen and settings now stay in sync independently of permission prompts
+- Fixed bottom navigation bar overlap in tutorial footer and bottom sheets (EditSession, ManualSession)
+
+## 1.0.0 (versionCode 1)
+
+- Initial release!
