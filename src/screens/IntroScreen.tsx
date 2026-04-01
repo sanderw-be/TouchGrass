@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
-  TouchableOpacity, Platform, ActivityIndicator, AppState, AppStateStatus, Alert,
+  TouchableOpacity, Platform, ActivityIndicator, AppState, AppStateStatus, Alert, Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Notifications from 'expo-notifications';
@@ -10,6 +10,7 @@ import * as IntentLauncher from 'expo-intent-launcher';
 import { spacing, radius, shadows } from '../utils/theme';
 import { useTheme } from '../context/ThemeContext';
 import { t } from '../i18n';
+import { PRIVACY_POLICY_URL } from '../utils/constants';
 import { toggleHealthConnect, toggleGPS, recheckHealthConnect, openHealthConnectSettings } from '../detection/index';
 import { requestGPSPermissions, checkGPSPermissions } from '../detection/index';
 import { requestNotificationPermissions } from '../notifications/notificationManager';
@@ -348,6 +349,9 @@ function WelcomeStep() {
         <FeatureItem icon="🎯" text={t('intro_welcome_feature_3')} />
         <FeatureItem icon="🔒" text={t('intro_welcome_feature_4')} />
       </View>
+      <TouchableOpacity onPress={() => Linking.openURL(PRIVACY_POLICY_URL)}>
+        <Text style={styles.privacyLink}>{t('intro_privacy_policy')}</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -738,6 +742,13 @@ function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
     fontSize: 15,
     color: colors.textPrimary,
     lineHeight: 22,
+  },
+
+  privacyLink: {
+    fontSize: 13,
+    color: colors.grass,
+    marginTop: spacing.md,
+    textDecorationLine: 'underline',
   },
 
   permissionCard: {
