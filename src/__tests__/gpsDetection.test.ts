@@ -1,6 +1,7 @@
 jest.mock('../storage/database');
 jest.mock('../detection/sessionMerger');
 
+import * as TaskManager from 'expo-task-manager';
 import * as Database from '../storage/database';
 import * as SessionMerger from '../detection/sessionMerger';
 import {
@@ -9,6 +10,15 @@ import {
   _resetGPSStateForTesting,
   MIN_OUTSIDE_DURATION_MS,
 } from '../detection/gpsDetection';
+
+// Capture the TOUCHGRASS_LOCATION_TRACK callback at file scope, before any
+// jest.clearAllMocks() call in beforeEach hooks wipes defineTask.mock.calls.
+const _defineTaskMock = TaskManager.defineTask as jest.Mock;
+const _locationTrackCall = _defineTaskMock.mock.calls.find(
+  ([name]: [string]) => name === 'TOUCHGRASS_LOCATION_TRACK',
+);
+const _locationTrackCallback: ((arg: { data: unknown; error: unknown }) => Promise<void>) | undefined =
+  _locationTrackCall?.[1];
 
 describe('isAtKnownIndoorLocation', () => {
   it('returns false when locations list is empty', () => {
@@ -219,5 +229,18 @@ describe('processLocationUpdate', () => {
     expect(SessionMerger.submitSession).toHaveBeenCalledTimes(1);
     const call = (SessionMerger.buildSession as jest.Mock).mock.calls[0];
     expect(call[0]).toBe(savedStart); // restored start time used
+  });
+});
+
+describe('TOUCHGRASS_LOCATION_TRACK background task', () => {
+  it('calls initDatabase to ensure schema migrations run before any DB access', async () => {
+    expect(_locationTrackCallback).toBeDefined();
+
+    jest.clearAllMocks();
+    (Database.getSetting as jest.Mock).mockImplementation((_k: string, fb: string) => fb);
+
+    await _locationTrackCallback!({ data: { locations: [] }, error: null });
+
+    expect(Database.initDatabase).toHaveBeenCalled();
   });
 });
