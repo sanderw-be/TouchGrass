@@ -49,6 +49,7 @@ export default function GoalsScreen() {
 
   // Weather state
   const [weatherEnabled, setWeatherEnabled] = useState(true);
+  const [gpsEnabled, setGpsEnabled] = useState(false);
 
   // Calendar state
   const [calendarEnabled, setCalendarEnabled] = useState(false);
@@ -64,6 +65,7 @@ export default function GoalsScreen() {
     setSmartRemindersCount(parseInt(getSetting('smart_reminders_count', '2'), 10));
     setCatchupRemindersCount(parseInt(getSetting('smart_catchup_reminders_count', '2'), 10));
     setWeatherEnabled(getSetting('weather_enabled', '1') === '1');
+    setGpsEnabled(getSetting('gps_user_enabled', '0') === '1');
     setCalendarEnabled(getSetting('calendar_integration_enabled', '0') === '1');
     setCalendarBuffer(parseInt(getSetting('calendar_buffer_minutes', '30'), 10));
     setCalendarDuration(parseInt(getSetting('calendar_default_duration', '0'), 10));
@@ -85,6 +87,7 @@ export default function GoalsScreen() {
 
     const sub = AppState.addEventListener('change', (state: AppStateStatus) => {
       if (state === 'active') {
+        loadGoalSettings();
         checkCalendarPermissions();
       }
     });
@@ -138,6 +141,15 @@ export default function GoalsScreen() {
   const toggleWeatherEnabled = (value: boolean) => {
     setSetting('weather_enabled', value ? '1' : '0');
     setWeatherEnabled(value);
+  };
+
+  const handleNavigateToSettings = () => {
+    const parent = navigation.getParent();
+    if (parent) {
+      parent.navigate('Settings');
+    } else {
+      console.warn('GoalsScreen: could not navigate to Settings tab — parent navigator unavailable');
+    }
   };
 
   const handleOpenAppSettings = async () => {
@@ -437,34 +449,52 @@ export default function GoalsScreen() {
 
         {/* Weather */}
         <Text style={styles.sectionHeader}>{t('settings_weather_title')}</Text>
-        <View style={styles.settingsCard}>
-          <SettingRow
-            icon="🌤️"
-            label={t('settings_weather_enabled')}
-            sublabel={t('settings_weather_enabled_desc')}
-            right={
-              <Switch
-                value={weatherEnabled}
-                onValueChange={toggleWeatherEnabled}
-                trackColor={{ false: colors.fog, true: colors.grassLight }}
-                thumbColor={weatherEnabled ? colors.grass : colors.inactive}
-              />
-            }
-          />
-          {weatherEnabled && (
-            <>
-              <Divider />
-              <TouchableOpacity onPress={() => navigation.navigate('WeatherSettings')}>
-                <SettingRow
-                  icon="⚙️"
-                  label={t('settings_weather_more')}
-                  sublabel={t('settings_weather_more_desc')}
-                  right={<Text style={styles.chevron}>›</Text>}
+        <TouchableOpacity
+          onPress={!gpsEnabled ? handleNavigateToSettings : undefined}
+          disabled={gpsEnabled}
+          activeOpacity={gpsEnabled ? 1 : 0.7}
+        >
+          <View style={[styles.settingsCard, !gpsEnabled && styles.settingsCardDisabled]}>
+            <SettingRow
+              icon="🌤️"
+              label={t('settings_weather_enabled')}
+              sublabel={t('settings_weather_enabled_desc')}
+              right={
+                <Switch
+                  value={weatherEnabled}
+                  onValueChange={toggleWeatherEnabled}
+                  trackColor={{ false: colors.fog, true: colors.grassLight }}
+                  thumbColor={weatherEnabled ? colors.grass : colors.inactive}
+                  disabled={!gpsEnabled}
                 />
-              </TouchableOpacity>
-            </>
-          )}
-        </View>
+              }
+            />
+            {!gpsEnabled && (
+              <>
+                <Divider />
+                <View style={styles.row}>
+                  <Text style={styles.rowIcon}>ℹ️</Text>
+                  <View style={styles.rowContent}>
+                    <Text style={styles.rowSublabel}>{t('settings_weather_gps_disabled')}</Text>
+                  </View>
+                </View>
+              </>
+            )}
+            {gpsEnabled && weatherEnabled && (
+              <>
+                <Divider />
+                <TouchableOpacity onPress={() => navigation.navigate('WeatherSettings')}>
+                  <SettingRow
+                    icon="⚙️"
+                    label={t('settings_weather_more')}
+                    sublabel={t('settings_weather_more_desc')}
+                    right={<Text style={styles.chevron}>›</Text>}
+                  />
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
+        </TouchableOpacity>
 
         {/* Calendar integration */}
         <Text style={styles.sectionHeader}>{t('settings_section_calendar')}</Text>
@@ -661,6 +691,9 @@ function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
     borderRadius: radius.lg,
     overflow: 'hidden',
     ...shadows.soft,
+  },
+  settingsCardDisabled: {
+    opacity: 0.5,
   },
 
   row: {

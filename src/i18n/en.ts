@@ -334,6 +334,7 @@ export default {
   settings_weather_enabled_desc: 'Consider weather conditions when suggesting outdoor times',
   settings_weather_more: 'More weather settings',
   settings_weather_more_desc: 'Temperature preference, rain, heat, UV',
+  settings_weather_gps_disabled: 'GPS is disabled — weather-aware reminders need GPS to know your location. Tap here to enable GPS in Settings.',
   settings_temp_preference: 'Climate preference',
   settings_temp_cold: 'Prefer cooler weather',
   settings_temp_moderate: 'Moderate climate',
@@ -409,7 +410,7 @@ export default {
   settings_calendar_buffer: 'Meeting buffer',
   settings_calendar_buffer_desc: 'Skip smart reminders when a meeting starts within this window',
   settings_calendar_buffer_minutes: '{{minutes}} minutes',
-  settings_calendar_duration: 'Default session duration',
+  settings_calendar_duration: 'Outside time in calendar',
   settings_calendar_duration_desc: 'Duration when adding outdoor time to calendar',
   settings_calendar_duration_off: 'Off',
   settings_calendar_duration_minutes: '{{minutes}} min',
@@ -451,7 +452,7 @@ export default {
 
   // Settings battery optimization
   settings_battery_optimization: 'Battery optimization',
-  settings_battery_optimization_sublabel: 'Ensure reminders work reliably in the background',
+  settings_battery_optimization_sublabel: 'TouchGrass is very efficient — but Android can aggressively block background apps. Go to Battery → Battery optimization → find TouchGrass → set to Unrestricted.',
 
   // Intro checklist
   intro_ready_checklist_item_battery: 'Set battery optimization to "Unrestricted".',

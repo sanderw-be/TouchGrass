@@ -334,6 +334,7 @@ export default {
   settings_weather_enabled_desc: 'Houd rekening met weersomstandigheden bij het voorstellen van tijden',
   settings_weather_more: 'Meer weerinstellingen',
   settings_weather_more_desc: 'Temperatuurvoorkeur, regen, hitte, UV',
+  settings_weather_gps_disabled: 'GPS is uitgeschakeld — weerbewuste herinneringen hebben GPS nodig om je locatie te kennen. Tik hier om GPS in te schakelen via Instellingen.',
   settings_temp_preference: 'Klimaatvoorkeur',
   settings_temp_cold: 'Voorkeur voor koeler weer',
   settings_temp_moderate: 'Gematigd klimaat',
@@ -409,7 +410,7 @@ export default {
   settings_calendar_buffer: 'Afspraakbuffer',
   settings_calendar_buffer_desc: 'Sla slimme herinneringen over als een afspraak binnen dit venster begint',
   settings_calendar_buffer_minutes: '{{minutes}} minuten',
-  settings_calendar_duration: 'Standaard sessieduur',
+  settings_calendar_duration: 'Buitentijd in agenda',
   settings_calendar_duration_desc: 'Duur bij het toevoegen van buitentijd aan de agenda',
   settings_calendar_duration_off: 'Uit',
   settings_calendar_duration_minutes: '{{minutes}} min',
@@ -451,7 +452,7 @@ export default {
 
   // Instellingen batterij-optimalisatie
   settings_battery_optimization: 'Batterij-optimalisatie',
-  settings_battery_optimization_sublabel: 'Zorg dat herinneringen betrouwbaar werken op de achtergrond',
+  settings_battery_optimization_sublabel: 'TouchGrass is zeer zuinig — maar Android kan achtergrondapps agressief blokkeren. Ga naar Batterij → Batterijoptimalisatie → zoek TouchGrass → kies Onbeperkt.',
 
   // Intro checklist
   intro_ready_checklist_item_battery: 'Stel batterij-optimalisatie in op "Onbeperkt".',
