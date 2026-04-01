@@ -1,6 +1,8 @@
 import React from 'react';
 import { render, fireEvent, act, waitFor } from '@testing-library/react-native';
+import { Linking } from 'react-native';
 import IntroScreen from '../screens/IntroScreen';
+import { PRIVACY_POLICY_URL } from '../utils/constants';
 
 // Mock the i18n module
 jest.mock('../i18n', () => ({
@@ -334,6 +336,30 @@ describe('IntroScreen', () => {
       fireEvent.press(getByText('intro_get_started'));
 
       expect(onComplete).toHaveBeenCalled();
+    });
+  });
+
+  describe('Welcome step privacy policy link', () => {
+    beforeEach(() => {
+      jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
+    });
+
+    it('renders privacy policy link on the welcome step', () => {
+      const onComplete = jest.fn();
+      const { getByText } = render(<IntroScreen onComplete={onComplete} />);
+
+      expect(getByText('intro_privacy_policy')).toBeTruthy();
+    });
+
+    it('opens privacy policy URL when privacy policy link is pressed', async () => {
+      const onComplete = jest.fn();
+      const { getByText } = render(<IntroScreen onComplete={onComplete} />);
+
+      fireEvent.press(getByText('intro_privacy_policy'));
+
+      await waitFor(() => {
+        expect(Linking.openURL).toHaveBeenCalledWith(PRIVACY_POLICY_URL);
+      });
     });
   });
 });
