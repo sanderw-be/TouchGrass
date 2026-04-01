@@ -33,7 +33,7 @@ export interface FetchWeatherForecastOptions {
  * Returns hourly forecast for the next 24 hours
  */
 export async function fetchWeatherForecast(
-  options: FetchWeatherForecastOptions = {},
+  options: FetchWeatherForecastOptions = {}
 ): Promise<WeatherFetchResult> {
   try {
     const { allowPermissionPrompt = true } = options;
@@ -41,12 +41,12 @@ export async function fetchWeatherForecast(
     // Check cache first
     const cache = getWeatherCache();
     const now = Date.now();
-    
+
     if (cache && cache.expiresAt > now) {
       // Cache is still valid, return cached data
       const todayStart = getStartOfDay(now);
       const conditions = getWeatherConditionsForHour(todayStart, 0, 24);
-      
+
       if (conditions.length > 0) {
         console.log('Weather forecast source: cache-fresh');
         return { success: true, conditions };
@@ -130,7 +130,7 @@ export async function fetchWeatherForecast(
     });
 
     const response = await fetch(`${OPEN_METEO_API}?${params.toString()}`);
-    
+
     if (!response.ok) {
       return { success: false, error: `API error: ${response.status}` };
     }
@@ -139,14 +139,14 @@ export async function fetchWeatherForecast(
 
     // Parse and save weather conditions
     const conditions = parseWeatherData(data, now);
-    
+
     if (conditions.length > 0) {
       // Clear old weather data first
       clearExpiredWeatherData(now);
-      
+
       // Save new conditions
       saveWeatherConditions(conditions);
-      
+
       // Update cache metadata
       saveWeatherCache({
         fetchedAt: now,
@@ -156,7 +156,7 @@ export async function fetchWeatherForecast(
       });
 
       console.log('Weather forecast source: network');
-      
+
       return { success: true, conditions };
     }
 
@@ -175,7 +175,7 @@ export function getWeatherForHour(hour: number): WeatherCondition | null {
   const now = Date.now();
   const todayStart = getStartOfDay(now);
   const conditions = getWeatherConditionsForHour(todayStart, hour, hour + 1);
-  
+
   return conditions.length > 0 ? conditions[0] : null;
 }
 
@@ -185,15 +185,15 @@ export function getWeatherForHour(hour: number): WeatherCondition | null {
 export function isWeatherDataAvailable(): boolean {
   const cache = getWeatherCache();
   const now = Date.now();
-  
+
   if (!cache || cache.expiresAt <= now) {
     return false;
   }
-  
+
   // Check if we have any conditions for today
   const todayStart = getStartOfDay(now);
   const conditions = getWeatherConditionsForHour(todayStart, 0, 24);
-  
+
   return conditions.length > 0;
 }
 
@@ -201,7 +201,7 @@ export function isWeatherDataAvailable(): boolean {
 
 function parseWeatherData(data: any, fetchTime: number): WeatherCondition[] {
   const conditions: WeatherCondition[] = [];
-  
+
   if (!data.hourly || !data.hourly.time) {
     return conditions;
   }

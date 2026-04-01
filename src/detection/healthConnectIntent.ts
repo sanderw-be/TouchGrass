@@ -35,7 +35,8 @@ export async function openHealthConnectPermissionsViaIntent(): Promise<boolean> 
     return false;
   }
 
-  const apiLevel = typeof Platform.Version === 'number' ? Platform.Version : (parseInt(Platform.Version, 10) || 0);
+  const apiLevel =
+    typeof Platform.Version === 'number' ? Platform.Version : parseInt(Platform.Version, 10) || 0;
 
   try {
     if (apiLevel >= 34) {
@@ -89,7 +90,9 @@ export async function openHealthConnectPermissionsViaIntent(): Promise<boolean> 
 
       // Method 3: Play Store via browser as a last resort.
       try {
-        await Linking.openURL(`https://play.google.com/store/apps/details?id=${HEALTH_CONNECT_PLAY_STORE_ID}`);
+        await Linking.openURL(
+          `https://play.google.com/store/apps/details?id=${HEALTH_CONNECT_PLAY_STORE_ID}`
+        );
         return true;
       } catch (e) {
         console.warn('Browser Play Store URL failed:', e);
@@ -115,9 +118,7 @@ export async function verifyHealthConnectPermissions(): Promise<boolean> {
     await initialize();
     const granted = await getGrantedPermissions();
     // Require at least ExerciseSession read access (the primary data source).
-    return granted.some(
-      (p) => p.accessType === 'read' && p.recordType === 'ExerciseSession',
-    );
+    return granted.some((p) => p.accessType === 'read' && p.recordType === 'ExerciseSession');
   } catch (error) {
     console.warn('Health Connect permission check error:', error);
     return false;

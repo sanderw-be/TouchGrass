@@ -1,7 +1,15 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView,
-  TouchableOpacity, Platform, ActivityIndicator, AppState, AppStateStatus, Alert,
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Platform,
+  ActivityIndicator,
+  AppState,
+  AppStateStatus,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Notifications from 'expo-notifications';
@@ -10,7 +18,12 @@ import * as IntentLauncher from 'expo-intent-launcher';
 import { spacing, radius, shadows } from '../utils/theme';
 import { useTheme } from '../context/ThemeContext';
 import { t } from '../i18n';
-import { toggleHealthConnect, toggleGPS, recheckHealthConnect, openHealthConnectSettings } from '../detection/index';
+import {
+  toggleHealthConnect,
+  toggleGPS,
+  recheckHealthConnect,
+  openHealthConnectSettings,
+} from '../detection/index';
 import { requestGPSPermissions, checkGPSPermissions } from '../detection/index';
 import { requestNotificationPermissions } from '../notifications/notificationManager';
 import { requestCalendarPermissions, hasCalendarPermissions } from '../calendar/calendarService';
@@ -21,7 +34,14 @@ interface Props {
   onComplete: () => void;
 }
 
-type Step = 'welcome' | 'health-connect' | 'location' | 'notifications' | 'battery' | 'calendar' | 'ready';
+type Step =
+  | 'welcome'
+  | 'health-connect'
+  | 'location'
+  | 'notifications'
+  | 'battery'
+  | 'calendar'
+  | 'ready';
 
 export default function IntroScreen({ onComplete }: Props) {
   const { colors } = useTheme();
@@ -39,13 +59,16 @@ export default function IntroScreen({ onComplete }: Props) {
   const [workSet, setWorkSet] = useState(false);
   const [fetchingLocationType, setFetchingLocationType] = useState<'home' | 'work' | null>(null);
   const [introSheetVisible, setIntroSheetVisible] = useState(false);
-  const [introSheetCoords, setIntroSheetCoords] = useState<{ latitude: number; longitude: number } | undefined>();
+  const [introSheetCoords, setIntroSheetCoords] = useState<
+    { latitude: number; longitude: number } | undefined
+  >();
   const [introSheetLabel, setIntroSheetLabel] = useState('');
   const [pendingLocationType, setPendingLocationType] = useState<'home' | 'work' | null>(null);
 
-  const steps: Step[] = Platform.OS === 'android'
-    ? ['welcome', 'health-connect', 'location', 'notifications', 'battery', 'calendar', 'ready']
-    : ['welcome', 'health-connect', 'location', 'notifications', 'calendar', 'ready'];
+  const steps: Step[] =
+    Platform.OS === 'android'
+      ? ['welcome', 'health-connect', 'location', 'notifications', 'battery', 'calendar', 'ready']
+      : ['welcome', 'health-connect', 'location', 'notifications', 'calendar', 'ready'];
   const currentIndex = steps.indexOf(currentStep);
   const progress = ((currentIndex + 1) / steps.length) * 100;
 
@@ -86,7 +109,9 @@ export default function IntroScreen({ onComplete }: Props) {
       // Refresh all permissions in parallel so the summary stays accurate.
       const checks: Promise<unknown>[] = [
         checkGPSPermissions().then(setLocationGranted),
-        Notifications.getPermissionsAsync().then(({ status }) => setNotificationsGranted(status === 'granted')),
+        Notifications.getPermissionsAsync().then(({ status }) =>
+          setNotificationsGranted(status === 'granted')
+        ),
         hasCalendarPermissions().then(setCalendarGranted),
       ];
       if (Platform.OS === 'android') {
@@ -108,7 +133,14 @@ export default function IntroScreen({ onComplete }: Props) {
 
   // Check permissions when entering permission-related steps
   useEffect(() => {
-    if (currentStep === 'health-connect' || currentStep === 'location' || currentStep === 'notifications' || currentStep === 'battery' || currentStep === 'calendar' || currentStep === 'ready') {
+    if (
+      currentStep === 'health-connect' ||
+      currentStep === 'location' ||
+      currentStep === 'notifications' ||
+      currentStep === 'battery' ||
+      currentStep === 'calendar' ||
+      currentStep === 'ready'
+    ) {
       checkPermissions();
     }
   }, [currentStep, checkPermissions]);
@@ -169,7 +201,9 @@ export default function IntroScreen({ onComplete }: Props) {
     setFetchingLocationType(type);
     try {
       const cachedPosition = await Location.getLastKnownPositionAsync();
-      const pos = cachedPosition ?? await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      const pos =
+        cachedPosition ??
+        (await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }));
       if (!pos) {
         Alert.alert(t('location_position_error_title'), t('location_position_error_body'));
         return;
@@ -289,10 +323,7 @@ export default function IntroScreen({ onComplete }: Props) {
             />
           )}
           {currentStep === 'battery' && (
-            <BatteryStep
-              visited={batteryVisited}
-              onOpen={() => setBatteryVisited(true)}
-            />
+            <BatteryStep visited={batteryVisited} onOpen={() => setBatteryVisited(true)} />
           )}
           {currentStep === 'calendar' && (
             <CalendarStep
@@ -352,7 +383,15 @@ function WelcomeStep() {
   );
 }
 
-function HealthConnectStep({ onRequest, granted, requesting }: { onRequest: () => void; granted: boolean; requesting: boolean }) {
+function HealthConnectStep({
+  onRequest,
+  granted,
+  requesting,
+}: {
+  onRequest: () => void;
+  granted: boolean;
+  requesting: boolean;
+}) {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   return (
@@ -437,10 +476,17 @@ function LocationStep({
               disabled={homeSet || settingLocation !== null}
             >
               {settingLocation === 'home' ? (
-                <ActivityIndicator size="small" color={homeSet ? colors.grassDark : colors.textInverse} />
+                <ActivityIndicator
+                  size="small"
+                  color={homeSet ? colors.grassDark : colors.textInverse}
+                />
               ) : (
-                <Text style={[styles.knownLocationBtnText, homeSet && styles.knownLocationBtnTextDone]}>
-                  {homeSet ? t('intro_location_known_set_home_done') : `🏠 ${t('intro_location_known_set_home')}`}
+                <Text
+                  style={[styles.knownLocationBtnText, homeSet && styles.knownLocationBtnTextDone]}
+                >
+                  {homeSet
+                    ? t('intro_location_known_set_home_done')
+                    : `🏠 ${t('intro_location_known_set_home')}`}
                 </Text>
               )}
             </TouchableOpacity>
@@ -450,10 +496,17 @@ function LocationStep({
               disabled={workSet || settingLocation !== null}
             >
               {settingLocation === 'work' ? (
-                <ActivityIndicator size="small" color={workSet ? colors.grassDark : colors.textInverse} />
+                <ActivityIndicator
+                  size="small"
+                  color={workSet ? colors.grassDark : colors.textInverse}
+                />
               ) : (
-                <Text style={[styles.knownLocationBtnText, workSet && styles.knownLocationBtnTextDone]}>
-                  {workSet ? t('intro_location_known_set_work_done') : `🏢 ${t('intro_location_known_set_work')}`}
+                <Text
+                  style={[styles.knownLocationBtnText, workSet && styles.knownLocationBtnTextDone]}
+                >
+                  {workSet
+                    ? t('intro_location_known_set_work_done')
+                    : `🏢 ${t('intro_location_known_set_work')}`}
                 </Text>
               )}
             </TouchableOpacity>
@@ -465,7 +518,15 @@ function LocationStep({
   );
 }
 
-function NotificationsStep({ onRequest, granted, requesting }: { onRequest: () => void; granted: boolean; requesting: boolean }) {
+function NotificationsStep({
+  onRequest,
+  granted,
+  requesting,
+}: {
+  onRequest: () => void;
+  granted: boolean;
+  requesting: boolean;
+}) {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   return (
@@ -502,7 +563,7 @@ function BatteryStep({ visited, onOpen }: { visited: boolean; onOpen: () => void
   const handleOpenBatterySettings = async () => {
     try {
       await IntentLauncher.startActivityAsync(
-        'android.settings.IGNORE_BATTERY_OPTIMIZATION_SETTINGS',
+        'android.settings.IGNORE_BATTERY_OPTIMIZATION_SETTINGS'
       );
       onOpen();
     } catch (error) {
@@ -533,9 +594,15 @@ function BatteryStep({ visited, onOpen }: { visited: boolean; onOpen: () => void
   );
 }
 
-function ReadyStep({ healthConnectGranted, locationGranted, notificationsGranted, batteryVisited, calendarGranted }: { 
-  healthConnectGranted: boolean; 
-  locationGranted: boolean; 
+function ReadyStep({
+  healthConnectGranted,
+  locationGranted,
+  notificationsGranted,
+  batteryVisited,
+  calendarGranted,
+}: {
+  healthConnectGranted: boolean;
+  locationGranted: boolean;
   notificationsGranted: boolean;
   batteryVisited: boolean;
   calendarGranted: boolean;
@@ -543,8 +610,8 @@ function ReadyStep({ healthConnectGranted, locationGranted, notificationsGranted
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   // Determine the status symbol for each permission
-  const getStatusSymbol = (granted: boolean) => granted ? '✓' : '-';
-  const getStatusColor = (granted: boolean) => granted ? colors.grass : colors.textMuted;
+  const getStatusSymbol = (granted: boolean) => (granted ? '✓' : '-');
+  const getStatusColor = (granted: boolean) => (granted ? colors.grass : colors.textMuted);
 
   return (
     <View style={styles.stepContainer}>
@@ -676,283 +743,283 @@ function FeatureItem({ icon, text }: { icon: string; text: string }) {
 
 function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
   return StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.mist,
-  },
-  progressBar: {
-    height: 4,
-    backgroundColor: colors.fog,
-    marginHorizontal: spacing.md,
-    marginTop: spacing.md,
-    borderRadius: radius.full,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: colors.grass,
-    borderRadius: radius.full,
-  },
+    container: {
+      flex: 1,
+      backgroundColor: colors.mist,
+    },
+    progressBar: {
+      height: 4,
+      backgroundColor: colors.fog,
+      marginHorizontal: spacing.md,
+      marginTop: spacing.md,
+      borderRadius: radius.full,
+      overflow: 'hidden',
+    },
+    progressFill: {
+      height: '100%',
+      backgroundColor: colors.grass,
+      borderRadius: radius.full,
+    },
 
-  content: { flex: 1 },
-  contentInner: {
-    padding: spacing.md,
-    paddingTop: spacing.xxl,
-  },
+    content: { flex: 1 },
+    contentInner: {
+      padding: spacing.md,
+      paddingTop: spacing.xxl,
+    },
 
-  stepContainer: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  emoji: { fontSize: 80, marginBottom: spacing.lg },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    textAlign: 'center',
-    marginBottom: spacing.md,
-  },
-  body: {
-    fontSize: 16,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    lineHeight: 24,
-    marginBottom: spacing.lg,
-  },
+    stepContainer: {
+      flex: 1,
+      alignItems: 'center',
+    },
+    emoji: { fontSize: 80, marginBottom: spacing.lg },
+    title: {
+      fontSize: 28,
+      fontWeight: '700',
+      color: colors.textPrimary,
+      textAlign: 'center',
+      marginBottom: spacing.md,
+    },
+    body: {
+      fontSize: 16,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      lineHeight: 24,
+      marginBottom: spacing.lg,
+    },
 
-  featureList: {
-    width: '100%',
-    gap: spacing.sm,
-  },
-  featureItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.card,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    ...shadows.soft,
-  },
-  featureIcon: { fontSize: 24, marginRight: spacing.md },
-  featureText: {
-    flex: 1,
-    fontSize: 15,
-    color: colors.textPrimary,
-    lineHeight: 22,
-  },
+    featureList: {
+      width: '100%',
+      gap: spacing.sm,
+    },
+    featureItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.card,
+      borderRadius: radius.md,
+      padding: spacing.md,
+      ...shadows.soft,
+    },
+    featureIcon: { fontSize: 24, marginRight: spacing.md },
+    featureText: {
+      flex: 1,
+      fontSize: 15,
+      color: colors.textPrimary,
+      lineHeight: 22,
+    },
 
-  permissionCard: {
-    width: '100%',
-    backgroundColor: colors.grassPale,
-    borderRadius: radius.lg,
-    padding: spacing.lg,
-    marginBottom: spacing.md,
-  },
-  permissionTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.grass,
-    marginBottom: spacing.xs,
-  },
-  permissionBody: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    lineHeight: 20,
-  },
+    permissionCard: {
+      width: '100%',
+      backgroundColor: colors.grassPale,
+      borderRadius: radius.lg,
+      padding: spacing.lg,
+      marginBottom: spacing.md,
+    },
+    permissionTitle: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: colors.grass,
+      marginBottom: spacing.xs,
+    },
+    permissionBody: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      lineHeight: 20,
+    },
 
-  permissionButton: {
-    width: '100%',
-    backgroundColor: colors.grass,
-    borderRadius: radius.full,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    alignItems: 'center',
-    marginBottom: spacing.sm,
-    ...shadows.soft,
-  },
-  permissionButtonGranted: {
-    backgroundColor: colors.grassDark,
-  },
-  permissionButtonText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.textInverse,
-  },
+    permissionButton: {
+      width: '100%',
+      backgroundColor: colors.grass,
+      borderRadius: radius.full,
+      paddingVertical: spacing.md,
+      paddingHorizontal: spacing.lg,
+      alignItems: 'center',
+      marginBottom: spacing.sm,
+      ...shadows.soft,
+    },
+    permissionButtonGranted: {
+      backgroundColor: colors.grassDark,
+    },
+    permissionButtonText: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: colors.textInverse,
+    },
 
-  tipCard: {
-    width: '100%',
-    backgroundColor: colors.warningSurface,
-    borderRadius: radius.lg,
-    padding: spacing.lg,
-  },
-  tipTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.warningText,
-    marginBottom: spacing.xs,
-  },
-  tipBody: {
-    fontSize: 14,
-    color: colors.warningText,
-    lineHeight: 20,
-  },
-  checklistCard: {
-    width: '100%',
-    backgroundColor: colors.card,
-    borderRadius: radius.lg,
-    padding: spacing.lg,
-    marginTop: spacing.md,
-    ...shadows.soft,
-  },
-  checklistTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginBottom: spacing.sm,
-  },
-  checklistItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: spacing.xs,
-  },
-  checklistBullet: {
-    width: 16,
-    color: colors.textMuted,
-    fontSize: 16,
-    lineHeight: 20,
-  },
-  checklistText: {
-    flex: 1,
-    fontSize: 14,
-    color: colors.textSecondary,
-    lineHeight: 20,
-  },
+    tipCard: {
+      width: '100%',
+      backgroundColor: colors.warningSurface,
+      borderRadius: radius.lg,
+      padding: spacing.lg,
+    },
+    tipTitle: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: colors.warningText,
+      marginBottom: spacing.xs,
+    },
+    tipBody: {
+      fontSize: 14,
+      color: colors.warningText,
+      lineHeight: 20,
+    },
+    checklistCard: {
+      width: '100%',
+      backgroundColor: colors.card,
+      borderRadius: radius.lg,
+      padding: spacing.lg,
+      marginTop: spacing.md,
+      ...shadows.soft,
+    },
+    checklistTitle: {
+      fontSize: 15,
+      fontWeight: '700',
+      color: colors.textPrimary,
+      marginBottom: spacing.sm,
+    },
+    checklistItem: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      marginBottom: spacing.xs,
+    },
+    checklistBullet: {
+      width: 16,
+      color: colors.textMuted,
+      fontSize: 16,
+      lineHeight: 20,
+    },
+    checklistText: {
+      flex: 1,
+      fontSize: 14,
+      color: colors.textSecondary,
+      lineHeight: 20,
+    },
 
-  hint: {
-    fontSize: 12,
-    color: colors.textMuted,
-    textAlign: 'center',
-    marginTop: spacing.sm,
-    lineHeight: 18,
-  },
+    hint: {
+      fontSize: 12,
+      color: colors.textMuted,
+      textAlign: 'center',
+      marginTop: spacing.sm,
+      lineHeight: 18,
+    },
 
-  knownLocationsCard: {
-    width: '100%',
-    backgroundColor: colors.card,
-    borderRadius: radius.lg,
-    padding: spacing.lg,
-    marginTop: spacing.lg,
-    ...shadows.soft,
-  },
-  knownLocationsTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginBottom: spacing.xs,
-  },
-  knownLocationsBody: {
-    fontSize: 13,
-    color: colors.textSecondary,
-    lineHeight: 19,
-    marginBottom: spacing.md,
-  },
-  knownLocationsButtons: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    marginBottom: spacing.sm,
-  },
-  knownLocationBtn: {
-    flex: 1,
-    backgroundColor: colors.grass,
-    borderRadius: radius.full,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    alignItems: 'center',
-    ...shadows.soft,
-  },
-  knownLocationBtnDone: {
-    backgroundColor: colors.grassPale,
-  },
-  knownLocationBtnText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: colors.textInverse,
-  },
-  knownLocationBtnTextDone: {
-    color: colors.grassDark,
-  },
-  knownLocationsHint: {
-    fontSize: 11,
-    color: colors.textMuted,
-    lineHeight: 16,
-    textAlign: 'center',
-  },
+    knownLocationsCard: {
+      width: '100%',
+      backgroundColor: colors.card,
+      borderRadius: radius.lg,
+      padding: spacing.lg,
+      marginTop: spacing.lg,
+      ...shadows.soft,
+    },
+    knownLocationsTitle: {
+      fontSize: 15,
+      fontWeight: '700',
+      color: colors.textPrimary,
+      marginBottom: spacing.xs,
+    },
+    knownLocationsBody: {
+      fontSize: 13,
+      color: colors.textSecondary,
+      lineHeight: 19,
+      marginBottom: spacing.md,
+    },
+    knownLocationsButtons: {
+      flexDirection: 'row',
+      gap: spacing.sm,
+      marginBottom: spacing.sm,
+    },
+    knownLocationBtn: {
+      flex: 1,
+      backgroundColor: colors.grass,
+      borderRadius: radius.full,
+      paddingVertical: spacing.sm,
+      paddingHorizontal: spacing.md,
+      alignItems: 'center',
+      ...shadows.soft,
+    },
+    knownLocationBtnDone: {
+      backgroundColor: colors.grassPale,
+    },
+    knownLocationBtnText: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: colors.textInverse,
+    },
+    knownLocationBtnTextDone: {
+      color: colors.grassDark,
+    },
+    knownLocationsHint: {
+      fontSize: 11,
+      color: colors.textMuted,
+      lineHeight: 16,
+      textAlign: 'center',
+    },
 
-  calendarSettingsCard: {
-    width: '100%',
-    backgroundColor: colors.card,
-    borderRadius: radius.lg,
-    overflow: 'hidden',
-    marginBottom: spacing.sm,
-    ...shadows.soft,
-  },
-  calendarSettingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: spacing.md,
-  },
-  calendarSettingContent: {
-    flex: 1,
-  },
-  calendarSettingLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.textPrimary,
-  },
-  calendarSettingDesc: {
-    fontSize: 12,
-    color: colors.textMuted,
-    marginTop: 2,
-  },
-  calendarSettingDivider: {
-    height: 1,
-    backgroundColor: colors.fog,
-    marginLeft: spacing.md,
-  },
-  valueChip: {
-    fontSize: 13,
-    color: colors.grass,
-    fontWeight: '600',
-    backgroundColor: colors.grassPale,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 3,
-    borderRadius: radius.full,
-  },
+    calendarSettingsCard: {
+      width: '100%',
+      backgroundColor: colors.card,
+      borderRadius: radius.lg,
+      overflow: 'hidden',
+      marginBottom: spacing.sm,
+      ...shadows.soft,
+    },
+    calendarSettingRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: spacing.md,
+    },
+    calendarSettingContent: {
+      flex: 1,
+    },
+    calendarSettingLabel: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.textPrimary,
+    },
+    calendarSettingDesc: {
+      fontSize: 12,
+      color: colors.textMuted,
+      marginTop: 2,
+    },
+    calendarSettingDivider: {
+      height: 1,
+      backgroundColor: colors.fog,
+      marginLeft: spacing.md,
+    },
+    valueChip: {
+      fontSize: 13,
+      color: colors.grass,
+      fontWeight: '600',
+      backgroundColor: colors.grassPale,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 3,
+      borderRadius: radius.full,
+    },
 
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: spacing.md,
-    backgroundColor: colors.card,
-    borderTopWidth: 1,
-    borderTopColor: colors.fog,
-  },
-  skipBtn: {
-    fontSize: 16,
-    color: colors.textMuted,
-    fontWeight: '500',
-  },
-  nextBtn: {
-    backgroundColor: colors.grass,
-    borderRadius: radius.full,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    ...shadows.soft,
-  },
-  nextBtnText: {
-    fontSize: 16,
-    color: colors.textInverse,
-    fontWeight: '700',
-  },
+    footer: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      padding: spacing.md,
+      backgroundColor: colors.card,
+      borderTopWidth: 1,
+      borderTopColor: colors.fog,
+    },
+    skipBtn: {
+      fontSize: 16,
+      color: colors.textMuted,
+      fontWeight: '500',
+    },
+    nextBtn: {
+      backgroundColor: colors.grass,
+      borderRadius: radius.full,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.md,
+      ...shadows.soft,
+    },
+    nextBtnText: {
+      fontSize: 16,
+      color: colors.textInverse,
+      fontWeight: '700',
+    },
   });
 }

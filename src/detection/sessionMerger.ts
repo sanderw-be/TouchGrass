@@ -1,7 +1,12 @@
-import { OutsideSession, insertSession, getSessionsForRange, deleteSession } from '../storage/database';
+import {
+  OutsideSession,
+  insertSession,
+  getSessionsForRange,
+  deleteSession,
+} from '../storage/database';
 import { computeSessionScore, DISCARD_CONFIDENCE_THRESHOLD } from './sessionConfidence';
 import { t } from '../i18n';
-import { useImperialUnits, kmhToMph } from '../utils/units';
+import { isImperialUnits, kmhToMph } from '../utils/units';
 
 const MERGE_GAP_MS = 5 * 60 * 1000; // sessions within 5 min of each other get merged
 
@@ -41,14 +46,14 @@ export function submitSession(candidate: OutsideSession): void {
   // be touched by automated detection regardless of their source (gps, health_connect, …).
   // Manual sessions are already handled above; any that appear in `existing` here
   // will also have userConfirmed === 1 and are therefore protected by the same path.
-  const confirmedSessions = existing.filter(s => s.userConfirmed === 1);
-  const unconfirmedSessions = existing.filter(s => s.userConfirmed !== 1);
+  const confirmedSessions = existing.filter((s) => s.userConfirmed === 1);
+  const unconfirmedSessions = existing.filter((s) => s.userConfirmed !== 1);
 
   // Merge all unconfirmed overlapping sessions and the candidate into one range.
   const allUnconfirmed = [...unconfirmedSessions, candidate];
-  const mergedStart = Math.min(...allUnconfirmed.map(s => s.startTime));
-  const mergedEnd   = Math.max(...allUnconfirmed.map(s => s.endTime));
-  const mergedConfidence = Math.max(...allUnconfirmed.map(s => s.confidence));
+  const mergedStart = Math.min(...allUnconfirmed.map((s) => s.startTime));
+  const mergedEnd = Math.max(...allUnconfirmed.map((s) => s.endTime));
+  const mergedConfidence = Math.max(...allUnconfirmed.map((s) => s.confidence));
 
   // Combine unique notes from all merging sessions so source-specific data
   // (e.g. exercise type) is not lost when sessions from different detection
@@ -63,9 +68,7 @@ export function submitSession(candidate: OutsideSession): void {
   // so we just deduplicate them.
   const uniqueGpsNotes = [
     ...new Set(
-      allUnconfirmed
-        .filter(s => s.source === 'gps' && s.notes)
-        .map(s => s.notes as string),
+      allUnconfirmed.filter((s) => s.source === 'gps' && s.notes).map((s) => s.notes as string)
     ),
   ];
 
@@ -85,7 +88,7 @@ export function submitSession(candidate: OutsideSession): void {
   let mergedSpeed: number | undefined;
   if (mergedDistance != null && mergedDurationMs > 0) {
     // km / h from metres and milliseconds
-    mergedSpeed = (mergedDistance / mergedDurationMs) * MS_PER_HOUR / METERS_PER_KM;
+    mergedSpeed = ((mergedDistance / mergedDurationMs) * MS_PER_HOUR) / METERS_PER_KM;
   } else if (mergedSteps != null && mergedDurationMs > 0) {
     const durationMin = mergedDurationMs / 60_000;
     const stepsPerMin = mergedSteps / durationMin;
@@ -98,7 +101,7 @@ export function submitSession(candidate: OutsideSession): void {
     const durationMin = mergedDurationMs / 60_000;
     const stepsPerMin = mergedSteps / durationMin;
     const speedKmh = (stepsPerMin / STEPS_PER_MIN_AT_BASELINE) * BASELINE_SPEED_KMH;
-    const imperial = useImperialUnits();
+    const imperial = isImperialUnits();
     const speed = imperial ? kmhToMph(speedKmh).toFixed(1) : speedKmh.toFixed(1);
     const speedUnit = imperial ? t('unit_speed_imperial') : t('unit_speed_metric');
     hcNotesParts.push(
@@ -106,15 +109,15 @@ export function submitSession(candidate: OutsideSession): void {
         steps: mergedSteps.toLocaleString(),
         speed,
         speedUnit,
-      }),
+      })
     );
   } else {
     // HC sessions without step data (exercise-only records) — keep unique notes.
     const uniqueHcNotes = [
       ...new Set(
         allUnconfirmed
-          .filter(s => s.source === 'health_connect' && s.notes)
-          .map(s => s.notes as string),
+          .filter((s) => s.source === 'health_connect' && s.notes)
+          .map((s) => s.notes as string)
       ),
     ];
     hcNotesParts.push(...uniqueHcNotes);
@@ -124,8 +127,8 @@ export function submitSession(candidate: OutsideSession): void {
   const otherNotes = [
     ...new Set(
       allUnconfirmed
-        .filter(s => s.source !== 'gps' && s.source !== 'health_connect' && s.notes)
-        .map(s => s.notes as string),
+        .filter((s) => s.source !== 'gps' && s.source !== 'health_connect' && s.notes)
+        .map((s) => s.notes as string)
     ),
   ];
 
@@ -134,10 +137,10 @@ export function submitSession(candidate: OutsideSession): void {
 
   // Preserve a denied (userConfirmed=0) status from existing unconfirmed sessions
   // so that a re-detection never silently un-denies a session.
-  const deniedSession = unconfirmedSessions.find(s => s.userConfirmed === 0);
+  const deniedSession = unconfirmedSessions.find((s) => s.userConfirmed === 0);
 
   // Delete all existing unconfirmed sessions in the overlap window.
-  unconfirmedSessions.forEach(session => {
+  unconfirmedSessions.forEach((session) => {
     if (session.id) {
       deleteSession(session.id);
     }
@@ -146,7 +149,7 @@ export function submitSession(candidate: OutsideSession): void {
   // Subtract confirmed session time from the merged range so that confirmed user
   // data is never overwritten.  Each remaining gap becomes an unconfirmed segment.
   const sortedConfirmed = [...confirmedSessions]
-    .filter(s => s.startTime < mergedEnd && s.endTime > mergedStart)
+    .filter((s) => s.startTime < mergedEnd && s.endTime > mergedStart)
     .sort((a, b) => a.startTime - b.startTime);
 
   if (sortedConfirmed.length > 0) {
@@ -167,9 +170,13 @@ export function submitSession(candidate: OutsideSession): void {
   }
 
   if (sortedConfirmed.length > 0) {
-    console.log(`TouchGrass: Session split result: ${segments.length} segment(s) after subtracting confirmed ranges`);
+    console.log(
+      `TouchGrass: Session split result: ${segments.length} segment(s) after subtracting confirmed ranges`
+    );
     segments.forEach(([s, e], idx) => {
-      console.log(`  Segment ${idx}: ${new Date(s).toISOString()} – ${new Date(e).toISOString()} (${Math.round((e - s) / 60000)} min)`);
+      console.log(
+        `  Segment ${idx}: ${new Date(s).toISOString()} – ${new Date(e).toISOString()} (${Math.round((e - s) / 60000)} min)`
+      );
     });
   }
 
@@ -191,15 +198,15 @@ export function submitSession(candidate: OutsideSession): void {
     // Only discard sessions that have no user feedback yet (userConfirmed === null).
     // Sessions the user explicitly denied (userConfirmed === 0) keep discarded=0 so
     // their rejection is preserved and visible in the Standard tab.
-    const shouldDiscard =
-      segSession.userConfirmed === null &&
-      score < DISCARD_CONFIDENCE_THRESHOLD;
+    const shouldDiscard = segSession.userConfirmed === null && score < DISCARD_CONFIDENCE_THRESHOLD;
     if (shouldDiscard) {
-      console.log(`TouchGrass: Session discarded (score ${score.toFixed(2)} < threshold ${DISCARD_CONFIDENCE_THRESHOLD}): ${new Date(segStart).toISOString()} – ${new Date(segEnd).toISOString()} source=${candidate.source}`);
+      console.log(
+        `TouchGrass: Session discarded (score ${score.toFixed(2)} < threshold ${DISCARD_CONFIDENCE_THRESHOLD}): ${new Date(segStart).toISOString()} – ${new Date(segEnd).toISOString()} source=${candidate.source}`
+      );
     }
     insertSession({
       ...segSession,
-      confidence: score,  // store computed score so the UI reflects actual confidence
+      confidence: score, // store computed score so the UI reflects actual confidence
       discarded: shouldDiscard ? 1 : 0,
     });
   }
@@ -216,7 +223,7 @@ export function buildSession(
   notes?: string,
   steps?: number,
   distanceMeters?: number,
-  averageSpeedKmh?: number,
+  averageSpeedKmh?: number
 ): OutsideSession {
   const durationMinutes = (endTime - startTime) / 60000;
   return {

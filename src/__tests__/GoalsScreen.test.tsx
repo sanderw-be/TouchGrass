@@ -43,7 +43,9 @@ jest.mock('@react-navigation/native', () => {
   const actual = jest.requireActual('@react-navigation/native');
   return {
     ...actual,
-    useFocusEffect: (cb: () => void) => { React.useEffect(cb, []); },
+    useFocusEffect: (cb: () => void) => {
+      React.useEffect(cb, []);
+    },
     useNavigation: () => ({ navigate: jest.fn() }),
   };
 });
@@ -150,7 +152,9 @@ describe('GoalsScreen calendar duration', () => {
       fireEvent.press(durationRow);
     });
 
-    await waitFor(() => expect(findByText('settings_calendar_duration_minutes')).resolves.toBeTruthy());
+    await waitFor(() =>
+      expect(findByText('settings_calendar_duration_minutes')).resolves.toBeTruthy()
+    );
     expect(mockSetSetting).toHaveBeenCalledWith('calendar_default_duration', '5');
   });
 
@@ -181,10 +185,17 @@ describe('GoalsScreen calendar duration', () => {
     });
     (CalendarService.hasCalendarPermissions as jest.Mock).mockResolvedValue(true);
     (CalendarService.getWritableCalendars as jest.Mock).mockResolvedValue([
-      { id: 'tg-local', title: 'TouchGrass', allowsModifications: true, source: { isLocalAccount: true } },
+      {
+        id: 'tg-local',
+        title: 'TouchGrass',
+        allowsModifications: true,
+        source: { isLocalAccount: true },
+      },
     ]);
 
-    const alertSpy = jest.spyOn(require('react-native').Alert, 'alert').mockImplementation(() => {});
+    const alertSpy = jest
+      .spyOn(require('react-native').Alert, 'alert')
+      .mockImplementation(() => {});
     const { findByText } = render(<GoalsScreen />);
 
     const selectRow = await findByText('settings_calendar_select');

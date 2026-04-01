@@ -1,7 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import {
-  Modal, View, Text, TouchableOpacity, StyleSheet,
-} from 'react-native';
+import { Modal, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useReminderFeedback } from '../context/ReminderFeedbackContext';
 import { useTheme } from '../context/ThemeContext';
 import { spacing, radius, shadows } from '../utils/theme';
@@ -22,7 +20,11 @@ export default function ReminderFeedbackModal() {
   const formatTime = (h: number, m: number) => {
     const d = new Date();
     d.setHours(h, m, 0, 0);
-    const raw = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: !uses24HourClock() });
+    const raw = d.toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: !uses24HourClock(),
+    });
     return uses24HourClock() ? raw : normalizeAmPm(raw);
   };
 
@@ -38,7 +40,10 @@ export default function ReminderFeedbackModal() {
           visible={visible}
           transparent
           animationType="fade"
-          onRequestClose={() => { setShowFewerConfirmation(false); dismiss(); }}
+          onRequestClose={() => {
+            setShowFewerConfirmation(false);
+            dismiss();
+          }}
         >
           <View style={styles.overlay}>
             <View style={styles.card}>
@@ -46,7 +51,10 @@ export default function ReminderFeedbackModal() {
               <Text style={styles.confirmBody}>{fewerConfirmationMessage}</Text>
               <TouchableOpacity
                 style={styles.button}
-                onPress={() => { setShowFewerConfirmation(false); dismiss(); }}
+                onPress={() => {
+                  setShowFewerConfirmation(false);
+                  dismiss();
+                }}
                 accessibilityRole="button"
               >
                 <Text style={styles.buttonText}>{t('notif_feedback_dismiss')}</Text>
@@ -77,30 +85,40 @@ export default function ReminderFeedbackModal() {
         const currentCount = parseInt(getSetting('smart_reminders_count', '2'), 10);
         const newCount = Math.max(1, currentCount - 1);
         setSetting('smart_reminders_count', String(newCount));
-        setFewerConfirmationMessage(t('notif_fewer_reminders_confirm', { newCount, oldCount: currentCount }));
+        setFewerConfirmationMessage(
+          t('notif_fewer_reminders_confirm', { newCount, oldCount: currentCount })
+        );
       }
       setShowFewerConfirmation(true);
     };
 
     return (
-      <Modal
-        visible={visible}
-        transparent
-        animationType="fade"
-        onRequestClose={dismiss}
-      >
+      <Modal visible={visible} transparent animationType="fade" onRequestClose={dismiss}>
         <View style={styles.overlay}>
           <View style={styles.card}>
             <View style={styles.cardHeader}>
               <Text style={styles.title}>{t('notif_less_often_title')}</Text>
-              <TouchableOpacity onPress={dismiss} style={styles.closeButton} accessibilityRole="button" accessibilityLabel={t('notif_feedback_dismiss')}>
+              <TouchableOpacity
+                onPress={dismiss}
+                style={styles.closeButton}
+                accessibilityRole="button"
+                accessibilityLabel={t('notif_feedback_dismiss')}
+              >
                 <Text style={styles.closeButtonText}>✕</Text>
               </TouchableOpacity>
             </View>
-            <TouchableOpacity style={styles.choiceButton} onPress={handleBadTime} accessibilityRole="button">
+            <TouchableOpacity
+              style={styles.choiceButton}
+              onPress={handleBadTime}
+              accessibilityRole="button"
+            >
               <Text style={styles.choiceButtonText}>{t('notif_less_often_bad_time')}</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.choiceButton, styles.choiceButtonSecondary]} onPress={handleFewerReminders} accessibilityRole="button">
+            <TouchableOpacity
+              style={[styles.choiceButton, styles.choiceButtonSecondary]}
+              onPress={handleFewerReminders}
+              accessibilityRole="button"
+            >
               <Text style={styles.choiceButtonText}>{t('notif_less_often_fewer_reminders')}</Text>
             </TouchableOpacity>
           </View>
@@ -125,19 +143,12 @@ export default function ReminderFeedbackModal() {
   }
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={dismiss}
-    >
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={dismiss}>
       <View style={styles.overlay}>
         <View style={styles.card}>
           <Text style={styles.title}>{t('notif_confirm_title')}</Text>
           <Text style={styles.confirmBody}>{confirmBody}</Text>
-          {detailText !== '' && (
-            <Text style={styles.detailBody}>{detailText}</Text>
-          )}
+          {detailText !== '' && <Text style={styles.detailBody}>{detailText}</Text>}
           <TouchableOpacity style={styles.button} onPress={dismiss} accessibilityRole="button">
             <Text style={styles.buttonText}>{t('notif_feedback_dismiss')}</Text>
           </TouchableOpacity>

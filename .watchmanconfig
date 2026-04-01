@@ -1,11 +1,4 @@
 {
-  "ignore_dirs": [
-    ".git",
-    "node_modules",
-    ".gradle",
-    "android",
-    "ios",
-    ".expo"
-  ],
+  "ignore_dirs": [".git", "node_modules", ".gradle", "android", "ios", ".expo"],
   "project_root": "."
 }

@@ -4,7 +4,7 @@ jest.mock('expo-localization', () => ({
   getLocales: () => mockGetLocales(),
 }));
 
-import { useFahrenheit, celsiusToFahrenheit, formatTemperature } from '../utils/temperature';
+import { isFahrenheit, celsiusToFahrenheit, formatTemperature } from '../utils/temperature';
 
 describe('celsiusToFahrenheit', () => {
   it('converts 0°C to 32°F', () => {
@@ -24,45 +24,45 @@ describe('celsiusToFahrenheit', () => {
   });
 });
 
-describe('useFahrenheit', () => {
+describe('isFahrenheit', () => {
   it('returns true for US region', () => {
     mockGetLocales.mockReturnValue([{ languageCode: 'en', regionCode: 'US' }]);
-    expect(useFahrenheit()).toBe(true);
+    expect(isFahrenheit()).toBe(true);
   });
 
   it('returns true for Liberia (LR)', () => {
     mockGetLocales.mockReturnValue([{ languageCode: 'en', regionCode: 'LR' }]);
-    expect(useFahrenheit()).toBe(true);
+    expect(isFahrenheit()).toBe(true);
   });
 
   it('returns true for Myanmar (MM)', () => {
     mockGetLocales.mockReturnValue([{ languageCode: 'my', regionCode: 'MM' }]);
-    expect(useFahrenheit()).toBe(true);
+    expect(isFahrenheit()).toBe(true);
   });
 
   it('returns true for US territory Guam (GU)', () => {
     mockGetLocales.mockReturnValue([{ languageCode: 'en', regionCode: 'GU' }]);
-    expect(useFahrenheit()).toBe(true);
+    expect(isFahrenheit()).toBe(true);
   });
 
   it('returns false for Netherlands (NL)', () => {
     mockGetLocales.mockReturnValue([{ languageCode: 'nl', regionCode: 'NL' }]);
-    expect(useFahrenheit()).toBe(false);
+    expect(isFahrenheit()).toBe(false);
   });
 
   it('returns false for Germany (DE)', () => {
     mockGetLocales.mockReturnValue([{ languageCode: 'de', regionCode: 'DE' }]);
-    expect(useFahrenheit()).toBe(false);
+    expect(isFahrenheit()).toBe(false);
   });
 
   it('returns false when region code is null', () => {
     mockGetLocales.mockReturnValue([{ languageCode: 'en', regionCode: null }]);
-    expect(useFahrenheit()).toBe(false);
+    expect(isFahrenheit()).toBe(false);
   });
 
   it('returns false when getLocales returns empty array', () => {
     mockGetLocales.mockReturnValue([]);
-    expect(useFahrenheit()).toBe(false);
+    expect(isFahrenheit()).toBe(false);
   });
 });
 

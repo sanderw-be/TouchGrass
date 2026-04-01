@@ -68,17 +68,13 @@ describe('EditSessionSheet', () => {
     const onSessionUpdated = jest.fn();
     const onClose = jest.fn();
     const { getByText } = render(
-      <EditSessionSheet
-        {...defaultProps}
-        onSessionUpdated={onSessionUpdated}
-        onClose={onClose}
-      />
+      <EditSessionSheet {...defaultProps} onSessionUpdated={onSessionUpdated} onClose={onClose} />
     );
     fireEvent.press(getByText('session_edit_save'));
     expect(updateSessionTimes).toHaveBeenCalledWith(
       mockSession.id,
       expect.any(Number),
-      expect.any(Number),
+      expect.any(Number)
     );
     expect(onSessionUpdated).toHaveBeenCalled();
     expect(onClose).toHaveBeenCalled();
@@ -136,24 +132,18 @@ describe('EditSessionSheet', () => {
 
   it('calls onClose when the close button is pressed', () => {
     const onClose = jest.fn();
-    const { getByText } = render(
-      <EditSessionSheet {...defaultProps} onClose={onClose} />
-    );
+    const { getByText } = render(<EditSessionSheet {...defaultProps} onClose={onClose} />);
     fireEvent.press(getByText('✕'));
     expect(onClose).toHaveBeenCalled();
   });
 
   it('does not render when not visible', () => {
-    const { queryByText } = render(
-      <EditSessionSheet {...defaultProps} visible={false} />
-    );
+    const { queryByText } = render(<EditSessionSheet {...defaultProps} visible={false} />);
     expect(queryByText('session_edit_title')).toBeNull();
   });
 
   it('does not render when session is null', () => {
-    const { queryByText } = render(
-      <EditSessionSheet {...defaultProps} session={null} />
-    );
+    const { queryByText } = render(<EditSessionSheet {...defaultProps} session={null} />);
     expect(queryByText('session_edit_title')).toBeNull();
   });
 });

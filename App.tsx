@@ -1,6 +1,12 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import type { InitialState } from '@react-navigation/native';
-import { View, ActivityIndicator, AppState, AppStateStatus, InteractionManager } from 'react-native';
+import {
+  View,
+  ActivityIndicator,
+  AppState,
+  AppStateStatus,
+  InteractionManager,
+} from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { enableScreens } from 'react-native-screens';
@@ -8,7 +14,11 @@ import 'expo-dev-client';
 import { initDatabase, getSetting, setSetting } from './src/storage/database';
 import i18n from './src/i18n';
 import { initDetection } from './src/detection/index';
-import { setupNotificationInfrastructure, scheduleDayReminders, processReminderQueue } from './src/notifications/notificationManager';
+import {
+  setupNotificationInfrastructure,
+  scheduleDayReminders,
+  processReminderQueue,
+} from './src/notifications/notificationManager';
 import { cleanupTouchGrassCalendars } from './src/calendar/calendarService';
 import { registerUnifiedBackgroundTask } from './src/background/unifiedBackgroundTask';
 
@@ -47,9 +57,15 @@ function AppContent() {
         const hasCompletedIntro = getSetting('hasCompletedIntro', '0') === '1';
         if (hasCompletedIntro) {
           InteractionManager.runAfterInteractions(() => {
-            scheduleDayReminders().catch((e) => console.warn('TouchGrass: foreground scheduleDayReminders error:', e));
-            processReminderQueue().catch((e) => console.warn('TouchGrass: foreground processReminderQueue error:', e));
-            cleanupTouchGrassCalendars().catch((e) => console.warn('TouchGrass: foreground calendar cleanup error:', e));
+            scheduleDayReminders().catch((e) =>
+              console.warn('TouchGrass: foreground scheduleDayReminders error:', e)
+            );
+            processReminderQueue().catch((e) =>
+              console.warn('TouchGrass: foreground processReminderQueue error:', e)
+            );
+            cleanupTouchGrassCalendars().catch((e) =>
+              console.warn('TouchGrass: foreground calendar cleanup error:', e)
+            );
           });
           // Calendar events are only created by scheduleDayReminders() at planned
           // half-hour slots. Do NOT call maybeAddOutdoorTimeToCalendar(new Date())
@@ -120,7 +136,8 @@ function AppContent() {
 
         // Reschedule any scheduled notifications (handles past notifications and ensures they're set for next occurrence)
         try {
-          const { scheduleAllScheduledNotifications } = await import('./src/notifications/scheduledNotifications');
+          const { scheduleAllScheduledNotifications } =
+            await import('./src/notifications/scheduledNotifications');
           await scheduleAllScheduledNotifications();
         } catch (e) {
           console.warn('Scheduled notifications init error:', e);
@@ -151,7 +168,14 @@ function AppContent() {
 
   if (!ready) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.mist }}>
+      <View
+        style={{
+          flex: 1,
+          justifyContent: 'center',
+          alignItems: 'center',
+          backgroundColor: colors.mist,
+        }}
+      >
         <ActivityIndicator size="large" color={colors.grass} />
       </View>
     );
@@ -171,7 +195,9 @@ function AppContent() {
         <AppNavigator
           key={locale}
           initialState={savedNavState.current}
-          onStateChange={(state) => { savedNavState.current = state; }}
+          onStateChange={(state) => {
+            savedNavState.current = state;
+          }}
         />
       </IntroContext.Provider>
     </LanguageContext.Provider>

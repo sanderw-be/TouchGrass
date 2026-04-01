@@ -2,17 +2,33 @@ import * as Notifications from 'expo-notifications';
 import * as TaskManager from 'expo-task-manager';
 import { Platform } from 'react-native';
 import {
-  getTodayMinutes, getCurrentDailyGoal,
-  getSetting, setSetting, insertReminderFeedback,
+  getTodayMinutes,
+  getCurrentDailyGoal,
+  getSetting,
+  setSetting,
+  insertReminderFeedback,
 } from '../storage/database';
 import { shouldRemindNow, scoreReminderHours, ScoreContributor } from './reminderAlgorithm';
-import { fetchWeatherForecast, getWeatherForHour, isWeatherDataAvailable } from '../weather/weatherService';
-import { getWeatherDescription, getWeatherEmoji, getWeatherPreferences } from '../weather/weatherAlgorithm';
 import {
-  hasScheduledNotificationNearby, isSlotNearScheduledNotification,
+  fetchWeatherForecast,
+  getWeatherForHour,
+  isWeatherDataAvailable,
+} from '../weather/weatherService';
+import {
+  getWeatherDescription,
+  getWeatherEmoji,
+  getWeatherPreferences,
+} from '../weather/weatherAlgorithm';
+import {
+  hasScheduledNotificationNearby,
+  isSlotNearScheduledNotification,
   scheduleAllScheduledNotifications,
 } from './scheduledNotifications';
-import { hasUpcomingEvent, maybeAddOutdoorTimeToCalendar, deleteFutureTouchGrassEvents } from '../calendar/calendarService';
+import {
+  hasUpcomingEvent,
+  maybeAddOutdoorTimeToCalendar,
+  deleteFutureTouchGrassEvents,
+} from '../calendar/calendarService';
 import { triggerReminderFeedbackModal } from '../context/ReminderFeedbackContext';
 import { t } from '../i18n';
 import { formatTemperature } from '../utils/temperature';
@@ -51,7 +67,7 @@ const FAILSAFE_DAYS_AHEAD = 3;
 export type ReminderQueueStatus = 'date_planned' | 'tick_planned' | 'consumed';
 
 export interface ReminderQueueEntry {
-  id: string;          // unique notification identifier, also used as the Expo notification identifier
+  id: string; // unique notification identifier, also used as the Expo notification identifier
   slotMinutes: number; // minutes-of-day for this slot (e.g. 840 = 14:00)
   status: ReminderQueueStatus;
 }
@@ -112,7 +128,10 @@ async function createReminderChannels(): Promise<void> {
   };
 
   await Notifications.setNotificationChannelAsync(CHANNEL_ID, reminderChannelConfig);
-  await Notifications.setNotificationChannelAsync(DEFAULT_ANDROID_CHANNEL_ID, reminderChannelConfig);
+  await Notifications.setNotificationChannelAsync(
+    DEFAULT_ANDROID_CHANNEL_ID,
+    reminderChannelConfig
+  );
 }
 
 /**
@@ -321,7 +340,7 @@ export async function scheduleNextReminder(): Promise<void> {
     todayMinutes,
     dailyTarget,
     lastReminderMs,
-    isCurrentlyOutside,
+    isCurrentlyOutside
   );
 
   if (!should) {
@@ -383,16 +402,14 @@ export async function processReminderQueue(): Promise<void> {
 
   const now = new Date();
   const nowMinutes = now.getHours() * 60 + now.getMinutes();
-  const WINDOW = 15;        // minutes — used for legacy tick_planned look-back
-  const CONSUMED_TTL = 60;  // minutes to retain a consumed entry for catch-up guard
+  const WINDOW = 15; // minutes — used for legacy tick_planned look-back
+  const CONSUMED_TTL = 60; // minutes to retain a consumed entry for catch-up guard
 
   let queue = getQueue();
 
   // Log queue snapshot on every tick for diagnostic purposes
   {
-    const snapshot = queue.length === 0
-      ? 'empty'
-      : queue.map(formatQueueEntry).join(', ');
+    const snapshot = queue.length === 0 ? 'empty' : queue.map(formatQueueEntry).join(', ');
     console.log(`TouchGrass: [Queue] Tick snapshot (${queue.length}): ${snapshot}`);
   }
 
@@ -403,13 +420,17 @@ export async function processReminderQueue(): Promise<void> {
 
   // --- Goal reached: cancel all pending triggers and clear the queue ---
   if (todayMinutes >= dailyTarget) {
-    console.log(`TouchGrass: [Queue] Daily goal reached (${todayMinutes}/${dailyTarget} min) — cancelling ${queue.length} queued reminder(s)`);
+    console.log(
+      `TouchGrass: [Queue] Daily goal reached (${todayMinutes}/${dailyTarget} min) — cancelling ${queue.length} queued reminder(s)`
+    );
     for (const entry of queue) {
       // Consumed entries already fired — no notification to cancel
       if (entry.status !== 'consumed') {
         await Notifications.cancelScheduledNotificationAsync(entry.id).catch(() => {});
       }
-      console.log(`TouchGrass: [Queue] Deleted: ${entry.id} at ${formatSlotMinutes(entry.slotMinutes)} [${entry.status}] (goal reached)`);
+      console.log(
+        `TouchGrass: [Queue] Deleted: ${entry.id} at ${formatSlotMinutes(entry.slotMinutes)} [${entry.status}] (goal reached)`
+      );
     }
     saveQueue([]);
     setSetting('reminders_planned_slots', '[]');
@@ -423,7 +444,9 @@ export async function processReminderQueue(): Promise<void> {
     if (entry.status === 'consumed') {
       const minutesSince = nowMinutes - entry.slotMinutes;
       if (minutesSince < 0 || minutesSince >= CONSUMED_TTL) {
-        console.log(`TouchGrass: [Queue] Deleted: ${entry.id} at ${formatSlotMinutes(entry.slotMinutes)} — consumed TTL expired`);
+        console.log(
+          `TouchGrass: [Queue] Deleted: ${entry.id} at ${formatSlotMinutes(entry.slotMinutes)} — consumed TTL expired`
+        );
         continue;
       }
       updatedQueue.push(entry);
@@ -436,7 +459,9 @@ export async function processReminderQueue(): Promise<void> {
         // Notification fired (or is about to fire) natively — mark consumed so
         // catch-up logic can use the slot time for its 60-minute wait guard.
         entry.status = 'consumed';
-        console.log(`TouchGrass: [Queue] Consumed: ${entry.id} at ${formatSlotMinutes(entry.slotMinutes)} — slot passed, marked consumed`);
+        console.log(
+          `TouchGrass: [Queue] Consumed: ${entry.id} at ${formatSlotMinutes(entry.slotMinutes)} — slot passed, marked consumed`
+        );
         updatedQueue.push(entry);
       } else {
         // Future slot — keep unchanged
@@ -450,7 +475,11 @@ export async function processReminderQueue(): Promise<void> {
       const minutesSince = nowMinutes - entry.slotMinutes;
       if (minutesSince >= 0 && minutesSince <= WINDOW) {
         // Fire immediately
-        const { title, body } = buildReminderMessage(todayMinutes, dailyTarget, Math.floor(entry.slotMinutes / 60));
+        const { title, body } = buildReminderMessage(
+          todayMinutes,
+          dailyTarget,
+          Math.floor(entry.slotMinutes / 60)
+        );
         await Notifications.scheduleNotificationAsync({
           content: {
             title,
@@ -465,13 +494,17 @@ export async function processReminderQueue(): Promise<void> {
           },
         });
         setSetting('last_reminder_ms', String(Date.now()));
-        console.log(`TouchGrass: [Queue] Consumed: ${entry.id} at ${formatSlotMinutes(entry.slotMinutes)} — fired via JS (${minutesSince} min since slot)`);
+        console.log(
+          `TouchGrass: [Queue] Consumed: ${entry.id} at ${formatSlotMinutes(entry.slotMinutes)} — fired via JS (${minutesSince} min since slot)`
+        );
         entry.status = 'consumed';
         updatedQueue.push(entry); // keep as consumed for CONSUMED_TTL
         continue;
       } else if (minutesSince > WINDOW) {
         // Window passed without JS running — drop stale entry
-        console.log(`TouchGrass: [Queue] Deleted: ${entry.id} at ${formatSlotMinutes(entry.slotMinutes)} — stale tick_planned (${minutesSince} min since slot)`);
+        console.log(
+          `TouchGrass: [Queue] Deleted: ${entry.id} at ${formatSlotMinutes(entry.slotMinutes)} — stale tick_planned (${minutesSince} min since slot)`
+        );
         continue;
       }
       // Future tick_planned (rare) — keep unchanged
@@ -486,9 +519,10 @@ export async function processReminderQueue(): Promise<void> {
 
   // Log the resulting queue state after processing
   {
-    const remaining = updatedQueue.length === 0
-      ? 'empty'
-      : updatedQueue.map(e => `${formatSlotMinutes(e.slotMinutes)}[${e.status}]`).join(', ');
+    const remaining =
+      updatedQueue.length === 0
+        ? 'empty'
+        : updatedQueue.map((e) => `${formatSlotMinutes(e.slotMinutes)}[${e.status}]`).join(', ');
     console.log(`TouchGrass: [Queue] After processing (${updatedQueue.length}): ${remaining}`);
   }
 }
@@ -505,8 +539,12 @@ export async function scheduleDayReminders(): Promise<void> {
   if (lastPlannedDate === todayStr) {
     const queue = getQueue();
     if (queue.length > 0) {
-      const summary = queue.map(e => `${formatSlotMinutes(e.slotMinutes)}[${e.status}]`).join(', ');
-      console.log(`TouchGrass: [DayPlan] Already planned today — queue (${queue.length}): ${summary}`);
+      const summary = queue
+        .map((e) => `${formatSlotMinutes(e.slotMinutes)}[${e.status}]`)
+        .join(', ');
+      console.log(
+        `TouchGrass: [DayPlan] Already planned today — queue (${queue.length}): ${summary}`
+      );
     } else {
       console.log('TouchGrass: [DayPlan] Already planned today — queue: empty');
     }
@@ -532,7 +570,7 @@ export async function scheduleDayReminders(): Promise<void> {
   // Delete stale failsafe calendar events created on a previous planning cycle
   // so they don't persist alongside the freshly planned events.
   deleteFutureTouchGrassEvents(new Date(), FAILSAFE_DAYS_AHEAD).catch((e) =>
-    console.warn('TouchGrass: Failed to delete stale failsafe calendar events:', e),
+    console.warn('TouchGrass: Failed to delete stale failsafe calendar events:', e)
   );
 
   if (remindersCount === 0) {
@@ -550,7 +588,9 @@ export async function scheduleDayReminders(): Promise<void> {
 
   // Don't schedule reminders if daily goal is already reached
   if (todayMinutes >= dailyTarget) {
-    console.log(`TouchGrass: [DayPlan] Daily goal already reached (${todayMinutes}/${dailyTarget} min) — skipping reminder planning`);
+    console.log(
+      `TouchGrass: [DayPlan] Daily goal already reached (${todayMinutes}/${dailyTarget} min) — skipping reminder planning`
+    );
     setSetting('reminders_planned_slots', '[]');
     setSetting('additional_reminders_today', '0');
     setSetting('catchup_reminder_slot_minutes', '');
@@ -581,7 +621,7 @@ export async function scheduleDayReminders(): Promise<void> {
       dailyTarget,
       currentHour,
       currentMinute,
-      topSlots as Array<{ hour: number; minute: 0 | 30 }>,
+      topSlots as Array<{ hour: number; minute: 0 | 30 }>
     );
 
     let picked = false;
@@ -595,12 +635,18 @@ export async function scheduleDayReminders(): Promise<void> {
 
       // Skip slots near user-defined scheduled notifications for today
       if (isSlotNearScheduledNotification(slot.hour, slot.minute, 30)) {
-        console.log(`TouchGrass: Skipping reminder at ${slot.hour}:${slot.minute.toString().padStart(2, '0')} - scheduled notification nearby`);
+        console.log(
+          `TouchGrass: Skipping reminder at ${slot.hour}:${slot.minute.toString().padStart(2, '0')} - scheduled notification nearby`
+        );
         continue;
       }
 
       seenSlots.add(slotKey);
-      topSlots.push({ hour: slot.hour, minute: slot.minute as 0 | 30, contributors: slot.contributors ?? [] });
+      topSlots.push({
+        hour: slot.hour,
+        minute: slot.minute as 0 | 30,
+        contributors: slot.contributors ?? [],
+      });
       picked = true;
       break;
     }
@@ -618,7 +664,12 @@ export async function scheduleDayReminders(): Promise<void> {
     const triggerDate = new Date();
     triggerDate.setHours(slot.hour, slot.minute, 0, 0);
 
-    const { title, body } = buildReminderMessage(todayMinutes, dailyTarget, slot.hour, slot.contributors);
+    const { title, body } = buildReminderMessage(
+      todayMinutes,
+      dailyTarget,
+      slot.hour,
+      slot.contributors
+    );
 
     const dateKey = formatLocalDateKey(triggerDate);
     const id = `smart_${dateKey}_${slot.hour}:${String(slot.minute).padStart(2, '0')}`;
@@ -650,11 +701,13 @@ export async function scheduleDayReminders(): Promise<void> {
       status: 'date_planned',
     });
 
-    console.log(`TouchGrass: [DayPlan] Scheduled: ${id} at ${formatSlotMinutes(slot.hour * 60 + slot.minute)} (date_planned)`);
+    console.log(
+      `TouchGrass: [DayPlan] Scheduled: ${id} at ${formatSlotMinutes(slot.hour * 60 + slot.minute)} (date_planned)`
+    );
 
     // Add a future outdoor time slot to the calendar for each planned reminder
     maybeAddOutdoorTimeToCalendar(triggerDate).catch((e) =>
-      console.warn('TouchGrass: Failed to add reminder slot to calendar:', e),
+      console.warn('TouchGrass: Failed to add reminder slot to calendar:', e)
     );
   }
 
@@ -667,8 +720,10 @@ export async function scheduleDayReminders(): Promise<void> {
   saveQueue(newQueueEntries);
 
   if (newQueueEntries.length > 0) {
-    const summary = newQueueEntries.map(e => formatSlotMinutes(e.slotMinutes)).join(', ');
-    console.log(`TouchGrass: [DayPlan] Planned ${newQueueEntries.length} reminder(s) for today: ${summary}`);
+    const summary = newQueueEntries.map((e) => formatSlotMinutes(e.slotMinutes)).join(', ');
+    console.log(
+      `TouchGrass: [DayPlan] Planned ${newQueueEntries.length} reminder(s) for today: ${summary}`
+    );
   } else {
     console.log('TouchGrass: [DayPlan] No suitable reminder slots found for today');
   }
@@ -699,7 +754,9 @@ export async function maybeScheduleCatchUpReminder(): Promise<void> {
   const additionalCount = parseInt(getSetting('additional_reminders_today', '0'), 10);
   const catchupLimit = parseInt(getSetting('smart_catchup_reminders_count', '2'), 10);
   if (additionalCount >= catchupLimit) {
-    console.log(`TouchGrass: [CatchUp] Limit reached (${additionalCount}/${catchupLimit}) — skipping`);
+    console.log(
+      `TouchGrass: [CatchUp] Limit reached (${additionalCount}/${catchupLimit}) — skipping`
+    );
     return;
   }
 
@@ -720,7 +777,7 @@ export async function maybeScheduleCatchUpReminder(): Promise<void> {
 
   // How many planned reminders have their time already passed?
   const passedCount = plannedSlots.filter(
-    (s) => s.hour * 60 + s.minute <= currentMinutesOfDay,
+    (s) => s.hour * 60 + s.minute <= currentMinutesOfDay
   ).length;
   if (passedCount === 0) return;
 
@@ -735,14 +792,14 @@ export async function maybeScheduleCatchUpReminder(): Promise<void> {
   // plannedSlots setting for slots that have passed but haven't been marked
   // consumed yet (e.g. on the very first tick after a reminder fires).
   const lastConsumedMin = queue
-    .filter(e => e.status === 'consumed')
-    .map(e => e.slotMinutes)
-    .filter(m => m <= currentMinutesOfDay)
+    .filter((e) => e.status === 'consumed')
+    .map((e) => e.slotMinutes)
+    .filter((m) => m <= currentMinutesOfDay)
     .reduce((max, m) => Math.max(max, m), -1);
 
   const mostRecentPassedSlotMin = plannedSlots
-    .map(s => s.hour * 60 + s.minute)
-    .filter(m => m <= currentMinutesOfDay)
+    .map((s) => s.hour * 60 + s.minute)
+    .filter((m) => m <= currentMinutesOfDay)
     .reduce((max, m) => Math.max(max, m), -1);
 
   // Use whichever is more recent (consumed queue entry or passed planned slot)
@@ -764,7 +821,9 @@ export async function maybeScheduleCatchUpReminder(): Promise<void> {
 
   // If the daily goal is already met, cancel any remaining smart reminders and stop.
   if (targetPercent >= 1) {
-    console.log(`TouchGrass: [CatchUp] Daily goal reached (${todayMinutes}/${dailyTarget} min) — cancelling remaining smart reminders`);
+    console.log(
+      `TouchGrass: [CatchUp] Daily goal reached (${todayMinutes}/${dailyTarget} min) — cancelling remaining smart reminders`
+    );
     await cancelAutomaticReminders();
     setSetting('reminders_planned_slots', '[]');
     setSetting('catchup_reminder_slot_minutes', '');
@@ -773,7 +832,9 @@ export async function maybeScheduleCatchUpReminder(): Promise<void> {
 
   // Only schedule a catch-up if more reminders have passed than target % reached
   if (passedPercent <= targetPercent) {
-    console.log(`TouchGrass: [CatchUp] On track — ${Math.round(targetPercent * 100)}% of goal reached vs ${Math.round(passedPercent * 100)}% of reminders passed — skipping`);
+    console.log(
+      `TouchGrass: [CatchUp] On track — ${Math.round(targetPercent * 100)}% of goal reached vs ${Math.round(passedPercent * 100)}% of reminders passed — skipping`
+    );
     return;
   }
 
@@ -788,14 +849,16 @@ export async function maybeScheduleCatchUpReminder(): Promise<void> {
 
   // Exclude slots that are already in the queue (any status) to prevent
   // scheduling two catch-up reminders for the same time from different ticks.
-  const queuedSlotMinutes = new Set(queue.map(e => e.slotMinutes));
+  const queuedSlotMinutes = new Set(queue.map((e) => e.slotMinutes));
 
   const candidateSlots = scores.filter((s) => {
     const slotMin = s.hour * 60 + s.minute;
-    return slotMin > currentMinutesOfDay
-      && s.score >= 0.3
-      && !isSlotNearScheduledNotification(s.hour, s.minute, 30)
-      && !queuedSlotMinutes.has(slotMin);
+    return (
+      slotMin > currentMinutesOfDay &&
+      s.score >= 0.3 &&
+      !isSlotNearScheduledNotification(s.hour, s.minute, 30) &&
+      !queuedSlotMinutes.has(slotMin)
+    );
   });
 
   if (candidateSlots.length === 0) {
@@ -814,7 +877,12 @@ export async function maybeScheduleCatchUpReminder(): Promise<void> {
   const triggerDate = new Date();
   triggerDate.setHours(best.hour, best.minute, 0, 0);
 
-  const { title, body } = buildReminderMessage(todayMinutes, dailyTarget, best.hour, best.contributors ?? []);
+  const { title, body } = buildReminderMessage(
+    todayMinutes,
+    dailyTarget,
+    best.hour,
+    best.contributors ?? []
+  );
 
   const dateKey = formatLocalDateKey(triggerDate);
   const id = `catchup_${dateKey}_${best.hour}:${String(best.minute).padStart(2, '0')}_${Date.now()}`;
@@ -849,7 +917,7 @@ export async function maybeScheduleCatchUpReminder(): Promise<void> {
   setSetting('catchup_reminder_slot_minutes', String(best.hour * 60 + best.minute));
   console.log(
     `TouchGrass: [CatchUp] Scheduled: ${id} at ${formatSlotMinutes(best.hour * 60 + best.minute)} ` +
-    `(${additionalCount + 1}/${catchupLimit}; progress: ${todayMinutes}/${dailyTarget} min)`,
+      `(${additionalCount + 1}/${catchupLimit}; progress: ${todayMinutes}/${dailyTarget} min)`
   );
 }
 
@@ -898,7 +966,7 @@ async function cancelFailsafeReminders(): Promise<void> {
  * @param slots  The time slots chosen by scheduleDayReminders() for today.
  */
 async function scheduleFailsafeReminders(
-  slots: Array<{ hour: number; minute: 0 | 30 }>,
+  slots: Array<{ hour: number; minute: 0 | 30 }>
 ): Promise<void> {
   if (slots.length === 0) return;
 
@@ -937,7 +1005,7 @@ async function scheduleFailsafeReminders(
       // planning runs on that day, deleteFutureTouchGrassEvents() removes these
       // stale events before creating updated ones.
       maybeAddOutdoorTimeToCalendar(triggerDate).catch((e) =>
-        console.warn('TouchGrass: Failed to add failsafe reminder slot to calendar:', e),
+        console.warn('TouchGrass: Failed to add failsafe reminder slot to calendar:', e)
       );
     }
   }
@@ -952,7 +1020,7 @@ async function scheduleFailsafeReminders(
  */
 async function cancelAutomaticReminders(): Promise<void> {
   const all = await Notifications.getAllScheduledNotificationsAsync();
-  
+
   for (const notif of all) {
     // Preserve:
     //  - scheduled notifications ('scheduled_' prefix)
@@ -981,7 +1049,9 @@ export async function cancelRemindersIfGoalReached(): Promise<void> {
   const dailyTarget = getCurrentDailyGoal()?.targetMinutes ?? 30;
   if (todayMinutes < dailyTarget) return;
 
-  console.log(`TouchGrass: Goal reached (${todayMinutes}/${dailyTarget} min) after user action — cancelling reminders`);
+  console.log(
+    `TouchGrass: Goal reached (${todayMinutes}/${dailyTarget} min) after user action — cancelling reminders`
+  );
 
   // Cancel all scheduled smart/catchup notifications
   await cancelAutomaticReminders();
@@ -1001,7 +1071,9 @@ export async function cancelRemindersIfGoalReached(): Promise<void> {
 /**
  * Handle user tapping a notification action button.
  */
-async function handleNotificationResponse(response: Notifications.NotificationResponse): Promise<void> {
+async function handleNotificationResponse(
+  response: Notifications.NotificationResponse
+): Promise<void> {
   const actionId = response.actionIdentifier;
   const notificationId = response.notification.request.identifier;
   const now = Date.now();
@@ -1020,10 +1092,14 @@ async function handleNotificationResponse(response: Notifications.NotificationRe
     return;
   }
 
-  const action = actionId === ACTION_WENT_OUTSIDE ? 'went_outside'
-    : actionId === ACTION_SNOOZE ? 'snoozed'
-    : actionId === ACTION_LESS_OFTEN ? 'less_often'
-    : 'dismissed';
+  const action =
+    actionId === ACTION_WENT_OUTSIDE
+      ? 'went_outside'
+      : actionId === ACTION_SNOOZE
+        ? 'snoozed'
+        : actionId === ACTION_LESS_OFTEN
+          ? 'less_often'
+          : 'dismissed';
 
   // For 'less_often', feedback is NOT inserted immediately — the in-app modal lets
   // the user choose between "bad time" (inserts bad_time feedback) or
@@ -1039,9 +1115,12 @@ async function handleNotificationResponse(response: Notifications.NotificationRe
   }
 
   if (action !== 'dismissed') {
-    const confirmBodyKey = action === 'went_outside' ? 'notif_confirm_went_outside'
-      : action === 'snoozed' ? 'notif_confirm_snoozed'
-      : undefined;
+    const confirmBodyKey =
+      action === 'went_outside'
+        ? 'notif_confirm_went_outside'
+        : action === 'snoozed'
+          ? 'notif_confirm_snoozed'
+          : undefined;
 
     // Show an in-app modal instead of re-posting the notification
     triggerReminderFeedbackModal({
@@ -1059,7 +1138,7 @@ async function handleNotificationResponse(response: Notifications.NotificationRe
     const { title, body } = buildReminderMessage(
       getTodayMinutes(),
       getCurrentDailyGoal()?.targetMinutes ?? 30,
-      snoozeHour,
+      snoozeHour
     );
     await Notifications.scheduleNotificationAsync({
       content: { title, body, categoryIdentifier: 'reminder', color: '#4A7C59' },
@@ -1080,7 +1159,7 @@ function buildReminderMessage(
   todayMinutes: number,
   dailyTarget: number,
   hour?: number,
-  contributors?: ScoreContributor[],
+  contributors?: ScoreContributor[]
 ): { title: string; body: string } {
   const remaining = Math.max(0, Math.round(dailyTarget - todayMinutes));
   const percent = todayMinutes / dailyTarget;

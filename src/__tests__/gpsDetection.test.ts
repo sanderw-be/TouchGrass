@@ -15,10 +15,11 @@ import {
 // jest.clearAllMocks() call in beforeEach hooks wipes defineTask.mock.calls.
 const _defineTaskMock = TaskManager.defineTask as jest.Mock;
 const _locationTrackCall = _defineTaskMock.mock.calls.find(
-  ([name]: [string]) => name === 'TOUCHGRASS_LOCATION_TRACK',
+  ([name]: [string]) => name === 'TOUCHGRASS_LOCATION_TRACK'
 );
-const _locationTrackCallback: ((arg: { data: unknown; error: unknown }) => Promise<void>) | undefined =
-  _locationTrackCall?.[1];
+const _locationTrackCallback:
+  | ((arg: { data: unknown; error: unknown }) => Promise<void>)
+  | undefined = _locationTrackCall?.[1];
 
 describe('isAtKnownIndoorLocation', () => {
   it('returns false when locations list is empty', () => {
@@ -27,7 +28,15 @@ describe('isAtKnownIndoorLocation', () => {
 
   it('returns false when no indoor locations are nearby', () => {
     const locations = [
-      { id: 1, label: 'Home', latitude: 51.5, longitude: 4.3, radiusMeters: 100, isIndoor: true, status: 'active' as const },
+      {
+        id: 1,
+        label: 'Home',
+        latitude: 51.5,
+        longitude: 4.3,
+        radiusMeters: 100,
+        isIndoor: true,
+        status: 'active' as const,
+      },
     ];
     // ~1km away — outside radius
     expect(isAtKnownIndoorLocation(51.51, 4.31, locations)).toBe(false);
@@ -35,7 +44,15 @@ describe('isAtKnownIndoorLocation', () => {
 
   it('returns true when within radius of an indoor location', () => {
     const locations = [
-      { id: 1, label: 'Home', latitude: 51.5, longitude: 4.3, radiusMeters: 100, isIndoor: true, status: 'active' as const },
+      {
+        id: 1,
+        label: 'Home',
+        latitude: 51.5,
+        longitude: 4.3,
+        radiusMeters: 100,
+        isIndoor: true,
+        status: 'active' as const,
+      },
     ];
     // ~0m away — inside radius
     expect(isAtKnownIndoorLocation(51.5, 4.3, locations)).toBe(true);
@@ -43,7 +60,15 @@ describe('isAtKnownIndoorLocation', () => {
 
   it('ignores outdoor (non-indoor) locations', () => {
     const locations = [
-      { id: 1, label: 'Park', latitude: 51.5, longitude: 4.3, radiusMeters: 100, isIndoor: false, status: 'active' as const },
+      {
+        id: 1,
+        label: 'Park',
+        latitude: 51.5,
+        longitude: 4.3,
+        radiusMeters: 100,
+        isIndoor: false,
+        status: 'active' as const,
+      },
     ];
     expect(isAtKnownIndoorLocation(51.5, 4.3, locations)).toBe(false);
   });
@@ -67,9 +92,14 @@ describe('processLocationUpdate', () => {
     (SessionMerger.submitSession as jest.Mock).mockImplementation(() => undefined);
     (SessionMerger.buildSession as jest.Mock).mockImplementation(
       (startTime: number, endTime: number, source: string, confidence: number, notes?: string) => ({
-        startTime, endTime, durationMinutes: (endTime - startTime) / 60000,
-        source, confidence, userConfirmed: null, notes,
-      }),
+        startTime,
+        endTime,
+        durationMinutes: (endTime - startTime) / 60000,
+        source,
+        confidence,
+        userConfirmed: null,
+        notes,
+      })
     );
   });
 
@@ -91,8 +121,8 @@ describe('processLocationUpdate', () => {
     processLocationUpdate(51.5001, 4.3001, NOW + MIN_OUTSIDE_DURATION_MS);
     expect(SessionMerger.submitSession).toHaveBeenCalledTimes(1);
     const call = (SessionMerger.buildSession as jest.Mock).mock.calls[0];
-    expect(call[0]).toBe(NOW);                               // startTime
-    expect(call[1]).toBe(NOW + MIN_OUTSIDE_DURATION_MS);     // endTime
+    expect(call[0]).toBe(NOW); // startTime
+    expect(call[1]).toBe(NOW + MIN_OUTSIDE_DURATION_MS); // endTime
     expect(call[2]).toBe('gps');
   });
 
@@ -109,9 +139,14 @@ describe('processLocationUpdate', () => {
     });
     (SessionMerger.buildSession as jest.Mock).mockImplementation(
       (startTime: number, endTime: number, source: string, confidence: number, notes?: string) => ({
-        startTime, endTime, durationMinutes: (endTime - startTime) / 60000,
-        source, confidence, userConfirmed: null, notes,
-      }),
+        startTime,
+        endTime,
+        durationMinutes: (endTime - startTime) / 60000,
+        source,
+        confidence,
+        userConfirmed: null,
+        notes,
+      })
     );
 
     // After reset, a further MIN_OUTSIDE_DURATION_MS elapsed → second flush
@@ -124,9 +159,13 @@ describe('processLocationUpdate', () => {
 
   it('submits a session on indoor transition when known indoor location exists', () => {
     const homeLocation = {
-      id: 1, label: 'Home',
-      latitude: 51.5, longitude: 4.3,
-      radiusMeters: 100, isIndoor: true, status: 'active' as const,
+      id: 1,
+      label: 'Home',
+      latitude: 51.5,
+      longitude: 4.3,
+      radiusMeters: 100,
+      isIndoor: true,
+      status: 'active' as const,
     };
 
     // First update: user is outside (far from home — ~1 km away)
@@ -148,9 +187,13 @@ describe('processLocationUpdate', () => {
 
   it('GPS notes include "left … and returned" when returning to same location', () => {
     const homeLocation = {
-      id: 1, label: 'Home',
-      latitude: 51.5, longitude: 4.3,
-      radiusMeters: 100, isIndoor: true, status: 'active' as const,
+      id: 1,
+      label: 'Home',
+      latitude: 51.5,
+      longitude: 4.3,
+      radiusMeters: 100,
+      isIndoor: true,
+      status: 'active' as const,
     };
 
     // Start near Home (just left it)
@@ -194,9 +237,13 @@ describe('processLocationUpdate', () => {
 
   it('does not submit a session when coming inside after less than minimum duration', () => {
     const homeLocation = {
-      id: 1, label: 'Home',
-      latitude: 51.5, longitude: 4.3,
-      radiusMeters: 100, isIndoor: true, status: 'active' as const,
+      id: 1,
+      label: 'Home',
+      latitude: 51.5,
+      longitude: 4.3,
+      radiusMeters: 100,
+      isIndoor: true,
+      status: 'active' as const,
     };
 
     (Database.getKnownLocations as jest.Mock).mockReturnValue([homeLocation]);
@@ -256,7 +303,11 @@ describe('TOUCHGRASS_LOCATION_TRACK background task', () => {
     (Database.getKnownLocations as jest.Mock).mockReturnValue([]);
 
     await _locationTrackCallback!({
-      data: { locations: [{ coords: { latitude: 51.5, longitude: 4.3, speed: 0 }, timestamp: 1_700_000_000_000 }] },
+      data: {
+        locations: [
+          { coords: { latitude: 51.5, longitude: 4.3, speed: 0 }, timestamp: 1_700_000_000_000 },
+        ],
+      },
       error: null,
     });
 

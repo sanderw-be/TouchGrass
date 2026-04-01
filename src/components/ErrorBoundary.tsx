@@ -1,6 +1,12 @@
 import React from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, Linking, ScrollView, Platform,
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Linking,
+  ScrollView,
+  Platform,
 } from 'react-native';
 import Constants from 'expo-constants';
 import i18n from '../i18n';

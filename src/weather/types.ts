@@ -4,24 +4,24 @@
 
 export interface WeatherCondition {
   id?: number;
-  timestamp: number;           // unix timestamp ms when forecast was fetched
-  forecastHour: number;         // hour of the day this forecast is for (0-23)
-  forecastDate: number;         // unix timestamp ms (start of day) this forecast is for
-  temperature: number;          // degrees Celsius
+  timestamp: number; // unix timestamp ms when forecast was fetched
+  forecastHour: number; // hour of the day this forecast is for (0-23)
+  forecastDate: number; // unix timestamp ms (start of day) this forecast is for
+  temperature: number; // degrees Celsius
   precipitationProbability: number; // 0-100
-  cloudCover: number;           // 0-100 percentage
-  uvIndex: number;              // 0-11+ UV index
-  windSpeed: number;            // km/h
-  weatherCode: number;          // WMO weather code
-  isDay: boolean;               // true if daytime, false if nighttime
+  cloudCover: number; // 0-100 percentage
+  uvIndex: number; // 0-11+ UV index
+  windSpeed: number; // km/h
+  weatherCode: number; // WMO weather code
+  isDay: boolean; // true if daytime, false if nighttime
 }
 
 export interface WeatherCache {
   id?: number;
-  fetchedAt: number;           // unix timestamp ms when data was fetched
+  fetchedAt: number; // unix timestamp ms when data was fetched
   latitude: number;
   longitude: number;
-  expiresAt: number;           // unix timestamp ms when cache expires
+  expiresAt: number; // unix timestamp ms when cache expires
 }
 
 export interface WeatherPreferences {

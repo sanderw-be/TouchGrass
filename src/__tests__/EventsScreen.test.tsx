@@ -41,7 +41,9 @@ jest.mock('../components/EditSessionSheet', () => {
 jest.mock('@react-navigation/native', () => {
   const React = require('react');
   return {
-    useFocusEffect: (cb: () => void) => { React.useEffect(cb, []); },
+    useFocusEffect: (cb: () => void) => {
+      React.useEffect(cb, []);
+    },
   };
 });
 

@@ -13,10 +13,10 @@ import { t } from '../i18n';
  */
 export function scoreWeatherCondition(
   condition: WeatherCondition,
-  preferences?: WeatherPreferences,
+  preferences?: WeatherPreferences
 ): number {
   const prefs = preferences || getWeatherPreferences();
-  
+
   if (!prefs.enabled) {
     return 0; // Weather scoring disabled
   }
@@ -30,13 +30,13 @@ export function scoreWeatherCondition(
       score += 0.25;
       reasons.push('dry');
     } else if (condition.precipitationProbability <= 30) {
-      score += 0.10;
+      score += 0.1;
       reasons.push('mostly dry');
     } else if (condition.precipitationProbability <= 50) {
-      score -= 0.10;
+      score -= 0.1;
       reasons.push('might rain');
     } else {
-      score -= 0.30;
+      score -= 0.3;
       reasons.push('likely rain');
     }
   }
@@ -48,27 +48,27 @@ export function scoreWeatherCondition(
     code === WEATHER_CODES.THUNDERSTORM ||
     code >= WEATHER_CODES.SNOW_MODERATE
   ) {
-    score -= 0.50; // Heavy penalty for active bad weather
+    score -= 0.5; // Heavy penalty for active bad weather
     reasons.push('bad weather');
   } else if (
     code === WEATHER_CODES.RAIN_LIGHT ||
     code === WEATHER_CODES.DRIZZLE_MODERATE ||
     code === WEATHER_CODES.SNOW_LIGHT
   ) {
-    score -= 0.20; // Moderate penalty for light rain/snow
+    score -= 0.2; // Moderate penalty for light rain/snow
     reasons.push('light precip');
   }
 
   // ── Temperature comfort zones ────────────────────────────
   const temp = condition.temperature;
-  
+
   if (prefs.temperaturePreference === 'cold') {
     // Prefer cooler temperatures (0-20°C optimal)
     if (temp >= 0 && temp <= 10) {
       score += 0.15;
       reasons.push('cool');
     } else if (temp > 10 && temp <= 20) {
-      score += 0.10;
+      score += 0.1;
       reasons.push('mild');
     } else if (temp > 20 && temp <= 25) {
       // Neutral zone - no penalty or bonus
@@ -83,7 +83,7 @@ export function scoreWeatherCondition(
       score += 0.15;
       reasons.push('warm');
     } else if (temp > 10 && temp < 20) {
-      score += 0.10;
+      score += 0.1;
       reasons.push('mild');
     } else if (temp > 5 && temp <= 10) {
       // Neutral-cool zone - slight preference still
@@ -105,7 +105,7 @@ export function scoreWeatherCondition(
       score += 0.05;
       reasons.push('warm');
     } else if (temp < 5 || temp > 35) {
-      score -= 0.20;
+      score -= 0.2;
       reasons.push('extreme temp');
     }
   }
@@ -146,7 +146,7 @@ export function scoreWeatherCondition(
     condition.windSpeed < 20 &&
     (code === WEATHER_CODES.CLEAR_SKY || code === WEATHER_CODES.MAINLY_CLEAR)
   ) {
-    score += 0.10; // Perfect weather bonus
+    score += 0.1; // Perfect weather bonus
     reasons.push('perfect weather');
   }
 
@@ -171,19 +171,23 @@ export function getWeatherPreferences(): WeatherPreferences {
  */
 export function getWeatherDescription(condition: WeatherCondition): string {
   const code = condition.weatherCode;
-  
+
   if (code === WEATHER_CODES.CLEAR_SKY) return t('weather_clear_sky');
   if (code === WEATHER_CODES.MAINLY_CLEAR) return t('weather_mainly_clear');
   if (code === WEATHER_CODES.PARTLY_CLOUDY) return t('weather_partly_cloudy');
   if (code === WEATHER_CODES.OVERCAST) return t('weather_overcast');
   if (code === WEATHER_CODES.FOG) return t('weather_foggy');
-  if (code >= WEATHER_CODES.DRIZZLE_LIGHT && code <= WEATHER_CODES.DRIZZLE_DENSE) return t('weather_drizzle');
-  if (code >= WEATHER_CODES.RAIN_LIGHT && code <= WEATHER_CODES.RAIN_HEAVY) return t('weather_rain');
-  if (code >= WEATHER_CODES.SNOW_LIGHT && code <= WEATHER_CODES.SNOW_HEAVY) return t('weather_snow');
-  if (code >= WEATHER_CODES.RAIN_SHOWERS_LIGHT && code <= WEATHER_CODES.RAIN_SHOWERS_HEAVY) return t('weather_rain_showers');
+  if (code >= WEATHER_CODES.DRIZZLE_LIGHT && code <= WEATHER_CODES.DRIZZLE_DENSE)
+    return t('weather_drizzle');
+  if (code >= WEATHER_CODES.RAIN_LIGHT && code <= WEATHER_CODES.RAIN_HEAVY)
+    return t('weather_rain');
+  if (code >= WEATHER_CODES.SNOW_LIGHT && code <= WEATHER_CODES.SNOW_HEAVY)
+    return t('weather_snow');
+  if (code >= WEATHER_CODES.RAIN_SHOWERS_LIGHT && code <= WEATHER_CODES.RAIN_SHOWERS_HEAVY)
+    return t('weather_rain_showers');
   if (code === WEATHER_CODES.SNOW_SHOWERS) return t('weather_snow_showers');
   if (code === WEATHER_CODES.THUNDERSTORM) return t('weather_thunderstorm');
-  
+
   return t('weather_unknown');
 }
 
@@ -192,7 +196,7 @@ export function getWeatherDescription(condition: WeatherCondition): string {
  */
 export function getWeatherEmoji(condition: WeatherCondition): string {
   const code = condition.weatherCode;
-  
+
   if (code === WEATHER_CODES.CLEAR_SKY) return condition.isDay ? '☀️' : '🌙';
   if (code === WEATHER_CODES.MAINLY_CLEAR) return condition.isDay ? '🌤️' : '🌙';
   if (code === WEATHER_CODES.PARTLY_CLOUDY) return '⛅';
@@ -201,9 +205,10 @@ export function getWeatherEmoji(condition: WeatherCondition): string {
   if (code >= WEATHER_CODES.DRIZZLE_LIGHT && code <= WEATHER_CODES.DRIZZLE_DENSE) return '🌦️';
   if (code >= WEATHER_CODES.RAIN_LIGHT && code <= WEATHER_CODES.RAIN_HEAVY) return '🌧️';
   if (code >= WEATHER_CODES.SNOW_LIGHT && code <= WEATHER_CODES.SNOW_HEAVY) return '❄️';
-  if (code >= WEATHER_CODES.RAIN_SHOWERS_LIGHT && code <= WEATHER_CODES.RAIN_SHOWERS_HEAVY) return '🌦️';
+  if (code >= WEATHER_CODES.RAIN_SHOWERS_LIGHT && code <= WEATHER_CODES.RAIN_SHOWERS_HEAVY)
+    return '🌦️';
   if (code === WEATHER_CODES.SNOW_SHOWERS) return '🌨️';
   if (code === WEATHER_CODES.THUNDERSTORM) return '⛈️';
-  
+
   return '🌡️';
 }

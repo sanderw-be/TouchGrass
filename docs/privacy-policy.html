@@ -1,227 +1,328 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TouchGrass – Privacy Policy</title>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TouchGrass – Privacy Policy</title>
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
 
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      font-size: 16px;
-      line-height: 1.7;
-      color: #1a1a1a;
-      background: #f9f9f7;
-    }
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        font-size: 16px;
+        line-height: 1.7;
+        color: #1a1a1a;
+        background: #f9f9f7;
+      }
 
-    .page {
-      max-width: 760px;
-      margin: 0 auto;
-      padding: 48px 24px 80px;
-    }
+      .page {
+        max-width: 760px;
+        margin: 0 auto;
+        padding: 48px 24px 80px;
+      }
 
-    header {
-      border-bottom: 3px solid #3a7d44;
-      padding-bottom: 24px;
-      margin-bottom: 40px;
-    }
+      header {
+        border-bottom: 3px solid #3a7d44;
+        padding-bottom: 24px;
+        margin-bottom: 40px;
+      }
 
-    header h1 {
-      font-size: 2rem;
-      font-weight: 700;
-      color: #3a7d44;
-    }
+      header h1 {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #3a7d44;
+      }
 
-    header p.subtitle {
-      margin-top: 6px;
-      color: #555;
-      font-size: 0.95rem;
-    }
+      header p.subtitle {
+        margin-top: 6px;
+        color: #555;
+        font-size: 0.95rem;
+      }
 
-    h2 {
-      font-size: 1.25rem;
-      font-weight: 700;
-      color: #2d6a37;
-      margin-top: 40px;
-      margin-bottom: 12px;
-    }
+      h2 {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #2d6a37;
+        margin-top: 40px;
+        margin-bottom: 12px;
+      }
 
-    p { margin-bottom: 14px; }
+      p {
+        margin-bottom: 14px;
+      }
 
-    ul, ol {
-      margin: 8px 0 14px 1.5rem;
-    }
+      ul,
+      ol {
+        margin: 8px 0 14px 1.5rem;
+      }
 
-    li { margin-bottom: 6px; }
+      li {
+        margin-bottom: 6px;
+      }
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin: 16px 0 24px;
-      font-size: 0.92rem;
-    }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 16px 0 24px;
+        font-size: 0.92rem;
+      }
 
-    th {
-      background: #3a7d44;
-      color: #fff;
-      text-align: left;
-      padding: 10px 14px;
-    }
+      th {
+        background: #3a7d44;
+        color: #fff;
+        text-align: left;
+        padding: 10px 14px;
+      }
 
-    td {
-      padding: 9px 14px;
-      border-bottom: 1px solid #ddd;
-      vertical-align: top;
-    }
+      td {
+        padding: 9px 14px;
+        border-bottom: 1px solid #ddd;
+        vertical-align: top;
+      }
 
-    tr:nth-child(even) td { background: #f2f8f3; }
+      tr:nth-child(even) td {
+        background: #f2f8f3;
+      }
 
-    .badge {
-      display: inline-block;
-      padding: 2px 8px;
-      border-radius: 12px;
-      font-size: 0.8rem;
-      font-weight: 600;
-    }
+      .badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        font-weight: 600;
+      }
 
-    .badge-no  { background: #e8f5e9; color: #2e7d32; }
-    .badge-yes { background: #fff3e0; color: #e65100; }
+      .badge-no {
+        background: #e8f5e9;
+        color: #2e7d32;
+      }
+      .badge-yes {
+        background: #fff3e0;
+        color: #e65100;
+      }
 
-    .highlight-box {
-      background: #e8f5e9;
-      border-left: 4px solid #3a7d44;
-      border-radius: 4px;
-      padding: 16px 20px;
-      margin: 24px 0;
-    }
+      .highlight-box {
+        background: #e8f5e9;
+        border-left: 4px solid #3a7d44;
+        border-radius: 4px;
+        padding: 16px 20px;
+        margin: 24px 0;
+      }
 
-    .highlight-box p { margin-bottom: 0; }
+      .highlight-box p {
+        margin-bottom: 0;
+      }
 
-    a { color: #3a7d44; }
-    a:hover { text-decoration: underline; }
+      a {
+        color: #3a7d44;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
 
-    footer {
-      margin-top: 56px;
-      padding-top: 24px;
-      border-top: 1px solid #ccc;
-      font-size: 0.88rem;
-      color: #666;
-    }
-  </style>
-</head>
-<body>
-  <div class="page">
+      footer {
+        margin-top: 56px;
+        padding-top: 24px;
+        border-top: 1px solid #ccc;
+        font-size: 0.88rem;
+        color: #666;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <header>
+        <h1>🌿 TouchGrass – Privacy Policy</h1>
+        <p class="subtitle">Last updated: 14 March 2025</p>
+      </header>
 
-    <header>
-      <h1>🌿 TouchGrass – Privacy Policy</h1>
-      <p class="subtitle">Last updated: 14 March 2025</p>
-    </header>
+      <div class="highlight-box">
+        <p>
+          <strong>Short version:</strong> TouchGrass stores all your personal data (location
+          history, health data, outdoor sessions) exclusively on your own device. We do not have
+          servers. We do not collect, transmit, or sell your personal information.
+        </p>
+      </div>
 
-    <div class="highlight-box">
-      <p><strong>Short version:</strong> TouchGrass stores all your personal data (location history, health data, outdoor sessions) exclusively on your own device. We do not have servers. We do not collect, transmit, or sell your personal information.</p>
+      <h2>1. Introduction</h2>
+      <p>
+        TouchGrass ("the app", "we", "our") is a mobile application that encourages you to spend
+        more time outdoors. It automatically tracks outdoor sessions using GPS and Health Connect,
+        lets you set daily/weekly goals, sends smart reminders, and shows your progress over time.
+      </p>
+      <p>
+        This Privacy Policy explains what data the app processes, why, and how it is protected. By
+        using TouchGrass you agree to the practices described below.
+      </p>
+
+      <h2>2. Data We Process</h2>
+      <p>
+        The table below lists every type of data the app accesses, its purpose, and whether it
+        leaves your device.
+      </p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Data type</th>
+            <th>Purpose</th>
+            <th>Shared externally?</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>GPS / background location</td>
+            <td>Detecting when you are outdoors and recording outdoor session durations</td>
+            <td><span class="badge badge-no">❌ No</span></td>
+          </tr>
+          <tr>
+            <td>Health Connect data<br /><em>(steps, exercise, calories, distance)</em></td>
+            <td>Supplementing outdoor activity tracking with health sensor data</td>
+            <td><span class="badge badge-no">❌ No</span></td>
+          </tr>
+          <tr>
+            <td>Calendar data</td>
+            <td>
+              Reading free/busy slots to schedule smart reminders at convenient times; writing
+              reminder events to your calendar
+            </td>
+            <td><span class="badge badge-no">❌ No</span></td>
+          </tr>
+          <tr>
+            <td>Approximate GPS coordinates</td>
+            <td>
+              Fetching a local weather forecast from the Open-Meteo API to enhance outdoor detection
+              accuracy
+            </td>
+            <td><span class="badge badge-yes">Lat/lon only — sent to Open-Meteo</span></td>
+          </tr>
+          <tr>
+            <td>Notification preferences</td>
+            <td>Scheduling and personalising reminder notifications</td>
+            <td><span class="badge badge-no">❌ No</span></td>
+          </tr>
+          <tr>
+            <td>App settings &amp; goal data</td>
+            <td>Storing your daily/weekly outdoor-time goals and user preferences</td>
+            <td><span class="badge badge-no">❌ No</span></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>3. On-Device Storage</h2>
+      <p>
+        All personal data — including your location history, outdoor sessions, health activity
+        records, and app settings — is stored exclusively in a local SQLite database on your device.
+        This data never leaves your device except as described in Section 4 (weather API).
+      </p>
+      <p>We operate no backend servers, user accounts, cloud sync, or analytics pipeline.</p>
+
+      <h2>4. Weather Data (Open-Meteo)</h2>
+      <p>
+        To improve outdoor detection accuracy, the app may send your
+        <strong>approximate GPS coordinates</strong> (latitude and longitude) to the
+        <a href="https://open-meteo.com" target="_blank" rel="noopener noreferrer"
+          >Open-Meteo API</a
+        >
+        to retrieve a local weather forecast. No other personal information is included in these
+        requests.
+      </p>
+      <p>
+        Open-Meteo is a free, open-source weather API that does not require an API key and does not
+        store user data. You can review their privacy practices at
+        <a href="https://open-meteo.com/en/terms" target="_blank" rel="noopener noreferrer"
+          >open-meteo.com/en/terms</a
+        >.
+      </p>
+
+      <h2>5. No Advertising or Analytics SDKs</h2>
+      <p>TouchGrass contains:</p>
+      <ul>
+        <li>No advertising SDKs</li>
+        <li>No analytics or crash-reporting services (e.g. Firebase, Crashlytics, Sentry)</li>
+        <li>No third-party tracking or attribution libraries</li>
+        <li>No in-app purchases or payment processors</li>
+      </ul>
+
+      <h2>6. Voluntary Feedback via Google Forms</h2>
+      <p>
+        The app may provide a link to an optional feedback form hosted on Google Forms. Submitting
+        feedback is entirely voluntary. Any information you provide through Google Forms is handled
+        by Google LLC under their own privacy policy. We encourage you to review
+        <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer"
+          >Google's Privacy Policy</a
+        >
+        before submitting feedback.
+      </p>
+
+      <h2>7. Permissions We Request</h2>
+      <ul>
+        <li>
+          <strong>Location (foreground &amp; background):</strong> Required to detect whether you
+          are currently outdoors.
+        </li>
+        <li>
+          <strong>Health Connect / Activity Recognition:</strong> Required to read step counts and
+          exercise session data for activity tracking.
+        </li>
+        <li>
+          <strong>Calendar (read &amp; write):</strong> Required to schedule outdoor-time reminders
+          around your existing calendar events.
+        </li>
+        <li>
+          <strong>Notifications:</strong> Required to deliver smart reminders encouraging you to go
+          outside.
+        </li>
+      </ul>
+      <p>
+        Each permission is requested only when the relevant feature is first used. You may revoke
+        any permission at any time through your device's Settings. Revoking a permission disables
+        the corresponding feature but does not affect other app functionality.
+      </p>
+
+      <h2>8. Your Right to Delete Your Data</h2>
+      <p>You can permanently delete all data stored by TouchGrass at any time:</p>
+      <ol>
+        <li>Open the TouchGrass app.</li>
+        <li>Go to <strong>Settings</strong>.</li>
+        <li>Tap <strong>Clear Data</strong> and confirm.</li>
+      </ol>
+      <p>
+        This action is irreversible and removes all outdoor sessions, settings, goals, and
+        notification history from your device. Uninstalling the app will also remove all locally
+        stored data.
+      </p>
+
+      <h2>9. Children's Privacy</h2>
+      <p>
+        TouchGrass is not directed at children under the age of 13. We do not knowingly collect
+        personal information from children. If you believe your child has provided information
+        through the app, please contact us at the address below.
+      </p>
+
+      <h2>10. Changes to This Policy</h2>
+      <p>
+        We may update this Privacy Policy from time to time to reflect changes in the app's
+        functionality. The "Last updated" date at the top of this page will be revised accordingly.
+        Continued use of the app after an update constitutes acceptance of the revised policy.
+      </p>
+
+      <h2>11. Contact</h2>
+      <p>
+        If you have questions or concerns about this Privacy Policy or your data, please contact
+        through our <a href="https://forms.gle/izrWxTmjgXGBgsLb7">Feedback form</a>
+      </p>
+
+      <footer>
+        <p>© 2025 TouchGrass. All rights reserved.</p>
+      </footer>
     </div>
-
-    <h2>1. Introduction</h2>
-    <p>TouchGrass ("the app", "we", "our") is a mobile application that encourages you to spend more time outdoors. It automatically tracks outdoor sessions using GPS and Health Connect, lets you set daily/weekly goals, sends smart reminders, and shows your progress over time.</p>
-    <p>This Privacy Policy explains what data the app processes, why, and how it is protected. By using TouchGrass you agree to the practices described below.</p>
-
-    <h2>2. Data We Process</h2>
-    <p>The table below lists every type of data the app accesses, its purpose, and whether it leaves your device.</p>
-
-    <table>
-      <thead>
-        <tr>
-          <th>Data type</th>
-          <th>Purpose</th>
-          <th>Shared externally?</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>GPS / background location</td>
-          <td>Detecting when you are outdoors and recording outdoor session durations</td>
-          <td><span class="badge badge-no">❌ No</span></td>
-        </tr>
-        <tr>
-          <td>Health Connect data<br /><em>(steps, exercise, calories, distance)</em></td>
-          <td>Supplementing outdoor activity tracking with health sensor data</td>
-          <td><span class="badge badge-no">❌ No</span></td>
-        </tr>
-        <tr>
-          <td>Calendar data</td>
-          <td>Reading free/busy slots to schedule smart reminders at convenient times; writing reminder events to your calendar</td>
-          <td><span class="badge badge-no">❌ No</span></td>
-        </tr>
-        <tr>
-          <td>Approximate GPS coordinates</td>
-          <td>Fetching a local weather forecast from the Open-Meteo API to enhance outdoor detection accuracy</td>
-          <td><span class="badge badge-yes">Lat/lon only — sent to Open-Meteo</span></td>
-        </tr>
-        <tr>
-          <td>Notification preferences</td>
-          <td>Scheduling and personalising reminder notifications</td>
-          <td><span class="badge badge-no">❌ No</span></td>
-        </tr>
-        <tr>
-          <td>App settings &amp; goal data</td>
-          <td>Storing your daily/weekly outdoor-time goals and user preferences</td>
-          <td><span class="badge badge-no">❌ No</span></td>
-        </tr>
-      </tbody>
-    </table>
-
-    <h2>3. On-Device Storage</h2>
-    <p>All personal data — including your location history, outdoor sessions, health activity records, and app settings — is stored exclusively in a local SQLite database on your device. This data never leaves your device except as described in Section 4 (weather API).</p>
-    <p>We operate no backend servers, user accounts, cloud sync, or analytics pipeline.</p>
-
-    <h2>4. Weather Data (Open-Meteo)</h2>
-    <p>To improve outdoor detection accuracy, the app may send your <strong>approximate GPS coordinates</strong> (latitude and longitude) to the <a href="https://open-meteo.com" target="_blank" rel="noopener noreferrer">Open-Meteo API</a> to retrieve a local weather forecast. No other personal information is included in these requests.</p>
-    <p>Open-Meteo is a free, open-source weather API that does not require an API key and does not store user data. You can review their privacy practices at <a href="https://open-meteo.com/en/terms" target="_blank" rel="noopener noreferrer">open-meteo.com/en/terms</a>.</p>
-
-    <h2>5. No Advertising or Analytics SDKs</h2>
-    <p>TouchGrass contains:</p>
-    <ul>
-      <li>No advertising SDKs</li>
-      <li>No analytics or crash-reporting services (e.g. Firebase, Crashlytics, Sentry)</li>
-      <li>No third-party tracking or attribution libraries</li>
-      <li>No in-app purchases or payment processors</li>
-    </ul>
-
-    <h2>6. Voluntary Feedback via Google Forms</h2>
-    <p>The app may provide a link to an optional feedback form hosted on Google Forms. Submitting feedback is entirely voluntary. Any information you provide through Google Forms is handled by Google LLC under their own privacy policy. We encourage you to review <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Google's Privacy Policy</a> before submitting feedback.</p>
-
-    <h2>7. Permissions We Request</h2>
-    <ul>
-      <li><strong>Location (foreground &amp; background):</strong> Required to detect whether you are currently outdoors.</li>
-      <li><strong>Health Connect / Activity Recognition:</strong> Required to read step counts and exercise session data for activity tracking.</li>
-      <li><strong>Calendar (read &amp; write):</strong> Required to schedule outdoor-time reminders around your existing calendar events.</li>
-      <li><strong>Notifications:</strong> Required to deliver smart reminders encouraging you to go outside.</li>
-    </ul>
-    <p>Each permission is requested only when the relevant feature is first used. You may revoke any permission at any time through your device's Settings. Revoking a permission disables the corresponding feature but does not affect other app functionality.</p>
-
-    <h2>8. Your Right to Delete Your Data</h2>
-    <p>You can permanently delete all data stored by TouchGrass at any time:</p>
-    <ol>
-      <li>Open the TouchGrass app.</li>
-      <li>Go to <strong>Settings</strong>.</li>
-      <li>Tap <strong>Clear Data</strong> and confirm.</li>
-    </ol>
-    <p>This action is irreversible and removes all outdoor sessions, settings, goals, and notification history from your device. Uninstalling the app will also remove all locally stored data.</p>
-
-    <h2>9. Children's Privacy</h2>
-    <p>TouchGrass is not directed at children under the age of 13. We do not knowingly collect personal information from children. If you believe your child has provided information through the app, please contact us at the address below.</p>
-
-    <h2>10. Changes to This Policy</h2>
-    <p>We may update this Privacy Policy from time to time to reflect changes in the app's functionality. The "Last updated" date at the top of this page will be revised accordingly. Continued use of the app after an update constitutes acceptance of the revised policy.</p>
-
-    <h2>11. Contact</h2>
-    <p>If you have questions or concerns about this Privacy Policy or your data, please contact through our <a href="https://forms.gle/izrWxTmjgXGBgsLb7">Feedback form</a></p>
-
-    <footer>
-      <p>© 2025 TouchGrass. All rights reserved.</p>
-    </footer>
-
-  </div>
-</body>
+  </body>
 </html>

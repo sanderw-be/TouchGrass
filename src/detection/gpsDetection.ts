@@ -2,18 +2,23 @@ import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager';
 import * as Notifications from 'expo-notifications';
 import {
-  getKnownLocations, getAllKnownLocations, upsertKnownLocation,
-  getSetting, setSetting, KnownLocation, initDatabase,
+  getKnownLocations,
+  getAllKnownLocations,
+  upsertKnownLocation,
+  getSetting,
+  setSetting,
+  KnownLocation,
+  initDatabase,
 } from '../storage/database';
 import { submitSession, buildSession } from './sessionMerger';
 import { t } from '../i18n';
-import { useImperialUnits, kmToMiles, kmhToMph } from '../utils/units';
+import { isImperialUnits, kmToMiles, kmhToMph } from '../utils/units';
 import { emitSessionsChanged } from '../utils/sessionsChangedEmitter';
 
 const GEOFENCE_TASK = 'TOUCHGRASS_GEOFENCE';
 const LOCATION_TRACK_TASK = 'TOUCHGRASS_LOCATION_TRACK';
 
-const CONFIDENCE_GPS_ONLY = 0.80;
+const CONFIDENCE_GPS_ONLY = 0.8;
 const CONFIDENCE_GPS_AND_ACTIVITY = 0.95;
 export const MIN_OUTSIDE_DURATION_MS = 5 * 60 * 1000;
 
@@ -93,7 +98,7 @@ export async function startLocationTracking(): Promise<void> {
   // Check if we already have permissions
   const { status: fg } = await Location.getForegroundPermissionsAsync();
   const { status: bg } = await Location.getBackgroundPermissionsAsync();
-  
+
   if (fg !== 'granted' || bg !== 'granted') {
     console.log('TouchGrass: GPS tracking not started - permissions not granted');
     return;
@@ -108,8 +113,8 @@ export async function startLocationTracking(): Promise<void> {
   console.log('TouchGrass: Starting GPS tracking with background notification');
   await Location.startLocationUpdatesAsync(LOCATION_TRACK_TASK, {
     accuracy: Location.Accuracy.Balanced,
-    timeInterval: 5 * 60 * 1000,      // every 5 minutes
-    distanceInterval: 100,              // or every 100 meters
+    timeInterval: 5 * 60 * 1000, // every 5 minutes
+    distanceInterval: 100, // or every 100 meters
     showsBackgroundLocationIndicator: false,
     foregroundService: {
       notificationTitle: 'TouchGrass',
@@ -137,7 +142,7 @@ export async function stopLocationTracking(): Promise<void> {
 export function isAtKnownIndoorLocation(
   lat: number,
   lon: number,
-  locations: KnownLocation[],
+  locations: KnownLocation[]
 ): boolean {
   return locations.some((loc) => {
     if (!loc.isIndoor) return false;
@@ -155,9 +160,9 @@ function buildGpsNotes(
   startLocationLabel: string | null,
   endLocationLabel: string | null,
   distanceMeters: number,
-  averageSpeedKmh: number,
+  averageSpeedKmh: number
 ): string {
-  const imperial = useImperialUnits();
+  const imperial = isImperialUnits();
   const distKm = distanceMeters / 1000;
   const dist = imperial ? kmToMiles(distKm).toFixed(1) : distKm.toFixed(1);
   const distUnit = imperial ? 'mi' : 'km';
@@ -166,15 +171,40 @@ function buildGpsNotes(
 
   if (startLocationLabel && endLocationLabel) {
     if (startLocationLabel === endLocationLabel) {
-      return t('session_notes_gps_left_returned', { start: startLocationLabel, dist, distUnit, speed, speedUnit });
+      return t('session_notes_gps_left_returned', {
+        start: startLocationLabel,
+        dist,
+        distUnit,
+        speed,
+        speedUnit,
+      });
     }
-    return t('session_notes_gps_left_went', { start: startLocationLabel, end: endLocationLabel, dist, distUnit, speed, speedUnit });
+    return t('session_notes_gps_left_went', {
+      start: startLocationLabel,
+      end: endLocationLabel,
+      dist,
+      distUnit,
+      speed,
+      speedUnit,
+    });
   }
   if (startLocationLabel) {
-    return t('session_notes_gps_left', { start: startLocationLabel, dist, distUnit, speed, speedUnit });
+    return t('session_notes_gps_left', {
+      start: startLocationLabel,
+      dist,
+      distUnit,
+      speed,
+      speedUnit,
+    });
   }
   if (endLocationLabel) {
-    return t('session_notes_gps_returned', { end: endLocationLabel, dist, distUnit, speed, speedUnit });
+    return t('session_notes_gps_returned', {
+      end: endLocationLabel,
+      dist,
+      distUnit,
+      speed,
+      speedUnit,
+    });
   }
   return t('session_notes_gps_no_location', { dist, distUnit, speed, speedUnit });
 }
@@ -183,7 +213,12 @@ function buildGpsNotes(
  * Process a new location update.
  * Called by the background task.
  */
-export function processLocationUpdate(lat: number, lon: number, timestamp: number, speedMs?: number): void {
+export function processLocationUpdate(
+  lat: number,
+  lon: number,
+  timestamp: number,
+  speedMs?: number
+): void {
   loadGPSState();
 
   const knownLocations = getKnownLocations();
@@ -208,8 +243,11 @@ export function processLocationUpdate(lat: number, lon: number, timestamp: numbe
 
   if (isOutside && !lastKnownOutside) {
     // Just went outside — record the departure location label if available.
-    const departureLocation = knownLocations.find(loc =>
-      loc.isIndoor && haversineDistance(lat, lon, loc.latitude, loc.longitude) <= loc.radiusMeters * DEPARTURE_LOCATION_RADIUS_MULTIPLIER,
+    const departureLocation = knownLocations.find(
+      (loc) =>
+        loc.isIndoor &&
+        haversineDistance(lat, lon, loc.latitude, loc.longitude) <=
+          loc.radiusMeters * DEPARTURE_LOCATION_RADIUS_MULTIPLIER
     );
     gpsSessionStartLocationLabel = departureLocation?.label ?? null;
     outsideSessionStart = timestamp;
@@ -221,19 +259,22 @@ export function processLocationUpdate(lat: number, lon: number, timestamp: numbe
   } else if (!isOutside && lastKnownOutside && outsideSessionStart !== null) {
     // Just came back inside
     const duration = timestamp - outsideSessionStart;
-    const matchedLocation = knownLocations.find(loc =>
-      // Recompute the matched location solely for the debug log label.
-      loc.isIndoor && haversineDistance(lat, lon, loc.latitude, loc.longitude) <= loc.radiusMeters,
+    const matchedLocation = knownLocations.find(
+      (loc) =>
+        // Recompute the matched location solely for the debug log label.
+        loc.isIndoor && haversineDistance(lat, lon, loc.latitude, loc.longitude) <= loc.radiusMeters
     );
     const locationLabel = matchedLocation?.label || `(${lat.toFixed(4)}, ${lon.toFixed(4)})`;
-    console.log(`TouchGrass: GPS update - at known location "${locationLabel}", ended outside session of ${Math.round(duration / 60000)} min`);
+    console.log(
+      `TouchGrass: GPS update - at known location "${locationLabel}", ended outside session of ${Math.round(duration / 60000)} min`
+    );
     if (duration >= MIN_OUTSIDE_DURATION_MS) {
       const avgSpeed = gpsSessionSpeedCount > 0 ? gpsSessionSpeedSum / gpsSessionSpeedCount : 0;
       const notes = buildGpsNotes(
         gpsSessionStartLocationLabel,
         matchedLocation?.label ?? null,
         gpsSessionDistanceMeters,
-        avgSpeed,
+        avgSpeed
       );
       const session = buildSession(
         outsideSessionStart,
@@ -243,7 +284,7 @@ export function processLocationUpdate(lat: number, lon: number, timestamp: numbe
         notes,
         undefined,
         gpsSessionDistanceMeters > 0 ? gpsSessionDistanceMeters : undefined,
-        gpsSessionSpeedCount > 0 ? gpsSessionSpeedSum / gpsSessionSpeedCount : undefined,
+        gpsSessionSpeedCount > 0 ? gpsSessionSpeedSum / gpsSessionSpeedCount : undefined
       );
       submitSession(session);
       emitSessionsChanged();
@@ -259,14 +300,16 @@ export function processLocationUpdate(lat: number, lon: number, timestamp: numbe
     // Flush periodically so sessions are logged even when no known indoor
     // locations exist to trigger the normal transition-based completion.
     const duration = timestamp - outsideSessionStart;
-    console.log(`TouchGrass: GPS update - still outside, current session length: ${Math.round(duration / 60000)} min`);
+    console.log(
+      `TouchGrass: GPS update - still outside, current session length: ${Math.round(duration / 60000)} min`
+    );
     if (duration >= MIN_OUTSIDE_DURATION_MS) {
       const avgSpeed = gpsSessionSpeedCount > 0 ? gpsSessionSpeedSum / gpsSessionSpeedCount : 0;
       const notes = buildGpsNotes(
         gpsSessionStartLocationLabel,
         null,
         gpsSessionDistanceMeters,
-        avgSpeed,
+        avgSpeed
       );
       const session = buildSession(
         outsideSessionStart,
@@ -276,7 +319,7 @@ export function processLocationUpdate(lat: number, lon: number, timestamp: numbe
         notes,
         undefined,
         gpsSessionDistanceMeters > 0 ? gpsSessionDistanceMeters : undefined,
-        gpsSessionSpeedCount > 0 ? gpsSessionSpeedSum / gpsSessionSpeedCount : undefined,
+        gpsSessionSpeedCount > 0 ? gpsSessionSpeedSum / gpsSessionSpeedCount : undefined
       );
       submitSession(session);
       emitSessionsChanged();
@@ -318,9 +361,10 @@ export async function autoDetectLocations(): Promise<void> {
 
     // Threshold depends on whether active known locations already exist
     const existingActive = getKnownLocations();
-    const thresholdMs = existingActive.length === 0
-      ? 2 * 60 * 60 * 1000   // 2 hours when no known locations
-      : 10 * 60 * 60 * 1000; // 10 hours when known locations exist
+    const thresholdMs =
+      existingActive.length === 0
+        ? 2 * 60 * 60 * 1000 // 2 hours when no known locations
+        : 10 * 60 * 60 * 1000; // 10 hours when known locations exist
 
     const allLocations = getAllKnownLocations();
 
@@ -328,14 +372,19 @@ export async function autoDetectLocations(): Promise<void> {
       if (cluster.totalDwellMs < thresholdMs) continue;
 
       // Skip if this place is already known (active or suggested)
-      const alreadyKnown = allLocations.some(loc =>
-        haversineDistance(loc.latitude, loc.longitude, cluster.lat, cluster.lon) <= loc.radiusMeters
+      const alreadyKnown = allLocations.some(
+        (loc) =>
+          haversineDistance(loc.latitude, loc.longitude, cluster.lat, cluster.lon) <=
+          loc.radiusMeters
       );
       if (alreadyKnown) continue;
 
       // Insert as a suggested location with an empty label (displayed as default at render time)
       // Use the user's chosen default suggestion radius (falls back to CLUSTER_DETECTION_RADIUS_M)
-      const suggestionRadius = parseInt(getSetting('location_suggestion_radius', String(CLUSTER_DETECTION_RADIUS_M)), 10);
+      const suggestionRadius = parseInt(
+        getSetting('location_suggestion_radius', String(CLUSTER_DETECTION_RADIUS_M)),
+        10
+      );
       upsertKnownLocation({
         label: '',
         latitude: cluster.lat,
@@ -513,7 +562,7 @@ TaskManager.defineTask(LOCATION_TRACK_TASK, async ({ data, error }: any) => {
       loc.coords.latitude,
       loc.coords.longitude,
       loc.timestamp,
-      loc.coords.speed ?? undefined,
+      loc.coords.speed ?? undefined
     );
     // Run dwell-based location suggestion after processing
     await autoDetectLocations();

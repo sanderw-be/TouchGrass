@@ -36,13 +36,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   };
 
   const isDark =
-    themePreference === 'dark' ||
-    (themePreference === 'system' && systemColorScheme === 'dark');
+    themePreference === 'dark' || (themePreference === 'system' && systemColorScheme === 'dark');
 
   const activeColors = isDark ? darkColors : lightColors;
 
   return (
-    <ThemeContext.Provider value={{ colors: activeColors, isDark, themePreference, setThemePreference }}>
+    <ThemeContext.Provider
+      value={{ colors: activeColors, isDark, themePreference, setThemePreference }}
+    >
       {children}
     </ThemeContext.Provider>
   );

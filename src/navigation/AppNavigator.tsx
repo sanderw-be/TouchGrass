@@ -39,7 +39,14 @@ const SettingsStack = createStackNavigator<SettingsStackParamList>();
 function ScreenFallback() {
   const { colors } = useTheme();
   return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.mist }}>
+    <View
+      style={{
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: colors.mist,
+      }}
+    >
       <ActivityIndicator color={colors.grass} />
     </View>
   );
@@ -69,10 +76,7 @@ function GoalsStackNavigator() {
         component={GoalsScreen}
         options={{ headerShown: false }}
       />
-      <GoalsStack.Screen
-        name="WeatherSettings"
-        options={{ title: t('nav_weather_settings') }}
-      >
+      <GoalsStack.Screen name="WeatherSettings" options={{ title: t('nav_weather_settings') }}>
         {() => (
           <Suspense fallback={<ScreenFallback />}>
             <WeatherSettingsScreen />
@@ -109,20 +113,14 @@ function SettingsStackNavigator() {
         component={SettingsScreen}
         options={{ headerShown: false }}
       />
-      <SettingsStack.Screen
-        name="KnownLocations"
-        options={{ title: t('nav_known_locations') }}
-      >
+      <SettingsStack.Screen name="KnownLocations" options={{ title: t('nav_known_locations') }}>
         {() => (
           <Suspense fallback={<ScreenFallback />}>
             <KnownLocationsScreen />
           </Suspense>
         )}
       </SettingsStack.Screen>
-      <SettingsStack.Screen
-        name="FeedbackSupport"
-        options={{ title: t('nav_feedback_support') }}
-      >
+      <SettingsStack.Screen name="FeedbackSupport" options={{ title: t('nav_feedback_support') }}>
         {() => (
           <Suspense fallback={<ScreenFallback />}>
             <FeedbackSupportScreen />
@@ -168,16 +166,8 @@ function TabNavigator() {
         component={HomeScreen}
         options={{ title: t('nav_home'), headerTitle: '🌱 TouchGrass' }}
       />
-      <Tab.Screen
-        name="Events"
-        component={EventsScreen}
-        options={{ title: t('nav_events') }}
-      />
-      <Tab.Screen
-        name="History"
-        component={HistoryScreen}
-        options={{ title: t('nav_history') }}
-      />
+      <Tab.Screen name="Events" component={EventsScreen} options={{ title: t('nav_events') }} />
+      <Tab.Screen name="History" component={HistoryScreen} options={{ title: t('nav_history') }} />
       <Tab.Screen
         name="Goals"
         component={GoalsStackNavigator}

@@ -5,17 +5,17 @@ const db = SQLite.openDatabaseSync('touchgrass.db');
 
 export interface OutsideSession {
   id?: number;
-  startTime: number;       // unix timestamp ms
-  endTime: number;         // unix timestamp ms
+  startTime: number; // unix timestamp ms
+  endTime: number; // unix timestamp ms
   durationMinutes: number;
   source: 'health_connect' | 'gps' | 'manual' | 'timeline';
-  confidence: number;      // 0-1, how sure are we this was outside?
-  userConfirmed: number | null;  // 0, 1, or null — SQLite has no boolean, null = not reviewed, true/false = user feedback
+  confidence: number; // 0-1, how sure are we this was outside?
+  userConfirmed: number | null; // 0, 1, or null — SQLite has no boolean, null = not reviewed, true/false = user feedback
   notes?: string;
-  steps?: number;          // aggregated step count from Health Connect steps records
+  steps?: number; // aggregated step count from Health Connect steps records
   distanceMeters?: number; // total GPS distance travelled in metres
   averageSpeedKmh?: number; // average speed during the session in km/h
-  discarded: number;       // 1 = algorithmically discarded (too unreliable to propose), 0 = normal session
+  discarded: number; // 1 = algorithmically discarded (too unreliable to propose), 0 = normal session
 }
 
 export interface DailyGoal {
@@ -34,28 +34,28 @@ export interface ReminderFeedback {
   id?: number;
   timestamp: number;
   action: 'snoozed' | 'dismissed' | 'went_outside' | 'less_often' | 'more_often' | 'bad_time';
-  scheduledHour: number;   // 0-23, what hour the reminder fired
+  scheduledHour: number; // 0-23, what hour the reminder fired
   scheduledMinute: number; // 0 or 30, which half-hour slot the reminder fired in
-  dayOfWeek: number;       // 0-6
+  dayOfWeek: number; // 0-6
 }
 
 export interface KnownLocation {
   id?: number;
-  label: string;           // 'home', 'work', or custom
+  label: string; // 'home', 'work', or custom
   latitude: number;
   longitude: number;
   radiusMeters: number;
   isIndoor: boolean;
-  status: 'active' | 'suggested';  // 'suggested' = pending user approval
+  status: 'active' | 'suggested'; // 'suggested' = pending user approval
 }
 
 export interface ScheduledNotification {
   id?: number;
-  hour: number;            // 0-23
-  minute: number;          // 0-59
-  daysOfWeek: number[];    // 0-6, Sunday=0
-  enabled: number;         // 0 or 1 (SQLite boolean)
-  label: string;           // optional label like "Morning walk"
+  hour: number; // 0-23
+  minute: number; // 0-59
+  daysOfWeek: number[]; // 0-6, Sunday=0
+  enabled: number; // 0 or 1 (SQLite boolean)
+  label: string; // optional label like "Morning walk"
 }
 
 export function initDatabase(): void {
@@ -142,18 +142,16 @@ export function initDatabase(): void {
   `);
 
   // Seed default goals if none exist
-  const goalCount = db.getFirstSync<{ count: number }>(
-    'SELECT COUNT(*) as count FROM daily_goals'
-  );
+  const goalCount = db.getFirstSync<{ count: number }>('SELECT COUNT(*) as count FROM daily_goals');
   if (goalCount?.count === 0) {
-    db.runSync(
-      'INSERT INTO daily_goals (targetMinutes, createdAt) VALUES (?, ?)',
-      [30, Date.now()]
-    );
-    db.runSync(
-      'INSERT INTO weekly_goals (targetMinutes, createdAt) VALUES (?, ?)',
-      [150, Date.now()]
-    );
+    db.runSync('INSERT INTO daily_goals (targetMinutes, createdAt) VALUES (?, ?)', [
+      30,
+      Date.now(),
+    ]);
+    db.runSync('INSERT INTO weekly_goals (targetMinutes, createdAt) VALUES (?, ?)', [
+      150,
+      Date.now(),
+    ]);
   }
 
   // Seed default settings that must be readable by the background task before
@@ -162,12 +160,14 @@ export function initDatabase(): void {
   db.runSync(
     "INSERT OR IGNORE INTO app_settings (key, value) VALUES ('smart_reminders_count', '2'), ('weather_enabled', '1')"
   );
-  
+
   // Clean up any corrupted scheduled notifications (one-time migration)
   try {
     const deletedCount = cleanupInvalidScheduledNotifications();
     if (deletedCount > 0) {
-      console.log(`Database migration: Removed ${deletedCount} corrupted scheduled notification(s)`);
+      console.log(
+        `Database migration: Removed ${deletedCount} corrupted scheduled notification(s)`
+      );
     }
   } catch (error) {
     console.error('Error cleaning up scheduled notifications:', error);
@@ -199,7 +199,9 @@ export function initDatabase(): void {
 
   // Add scheduledMinute column to reminder_feedback if it doesn't exist (migration)
   try {
-    db.execSync(`ALTER TABLE reminder_feedback ADD COLUMN scheduledMinute INTEGER NOT NULL DEFAULT 0`);
+    db.execSync(
+      `ALTER TABLE reminder_feedback ADD COLUMN scheduledMinute INTEGER NOT NULL DEFAULT 0`
+    );
     console.log('Database migration: Added scheduledMinute column to reminder_feedback');
   } catch {
     // Column already exists — safe to ignore
@@ -301,14 +303,14 @@ export function getDailyTotalsForMonth(dateMs: number): { date: number; minutes:
      ORDER BY day ASC`,
     [start, end]
   );
-  return rows.map(r => ({ date: r.day, minutes: r.minutes }));
+  return rows.map((r) => ({ date: r.day, minutes: r.minutes }));
 }
 
 export function confirmSession(id: number, confirmed: boolean | null): void {
-  db.runSync(
-    'UPDATE outside_sessions SET userConfirmed = ? WHERE id = ?',
-    [confirmed === null ? null : (confirmed ? 1 : 0), id]
-  );
+  db.runSync('UPDATE outside_sessions SET userConfirmed = ? WHERE id = ?', [
+    confirmed === null ? null : confirmed ? 1 : 0,
+    id,
+  ]);
 }
 
 export function getUnreviewedSessions(): OutsideSession[] {
@@ -364,10 +366,7 @@ export function getAllSessionsIncludingDiscarded(fromMs: number, toMs: number): 
  * Sets discarded = 0 and userConfirmed = null so it surfaces in the Standard tab for review.
  */
 export function unDiscardSession(id: number): void {
-  db.runSync(
-    'UPDATE outside_sessions SET discarded = 0, userConfirmed = NULL WHERE id = ?',
-    [id]
-  );
+  db.runSync('UPDATE outside_sessions SET discarded = 0, userConfirmed = NULL WHERE id = ?', [id]);
 }
 
 /**
@@ -403,7 +402,7 @@ export function updateSessionTimes(id: number, startTime: number, endTime: numbe
  */
 export function pruneShortDiscardedHealthConnectSessions(
   beforeMs: number,
-  minStepsPerMinute: number,
+  minStepsPerMinute: number
 ): number {
   const result = db.runSync(
     `DELETE FROM outside_sessions
@@ -422,29 +421,25 @@ export function pruneShortDiscardedHealthConnectSessions(
 // ── Goals ─────────────────────────────────────────────────
 
 export function getCurrentDailyGoal(): DailyGoal | null {
-  return db.getFirstSync<DailyGoal>(
-    'SELECT * FROM daily_goals ORDER BY createdAt DESC LIMIT 1'
-  );
+  return db.getFirstSync<DailyGoal>('SELECT * FROM daily_goals ORDER BY createdAt DESC LIMIT 1');
 }
 
 export function getCurrentWeeklyGoal(): WeeklyGoal | null {
-  return db.getFirstSync<WeeklyGoal>(
-    'SELECT * FROM weekly_goals ORDER BY createdAt DESC LIMIT 1'
-  );
+  return db.getFirstSync<WeeklyGoal>('SELECT * FROM weekly_goals ORDER BY createdAt DESC LIMIT 1');
 }
 
 export function setDailyGoal(minutes: number): void {
-  db.runSync(
-    'INSERT INTO daily_goals (targetMinutes, createdAt) VALUES (?, ?)',
-    [minutes, Date.now()]
-  );
+  db.runSync('INSERT INTO daily_goals (targetMinutes, createdAt) VALUES (?, ?)', [
+    minutes,
+    Date.now(),
+  ]);
 }
 
 export function setWeeklyGoal(minutes: number): void {
-  db.runSync(
-    'INSERT INTO weekly_goals (targetMinutes, createdAt) VALUES (?, ?)',
-    [minutes, Date.now()]
-  );
+  db.runSync('INSERT INTO weekly_goals (targetMinutes, createdAt) VALUES (?, ?)', [
+    minutes,
+    Date.now(),
+  ]);
 }
 
 // ── Reminder feedback ─────────────────────────────────────
@@ -469,7 +464,9 @@ export function getReminderFeedback(): ReminderFeedback[] {
 // ── Known locations ───────────────────────────────────────
 
 export function getKnownLocations(): KnownLocation[] {
-  return db.getAllSync<any>('SELECT * FROM known_locations WHERE status = ?', ['active']).map(mapLocation);
+  return db
+    .getAllSync<any>('SELECT * FROM known_locations WHERE status = ?', ['active'])
+    .map(mapLocation);
 }
 
 export function getAllKnownLocations(): KnownLocation[] {
@@ -477,7 +474,9 @@ export function getAllKnownLocations(): KnownLocation[] {
 }
 
 export function getSuggestedLocations(): KnownLocation[] {
-  return db.getAllSync<any>('SELECT * FROM known_locations WHERE status = ?', ['suggested']).map(mapLocation);
+  return db
+    .getAllSync<any>('SELECT * FROM known_locations WHERE status = ?', ['suggested'])
+    .map(mapLocation);
 }
 
 function mapLocation(row: any): KnownLocation {
@@ -497,7 +496,15 @@ export function upsertKnownLocation(loc: KnownLocation): void {
   if (loc.id) {
     db.runSync(
       `UPDATE known_locations SET label=?, latitude=?, longitude=?, radiusMeters=?, isIndoor=?, status=? WHERE id=?`,
-      [loc.label, loc.latitude, loc.longitude, loc.radiusMeters, loc.isIndoor ? 1 : 0, status, loc.id]
+      [
+        loc.label,
+        loc.latitude,
+        loc.longitude,
+        loc.radiusMeters,
+        loc.isIndoor ? 1 : 0,
+        status,
+        loc.id,
+      ]
     );
   } else {
     db.runSync(
@@ -508,10 +515,7 @@ export function upsertKnownLocation(loc: KnownLocation): void {
 }
 
 export function approveKnownLocation(id: number, label: string): void {
-  db.runSync(
-    `UPDATE known_locations SET status='active', label=? WHERE id=?`,
-    [label, id]
-  );
+  db.runSync(`UPDATE known_locations SET status='active', label=? WHERE id=?`, [label, id]);
 }
 
 export function denyKnownLocation(id: number): void {
@@ -525,45 +529,39 @@ export function deleteKnownLocation(id: number): void {
 // ── Settings ──────────────────────────────────────────────
 
 export function getSetting(key: string, fallback: string): string {
-  const row = db.getFirstSync<{ value: string }>(
-    'SELECT value FROM app_settings WHERE key = ?', [key]
-  );
+  const row = db.getFirstSync<{ value: string }>('SELECT value FROM app_settings WHERE key = ?', [
+    key,
+  ]);
   return row?.value ?? fallback;
 }
 
 export function setSetting(key: string, value: string): void {
-  db.runSync(
-    'INSERT OR REPLACE INTO app_settings (key, value) VALUES (?, ?)',
-    [key, value]
-  );
+  db.runSync('INSERT OR REPLACE INTO app_settings (key, value) VALUES (?, ?)', [key, value]);
 }
 
 // ── Clear all data ────────────────────────────────────────
 
 export function clearAllData(): void {
   console.log('[Database] Clearing all data...');
-  
+
   // Delete all sessions
   db.runSync('DELETE FROM outside_sessions');
-  
+
   // Delete reminder feedback
   db.runSync('DELETE FROM reminder_feedback');
-  
+
   // Reset goals to defaults
   db.runSync('DELETE FROM daily_goals');
   db.runSync('DELETE FROM weekly_goals');
-  db.runSync(
-    'INSERT INTO daily_goals (targetMinutes, createdAt) VALUES (?, ?)',
-    [30, Date.now()]
-  );
-  db.runSync(
-    'INSERT INTO weekly_goals (targetMinutes, createdAt) VALUES (?, ?)',
-    [150, Date.now()]
-  );
-  
+  db.runSync('INSERT INTO daily_goals (targetMinutes, createdAt) VALUES (?, ?)', [30, Date.now()]);
+  db.runSync('INSERT INTO weekly_goals (targetMinutes, createdAt) VALUES (?, ?)', [
+    150,
+    Date.now(),
+  ]);
+
   // Clear non-essential settings (keep language only; hasCompletedIntro is reset so tutorial shows again)
   db.runSync('DELETE FROM app_settings WHERE key NOT IN (?)', ['language']);
-  
+
   console.log('[Database] All data cleared successfully');
 }
 
@@ -627,8 +625,8 @@ export function getWeatherConditionsForHour(
      ORDER BY forecastHour ASC`,
     [forecastDate, startHour, endHour]
   );
-  
-  return rows.map(row => ({
+
+  return rows.map((row) => ({
     id: row.id,
     timestamp: row.timestamp,
     forecastHour: row.forecastHour,
@@ -652,9 +650,7 @@ export function saveWeatherCache(cache: WeatherCache): void {
 }
 
 export function getWeatherCache(): WeatherCache | null {
-  return db.getFirstSync<WeatherCache>(
-    'SELECT * FROM weather_cache WHERE id = 1'
-  );
+  return db.getFirstSync<WeatherCache>('SELECT * FROM weather_cache WHERE id = 1');
 }
 
 export function clearExpiredWeatherData(now: number): void {
@@ -667,7 +663,7 @@ export function clearExpiredWeatherData(now: number): void {
 
 export function getScheduledNotifications(): ScheduledNotification[] {
   const rows = db.getAllSync<any>('SELECT * FROM scheduled_notifications ORDER BY hour, minute');
-  return rows.map(row => ({
+  return rows.map((row) => ({
     id: row.id,
     hour: row.hour,
     minute: row.minute,
@@ -682,12 +678,14 @@ export function getScheduledNotifications(): ScheduledNotification[] {
   }));
 }
 
-export function insertScheduledNotification(notification: Omit<ScheduledNotification, 'id'>): number {
+export function insertScheduledNotification(
+  notification: Omit<ScheduledNotification, 'id'>
+): number {
   // Validate daysOfWeek is not empty
   if (!notification.daysOfWeek || notification.daysOfWeek.length === 0) {
     throw new Error('Cannot insert scheduled notification without any days selected');
   }
-  
+
   const result = db.runSync(
     'INSERT INTO scheduled_notifications (hour, minute, daysOfWeek, enabled, label) VALUES (?, ?, ?, ?, ?)',
     [
@@ -703,12 +701,12 @@ export function insertScheduledNotification(notification: Omit<ScheduledNotifica
 
 export function updateScheduledNotification(notification: ScheduledNotification): void {
   if (!notification.id) throw new Error('Cannot update notification without id');
-  
+
   // Validate daysOfWeek is not empty
   if (!notification.daysOfWeek || notification.daysOfWeek.length === 0) {
     throw new Error('Cannot update scheduled notification without any days selected');
   }
-  
+
   db.runSync(
     'UPDATE scheduled_notifications SET hour=?, minute=?, daysOfWeek=?, enabled=?, label=? WHERE id=?',
     [
@@ -727,10 +725,7 @@ export function deleteScheduledNotification(id: number): void {
 }
 
 export function toggleScheduledNotification(id: number, enabled: boolean): void {
-  db.runSync(
-    'UPDATE scheduled_notifications SET enabled = ? WHERE id = ?',
-    [enabled ? 1 : 0, id]
-  );
+  db.runSync('UPDATE scheduled_notifications SET enabled = ? WHERE id = ?', [enabled ? 1 : 0, id]);
 }
 
 /**
@@ -745,11 +740,11 @@ export function cleanupInvalidScheduledNotifications(): number {
         OR daysOfWeek IS NULL 
         OR length(trim(daysOfWeek)) = 0`
   );
-  
+
   const deletedCount = result.changes;
   if (deletedCount > 0) {
     console.log(`Cleaned up ${deletedCount} corrupted scheduled notification(s)`);
   }
-  
+
   return deletedCount;
 }

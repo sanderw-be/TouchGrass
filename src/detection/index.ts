@@ -1,5 +1,10 @@
 import * as Location from 'expo-location';
-import { syncHealthConnect, requestHealthPermissions, isHealthConnectAvailable, openHealthConnectForManagement } from './healthConnect';
+import {
+  syncHealthConnect,
+  requestHealthPermissions,
+  isHealthConnectAvailable,
+  openHealthConnectForManagement,
+} from './healthConnect';
 import { verifyHealthConnectPermissions } from './healthConnectIntent';
 import { startLocationTracking, stopLocationTracking, autoDetectLocations } from './gpsDetection';
 import { getSetting, setSetting } from '../storage/database';
@@ -44,7 +49,7 @@ export async function initDetection(): Promise<DetectionStatus> {
 
     // Kick off a sync in the background so app startup is not blocked.
     if (hasPermissions) {
-      syncHealthConnect().catch(e => console.warn('HC background sync error:', e));
+      syncHealthConnect().catch((e) => console.warn('HC background sync error:', e));
     }
   }
 
@@ -102,17 +107,17 @@ export async function recheckHealthConnect(): Promise<boolean> {
 
     const available = await isHealthConnectAvailable();
     if (!available) return false;
-    
+
     // Fast permission check — does not read health data.
     const hasPermissions = await verifyHealthConnectPermissions();
     // Update permission status but leave the user-toggle unchanged.
     setSetting('healthconnect_enabled', hasPermissions ? '1' : '0');
-    
+
     // Kick off a sync in the background; do not block the foreground resume.
     if (hasPermissions) {
-      syncHealthConnect().catch(e => console.warn('HC background sync error:', e));
+      syncHealthConnect().catch((e) => console.warn('HC background sync error:', e));
     }
-    
+
     return hasPermissions;
   } catch {
     setSetting('healthconnect_enabled', '0');
@@ -139,7 +144,6 @@ export async function openHealthConnectSettings(): Promise<boolean> {
   }
 }
 
-
 export function getDetectionStatus(): DetectionStatus {
   return {
     healthConnect: getSetting(HC_USER_KEY, '0') === '1',
@@ -159,10 +163,10 @@ export async function checkGPSPermissions(): Promise<boolean> {
     const { status: fgStatus } = await Location.getForegroundPermissionsAsync();
     const { status: bgStatus } = await Location.getBackgroundPermissionsAsync();
     const granted = fgStatus === 'granted' && bgStatus === 'granted';
-    
+
     // Update the permission status but leave the user-toggle unchanged.
     setSetting('gps_enabled', granted ? '1' : '0');
-    
+
     return granted;
   } catch (e) {
     console.warn('GPS permission check error:', e);
@@ -178,7 +182,7 @@ export async function requestGPSPermissions(): Promise<boolean> {
   try {
     // Check current foreground permission status
     const { status: currentFgStatus } = await Location.getForegroundPermissionsAsync();
-    
+
     // Request foreground permission
     const { status: fgStatus } = await Location.requestForegroundPermissionsAsync();
     if (fgStatus !== 'granted') {
@@ -186,14 +190,14 @@ export async function requestGPSPermissions(): Promise<boolean> {
       // If user explicitly denied, return false immediately
       return false;
     }
-    
+
     // Check current background permission status
     const { status: currentBgStatus } = await Location.getBackgroundPermissionsAsync();
-    
+
     // Request background permission
     const { status: bgStatus } = await Location.requestBackgroundPermissionsAsync();
     const granted = bgStatus === 'granted';
-    
+
     if (granted) {
       await startLocationTracking();
       setSetting('gps_enabled', '1');
@@ -202,7 +206,7 @@ export async function requestGPSPermissions(): Promise<boolean> {
       // Update setting to reflect this
       setSetting('gps_enabled', '0');
     }
-    
+
     return granted;
   } catch (e) {
     console.warn('GPS permission request error:', e);
@@ -219,7 +223,9 @@ export async function requestGPSPermissions(): Promise<boolean> {
  *
  * Call this when the user flips the HC switch ON (Settings or Intro).
  */
-export async function toggleHealthConnect(enabled: boolean): Promise<{ needsPermissions: boolean }> {
+export async function toggleHealthConnect(
+  enabled: boolean
+): Promise<{ needsPermissions: boolean }> {
   if (!enabled) {
     setSetting(HC_USER_KEY, '0');
     setSetting('healthconnect_enabled', '0');
@@ -243,7 +249,7 @@ export async function toggleHealthConnect(enabled: boolean): Promise<{ needsPerm
 
     // Kick off a sync in the background; do not block the toggle response.
     if (hasPermissions) {
-      syncHealthConnect().catch(e => console.warn('HC background sync error:', e));
+      syncHealthConnect().catch((e) => console.warn('HC background sync error:', e));
     }
 
     return { needsPermissions: !hasPermissions };

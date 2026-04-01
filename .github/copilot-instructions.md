@@ -78,6 +78,7 @@ npm run ios
 - Mock platform-specific APIs (location, notifications, health connect, SQLite) using `jest.mock()`.
 
 Example test structure:
+
 ```typescript
 describe('myFunction', () => {
   it('does the expected thing', () => {
@@ -95,12 +96,12 @@ describe('myFunction', () => {
 
 ## Key Files
 
-| File | Purpose |
-|------|---------|
-| `App.tsx` | Root component, navigation container |
-| `src/storage/database.ts` | SQLite schema and query helpers |
-| `src/detection/` | GPS and Health Connect session detection |
-| `src/i18n/` | Locale definitions and `t()` helper |
-| `src/utils/theme.ts` | Shared colors and spacing constants |
-| `jest.setup.js` | Global mock configuration for native modules |
-| `.github/workflows/ci.yml` | CI pipeline (test → build Android → lint) |
+| File                       | Purpose                                      |
+| -------------------------- | -------------------------------------------- |
+| `App.tsx`                  | Root component, navigation container         |
+| `src/storage/database.ts`  | SQLite schema and query helpers              |
+| `src/detection/`           | GPS and Health Connect session detection     |
+| `src/i18n/`                | Locale definitions and `t()` helper          |
+| `src/utils/theme.ts`       | Shared colors and spacing constants          |
+| `jest.setup.js`            | Global mock configuration for native modules |
+| `.github/workflows/ci.yml` | CI pipeline (test → build Android → lint)    |

@@ -17,10 +17,20 @@ jest.mock('../utils/helpers', () => ({
 jest.mock('../context/ThemeContext', () => ({
   useTheme: () => ({
     colors: {
-      grass: '#4A7C59', grassLight: '#6BAF7A', grassPale: '#E8F5EC', grassDark: '#2D5240',
-      sky: '#7EB8D4', skyLight: '#B8DFF0', sun: '#F5C842',
-      mist: '#F8F9F7', fog: '#E8EBE6', card: '#FFFFFF',
-      textPrimary: '#1A2E1F', textSecondary: '#5A7060', textMuted: '#8FA892', textInverse: '#FFFFFF',
+      grass: '#4A7C59',
+      grassLight: '#6BAF7A',
+      grassPale: '#E8F5EC',
+      grassDark: '#2D5240',
+      sky: '#7EB8D4',
+      skyLight: '#B8DFF0',
+      sun: '#F5C842',
+      mist: '#F8F9F7',
+      fog: '#E8EBE6',
+      card: '#FFFFFF',
+      textPrimary: '#1A2E1F',
+      textSecondary: '#5A7060',
+      textMuted: '#8FA892',
+      textInverse: '#FFFFFF',
     },
     isDark: false,
   }),
@@ -32,7 +42,9 @@ jest.mock('@react-navigation/native', () => ({
   useFocusEffect: (cb: () => void) => {
     const React = require('react');
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    React.useEffect(() => { cb(); }, [cb]);
+    React.useEffect(() => {
+      cb();
+    }, [cb]);
   },
 }));
 
@@ -48,8 +60,12 @@ const realStartOfWeek = (ms: number) => {
   return monday.getTime();
 };
 
-const mockGetSessionsForRange = jest.fn((_from: number, _to: number) => [] as import('../storage/database').OutsideSession[]);
-const mockGetDailyTotalsForMonth = jest.fn((_date: number) => [] as { date: number; minutes: number }[]);
+const mockGetSessionsForRange = jest.fn(
+  (_from: number, _to: number) => [] as import('../storage/database').OutsideSession[]
+);
+const mockGetDailyTotalsForMonth = jest.fn(
+  (_date: number) => [] as { date: number; minutes: number }[]
+);
 const mockGetCurrentDailyGoal = jest.fn(() => ({ targetMinutes: 30 }));
 
 jest.mock('../storage/database', () => ({
@@ -78,16 +94,24 @@ describe('HistoryScreen weekly average', () => {
     // Mon=60, Tue=30, Wed=90, Thu–Sun=0 → total=180, avg=180/3=60
     mockGetSessionsForRange.mockImplementation((from: number) => {
       const minutes =
-        from === MONDAY ? 60 :
-        from === MONDAY + 86400000 ? 30 :
-        from === WEDNESDAY ? 90 : 0;
+        from === MONDAY ? 60 : from === MONDAY + 86400000 ? 30 : from === WEDNESDAY ? 90 : 0;
       if (minutes === 0) return [];
-      return [{ startTime: from, endTime: from + minutes * 60000, durationMinutes: minutes, userConfirmed: 1, source: 'gps', confidence: 0.9, discarded: 0 }];
+      return [
+        {
+          startTime: from,
+          endTime: from + minutes * 60000,
+          durationMinutes: minutes,
+          userConfirmed: 1,
+          source: 'gps',
+          confidence: 0.9,
+          discarded: 0,
+        },
+      ];
     });
 
     const { getByText } = render(<HistoryScreen />);
-    expect(getByText('60m')).toBeTruthy();   // avg = 180 / 3
-    expect(getByText('180m')).toBeTruthy();  // total
+    expect(getByText('60m')).toBeTruthy(); // avg = 180 / 3
+    expect(getByText('180m')).toBeTruthy(); // total
   });
 
   it('divides by 7 when viewing a completed past week', () => {
@@ -99,7 +123,17 @@ describe('HistoryScreen weekly average', () => {
     // All 7 days have 14 minutes each → total=98, avg=14
     mockGetSessionsForRange.mockImplementation((from: number) => {
       if (from >= PAST_MONDAY && from < MONDAY) {
-        return [{ startTime: from, endTime: from + 14 * 60000, durationMinutes: 14, userConfirmed: 1, source: 'gps', confidence: 0.9, discarded: 0 }];
+        return [
+          {
+            startTime: from,
+            endTime: from + 14 * 60000,
+            durationMinutes: 14,
+            userConfirmed: 1,
+            source: 'gps',
+            confidence: 0.9,
+            discarded: 0,
+          },
+        ];
       }
       return [];
     });
@@ -109,8 +143,8 @@ describe('HistoryScreen weekly average', () => {
     // Navigate to the previous week
     fireEvent.press(getByText('‹'));
 
-    expect(getByText('98m')).toBeTruthy();  // total
-    expect(getByText('14m')).toBeTruthy();  // avg = 98 / 7
+    expect(getByText('98m')).toBeTruthy(); // total
+    expect(getByText('14m')).toBeTruthy(); // avg = 98 / 7
   });
 });
 
@@ -125,7 +159,7 @@ describe('HistoryScreen BarChart', () => {
     }));
 
     const { getByTestId, getAllByTestId } = render(
-      <BarChart data={data} target={30} maxValue={60} period="week" />,
+      <BarChart data={data} target={30} maxValue={60} period="week" />
     );
 
     fireEvent(getByTestId('history-chart-area'), 'layout', {

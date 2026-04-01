@@ -8,8 +8,12 @@ jest.mock('../i18n', () => ({
 }));
 
 // Mock detection module
-const mockToggleHealthConnect = jest.fn<Promise<{ needsPermissions: boolean }>, [boolean]>(() => Promise.resolve({ needsPermissions: false }));
-const mockToggleGPS = jest.fn<Promise<{ needsPermissions: boolean }>, [boolean]>(() => Promise.resolve({ needsPermissions: false }));
+const mockToggleHealthConnect = jest.fn<Promise<{ needsPermissions: boolean }>, [boolean]>(() =>
+  Promise.resolve({ needsPermissions: false })
+);
+const mockToggleGPS = jest.fn<Promise<{ needsPermissions: boolean }>, [boolean]>(() =>
+  Promise.resolve({ needsPermissions: false })
+);
 jest.mock('../detection/index', () => ({
   toggleHealthConnect: (enabled: boolean) => mockToggleHealthConnect(enabled),
   toggleGPS: (enabled: boolean) => mockToggleGPS(enabled),
@@ -53,7 +57,7 @@ describe('IntroScreen', () => {
   it('renders without crashing', () => {
     const onComplete = jest.fn();
     const { getByText } = render(<IntroScreen onComplete={onComplete} />);
-    
+
     // Check that the welcome step is shown
     expect(getByText('intro_welcome_title')).toBeTruthy();
   });
@@ -61,7 +65,7 @@ describe('IntroScreen', () => {
   it('renders progress bar', () => {
     const onComplete = jest.fn();
     const { UNSAFE_getAllByType } = render(<IntroScreen onComplete={onComplete} />);
-    
+
     // Check that the component tree contains View elements (progress bar)
     // This is a basic smoke test to ensure the component structure is intact
     const views = UNSAFE_getAllByType('View' as any);
@@ -71,14 +75,14 @@ describe('IntroScreen', () => {
   it('renders Next button', () => {
     const onComplete = jest.fn();
     const { getByText } = render(<IntroScreen onComplete={onComplete} />);
-    
+
     expect(getByText('intro_next')).toBeTruthy();
   });
 
   it('renders Skip button', () => {
     const onComplete = jest.fn();
     const { getByText } = render(<IntroScreen onComplete={onComplete} />);
-    
+
     expect(getByText('intro_skip')).toBeTruthy();
   });
 
@@ -178,10 +182,7 @@ describe('IntroScreen', () => {
         fireEvent.press(bufferRow);
       });
 
-      expect(mockSetSetting).toHaveBeenCalledWith(
-        'calendar_buffer_minutes',
-        expect.any(String),
-      );
+      expect(mockSetSetting).toHaveBeenCalledWith('calendar_buffer_minutes', expect.any(String));
     });
 
     it('cycles the calendar duration when tapped', async () => {
@@ -192,10 +193,7 @@ describe('IntroScreen', () => {
         fireEvent.press(durationRow);
       });
 
-      expect(mockSetSetting).toHaveBeenCalledWith(
-        'calendar_default_duration',
-        expect.any(String),
-      );
+      expect(mockSetSetting).toHaveBeenCalledWith('calendar_default_duration', expect.any(String));
     });
   });
 

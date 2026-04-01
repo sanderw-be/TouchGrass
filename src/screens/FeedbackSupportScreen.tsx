@@ -1,7 +1,5 @@
 import React, { useMemo } from 'react';
-import {
-  View, Text, ScrollView, TouchableOpacity, Linking, Alert,
-} from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Linking, Alert } from 'react-native';
 import { spacing, radius, shadows } from '../utils/theme';
 import { useTheme } from '../context/ThemeContext';
 import { t } from '../i18n';
@@ -63,7 +61,10 @@ export default function FeedbackSupportScreen() {
 }
 
 function SettingRow({
-  icon, label, sublabel, right,
+  icon,
+  label,
+  sublabel,
+  right,
 }: {
   icon: string;
   label: string;

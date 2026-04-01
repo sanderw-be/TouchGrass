@@ -72,7 +72,7 @@ export const darkColors: typeof colors = {
 
 export const fonts = {
   // Display — characterful, nature-inspired
-  display: 'serif',          // fallback; we'll load custom fonts later
+  display: 'serif', // fallback; we'll load custom fonts later
   body: 'System',
   mono: 'monospace',
 };

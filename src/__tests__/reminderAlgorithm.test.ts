@@ -6,7 +6,12 @@ jest.mock('../i18n', () => ({ t: (key: string) => key }));
 import * as Database from '../storage/database';
 import * as WeatherService from '../weather/weatherService';
 import * as WeatherAlgorithm from '../weather/weatherAlgorithm';
-import { scoreReminderHours, shouldRemindNow, HourScore, ScoreContributor } from '../notifications/reminderAlgorithm';
+import {
+  scoreReminderHours,
+  shouldRemindNow,
+  HourScore,
+  ScoreContributor,
+} from '../notifications/reminderAlgorithm';
 
 describe('reminderAlgorithm', () => {
   beforeEach(() => {
@@ -103,7 +108,13 @@ describe('reminderAlgorithm', () => {
 
     it('applies less_often feedback penalty only to the matching half-hour slot', () => {
       (Database.getReminderFeedback as jest.Mock).mockReturnValue([
-        { action: 'less_often', scheduledHour: 10, scheduledMinute: 0, dayOfWeek: 1, timestamp: Date.now() },
+        {
+          action: 'less_often',
+          scheduledHour: 10,
+          scheduledMinute: 0,
+          dayOfWeek: 1,
+          timestamp: Date.now(),
+        },
       ]);
       const scores = scoreReminderHours(0, 30, 0, 0);
       const slot1000 = scores.find((s) => s.hour === 10 && s.minute === 0)!;
@@ -115,7 +126,13 @@ describe('reminderAlgorithm', () => {
 
     it('applies bad_time feedback with a significant penalty to the matching half-hour slot', () => {
       (Database.getReminderFeedback as jest.Mock).mockReturnValue([
-        { action: 'bad_time', scheduledHour: 10, scheduledMinute: 0, dayOfWeek: 1, timestamp: Date.now() },
+        {
+          action: 'bad_time',
+          scheduledHour: 10,
+          scheduledMinute: 0,
+          dayOfWeek: 1,
+          timestamp: Date.now(),
+        },
       ]);
       const scores = scoreReminderHours(0, 30, 0, 0);
       const slot1000 = scores.find((s) => s.hour === 10 && s.minute === 0)!;
@@ -129,10 +146,22 @@ describe('reminderAlgorithm', () => {
 
     it('bad_time penalty is larger than less_often penalty for the same count', () => {
       const badTimeFeedback = [
-        { action: 'bad_time', scheduledHour: 10, scheduledMinute: 0, dayOfWeek: 1, timestamp: Date.now() },
+        {
+          action: 'bad_time',
+          scheduledHour: 10,
+          scheduledMinute: 0,
+          dayOfWeek: 1,
+          timestamp: Date.now(),
+        },
       ];
       const lessOftenFeedback = [
-        { action: 'less_often', scheduledHour: 10, scheduledMinute: 0, dayOfWeek: 1, timestamp: Date.now() },
+        {
+          action: 'less_often',
+          scheduledHour: 10,
+          scheduledMinute: 0,
+          dayOfWeek: 1,
+          timestamp: Date.now(),
+        },
       ];
 
       (Database.getReminderFeedback as jest.Mock).mockReturnValue(badTimeFeedback);
@@ -148,7 +177,13 @@ describe('reminderAlgorithm', () => {
 
     it('applies more_often feedback bonus', () => {
       (Database.getReminderFeedback as jest.Mock).mockReturnValue([
-        { action: 'more_often', scheduledHour: 15, scheduledMinute: 0, dayOfWeek: 1, timestamp: Date.now() },
+        {
+          action: 'more_often',
+          scheduledHour: 15,
+          scheduledMinute: 0,
+          dayOfWeek: 1,
+          timestamp: Date.now(),
+        },
       ]);
       const scores = scoreReminderHours(0, 30, 0, 0);
       const slot1500 = scores.find((s) => s.hour === 15 && s.minute === 0)!;
@@ -290,7 +325,13 @@ describe('reminderAlgorithm', () => {
 
     it('acted feedback creates an acted contributor', () => {
       (Database.getReminderFeedback as jest.Mock).mockReturnValue([
-        { action: 'went_outside', scheduledHour: 10, scheduledMinute: 0, dayOfWeek: 1, timestamp: Date.now() },
+        {
+          action: 'went_outside',
+          scheduledHour: 10,
+          scheduledMinute: 0,
+          dayOfWeek: 1,
+          timestamp: Date.now(),
+        },
       ]);
       const scores = scoreReminderHours(0, 30, 0, 0);
       const slot1000 = scores.find((s) => s.hour === 10 && s.minute === 0)!;
@@ -301,7 +342,13 @@ describe('reminderAlgorithm', () => {
 
     it('more_often feedback creates a more_often contributor', () => {
       (Database.getReminderFeedback as jest.Mock).mockReturnValue([
-        { action: 'more_often', scheduledHour: 10, scheduledMinute: 0, dayOfWeek: 1, timestamp: Date.now() },
+        {
+          action: 'more_often',
+          scheduledHour: 10,
+          scheduledMinute: 0,
+          dayOfWeek: 1,
+          timestamp: Date.now(),
+        },
       ]);
       const scores = scoreReminderHours(0, 30, 0, 0);
       const slot1000 = scores.find((s) => s.hour === 10 && s.minute === 0)!;
@@ -341,9 +388,16 @@ describe('reminderAlgorithm', () => {
     it('negative weather score does not create a weather contributor', () => {
       (WeatherAlgorithm.getWeatherPreferences as jest.Mock).mockReturnValue({ enabled: true });
       (WeatherService.getWeatherForHour as jest.Mock).mockReturnValue({
-        temperature: 5, weatherCode: 61, precipitationProbability: 90,
-        cloudCover: 100, uvIndex: 0, windSpeed: 20, isDay: true,
-        forecastHour: 12, forecastDate: 0, timestamp: 0,
+        temperature: 5,
+        weatherCode: 61,
+        precipitationProbability: 90,
+        cloudCover: 100,
+        uvIndex: 0,
+        windSpeed: 20,
+        isDay: true,
+        forecastHour: 12,
+        forecastDate: 0,
+        timestamp: 0,
       });
       (WeatherAlgorithm.scoreWeatherCondition as jest.Mock).mockReturnValue(-0.3);
       (WeatherAlgorithm.getWeatherEmoji as jest.Mock).mockReturnValue('🌧️');
@@ -367,7 +421,9 @@ describe('reminderAlgorithm', () => {
       const slot1200 = scores.find((s) => s.hour === 12 && s.minute === 0)!;
       // pattern boost (3 * 0.1 = 0.3 capped) should be >= lunch (0.1)
       for (let i = 1; i < slot1200.contributors.length; i++) {
-        expect(slot1200.contributors[i - 1].score).toBeGreaterThanOrEqual(slot1200.contributors[i].score);
+        expect(slot1200.contributors[i - 1].score).toBeGreaterThanOrEqual(
+          slot1200.contributors[i].score
+        );
       }
     });
 
@@ -466,7 +522,9 @@ describe('reminderAlgorithm', () => {
       expect(result.should).toBe(true);
       expect(Array.isArray(result.contributors)).toBe(true);
       // 12:00 has a lunch contributor
-      const lunchContributor = result.contributors.find((c: ScoreContributor) => c.reason === 'lunch');
+      const lunchContributor = result.contributors.find(
+        (c: ScoreContributor) => c.reason === 'lunch'
+      );
       expect(lunchContributor).toBeDefined();
       jest.restoreAllMocks();
     });

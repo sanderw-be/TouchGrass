@@ -13,7 +13,6 @@ Tests are organized in the `src/__tests__/` directory with the following coverag
 - **Unit Tests**: Test individual functions and utilities
   - `helpers.test.ts` - Date/time formatting functions
   - `database.test.ts` - Database initialization and core functions
-  
 - **Integration Tests**: Test component behavior and interactions
   - `IntroScreen.test.tsx` - First-run tutorial screens
   - `App.test.tsx` - App initialization and navigation
@@ -21,21 +20,25 @@ Tests are organized in the `src/__tests__/` directory with the following coverag
 ## Running Tests Locally
 
 ### Run all tests
+
 ```bash
 npm test
 ```
 
 ### Run tests in watch mode (useful during development)
+
 ```bash
 npm run test:watch
 ```
 
 ### Run tests with coverage report
+
 ```bash
 npm run test:coverage
 ```
 
 ### Run TypeScript type checking
+
 ```bash
 npm run type-check
 ```
@@ -43,12 +46,15 @@ npm run type-check
 ## Test Configuration
 
 ### Jest Configuration (`jest.config.js`)
+
 - Uses `jest-expo` preset for React Native/Expo compatibility
 - Transforms node_modules for React Native libraries
 - Collects coverage from `src/**/*.{ts,tsx}` files
 
 ### Mock Setup (`jest.setup.js`)
+
 Mocks are configured for Expo modules that require native functionality:
+
 - `expo-sqlite` - Database operations
 - `expo-location` - GPS/location services
 - `expo-notifications` - Push notifications
@@ -62,18 +68,21 @@ Mocks are configured for Expo modules that require native functionality:
 The CI pipeline runs on every pull request and push to main/master branches:
 
 #### 1. **Build and Test** Job
+
 - Installs dependencies
 - Runs TypeScript type checking
 - Executes all Jest tests
 - Generates and uploads coverage reports
 
 #### 2. **Build Android App** Job
+
 - Builds Android APK using EAS Build
 - Uploads APK as downloadable artifact
 - Artifact available for 30 days after workflow run
 - APK can be installed on test devices for manual testing
 
 #### 3. **Lint and Format Check** Job
+
 - Validates TypeScript compilation
 - Checks for common code issues
 
@@ -98,12 +107,13 @@ The APK artifact is retained for 30 days after the workflow run.
 ## Writing New Tests
 
 ### Unit Test Example
+
 ```typescript
 describe('formatMinutes', () => {
   it('formats minutes less than 60', () => {
     expect(formatMinutes(45)).toBe('45m');
   });
-  
+
   it('formats hours with minutes', () => {
     expect(formatMinutes(90)).toBe('1h 30m');
   });
@@ -111,6 +121,7 @@ describe('formatMinutes', () => {
 ```
 
 ### Component Test Example
+
 ```typescript
 describe('IntroScreen', () => {
   it('renders without crashing', () => {
@@ -132,16 +143,19 @@ describe('IntroScreen', () => {
 ## Debugging Tests
 
 ### View detailed test output
+
 ```bash
 npm test -- --verbose
 ```
 
 ### Run a specific test file
+
 ```bash
 npm test -- helpers.test.ts
 ```
 
 ### Update snapshots (if using snapshot tests)
+
 ```bash
 npm test -- -u
 ```
@@ -149,6 +163,7 @@ npm test -- -u
 ## Coverage Goals
 
 Current test coverage focuses on:
+
 - Core business logic (date helpers, formatters)
 - Database operations (initialization, settings)
 - Critical user flows (app initialization, intro tutorial)
@@ -157,6 +172,7 @@ Current test coverage focuses on:
 ## Future Enhancements
 
 Potential improvements to the test suite:
+
 - E2E tests with Detox or Maestro for full user flow testing
 - Visual regression testing for UI components
 - Performance testing for database queries

@@ -15,7 +15,7 @@ const withAbiFilters = (config, { abiFilters = ['arm64-v8a'] } = {}) => {
         
         ndk {
             abiFilters ${abiFiltersString}
-        }`,
+        }`
         );
       }
 

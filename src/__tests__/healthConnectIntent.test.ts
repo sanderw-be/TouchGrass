@@ -9,7 +9,10 @@ jest.mock('react-native', () => ({
 
 import { Platform, Linking } from 'react-native';
 import * as HealthConnect from 'react-native-health-connect';
-import { openHealthConnectPermissionsViaIntent, verifyHealthConnectPermissions } from '../detection/healthConnectIntent';
+import {
+  openHealthConnectPermissionsViaIntent,
+  verifyHealthConnectPermissions,
+} from '../detection/healthConnectIntent';
 
 describe('openHealthConnectPermissionsViaIntent', () => {
   beforeEach(() => {
@@ -59,10 +62,10 @@ describe('openHealthConnectPermissionsViaIntent', () => {
 
       expect(result).toBe(true);
       expect(Linking.openURL).toHaveBeenCalledWith(
-        expect.stringContaining('android.health.connect.action.MANAGE_HEALTH_PERMISSIONS'),
+        expect.stringContaining('android.health.connect.action.MANAGE_HEALTH_PERMISSIONS')
       );
       expect(Linking.openURL).toHaveBeenCalledWith(
-        expect.stringContaining('com.jollyheron.touchgrass'),
+        expect.stringContaining('com.jollyheron.touchgrass')
       );
     });
 
@@ -85,8 +88,9 @@ describe('openHealthConnectPermissionsViaIntent', () => {
 
       await openHealthConnectPermissionsViaIntent();
 
-      const playStoreCalls = (Linking.openURL as jest.Mock).mock.calls.filter(([url]: [string]) =>
-        /^https?:\/\/play\.google\.com\//.test(url) || url.startsWith('market://'),
+      const playStoreCalls = (Linking.openURL as jest.Mock).mock.calls.filter(
+        ([url]: [string]) =>
+          /^https?:\/\/play\.google\.com\//.test(url) || url.startsWith('market://')
       );
       expect(playStoreCalls).toHaveLength(0);
     });
@@ -129,14 +133,14 @@ describe('openHealthConnectPermissionsViaIntent', () => {
 
     it('falls back to Play Store market URL when custom scheme is unavailable', async () => {
       (Linking.canOpenURL as jest.Mock)
-        .mockResolvedValueOnce(false)  // healthconnect://
-        .mockResolvedValueOnce(true);  // market://
+        .mockResolvedValueOnce(false) // healthconnect://
+        .mockResolvedValueOnce(true); // market://
 
       const result = await openHealthConnectPermissionsViaIntent();
 
       expect(result).toBe(true);
       expect(Linking.openURL).toHaveBeenCalledWith(
-        expect.stringContaining('market://details?id=com.google.android.apps.healthdata'),
+        expect.stringContaining('market://details?id=com.google.android.apps.healthdata')
       );
     });
 
@@ -147,7 +151,9 @@ describe('openHealthConnectPermissionsViaIntent', () => {
 
       expect(result).toBe(true);
       expect(Linking.openURL).toHaveBeenCalledWith(
-        expect.stringContaining('https://play.google.com/store/apps/details?id=com.google.android.apps.healthdata'),
+        expect.stringContaining(
+          'https://play.google.com/store/apps/details?id=com.google.android.apps.healthdata'
+        )
       );
     });
 
@@ -208,7 +214,7 @@ describe('verifyHealthConnectPermissions', () => {
 
   it('returns false when getGrantedPermissions throws', async () => {
     (HealthConnect.getGrantedPermissions as jest.Mock).mockRejectedValue(
-      new Error('Health Connect not available'),
+      new Error('Health Connect not available')
     );
 
     const result = await verifyHealthConnectPermissions();

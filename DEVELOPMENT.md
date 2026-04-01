@@ -31,16 +31,19 @@ This starts the Expo development server. You'll see a QR code in the terminal.
 ### 3. Run on Device/Emulator
 
 **Android Emulator:**
+
 ```bash
 npm run android
 ```
 
 **Android Device (USB):**
+
 ```bash
 npm run android:device
 ```
 
 **Debug Build:**
+
 ```bash
 npm run android:dev
 ```
@@ -77,15 +80,18 @@ npm run type-check
 ### Debugging
 
 **React Native Debugger:**
+
 - Press `j` in Expo terminal to open debugger
 - Use Chrome DevTools for console, network, etc.
 
 **Console Logs:**
+
 ```typescript
 console.log('Debug message:', value);
 ```
 
 **React DevTools:**
+
 - Available in Expo dev client
 - Inspect component tree and props
 
@@ -104,16 +110,19 @@ npm run android:release
 ### EAS Build (Cloud)
 
 **Development Build:**
+
 ```bash
 eas build --platform android --profile development
 ```
 
 **Preview Build (APK):**
+
 ```bash
 eas build --platform android --profile preview
 ```
 
 **Production Build (AAB):**
+
 ```bash
 eas build --platform android --profile production
 ```
@@ -209,6 +218,7 @@ await db.updateSession(id, { userConfirmed: true });
 ## Git Workflow
 
 1. **Create feature branch**:
+
    ```bash
    git checkout -b feature/my-feature
    ```
@@ -216,6 +226,7 @@ await db.updateSession(id, { userConfirmed: true });
 2. **Make changes** and test
 
 3. **Commit with clear messages**:
+
    ```bash
    git commit -m "feat: add outdoor detection"
    git commit -m "fix: handle overlapping sessions"
@@ -223,6 +234,7 @@ await db.updateSession(id, { userConfirmed: true });
    ```
 
 4. **Push and create MR**:
+
    ```bash
    git push origin feature/my-feature
    ```

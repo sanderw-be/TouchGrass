@@ -5,7 +5,7 @@ import { getSetting, setSetting } from '../storage/database';
  * Combined confidence score below this threshold causes a session to be stored
  * as `discarded = 1` rather than being proposed to the user for review.
  */
-export const DISCARD_CONFIDENCE_THRESHOLD = 0.40;
+export const DISCARD_CONFIDENCE_THRESHOLD = 0.4;
 
 // ── Time-slot probability ─────────────────────────────────
 
@@ -55,7 +55,7 @@ export function getTimeSlotProbability(hour: number, dayOfWeek: number): number 
 export function updateTimeSlotProbability(
   hour: number,
   dayOfWeek: number,
-  confirmed: boolean,
+  confirmed: boolean
 ): void {
   const probs = loadTimeSlotProbabilities();
   const key = slotKey(hour, dayOfWeek);
@@ -77,11 +77,11 @@ export function updateTimeSlotProbability(
  */
 export function scoreDuration(durationMs: number): number {
   const minutes = durationMs / 60_000;
-  if (minutes <= 5)   return 0.30;  // too short to be meaningful
-  if (minutes <= 15)  return 0.70;  // short but plausible
-  if (minutes <= 90)  return 1.00;  // ideal outdoor session length
-  if (minutes <= 240) return 0.80;  // up to 4 h: long walk / hike, still plausible
-  return 0.40;                       // > 4 h: unlikely to be a single outdoor session
+  if (minutes <= 5) return 0.3; // too short to be meaningful
+  if (minutes <= 15) return 0.7; // short but plausible
+  if (minutes <= 90) return 1.0; // ideal outdoor session length
+  if (minutes <= 240) return 0.8; // up to 4 h: long walk / hike, still plausible
+  return 0.4; // > 4 h: unlikely to be a single outdoor session
 }
 
 // ── Combined confidence score ─────────────────────────────
@@ -110,7 +110,7 @@ export function computeSessionScore(session: OutsideSession): number {
   const dayOfWeek = d.getDay(); // 0 = Sunday
 
   const durationFactor = scoreDuration(durationMs);
-  const timeSlotProb   = getTimeSlotProbability(hour, dayOfWeek);
+  const timeSlotProb = getTimeSlotProbability(hour, dayOfWeek);
 
   const raw = session.confidence * durationFactor * (0.5 + timeSlotProb);
   return Math.min(1, Math.max(0, raw));

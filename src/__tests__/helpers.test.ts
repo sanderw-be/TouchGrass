@@ -1,4 +1,11 @@
-import { formatMinutes, formatTime, formatDate, formatTimer, uses24HourClock, normalizeAmPm } from '../utils/helpers';
+import {
+  formatMinutes,
+  formatTime,
+  formatDate,
+  formatTimer,
+  uses24HourClock,
+  normalizeAmPm,
+} from '../utils/helpers';
 
 // Mock react-native-localize for helpers tests
 const mockUses24HourClock = jest.fn(() => true);

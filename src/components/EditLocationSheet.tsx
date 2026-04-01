@@ -1,7 +1,14 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
-  View, Text, StyleSheet, Modal, TouchableOpacity,
-  TextInput, Alert, ScrollView, ActivityIndicator,
+  View,
+  Text,
+  StyleSheet,
+  Modal,
+  TouchableOpacity,
+  TextInput,
+  Alert,
+  ScrollView,
+  ActivityIndicator,
 } from 'react-native';
 import * as Location from 'expo-location';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -18,7 +25,10 @@ function findRadiusIdx(r: number): number {
   let bestDiff = Math.abs(RADIUS_STEPS[0] - r);
   for (let i = 1; i < RADIUS_STEPS.length; i++) {
     const diff = Math.abs(RADIUS_STEPS[i] - r);
-    if (diff < bestDiff) { best = i; bestDiff = diff; }
+    if (diff < bestDiff) {
+      best = i;
+      bestDiff = diff;
+    }
   }
   return best;
 }
@@ -47,7 +57,12 @@ interface Props {
 }
 
 export default function EditLocationSheet({
-  visible, location, initialCoords, initialLabel, onClose, onSave,
+  visible,
+  location,
+  initialCoords,
+  initialLabel,
+  onClose,
+  onSave,
 }: Props) {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
@@ -71,7 +86,7 @@ export default function EditLocationSheet({
   // Working coordinates: manual override > existing location > initial coords
   const baseCoords: Coords | null = location
     ? { latitude: location.latitude, longitude: location.longitude }
-    : initialCoords ?? null;
+    : (initialCoords ?? null);
   const coords: Coords | null = manualCoords ?? baseCoords;
 
   const isNew = location === null;
@@ -115,7 +130,9 @@ export default function EditLocationSheet({
       .finally(() => {
         if (!cancelled) setAddressLoading(false);
       });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [visible, coords?.latitude, coords?.longitude, addressEditing]);
 
   // Geocode search with 500ms debounce
@@ -129,7 +146,7 @@ export default function EditLocationSheet({
       try {
         const results = await Location.geocodeAsync(text.trim());
         const suggestions: AddressSuggestion[] = results
-          .filter(r => r.latitude !== 0 || r.longitude !== 0) // exclude null island (0,0)
+          .filter((r) => r.latitude !== 0 || r.longitude !== 0) // exclude null island (0,0)
           .slice(0, 5)
           .map((r) => ({
             // Temporary display text — replaced by reverse-geocode below
@@ -147,7 +164,9 @@ export default function EditLocationSheet({
                 const parts = [street, rev[0].city, rev[0].country].filter(Boolean);
                 return { ...s, display: parts.join(', ') || s.display };
               }
-            } catch { /* keep original */ }
+            } catch {
+              /* keep original */
+            }
             return s;
           })
         );
@@ -195,45 +214,36 @@ export default function EditLocationSheet({
 
   const handleDelete = () => {
     if (!location?.id) return;
-    Alert.alert(
-      t('location_delete_confirm_title'),
-      t('location_delete_confirm_body'),
-      [
-        { text: t('settings_clear_cancel'), style: 'cancel' },
-        {
-          text: t('location_delete_btn'),
-          style: 'destructive',
-          onPress: () => {
-            if (!location?.id) return;
-            try {
-              deleteKnownLocation(location.id);
-              onSave();
-              onClose();
-            } catch (error) {
-              console.error('Error deleting location:', error);
-              Alert.alert(t('location_edit_error_title'), t('location_edit_error_delete'));
-            }
-          },
+    Alert.alert(t('location_delete_confirm_title'), t('location_delete_confirm_body'), [
+      { text: t('settings_clear_cancel'), style: 'cancel' },
+      {
+        text: t('location_delete_btn'),
+        style: 'destructive',
+        onPress: () => {
+          if (!location?.id) return;
+          try {
+            deleteKnownLocation(location.id);
+            onSave();
+            onClose();
+          } catch (error) {
+            console.error('Error deleting location:', error);
+            Alert.alert(t('location_edit_error_title'), t('location_edit_error_delete'));
+          }
         },
-      ]
-    );
+      },
+    ]);
   };
 
   const title = isNew
     ? t('location_add_title')
-    : (isSuggested ? t('location_edit_approve_title') : t('settings_location_edit_title'));
+    : isSuggested
+      ? t('location_edit_approve_title')
+      : t('settings_location_edit_title');
 
-  const saveLabel = (isNew || isSuggested)
-    ? t('location_edit_approve_confirm')
-    : t('goals_save');
+  const saveLabel = isNew || isSuggested ? t('location_edit_approve_confirm') : t('goals_save');
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="slide"
-      onRequestClose={onClose}
-    >
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       {/* Tappable backdrop */}
       <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onClose} />
 
@@ -272,9 +282,7 @@ export default function EditLocationSheet({
                       placeholderTextColor={colors.textMuted}
                       autoFocus
                     />
-                    {addressSearching && (
-                      <ActivityIndicator size="small" color={colors.grass} />
-                    )}
+                    {addressSearching && <ActivityIndicator size="small" color={colors.grass} />}
                     <TouchableOpacity
                       onPress={() => {
                         setAddressEditing(false);
@@ -299,7 +307,9 @@ export default function EditLocationSheet({
                           onPress={() => handleSelectSuggestion(s)}
                         >
                           <Text style={styles.suggestionIcon}>📍</Text>
-                          <Text style={styles.suggestionText} numberOfLines={2}>{s.display}</Text>
+                          <Text style={styles.suggestionText} numberOfLines={2}>
+                            {s.display}
+                          </Text>
                         </TouchableOpacity>
                       ))}
                     </View>
@@ -321,10 +331,16 @@ export default function EditLocationSheet({
                 >
                   <Text style={styles.addressIcon}>📍</Text>
                   {addressLoading ? (
-                    <ActivityIndicator size="small" color={colors.grass} style={{ marginLeft: spacing.sm }} />
+                    <ActivityIndicator
+                      size="small"
+                      color={colors.grass}
+                      style={{ marginLeft: spacing.sm }}
+                    />
                   ) : (
                     <>
-                      <Text style={styles.addressText}>{address ?? t('location_edit_address_unavailable')}</Text>
+                      <Text style={styles.addressText}>
+                        {address ?? t('location_edit_address_unavailable')}
+                      </Text>
                       <Text style={styles.addressEditHint}>✎</Text>
                     </>
                   )}
@@ -426,11 +442,9 @@ function RadiusSlider({ idx, onChange }: { idx: number; onChange: (i: number) =>
             onPress={() => onChange(i)}
             hitSlop={{ top: 14, bottom: 14, left: 4, right: 4 }}
           >
-            <View style={[
-              styles.dot,
-              i <= idx && styles.dotFilled,
-              i === idx && styles.dotActive,
-            ]} />
+            <View
+              style={[styles.dot, i <= idx && styles.dotFilled, i === idx && styles.dotActive]}
+            />
           </TouchableOpacity>
         ))}
       </View>
@@ -440,205 +454,214 @@ function RadiusSlider({ idx, onChange }: { idx: number; onChange: (i: number) =>
 
 function makeSliderStyles(colors: ReturnType<typeof useTheme>['colors']) {
   return StyleSheet.create({
-  wrapper: {
-    height: 40,
-    justifyContent: 'center',
-    marginVertical: spacing.sm,
-  },
-  track: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    height: 4,
-    backgroundColor: colors.fog,
-    borderRadius: 2,
-  },
-  trackFill: {
-    position: 'absolute',
-    left: 0,
-    height: 4,
-    backgroundColor: colors.grass,
-    borderRadius: 2,
-  },
-  dotsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  dot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: colors.fog,
-    borderWidth: 2,
-    borderColor: colors.fog,
-  },
-  dotFilled: {
-    backgroundColor: colors.grassPale,
-    borderColor: colors.grass,
-  },
-  dotActive: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: colors.grass,
-    borderColor: colors.grassDark,
-  },
+    wrapper: {
+      height: 40,
+      justifyContent: 'center',
+      marginVertical: spacing.sm,
+    },
+    track: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      height: 4,
+      backgroundColor: colors.fog,
+      borderRadius: 2,
+    },
+    trackFill: {
+      position: 'absolute',
+      left: 0,
+      height: 4,
+      backgroundColor: colors.grass,
+      borderRadius: 2,
+    },
+    dotsRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    dot: {
+      width: 12,
+      height: 12,
+      borderRadius: 6,
+      backgroundColor: colors.fog,
+      borderWidth: 2,
+      borderColor: colors.fog,
+    },
+    dotFilled: {
+      backgroundColor: colors.grassPale,
+      borderColor: colors.grass,
+    },
+    dotActive: {
+      width: 20,
+      height: 20,
+      borderRadius: 10,
+      backgroundColor: colors.grass,
+      borderColor: colors.grassDark,
+    },
   });
 }
 
 function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
   return StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-  },
-  sheet: {
-    backgroundColor: colors.mist,
-    borderTopLeftRadius: radius.lg,
-    borderTopRightRadius: radius.lg,
-    maxHeight: '88%',
-    ...shadows.medium,
-  },
-  handle: {
-    width: 40,
-    height: 4,
-    backgroundColor: colors.fog,
-    borderRadius: radius.full,
-    alignSelf: 'center',
-    marginTop: spacing.sm,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: spacing.md,
-    paddingBottom: spacing.sm,
-  },
-  title: { fontSize: 18, fontWeight: '700', color: colors.textPrimary },
-  closeBtn: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: colors.fog,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  closeBtnText: { fontSize: 12, color: colors.textSecondary, fontWeight: '700' },
+    backdrop: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.4)',
+    },
+    sheet: {
+      backgroundColor: colors.mist,
+      borderTopLeftRadius: radius.lg,
+      borderTopRightRadius: radius.lg,
+      maxHeight: '88%',
+      ...shadows.medium,
+    },
+    handle: {
+      width: 40,
+      height: 4,
+      backgroundColor: colors.fog,
+      borderRadius: radius.full,
+      alignSelf: 'center',
+      marginTop: spacing.sm,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      padding: spacing.md,
+      paddingBottom: spacing.sm,
+    },
+    title: { fontSize: 18, fontWeight: '700', color: colors.textPrimary },
+    closeBtn: {
+      width: 30,
+      height: 30,
+      borderRadius: 15,
+      backgroundColor: colors.fog,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    closeBtnText: { fontSize: 12, color: colors.textSecondary, fontWeight: '700' },
 
-  contentInner: { padding: spacing.md, paddingBottom: spacing.lg },
+    contentInner: { padding: spacing.md, paddingBottom: spacing.lg },
 
-  section: { marginBottom: spacing.lg },
-  sectionLabel: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: colors.textMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginBottom: spacing.xs,
-  },
+    section: { marginBottom: spacing.lg },
+    sectionLabel: {
+      fontSize: 13,
+      fontWeight: '700',
+      color: colors.textMuted,
+      textTransform: 'uppercase',
+      letterSpacing: 1,
+      marginBottom: spacing.xs,
+    },
 
-  addressCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.card,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    ...shadows.soft,
-  },
-  addressIcon: { fontSize: 16, marginRight: spacing.sm },
-  addressText: { flex: 1, fontSize: 15, color: colors.textPrimary },
-  addressEditHint: { fontSize: 16, color: colors.textMuted, marginLeft: spacing.sm },
+    addressCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.card,
+      borderRadius: radius.md,
+      padding: spacing.md,
+      ...shadows.soft,
+    },
+    addressIcon: { fontSize: 16, marginRight: spacing.sm },
+    addressText: { flex: 1, fontSize: 15, color: colors.textPrimary },
+    addressEditHint: { fontSize: 16, color: colors.textMuted, marginLeft: spacing.sm },
 
-  addressSearchRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.card,
-    borderRadius: radius.md,
-    padding: spacing.sm,
-    gap: spacing.sm,
-    ...shadows.soft,
-  },
-  addressInput: {
-    flex: 1,
-    fontSize: 15,
-    color: colors.textPrimary,
-    padding: spacing.xs,
-  },
-  cancelSearch: { fontSize: 14, color: colors.textMuted, fontWeight: '700', paddingHorizontal: 4 },
+    addressSearchRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.card,
+      borderRadius: radius.md,
+      padding: spacing.sm,
+      gap: spacing.sm,
+      ...shadows.soft,
+    },
+    addressInput: {
+      flex: 1,
+      fontSize: 15,
+      color: colors.textPrimary,
+      padding: spacing.xs,
+    },
+    cancelSearch: {
+      fontSize: 14,
+      color: colors.textMuted,
+      fontWeight: '700',
+      paddingHorizontal: 4,
+    },
 
-  suggestionsList: {
-    backgroundColor: colors.card,
-    borderRadius: radius.md,
-    marginTop: spacing.xs,
-    ...shadows.soft,
-    overflow: 'hidden',
-  },
-  suggestionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: spacing.md,
-    gap: spacing.sm,
-  },
-  suggestionDivider: {
-    borderBottomWidth: 1,
-    borderBottomColor: colors.fog,
-  },
-  suggestionIcon: { fontSize: 14 },
-  suggestionText: { flex: 1, fontSize: 14, color: colors.textPrimary },
+    suggestionsList: {
+      backgroundColor: colors.card,
+      borderRadius: radius.md,
+      marginTop: spacing.xs,
+      ...shadows.soft,
+      overflow: 'hidden',
+    },
+    suggestionRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: spacing.md,
+      gap: spacing.sm,
+    },
+    suggestionDivider: {
+      borderBottomWidth: 1,
+      borderBottomColor: colors.fog,
+    },
+    suggestionIcon: { fontSize: 14 },
+    suggestionText: { flex: 1, fontSize: 14, color: colors.textPrimary },
 
-  noResults: { fontSize: 13, color: colors.textMuted, marginTop: spacing.xs, textAlign: 'center' },
+    noResults: {
+      fontSize: 13,
+      color: colors.textMuted,
+      marginTop: spacing.xs,
+      textAlign: 'center',
+    },
 
-  input: {
-    backgroundColor: colors.card,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    fontSize: 16,
-    color: colors.textPrimary,
-    ...shadows.soft,
-  },
+    input: {
+      backgroundColor: colors.card,
+      borderRadius: radius.md,
+      padding: spacing.md,
+      fontSize: 16,
+      color: colors.textPrimary,
+      ...shadows.soft,
+    },
 
-  radiusValueRow: { alignItems: 'center', marginBottom: spacing.xs },
-  radiusValue: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: colors.grass,
-  },
+    radiusValueRow: { alignItems: 'center', marginBottom: spacing.xs },
+    radiusValue: {
+      fontSize: 22,
+      fontWeight: '700',
+      color: colors.grass,
+    },
 
-  hint: { fontSize: 12, color: colors.textMuted, marginTop: spacing.xs },
+    hint: { fontSize: 12, color: colors.textMuted, marginTop: spacing.xs },
 
-  toggleRow: { flexDirection: 'row', gap: spacing.sm },
-  toggleBtn: {
-    flex: 1,
-    backgroundColor: colors.card,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    alignItems: 'center',
-    ...shadows.soft,
-  },
-  toggleBtnActive: {
-    backgroundColor: colors.grassPale,
-    borderWidth: 2,
-    borderColor: colors.grass,
-  },
-  toggleText: { fontSize: 14, color: colors.textMuted, fontWeight: '500' },
-  toggleTextActive: { color: colors.grass, fontWeight: '700' },
+    toggleRow: { flexDirection: 'row', gap: spacing.sm },
+    toggleBtn: {
+      flex: 1,
+      backgroundColor: colors.card,
+      borderRadius: radius.md,
+      padding: spacing.md,
+      alignItems: 'center',
+      ...shadows.soft,
+    },
+    toggleBtnActive: {
+      backgroundColor: colors.grassPale,
+      borderWidth: 2,
+      borderColor: colors.grass,
+    },
+    toggleText: { fontSize: 14, color: colors.textMuted, fontWeight: '500' },
+    toggleTextActive: { color: colors.grass, fontWeight: '700' },
 
-  primaryBtn: {
-    backgroundColor: colors.grass,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    alignItems: 'center',
-  },
-  primaryBtnText: { fontSize: 16, color: colors.textInverse, fontWeight: '700' },
+    primaryBtn: {
+      backgroundColor: colors.grass,
+      borderRadius: radius.md,
+      padding: spacing.md,
+      alignItems: 'center',
+    },
+    primaryBtnText: { fontSize: 16, color: colors.textInverse, fontWeight: '700' },
 
-  deleteBtn: {
-    backgroundColor: colors.errorSurface,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    alignItems: 'center',
-  },
-  deleteBtnText: { fontSize: 16, color: colors.error, fontWeight: '600' },
+    deleteBtn: {
+      backgroundColor: colors.errorSurface,
+      borderRadius: radius.md,
+      padding: spacing.md,
+      alignItems: 'center',
+    },
+    deleteBtnText: { fontSize: 16, color: colors.error, fontWeight: '600' },
   });
 }
-

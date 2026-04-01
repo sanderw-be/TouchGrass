@@ -27,9 +27,15 @@ function TestConsumer() {
       <Text testID="isDark">{isDark ? 'dark' : 'light'}</Text>
       <Text testID="pref">{themePreference}</Text>
       <Text testID="bg">{colors.mist}</Text>
-      <Text testID="setPref" onPress={() => setThemePreference('dark')}>set-dark</Text>
-      <Text testID="setPrefLight" onPress={() => setThemePreference('light')}>set-light</Text>
-      <Text testID="setPrefSystem" onPress={() => setThemePreference('system')}>set-system</Text>
+      <Text testID="setPref" onPress={() => setThemePreference('dark')}>
+        set-dark
+      </Text>
+      <Text testID="setPrefLight" onPress={() => setThemePreference('light')}>
+        set-light
+      </Text>
+      <Text testID="setPrefSystem" onPress={() => setThemePreference('system')}>
+        set-system
+      </Text>
     </>
   );
 }

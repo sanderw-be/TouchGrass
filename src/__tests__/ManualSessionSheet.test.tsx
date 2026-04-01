@@ -13,7 +13,6 @@ jest.mock('../detection/manualCheckin', () => ({
   startManualSession: jest.fn(() => jest.fn()),
 }));
 
-
 jest.mock('../utils/helpers', () => ({
   formatMinutes: (mins: number) => `${mins} min`,
   formatTimer: (secs: number) => `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`,
@@ -80,7 +79,7 @@ describe('ManualSessionSheet', () => {
     const onSessionLogged = jest.fn();
     const onClose = jest.fn();
     const { getByText } = render(
-      <ManualSessionSheet visible={true} onClose={onClose} onSessionLogged={onSessionLogged} />,
+      <ManualSessionSheet visible={true} onClose={onClose} onSessionLogged={onSessionLogged} />
     );
     fireEvent.press(getByText('manual_tab_timer'));
     fireEvent.press(getByText('manual_timer_start'));
@@ -98,7 +97,7 @@ describe('ManualSessionSheet', () => {
     const startMs = new Date('2024-01-01T10:00:00.000Z').getTime();
     const endMs = new Date('2024-01-01T10:10:00.000Z').getTime();
     const { getByText } = render(
-      <ManualSessionSheet visible={true} onClose={onClose} onSessionLogged={onSessionLogged} />,
+      <ManualSessionSheet visible={true} onClose={onClose} onSessionLogged={onSessionLogged} />
     );
     fireEvent.press(getByText('manual_tab_timer'));
     fireEvent.press(getByText('manual_timer_start'));
@@ -107,11 +106,7 @@ describe('ManualSessionSheet', () => {
     fireEvent.press(getByText('manual_timer_stop'));
     fireEvent.press(getByText('manual_log_btn'));
     // Exact start and end timestamps are passed (not a rounded duration)
-    expect(logManualSession).toHaveBeenCalledWith(
-      (endMs - startMs) / 60000,
-      startMs,
-      endMs,
-    );
+    expect(logManualSession).toHaveBeenCalledWith((endMs - startMs) / 60000, startMs, endMs);
     expect(onSessionLogged).toHaveBeenCalled();
     expect(onClose).toHaveBeenCalled();
   });
@@ -123,18 +118,14 @@ describe('ManualSessionSheet', () => {
     const startMs = new Date('2024-01-01T10:00:00.000Z').getTime();
     const endMs = new Date('2024-01-01T10:00:20.000Z').getTime(); // 20 seconds
     const { getByText } = render(
-      <ManualSessionSheet visible={true} onClose={onClose} onSessionLogged={onSessionLogged} />,
+      <ManualSessionSheet visible={true} onClose={onClose} onSessionLogged={onSessionLogged} />
     );
     fireEvent.press(getByText('manual_tab_timer'));
     fireEvent.press(getByText('manual_timer_start'));
     jest.setSystemTime(new Date(endMs));
     fireEvent.press(getByText('manual_timer_stop'));
     fireEvent.press(getByText('manual_log_btn'));
-    expect(logManualSession).toHaveBeenCalledWith(
-      (endMs - startMs) / 60000,
-      startMs,
-      endMs,
-    );
+    expect(logManualSession).toHaveBeenCalledWith((endMs - startMs) / 60000, startMs, endMs);
     expect(onSessionLogged).toHaveBeenCalled();
     expect(onClose).toHaveBeenCalled();
   });
@@ -172,7 +163,7 @@ describe('ManualSessionSheet', () => {
 
   it('does not render when not visible', () => {
     const { queryByText } = render(
-      <ManualSessionSheet visible={false} onClose={jest.fn()} onSessionLogged={jest.fn()} />,
+      <ManualSessionSheet visible={false} onClose={jest.fn()} onSessionLogged={jest.fn()} />
     );
     expect(queryByText('manual_title')).toBeNull();
   });
@@ -180,7 +171,7 @@ describe('ManualSessionSheet', () => {
   it('calls onClose when the close button is pressed', () => {
     const onClose = jest.fn();
     const { getByText } = render(
-      <ManualSessionSheet visible={true} onClose={onClose} onSessionLogged={jest.fn()} />,
+      <ManualSessionSheet visible={true} onClose={onClose} onSessionLogged={jest.fn()} />
     );
     fireEvent.press(getByText('✕'));
     expect(onClose).toHaveBeenCalled();

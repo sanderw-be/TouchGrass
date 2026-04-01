@@ -30,31 +30,31 @@ function makeSession(overrides: Partial<OutsideSession> = {}): OutsideSession {
 
 describe('scoreDuration', () => {
   it('returns low score for sessions at or below 5 minutes', () => {
-    expect(scoreDuration(5 * 60 * 1000)).toBe(0.30);
-    expect(scoreDuration(3 * 60 * 1000)).toBe(0.30);
-    expect(scoreDuration(0)).toBe(0.30);
+    expect(scoreDuration(5 * 60 * 1000)).toBe(0.3);
+    expect(scoreDuration(3 * 60 * 1000)).toBe(0.3);
+    expect(scoreDuration(0)).toBe(0.3);
   });
 
   it('returns moderate score for sessions between 5 and 15 minutes', () => {
-    expect(scoreDuration(6 * 60 * 1000)).toBe(0.70);
-    expect(scoreDuration(15 * 60 * 1000)).toBe(0.70);
+    expect(scoreDuration(6 * 60 * 1000)).toBe(0.7);
+    expect(scoreDuration(15 * 60 * 1000)).toBe(0.7);
   });
 
   it('returns full score for sessions between 15 and 90 minutes', () => {
-    expect(scoreDuration(16 * 60 * 1000)).toBe(1.00);
-    expect(scoreDuration(30 * 60 * 1000)).toBe(1.00);
-    expect(scoreDuration(90 * 60 * 1000)).toBe(1.00);
+    expect(scoreDuration(16 * 60 * 1000)).toBe(1.0);
+    expect(scoreDuration(30 * 60 * 1000)).toBe(1.0);
+    expect(scoreDuration(90 * 60 * 1000)).toBe(1.0);
   });
 
   it('returns slightly reduced score for sessions between 90 min and 4 hours', () => {
-    expect(scoreDuration(91 * 60 * 1000)).toBe(0.80);
-    expect(scoreDuration(180 * 60 * 1000)).toBe(0.80);
-    expect(scoreDuration(240 * 60 * 1000)).toBe(0.80);
+    expect(scoreDuration(91 * 60 * 1000)).toBe(0.8);
+    expect(scoreDuration(180 * 60 * 1000)).toBe(0.8);
+    expect(scoreDuration(240 * 60 * 1000)).toBe(0.8);
   });
 
   it('returns low score for sessions longer than 4 hours', () => {
-    expect(scoreDuration(241 * 60 * 1000)).toBe(0.40);
-    expect(scoreDuration(6 * 60 * 60 * 1000)).toBe(0.40);
+    expect(scoreDuration(241 * 60 * 1000)).toBe(0.4);
+    expect(scoreDuration(6 * 60 * 60 * 1000)).toBe(0.4);
   });
 });
 
@@ -85,9 +85,7 @@ describe('updateTimeSlotProbability', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     storedProbs = {};
-    (Database.getSetting as jest.Mock).mockImplementation(() =>
-      JSON.stringify(storedProbs)
-    );
+    (Database.getSetting as jest.Mock).mockImplementation(() => JSON.stringify(storedProbs));
     (Database.setSetting as jest.Mock).mockImplementation((_key: string, value: string) => {
       storedProbs = JSON.parse(value);
     });

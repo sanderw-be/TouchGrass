@@ -2,7 +2,7 @@ name: Build Pixel 10 Pro APK
 
 on:
   pull_request:
-    branches: [ main, master ]
+    branches: [main, master]
   workflow_dispatch:
 
 # Set minimal permissions for GITHUB_TOKEN
@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -51,7 +51,7 @@ jobs:
       contents: read
       actions: write
       pull-requests: write
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -97,16 +97,16 @@ jobs:
         run: |
           # Create the credentials/android directory if it doesn't exist
           mkdir -p credentials/android
-          
+
           # Decode the base64 string and save to the target location
           echo "$ENCODED_KEYSTORE" | base64 --decode > credentials/android/keystore.jks
-          
+
           # Verify the file was created successfully
           if [ ! -f credentials/android/keystore.jks ]; then
             echo "ERROR: Keystore file was not created at credentials/android/keystore.jks"
             exit 1
           fi
-          
+
           # Show file size to confirm it's not empty
           ls -lh credentials/android/keystore.jks
           echo "✓ Keystore successfully decoded and saved to credentials/android/keystore.jks"
@@ -126,7 +126,7 @@ jobs:
           eas build --platform android --profile preview --local --non-interactive --output ./build-artifacts/app-arm64.apk
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-          GRADLE_OPTS: "-Xmx3072m"
+          GRADLE_OPTS: '-Xmx3072m'
 
       - name: Upload Android APK artifact
         uses: actions/upload-artifact@v4
@@ -162,7 +162,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -176,8 +176,8 @@ jobs:
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
 
-      - name: Check for common issues
-        run: |
-          echo "Checking for syntax errors in TypeScript files..."
-          npx tsc --noEmit --pretty
-          echo "TypeScript check passed!"
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Check Prettier formatting
+        run: npm run format:check

@@ -82,11 +82,11 @@ describe('submitSession', () => {
     expect(Database.deleteSession).toHaveBeenCalledWith(1);
     expect(Database.insertSession).toHaveBeenCalledWith(
       expect.objectContaining({
-        startTime: BASE_TIME,                       // min of both
-        endTime: BASE_TIME + 40 * 60 * 1000,        // max of both
+        startTime: BASE_TIME, // min of both
+        endTime: BASE_TIME + 40 * 60 * 1000, // max of both
         durationMinutes: 40,
         confidence: 0.8,
-      }),
+      })
     );
   });
 
@@ -146,8 +146,14 @@ describe('submitSession', () => {
 
   it('sums step counts when multiple step sessions are merged', () => {
     const hc1 = makeSession({ id: 1, source: 'health_connect', steps: 500, userConfirmed: null });
-    const hc2 = makeSession({ id: 2, source: 'health_connect', steps: 300, userConfirmed: null,
-      startTime: BASE_TIME + 3 * 60 * 1000, endTime: BASE_TIME + 25 * 60 * 1000 });
+    const hc2 = makeSession({
+      id: 2,
+      source: 'health_connect',
+      steps: 300,
+      userConfirmed: null,
+      startTime: BASE_TIME + 3 * 60 * 1000,
+      endTime: BASE_TIME + 25 * 60 * 1000,
+    });
     (Database.getSessionsForRange as jest.Mock).mockReturnValue([hc1, hc2]);
 
     const candidate = makeSession({ source: 'health_connect', steps: 200, userConfirmed: null });
@@ -160,12 +166,16 @@ describe('submitSession', () => {
   it('generates a single aggregated HC note when many tiny steps records are merged', () => {
     // Simulate 3 tiny HC records that all merge into one window (30 min total)
     const hc1 = makeSession({
-      id: 1, source: 'health_connect', steps: 100,
+      id: 1,
+      source: 'health_connect',
+      steps: 100,
       notes: 'Health Connect, 100 steps at 1.5 km/h.',
       userConfirmed: null,
     });
     const hc2 = makeSession({
-      id: 2, source: 'health_connect', steps: 200,
+      id: 2,
+      source: 'health_connect',
+      steps: 200,
       notes: 'Health Connect, 200 steps at 3.0 km/h.',
       userConfirmed: null,
       startTime: BASE_TIME + 10 * 60 * 1000,
@@ -174,7 +184,8 @@ describe('submitSession', () => {
     (Database.getSessionsForRange as jest.Mock).mockReturnValue([hc1, hc2]);
 
     const candidate = makeSession({
-      source: 'health_connect', steps: 700,
+      source: 'health_connect',
+      steps: 700,
       notes: 'Health Connect, 700 steps at 4.5 km/h.',
       userConfirmed: null,
     });
@@ -188,7 +199,9 @@ describe('submitSession', () => {
 
   it('combines GPS notes and aggregated HC steps note when sources are mixed', () => {
     const hcSession = makeSession({
-      id: 1, source: 'health_connect', steps: 3000,
+      id: 1,
+      source: 'health_connect',
+      steps: 3000,
       notes: 'Health Connect, 3,000 steps at 4.5 km/h.',
       userConfirmed: null,
     });
@@ -212,10 +225,17 @@ describe('submitSession', () => {
   });
 
   it('does not duplicate notes when merging sessions with identical notes', () => {
-    const existing = makeSession({ id: 1, notes: 'GPS detection, 1.0 km at 4.0 km/h.', userConfirmed: null });
+    const existing = makeSession({
+      id: 1,
+      notes: 'GPS detection, 1.0 km at 4.0 km/h.',
+      userConfirmed: null,
+    });
     (Database.getSessionsForRange as jest.Mock).mockReturnValue([existing]);
 
-    const candidate = makeSession({ notes: 'GPS detection, 1.0 km at 4.0 km/h.', userConfirmed: null });
+    const candidate = makeSession({
+      notes: 'GPS detection, 1.0 km at 4.0 km/h.',
+      userConfirmed: null,
+    });
     submitSession(candidate);
 
     const inserted = (Database.insertSession as jest.Mock).mock.calls[0][0];
@@ -287,7 +307,11 @@ describe('submitSession', () => {
 
   it('merges multiple overlapping sessions at once', () => {
     const e1 = makeSession({ id: 1, startTime: BASE_TIME, endTime: BASE_TIME + 10 * 60 * 1000 });
-    const e2 = makeSession({ id: 2, startTime: BASE_TIME + 8 * 60 * 1000, endTime: BASE_TIME + 20 * 60 * 1000 });
+    const e2 = makeSession({
+      id: 2,
+      startTime: BASE_TIME + 8 * 60 * 1000,
+      endTime: BASE_TIME + 20 * 60 * 1000,
+    });
     (Database.getSessionsForRange as jest.Mock).mockReturnValue([e1, e2]);
 
     const candidate = makeSession({
@@ -343,12 +367,20 @@ describe('submitSession', () => {
 
     // Two GPS segments: before and after the manual session
     expect(Database.insertSession).toHaveBeenCalledTimes(2);
-    const calls = (Database.insertSession as jest.Mock).mock.calls.map(c => c[0]);
+    const calls = (Database.insertSession as jest.Mock).mock.calls.map((c) => c[0]);
     expect(calls).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ startTime: BASE_TIME, endTime: BASE_TIME + 10 * 60 * 1000, durationMinutes: 10 }),
-        expect.objectContaining({ startTime: BASE_TIME + 20 * 60 * 1000, endTime: BASE_TIME + 30 * 60 * 1000, durationMinutes: 10 }),
-      ]),
+        expect.objectContaining({
+          startTime: BASE_TIME,
+          endTime: BASE_TIME + 10 * 60 * 1000,
+          durationMinutes: 10,
+        }),
+        expect.objectContaining({
+          startTime: BASE_TIME + 20 * 60 * 1000,
+          endTime: BASE_TIME + 30 * 60 * 1000,
+          durationMinutes: 10,
+        }),
+      ])
     );
   });
 
@@ -459,8 +491,8 @@ describe('submitSession', () => {
     const candidate = makeSession({ startTime: BASE_TIME, endTime: BASE_TIME + 30 * 60 * 1000 });
     submitSession(candidate);
 
-    const calls = (Database.insertSession as jest.Mock).mock.calls.map(c => c[0]);
-    calls.forEach(s => expect(s.userConfirmed).toBeNull());
+    const calls = (Database.insertSession as jest.Mock).mock.calls.map((c) => c[0]);
+    calls.forEach((s) => expect(s.userConfirmed).toBeNull());
   });
 
   // ── Confirmed-session protection (any source) ─────────────
@@ -496,12 +528,15 @@ describe('submitSession', () => {
 
     expect(Database.deleteSession).not.toHaveBeenCalledWith(5);
     expect(Database.insertSession).toHaveBeenCalledTimes(2);
-    const calls = (Database.insertSession as jest.Mock).mock.calls.map(c => c[0]);
+    const calls = (Database.insertSession as jest.Mock).mock.calls.map((c) => c[0]);
     expect(calls).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ startTime: BASE_TIME, endTime: BASE_TIME + 10 * 60 * 1000 }),
-        expect.objectContaining({ startTime: BASE_TIME + 20 * 60 * 1000, endTime: BASE_TIME + 30 * 60 * 1000 }),
-      ]),
+        expect.objectContaining({
+          startTime: BASE_TIME + 20 * 60 * 1000,
+          endTime: BASE_TIME + 30 * 60 * 1000,
+        }),
+      ])
     );
   });
 
@@ -544,8 +579,8 @@ describe('submitSession', () => {
     });
     submitSession(candidate);
 
-    const calls = (Database.insertSession as jest.Mock).mock.calls.map(c => c[0]);
-    calls.forEach(s => expect(s.userConfirmed).toBeNull());
+    const calls = (Database.insertSession as jest.Mock).mock.calls.map((c) => c[0]);
+    calls.forEach((s) => expect(s.userConfirmed).toBeNull());
   });
 
   // ── Confidence-based discard ──────────────────────────────
@@ -607,8 +642,8 @@ describe('submitSession', () => {
     submitSession(candidate);
 
     const inserted = (Database.insertSession as jest.Mock).mock.calls[0][0];
-    expect(inserted.userConfirmed).toBe(0);   // preserved denial
-    expect(inserted.discarded).toBe(0);        // NOT discarded
+    expect(inserted.userConfirmed).toBe(0); // preserved denial
+    expect(inserted.discarded).toBe(0); // NOT discarded
   });
 
   it('stores the computed confidence score instead of the raw detection confidence', () => {
@@ -623,7 +658,7 @@ describe('submitSession', () => {
     submitSession(candidate);
 
     const inserted = (Database.insertSession as jest.Mock).mock.calls[0][0];
-    expect(inserted.confidence).toBeLessThan(0.8);  // lower than raw GPS confidence
+    expect(inserted.confidence).toBeLessThan(0.8); // lower than raw GPS confidence
   });
 
   it('manual sessions are never scored for discard (inserted as-is)', () => {

@@ -55,12 +55,14 @@ TaskManager.defineTask(UNIFIED_BACKGROUND_TASK, async () => {
     // --- Reminder planning ---
     const remindersCountRaw = getSetting('smart_reminders_count', '0');
     const remindersEnabled = parseInt(remindersCountRaw, 10) > 0;
-    console.log(`TouchGrass: [UnifiedTask] smart_reminders_count=${remindersCountRaw} → reminders ${remindersEnabled ? 'enabled' : 'disabled'}`);
+    console.log(
+      `TouchGrass: [UnifiedTask] smart_reminders_count=${remindersCountRaw} → reminders ${remindersEnabled ? 'enabled' : 'disabled'}`
+    );
     if (remindersEnabled) {
       logReminderQueueSnapshot();
       try {
         await scheduleDayReminders();
-        await processReminderQueue();         // update consumed states before catch-up check
+        await processReminderQueue(); // update consumed states before catch-up check
         await maybeScheduleCatchUpReminder(); // uses consumed entries for 60-min wait guard
       } catch (reminderError) {
         console.error('TouchGrass: [UnifiedTask] Reminder operations failed', reminderError);

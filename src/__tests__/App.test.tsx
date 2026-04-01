@@ -66,16 +66,19 @@ describe('App', () => {
     // AppNavigator is mocked above to render the literal text 'AppNavigator'.
     const { getByText } = render(<App />);
 
-    await waitFor(() => {
-      expect(getByText('AppNavigator')).toBeTruthy();
-    }, { timeout: 3000 });
+    await waitFor(
+      () => {
+        expect(getByText('AppNavigator')).toBeTruthy();
+      },
+      { timeout: 3000 }
+    );
   });
 
   it('initializes the database on mount', async () => {
     const { initDatabase } = require('../storage/database');
-    
+
     render(<App />);
-    
+
     await waitFor(() => {
       expect(initDatabase).toHaveBeenCalled();
     });
@@ -85,10 +88,13 @@ describe('App', () => {
     // IntroScreen mock renders 'IntroScreen'; AppNavigator mock renders 'AppNavigator'.
     // getSetting mock returns '1' for hasCompletedIntro, so the intro should be skipped.
     const { getByText, queryByText } = render(<App />);
-    
-    await waitFor(() => {
-      expect(getByText('AppNavigator')).toBeTruthy();
-    }, { timeout: 3000 });
+
+    await waitFor(
+      () => {
+        expect(getByText('AppNavigator')).toBeTruthy();
+      },
+      { timeout: 3000 }
+    );
 
     expect(queryByText('IntroScreen')).toBeNull();
   });

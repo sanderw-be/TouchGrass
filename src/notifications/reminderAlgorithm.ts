@@ -1,12 +1,22 @@
-import { getReminderFeedback, getSessionsForRange, startOfDay, startOfWeek } from '../storage/database';
+import {
+  getReminderFeedback,
+  getSessionsForRange,
+  startOfDay,
+  startOfWeek,
+} from '../storage/database';
 import { getWeatherForHour } from '../weather/weatherService';
-import { scoreWeatherCondition, getWeatherPreferences, getWeatherDescription, getWeatherEmoji } from '../weather/weatherAlgorithm';
+import {
+  scoreWeatherCondition,
+  getWeatherPreferences,
+  getWeatherDescription,
+  getWeatherEmoji,
+} from '../weather/weatherAlgorithm';
 import { t } from '../i18n';
 import { formatTemperature } from '../utils/temperature';
 
 // Active hours: 7:00 – 22:30 (slots at :00 and :30)
-const SLOT_START_MINUTES = 7 * 60;  // 7:00
-const SLOT_END_MINUTES = 23 * 60;   // exclusive end, last slot is 22:30
+const SLOT_START_MINUTES = 7 * 60; // 7:00
+const SLOT_END_MINUTES = 23 * 60; // exclusive end, last slot is 22:30
 const SLOT_STEP = 30;
 
 // Proximity: slots ≥ 3 hours from a planned reminder are unaffected (multiplier 1.0);
@@ -44,7 +54,7 @@ export function scoreReminderHours(
   dailyTargetMinutes: number,
   currentHour: number,
   currentMinute: number = 0,
-  plannedSlots: Array<{ hour: number; minute: 0 | 30 }> = [],
+  plannedSlots: Array<{ hour: number; minute: 0 | 30 }> = []
 ): HourScore[] {
   const feedback = getReminderFeedback();
   const scores: HourScore[] = [];
@@ -55,7 +65,11 @@ export function scoreReminderHours(
   const dayProgressRatio = currentHour / 21; // normalize to end of reasonable day (9pm)
   const urgency = Math.max(0, dayProgressRatio - progressRatio); // 0 = no urgency, 1 = very urgent
 
-  for (let slotMinutes = SLOT_START_MINUTES; slotMinutes < SLOT_END_MINUTES; slotMinutes += SLOT_STEP) {
+  for (
+    let slotMinutes = SLOT_START_MINUTES;
+    slotMinutes < SLOT_END_MINUTES;
+    slotMinutes += SLOT_STEP
+  ) {
     const hour = Math.floor(slotMinutes / 60);
     const minute = (slotMinutes % 60) as 0 | 30;
 
@@ -76,12 +90,18 @@ export function scoreReminderHours(
       const patternBoost = Math.min(outsideAtHour * 0.1, 0.3);
       score += patternBoost;
       reasons.push(`pattern +${patternBoost.toFixed(2)}`);
-      contributors.push({ reason: 'pattern', score: patternBoost, description: t('notif_reason_pattern') });
+      contributors.push({
+        reason: 'pattern',
+        score: patternBoost,
+        description: t('notif_reason_pattern'),
+      });
     }
 
     // ── Feedback penalties and bonuses ───────────────────
     // Feedback is keyed by half-hour slot (hour + minute) for precise per-slot scoring
-    const slotFeedback = feedback.filter((f) => f.scheduledHour === hour && (f.scheduledMinute ?? 0) === minute);
+    const slotFeedback = feedback.filter(
+      (f) => f.scheduledHour === hour && (f.scheduledMinute ?? 0) === minute
+    );
 
     const snoozeCount = slotFeedback.filter((f) => f.action === 'snoozed').length;
     const dismissCount = slotFeedback.filter((f) => f.action === 'dismissed').length;
@@ -97,7 +117,7 @@ export function scoreReminderHours(
     }
 
     if (dismissCount > 0) {
-      const penalty = Math.min(dismissCount * 0.12, 0.30);
+      const penalty = Math.min(dismissCount * 0.12, 0.3);
       score -= penalty;
       reasons.push(`dismissed -${penalty.toFixed(2)}`);
     }
@@ -110,7 +130,7 @@ export function scoreReminderHours(
     }
 
     if (lessCount > 0) {
-      const penalty = Math.min(lessCount * 0.15, 0.40);
+      const penalty = Math.min(lessCount * 0.15, 0.4);
       score -= penalty;
       reasons.push(`less_often -${penalty.toFixed(2)}`);
     }
@@ -119,13 +139,17 @@ export function scoreReminderHours(
       const bonus = Math.min(moreCount * 0.15, 0.35);
       score += bonus;
       reasons.push(`more_often +${bonus.toFixed(2)}`);
-      contributors.push({ reason: 'more_often', score: bonus, description: t('notif_reason_more_often') });
+      contributors.push({
+        reason: 'more_often',
+        score: bonus,
+        description: t('notif_reason_more_often'),
+      });
     }
 
     if (badTimeCount > 0) {
       // "Bad time" is an explicit, deliberate signal — apply a larger and
       // long-lasting penalty so the algorithm avoids this slot in the future.
-      const penalty = Math.min(badTimeCount * 0.30, 0.70);
+      const penalty = Math.min(badTimeCount * 0.3, 0.7);
       score -= penalty;
       reasons.push(`bad_time -${penalty.toFixed(2)}`);
     }
@@ -137,7 +161,11 @@ export function scoreReminderHours(
       const urgencyBoost = urgency * 0.3;
       score += urgencyBoost;
       reasons.push(`urgent +${urgencyBoost.toFixed(2)}`);
-      contributors.push({ reason: 'urgent', score: urgencyBoost, description: t('notif_reason_urgent') });
+      contributors.push({
+        reason: 'urgent',
+        score: urgencyBoost,
+        description: t('notif_reason_urgent'),
+      });
     }
 
     // ── Prime outdoor hours bonus ─────────────────────────
@@ -150,7 +178,11 @@ export function scoreReminderHours(
     if (hour >= 17 && hour <= 19) {
       score += 0.15;
       reasons.push('after-work +0.15');
-      contributors.push({ reason: 'after_work', score: 0.15, description: t('notif_reason_after_work') });
+      contributors.push({
+        reason: 'after_work',
+        score: 0.15,
+        description: t('notif_reason_after_work'),
+      });
     }
 
     // ── Weather score ─────────────────────────────────────
@@ -167,7 +199,11 @@ export function scoreReminderHours(
         if (weatherScore > 0) {
           const emoji = getWeatherEmoji(weather);
           const desc = getWeatherDescription(weather);
-          contributors.push({ reason: 'weather', score: weatherScore, description: `${emoji} ${desc}, ${formatTemperature(weather.temperature)}` });
+          contributors.push({
+            reason: 'weather',
+            score: weatherScore,
+            description: `${emoji} ${desc}, ${formatTemperature(weather.temperature)}`,
+          });
         }
       }
     }
@@ -226,7 +262,7 @@ export function shouldRemindNow(
   todayMinutes: number,
   dailyTargetMinutes: number,
   lastReminderMs: number,
-  isCurrentlyOutside: boolean,
+  isCurrentlyOutside: boolean
 ): { should: boolean; reason: string; contributors: ScoreContributor[] } {
   const now = Date.now();
   const d = new Date(now);
@@ -258,7 +294,11 @@ export function shouldRemindNow(
   const currentHourScore = scores.find((s) => s.hour === hour && s.minute === currentSlotMinute);
 
   if (!currentHourScore || currentHourScore.score < 0.35) {
-    return { should: false, reason: `score too low (${currentHourScore?.score.toFixed(2) ?? '0'})`, contributors: [] };
+    return {
+      should: false,
+      reason: `score too low (${currentHourScore?.score.toFixed(2) ?? '0'})`,
+      contributors: [],
+    };
   }
 
   return {

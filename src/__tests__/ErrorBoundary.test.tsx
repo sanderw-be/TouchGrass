@@ -43,7 +43,7 @@ describe('ErrorBoundary', () => {
     const { getByText } = render(
       <ErrorBoundary>
         <ThrowingComponent shouldThrow={false} />
-      </ErrorBoundary>,
+      </ErrorBoundary>
     );
     // No fallback UI should be shown
     expect(() => getByText('error_boundary_title')).toThrow();
@@ -53,7 +53,7 @@ describe('ErrorBoundary', () => {
     const { getByText } = render(
       <ErrorBoundary>
         <ThrowingComponent shouldThrow />
-      </ErrorBoundary>,
+      </ErrorBoundary>
     );
     expect(getByText('error_boundary_title')).toBeTruthy();
     expect(getByText('error_boundary_subtitle')).toBeTruthy();
@@ -73,7 +73,7 @@ describe('ErrorBoundary', () => {
     const { getByText, queryByText, rerender } = render(
       <ErrorBoundary>
         <TogglableThrow />
-      </ErrorBoundary>,
+      </ErrorBoundary>
     );
 
     expect(getByText('error_boundary_title')).toBeTruthy();
@@ -90,7 +90,7 @@ describe('ErrorBoundary', () => {
     const { getByText } = render(
       <ErrorBoundary>
         <ThrowingComponent shouldThrow />
-      </ErrorBoundary>,
+      </ErrorBoundary>
     );
 
     fireEvent.press(getByText('error_boundary_report'));
@@ -98,7 +98,7 @@ describe('ErrorBoundary', () => {
     await Promise.resolve();
 
     expect(Linking.openURL).toHaveBeenCalledWith(
-      expect.stringContaining('forms.gle/P6Www1U1yiurgk2D6'),
+      expect.stringContaining('forms.gle/P6Www1U1yiurgk2D6')
     );
   });
 
@@ -109,7 +109,7 @@ describe('ErrorBoundary', () => {
     const { getByText } = render(
       <ErrorBoundary>
         <ThrowingComponent shouldThrow />
-      </ErrorBoundary>,
+      </ErrorBoundary>
     );
 
     fireEvent.press(getByText('error_boundary_report'));
@@ -117,7 +117,7 @@ describe('ErrorBoundary', () => {
     await Promise.resolve();
 
     expect(Linking.openURL).toHaveBeenCalledWith(
-      expect.stringContaining('forms.gle/SSavqQgWFqYmiJaZA'),
+      expect.stringContaining('forms.gle/SSavqQgWFqYmiJaZA')
     );
 
     i18n.default.locale = 'en';
@@ -127,7 +127,7 @@ describe('ErrorBoundary', () => {
     const { getByText } = render(
       <ErrorBoundary>
         <ThrowingComponent shouldThrow />
-      </ErrorBoundary>,
+      </ErrorBoundary>
     );
 
     fireEvent.press(getByText('error_boundary_report'));
@@ -144,7 +144,7 @@ describe('ErrorBoundary', () => {
     const { getByText } = render(
       <ErrorBoundary>
         <ThrowingComponent shouldThrow />
-      </ErrorBoundary>,
+      </ErrorBoundary>
     );
 
     fireEvent.press(getByText('error_boundary_report'));
@@ -159,13 +159,13 @@ describe('ErrorBoundary', () => {
     render(
       <ErrorBoundary>
         <ThrowingComponent shouldThrow />
-      </ErrorBoundary>,
+      </ErrorBoundary>
     );
 
     expect(console.error).toHaveBeenCalledWith(
       expect.stringContaining('TouchGrass: Unhandled render error:'),
       expect.any(Error),
-      expect.anything(),
+      expect.anything()
     );
   });
 });
