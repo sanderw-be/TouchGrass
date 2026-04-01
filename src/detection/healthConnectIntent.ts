@@ -47,20 +47,18 @@ export async function openHealthConnectPermissionsViaIntent(): Promise<boolean> 
       try {
         const permissionsUrl = `intent:#Intent;action=android.health.connect.action.MANAGE_HEALTH_PERMISSIONS;S.android.intent.extra.PACKAGE_NAME=${APP_PACKAGE_NAME};end`;
         await Linking.openURL(permissionsUrl);
-        console.log('Opened Health Connect permissions via MANAGE_HEALTH_PERMISSIONS');
         return true;
       } catch (e) {
-        console.log('MANAGE_HEALTH_PERMISSIONS intent failed, trying main settings:', e);
+        console.warn('MANAGE_HEALTH_PERMISSIONS intent failed, trying main settings:', e);
       }
 
       // Method 2: Open the main Health Connect settings page.
       // (Settings → Security & Privacy → Privacy → Health Connect)
       try {
         openHealthConnectSettings();
-        console.log('Opened Health Connect settings via native library');
         return true;
       } catch (e) {
-        console.log('openHealthConnectSettings failed:', e);
+        console.warn('openHealthConnectSettings failed:', e);
       }
     } else {
       // Android 13 and below: Health Connect is a standalone app.
@@ -70,11 +68,10 @@ export async function openHealthConnectPermissionsViaIntent(): Promise<boolean> 
         const canOpenApp = await Linking.canOpenURL(appUrl);
         if (canOpenApp) {
           await Linking.openURL(appUrl);
-          console.log('Opened Health Connect via custom scheme');
           return true;
         }
       } catch (e) {
-        console.log('Custom scheme failed:', e);
+        console.warn('Custom scheme failed:', e);
       }
 
       // Method 2: Open the Play Store via the market:// scheme.
@@ -83,20 +80,18 @@ export async function openHealthConnectPermissionsViaIntent(): Promise<boolean> 
         const canOpenMarket = await Linking.canOpenURL(playStoreUrl);
         if (canOpenMarket) {
           await Linking.openURL(playStoreUrl);
-          console.log('Opened Health Connect in Play Store (market)');
           return true;
         }
       } catch (e) {
-        console.log('Play Store market URL failed:', e);
+        console.warn('Play Store market URL failed:', e);
       }
 
       // Method 3: Play Store via browser as a last resort.
       try {
         await Linking.openURL(`https://play.google.com/store/apps/details?id=${HEALTH_CONNECT_PLAY_STORE_ID}`);
-        console.log('Opened Health Connect in Play Store (browser)');
         return true;
       } catch (e) {
-        console.log('Browser Play Store URL failed:', e);
+        console.warn('Browser Play Store URL failed:', e);
       }
     }
 

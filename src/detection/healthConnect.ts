@@ -99,17 +99,23 @@ export async function requestHealthPermissions(): Promise<boolean> {
         { accessType: 'read', recordType: 'Distance' },
       ]);
       
-      // Check if permissions were granted
-      if (granted && granted.length > 0) {
+      // Check if permissions were granted via the dialog
+      if (granted && Array.isArray(granted) && granted.length > 0) {
         setSetting(PERMISSION_WARNING_KEY, '0');
         return true;
       }
       
-      // If no permissions granted, fall back to Intent flow
-      console.log('requestPermission returned empty, trying Intent fallback');
+      // requestPermission() can return null/empty when permissions are already granted
+      // (e.g. some devices return null instead of the full list). Re-verify before
+      // falling back to the Intent flow.
+      const nowGranted = await verifyHealthConnectPermissions();
+      if (nowGranted) {
+        setSetting(PERMISSION_WARNING_KEY, '0');
+        return true;
+      }
     } catch (permError) {
       // If requestPermission fails, fall back to manual flow
-      console.log('Library requestPermission failed, using Intent fallback:', permError);
+      console.warn('Library requestPermission failed, using Intent fallback:', permError);
     }
     
     // Fallback: Open Health Connect Settings so user can manually grant permissions
@@ -256,12 +262,10 @@ let syncInProgress = false;
  */
 export async function syncHealthConnect(): Promise<boolean> {
   if (syncInProgress) {
-    console.log('TouchGrass: HC sync already in progress, skipping duplicate call');
     return false;
   }
   // Respect the user's toggle: do not sync if the user has disabled Health Connect.
   if (getSetting('healthconnect_user_enabled', '0') !== '1') {
-    console.log('TouchGrass: HC sync skipped — Health Connect disabled by user');
     return false;
   }
   syncInProgress = true;
@@ -288,15 +292,12 @@ export async function syncHealthConnect(): Promise<boolean> {
       },
     });
 
-    console.log(`TouchGrass: Health Connect - ${exerciseResult.records.length} exercise session(s) received`);
-
-    for (const [i, record] of exerciseResult.records.entries()) {
+    for (const record of exerciseResult.records) {
       const start = new Date(record.startTime).getTime();
       const end = new Date(record.endTime).getTime();
       const duration = end - start;
 
       if (duration < MIN_DURATION_MS) {
-        console.log(`TouchGrass: HC exercise[${i}] skipped - too short (${Math.round(duration / 60000)} min): type=${record.exerciseType} ${record.startTime} – ${record.endTime}`);
         continue;
       }
 
@@ -304,11 +305,8 @@ export async function syncHealthConnect(): Promise<boolean> {
       const isExplicitlyOutdoor = isOutdoorExerciseType(record.exerciseType);
       const confidence = isExplicitlyOutdoor ? 0.80 : CONFIDENCE_ACTIVITY;
 
-      console.log(`TouchGrass: HC exercise[${i}]: type=${record.exerciseType} start=${record.startTime} end=${record.endTime} duration=${Math.round(duration / 60000)} min confidence=${confidence.toFixed(2)}`);
-
       // Skip if GPS data shows the user was at a known indoor location throughout
       if (wasDefinitelyAtKnownIndoorLocation(start, end)) {
-        console.log(`TouchGrass: HC exercise[${i}] skipped - GPS shows user was at known indoor location throughout`);
         continue;
       }
 
@@ -334,9 +332,7 @@ export async function syncHealthConnect(): Promise<boolean> {
         },
       });
 
-      console.log(`TouchGrass: Health Connect - ${stepsResult.records.length} steps record(s) received`);
-
-      for (const [i, record] of stepsResult.records.entries()) {
+      for (const record of stepsResult.records) {
         const start = new Date(record.startTime).getTime();
         const end = new Date(record.endTime).getTime();
         const recordedDuration = end - start;
@@ -351,7 +347,6 @@ export async function syncHealthConnect(): Promise<boolean> {
 
         // Skip if GPS data shows the user was at a known indoor location throughout
         if (wasDefinitelyAtKnownIndoorLocation(sessionStart, end)) {
-          console.log(`TouchGrass: HC steps[${i}] skipped - GPS shows user was at known indoor location throughout`);
           continue;
         }
 
@@ -362,13 +357,6 @@ export async function syncHealthConnect(): Promise<boolean> {
         const stepsPerMinute = record.count / (effectiveDurationMs / 60_000);
         const isSlowWalking = stepsPerMinute < STEPS_PER_MIN_AT_4KMH;
         const stepConfidence = isSlowWalking ? CONFIDENCE_SLOW_WALK : CONFIDENCE_ACTIVITY;
-
-        const isTiny = record.count < 500 || effectiveDurationMs < MIN_DURATION_MS;
-        if (isTiny) {
-          console.log(`TouchGrass: HC steps[${i}] tiny (${record.count} steps, ${Math.round(effectiveDurationMs / 60000)} min) - submitting as low-confidence: ${record.startTime} – ${record.endTime}`);
-        } else {
-          console.log(`TouchGrass: HC steps[${i}]: ${record.count} steps start=${new Date(sessionStart).toISOString()} end=${record.endTime} duration=${Math.round(effectiveDurationMs / 60000)} min`);
-        }
 
         // Use the recorded end time (when batch-sync writes the record) and
         // extend backwards so the session covers the full estimated walk.
@@ -400,10 +388,7 @@ export async function syncHealthConnect(): Promise<boolean> {
     //   - it was discarded and is still under 5 minutes in duration, OR
     //   - its aggregated step rate is below the minimum walking speed (2.5 km/h).
     const pruneBeforeMs = now - MIN_DURATION_MS;
-    const pruned = pruneShortDiscardedHealthConnectSessions(pruneBeforeMs, STEPS_PER_MIN_AT_2_5KMH);
-    if (pruned > 0) {
-      console.log(`TouchGrass: HC cleanup - deleted ${pruned} short/slow session(s) settled before ${new Date(pruneBeforeMs).toISOString()}`);
-    }
+    pruneShortDiscardedHealthConnectSessions(pruneBeforeMs, STEPS_PER_MIN_AT_2_5KMH);
 
     // Update last sync timestamp
     setSetting('healthconnect_last_sync', String(now));
