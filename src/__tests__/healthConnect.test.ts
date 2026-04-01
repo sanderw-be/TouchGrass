@@ -1,12 +1,15 @@
 jest.mock('../storage/database');
 jest.mock('../detection/sessionMerger');
 jest.mock('react-native-health-connect');
+jest.mock('../detection/healthConnectIntent');
 
 import * as HealthConnect from 'react-native-health-connect';
 import * as Database from '../storage/database';
 import * as SessionMerger from '../detection/sessionMerger';
+import * as HealthConnectIntent from '../detection/healthConnectIntent';
 import {
   syncHealthConnect,
+  requestHealthPermissions,
   MIN_DURATION_MS,
   STEPS_PER_MINUTE_AT_5KMH,
   STEPS_PER_MIN_AT_2_5KMH,
@@ -400,5 +403,93 @@ describe('syncHealthConnect', () => {
 
     await syncHealthConnect();
     expect(SessionMerger.submitSession).not.toHaveBeenCalled();
+  });
+});
+
+describe('requestHealthPermissions', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    (HealthConnect.getSdkStatus as jest.Mock).mockResolvedValue(3); // SDK_AVAILABLE
+    (HealthConnect.initialize as jest.Mock).mockResolvedValue(undefined);
+    (Database.setSetting as jest.Mock).mockImplementation(() => undefined);
+    (Database.getSetting as jest.Mock).mockReturnValue('0');
+    (HealthConnectIntent.verifyHealthConnectPermissions as jest.Mock).mockResolvedValue(false);
+    (HealthConnectIntent.openHealthConnectPermissionsViaIntent as jest.Mock).mockResolvedValue(true);
+  });
+
+  it('returns true immediately when permissions are already granted', async () => {
+    (HealthConnectIntent.verifyHealthConnectPermissions as jest.Mock).mockResolvedValue(true);
+
+    const result = await requestHealthPermissions();
+
+    expect(result).toBe(true);
+    expect(HealthConnect.requestPermission).not.toHaveBeenCalled();
+    expect(HealthConnectIntent.openHealthConnectPermissionsViaIntent).not.toHaveBeenCalled();
+  });
+
+  it('returns true when requestPermission grants permissions', async () => {
+    (HealthConnect.requestPermission as jest.Mock).mockResolvedValue([
+      { accessType: 'read', recordType: 'ExerciseSession' },
+    ]);
+
+    const result = await requestHealthPermissions();
+
+    expect(result).toBe(true);
+    expect(HealthConnectIntent.openHealthConnectPermissionsViaIntent).not.toHaveBeenCalled();
+  });
+
+  it('returns true when requestPermission returns null but permissions are now granted (re-verify)', async () => {
+    // requestPermission() can return null when permissions were already granted
+    // on some Android versions. The re-verify check should catch this.
+    (HealthConnect.requestPermission as jest.Mock).mockResolvedValue(null);
+    (HealthConnectIntent.verifyHealthConnectPermissions as jest.Mock)
+      .mockResolvedValueOnce(false)  // initial check before requestPermission
+      .mockResolvedValueOnce(true);  // re-verify after requestPermission returns null
+
+    const result = await requestHealthPermissions();
+
+    expect(result).toBe(true);
+    expect(HealthConnectIntent.openHealthConnectPermissionsViaIntent).not.toHaveBeenCalled();
+  });
+
+  it('returns true when requestPermission returns empty array but permissions are now granted (re-verify)', async () => {
+    (HealthConnect.requestPermission as jest.Mock).mockResolvedValue([]);
+    (HealthConnectIntent.verifyHealthConnectPermissions as jest.Mock)
+      .mockResolvedValueOnce(false)  // initial check
+      .mockResolvedValueOnce(true);  // re-verify
+
+    const result = await requestHealthPermissions();
+
+    expect(result).toBe(true);
+    expect(HealthConnectIntent.openHealthConnectPermissionsViaIntent).not.toHaveBeenCalled();
+  });
+
+  it('falls back to Intent when requestPermission returns empty and re-verify also fails', async () => {
+    (HealthConnect.requestPermission as jest.Mock).mockResolvedValue([]);
+    // verifyHealthConnectPermissions always returns false
+    (HealthConnectIntent.verifyHealthConnectPermissions as jest.Mock).mockResolvedValue(false);
+
+    const result = await requestHealthPermissions();
+
+    expect(result).toBe(true); // opened HC settings successfully
+    expect(HealthConnectIntent.openHealthConnectPermissionsViaIntent).toHaveBeenCalled();
+  });
+
+  it('falls back to Intent when requestPermission throws', async () => {
+    (HealthConnect.requestPermission as jest.Mock).mockRejectedValue(new Error('Permission error'));
+
+    const result = await requestHealthPermissions();
+
+    expect(result).toBe(true); // opened HC settings
+    expect(HealthConnectIntent.openHealthConnectPermissionsViaIntent).toHaveBeenCalled();
+  });
+
+  it('returns false when Intent fallback also fails', async () => {
+    (HealthConnect.requestPermission as jest.Mock).mockResolvedValue([]);
+    (HealthConnectIntent.openHealthConnectPermissionsViaIntent as jest.Mock).mockResolvedValue(false);
+
+    const result = await requestHealthPermissions();
+
+    expect(result).toBe(false);
   });
 });

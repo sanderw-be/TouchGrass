@@ -36,7 +36,25 @@ describe('openHealthConnectPermissionsViaIntent', () => {
       (Platform as any).Version = 34;
     });
 
-    it('opens TouchGrass-specific permissions page via MANAGE_HEALTH_PERMISSIONS intent URI', async () => {
+    it('opens Health Connect settings via native library on Android 14+', async () => {
+      const result = await openHealthConnectPermissionsViaIntent();
+
+      expect(result).toBe(true);
+      expect(HealthConnect.openHealthConnectSettings).toHaveBeenCalled();
+      expect(Linking.openURL).not.toHaveBeenCalled();
+    });
+
+    it('does not call canOpenURL on Android 14+', async () => {
+      await openHealthConnectPermissionsViaIntent();
+
+      expect(Linking.canOpenURL).not.toHaveBeenCalled();
+    });
+
+    it('falls back to MANAGE_HEALTH_PERMISSIONS intent URI when openHealthConnectSettings fails', async () => {
+      (HealthConnect.openHealthConnectSettings as jest.Mock).mockImplementation(() => {
+        throw new Error('Failed');
+      });
+
       const result = await openHealthConnectPermissionsViaIntent();
 
       expect(result).toBe(true);
@@ -46,22 +64,6 @@ describe('openHealthConnectPermissionsViaIntent', () => {
       expect(Linking.openURL).toHaveBeenCalledWith(
         expect.stringContaining('com.jollyheron.touchgrass'),
       );
-      expect(HealthConnect.openHealthConnectSettings).not.toHaveBeenCalled();
-    });
-
-    it('does not call canOpenURL before openURL for intent: URIs on Android 14+', async () => {
-      await openHealthConnectPermissionsViaIntent();
-
-      expect(Linking.canOpenURL).not.toHaveBeenCalled();
-    });
-
-    it('falls back to openHealthConnectSettings when MANAGE_HEALTH_PERMISSIONS fails', async () => {
-      (Linking.openURL as jest.Mock).mockRejectedValueOnce(new Error('ActivityNotFoundException'));
-
-      const result = await openHealthConnectPermissionsViaIntent();
-
-      expect(result).toBe(true);
-      expect(HealthConnect.openHealthConnectSettings).toHaveBeenCalled();
     });
 
     it('returns false when both Android 14+ methods fail', async () => {
@@ -95,9 +97,7 @@ describe('openHealthConnectPermissionsViaIntent', () => {
       const result = await openHealthConnectPermissionsViaIntent();
 
       expect(result).toBe(true);
-      expect(Linking.openURL).toHaveBeenCalledWith(
-        expect.stringContaining('android.health.connect.action.MANAGE_HEALTH_PERMISSIONS'),
-      );
+      expect(HealthConnect.openHealthConnectSettings).toHaveBeenCalled();
     });
 
     it('falls back to Android 13- path when Version string cannot be parsed', async () => {
