@@ -15,6 +15,7 @@ import {
 import { hasUpcomingEvent, maybeAddOutdoorTimeToCalendar, deleteFutureTouchGrassEvents } from '../calendar/calendarService';
 import { triggerReminderFeedbackModal } from '../context/ReminderFeedbackContext';
 import { t } from '../i18n';
+import { formatTemperature } from '../utils/temperature';
 
 const NOTIF_TITLES = [
   'notif_title_1',
@@ -1022,7 +1023,7 @@ function buildReminderMessage(
     if (descriptions.length === 1) {
       body += ` ${first}.`;
     } else {
-      body += ` ${first}, and ${descriptions[1]}.`;
+      body += ` ${first}, ${t('notif_contributor_and')} ${descriptions[1]}.`;
     }
   } else {
     // Fallback: add weather context if available and enabled (used when no contributors provided)
@@ -1034,11 +1035,10 @@ function buildReminderMessage(
 
         if (weather) {
           const emoji = getWeatherEmoji(weather);
-          const temp = Math.round(weather.temperature);
           const desc = getWeatherDescription(weather);
 
           // Add weather hint to body
-          body += ` ${emoji} ${desc}, ${temp}°C outside.`;
+          body += ` ${emoji} ${t('notif_weather_context', { desc, temp: formatTemperature(weather.temperature) })}`;
         }
       }
     }

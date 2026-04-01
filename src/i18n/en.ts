@@ -304,6 +304,12 @@ export default {
   notif_reason_acted: "you've gone outside around this time before",
   notif_reason_more_often: 'you prefer reminders around this time',
 
+  // Connector word used between two reminder reason descriptions ("X, and Y.")
+  notif_contributor_and: 'and',
+  // Weather context appended to notification body when no contributor reasons are available
+  // {{desc}} = weather description (e.g. "Sunny"), {{temp}} = formatted temperature (e.g. "22°C")
+  notif_weather_context: '{{desc}}, {{temp}} outside.',
+
   // Notification action buttons
   notif_action_went_outside: '✅ Went outside!',
   notif_action_snooze: '⏰ Snooze',

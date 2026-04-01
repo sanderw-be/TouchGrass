@@ -1285,10 +1285,9 @@ describe('notificationManager', () => {
       await scheduleDayReminders();
 
       const call = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls[0][0];
-      // Body should include emoji, description, and temperature
+      // Body should include emoji and the weather context i18n key (t() is mocked to return the key)
       expect(call.content.body).toContain('☀️');
-      expect(call.content.body).toContain('weather_clear_sky');
-      expect(call.content.body).toContain('18°C');
+      expect(call.content.body).toContain('notif_weather_context');
 
       jest.restoreAllMocks();
     });
@@ -1366,7 +1365,7 @@ describe('notificationManager', () => {
       // First contributor has its first letter capitalized; second is unchanged
       expect(call.content.body).toMatch(/notif_reason_after_work/i);
       expect(call.content.body).toContain('notif_reason_pattern');
-      expect(call.content.body).toContain(', and ');
+      expect(call.content.body).toContain(', notif_contributor_and ');
 
       jest.restoreAllMocks();
     });
@@ -1398,7 +1397,7 @@ describe('notificationManager', () => {
 
       const call = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls[0][0];
       expect(call.content.body).toContain('☀️');
-      expect(call.content.body).toContain('22°C');
+      expect(call.content.body).toContain('notif_weather_context');
 
       jest.restoreAllMocks();
     });

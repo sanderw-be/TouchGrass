@@ -2,6 +2,7 @@ import { getReminderFeedback, getSessionsForRange, startOfDay, startOfWeek } fro
 import { getWeatherForHour } from '../weather/weatherService';
 import { scoreWeatherCondition, getWeatherPreferences, getWeatherDescription, getWeatherEmoji } from '../weather/weatherAlgorithm';
 import { t } from '../i18n';
+import { formatTemperature } from '../utils/temperature';
 
 // Active hours: 7:00 – 22:30 (slots at :00 and :30)
 const SLOT_START_MINUTES = 7 * 60;  // 7:00
@@ -165,9 +166,8 @@ export function scoreReminderHours(
         }
         if (weatherScore > 0) {
           const emoji = getWeatherEmoji(weather);
-          const temp = Math.round(weather.temperature);
           const desc = getWeatherDescription(weather);
-          contributors.push({ reason: 'weather', score: weatherScore, description: `${emoji} ${desc}, ${temp}°C` });
+          contributors.push({ reason: 'weather', score: weatherScore, description: `${emoji} ${desc}, ${formatTemperature(weather.temperature)}` });
         }
       }
     }
