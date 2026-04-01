@@ -6,7 +6,7 @@ import {
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { getSetting, setSetting, getKnownLocations, getSuggestedLocations, KnownLocation, clearAllData } from '../storage/database';
+import { getKnownLocations, getSuggestedLocations, KnownLocation, clearAllData } from '../storage/database';
 import { getDetectionStatus, toggleHealthConnect, toggleGPS, recheckHealthConnect, checkGPSPermissions, requestGPSPermissions, openHealthConnectSettings } from '../detection/index';
 import { AppState, AppStateStatus } from 'react-native';
 import { spacing, radius, shadows } from '../utils/theme';
@@ -14,16 +14,7 @@ import { useTheme, ThemePreference } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { t } from '../i18n';
 import type { SettingsStackParamList } from '../navigation/AppNavigator';
-import {
-  requestCalendarPermissions,
-  hasCalendarPermissions,
-  getWritableCalendars,
-  getOrCreateTouchGrassCalendar,
-  getSelectedCalendarId,
-  setSelectedCalendarId,
-} from '../calendar/calendarService';
 import { useShowIntro } from '../context/IntroContext';
-import * as IntentLauncher from 'expo-intent-launcher';
 
 const LANGUAGES = [
   { code: 'en', label: 'English' },
@@ -43,54 +34,25 @@ export default function SettingsScreen() {
   const [suggestedCount, setSuggestedCount] = useState(0);
   const [togglingHC, setTogglingHC] = useState(false);
   const [togglingGPS, setTogglingGPS] = useState(false);
-  
-  // Weather state - only the main toggle
-  const [weatherEnabled, setWeatherEnabled] = useState(true);
-
-  // Calendar state
-  const [calendarEnabled, setCalendarEnabled] = useState(false);
-  const [calendarPermissionGranted, setCalendarPermissionGranted] = useState(false);
-  const [calendarBuffer, setCalendarBuffer] = useState(30);
-  const [calendarDuration, setCalendarDuration] = useState(0);
-  const [calendarSelectedId, setCalendarSelectedIdState] = useState('');
-  const [calendarOptions, setCalendarOptions] = useState<{ id: string; title: string }[]>([]);
 
   const styles = useMemo(() => makeStyles(colors), [colors]);
 
   const loadStatus = useCallback(() => {
-    setSmartRemindersCount(parseInt(getSetting('smart_reminders_count', '2'), 10));
-    setCatchupRemindersCount(parseInt(getSetting('smart_catchup_reminders_count', '2'), 10));
     setDetectionStatus(getDetectionStatus());
     setKnownLocations(getKnownLocations());
     setSuggestedCount(getSuggestedLocations().length);
-    
-    // Load weather settings
-    setWeatherEnabled(getSetting('weather_enabled', '1') === '1');
-
-    // Load calendar settings
-    setCalendarEnabled(getSetting('calendar_integration_enabled', '0') === '1');
-    setCalendarBuffer(parseInt(getSetting('calendar_buffer_minutes', '30'), 10));
-    setCalendarDuration(parseInt(getSetting('calendar_default_duration', '0'), 10));
-    setCalendarSelectedIdState(getSelectedCalendarId());
   }, []);
 
   // Re-check permission status silently (no popups) when the screen regains focus
   // or the app returns to the foreground.  The UI shows an error indicator on
   // the toggle row when the user has enabled a source but permissions are gone.
   const checkAndUpdatePermissions = useCallback(async () => {
-    // Run independent permission checks in parallel for faster response.
-    const [, , calGranted] = await Promise.all([
+    await Promise.all([
       recheckHealthConnect(),
       checkGPSPermissions(),
-      hasCalendarPermissions(),
     ]);
 
     setDetectionStatus(getDetectionStatus());
-    setCalendarPermissionGranted(calGranted);
-    if (calGranted) {
-      const cals = await getWritableCalendars();
-      setCalendarOptions(cals.map((c) => ({ id: c.id, title: c.title })));
-    }
   }, []);
 
   useFocusEffect(useCallback(() => {
@@ -165,30 +127,6 @@ export default function SettingsScreen() {
     }
   };
 
-  const SMART_REMINDERS_OPTIONS = [0, 1, 2, 3];
-
-  const cycleSmartRemindersCount = () => {
-    const idx = SMART_REMINDERS_OPTIONS.indexOf(smartRemindersCount);
-    const next = SMART_REMINDERS_OPTIONS[(idx + 1) % SMART_REMINDERS_OPTIONS.length];
-    setSetting('smart_reminders_count', String(next));
-    setSmartRemindersCount(next);
-  };
-
-  const CATCHUP_REMINDERS_OPTIONS = [0, 1, 2, 3] as const;
-  const CATCHUP_REMINDERS_LABELS: Record<number, string> = {
-    0: t('settings_catchup_off'),
-    1: t('settings_catchup_mellow'),
-    2: t('settings_catchup_medium'),
-    3: t('settings_catchup_aggressive'),
-  };
-
-  const cycleCatchupRemindersCount = () => {
-    const idx = CATCHUP_REMINDERS_OPTIONS.indexOf(catchupRemindersCount as 0 | 1 | 2 | 3);
-    const next = CATCHUP_REMINDERS_OPTIONS[(idx + 1) % CATCHUP_REMINDERS_OPTIONS.length];
-    setSetting('smart_catchup_reminders_count', String(next));
-    setCatchupRemindersCount(next);
-  };
-
   const changeLanguage = (code: string) => {
     // Delegates to context's setLocale which updates i18n, saves to storage, and triggers re-render
     setLocale(code);
@@ -239,93 +177,6 @@ export default function SettingsScreen() {
       );
     }
   };
-
-  const toggleWeatherEnabled = (value: boolean) => {
-    setSetting('weather_enabled', value ? '1' : '0');
-    setWeatherEnabled(value);
-  };
-
-  const CALENDAR_BUFFER_OPTIONS = [10, 20, 30, 45, 60];
-  const CALENDAR_DURATION_OPTIONS = [0, 5, 10, 15, 20, 30];
-
-  const toggleCalendarIntegration = async (value: boolean) => {
-    if (value && !calendarPermissionGranted) {
-      const granted = await requestCalendarPermissions();
-      setCalendarPermissionGranted(granted);
-      if (!granted) {
-        Alert.alert(
-          t('settings_calendar_permission_title'),
-          t('settings_calendar_permission_body'),
-          [
-            { text: t('settings_calendar_permission_cancel'), style: 'cancel' },
-            { text: t('settings_calendar_permission_open'), onPress: handleOpenAppSettings },
-          ],
-        );
-        return;
-      }
-    }
-    setSetting('calendar_integration_enabled', value ? '1' : '0');
-    setCalendarEnabled(value);
-  };
-
-  const cycleCalendarBuffer = () => {
-    const idx = CALENDAR_BUFFER_OPTIONS.indexOf(calendarBuffer);
-    const next = CALENDAR_BUFFER_OPTIONS[(idx + 1) % CALENDAR_BUFFER_OPTIONS.length];
-    setSetting('calendar_buffer_minutes', String(next));
-    setCalendarBuffer(next);
-  };
-
-  const cycleCalendarDuration = () => {
-    const idx = CALENDAR_DURATION_OPTIONS.indexOf(calendarDuration);
-    const next = CALENDAR_DURATION_OPTIONS[(idx + 1) % CALENDAR_DURATION_OPTIONS.length];
-    setSetting('calendar_default_duration', String(next));
-    setCalendarDuration(next);
-  };
-
-  const handleSelectCalendar = async () => {
-    const hasAlternatives = calendarOptions.some((c) => !c.title.toLowerCase().includes('touchgrass'));
-    if (!hasAlternatives) return;
-
-
-    // Show only local-account calendars (the only ones that accept writes on Android)
-    // plus the dedicated TouchGrass local calendar as the first/default option.
-    const otherCalendars = calendarOptions.filter((c) => !c.title.includes('TouchGrass'));
-    const options = [
-      { id: '__touchgrass__', title: t('settings_calendar_select_touchgrass') },
-      ...otherCalendars,
-    ];
-    const isSelected = (optId: string) =>
-      optId === calendarSelectedId || (optId === '__touchgrass__' && !calendarSelectedId);
-    Alert.alert(
-      t('settings_calendar_select_title'),
-      undefined,
-      [
-        ...options.map((opt) => ({
-          text: isSelected(opt.id) ? `${opt.title} ✓` : opt.title,
-          onPress: async () => {
-            if (opt.id === '__touchgrass__') {
-              const id = await getOrCreateTouchGrassCalendar();
-              const newId = id ?? '';
-              setSelectedCalendarId(newId);
-              setCalendarSelectedIdState(newId);
-            } else {
-              setSelectedCalendarId(opt.id);
-              setCalendarSelectedIdState(opt.id);
-            }
-          },
-        })),
-        { text: t('settings_calendar_permission_cancel'), style: 'cancel' },
-      ],
-    );
-  };
-
-  const calendarSelectedTitle = (): string => {
-    if (!calendarSelectedId) return t('settings_calendar_select_touchgrass');
-    const match = calendarOptions.find((c) => c.id === calendarSelectedId);
-    return match?.title ?? t('settings_calendar_select_touchgrass');
-  };
-
-  const hasAlternativeCalendars = calendarOptions.some((c) => !c.title.toLowerCase().includes('touchgrass'));
 
   return (
     <>
@@ -389,148 +240,6 @@ export default function SettingsScreen() {
             }
           />
         </TouchableOpacity>
-      </View>
-
-      <Text style={styles.sectionHeader}>{t('settings_section_reminders')}</Text>
-      <View style={styles.card}>
-        <TouchableOpacity onPress={cycleSmartRemindersCount}>
-          <SettingRow
-            icon="🔔"
-            label={t('settings_reminders_label')}
-            sublabel={t('settings_reminders_sublabel')}
-            right={
-              <Text style={styles.valueChip}>
-                {smartRemindersCount === 0
-                  ? t('settings_reminders_count_off')
-                  : t('settings_reminders_count_per_day', { count: smartRemindersCount })}
-              </Text>
-            }
-          />
-        </TouchableOpacity>
-        <Divider />
-        <TouchableOpacity onPress={cycleCatchupRemindersCount}>
-          <SettingRow
-            icon="🎯"
-            label={t('settings_catchup_label')}
-            sublabel={t('settings_catchup_sublabel')}
-            right={
-              <Text style={styles.valueChip}>
-                {CATCHUP_REMINDERS_LABELS[catchupRemindersCount] ?? t('settings_catchup_medium')}
-              </Text>
-            }
-          />
-        </TouchableOpacity>
-        <Divider />
-        <TouchableOpacity onPress={() => navigation.navigate('ScheduledNotifications')}>
-          <SettingRow
-            icon="📅"
-            label={t('settings_scheduled_reminders')}
-            sublabel={t('settings_scheduled_reminders_sublabel')}
-            right={<Text style={styles.chevron}>›</Text>}
-          />
-        </TouchableOpacity>
-        <Divider />
-        <SettingRow
-          icon="📡"
-          label={t('settings_background_tracking_label')}
-          sublabel={t('settings_background_tracking_sublabel')}
-        />
-      </View>
-
-      {/* Weather settings */}
-      <Text style={styles.sectionHeader}>{t('settings_weather_title')}</Text>
-      <View style={styles.card}>
-        <SettingRow
-          icon="🌤️"
-          label={t('settings_weather_enabled')}
-          sublabel={t('settings_weather_enabled_desc')}
-          right={
-            <Switch
-              value={weatherEnabled}
-              onValueChange={toggleWeatherEnabled}
-              trackColor={{ false: colors.fog, true: colors.grassLight }}
-              thumbColor={weatherEnabled ? colors.grass : colors.inactive}
-            />
-          }
-        />
-        {weatherEnabled && (
-          <>
-            <Divider />
-            <TouchableOpacity
-              onPress={() => navigation.navigate('WeatherSettings')}
-            >
-              <SettingRow
-                icon="⚙️"
-                label={t('settings_weather_more')}
-                sublabel={t('settings_weather_more_desc')}
-                right={
-                  <Text style={styles.chevron}>›</Text>
-                }
-              />
-            </TouchableOpacity>
-          </>
-        )}
-      </View>
-
-      {/* Calendar integration */}
-      <Text style={styles.sectionHeader}>{t('settings_section_calendar')}</Text>
-      <View style={styles.card}>
-        <SettingRow
-          icon="📆"
-          label={t('settings_calendar_integration')}
-          sublabel={t('settings_calendar_integration_desc')}
-          right={
-            <Switch
-              value={calendarEnabled}
-              onValueChange={toggleCalendarIntegration}
-              trackColor={{ false: colors.fog, true: colors.grassLight }}
-              thumbColor={calendarEnabled ? colors.grass : colors.inactive}
-            />
-          }
-        />
-        {calendarEnabled && (
-          <>
-            <Divider />
-            <TouchableOpacity onPress={cycleCalendarBuffer}>
-              <SettingRow
-                icon="⏱️"
-                label={t('settings_calendar_buffer')}
-                sublabel={t('settings_calendar_buffer_desc')}
-                right={
-                  <Text style={styles.valueChip}>
-                    {t('settings_calendar_buffer_minutes', { minutes: calendarBuffer })}
-                  </Text>
-                }
-              />
-            </TouchableOpacity>
-            <Divider />
-            <TouchableOpacity onPress={cycleCalendarDuration}>
-              <SettingRow
-                icon="🕐"
-                label={t('settings_calendar_duration')}
-                sublabel={t('settings_calendar_duration_desc')}
-                right={
-                  <Text style={styles.valueChip}>
-                    {calendarDuration === 0
-                      ? t('settings_calendar_duration_off')
-                      : t('settings_calendar_duration_minutes', { minutes: calendarDuration })}
-                  </Text>
-                }
-              />
-            </TouchableOpacity>
-            <Divider />
-            <TouchableOpacity onPress={handleSelectCalendar} disabled={!hasAlternativeCalendars}>
-              <SettingRow
-                icon="📋"
-                label={t('settings_calendar_select')}
-                sublabel={t('settings_calendar_select_desc')}
-                right={
-                  <Text style={styles.valueChip}>{calendarSelectedTitle()}</Text>
-                }
-              />
-            </TouchableOpacity>
-          </>
-        )}
       </View>
 
       <Text style={styles.sectionHeader}>{t('settings_section_appearance')}</Text>
@@ -608,29 +317,6 @@ export default function SettingsScreen() {
             right={<Text style={styles.chevron}>›</Text>}
           />
         </TouchableOpacity>
-        {Platform.OS === 'android' && (
-          <>
-            <Divider />
-            <TouchableOpacity
-              onPress={async () => {
-                try {
-                  await IntentLauncher.startActivityAsync(
-                    'android.settings.IGNORE_BATTERY_OPTIMIZATION_SETTINGS',
-                  );
-                } catch (error) {
-                  console.error('Error opening battery settings:', error);
-                }
-              }}
-            >
-              <SettingRow
-                icon="🔋"
-                label={t('settings_battery_optimization')}
-                sublabel={t('settings_battery_optimization_sublabel')}
-                right={<Text style={styles.chevron}>›</Text>}
-              />
-            </TouchableOpacity>
-          </>
-        )}
         <Divider />
         <SettingRow
           icon="🗑️"
