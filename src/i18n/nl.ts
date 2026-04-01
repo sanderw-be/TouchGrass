@@ -304,6 +304,12 @@ export default {
   notif_reason_acted: 'je bent eerder buiten geweest rond deze tijd',
   notif_reason_more_often: 'je geeft de voorkeur aan herinneringen rond deze tijd',
 
+  // Verbindingswoord tussen twee reden-beschrijvingen ("X, en Y.")
+  notif_contributor_and: 'en',
+  // Weercontext toegevoegd aan meldingstekst als er geen redenbeschrijvingen beschikbaar zijn
+  // {{desc}} = weersomschrijving (bijv. "Zonnig"), {{temp}} = opgemaakte temperatuur (bijv. "22°C")
+  notif_weather_context: '{{desc}}, {{temp}} buiten.',
+
   // Meldingsacties
   notif_action_went_outside: '✅ Gegaan!',
   notif_action_snooze: '⏰ Snooze',

@@ -335,7 +335,7 @@ describe('reminderAlgorithm', () => {
       expect(weatherContributor!.score).toBeCloseTo(0.2);
       expect(weatherContributor!.description).toContain('☀️');
       expect(weatherContributor!.description).toContain('Clear sky');
-      expect(weatherContributor!.description).toContain('20°C');
+      expect(weatherContributor!.description).toContain('68°F');
     });
 
     it('negative weather score does not create a weather contributor', () => {
