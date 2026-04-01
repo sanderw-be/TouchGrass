@@ -14,9 +14,10 @@ import {
   scheduleDayReminders,
   maybeScheduleCatchUpReminder,
   processReminderQueue,
+  logReminderQueueSnapshot,
 } from '../notifications/notificationManager';
 import { fetchWeatherForecast } from '../weather/weatherService';
-import { getSetting } from '../storage/database';
+import { getSetting, initDatabase } from '../storage/database';
 
 export const UNIFIED_BACKGROUND_TASK = 'TOUCHGRASS_UNIFIED_TASK';
 
@@ -29,9 +30,16 @@ TaskManager.defineTask(UNIFIED_BACKGROUND_TASK, async () => {
   try {
     console.log('TouchGrass: [UnifiedTask] Tick');
 
+    // Ensure the DB schema and default settings are in place.
+    // The background JS runtime has no guarantee that App.tsx has run first.
+    initDatabase();
+
     // --- Reminder planning ---
-    const remindersEnabled = parseInt(getSetting('smart_reminders_count', '0'), 10) > 0;
+    const remindersCountRaw = getSetting('smart_reminders_count', '0');
+    const remindersEnabled = parseInt(remindersCountRaw, 10) > 0;
+    console.log(`TouchGrass: [UnifiedTask] smart_reminders_count=${remindersCountRaw} → reminders ${remindersEnabled ? 'enabled' : 'disabled'}`);
     if (remindersEnabled) {
+      logReminderQueueSnapshot();
       try {
         await scheduleDayReminders();
         await maybeScheduleCatchUpReminder();

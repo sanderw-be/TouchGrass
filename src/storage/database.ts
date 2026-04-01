@@ -155,6 +155,13 @@ export function initDatabase(): void {
       [150, Date.now()]
     );
   }
+
+  // Seed default settings that must be readable by the background task before
+  // the user ever opens the app. OR IGNORE ensures existing user preferences
+  // are never overwritten.
+  db.runSync(
+    "INSERT OR IGNORE INTO app_settings (key, value) VALUES ('smart_reminders_count', '2'), ('weather_enabled', '1')"
+  );
   
   // Clean up any corrupted scheduled notifications (one-time migration)
   try {

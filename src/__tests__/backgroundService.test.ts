@@ -8,6 +8,7 @@ jest.mock('../notifications/notificationManager', () => ({
   scheduleDayReminders: jest.fn(),
   maybeScheduleCatchUpReminder: jest.fn(),
   processReminderQueue: jest.fn(),
+  logReminderQueueSnapshot: jest.fn(),
 }));
 
 jest.mock('../weather/weatherService', () => ({
@@ -16,6 +17,7 @@ jest.mock('../weather/weatherService', () => ({
 
 jest.mock('../storage/database', () => ({
   getSetting: jest.fn(),
+  initDatabase: jest.fn(),
 }));
 
 import * as BackgroundTask from 'expo-background-task';
@@ -106,6 +108,14 @@ describe('unifiedBackgroundTask', () => {
       expect(taskCallback).toBeDefined();
     });
 
+    it('calls initDatabase on every tick to ensure DB is initialised in the background runtime', async () => {
+      (Database.getSetting as jest.Mock).mockReturnValue('0');
+
+      await taskCallback();
+
+      expect(Database.initDatabase).toHaveBeenCalledTimes(1);
+    });
+
     it('runs all three reminder operations when reminders are enabled', async () => {
       (Database.getSetting as jest.Mock).mockImplementation((key: string) => {
         if (key === 'smart_reminders_count') return '2';
@@ -118,6 +128,7 @@ describe('unifiedBackgroundTask', () => {
 
       const result = await taskCallback();
 
+      expect(NotificationManager.logReminderQueueSnapshot).toHaveBeenCalledTimes(1);
       expect(NotificationManager.scheduleDayReminders).toHaveBeenCalledTimes(1);
       expect(NotificationManager.maybeScheduleCatchUpReminder).toHaveBeenCalledTimes(1);
       expect(NotificationManager.processReminderQueue).toHaveBeenCalledTimes(1);
@@ -133,6 +144,7 @@ describe('unifiedBackgroundTask', () => {
 
       await taskCallback();
 
+      expect(NotificationManager.logReminderQueueSnapshot).not.toHaveBeenCalled();
       expect(NotificationManager.scheduleDayReminders).not.toHaveBeenCalled();
       expect(NotificationManager.maybeScheduleCatchUpReminder).not.toHaveBeenCalled();
       expect(NotificationManager.processReminderQueue).not.toHaveBeenCalled();
