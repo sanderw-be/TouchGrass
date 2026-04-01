@@ -243,4 +243,25 @@ describe('TOUCHGRASS_LOCATION_TRACK background task', () => {
 
     expect(Database.initDatabase).toHaveBeenCalled();
   });
+
+  it('skips processing when GPS is disabled by the user', async () => {
+    expect(_locationTrackCallback).toBeDefined();
+
+    jest.clearAllMocks();
+    _resetGPSStateForTesting();
+    (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
+      if (key === 'gps_user_enabled') return '0';
+      return fallback;
+    });
+    (Database.getKnownLocations as jest.Mock).mockReturnValue([]);
+
+    await _locationTrackCallback!({
+      data: { locations: [{ coords: { latitude: 51.5, longitude: 4.3, speed: 0 }, timestamp: 1_700_000_000_000 }] },
+      error: null,
+    });
+
+    // processLocationUpdate should not have run — no setSetting calls for GPS state
+    expect(SessionMerger.submitSession).not.toHaveBeenCalled();
+    expect(Database.setSetting).not.toHaveBeenCalled();
+  });
 });

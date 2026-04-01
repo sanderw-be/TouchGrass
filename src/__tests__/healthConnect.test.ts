@@ -22,7 +22,10 @@ describe('syncHealthConnect', () => {
 
     (HealthConnect.getSdkStatus as jest.Mock).mockResolvedValue(3); // SDK_AVAILABLE
     (HealthConnect.initialize as jest.Mock).mockResolvedValue(undefined);
-    (Database.getSetting as jest.Mock).mockReturnValue('0');
+    (Database.getSetting as jest.Mock).mockImplementation((key: string) => {
+      if (key === 'healthconnect_user_enabled') return '1';
+      return '0';
+    });
     (Database.setSetting as jest.Mock).mockImplementation(() => undefined);
     (Database.pruneShortDiscardedHealthConnectSessions as jest.Mock).mockReturnValue(0);
     (Database.getKnownLocations as jest.Mock).mockReturnValue([]);
@@ -39,6 +42,17 @@ describe('syncHealthConnect', () => {
     (HealthConnect.getSdkStatus as jest.Mock).mockResolvedValue(1); // SDK_UNAVAILABLE
     const result = await syncHealthConnect();
     expect(result).toBe(false);
+    expect(SessionMerger.submitSession).not.toHaveBeenCalled();
+  });
+
+  it('returns false and does not sync when HC is disabled by the user', async () => {
+    (Database.getSetting as jest.Mock).mockImplementation((key: string) => {
+      if (key === 'healthconnect_user_enabled') return '0';
+      return '0';
+    });
+    const result = await syncHealthConnect();
+    expect(result).toBe(false);
+    expect(HealthConnect.getSdkStatus).not.toHaveBeenCalled();
     expect(SessionMerger.submitSession).not.toHaveBeenCalled();
   });
 
@@ -344,6 +358,7 @@ describe('syncHealthConnect', () => {
       { lat: 52.0, lon: 5.0, timestamp: NOW - 15 * 60 * 1000 },
     ];
     (Database.getSetting as jest.Mock).mockImplementation((key: string) => {
+      if (key === 'healthconnect_user_enabled') return '1';
       if (key === 'location_clusters') return JSON.stringify(gpsSamples);
       return '0';
     });
@@ -375,6 +390,7 @@ describe('syncHealthConnect', () => {
       { lat: indoorLat, lon: indoorLon, timestamp: NOW - 10 * 60 * 1000 },
     ];
     (Database.getSetting as jest.Mock).mockImplementation((key: string) => {
+      if (key === 'healthconnect_user_enabled') return '1';
       if (key === 'location_clusters') return JSON.stringify(gpsSamples);
       return '0';
     });

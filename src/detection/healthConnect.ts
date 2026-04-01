@@ -259,6 +259,11 @@ export async function syncHealthConnect(): Promise<boolean> {
     console.log('TouchGrass: HC sync already in progress, skipping duplicate call');
     return false;
   }
+  // Respect the user's toggle: do not sync if the user has disabled Health Connect.
+  if (getSetting('healthconnect_user_enabled', '0') !== '1') {
+    console.log('TouchGrass: HC sync skipped — Health Connect disabled by user');
+    return false;
+  }
   syncInProgress = true;
   try {
     const available = await isHealthConnectAvailable();
