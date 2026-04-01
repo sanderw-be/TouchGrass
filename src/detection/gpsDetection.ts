@@ -3,7 +3,7 @@ import * as TaskManager from 'expo-task-manager';
 import * as Notifications from 'expo-notifications';
 import {
   getKnownLocations, getAllKnownLocations, upsertKnownLocation,
-  getSetting, setSetting, KnownLocation,
+  getSetting, setSetting, KnownLocation, initDatabase,
 } from '../storage/database';
 import { submitSession, buildSession } from './sessionMerger';
 import { t } from '../i18n';
@@ -498,6 +498,9 @@ TaskManager.defineTask(LOCATION_TRACK_TASK, async ({ data, error }: any) => {
     console.warn('Location task error:', error);
     return;
   }
+  // Ensure the DB schema and migrations are applied before any DB access.
+  // The background JS runtime does not guarantee App.tsx has run first.
+  initDatabase();
   if (data?.locations?.length > 0) {
     const loc = data.locations[data.locations.length - 1];
     processLocationUpdate(
