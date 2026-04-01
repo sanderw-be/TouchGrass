@@ -4,8 +4,11 @@
  * background work is consolidated here.
  *
  * On each ~15-minute wake:
- * 1. If reminders are enabled: scheduleDayReminders → maybeScheduleCatchUpReminder → scheduleNextReminder
- * 2. If weather is enabled: fetchWeatherForecast (best-effort, no permission prompt)
+ * 1. If weather is enabled: fetchWeatherForecast first — populates the 30-min cache so
+ *    the reminder functions below hit the cache instead of making their own network calls.
+ * 2. If reminders are enabled: scheduleDayReminders → processReminderQueue → maybeScheduleCatchUpReminder
+ *    Both internally call fetchWeatherForecast too, but they get an instant cache-hit
+ *    because step 1 has already refreshed the data.
  */
 
 import * as BackgroundTask from 'expo-background-task';
@@ -34,6 +37,21 @@ TaskManager.defineTask(UNIFIED_BACKGROUND_TASK, async () => {
     // The background JS runtime has no guarantee that App.tsx has run first.
     initDatabase();
 
+    // --- Weather refresh (runs first to warm the 30-min cache) ---
+    // scheduleDayReminders and maybeScheduleCatchUpReminder both call
+    // fetchWeatherForecast internally. By fetching once up-front, those
+    // internal calls return immediately from the cache instead of each
+    // making their own location + HTTP round-trip. This keeps the total
+    // task wall-time well within Android's background execution window.
+    const weatherEnabled = getSetting('weather_enabled', '1') === '1';
+    if (weatherEnabled) {
+      try {
+        await fetchWeatherForecast({ allowPermissionPrompt: false });
+      } catch (weatherError) {
+        console.error('TouchGrass: [UnifiedTask] Weather fetch failed', weatherError);
+      }
+    }
+
     // --- Reminder planning ---
     const remindersCountRaw = getSetting('smart_reminders_count', '0');
     const remindersEnabled = parseInt(remindersCountRaw, 10) > 0;
@@ -42,20 +60,10 @@ TaskManager.defineTask(UNIFIED_BACKGROUND_TASK, async () => {
       logReminderQueueSnapshot();
       try {
         await scheduleDayReminders();
-        await maybeScheduleCatchUpReminder();
-        await processReminderQueue();
+        await processReminderQueue();         // update consumed states before catch-up check
+        await maybeScheduleCatchUpReminder(); // uses consumed entries for 60-min wait guard
       } catch (reminderError) {
         console.error('TouchGrass: [UnifiedTask] Reminder operations failed', reminderError);
-      }
-    }
-
-    // --- Weather refresh ---
-    const weatherEnabled = getSetting('weather_enabled', '1') === '1';
-    if (weatherEnabled) {
-      try {
-        await fetchWeatherForecast({ allowPermissionPrompt: false });
-      } catch (weatherError) {
-        console.error('TouchGrass: [UnifiedTask] Weather fetch failed', weatherError);
       }
     }
 

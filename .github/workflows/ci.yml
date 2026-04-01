@@ -76,7 +76,7 @@ jobs:
             ~/.gradle/caches
             ~/.gradle/wrapper
             ${{ env.ANDROID_SDK_ROOT }}/ndk/27.1.12297006
-          key: ${{ runner.os }}-gradle-${{ hashFiles('package-lock.json', 'app.json') }}
+          key: ${{ runner.os }}-gradle-${{ hashFiles('package-lock.json', 'app.json', 'patches/**') }}
           restore-keys: |
             ${{ runner.os }}-gradle-
 

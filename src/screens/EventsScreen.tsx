@@ -17,6 +17,7 @@ import ManualSessionSheet from '../components/ManualSessionSheet';
 import EditSessionSheet from '../components/EditSessionSheet';
 import { updateTimeSlotProbability } from '../detection/sessionConfidence';
 import { onSessionsChanged } from '../utils/sessionsChangedEmitter';
+import { cancelRemindersIfGoalReached } from '../notifications/notificationManager';
 
 type Tab = 'approved' | 'standard' | 'all';
 
@@ -67,10 +68,13 @@ export default function EventsScreen() {
     setRefreshing(false);
   };
 
-  const handleConfirm = (id: number, startTime: number, confirmed: boolean) => {
+  const handleConfirm = async (id: number, startTime: number, confirmed: boolean) => {
     confirmSession(id, confirmed);
     const d = new Date(startTime);
     updateTimeSlotProbability(d.getHours(), d.getDay(), confirmed);
+    if (confirmed) {
+      await cancelRemindersIfGoalReached();
+    }
     setExpandedId(null);
     loadData();
   };

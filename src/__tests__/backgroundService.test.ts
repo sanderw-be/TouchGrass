@@ -178,20 +178,45 @@ describe('unifiedBackgroundTask', () => {
       expect(WeatherService.fetchWeatherForecast).not.toHaveBeenCalled();
     });
 
-    it('continues to weather fetch even if reminder operations throw', async () => {
+    it('fetches weather before reminder operations (weather warms cache for reminder scoring)', async () => {
+      const callOrder: string[] = [];
       (Database.getSetting as jest.Mock).mockImplementation((key: string) => {
         if (key === 'smart_reminders_count') return '2';
         if (key === 'weather_enabled') return '1';
         return '';
       });
-      (NotificationManager.scheduleDayReminders as jest.Mock).mockRejectedValue(
-        new Error('reminder error'),
+      (WeatherService.fetchWeatherForecast as jest.Mock).mockImplementation(async () => {
+        callOrder.push('weather');
+        return { success: true };
+      });
+      (NotificationManager.scheduleDayReminders as jest.Mock).mockImplementation(async () => {
+        callOrder.push('reminders');
+      });
+      (NotificationManager.processReminderQueue as jest.Mock).mockResolvedValue(undefined);
+      (NotificationManager.maybeScheduleCatchUpReminder as jest.Mock).mockResolvedValue(undefined);
+
+      await taskCallback();
+
+      expect(callOrder[0]).toBe('weather');
+      expect(callOrder[1]).toBe('reminders');
+    });
+
+    it('continues to run reminder operations even if weather fetch throws', async () => {
+      (Database.getSetting as jest.Mock).mockImplementation((key: string) => {
+        if (key === 'smart_reminders_count') return '2';
+        if (key === 'weather_enabled') return '1';
+        return '';
+      });
+      (WeatherService.fetchWeatherForecast as jest.Mock).mockRejectedValue(
+        new Error('network error'),
       );
-      (WeatherService.fetchWeatherForecast as jest.Mock).mockResolvedValue({ success: true });
+      (NotificationManager.scheduleDayReminders as jest.Mock).mockResolvedValue(undefined);
+      (NotificationManager.processReminderQueue as jest.Mock).mockResolvedValue(undefined);
+      (NotificationManager.maybeScheduleCatchUpReminder as jest.Mock).mockResolvedValue(undefined);
 
       const result = await taskCallback();
 
-      expect(WeatherService.fetchWeatherForecast).toHaveBeenCalled();
+      expect(NotificationManager.scheduleDayReminders).toHaveBeenCalled();
       expect(result).toBe(BackgroundTask.BackgroundTaskResult.Success);
     });
 

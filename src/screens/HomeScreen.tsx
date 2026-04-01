@@ -19,6 +19,7 @@ import { t, formatLocalDate } from '../i18n';
 import { updateTimeSlotProbability } from '../detection/sessionConfidence';
 import { startManualSession } from '../detection/manualCheckin';
 import { onSessionsChanged } from '../utils/sessionsChangedEmitter';
+import { cancelRemindersIfGoalReached } from '../notifications/notificationManager';
 
 export default function HomeScreen() {
   const { colors, isDark } = useTheme();
@@ -76,10 +77,13 @@ export default function HomeScreen() {
     setRefreshing(false);
   };
 
-  const handleConfirm = (id: number, startTime: number, confirmed: boolean) => {
+  const handleConfirm = async (id: number, startTime: number, confirmed: boolean) => {
     confirmSession(id, confirmed);
     const d = new Date(startTime);
     updateTimeSlotProbability(d.getHours(), d.getDay(), confirmed);
+    if (confirmed) {
+      await cancelRemindersIfGoalReached();
+    }
     loadData();
   };
 
