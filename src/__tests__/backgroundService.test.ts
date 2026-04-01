@@ -17,6 +17,7 @@ jest.mock('../weather/weatherService', () => ({
 
 jest.mock('../storage/database', () => ({
   getSetting: jest.fn(),
+  initDatabase: jest.fn(),
 }));
 
 import * as BackgroundTask from 'expo-background-task';
@@ -105,6 +106,14 @@ describe('unifiedBackgroundTask', () => {
   describe('task definition', () => {
     it('defines the task with TaskManager on module load', () => {
       expect(taskCallback).toBeDefined();
+    });
+
+    it('calls initDatabase on every tick to ensure DB is initialised in the background runtime', async () => {
+      (Database.getSetting as jest.Mock).mockReturnValue('0');
+
+      await taskCallback();
+
+      expect(Database.initDatabase).toHaveBeenCalledTimes(1);
     });
 
     it('runs all three reminder operations when reminders are enabled', async () => {
