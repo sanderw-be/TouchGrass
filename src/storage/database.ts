@@ -160,10 +160,7 @@ export function initDatabase(): void {
   // the user ever opens the app. OR IGNORE ensures existing user preferences
   // are never overwritten.
   db.runSync(
-    "INSERT OR IGNORE INTO app_settings (key, value) VALUES ('smart_reminders_count', '2')"
-  );
-  db.runSync(
-    "INSERT OR IGNORE INTO app_settings (key, value) VALUES ('weather_enabled', '1')"
+    "INSERT OR IGNORE INTO app_settings (key, value) VALUES ('smart_reminders_count', '2'), ('weather_enabled', '1')"
   );
   
   // Clean up any corrupted scheduled notifications (one-time migration)
