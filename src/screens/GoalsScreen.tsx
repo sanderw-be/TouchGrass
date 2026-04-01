@@ -143,6 +143,15 @@ export default function GoalsScreen() {
     setWeatherEnabled(value);
   };
 
+  const handleNavigateToSettings = () => {
+    const parent = navigation.getParent();
+    if (parent) {
+      parent.navigate('Settings');
+    } else {
+      console.warn('GoalsScreen: could not navigate to Settings tab — parent navigator unavailable');
+    }
+  };
+
   const handleOpenAppSettings = async () => {
     try {
       if (Platform.OS === 'android') {
@@ -441,7 +450,7 @@ export default function GoalsScreen() {
         {/* Weather */}
         <Text style={styles.sectionHeader}>{t('settings_weather_title')}</Text>
         <TouchableOpacity
-          onPress={!gpsEnabled ? () => navigation.getParent()?.navigate('Settings') : undefined}
+          onPress={!gpsEnabled ? handleNavigateToSettings : undefined}
           disabled={gpsEnabled}
           activeOpacity={gpsEnabled ? 1 : 0.7}
         >
