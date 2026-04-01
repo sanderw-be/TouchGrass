@@ -24,6 +24,10 @@ jest.mock('../detection/sessionConfidence', () => ({
   updateTimeSlotProbability: jest.fn(),
 }));
 
+jest.mock('../notifications/notificationManager', () => ({
+  cancelRemindersIfGoalReached: jest.fn(() => Promise.resolve()),
+}));
+
 jest.mock('../components/ManualSessionSheet', () => {
   const React = require('react');
   return jest.fn(() => null);

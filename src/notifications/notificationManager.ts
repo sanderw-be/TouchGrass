@@ -48,7 +48,7 @@ const FAILSAFE_DAYS_AHEAD = 3;
 // Stateful reminder queue — persisted in app_settings as 'smart_reminder_queue'
 // ---------------------------------------------------------------------------
 
-export type ReminderQueueStatus = 'date_planned' | 'tick_planned';
+export type ReminderQueueStatus = 'date_planned' | 'tick_planned' | 'consumed';
 
 export interface ReminderQueueEntry {
   id: string;          // unique notification identifier, also used as the Expo notification identifier
@@ -361,14 +361,21 @@ export async function scheduleNextReminder(): Promise<void> {
  * Process the stateful reminder queue on each background tick or foreground wake.
  *
  * Steps:
- * 1. Goal reached → cancel all queued DATE triggers and clear the queue.
- * 2. Look-ahead: `date_planned` entries firing within the next WINDOW minutes
- *    → cancel their DATE trigger and promote to `tick_planned` so look-back
- *    can fire them via JS.
- * 3. Look-back: `tick_planned` entries whose slot is in the past WINDOW minutes
- *    → fire immediately via TIME_INTERVAL: 1 and remove from queue.
- * 4. Stale cleanup: entries more than WINDOW minutes past → drop silently
- *    (DATE trigger already fired natively via AlarmManager, or was missed).
+ * 1. Goal reached → cancel all pending queued triggers and clear the queue.
+ * 2. `date_planned` entries whose slot time has passed → mark as `consumed`
+ *    (the DATE/TIME_INTERVAL trigger has fired or is about to fire natively).
+ * 3. `tick_planned` entries within the WINDOW (legacy) → fire via TIME_INTERVAL:1
+ *    and mark as `consumed`.
+ * 4. `tick_planned` entries older than WINDOW → drop silently (missed).
+ * 5. `consumed` entries older than CONSUMED_TTL minutes → drop (no longer needed
+ *    for the catch-up 60-minute wait guard).
+ *
+ * Note: the look-ahead step (date_planned → tick_planned promotion) has been
+ * parked because the daily goal can currently only be reached by user action in
+ * the foreground. DATE/TIME_INTERVAL triggers fire natively; the tick_planned
+ * state was only needed to intercept reminders before they fired so the
+ * background task could check for a goal-already-reached scenario. Existing
+ * tick_planned entries in the queue are still handled (look-back, step 3).
  */
 export async function processReminderQueue(): Promise<void> {
   const remindersCount = parseInt(getSetting('smart_reminders_count', '0'), 10);
@@ -376,7 +383,8 @@ export async function processReminderQueue(): Promise<void> {
 
   const now = new Date();
   const nowMinutes = now.getHours() * 60 + now.getMinutes();
-  const WINDOW = 15; // minutes
+  const WINDOW = 15;        // minutes — used for legacy tick_planned look-back
+  const CONSUMED_TTL = 60;  // minutes to retain a consumed entry for catch-up guard
 
   let queue = getQueue();
 
@@ -393,11 +401,14 @@ export async function processReminderQueue(): Promise<void> {
   const todayMinutes = getTodayMinutes();
   const dailyTarget = getCurrentDailyGoal()?.targetMinutes ?? 30;
 
-  // --- Goal reached: cancel everything ---
+  // --- Goal reached: cancel all pending triggers and clear the queue ---
   if (todayMinutes >= dailyTarget) {
     console.log(`TouchGrass: [Queue] Daily goal reached (${todayMinutes}/${dailyTarget} min) — cancelling ${queue.length} queued reminder(s)`);
     for (const entry of queue) {
-      await Notifications.cancelScheduledNotificationAsync(entry.id).catch(() => {});
+      // Consumed entries already fired — no notification to cancel
+      if (entry.status !== 'consumed') {
+        await Notifications.cancelScheduledNotificationAsync(entry.id).catch(() => {});
+      }
       console.log(`TouchGrass: [Queue] Deleted: ${entry.id} at ${formatSlotMinutes(entry.slotMinutes)} [${entry.status}] (goal reached)`);
     }
     saveQueue([]);
@@ -406,25 +417,39 @@ export async function processReminderQueue(): Promise<void> {
     return;
   }
 
-  // --- Look-ahead: date_planned entries firing within next WINDOW minutes ---
-  // Cancel their DATE trigger; mark tick_planned so look-back fires them via JS
-  for (const entry of queue) {
-    if (entry.status !== 'date_planned') continue;
-    const minutesUntil = entry.slotMinutes - nowMinutes;
-    if (minutesUntil >= 0 && minutesUntil <= WINDOW) {
-      await Notifications.cancelScheduledNotificationAsync(entry.id).catch(() => {});
-      entry.status = 'tick_planned';
-      console.log(`TouchGrass: [Queue] Promoted: ${entry.id} at ${formatSlotMinutes(entry.slotMinutes)} — date_planned → tick_planned (fires in ${minutesUntil} min)`);
-    }
-  }
-
-  // --- Look-back: tick_planned entries whose slot is in the past WINDOW minutes ---
   const updatedQueue: ReminderQueueEntry[] = [];
   for (const entry of queue) {
+    // --- Consumed cleanup: drop after CONSUMED_TTL minutes or on day rollover ---
+    if (entry.status === 'consumed') {
+      const minutesSince = nowMinutes - entry.slotMinutes;
+      if (minutesSince < 0 || minutesSince >= CONSUMED_TTL) {
+        console.log(`TouchGrass: [Queue] Deleted: ${entry.id} at ${formatSlotMinutes(entry.slotMinutes)} — consumed TTL expired`);
+        continue;
+      }
+      updatedQueue.push(entry);
+      continue;
+    }
+
+    // --- date_planned: mark consumed when slot time has passed ---
+    if (entry.status === 'date_planned') {
+      if (nowMinutes >= entry.slotMinutes) {
+        // Notification fired (or is about to fire) natively — mark consumed so
+        // catch-up logic can use the slot time for its 60-minute wait guard.
+        entry.status = 'consumed';
+        console.log(`TouchGrass: [Queue] Consumed: ${entry.id} at ${formatSlotMinutes(entry.slotMinutes)} — slot passed, marked consumed`);
+        updatedQueue.push(entry);
+      } else {
+        // Future slot — keep unchanged
+        updatedQueue.push(entry);
+      }
+      continue;
+    }
+
+    // --- tick_planned (legacy): fire via JS if within WINDOW, else drop if stale ---
     if (entry.status === 'tick_planned') {
       const minutesSince = nowMinutes - entry.slotMinutes;
       if (minutesSince >= 0 && minutesSince <= WINDOW) {
-        // Fire now
+        // Fire immediately
         const { title, body } = buildReminderMessage(todayMinutes, dailyTarget, Math.floor(entry.slotMinutes / 60));
         await Notifications.scheduleNotificationAsync({
           content: {
@@ -441,20 +466,19 @@ export async function processReminderQueue(): Promise<void> {
         });
         setSetting('last_reminder_ms', String(Date.now()));
         console.log(`TouchGrass: [Queue] Consumed: ${entry.id} at ${formatSlotMinutes(entry.slotMinutes)} — fired via JS (${minutesSince} min since slot)`);
-        // Do NOT add to updatedQueue — entry is consumed
+        entry.status = 'consumed';
+        updatedQueue.push(entry); // keep as consumed for CONSUMED_TTL
         continue;
       } else if (minutesSince > WINDOW) {
-        // Window passed without JS running — entry is stale, drop it
+        // Window passed without JS running — drop stale entry
         console.log(`TouchGrass: [Queue] Deleted: ${entry.id} at ${formatSlotMinutes(entry.slotMinutes)} — stale tick_planned (${minutesSince} min since slot)`);
         continue;
       }
-    }
-    // --- Stale cleanup: date_planned whose slot passed more than WINDOW minutes ago ---
-    if (entry.status === 'date_planned' && nowMinutes - entry.slotMinutes > WINDOW) {
-      // DATE trigger fired natively (AlarmManager) or was missed — remove from queue
-      console.log(`TouchGrass: [Queue] Deleted: ${entry.id} at ${formatSlotMinutes(entry.slotMinutes)} — stale date_planned (${nowMinutes - entry.slotMinutes} min since slot, fired natively)`);
+      // Future tick_planned (rare) — keep unchanged
+      updatedQueue.push(entry);
       continue;
     }
+
     updatedQueue.push(entry);
   }
 
@@ -608,8 +632,13 @@ export async function scheduleDayReminders(): Promise<void> {
         color: '#4A7C59',
       },
       trigger: {
-        type: Notifications.SchedulableTriggerInputTypes.DATE,
-        date: triggerDate,
+        // Use TIME_INTERVAL (non-exact) instead of DATE (exact) for smart
+        // reminders — this avoids SCHEDULE_EXACT_ALARM on Android and lets
+        // the system batch the alarm for better battery efficiency.
+        // Failsafe reminders (DATE triggers) serve as a reliable backup if
+        // the app is force-closed before the interval elapses.
+        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds: Math.max(1, Math.floor((triggerDate.getTime() - Date.now()) / 1000)),
         channelId: CHANNEL_ID,
       },
     });
@@ -695,14 +724,32 @@ export async function maybeScheduleCatchUpReminder(): Promise<void> {
   ).length;
   if (passedCount === 0) return;
 
-  // Don't schedule a catch-up within 60 minutes of the last planned reminder —
-  // give the user time to go outside before sending a follow-up.
-  const mostRecentPassedMin = plannedSlots
+  // Read the queue early — used for both the 60-minute wait guard and
+  // duplicate-slot prevention below.
+  const queue = getQueue();
+
+  // Don't schedule a catch-up within 60 minutes of the last consumed planned
+  // reminder — give the user time to go outside before sending a follow-up.
+  // Consumed entries are written by processReminderQueue() (which runs before
+  // this function in the background task).  As a fallback we also check the
+  // plannedSlots setting for slots that have passed but haven't been marked
+  // consumed yet (e.g. on the very first tick after a reminder fires).
+  const lastConsumedMin = queue
+    .filter(e => e.status === 'consumed')
+    .map(e => e.slotMinutes)
+    .filter(m => m <= currentMinutesOfDay)
+    .reduce((max, m) => Math.max(max, m), -1);
+
+  const mostRecentPassedSlotMin = plannedSlots
     .map(s => s.hour * 60 + s.minute)
     .filter(m => m <= currentMinutesOfDay)
     .reduce((max, m) => Math.max(max, m), -1);
-  if (mostRecentPassedMin >= 0 && currentMinutesOfDay - mostRecentPassedMin < 60) {
-    console.log('TouchGrass: catch-up postponed — waiting 60 min after last planned reminder');
+
+  // Use whichever is more recent (consumed queue entry or passed planned slot)
+  const lastReminderMin = Math.max(lastConsumedMin, mostRecentPassedSlotMin);
+
+  if (lastReminderMin >= 0 && currentMinutesOfDay - lastReminderMin < 60) {
+    console.log('TouchGrass: [CatchUp] Postponed — waiting 60 min after last planned reminder');
     return;
   }
 
@@ -738,11 +785,17 @@ export async function maybeScheduleCatchUpReminder(): Promise<void> {
     await fetchWeatherForecast({ allowPermissionPrompt: false });
   }
   const scores = scoreReminderHours(todayMinutes, dailyTarget, now.getHours(), now.getMinutes());
+
+  // Exclude slots that are already in the queue (any status) to prevent
+  // scheduling two catch-up reminders for the same time from different ticks.
+  const queuedSlotMinutes = new Set(queue.map(e => e.slotMinutes));
+
   const candidateSlots = scores.filter((s) => {
     const slotMin = s.hour * 60 + s.minute;
     return slotMin > currentMinutesOfDay
       && s.score >= 0.3
-      && !isSlotNearScheduledNotification(s.hour, s.minute, 30);
+      && !isSlotNearScheduledNotification(s.hour, s.minute, 30)
+      && !queuedSlotMinutes.has(slotMin);
   });
 
   if (candidateSlots.length === 0) {
@@ -775,14 +828,15 @@ export async function maybeScheduleCatchUpReminder(): Promise<void> {
       color: '#4A7C59',
     },
     trigger: {
-      type: Notifications.SchedulableTriggerInputTypes.DATE,
-      date: triggerDate,
+      // Use TIME_INTERVAL (non-exact) instead of DATE (exact) — same rationale
+      // as smart reminders: avoids SCHEDULE_EXACT_ALARM, battery-friendlier.
+      type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+      seconds: Math.max(1, Math.floor((triggerDate.getTime() - Date.now()) / 1000)),
       channelId: CHANNEL_ID,
     },
   });
 
   // Append catch-up entry to the queue
-  const queue = getQueue();
   queue.push({
     id,
     slotMinutes: best.hour * 60 + best.minute,
@@ -912,6 +966,36 @@ async function cancelAutomaticReminders(): Promise<void> {
       await Notifications.cancelScheduledNotificationAsync(notif.identifier);
     }
   }
+}
+
+/**
+ * Cancel all automatic reminders immediately if the daily goal has been reached.
+ * Call this after any user action that may have incremented today's outdoor time
+ * (e.g. session approval or a goal change that makes the current progress sufficient).
+ */
+export async function cancelRemindersIfGoalReached(): Promise<void> {
+  const remindersCount = parseInt(getSetting('smart_reminders_count', '0'), 10);
+  if (remindersCount === 0) return;
+
+  const todayMinutes = getTodayMinutes();
+  const dailyTarget = getCurrentDailyGoal()?.targetMinutes ?? 30;
+  if (todayMinutes < dailyTarget) return;
+
+  console.log(`TouchGrass: Goal reached (${todayMinutes}/${dailyTarget} min) after user action — cancelling reminders`);
+
+  // Cancel all scheduled smart/catchup notifications
+  await cancelAutomaticReminders();
+
+  // Cancel any pending (non-consumed) queue entries and clear the queue
+  const queue = getQueue();
+  for (const entry of queue) {
+    if (entry.status !== 'consumed') {
+      await Notifications.cancelScheduledNotificationAsync(entry.id).catch(() => {});
+    }
+  }
+  saveQueue([]);
+  setSetting('reminders_planned_slots', '[]');
+  setSetting('catchup_reminder_slot_minutes', '');
 }
 
 /**

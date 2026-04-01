@@ -4,7 +4,7 @@
  * background work is consolidated here.
  *
  * On each ~15-minute wake:
- * 1. If reminders are enabled: scheduleDayReminders → maybeScheduleCatchUpReminder → scheduleNextReminder
+ * 1. If reminders are enabled: scheduleDayReminders → processReminderQueue → maybeScheduleCatchUpReminder
  * 2. If weather is enabled: fetchWeatherForecast (best-effort, no permission prompt)
  */
 
@@ -42,8 +42,8 @@ TaskManager.defineTask(UNIFIED_BACKGROUND_TASK, async () => {
       logReminderQueueSnapshot();
       try {
         await scheduleDayReminders();
-        await maybeScheduleCatchUpReminder();
-        await processReminderQueue();
+        await processReminderQueue();         // update consumed states before catch-up check
+        await maybeScheduleCatchUpReminder(); // uses consumed entries for 60-min wait guard
       } catch (reminderError) {
         console.error('TouchGrass: [UnifiedTask] Reminder operations failed', reminderError);
       }
