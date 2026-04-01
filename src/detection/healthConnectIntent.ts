@@ -14,13 +14,14 @@ const HEALTH_CONNECT_PLAY_STORE_ID = 'com.google.android.apps.healthdata';
  * On Android 14+ (API 34+), Health Connect is integrated into the OS under
  * Settings → Security & Privacy → Privacy → Health Connect.
  *
- * Method 1: Deep-link directly to the TouchGrass permissions page using the
- * MANAGE_HEALTH_PERMISSIONS intent (requires manifest <queries> declaration).
- * React Native's Linking module parses intent: URIs via Intent.parseUri with
- * URI_INTENT_SCHEME, which calls startActivity() natively.
+ * Method 1: Open the main Health Connect settings page via the library's
+ * native openHealthConnectSettings() which calls startActivity() directly.
  *
- * Method 2: Fall back to the main Health Connect settings page via the library's
- * native openHealthConnectSettings() which uses startActivity() directly.
+ * Method 2: Fallback — deep-link directly to the TouchGrass permissions page
+ * using the MANAGE_HEALTH_PERMISSIONS intent URI (requires manifest <queries>
+ * declaration). Note: React Native's Linking.openURL() wraps URLs in
+ * ACTION_VIEW rather than calling Intent.parseUri(), so this path only works
+ * on devices/RN versions that handle intent: schemes via ACTION_VIEW.
  *
  * On Android 13 and below, Health Connect is a standalone app. The custom
  * scheme is tried first; if unavailable the Play Store is opened so the user
@@ -40,25 +41,25 @@ export async function openHealthConnectPermissionsViaIntent(): Promise<boolean> 
     if (apiLevel >= 34) {
       // Android 14+ (API 34+): Health Connect is built into the OS.
 
-      // Method 1: Deep-link to the TouchGrass-specific permissions page.
-      // React Native parses intent: URIs via Intent.parseUri (URI_INTENT_SCHEME).
-      // Note: canOpenURL is intentionally skipped — it returns false for intent: URIs
-      // even when the target activity exists.
-      try {
-        const permissionsUrl = `intent:#Intent;action=android.health.connect.action.MANAGE_HEALTH_PERMISSIONS;S.android.intent.extra.PACKAGE_NAME=${APP_PACKAGE_NAME};end`;
-        await Linking.openURL(permissionsUrl);
-        return true;
-      } catch (e) {
-        console.warn('MANAGE_HEALTH_PERMISSIONS intent failed, trying main settings:', e);
-      }
-
-      // Method 2: Open the main Health Connect settings page.
-      // (Settings → Security & Privacy → Privacy → Health Connect)
+      // Method 1: Open the main Health Connect settings page via the native library.
+      // Uses startActivity() directly — the most reliable approach on API 34+.
       try {
         openHealthConnectSettings();
         return true;
       } catch (e) {
         console.warn('openHealthConnectSettings failed:', e);
+      }
+
+      // Method 2: Deep-link directly to the TouchGrass permissions page.
+      // Fallback for devices where the library call fails. Note: Linking.openURL()
+      // wraps the URL in ACTION_VIEW rather than using Intent.parseUri(), so this
+      // may not work on all devices.
+      try {
+        const permissionsUrl = `intent:#Intent;action=android.health.connect.action.MANAGE_HEALTH_PERMISSIONS;S.android.intent.extra.PACKAGE_NAME=${APP_PACKAGE_NAME};end`;
+        await Linking.openURL(permissionsUrl);
+        return true;
+      } catch (e) {
+        console.warn('MANAGE_HEALTH_PERMISSIONS intent failed:', e);
       }
     } else {
       // Android 13 and below: Health Connect is a standalone app.
