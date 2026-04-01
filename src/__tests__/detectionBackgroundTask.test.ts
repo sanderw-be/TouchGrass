@@ -11,12 +11,14 @@ jest.mock('../detection/healthConnectIntent', () => ({
 }));
 jest.mock('../detection/gpsDetection', () => ({
   startLocationTracking: jest.fn().mockResolvedValue(undefined),
+  stopLocationTracking: jest.fn().mockResolvedValue(undefined),
   autoDetectLocations: jest.fn().mockResolvedValue(undefined),
 }));
 
 import * as Database from '../storage/database';
 import * as HealthConnect from '../detection/healthConnect';
 import * as HealthConnectIntent from '../detection/healthConnectIntent';
+import * as GpsDetection from '../detection/gpsDetection';
 import * as Detection from '../detection/index';
 
 describe('initDetection', () => {
@@ -99,5 +101,24 @@ describe('initDetection', () => {
     expect(Database.setSetting).toHaveBeenCalledWith('healthconnect_enabled', '0');
     expect(status.healthConnectPermission).toBe(false);
     expect(HealthConnect.syncHealthConnect).not.toHaveBeenCalled();
+  });
+});
+
+describe('toggleGPS', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    (Database.getSetting as jest.Mock).mockImplementation((_key: string, fallback: string) => fallback);
+    (Database.setSetting as jest.Mock).mockImplementation(() => {});
+  });
+
+  it('calls stopLocationTracking when GPS is disabled', async () => {
+    await Detection.toggleGPS(false);
+    expect(GpsDetection.stopLocationTracking).toHaveBeenCalled();
+  });
+
+  it('sets gps_user_enabled and gps_enabled to 0 when GPS is disabled', async () => {
+    await Detection.toggleGPS(false);
+    expect(Database.setSetting).toHaveBeenCalledWith('gps_user_enabled', '0');
+    expect(Database.setSetting).toHaveBeenCalledWith('gps_enabled', '0');
   });
 });

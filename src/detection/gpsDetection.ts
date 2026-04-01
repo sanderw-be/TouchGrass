@@ -501,6 +501,12 @@ TaskManager.defineTask(LOCATION_TRACK_TASK, async ({ data, error }: any) => {
   // Ensure the DB schema and migrations are applied before any DB access.
   // The background JS runtime does not guarantee App.tsx has run first.
   initDatabase();
+  // Respect the user's toggle: if GPS was disabled while the OS task was
+  // still alive, skip processing and do not submit any session.
+  if (getSetting('gps_user_enabled', '0') !== '1') {
+    console.log('TouchGrass: GPS task fired but GPS is disabled by user — skipping');
+    return;
+  }
   if (data?.locations?.length > 0) {
     const loc = data.locations[data.locations.length - 1];
     processLocationUpdate(

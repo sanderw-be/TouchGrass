@@ -1,7 +1,7 @@
 import * as Location from 'expo-location';
 import { syncHealthConnect, requestHealthPermissions, isHealthConnectAvailable, openHealthConnectForManagement } from './healthConnect';
 import { verifyHealthConnectPermissions } from './healthConnectIntent';
-import { startLocationTracking, autoDetectLocations } from './gpsDetection';
+import { startLocationTracking, stopLocationTracking, autoDetectLocations } from './gpsDetection';
 import { getSetting, setSetting } from '../storage/database';
 
 // Setting keys for the user's explicit intent (independent of OS permission state)
@@ -265,6 +265,7 @@ export async function toggleGPS(enabled: boolean): Promise<{ needsPermissions: b
   if (!enabled) {
     setSetting(GPS_USER_KEY, '0');
     setSetting('gps_enabled', '0');
+    await stopLocationTracking();
     return { needsPermissions: false };
   }
 
