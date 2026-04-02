@@ -15,11 +15,11 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Notifications from 'expo-notifications';
 import * as Location from 'expo-location';
-import * as IntentLauncher from 'expo-intent-launcher';
 import { spacing, radius, shadows } from '../utils/theme';
 import { useTheme } from '../context/ThemeContext';
 import { t } from '../i18n';
 import { PRIVACY_POLICY_URL } from '../utils/constants';
+import { openBatteryOptimizationSettings } from '../utils/batteryOptimization';
 import {
   toggleHealthConnect,
   toggleGPS,
@@ -568,13 +568,9 @@ function BatteryStep({ visited, onOpen }: { visited: boolean; onOpen: () => void
   const styles = useMemo(() => makeStyles(colors), [colors]);
 
   const handleOpenBatterySettings = async () => {
-    try {
-      await IntentLauncher.startActivityAsync(
-        'android.settings.IGNORE_BATTERY_OPTIMIZATION_SETTINGS'
-      );
+    const opened = await openBatteryOptimizationSettings();
+    if (opened) {
       onOpen();
-    } catch (error) {
-      console.error('Error opening battery settings:', error);
     }
   };
 

@@ -33,7 +33,6 @@ import {
   setSelectedCalendarId,
 } from '../calendar/calendarService';
 import { checkWeatherLocationPermissions } from '../detection';
-import * as IntentLauncher from 'expo-intent-launcher';
 import { spacing, radius, shadows } from '../utils/theme';
 import { useTheme } from '../context/ThemeContext';
 import { formatMinutes } from '../utils/helpers';
@@ -42,6 +41,7 @@ import type { GoalsStackParamList } from '../navigation/AppNavigator';
 import PermissionExplainerSheet, {
   PermissionSheetConfig,
 } from '../components/PermissionExplainerSheet';
+import { openBatteryOptimizationSettings } from '../utils/batteryOptimization';
 
 const DAILY_PRESETS = [15, 20, 30, 45, 60, 90];
 const WEEKLY_PRESETS = [60, 90, 120, 150, 210, 300];
@@ -481,17 +481,7 @@ export default function GoalsScreen() {
           {Platform.OS === 'android' && (
             <>
               <Divider />
-              <TouchableOpacity
-                onPress={async () => {
-                  try {
-                    await IntentLauncher.startActivityAsync(
-                      'android.settings.IGNORE_BATTERY_OPTIMIZATION_SETTINGS'
-                    );
-                  } catch (error) {
-                    console.error('Error opening battery settings:', error);
-                  }
-                }}
-              >
+              <TouchableOpacity onPress={openBatteryOptimizationSettings}>
                 <SettingRow
                   icon={
                     <Ionicons
