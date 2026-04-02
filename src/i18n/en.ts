@@ -14,6 +14,13 @@ export default {
   no_sessions_sub: 'Head out or log it manually!',
   todays_sessions: "Today's sessions",
 
+  // Streaks
+  streak_daily_singular: '{{count}} day streak',
+  streak_daily_plural: '{{count}} day streak',
+  streak_weekly_singular: '{{count}} week streak',
+  streak_weekly_plural: '{{count}} week streak',
+  streak_separator: ' · ',
+
   // Progress ring inline timer
   ring_timer_start: 'tap to start',
   ring_timer_tap_stop: 'tap to stop',
@@ -340,6 +347,12 @@ export default {
   notif_reason_urgent: "you haven't reached your goal yet today",
   notif_reason_acted: "you've gone outside around this time before",
   notif_reason_more_often: 'you prefer reminders around this time',
+
+  // Streak encouragement for notifications
+  notif_streak_daily: "Keep your {{count}} day streak going!",
+  notif_streak_weekly: "Maintain your {{count}} week streak!",
+  notif_streak_daily_at_risk: "Don't break your {{count}} day streak!",
+  notif_streak_weekly_at_risk: "Don't break your {{count}} week streak!",
 
   // Connector word used between two reminder reason descriptions ("X, and Y.")
   notif_contributor_and: 'and',

@@ -21,6 +21,8 @@ import {
   getCurrentWeeklyGoal,
   getSessionsForDay,
   confirmSession,
+  getDailyStreak,
+  getWeeklyStreak,
 } from '../storage/database';
 import { spacing, radius } from '../utils/theme';
 import { useTheme } from '../context/ThemeContext';
@@ -41,6 +43,8 @@ export default function HomeScreen() {
   const [todaySessions, setTodaySessions] = useState<any[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [sheetVisible, setSheetVisible] = useState(false);
+  const [dailyStreak, setDailyStreak] = useState(0);
+  const [weeklyStreak, setWeeklyStreak] = useState(0);
 
   // Inline ring timer
   const [timerRunning, setTimerRunning] = useState(false);
@@ -74,6 +78,8 @@ export default function HomeScreen() {
     setDailyTarget(getCurrentDailyGoal()?.targetMinutes ?? 30);
     setWeeklyTarget(getCurrentWeeklyGoal()?.targetMinutes ?? 150);
     setTodaySessions(getSessionsForDay(Date.now()));
+    setDailyStreak(getDailyStreak());
+    setWeeklyStreak(getWeeklyStreak());
   }, []);
 
   useFocusEffect(
@@ -185,6 +191,23 @@ export default function HomeScreen() {
           timerSeconds={timerSeconds}
         />
         <Text style={styles.motivation}>{motivationText()}</Text>
+        {(dailyStreak > 0 || weeklyStreak > 0) && (
+          <View style={styles.streakContainer}>
+            {dailyStreak > 0 && (
+              <Text style={styles.streakText}>
+                {t(dailyStreak === 1 ? 'streak_daily_singular' : 'streak_daily_plural', { count: dailyStreak })}
+              </Text>
+            )}
+            {dailyStreak > 0 && weeklyStreak > 0 && (
+              <Text style={styles.streakSeparator}>{t('streak_separator')}</Text>
+            )}
+            {weeklyStreak > 0 && (
+              <Text style={styles.streakText}>
+                {t(weeklyStreak === 1 ? 'streak_weekly_singular' : 'streak_weekly_plural', { count: weeklyStreak })}
+              </Text>
+            )}
+          </View>
+        )}
       </View>
 
       {/* Weekly strip */}
@@ -407,6 +430,22 @@ function makeStyles(
       color: colors.textSecondary,
       textAlign: 'center',
       lineHeight: 20,
+    },
+    streakContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginTop: spacing.xs,
+    },
+    streakText: {
+      fontSize: 13,
+      color: colors.grass,
+      fontWeight: '600',
+    },
+    streakSeparator: {
+      fontSize: 13,
+      color: colors.textMuted,
+      marginHorizontal: spacing.xs,
     },
 
     weekCard: {

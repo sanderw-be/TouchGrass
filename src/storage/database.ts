@@ -472,6 +472,88 @@ export function setWeeklyGoal(minutes: number): void {
   ]);
 }
 
+// ── Streaks ───────────────────────────────────────────────
+
+/**
+ * Calculate the current daily streak (consecutive days of reaching daily goal).
+ * Returns the number of consecutive days ending today where daily goal was reached.
+ */
+export function getDailyStreak(): number {
+  const dailyGoal = getCurrentDailyGoal();
+  if (!dailyGoal) return 0;
+
+  const targetMinutes = dailyGoal.targetMinutes;
+  let streak = 0;
+  let currentDate = startOfDay(Date.now());
+
+  // Check each day going backwards from today
+  while (true) {
+    const dayEnd = currentDate + 86400000;
+    const row = db.getFirstSync<{ total: number }>(
+      `SELECT COALESCE(SUM(durationMinutes), 0) as total
+       FROM outside_sessions
+       WHERE startTime >= ? AND startTime < ? AND userConfirmed = 1`,
+      [currentDate, dayEnd]
+    );
+
+    const minutes = row?.total ?? 0;
+
+    // If this day met the goal, increment streak and move to previous day
+    if (minutes >= targetMinutes) {
+      streak++;
+      currentDate -= 86400000; // Move back one day
+    } else {
+      // Streak is broken
+      break;
+    }
+
+    // Safety limit to prevent infinite loop (max 365 days)
+    if (streak >= 365) break;
+  }
+
+  return streak;
+}
+
+/**
+ * Calculate the current weekly streak (consecutive weeks of reaching weekly goal).
+ * Returns the number of consecutive weeks ending with the current week where weekly goal was reached.
+ */
+export function getWeeklyStreak(): number {
+  const weeklyGoal = getCurrentWeeklyGoal();
+  if (!weeklyGoal) return 0;
+
+  const targetMinutes = weeklyGoal.targetMinutes;
+  let streak = 0;
+  let currentWeekStart = startOfWeek(Date.now());
+
+  // Check each week going backwards from current week
+  while (true) {
+    const weekEnd = currentWeekStart + 7 * 86400000;
+    const row = db.getFirstSync<{ total: number }>(
+      `SELECT COALESCE(SUM(durationMinutes), 0) as total
+       FROM outside_sessions
+       WHERE startTime >= ? AND startTime < ? AND userConfirmed = 1`,
+      [currentWeekStart, weekEnd]
+    );
+
+    const minutes = row?.total ?? 0;
+
+    // If this week met the goal, increment streak and move to previous week
+    if (minutes >= targetMinutes) {
+      streak++;
+      currentWeekStart -= 7 * 86400000; // Move back one week
+    } else {
+      // Streak is broken
+      break;
+    }
+
+    // Safety limit to prevent infinite loop (max 52 weeks)
+    if (streak >= 52) break;
+  }
+
+  return streak;
+}
+
 // ── Reminder feedback ─────────────────────────────────────
 
 export function insertReminderFeedback(feedback: ReminderFeedback): void {
