@@ -1,8 +1,5 @@
 import React, { useState, useCallback, useLayoutEffect, useMemo } from 'react';
-import {
-  View, Text, StyleSheet, ScrollView,
-  TouchableOpacity, Switch, Alert,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Alert } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -32,20 +29,24 @@ export default function KnownLocationsScreen() {
   const [active, setActive] = useState<KnownLocation[]>([]);
   const [editingLocation, setEditingLocation] = useState<KnownLocation | null>(null);
   const [isCreatingLocation, setIsCreatingLocation] = useState(false);
-  const [newLocationCoords, setNewLocationCoords] = useState<{ latitude: number; longitude: number } | undefined>();
+  const [newLocationCoords, setNewLocationCoords] = useState<
+    { latitude: number; longitude: number } | undefined
+  >();
 
   const loadData = useCallback(() => {
     setSuggestionsEnabled(getSetting('location_suggestions_enabled', '1') === '1');
     const status = getDetectionStatus();
     setGpsActive(status.gps);
     const all = getAllKnownLocations();
-    setSuggested(all.filter(l => l.status === 'suggested'));
-    setActive(all.filter(l => l.status === 'active'));
+    setSuggested(all.filter((l) => l.status === 'suggested'));
+    setActive(all.filter((l) => l.status === 'active'));
   }, []);
 
-  useFocusEffect(useCallback(() => {
-    loadData();
-  }, [loadData]));
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [loadData])
+  );
 
   const handleAddLocation = useCallback(async () => {
     try {
@@ -77,7 +78,7 @@ export default function KnownLocationsScreen() {
         </TouchableOpacity>
       ),
     });
-  }, [navigation, handleAddLocation]);
+  }, [navigation, handleAddLocation, styles.headerAddBtn, styles.headerAddBtnText]);
 
   const closeSheet = useCallback(() => {
     setEditingLocation(null);
@@ -97,21 +98,17 @@ export default function KnownLocationsScreen() {
 
   const handleDeny = (loc: KnownLocation) => {
     if (!loc.id) return;
-    Alert.alert(
-      t('settings_location_deny_title'),
-      t('settings_location_deny_body'),
-      [
-        { text: t('settings_location_deny_cancel'), style: 'cancel' },
-        {
-          text: t('settings_location_deny_confirm'),
-          style: 'destructive',
-          onPress: () => {
-            denyKnownLocation(loc.id!);
-            loadData();
-          },
+    Alert.alert(t('settings_location_deny_title'), t('settings_location_deny_body'), [
+      { text: t('settings_location_deny_cancel'), style: 'cancel' },
+      {
+        text: t('settings_location_deny_confirm'),
+        style: 'destructive',
+        onPress: () => {
+          denyKnownLocation(loc.id!);
+          loadData();
         },
-      ]
-    );
+      },
+    ]);
   };
 
   const sheetVisible = editingLocation !== null || isCreatingLocation;
@@ -170,15 +167,21 @@ export default function KnownLocationsScreen() {
                   <View style={styles.row}>
                     <Text style={styles.rowIcon}>🔍</Text>
                     <View style={styles.rowContent}>
-                      <Text style={styles.rowLabel}>{loc.label || t('location_suggestion_default_label')}</Text>
+                      <Text style={styles.rowLabel}>
+                        {loc.label || t('location_suggestion_default_label')}
+                      </Text>
                       <Text style={styles.rowSublabel}>
                         {t('settings_location_radius', {
                           radius: loc.radiusMeters,
-                          type: loc.isIndoor ? t('settings_location_indoor') : t('settings_location_outdoor'),
+                          type: loc.isIndoor
+                            ? t('settings_location_indoor')
+                            : t('settings_location_outdoor'),
                         })}
                       </Text>
                       <View style={styles.pendingBadge}>
-                        <Text style={styles.pendingBadgeText}>{t('settings_location_suggested_badge')}</Text>
+                        <Text style={styles.pendingBadgeText}>
+                          {t('settings_location_suggested_badge')}
+                        </Text>
                       </View>
                     </View>
                     <View style={styles.actionButtons}>
@@ -188,10 +191,7 @@ export default function KnownLocationsScreen() {
                       >
                         <Text style={styles.approveBtnText}>{t('settings_location_approve')}</Text>
                       </TouchableOpacity>
-                      <TouchableOpacity
-                        style={styles.denyBtn}
-                        onPress={() => handleDeny(loc)}
-                      >
+                      <TouchableOpacity style={styles.denyBtn} onPress={() => handleDeny(loc)}>
                         <Text style={styles.denyBtnText}>{t('settings_location_deny')}</Text>
                       </TouchableOpacity>
                     </View>
@@ -224,7 +224,9 @@ export default function KnownLocationsScreen() {
                       <Text style={styles.rowSublabel}>
                         {t('settings_location_radius', {
                           radius: loc.radiusMeters,
-                          type: loc.isIndoor ? t('settings_location_indoor') : t('settings_location_outdoor'),
+                          type: loc.isIndoor
+                            ? t('settings_location_indoor')
+                            : t('settings_location_outdoor'),
                         })}
                       </Text>
                     </View>
@@ -242,79 +244,78 @@ export default function KnownLocationsScreen() {
 
 function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
   return StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.mist },
-  content: { padding: spacing.md },
+    container: { flex: 1, backgroundColor: colors.mist },
+    content: { padding: spacing.md },
 
-  sectionHeader: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.textMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginBottom: spacing.xs,
-    marginTop: spacing.md,
-    marginLeft: spacing.xs,
-  },
+    sectionHeader: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: colors.textMuted,
+      textTransform: 'uppercase',
+      letterSpacing: 1,
+      marginBottom: spacing.xs,
+      marginTop: spacing.md,
+      marginLeft: spacing.xs,
+    },
 
-  card: {
-    backgroundColor: colors.card,
-    borderRadius: radius.lg,
-    overflow: 'hidden',
-    ...shadows.soft,
-  },
+    card: {
+      backgroundColor: colors.card,
+      borderRadius: radius.lg,
+      overflow: 'hidden',
+      ...shadows.soft,
+    },
 
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: spacing.md,
-  },
-  rowIcon: { fontSize: 20, marginRight: spacing.md, width: 28, textAlign: 'center' },
-  rowContent: { flex: 1 },
-  rowLabel: { fontSize: 15, color: colors.textPrimary, fontWeight: '500' },
-  rowSublabel: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: spacing.md,
+    },
+    rowIcon: { fontSize: 20, marginRight: spacing.md, width: 28, textAlign: 'center' },
+    rowContent: { flex: 1 },
+    rowLabel: { fontSize: 15, color: colors.textPrimary, fontWeight: '500' },
+    rowSublabel: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
 
-  divider: { height: 1, backgroundColor: colors.fog, marginLeft: spacing.md + 28 + spacing.md },
+    divider: { height: 1, backgroundColor: colors.fog, marginLeft: spacing.md + 28 + spacing.md },
 
-  emptyBox: { padding: spacing.md },
-  emptyTitle: { fontSize: 14, color: colors.textPrimary, fontWeight: '600', marginBottom: 4 },
-  emptyHint: { fontSize: 13, color: colors.textMuted, lineHeight: 18 },
+    emptyBox: { padding: spacing.md },
+    emptyTitle: { fontSize: 14, color: colors.textPrimary, fontWeight: '600', marginBottom: 4 },
+    emptyHint: { fontSize: 13, color: colors.textMuted, lineHeight: 18 },
 
-  pendingBadge: {
-    alignSelf: 'flex-start',
-    marginTop: 4,
-    backgroundColor: colors.warningSurface,
-    borderRadius: radius.full,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
-  },
-  pendingBadgeText: { fontSize: 11, color: colors.warningText, fontWeight: '600' },
+    pendingBadge: {
+      alignSelf: 'flex-start',
+      marginTop: 4,
+      backgroundColor: colors.warningSurface,
+      borderRadius: radius.full,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 2,
+    },
+    pendingBadgeText: { fontSize: 11, color: colors.warningText, fontWeight: '600' },
 
-  actionButtons: {
-    flexDirection: 'column',
-    gap: spacing.xs,
-    marginLeft: spacing.sm,
-  },
-  approveBtn: {
-    backgroundColor: colors.grassPale,
-    borderRadius: radius.full,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
-    alignItems: 'center',
-  },
-  approveBtnText: { fontSize: 12, color: colors.grass, fontWeight: '600' },
-  denyBtn: {
-    backgroundColor: colors.errorSurface,
-    borderRadius: radius.full,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
-    alignItems: 'center',
-  },
-  denyBtnText: { fontSize: 12, color: colors.error, fontWeight: '600' },
+    actionButtons: {
+      flexDirection: 'column',
+      gap: spacing.xs,
+      marginLeft: spacing.sm,
+    },
+    approveBtn: {
+      backgroundColor: colors.grassPale,
+      borderRadius: radius.full,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 4,
+      alignItems: 'center',
+    },
+    approveBtnText: { fontSize: 12, color: colors.grass, fontWeight: '600' },
+    denyBtn: {
+      backgroundColor: colors.errorSurface,
+      borderRadius: radius.full,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 4,
+      alignItems: 'center',
+    },
+    denyBtnText: { fontSize: 12, color: colors.error, fontWeight: '600' },
 
-  chevron: { fontSize: 24, color: colors.textMuted, fontWeight: '300' },
+    chevron: { fontSize: 24, color: colors.textMuted, fontWeight: '300' },
 
-  headerAddBtn: { marginRight: spacing.md },
-  headerAddBtnText: { fontSize: 24, color: colors.grass, fontWeight: '400', lineHeight: 28 },
+    headerAddBtn: { marginRight: spacing.md },
+    headerAddBtnText: { fontSize: 24, color: colors.grass, fontWeight: '400', lineHeight: 28 },
   });
 }
-

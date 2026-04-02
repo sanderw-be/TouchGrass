@@ -1,18 +1,17 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import {
-  View, Text, StyleSheet, ScrollView,
-  TouchableOpacity, Dimensions,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import {
-  getDailyTotalsForMonth, getSessionsForRange,
-  getCurrentDailyGoal, startOfDay, startOfWeek,
+  getDailyTotalsForMonth,
+  getSessionsForRange,
+  getCurrentDailyGoal,
+  startOfDay,
+  startOfWeek,
 } from '../storage/database';
 import { spacing, radius, shadows } from '../utils/theme';
 import { useTheme } from '../context/ThemeContext';
 import { formatMinutes } from '../utils/helpers';
-import { formatLocalDate } from '../i18n';
-import { t } from '../i18n';
+import { formatLocalDate, t } from '../i18n';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const BAR_AREA_WIDTH = SCREEN_WIDTH - spacing.md * 2 - spacing.lg * 2;
@@ -28,10 +27,12 @@ export default function HistoryScreen() {
   const [dailyTarget, setDailyTarget] = useState(30);
   const [viewDate, setViewDate] = useState(Date.now());
 
-  useFocusEffect(useCallback(() => {
-    setDailyTarget(getCurrentDailyGoal()?.targetMinutes ?? 30);
-    loadData(period, viewDate);
-  }, [period, viewDate]));
+  useFocusEffect(
+    useCallback(() => {
+      setDailyTarget(getCurrentDailyGoal()?.targetMinutes ?? 30);
+      loadData(period, viewDate);
+    }, [period, viewDate])
+  );
 
   const loadData = (p: Period, date: number) => {
     if (p === 'week') {
@@ -42,7 +43,7 @@ export default function HistoryScreen() {
         const sessions = getSessionsForRange(dayStart, dayStart + DAY_MS);
         // Filter out declined sessions (userConfirmed === 0)
         const minutes = sessions
-          .filter(s => s.userConfirmed !== 0)
+          .filter((s) => s.userConfirmed !== 0)
           .reduce((sum, s) => sum + s.durationMinutes, 0);
         days.push({ date: dayStart, minutes });
       }
@@ -53,9 +54,7 @@ export default function HistoryScreen() {
   };
 
   const navigate = (dir: -1 | 1) => {
-    const delta = period === 'week'
-      ? dir * 7 * DAY_MS
-      : dir * 30 * DAY_MS;
+    const delta = period === 'week' ? dir * 7 * DAY_MS : dir * 30 * DAY_MS;
     setViewDate((v) => v + delta);
   };
 
@@ -79,7 +78,6 @@ export default function HistoryScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-
       {/* Period tabs */}
       <View style={styles.tabs}>
         {(['week', 'month'] as Period[]).map((p) => (
@@ -119,14 +117,8 @@ export default function HistoryScreen() {
 
       {/* Bar chart */}
       <View style={styles.chartCard}>
-        <BarChart
-          data={dailyData}
-          target={dailyTarget}
-          maxValue={maxMinutes}
-          period={period}
-        />
+        <BarChart data={dailyData} target={dailyTarget} maxValue={maxMinutes} period={period} />
       </View>
-
     </ScrollView>
   );
 }
@@ -160,11 +152,16 @@ export function BarChart({
   const [chartWidth, setChartWidth] = useState(BAR_AREA_WIDTH);
   const barCount = data.length || 1;
   const effectiveWidth = Math.max(chartWidth, 1);
-  const barWidth = Math.max(4, (effectiveWidth / barCount) - 4);
+  const barWidth = Math.max(4, effectiveWidth / barCount - 4);
 
   if (data.length === 0) {
     return (
-      <View style={[styles.chartArea, { height: CHART_HEIGHT, justifyContent: 'center', alignItems: 'center' }]}>
+      <View
+        style={[
+          styles.chartArea,
+          { height: CHART_HEIGHT, justifyContent: 'center', alignItems: 'center' },
+        ]}
+      >
         <Text style={{ color: colors.textMuted, fontSize: 14 }}>{t('history_no_data')}</Text>
       </View>
     );
@@ -193,7 +190,11 @@ export function BarChart({
             const isToday = startOfDay(d.date) === startOfDay(Date.now());
 
             return (
-              <View key={i} testID="history-bar-wrapper" style={[styles.barWrapper, { width: barWidth }]}>
+              <View
+                key={i}
+                testID="history-bar-wrapper"
+                style={[styles.barWrapper, { width: barWidth }]}
+              >
                 <View
                   style={[
                     styles.bar,
@@ -249,106 +250,112 @@ export function BarChart({
 
 function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
   return StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.mist },
-  content: { padding: spacing.md, paddingBottom: spacing.xxl },
+    container: { flex: 1, backgroundColor: colors.mist },
+    content: { padding: spacing.md, paddingBottom: spacing.xxl },
 
-  tabs: {
-    flexDirection: 'row',
-    backgroundColor: colors.fog,
-    borderRadius: radius.full,
-    padding: 3,
-    marginBottom: spacing.md,
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: spacing.xs,
-    borderRadius: radius.full,
-    alignItems: 'center',
-  },
-  tabActive: { backgroundColor: colors.card, ...shadows.soft },
-  tabText: { fontSize: 14, color: colors.textMuted, fontWeight: '500' },
-  tabTextActive: { color: colors.textPrimary, fontWeight: '700' },
+    tabs: {
+      flexDirection: 'row',
+      backgroundColor: colors.fog,
+      borderRadius: radius.full,
+      padding: 3,
+      marginBottom: spacing.md,
+    },
+    tab: {
+      flex: 1,
+      paddingVertical: spacing.xs,
+      borderRadius: radius.full,
+      alignItems: 'center',
+    },
+    tabActive: { backgroundColor: colors.card, ...shadows.soft },
+    tabText: { fontSize: 14, color: colors.textMuted, fontWeight: '500' },
+    tabTextActive: { color: colors.textPrimary, fontWeight: '700' },
 
-  navigator: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: spacing.md,
-  },
-  navBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.card,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...shadows.soft,
-  },
-  navBtnDisabled: { opacity: 0.3 },
-  navBtnText: { fontSize: 22, color: colors.textPrimary, lineHeight: 26 },
-  periodLabel: { fontSize: 15, fontWeight: '600', color: colors.textPrimary },
+    navigator: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: spacing.md,
+    },
+    navBtn: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: colors.card,
+      alignItems: 'center',
+      justifyContent: 'center',
+      ...shadows.soft,
+    },
+    navBtnDisabled: { opacity: 0.3 },
+    navBtnText: { fontSize: 22, color: colors.textPrimary, lineHeight: 26 },
+    periodLabel: { fontSize: 15, fontWeight: '600', color: colors.textPrimary },
 
-  statsRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    marginBottom: spacing.md,
-  },
-  statBox: {
-    flex: 1,
-    backgroundColor: colors.card,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    alignItems: 'center',
-    ...shadows.soft,
-  },
-  statValue: { fontSize: 20, fontWeight: '700', color: colors.textPrimary },
-  statLabel: { fontSize: 11, color: colors.textMuted, marginTop: 2, textTransform: 'uppercase', letterSpacing: 0.5 },
+    statsRow: {
+      flexDirection: 'row',
+      gap: spacing.sm,
+      marginBottom: spacing.md,
+    },
+    statBox: {
+      flex: 1,
+      backgroundColor: colors.card,
+      borderRadius: radius.md,
+      padding: spacing.md,
+      alignItems: 'center',
+      ...shadows.soft,
+    },
+    statValue: { fontSize: 20, fontWeight: '700', color: colors.textPrimary },
+    statLabel: {
+      fontSize: 11,
+      color: colors.textMuted,
+      marginTop: 2,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+    },
 
-  chartCard: {
-    backgroundColor: colors.card,
-    borderRadius: radius.lg,
-    padding: spacing.lg,
-    width: '100%',
-    ...shadows.soft,
-  },
-  chartArea: {
-    position: 'relative',
-    width: '100%',
-    marginBottom: spacing.xs,
-  },
-  targetLine: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    height: 1.5,
-    backgroundColor: colors.sun,
-    zIndex: 1,
-  },
-  barsRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    width: '100%',
-    height: '100%',
-  },
-  barWrapper: { alignItems: 'center', justifyContent: 'flex-end', height: '100%' },
-  bar: { borderRadius: 3 },
+    chartCard: {
+      backgroundColor: colors.card,
+      borderRadius: radius.lg,
+      padding: spacing.lg,
+      width: '100%',
+      ...shadows.soft,
+    },
+    chartArea: {
+      position: 'relative',
+      width: '100%',
+      marginBottom: spacing.xs,
+    },
+    targetLine: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      height: 1.5,
+      backgroundColor: colors.sun,
+      zIndex: 1,
+    },
+    barsRow: {
+      flexDirection: 'row',
+      alignItems: 'flex-end',
+      width: '100%',
+      height: '100%',
+    },
+    barWrapper: { alignItems: 'center', justifyContent: 'flex-end', height: '100%' },
+    bar: { borderRadius: 3 },
 
-  xLabels: { flexDirection: 'row', marginTop: spacing.xs, width: '100%' },
-  xLabel: { alignItems: 'center' },
-  xLabelText: { fontSize: 10, color: colors.textMuted },
+    xLabels: { flexDirection: 'row', marginTop: spacing.xs, width: '100%' },
+    xLabel: { alignItems: 'center' },
+    xLabelText: { fontSize: 10, color: colors.textMuted },
 
-  legend: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: spacing.lg,
-    marginTop: spacing.md,
-    paddingTop: spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: colors.fog,
-  },
-  legendItem: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
-  legendDot: { width: 8, height: 8, borderRadius: 4 },
-  legendLine: { width: 16, height: 2, backgroundColor: colors.sun },
-  legendText: { fontSize: 11, color: colors.textMuted },
+    legend: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      gap: spacing.lg,
+      marginTop: spacing.md,
+      paddingTop: spacing.sm,
+      borderTopWidth: 1,
+      borderTopColor: colors.fog,
+    },
+    legendItem: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+    legendDot: { width: 8, height: 8, borderRadius: 4 },
+    legendLine: { width: 16, height: 2, backgroundColor: colors.sun },
+    legendText: { fontSize: 11, color: colors.textMuted },
   });
 }

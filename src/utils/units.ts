@@ -26,7 +26,7 @@ const IMPERIAL_REGIONS = new Set([
  * certain test contexts). The fallback is an empty array, which results in
  * metric being used by default.
  */
-export function useImperialUnits(): boolean {
+export function isImperialUnits(): boolean {
   const locales = ExpoLocalization.getLocales?.() ?? [];
   const regionCode = locales[0]?.regionCode ?? null;
   return regionCode !== null && IMPERIAL_REGIONS.has(regionCode);

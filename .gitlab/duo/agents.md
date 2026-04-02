@@ -17,23 +17,24 @@ This guide helps AI agents understand the TouchGrass project structure, conventi
 
 ### Core Modules
 
-| Module | Purpose | Key Files |
-|--------|---------|----------|
-| `detection/` | GPS + Health Connect outdoor activity detection | Session merging logic, overlap handling |
-| `storage/` | SQLite database layer | Schema, queries, migrations |
-| `notifications/` | Reminder scheduling and delivery | Background tasks, notification channels |
-| `calendar/` | Calendar integration | Event creation, sync logic |
-| `weather/` | Weather data integration | API calls, caching |
-| `components/` | Reusable UI components | Buttons, modals, sheets, lists |
-| `screens/` | Full-screen views | Home, History, Events, Settings |
-| `navigation/` | React Navigation setup | Bottom tabs, stack navigation |
-| `i18n/` | Internationalization | English (en), Dutch (nl) |
-| `utils/` | Helpers and theme | Colors, formatting, constants |
-| `context/` | React Context providers | Global state management |
+| Module           | Purpose                                         | Key Files                               |
+| ---------------- | ----------------------------------------------- | --------------------------------------- |
+| `detection/`     | GPS + Health Connect outdoor activity detection | Session merging logic, overlap handling |
+| `storage/`       | SQLite database layer                           | Schema, queries, migrations             |
+| `notifications/` | Reminder scheduling and delivery                | Background tasks, notification channels |
+| `calendar/`      | Calendar integration                            | Event creation, sync logic              |
+| `weather/`       | Weather data integration                        | API calls, caching                      |
+| `components/`    | Reusable UI components                          | Buttons, modals, sheets, lists          |
+| `screens/`       | Full-screen views                               | Home, History, Events, Settings         |
+| `navigation/`    | React Navigation setup                          | Bottom tabs, stack navigation           |
+| `i18n/`          | Internationalization                            | English (en), Dutch (nl)                |
+| `utils/`         | Helpers and theme                               | Colors, formatting, constants           |
+| `context/`       | React Context providers                         | Global state management                 |
 
 ### Session Merging Logic
 
 When GPS and Health Connect detect overlapping outdoor time:
+
 - **Unconfirmed + Unconfirmed**: Merge into one pending session
 - **Automated + Confirmed**: Confirmed session stays intact; only non-overlapping time becomes new unconfirmed session
 - **Automated + Denied**: Sessions merge; denied status is preserved
@@ -99,16 +100,19 @@ await db.insertSession({ startTime, endTime, source });
 ## Build & Release
 
 ### Development Build (APK)
+
 ```bash
 npm run android:dev
 ```
 
 ### Preview Build (APK via EAS)
+
 ```bash
 eas build --platform android --profile preview
 ```
 
 ### Production Build (AAB via EAS)
+
 ```bash
 eas build --platform android --profile production
 ```

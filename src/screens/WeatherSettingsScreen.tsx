@@ -1,14 +1,24 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView,
-  TouchableOpacity, Switch, ActivityIndicator, Alert,
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Switch,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { getSetting, setSetting } from '../storage/database';
 import { spacing, radius, shadows } from '../utils/theme';
 import { useTheme } from '../context/ThemeContext';
 import { t } from '../i18n';
-import { fetchWeatherForecast, isWeatherDataAvailable, getWeatherForHour } from '../weather/weatherService';
+import {
+  fetchWeatherForecast,
+  isWeatherDataAvailable,
+  getWeatherForHour,
+} from '../weather/weatherService';
 import { getWeatherDescription, getWeatherEmoji } from '../weather/weatherAlgorithm';
 import { formatTemperature } from '../utils/temperature';
 
@@ -37,24 +47,28 @@ export default function WeatherSettingsScreen() {
     setAvoidRain(getSetting('weather_avoid_rain', '1') === '1');
     setAvoidHeat(getSetting('weather_avoid_heat', '1') === '1');
     setConsiderUV(getSetting('weather_consider_uv', '1') === '1');
-    
+
     // Auto-refresh weather data if unavailable or stale
     if (!isWeatherDataAvailable()) {
       // Fetch weather in background without showing loading state
-      fetchWeatherForecast().then((result) => {
-        if (!isMountedRef.current) return;
-        if (result.success) {
-          const hour = new Date().getHours();
-          const weather = getWeatherForHour(hour);
-          if (weather) {
-            const description = getWeatherDescription(weather);
-            const emoji = getWeatherEmoji(weather);
-            setCurrentWeather(`${emoji} ${description}, ${formatTemperature(weather.temperature)}`);
+      fetchWeatherForecast()
+        .then((result) => {
+          if (!isMountedRef.current) return;
+          if (result.success) {
+            const hour = new Date().getHours();
+            const weather = getWeatherForHour(hour);
+            if (weather) {
+              const description = getWeatherDescription(weather);
+              const emoji = getWeatherEmoji(weather);
+              setCurrentWeather(
+                `${emoji} ${description}, ${formatTemperature(weather.temperature)}`
+              );
+            }
           }
-        }
-      }).catch((error) => {
-        console.error('Auto-refresh weather error:', error);
-      });
+        })
+        .catch((error) => {
+          console.error('Auto-refresh weather error:', error);
+        });
     } else {
       // Load current weather if available
       const hour = new Date().getHours();
@@ -69,9 +83,11 @@ export default function WeatherSettingsScreen() {
     }
   }, []);
 
-  useFocusEffect(useCallback(() => {
-    loadSettings();
-  }, [loadSettings]));
+  useFocusEffect(
+    useCallback(() => {
+      loadSettings();
+    }, [loadSettings])
+  );
 
   const changeTempPreference = (pref: 'cold' | 'moderate' | 'hot') => {
     setSetting('temp_preference', pref);
@@ -131,10 +147,7 @@ export default function WeatherSettingsScreen() {
           {(['cold', 'moderate', 'hot'] as const).map((pref) => (
             <TouchableOpacity
               key={pref}
-              style={[
-                styles.tempOption,
-                tempPreference === pref && styles.tempOptionActive,
-              ]}
+              style={[styles.tempOption, tempPreference === pref && styles.tempOptionActive]}
               onPress={() => changeTempPreference(pref)}
             >
               <Text
@@ -200,10 +213,7 @@ export default function WeatherSettingsScreen() {
                 <Text style={styles.successIndicatorText}>✓</Text>
               </View>
             ) : (
-              <TouchableOpacity
-                style={styles.editBtn}
-                onPress={handleRefreshWeather}
-              >
+              <TouchableOpacity style={styles.editBtn} onPress={handleRefreshWeather}>
                 <Text style={styles.editBtnText}>{t('settings_weather_refresh')}</Text>
               </TouchableOpacity>
             )
@@ -215,7 +225,10 @@ export default function WeatherSettingsScreen() {
 }
 
 function SettingRow({
-  icon, label, sublabel, right,
+  icon,
+  label,
+  sublabel,
+  right,
 }: {
   icon: string;
   label: string;
@@ -244,84 +257,84 @@ function Divider() {
 
 function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
   return StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.mist },
-  content: { padding: spacing.md, paddingBottom: spacing.xxl },
+    container: { flex: 1, backgroundColor: colors.mist },
+    content: { padding: spacing.md, paddingBottom: spacing.xxl },
 
-  card: {
-    backgroundColor: colors.card,
-    borderRadius: radius.lg,
-    overflow: 'hidden',
-    ...shadows.soft,
-  },
+    card: {
+      backgroundColor: colors.card,
+      borderRadius: radius.lg,
+      overflow: 'hidden',
+      ...shadows.soft,
+    },
 
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: spacing.md,
-  },
-  rowIcon: { fontSize: 20, marginRight: spacing.md, width: 28, textAlign: 'center' },
-  rowContent: { flex: 1 },
-  rowLabel: { fontSize: 15, color: colors.textPrimary, fontWeight: '500' },
-  rowSublabel: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
-  rowRight: { marginLeft: spacing.sm },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: spacing.md,
+    },
+    rowIcon: { fontSize: 20, marginRight: spacing.md, width: 28, textAlign: 'center' },
+    rowContent: { flex: 1 },
+    rowLabel: { fontSize: 15, color: colors.textPrimary, fontWeight: '500' },
+    rowSublabel: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
+    rowRight: { marginLeft: spacing.sm },
 
-  divider: { height: 1, backgroundColor: colors.fog, marginLeft: spacing.md + 28 + spacing.md },
+    divider: { height: 1, backgroundColor: colors.fog, marginLeft: spacing.md + 28 + spacing.md },
 
-  editBtn: {
-    backgroundColor: colors.grassPale,
-    borderRadius: radius.full,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
-  },
-  editBtnText: { fontSize: 12, color: colors.grass, fontWeight: '600' },
+    editBtn: {
+      backgroundColor: colors.grassPale,
+      borderRadius: radius.full,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 4,
+    },
+    editBtnText: { fontSize: 12, color: colors.grass, fontWeight: '600' },
 
-  successIndicator: {
-    backgroundColor: colors.grassPale,
-    borderRadius: radius.full,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
-  },
-  successIndicatorText: { fontSize: 12, color: colors.grass, fontWeight: '700' },
+    successIndicator: {
+      backgroundColor: colors.grassPale,
+      borderRadius: radius.full,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 4,
+    },
+    successIndicatorText: { fontSize: 12, color: colors.grass, fontWeight: '700' },
 
-  tempRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingTop: spacing.md,
-    paddingHorizontal: spacing.md,
-    paddingBottom: spacing.xs,
-  },
-  tempRowIcon: { fontSize: 20, marginRight: spacing.md, width: 28, textAlign: 'center' },
-  tempRowLabel: { fontSize: 15, color: colors.textPrimary, fontWeight: '500' },
-  
-  tempOptionsContainer: {
-    flexDirection: 'row',
-    gap: spacing.xs,
-    flexWrap: 'wrap',
-    paddingHorizontal: spacing.md,
-    paddingBottom: spacing.md,
-  },
-  tempOption: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
-    borderRadius: radius.sm,
-    backgroundColor: colors.fog,
-    borderWidth: 1,
-    borderColor: 'transparent',
-    minWidth: 70,
-  },
-  tempOptionActive: {
-    backgroundColor: colors.grassLight,
-    borderColor: colors.grass,
-  },
-  tempOptionText: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    fontWeight: '500',
-    textAlign: 'center',
-  },
-  tempOptionTextActive: {
-    color: colors.grass,
-    fontWeight: '600',
-  },
+    tempRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingTop: spacing.md,
+      paddingHorizontal: spacing.md,
+      paddingBottom: spacing.xs,
+    },
+    tempRowIcon: { fontSize: 20, marginRight: spacing.md, width: 28, textAlign: 'center' },
+    tempRowLabel: { fontSize: 15, color: colors.textPrimary, fontWeight: '500' },
+
+    tempOptionsContainer: {
+      flexDirection: 'row',
+      gap: spacing.xs,
+      flexWrap: 'wrap',
+      paddingHorizontal: spacing.md,
+      paddingBottom: spacing.md,
+    },
+    tempOption: {
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 4,
+      borderRadius: radius.sm,
+      backgroundColor: colors.fog,
+      borderWidth: 1,
+      borderColor: 'transparent',
+      minWidth: 70,
+    },
+    tempOptionActive: {
+      backgroundColor: colors.grassLight,
+      borderColor: colors.grass,
+    },
+    tempOptionText: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      fontWeight: '500',
+      textAlign: 'center',
+    },
+    tempOptionTextActive: {
+      color: colors.grass,
+      fontWeight: '600',
+    },
   });
 }

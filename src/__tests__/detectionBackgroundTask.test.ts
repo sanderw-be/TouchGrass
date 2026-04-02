@@ -24,7 +24,9 @@ import * as Detection from '../detection/index';
 describe('initDetection', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    (Database.getSetting as jest.Mock).mockImplementation((_key: string, fallback: string) => fallback);
+    (Database.getSetting as jest.Mock).mockImplementation(
+      (_key: string, fallback: string) => fallback
+    );
     (Database.setSetting as jest.Mock).mockImplementation(() => {});
   });
 
@@ -69,7 +71,13 @@ describe('initDetection', () => {
     // Simulate a slow sync that would delay startup if awaited
     let syncResolved = false;
     (HealthConnect.syncHealthConnect as jest.Mock).mockImplementation(
-      () => new Promise(resolve => setTimeout(() => { syncResolved = true; resolve(true); }, 100)),
+      () =>
+        new Promise((resolve) =>
+          setTimeout(() => {
+            syncResolved = true;
+            resolve(true);
+          }, 100)
+        )
     );
     (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
       if (key === 'healthconnect_user_enabled') return '1';
@@ -84,7 +92,7 @@ describe('initDetection', () => {
     expect(HealthConnect.syncHealthConnect).toHaveBeenCalled();
 
     // Let the background promise settle to avoid leaking into other tests.
-    await new Promise(r => setTimeout(r, 150));
+    await new Promise((r) => setTimeout(r, 150));
     expect(syncResolved).toBe(true);
   });
 
@@ -107,7 +115,9 @@ describe('initDetection', () => {
 describe('toggleGPS', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    (Database.getSetting as jest.Mock).mockImplementation((_key: string, fallback: string) => fallback);
+    (Database.getSetting as jest.Mock).mockImplementation(
+      (_key: string, fallback: string) => fallback
+    );
     (Database.setSetting as jest.Mock).mockImplementation(() => {});
   });
 

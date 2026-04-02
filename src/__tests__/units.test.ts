@@ -4,7 +4,7 @@ jest.mock('expo-localization', () => ({
   getLocales: () => mockGetLocales(),
 }));
 
-import { useImperialUnits, kmToMiles, kmhToMph } from '../utils/units';
+import { isImperialUnits, kmToMiles, kmhToMph } from '../utils/units';
 
 describe('kmToMiles', () => {
   it('converts 1 km to ~0.621 miles', () => {
@@ -34,49 +34,49 @@ describe('kmhToMph', () => {
   });
 });
 
-describe('useImperialUnits', () => {
+describe('isImperialUnits', () => {
   it('returns true for US region', () => {
     mockGetLocales.mockReturnValue([{ languageCode: 'en', regionCode: 'US' }]);
-    expect(useImperialUnits()).toBe(true);
+    expect(isImperialUnits()).toBe(true);
   });
 
   it('returns true for GB (United Kingdom)', () => {
     mockGetLocales.mockReturnValue([{ languageCode: 'en', regionCode: 'GB' }]);
-    expect(useImperialUnits()).toBe(true);
+    expect(isImperialUnits()).toBe(true);
   });
 
   it('returns true for US territory Guam (GU)', () => {
     mockGetLocales.mockReturnValue([{ languageCode: 'en', regionCode: 'GU' }]);
-    expect(useImperialUnits()).toBe(true);
+    expect(isImperialUnits()).toBe(true);
   });
 
   it('returns true for US territory Puerto Rico (PR)', () => {
     mockGetLocales.mockReturnValue([{ languageCode: 'en', regionCode: 'PR' }]);
-    expect(useImperialUnits()).toBe(true);
+    expect(isImperialUnits()).toBe(true);
   });
 
   it('returns false for Netherlands (NL)', () => {
     mockGetLocales.mockReturnValue([{ languageCode: 'nl', regionCode: 'NL' }]);
-    expect(useImperialUnits()).toBe(false);
+    expect(isImperialUnits()).toBe(false);
   });
 
   it('returns false for Germany (DE)', () => {
     mockGetLocales.mockReturnValue([{ languageCode: 'de', regionCode: 'DE' }]);
-    expect(useImperialUnits()).toBe(false);
+    expect(isImperialUnits()).toBe(false);
   });
 
   it('returns false for Australia (AU)', () => {
     mockGetLocales.mockReturnValue([{ languageCode: 'en', regionCode: 'AU' }]);
-    expect(useImperialUnits()).toBe(false);
+    expect(isImperialUnits()).toBe(false);
   });
 
   it('returns false when region code is null', () => {
     mockGetLocales.mockReturnValue([{ languageCode: 'en', regionCode: null }]);
-    expect(useImperialUnits()).toBe(false);
+    expect(isImperialUnits()).toBe(false);
   });
 
   it('returns false when getLocales returns empty array', () => {
     mockGetLocales.mockReturnValue([]);
-    expect(useImperialUnits()).toBe(false);
+    expect(isImperialUnits()).toBe(false);
   });
 });

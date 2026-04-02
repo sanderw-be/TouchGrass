@@ -1,11 +1,8 @@
 import React, { useMemo } from 'react';
-import {
-  View, Text, ScrollView, TouchableOpacity, Linking, Alert,
-} from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Linking, Alert } from 'react-native';
 import { spacing, radius, shadows } from '../utils/theme';
 import { useTheme } from '../context/ThemeContext';
-import { t } from '../i18n';
-import i18n from '../i18n';
+import i18n, { t } from '../i18n';
 
 const FEEDBACK_URLS: Record<string, string> = {
   nl: 'https://forms.gle/SSavqQgWFqYmiJaZA',
@@ -63,7 +60,10 @@ export default function FeedbackSupportScreen() {
 }
 
 function SettingRow({
-  icon, label, sublabel, right,
+  icon,
+  label,
+  sublabel,
+  right,
 }: {
   icon: string;
   label: string;

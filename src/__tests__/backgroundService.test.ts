@@ -37,7 +37,7 @@ describe('unifiedBackgroundTask', () => {
 
   beforeAll(() => {
     const call = (TaskManager.defineTask as jest.Mock).mock.calls.find(
-      (c: any[]) => c[0] === UNIFIED_BACKGROUND_TASK,
+      (c: any[]) => c[0] === UNIFIED_BACKGROUND_TASK
     );
     taskCallback = call?.[1];
   });
@@ -52,10 +52,9 @@ describe('unifiedBackgroundTask', () => {
 
       await registerUnifiedBackgroundTask();
 
-      expect(BackgroundTask.registerTaskAsync).toHaveBeenCalledWith(
-        UNIFIED_BACKGROUND_TASK,
-        { minimumInterval: 15 },
-      );
+      expect(BackgroundTask.registerTaskAsync).toHaveBeenCalledWith(UNIFIED_BACKGROUND_TASK, {
+        minimumInterval: 15,
+      });
     });
 
     it('does not register the task when already registered', async () => {
@@ -69,7 +68,7 @@ describe('unifiedBackgroundTask', () => {
     it('handles registration errors gracefully', async () => {
       (TaskManager.isTaskRegisteredAsync as jest.Mock).mockResolvedValue(false);
       (BackgroundTask.registerTaskAsync as jest.Mock).mockRejectedValue(
-        new Error('Registration failed'),
+        new Error('Registration failed')
       );
 
       await expect(registerUnifiedBackgroundTask()).resolves.not.toThrow();
@@ -96,7 +95,7 @@ describe('unifiedBackgroundTask', () => {
     it('handles unregistration errors gracefully', async () => {
       (TaskManager.isTaskRegisteredAsync as jest.Mock).mockResolvedValue(true);
       (BackgroundTask.unregisterTaskAsync as jest.Mock).mockRejectedValue(
-        new Error('Unregistration failed'),
+        new Error('Unregistration failed')
       );
 
       await expect(unregisterUnifiedBackgroundTask()).resolves.not.toThrow();
@@ -208,7 +207,7 @@ describe('unifiedBackgroundTask', () => {
         return '';
       });
       (WeatherService.fetchWeatherForecast as jest.Mock).mockRejectedValue(
-        new Error('network error'),
+        new Error('network error')
       );
       (NotificationManager.scheduleDayReminders as jest.Mock).mockResolvedValue(undefined);
       (NotificationManager.processReminderQueue as jest.Mock).mockResolvedValue(undefined);
@@ -227,7 +226,7 @@ describe('unifiedBackgroundTask', () => {
         return '';
       });
       (WeatherService.fetchWeatherForecast as jest.Mock).mockRejectedValue(
-        new Error('network error'),
+        new Error('network error')
       );
 
       const result = await taskCallback();

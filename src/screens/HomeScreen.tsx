@@ -1,16 +1,24 @@
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView,
-  TouchableOpacity, RefreshControl, StatusBar,
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  RefreshControl,
+  StatusBar,
 } from 'react-native';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { useFocusEffect } from '@react-navigation/native';
 import ManualSessionSheet from '../components/ManualSessionSheet';
 import ProgressRing from '../components/ProgressRing';
 import {
-  getTodayMinutes, getWeekMinutes,
-  getCurrentDailyGoal, getCurrentWeeklyGoal,
-  getSessionsForDay, confirmSession,
+  getTodayMinutes,
+  getWeekMinutes,
+  getCurrentDailyGoal,
+  getCurrentWeeklyGoal,
+  getSessionsForDay,
+  confirmSession,
 } from '../storage/database';
 import { spacing, radius, shadows } from '../utils/theme';
 import { useTheme } from '../context/ThemeContext';
@@ -66,7 +74,11 @@ export default function HomeScreen() {
     setTodaySessions(getSessionsForDay(Date.now()));
   }, []);
 
-  useFocusEffect(useCallback(() => { loadData(); }, [loadData]));
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [loadData])
+  );
 
   // Refresh whenever background work (e.g. Health Connect sync) inserts new sessions.
   useEffect(() => onSessionsChanged(loadData), [loadData]);
@@ -130,9 +142,14 @@ export default function HomeScreen() {
     <ScrollView
       style={styles.container}
       contentContainerStyle={styles.content}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.grass} />}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.grass} />
+      }
     >
-      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={colors.mist} />
+      <StatusBar
+        barStyle={isDark ? 'light-content' : 'dark-content'}
+        backgroundColor={colors.mist}
+      />
 
       <ManualSessionSheet
         visible={sheetVisible}
@@ -174,7 +191,9 @@ export default function HomeScreen() {
           <Text style={styles.weekTitle}>{t('this_week')}</Text>
           <Text style={styles.weekValue}>
             {formatMinutes(weekMinutes)}{' '}
-            <Text style={styles.weekOf}>{t('of')} {formatMinutes(weeklyTarget)}</Text>
+            <Text style={styles.weekOf}>
+              {t('of')} {formatMinutes(weeklyTarget)}
+            </Text>
           </Text>
         </View>
         <View style={styles.weekBar}>
@@ -213,8 +232,13 @@ function WeekDots() {
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const today = new Date().getDay();
   const days = [
-    t('day_mon'), t('day_tue'), t('day_wed'), t('day_thu'),
-    t('day_fri'), t('day_sat'), t('day_sun'),
+    t('day_mon'),
+    t('day_tue'),
+    t('day_wed'),
+    t('day_thu'),
+    t('day_fri'),
+    t('day_sat'),
+    t('day_sun'),
   ];
   const todayMon = (today + 6) % 7;
 
@@ -222,11 +246,9 @@ function WeekDots() {
     <View style={styles.weekDots}>
       {days.map((d, i) => (
         <View key={i} style={styles.dotWrapper}>
-          <View style={[
-            styles.dot,
-            i < todayMon && styles.dotPast,
-            i === todayMon && styles.dotToday,
-          ]} />
+          <View
+            style={[styles.dot, i < todayMon && styles.dotPast, i === todayMon && styles.dotToday]}
+          />
           <Text style={[styles.dotLabel, i === todayMon && styles.dotLabelToday]}>{d}</Text>
         </View>
       ))}
@@ -234,7 +256,13 @@ function WeekDots() {
   );
 }
 
-function SessionRow({ session, onConfirm }: { session: any; onConfirm: (confirmed: boolean) => void }) {
+function SessionRow({
+  session,
+  onConfirm,
+}: {
+  session: any;
+  onConfirm: (confirmed: boolean) => void;
+}) {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const swipeableRef = useRef<Swipeable>(null);
@@ -249,7 +277,10 @@ function SessionRow({ session, onConfirm }: { session: any; onConfirm: (confirme
   const renderConfirmAction = () => (
     <TouchableOpacity
       style={[styles.swipeAction, styles.swipeConfirm]}
-      onPress={() => { swipeableRef.current?.close(); onConfirm(true); }}
+      onPress={() => {
+        swipeableRef.current?.close();
+        onConfirm(true);
+      }}
       testID="home-swipe-confirm-action"
     >
       <Text style={styles.swipeConfirmIcon}>✓</Text>
@@ -260,7 +291,10 @@ function SessionRow({ session, onConfirm }: { session: any; onConfirm: (confirme
   const renderRejectAction = () => (
     <TouchableOpacity
       style={[styles.swipeAction, styles.swipeReject]}
-      onPress={() => { swipeableRef.current?.close(); onConfirm(false); }}
+      onPress={() => {
+        swipeableRef.current?.close();
+        onConfirm(false);
+      }}
       testID="home-swipe-reject-action"
     >
       <Text style={styles.swipeRejectIcon}>✕</Text>
@@ -313,124 +347,134 @@ function SessionRow({ session, onConfirm }: { session: any; onConfirm: (confirme
 
 function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
   return StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.mist },
-  content: { padding: spacing.md, paddingBottom: spacing.xxl },
+    container: { flex: 1, backgroundColor: colors.mist },
+    content: { padding: spacing.md, paddingBottom: spacing.xxl },
 
-  header: {
-    marginBottom: spacing.lg,
-    marginTop: spacing.md,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-  },
-  greeting: { fontSize: 26, fontWeight: '700', color: colors.textPrimary, letterSpacing: -0.5 },
-  date: { fontSize: 14, color: colors.textSecondary, marginTop: 2 },
-  addBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.grass,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: spacing.xs,
-    ...shadows.soft,
-  },
-  addBtnText: { fontSize: 24, color: colors.textInverse, lineHeight: 30, fontWeight: '300' },
+    header: {
+      marginBottom: spacing.lg,
+      marginTop: spacing.md,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+    },
+    greeting: { fontSize: 26, fontWeight: '700', color: colors.textPrimary, letterSpacing: -0.5 },
+    date: { fontSize: 14, color: colors.textSecondary, marginTop: 2 },
+    addBtn: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: colors.grass,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginTop: spacing.xs,
+      ...shadows.soft,
+    },
+    addBtnText: { fontSize: 24, color: colors.textInverse, lineHeight: 30, fontWeight: '300' },
 
-  ringCard: {
-    backgroundColor: colors.card,
-    borderRadius: radius.lg,
-    padding: spacing.xl,
-    alignItems: 'center',
-    marginBottom: spacing.md,
-    ...shadows.soft,
-  },
-  motivation: {
-    marginTop: spacing.md,
-    fontSize: 14,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    lineHeight: 20,
-  },
+    ringCard: {
+      backgroundColor: colors.card,
+      borderRadius: radius.lg,
+      padding: spacing.xl,
+      alignItems: 'center',
+      marginBottom: spacing.md,
+      ...shadows.soft,
+    },
+    motivation: {
+      marginTop: spacing.md,
+      fontSize: 14,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      lineHeight: 20,
+    },
 
-  weekCard: {
-    backgroundColor: colors.card,
-    borderRadius: radius.lg,
-    padding: spacing.lg,
-    marginBottom: spacing.md,
-    ...shadows.soft,
-  },
-  weekHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'baseline',
-    marginBottom: spacing.sm,
-  },
-  weekTitle: { fontSize: 16, fontWeight: '600', color: colors.textPrimary },
-  weekValue: { fontSize: 18, fontWeight: '700', color: colors.grass },
-  weekOf: { fontSize: 13, fontWeight: '400', color: colors.textMuted },
-  weekBar: {
-    height: 6,
-    backgroundColor: colors.fog,
-    borderRadius: radius.full,
-    marginBottom: spacing.md,
-    overflow: 'hidden',
-  },
-  weekBarFill: {
-    height: '100%',
-    backgroundColor: colors.grass,
-    borderRadius: radius.full,
-  },
-  weekDots: { flexDirection: 'row', justifyContent: 'space-between' },
-  dotWrapper: { alignItems: 'center', gap: 4 },
-  dot: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.fog },
-  dotPast: { backgroundColor: colors.grassLight },
-  dotToday: { backgroundColor: colors.grass, width: 14, height: 14, borderRadius: 7 },
-  dotLabel: { fontSize: 10, color: colors.textMuted },
-  dotLabelToday: { color: colors.grass, fontWeight: '700' },
+    weekCard: {
+      backgroundColor: colors.card,
+      borderRadius: radius.lg,
+      padding: spacing.lg,
+      marginBottom: spacing.md,
+      ...shadows.soft,
+    },
+    weekHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'baseline',
+      marginBottom: spacing.sm,
+    },
+    weekTitle: { fontSize: 16, fontWeight: '600', color: colors.textPrimary },
+    weekValue: { fontSize: 18, fontWeight: '700', color: colors.grass },
+    weekOf: { fontSize: 13, fontWeight: '400', color: colors.textMuted },
+    weekBar: {
+      height: 6,
+      backgroundColor: colors.fog,
+      borderRadius: radius.full,
+      marginBottom: spacing.md,
+      overflow: 'hidden',
+    },
+    weekBarFill: {
+      height: '100%',
+      backgroundColor: colors.grass,
+      borderRadius: radius.full,
+    },
+    weekDots: { flexDirection: 'row', justifyContent: 'space-between' },
+    dotWrapper: { alignItems: 'center', gap: 4 },
+    dot: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.fog },
+    dotPast: { backgroundColor: colors.grassLight },
+    dotToday: { backgroundColor: colors.grass, width: 14, height: 14, borderRadius: 7 },
+    dotLabel: { fontSize: 10, color: colors.textMuted },
+    dotLabelToday: { color: colors.grass, fontWeight: '700' },
 
-  section: { marginBottom: spacing.md },
-  sectionTitle: { fontSize: 16, fontWeight: '600', color: colors.textPrimary, marginBottom: spacing.sm },
+    section: { marginBottom: spacing.md },
+    sectionTitle: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.textPrimary,
+      marginBottom: spacing.sm,
+    },
 
-  sessionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.card,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    marginBottom: spacing.xs,
-    ...shadows.soft,
-  },
-  sessionIcon: { fontSize: 20, marginRight: spacing.sm },
-  sessionInfo: { flex: 1 },
-  sessionPending: { opacity: 0.5 },
-  sessionTime: { fontSize: 14, color: colors.textSecondary },
-  sessionDuration: { fontSize: 16, fontWeight: '600', color: colors.textPrimary, marginTop: 2 },
-  reviewBadge: {
-    backgroundColor: colors.grassPale,
-    borderRadius: radius.full,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 3,
-  },
-  reviewText: { fontSize: 11, color: colors.grass, fontWeight: '600' },
+    sessionRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.card,
+      borderRadius: radius.md,
+      padding: spacing.md,
+      marginBottom: spacing.xs,
+      ...shadows.soft,
+    },
+    sessionIcon: { fontSize: 20, marginRight: spacing.sm },
+    sessionInfo: { flex: 1 },
+    sessionPending: { opacity: 0.5 },
+    sessionTime: { fontSize: 14, color: colors.textSecondary },
+    sessionDuration: { fontSize: 16, fontWeight: '600', color: colors.textPrimary, marginTop: 2 },
+    reviewBadge: {
+      backgroundColor: colors.grassPale,
+      borderRadius: radius.full,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 3,
+    },
+    reviewText: { fontSize: 11, color: colors.grass, fontWeight: '600' },
 
-  swipeAction: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: 88,
-    borderRadius: radius.md,
-    marginBottom: spacing.xs,
-  },
-  swipeConfirm: { backgroundColor: colors.grass },
-  swipeConfirmIcon: { fontSize: 22, color: colors.textInverse, fontWeight: '700' },
-  swipeConfirmLabel: { fontSize: 11, color: colors.textInverse, fontWeight: '600', marginTop: 2 },
-  swipeReject: { backgroundColor: colors.fog },
-  swipeRejectIcon: { fontSize: 22, color: colors.textSecondary, fontWeight: '700' },
-  swipeRejectLabel: { fontSize: 11, color: colors.textSecondary, fontWeight: '600', marginTop: 2 },
+    swipeAction: {
+      justifyContent: 'center',
+      alignItems: 'center',
+      width: 88,
+      borderRadius: radius.md,
+      marginBottom: spacing.xs,
+    },
+    swipeConfirm: { backgroundColor: colors.grass },
+    swipeConfirmIcon: { fontSize: 22, color: colors.textInverse, fontWeight: '700' },
+    swipeConfirmLabel: { fontSize: 11, color: colors.textInverse, fontWeight: '600', marginTop: 2 },
+    swipeReject: { backgroundColor: colors.fog },
+    swipeRejectIcon: { fontSize: 22, color: colors.textSecondary, fontWeight: '700' },
+    swipeRejectLabel: {
+      fontSize: 11,
+      color: colors.textSecondary,
+      fontWeight: '600',
+      marginTop: 2,
+    },
 
-  emptyState: { alignItems: 'center', paddingVertical: spacing.xxl },
-  emptyIcon: { fontSize: 48, marginBottom: spacing.md },
-  emptyText: { fontSize: 16, color: colors.textSecondary, fontWeight: '500' },
-  emptySubtext: { fontSize: 13, color: colors.textMuted, marginTop: spacing.xs },
+    emptyState: { alignItems: 'center', paddingVertical: spacing.xxl },
+    emptyIcon: { fontSize: 48, marginBottom: spacing.md },
+    emptyText: { fontSize: 16, color: colors.textSecondary, fontWeight: '500' },
+    emptySubtext: { fontSize: 13, color: colors.textMuted, marginTop: spacing.xs },
   });
 }

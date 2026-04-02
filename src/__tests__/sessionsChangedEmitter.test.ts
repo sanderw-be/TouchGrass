@@ -52,7 +52,9 @@ describe('sessionsChangedEmitter', () => {
   });
 
   it('continues emitting to remaining listeners when one throws', () => {
-    const throwing = jest.fn(() => { throw new Error('test error'); });
+    const throwing = jest.fn(() => {
+      throw new Error('test error');
+    });
     const safe = jest.fn();
 
     const unsubThrowing = onSessionsChanged(throwing);

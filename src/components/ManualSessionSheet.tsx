@@ -1,7 +1,13 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
-  View, Text, StyleSheet, Modal, TouchableOpacity,
-  ScrollView, TextInput, Platform, Alert,
+  View,
+  Text,
+  StyleSheet,
+  Modal,
+  TouchableOpacity,
+  ScrollView,
+  Platform,
+  Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -19,8 +25,6 @@ interface Props {
 
 type Tab = 'log' | 'timer';
 
-const DURATION_PRESETS = [15, 20, 30, 45, 60, 90];
-
 export default function ManualSessionSheet({ visible, onClose, onSessionLogged }: Props) {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
@@ -28,10 +32,7 @@ export default function ManualSessionSheet({ visible, onClose, onSessionLogged }
   const [tab, setTab] = useState<Tab>('log');
 
   // Log past session state
-  const [durationMinutes, setDurationMinutes] = useState(30);
-  const [customDuration, setCustomDuration] = useState('');
-  const [useCustom, setUseCustom] = useState(false);
-  
+
   // Time pickers for start and end time
   const [startTime, setStartTime] = useState(new Date());
   const [endTime, setEndTime] = useState(new Date());
@@ -50,11 +51,8 @@ export default function ManualSessionSheet({ visible, onClose, onSessionLogged }
   useEffect(() => {
     if (visible) {
       setTab('log');
-      setDurationMinutes(30);
-      setCustomDuration('');
-      setUseCustom(false);
       setFromTimer(false);
-      
+
       // Set default times: end time is now, start time is 30 minutes ago
       const now = new Date();
       setEndTime(now);
@@ -143,7 +141,8 @@ export default function ManualSessionSheet({ visible, onClose, onSessionLogged }
     // Pre-fill the log form with the timed session's actual start and end times
     // so the user can review and edit before saving (or cancel entirely).
     const end = new Date();
-    const start = timerStartTime > 0 ? new Date(timerStartTime) : new Date(end.getTime() - timerSeconds * 1000);
+    const start =
+      timerStartTime > 0 ? new Date(timerStartTime) : new Date(end.getTime() - timerSeconds * 1000);
     setStartTime(start);
     setEndTime(end);
     setFromTimer(true);
@@ -161,12 +160,7 @@ export default function ManualSessionSheet({ visible, onClose, onSessionLogged }
   const calculatedDuration = Math.round((endTime.getTime() - startTime.getTime()) / (60 * 1000));
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="slide"
-      onRequestClose={onClose}
-    >
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onClose} />
 
       <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, spacing.sm) }]}>
@@ -193,7 +187,10 @@ export default function ManualSessionSheet({ visible, onClose, onSessionLogged }
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.tab, tab === 'timer' && styles.tabActive]}
-            onPress={() => { setTab('timer'); setFromTimer(false); }}
+            onPress={() => {
+              setTab('timer');
+              setFromTimer(false);
+            }}
           >
             <Text style={[styles.tabText, tab === 'timer' && styles.tabTextActive]}>
               {t('manual_tab_timer')}
@@ -202,7 +199,6 @@ export default function ManualSessionSheet({ visible, onClose, onSessionLogged }
         </View>
 
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-
           {/* ── Log past session tab ── */}
           {tab === 'log' && (
             <View>
@@ -261,9 +257,7 @@ export default function ManualSessionSheet({ visible, onClose, onSessionLogged }
                     style={styles.timeButton}
                     onPress={() => setShowEndPicker(true)}
                   >
-                    <Text style={styles.timeButtonText}>
-                      {formatLocalTime(endTime.getTime())}
-                    </Text>
+                    <Text style={styles.timeButtonText}>{formatLocalTime(endTime.getTime())}</Text>
                   </TouchableOpacity>
                   {showEndPicker && (
                     <DateTimePicker
@@ -284,11 +278,13 @@ export default function ManualSessionSheet({ visible, onClose, onSessionLogged }
                   <Text style={styles.previewTime}>
                     {formatLocalTime(startTime.getTime())} – {formatLocalTime(endTime.getTime())}
                   </Text>
-                  <Text style={styles.previewDuration}>
-                    {formatMinutes(calculatedDuration)}
-                  </Text>
+                  <Text style={styles.previewDuration}>{formatMinutes(calculatedDuration)}</Text>
                   <Text style={styles.previewDate}>
-                    {formatLocalDate(startTime.getTime(), { weekday: 'long', month: 'short', day: 'numeric' })}
+                    {formatLocalDate(startTime.getTime(), {
+                      weekday: 'long',
+                      month: 'short',
+                      day: 'numeric',
+                    })}
                   </Text>
                 </View>
               )}
@@ -324,7 +320,6 @@ export default function ManualSessionSheet({ visible, onClose, onSessionLogged }
               )}
             </View>
           )}
-
         </ScrollView>
       </View>
     </Modal>
@@ -333,235 +328,235 @@ export default function ManualSessionSheet({ visible, onClose, onSessionLogged }
 
 function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
   return StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-  },
-  sheet: {
-    backgroundColor: colors.mist,
-    borderTopLeftRadius: radius.lg,
-    borderTopRightRadius: radius.lg,
-    maxHeight: '85%',
-    ...shadows.medium,
-  },
-  handle: {
-    width: 40,
-    height: 4,
-    backgroundColor: colors.fog,
-    borderRadius: radius.full,
-    alignSelf: 'center',
-    marginTop: spacing.sm,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: spacing.md,
-    paddingBottom: spacing.sm,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  closeBtn: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: colors.fog,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  closeBtnText: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    fontWeight: '700',
-  },
+    backdrop: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.4)',
+    },
+    sheet: {
+      backgroundColor: colors.mist,
+      borderTopLeftRadius: radius.lg,
+      borderTopRightRadius: radius.lg,
+      maxHeight: '85%',
+      ...shadows.medium,
+    },
+    handle: {
+      width: 40,
+      height: 4,
+      backgroundColor: colors.fog,
+      borderRadius: radius.full,
+      alignSelf: 'center',
+      marginTop: spacing.sm,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      padding: spacing.md,
+      paddingBottom: spacing.sm,
+    },
+    title: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: colors.textPrimary,
+    },
+    closeBtn: {
+      width: 30,
+      height: 30,
+      borderRadius: 15,
+      backgroundColor: colors.fog,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    closeBtnText: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      fontWeight: '700',
+    },
 
-  tabs: {
-    flexDirection: 'row',
-    backgroundColor: colors.fog,
-    borderRadius: radius.full,
-    padding: 3,
-    marginHorizontal: spacing.md,
-    marginBottom: spacing.md,
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: spacing.xs,
-    borderRadius: radius.full,
-    alignItems: 'center',
-  },
-  tabActive: { backgroundColor: colors.card, ...shadows.soft },
-  tabText: { fontSize: 14, color: colors.textMuted, fontWeight: '500' },
-  tabTextActive: { color: colors.textPrimary, fontWeight: '700' },
+    tabs: {
+      flexDirection: 'row',
+      backgroundColor: colors.fog,
+      borderRadius: radius.full,
+      padding: 3,
+      marginHorizontal: spacing.md,
+      marginBottom: spacing.md,
+    },
+    tab: {
+      flex: 1,
+      paddingVertical: spacing.xs,
+      borderRadius: radius.full,
+      alignItems: 'center',
+    },
+    tabActive: { backgroundColor: colors.card, ...shadows.soft },
+    tabText: { fontSize: 14, color: colors.textMuted, fontWeight: '500' },
+    tabTextActive: { color: colors.textPrimary, fontWeight: '700' },
 
-  content: {
-    padding: spacing.md,
-    paddingBottom: spacing.xxl,
-  },
+    content: {
+      padding: spacing.md,
+      paddingBottom: spacing.xxl,
+    },
 
-  sectionLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.textMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginBottom: spacing.sm,
-    marginTop: spacing.md,
-  },
+    sectionLabel: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: colors.textMuted,
+      textTransform: 'uppercase',
+      letterSpacing: 1,
+      marginBottom: spacing.sm,
+      marginTop: spacing.md,
+    },
 
-  presets: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.xs,
-    marginBottom: spacing.sm,
-  },
-  offsetRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.xs,
-    marginBottom: spacing.md,
-  },
-  preset: {
-    borderRadius: radius.full,
-    borderWidth: 1.5,
-    borderColor: colors.fog,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    backgroundColor: colors.card,
-  },
-  presetActive: { backgroundColor: colors.grass, borderColor: colors.grass },
-  presetText: { fontSize: 14, color: colors.textSecondary, fontWeight: '500' },
-  presetTextActive: { color: colors.textInverse, fontWeight: '700' },
+    presets: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: spacing.xs,
+      marginBottom: spacing.sm,
+    },
+    offsetRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: spacing.xs,
+      marginBottom: spacing.md,
+    },
+    preset: {
+      borderRadius: radius.full,
+      borderWidth: 1.5,
+      borderColor: colors.fog,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.xs,
+      backgroundColor: colors.card,
+    },
+    presetActive: { backgroundColor: colors.grass, borderColor: colors.grass },
+    presetText: { fontSize: 14, color: colors.textSecondary, fontWeight: '500' },
+    presetTextActive: { color: colors.textInverse, fontWeight: '700' },
 
-  customRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    marginBottom: spacing.md,
-  },
-  input: {
-    flex: 1,
-    borderWidth: 1.5,
-    borderColor: colors.fog,
-    borderRadius: radius.md,
-    padding: spacing.sm,
-    fontSize: 16,
-    color: colors.textPrimary,
-    backgroundColor: colors.card,
-  },
-  inputActive: { borderColor: colors.grass },
-  inputUnit: { fontSize: 14, color: colors.textSecondary },
+    customRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      marginBottom: spacing.md,
+    },
+    input: {
+      flex: 1,
+      borderWidth: 1.5,
+      borderColor: colors.fog,
+      borderRadius: radius.md,
+      padding: spacing.sm,
+      fontSize: 16,
+      color: colors.textPrimary,
+      backgroundColor: colors.card,
+    },
+    inputActive: { borderColor: colors.grass },
+    inputUnit: { fontSize: 14, color: colors.textSecondary },
 
-  preview: {
-    backgroundColor: colors.grassPale,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    marginBottom: spacing.md,
-    alignItems: 'center',
-  },
-  previewLabel: {
-    fontSize: 11,
-    color: colors.grassDark,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginBottom: spacing.xs,
-  },
-  previewTime: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: colors.grassDark,
-  },
-  previewDate: {
-    fontSize: 13,
-    color: colors.grass,
-    marginTop: 2,
-  },
+    preview: {
+      backgroundColor: colors.grassPale,
+      borderRadius: radius.md,
+      padding: spacing.md,
+      marginBottom: spacing.md,
+      alignItems: 'center',
+    },
+    previewLabel: {
+      fontSize: 11,
+      color: colors.grassDark,
+      textTransform: 'uppercase',
+      letterSpacing: 1,
+      marginBottom: spacing.xs,
+    },
+    previewTime: {
+      fontSize: 20,
+      fontWeight: '700',
+      color: colors.grassDark,
+    },
+    previewDate: {
+      fontSize: 13,
+      color: colors.grass,
+      marginTop: 2,
+    },
 
-  primaryBtn: {
-    backgroundColor: colors.grass,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    alignItems: 'center',
-    marginTop: spacing.sm,
-  },
-  primaryBtnText: {
-    color: colors.textInverse,
-    fontSize: 16,
-    fontWeight: '700',
-  },
+    primaryBtn: {
+      backgroundColor: colors.grass,
+      borderRadius: radius.md,
+      padding: spacing.md,
+      alignItems: 'center',
+      marginTop: spacing.sm,
+    },
+    primaryBtnText: {
+      color: colors.textInverse,
+      fontSize: 16,
+      fontWeight: '700',
+    },
 
-  // Timer tab
-  timerContainer: {
-    alignItems: 'center',
-    paddingVertical: spacing.xl,
-  },
-  timerDisplay: {
-    fontSize: 64,
-    fontWeight: '200',
-    color: colors.textPrimary,
-    letterSpacing: -2,
-    marginBottom: spacing.sm,
-  },
-  timerSub: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    marginBottom: spacing.xl,
-  },
-  timerButtons: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    width: '100%',
-  },
-  secondaryBtn: {
-    flex: 1,
-    backgroundColor: colors.fog,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    alignItems: 'center',
-    marginTop: spacing.sm,
-  },
-  secondaryBtnText: {
-    color: colors.textSecondary,
-    fontSize: 16,
-    fontWeight: '600',
-  },
+    // Timer tab
+    timerContainer: {
+      alignItems: 'center',
+      paddingVertical: spacing.xl,
+    },
+    timerDisplay: {
+      fontSize: 64,
+      fontWeight: '200',
+      color: colors.textPrimary,
+      letterSpacing: -2,
+      marginBottom: spacing.sm,
+    },
+    timerSub: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      marginBottom: spacing.xl,
+    },
+    timerButtons: {
+      flexDirection: 'row',
+      gap: spacing.sm,
+      width: '100%',
+    },
+    secondaryBtn: {
+      flex: 1,
+      backgroundColor: colors.fog,
+      borderRadius: radius.md,
+      padding: spacing.md,
+      alignItems: 'center',
+      marginTop: spacing.sm,
+    },
+    secondaryBtnText: {
+      color: colors.textSecondary,
+      fontSize: 16,
+      fontWeight: '600',
+    },
 
-  // Time picker styles
-  timePicker: {
-    alignSelf: 'flex-start',
-    marginBottom: spacing.md,
-  },
-  timeButton: {
-    backgroundColor: colors.fog,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    borderRadius: radius.md,
-    alignItems: 'center',
-    marginBottom: spacing.md,
-  },
-  timeButtonText: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  previewDuration: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.grass,
-    marginTop: spacing.xs,
-  },
-  timerHint: {
-    backgroundColor: colors.grassPale,
-    borderRadius: radius.md,
-    padding: spacing.sm,
-    marginBottom: spacing.sm,
-  },
-  timerHintText: {
-    fontSize: 13,
-    color: colors.grassDark,
-    textAlign: 'center',
-  },
+    // Time picker styles
+    timePicker: {
+      alignSelf: 'flex-start',
+      marginBottom: spacing.md,
+    },
+    timeButton: {
+      backgroundColor: colors.fog,
+      paddingVertical: spacing.md,
+      paddingHorizontal: spacing.lg,
+      borderRadius: radius.md,
+      alignItems: 'center',
+      marginBottom: spacing.md,
+    },
+    timeButtonText: {
+      fontSize: 24,
+      fontWeight: '700',
+      color: colors.textPrimary,
+    },
+    previewDuration: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.grass,
+      marginTop: spacing.xs,
+    },
+    timerHint: {
+      backgroundColor: colors.grassPale,
+      borderRadius: radius.md,
+      padding: spacing.sm,
+      marginBottom: spacing.sm,
+    },
+    timerHintText: {
+      fontSize: 13,
+      color: colors.grassDark,
+      textAlign: 'center',
+    },
   });
 }

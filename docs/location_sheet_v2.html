@@ -1,144 +1,407 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-<head>
-<meta charset="utf-8">
-<title>Location Sheet</title>
-<style>
-  * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, sans-serif; }
-  body { background: #e8ebe6; display: flex; gap: 32px; padding: 32px; justify-content: center; align-items: flex-end; min-height: 100vh; }
-  .phone { width: 340px; height: 680px; background: #eee; border-radius: 44px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,.28); border: 2px solid #ccc; position: relative; flex-shrink: 0; }
-  .statusbar { background: #f8f9f7; height: 44px; display: flex; align-items: center; padding: 0 20px; justify-content: space-between; font-size: 13px; font-weight: 600; }
-  .screen-bg { width: 100%; height: 100%; background: rgba(0,0,0,0.45); display: flex; flex-direction: column; justify-content: flex-end; }
-  .settings-screen { background: #f8f9f7; flex: 1; overflow: hidden; display: flex; flex-direction: column; }
-  .navbar { background: #f8f9f7; padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #e8ebe6; }
-  .navbar-title { font-size: 17px; font-weight: 700; color: #1A2E1F; }
-  .navbar-back { color: #4A7C59; font-size: 16px; }
-  .navbar-add { color: #4A7C59; font-size: 24px; font-weight: 300; line-height: 28px; }
-  .settings-content { padding: 12px 16px; flex: 1; overflow-y: auto; }
-  .card { background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 2px 8px rgba(44,80,60,.08); margin-bottom: 4px; }
-  .section-header { font-size: 10px; font-weight: 700; color: #8FA892; text-transform: uppercase; letter-spacing: 1px; margin: 10px 0 5px 4px; }
-  .row { display: flex; align-items: center; padding: 13px 16px; gap: 12px; }
-  .row-icon { font-size: 18px; width: 28px; text-align: center; }
-  .row-content { flex: 1; }
-  .row-label { font-size: 14px; color: #1A2E1F; font-weight: 500; }
-  .row-sub { font-size: 11px; color: #8FA892; margin-top: 2px; }
-  .chevron { color: #8FA892; font-size: 20px; }
-  .divider { height: 1px; background: #e8ebe6; margin-left: 56px; }
+  <head>
+    <meta charset="utf-8" />
+    <title>Location Sheet</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        font-family: -apple-system, sans-serif;
+      }
+      body {
+        background: #e8ebe6;
+        display: flex;
+        gap: 32px;
+        padding: 32px;
+        justify-content: center;
+        align-items: flex-end;
+        min-height: 100vh;
+      }
+      .phone {
+        width: 340px;
+        height: 680px;
+        background: #eee;
+        border-radius: 44px;
+        overflow: hidden;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.28);
+        border: 2px solid #ccc;
+        position: relative;
+        flex-shrink: 0;
+      }
+      .statusbar {
+        background: #f8f9f7;
+        height: 44px;
+        display: flex;
+        align-items: center;
+        padding: 0 20px;
+        justify-content: space-between;
+        font-size: 13px;
+        font-weight: 600;
+      }
+      .screen-bg {
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.45);
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+      }
+      .settings-screen {
+        background: #f8f9f7;
+        flex: 1;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+      .navbar {
+        background: #f8f9f7;
+        padding: 10px 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid #e8ebe6;
+      }
+      .navbar-title {
+        font-size: 17px;
+        font-weight: 700;
+        color: #1a2e1f;
+      }
+      .navbar-back {
+        color: #4a7c59;
+        font-size: 16px;
+      }
+      .navbar-add {
+        color: #4a7c59;
+        font-size: 24px;
+        font-weight: 300;
+        line-height: 28px;
+      }
+      .settings-content {
+        padding: 12px 16px;
+        flex: 1;
+        overflow-y: auto;
+      }
+      .card {
+        background: #fff;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(44, 80, 60, 0.08);
+        margin-bottom: 4px;
+      }
+      .section-header {
+        font-size: 10px;
+        font-weight: 700;
+        color: #8fa892;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin: 10px 0 5px 4px;
+      }
+      .row {
+        display: flex;
+        align-items: center;
+        padding: 13px 16px;
+        gap: 12px;
+      }
+      .row-icon {
+        font-size: 18px;
+        width: 28px;
+        text-align: center;
+      }
+      .row-content {
+        flex: 1;
+      }
+      .row-label {
+        font-size: 14px;
+        color: #1a2e1f;
+        font-weight: 500;
+      }
+      .row-sub {
+        font-size: 11px;
+        color: #8fa892;
+        margin-top: 2px;
+      }
+      .chevron {
+        color: #8fa892;
+        font-size: 20px;
+      }
+      .divider {
+        height: 1px;
+        background: #e8ebe6;
+        margin-left: 56px;
+      }
 
-  /* Bottom sheet overlay */
-  .overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.45); display: flex; flex-direction: column; justify-content: flex-end; }
-  .sheet { background: #f8f9f7; border-radius: 24px 24px 0 0; box-shadow: 0 -4px 24px rgba(0,0,0,.18); max-height: 88%; overflow: hidden; display: flex; flex-direction: column; }
-  .handle { width: 40px; height: 4px; background: #e8ebe6; border-radius: 100px; align-self: center; margin: 8px auto 0; }
-  .sheet-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px 8px; }
-  .sheet-title { font-size: 17px; font-weight: 700; color: #1A2E1F; }
-  .close-btn { width: 28px; height: 28px; border-radius: 14px; background: #e8ebe6; display: flex; align-items: center; justify-content: center; font-size: 11px; color: #5A7060; font-weight: 700; }
-  .sheet-body { padding: 4px 16px 20px; overflow-y: auto; }
-  .field-label { font-size: 11px; font-weight: 700; color: #8FA892; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; margin-top: 12px; }
-  .address-card { background: #fff; border-radius: 12px; padding: 11px 13px; display: flex; align-items: center; gap: 9px; box-shadow: 0 2px 8px rgba(44,80,60,.08); }
-  .address-text { font-size: 14px; color: #1A2E1F; }
-  .coords { font-size: 10px; color: #8FA892; margin-top: 3px; }
-  .input-box { background: #fff; border-radius: 12px; padding: 11px 13px; font-size: 15px; color: #1A2E1F; box-shadow: 0 2px 8px rgba(44,80,60,.08); width: 100%; border: none; margin-bottom: 0; }
-  .radius-value { text-align: center; font-size: 22px; font-weight: 700; color: #4A7C59; margin: 6px 0 8px; }
-  .slider-wrap { position: relative; height: 34px; display: flex; align-items: center; }
-  .slider-track { position: absolute; left: 0; right: 0; height: 4px; background: #e8ebe6; border-radius: 2px; }
-  .slider-fill { position: absolute; left: 0; width: 30%; height: 4px; background: #4A7C59; border-radius: 2px; }
-  .slider-dots { position: relative; width: 100%; display: flex; justify-content: space-between; align-items: center; }
-  .dot { width: 10px; height: 10px; border-radius: 5px; background: #e8ebe6; border: 2px solid #e8ebe6; }
-  .dot.filled { background: #E8F5EC; border-color: #4A7C59; }
-  .dot.active { width: 18px; height: 18px; border-radius: 9px; background: #4A7C59; border-color: #2D5240; }
-  .slider-hint { font-size: 10px; color: #8FA892; margin-top: 3px; }
-  .toggle-row { display: flex; gap: 8px; }
-  .toggle-btn { flex: 1; background: #fff; border-radius: 12px; padding: 11px 6px; text-align: center; font-size: 13px; color: #8FA892; font-weight: 500; box-shadow: 0 2px 8px rgba(44,80,60,.08); border: 2px solid transparent; }
-  .toggle-btn.active { background: #E8F5EC; border-color: #4A7C59; color: #4A7C59; font-weight: 700; }
-  .save-btn { background: #4A7C59; border-radius: 12px; padding: 13px; text-align: center; color: #fff; font-size: 15px; font-weight: 700; margin-top: 12px; }
-  .field-gap { margin-bottom: 2px; }
-</style>
-</head>
-<body>
-
-<!-- Phone: settings list visible behind the sheet -->
-<div class="phone">
-  <div class="statusbar"><span>9:41</span><span>●●●</span></div>
-  <div class="settings-screen">
-    <div class="navbar">
-      <span class="navbar-back">‹ Settings</span>
-      <span class="navbar-title">Known Locations</span>
-      <span class="navbar-add">＋</span>
-    </div>
-    <div class="settings-content">
-      <div class="section-header">Active locations</div>
-      <div class="card">
-        <div class="row">
-          <span class="row-icon">🏠</span>
-          <div class="row-content">
-            <div class="row-label">Home</div>
-            <div class="row-sub">100m radius · Indoor</div>
-          </div>
-          <span class="chevron">›</span>
+      /* Bottom sheet overlay */
+      .overlay {
+        position: absolute;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.45);
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+      }
+      .sheet {
+        background: #f8f9f7;
+        border-radius: 24px 24px 0 0;
+        box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.18);
+        max-height: 88%;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+      .handle {
+        width: 40px;
+        height: 4px;
+        background: #e8ebe6;
+        border-radius: 100px;
+        align-self: center;
+        margin: 8px auto 0;
+      }
+      .sheet-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 16px 8px;
+      }
+      .sheet-title {
+        font-size: 17px;
+        font-weight: 700;
+        color: #1a2e1f;
+      }
+      .close-btn {
+        width: 28px;
+        height: 28px;
+        border-radius: 14px;
+        background: #e8ebe6;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        color: #5a7060;
+        font-weight: 700;
+      }
+      .sheet-body {
+        padding: 4px 16px 20px;
+        overflow-y: auto;
+      }
+      .field-label {
+        font-size: 11px;
+        font-weight: 700;
+        color: #8fa892;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 5px;
+        margin-top: 12px;
+      }
+      .address-card {
+        background: #fff;
+        border-radius: 12px;
+        padding: 11px 13px;
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        box-shadow: 0 2px 8px rgba(44, 80, 60, 0.08);
+      }
+      .address-text {
+        font-size: 14px;
+        color: #1a2e1f;
+      }
+      .coords {
+        font-size: 10px;
+        color: #8fa892;
+        margin-top: 3px;
+      }
+      .input-box {
+        background: #fff;
+        border-radius: 12px;
+        padding: 11px 13px;
+        font-size: 15px;
+        color: #1a2e1f;
+        box-shadow: 0 2px 8px rgba(44, 80, 60, 0.08);
+        width: 100%;
+        border: none;
+        margin-bottom: 0;
+      }
+      .radius-value {
+        text-align: center;
+        font-size: 22px;
+        font-weight: 700;
+        color: #4a7c59;
+        margin: 6px 0 8px;
+      }
+      .slider-wrap {
+        position: relative;
+        height: 34px;
+        display: flex;
+        align-items: center;
+      }
+      .slider-track {
+        position: absolute;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: #e8ebe6;
+        border-radius: 2px;
+      }
+      .slider-fill {
+        position: absolute;
+        left: 0;
+        width: 30%;
+        height: 4px;
+        background: #4a7c59;
+        border-radius: 2px;
+      }
+      .slider-dots {
+        position: relative;
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 5px;
+        background: #e8ebe6;
+        border: 2px solid #e8ebe6;
+      }
+      .dot.filled {
+        background: #e8f5ec;
+        border-color: #4a7c59;
+      }
+      .dot.active {
+        width: 18px;
+        height: 18px;
+        border-radius: 9px;
+        background: #4a7c59;
+        border-color: #2d5240;
+      }
+      .slider-hint {
+        font-size: 10px;
+        color: #8fa892;
+        margin-top: 3px;
+      }
+      .toggle-row {
+        display: flex;
+        gap: 8px;
+      }
+      .toggle-btn {
+        flex: 1;
+        background: #fff;
+        border-radius: 12px;
+        padding: 11px 6px;
+        text-align: center;
+        font-size: 13px;
+        color: #8fa892;
+        font-weight: 500;
+        box-shadow: 0 2px 8px rgba(44, 80, 60, 0.08);
+        border: 2px solid transparent;
+      }
+      .toggle-btn.active {
+        background: #e8f5ec;
+        border-color: #4a7c59;
+        color: #4a7c59;
+        font-weight: 700;
+      }
+      .save-btn {
+        background: #4a7c59;
+        border-radius: 12px;
+        padding: 13px;
+        text-align: center;
+        color: #fff;
+        font-size: 15px;
+        font-weight: 700;
+        margin-top: 12px;
+      }
+      .field-gap {
+        margin-bottom: 2px;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Phone: settings list visible behind the sheet -->
+    <div class="phone">
+      <div class="statusbar"><span>9:41</span><span>●●●</span></div>
+      <div class="settings-screen">
+        <div class="navbar">
+          <span class="navbar-back">‹ Settings</span>
+          <span class="navbar-title">Known Locations</span>
+          <span class="navbar-add">＋</span>
         </div>
-        <div class="divider"></div>
-        <div class="row">
-          <span class="row-icon">🏢</span>
-          <div class="row-content">
-            <div class="row-label">Work</div>
-            <div class="row-sub">150m radius · Indoor</div>
+        <div class="settings-content">
+          <div class="section-header">Active locations</div>
+          <div class="card">
+            <div class="row">
+              <span class="row-icon">🏠</span>
+              <div class="row-content">
+                <div class="row-label">Home</div>
+                <div class="row-sub">100m radius · Indoor</div>
+              </div>
+              <span class="chevron">›</span>
+            </div>
+            <div class="divider"></div>
+            <div class="row">
+              <span class="row-icon">🏢</span>
+              <div class="row-content">
+                <div class="row-label">Work</div>
+                <div class="row-sub">150m radius · Indoor</div>
+              </div>
+              <span class="chevron">›</span>
+            </div>
           </div>
-          <span class="chevron">›</span>
+        </div>
+      </div>
+
+      <!-- Bottom sheet overlay -->
+      <div class="overlay">
+        <div class="sheet">
+          <div class="handle"></div>
+          <div class="sheet-header">
+            <span class="sheet-title">Edit location</span>
+            <div class="close-btn">✕</div>
+          </div>
+          <div class="sheet-body">
+            <div class="field-label">Nearest address</div>
+            <div class="address-card field-gap">
+              <span style="font-size: 15px">📍</span>
+              <span class="address-text">Damrak 1, Amsterdam</span>
+            </div>
+            <div class="coords">52.37454, 4.89797</div>
+
+            <div class="field-label">Location name</div>
+            <input class="input-box" value="Home" />
+
+            <div class="field-label">Geofence radius</div>
+            <div class="radius-value">100 m</div>
+            <div class="slider-wrap">
+              <div class="slider-track"></div>
+              <div class="slider-fill"></div>
+              <div class="slider-dots">
+                <div class="dot filled"></div>
+                <div class="dot filled"></div>
+                <div class="dot filled"></div>
+                <div class="dot active"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+              </div>
+            </div>
+            <div class="slider-hint">25 m — 1000 m · tap to adjust</div>
+
+            <div class="field-label">Location type</div>
+            <div class="toggle-row">
+              <div class="toggle-btn active">🏠 Indoor</div>
+              <div class="toggle-btn">🌳 Outdoor</div>
+            </div>
+
+            <div class="save-btn">Save</div>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-
-  <!-- Bottom sheet overlay -->
-  <div class="overlay">
-    <div class="sheet">
-      <div class="handle"></div>
-      <div class="sheet-header">
-        <span class="sheet-title">Edit location</span>
-        <div class="close-btn">✕</div>
-      </div>
-      <div class="sheet-body">
-        <div class="field-label">Nearest address</div>
-        <div class="address-card field-gap">
-          <span style="font-size:15px">📍</span>
-          <span class="address-text">Damrak 1, Amsterdam</span>
-        </div>
-        <div class="coords">52.37454, 4.89797</div>
-
-        <div class="field-label">Location name</div>
-        <input class="input-box" value="Home" />
-
-        <div class="field-label">Geofence radius</div>
-        <div class="radius-value">100 m</div>
-        <div class="slider-wrap">
-          <div class="slider-track"></div>
-          <div class="slider-fill"></div>
-          <div class="slider-dots">
-            <div class="dot filled"></div>
-            <div class="dot filled"></div>
-            <div class="dot filled"></div>
-            <div class="dot active"></div>
-            <div class="dot"></div>
-            <div class="dot"></div>
-            <div class="dot"></div>
-            <div class="dot"></div>
-            <div class="dot"></div>
-            <div class="dot"></div>
-          </div>
-        </div>
-        <div class="slider-hint">25 m — 1000 m · tap to adjust</div>
-
-        <div class="field-label">Location type</div>
-        <div class="toggle-row">
-          <div class="toggle-btn active">🏠 Indoor</div>
-          <div class="toggle-btn">🌳 Outdoor</div>
-        </div>
-
-        <div class="save-btn">Save</div>
-      </div>
-    </div>
-  </div>
-</div>
-
-</body>
+  </body>
 </html>

@@ -43,7 +43,9 @@ jest.mock('../detection/sessionConfidence', () => ({
 jest.mock('@react-navigation/native', () => ({
   useFocusEffect: (cb: () => void) => {
     const React = require('react');
-    React.useEffect(() => { cb(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    React.useEffect(() => {
+      cb();
+    }, []);
   },
 }));
 
@@ -55,10 +57,20 @@ jest.mock('react-native-gesture-handler/Swipeable', () => {
 jest.mock('../context/ThemeContext', () => ({
   useTheme: () => ({
     colors: {
-      grass: '#4A7C59', grassLight: '#6BAF7A', grassPale: '#E8F5EC', grassDark: '#2D5240',
-      sky: '#7EB8D4', skyLight: '#B8DFF0', sun: '#F5C842',
-      mist: '#F8F9F7', fog: '#E8EBE6', card: '#FFFFFF',
-      textPrimary: '#1A2E1F', textSecondary: '#5A7060', textMuted: '#8FA892', textInverse: '#FFFFFF',
+      grass: '#4A7C59',
+      grassLight: '#6BAF7A',
+      grassPale: '#E8F5EC',
+      grassDark: '#2D5240',
+      sky: '#7EB8D4',
+      skyLight: '#B8DFF0',
+      sun: '#F5C842',
+      mist: '#F8F9F7',
+      fog: '#E8EBE6',
+      card: '#FFFFFF',
+      textPrimary: '#1A2E1F',
+      textSecondary: '#5A7060',
+      textMuted: '#8FA892',
+      textInverse: '#FFFFFF',
     },
     isDark: false,
   }),

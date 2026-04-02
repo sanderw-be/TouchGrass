@@ -25,7 +25,7 @@ const FAHRENHEIT_REGIONS = new Set([
  * certain test contexts). The fallback is an empty array, which results in
  * Celsius being used by default.
  */
-export function useFahrenheit(): boolean {
+export function isFahrenheit(): boolean {
   const locales = ExpoLocalization.getLocales?.() ?? [];
   const regionCode = locales[0]?.regionCode ?? null;
   return regionCode !== null && FAHRENHEIT_REGIONS.has(regionCode);
@@ -35,7 +35,7 @@ export function useFahrenheit(): boolean {
  * Converts a Celsius value to Fahrenheit.
  */
 export function celsiusToFahrenheit(celsius: number): number {
-  return celsius * 9 / 5 + 32;
+  return (celsius * 9) / 5 + 32;
 }
 
 /**
@@ -43,7 +43,7 @@ export function celsiusToFahrenheit(celsius: number): number {
  * appropriate unit for the device's region (°C or °F).
  */
 export function formatTemperature(celsius: number): string {
-  if (useFahrenheit()) {
+  if (isFahrenheit()) {
     return `${Math.round(celsiusToFahrenheit(celsius))}°F`;
   }
   return `${Math.round(celsius)}°C`;

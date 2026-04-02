@@ -131,7 +131,9 @@ describe('autoDetectLocations', () => {
 
   it('returns early when fewer than 10 samples are available', async () => {
     const fewSamples = Array.from({ length: 5 }, (_, i) => ({
-      lat: 51.5, lon: 4.3, timestamp: BASE_TIME + i * FIVE_MIN,
+      lat: 51.5,
+      lon: 4.3,
+      timestamp: BASE_TIME + i * FIVE_MIN,
     }));
     (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
       if (key === 'location_suggestions_enabled') return '1';
@@ -145,7 +147,9 @@ describe('autoDetectLocations', () => {
   it('suggests a location after 2h+ dwell with no known locations', async () => {
     // 25 samples × 5 min = 120 min at same location
     const samples = Array.from({ length: 25 }, (_, i) => ({
-      lat: 51.5, lon: 4.3, timestamp: BASE_TIME + i * FIVE_MIN,
+      lat: 51.5,
+      lon: 4.3,
+      timestamp: BASE_TIME + i * FIVE_MIN,
     }));
     (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
       if (key === 'location_suggestions_enabled') return '1';
@@ -163,15 +167,33 @@ describe('autoDetectLocations', () => {
   it('uses 10h threshold when known locations already exist', async () => {
     // Mock: 1 known active location exists
     (Database.getKnownLocations as jest.Mock).mockReturnValue([
-      { id: 1, label: 'Home', latitude: 51.5, longitude: 4.3, radiusMeters: 100, isIndoor: true, status: 'active' },
+      {
+        id: 1,
+        label: 'Home',
+        latitude: 51.5,
+        longitude: 4.3,
+        radiusMeters: 100,
+        isIndoor: true,
+        status: 'active',
+      },
     ]);
     (Database.getAllKnownLocations as jest.Mock).mockReturnValue([
-      { id: 1, label: 'Home', latitude: 51.5, longitude: 4.3, radiusMeters: 100, isIndoor: true, status: 'active' },
+      {
+        id: 1,
+        label: 'Home',
+        latitude: 51.5,
+        longitude: 4.3,
+        radiusMeters: 100,
+        isIndoor: true,
+        status: 'active',
+      },
     ]);
 
     // 25 samples × 5 min at a NEW location — only 2h dwell, below 10h threshold
     const samples = Array.from({ length: 25 }, (_, i) => ({
-      lat: 51.52, lon: 4.32, timestamp: BASE_TIME + i * FIVE_MIN,
+      lat: 51.52,
+      lon: 4.32,
+      timestamp: BASE_TIME + i * FIVE_MIN,
     }));
     (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
       if (key === 'location_suggestions_enabled') return '1';
@@ -188,11 +210,21 @@ describe('autoDetectLocations', () => {
   it('does not re-suggest a place already tracked in known locations', async () => {
     // Known active location at same place as dwell
     (Database.getAllKnownLocations as jest.Mock).mockReturnValue([
-      { id: 1, label: 'Home', latitude: 51.5, longitude: 4.3, radiusMeters: 100, isIndoor: true, status: 'active' },
+      {
+        id: 1,
+        label: 'Home',
+        latitude: 51.5,
+        longitude: 4.3,
+        radiusMeters: 100,
+        isIndoor: true,
+        status: 'active',
+      },
     ]);
 
     const samples = Array.from({ length: 25 }, (_, i) => ({
-      lat: 51.5, lon: 4.3, timestamp: BASE_TIME + i * FIVE_MIN,
+      lat: 51.5,
+      lon: 4.3,
+      timestamp: BASE_TIME + i * FIVE_MIN,
     }));
     (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
       if (key === 'location_suggestions_enabled') return '1';
@@ -207,7 +239,9 @@ describe('autoDetectLocations', () => {
 
   it('sends a notification when a location is suggested', async () => {
     const samples = Array.from({ length: 25 }, (_, i) => ({
-      lat: 51.5, lon: 4.3, timestamp: BASE_TIME + i * FIVE_MIN,
+      lat: 51.5,
+      lon: 4.3,
+      timestamp: BASE_TIME + i * FIVE_MIN,
     }));
     (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
       if (key === 'location_suggestions_enabled') return '1';
@@ -220,7 +254,7 @@ describe('autoDetectLocations', () => {
     expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledWith(
       expect.objectContaining({
         trigger: expect.objectContaining({ channelId: 'touchgrass_reminders' }),
-      }),
+      })
     );
   });
 
@@ -228,7 +262,9 @@ describe('autoDetectLocations', () => {
     (Notifications.getPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'denied' });
 
     const samples = Array.from({ length: 25 }, (_, i) => ({
-      lat: 51.5, lon: 4.3, timestamp: BASE_TIME + i * FIVE_MIN,
+      lat: 51.5,
+      lon: 4.3,
+      timestamp: BASE_TIME + i * FIVE_MIN,
     }));
     (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
       if (key === 'location_suggestions_enabled') return '1';

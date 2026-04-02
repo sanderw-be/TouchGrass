@@ -17,13 +17,16 @@ export async function scheduleAllScheduledNotifications(): Promise<void> {
     // Check if we have notification permissions first
     const { status } = await Notifications.getPermissionsAsync();
     if (status !== 'granted') {
-      console.warn('TouchGrass: Cannot schedule notifications - permission not granted. Current status:', status);
+      console.warn(
+        'TouchGrass: Cannot schedule notifications - permission not granted. Current status:',
+        status
+      );
       return; // Don't throw, just return
     }
 
     const schedules = getScheduledNotifications();
-    const enabled = schedules.filter(s => s.enabled === 1);
-    
+    const enabled = schedules.filter((s) => s.enabled === 1);
+
     console.log(`TouchGrass: Scheduling ${enabled.length} enabled notification schedule(s)`);
 
     // Cancel existing scheduled notifications (prefix-based)
@@ -36,18 +39,18 @@ export async function scheduleAllScheduledNotifications(): Promise<void> {
 
     let totalScheduled = 0;
     const errors: string[] = [];
-    
+
     for (const schedule of enabled) {
       // Validate schedule data before processing
       if (!schedule.daysOfWeek || schedule.daysOfWeek.length === 0) {
         console.warn(`TouchGrass: Schedule ${schedule.id} has no valid days of week, skipping`);
         continue;
       }
-      
+
       for (const dayOfWeek of schedule.daysOfWeek) {
         // Schedule a notification for the next occurrence of this day/time
         const notificationId = `${SCHEDULED_NOTIF_PREFIX}${schedule.id}_${dayOfWeek}`;
-        
+
         try {
           await Notifications.scheduleNotificationAsync({
             identifier: notificationId,
@@ -77,9 +80,9 @@ export async function scheduleAllScheduledNotifications(): Promise<void> {
         }
       }
     }
-    
+
     console.log(`TouchGrass: Successfully scheduled ${totalScheduled} notifications`);
-    
+
     if (errors.length > 0) {
       console.error(`TouchGrass: Encountered ${errors.length} error(s) during scheduling`);
       // Don't throw, just log the errors
@@ -96,7 +99,7 @@ export async function scheduleAllScheduledNotifications(): Promise<void> {
  */
 export async function cancelAllScheduledNotifications(): Promise<void> {
   const all = await Notifications.getAllScheduledNotificationsAsync();
-  
+
   for (const notif of all) {
     if (notif.identifier.startsWith(SCHEDULED_NOTIF_PREFIX)) {
       await Notifications.cancelScheduledNotificationAsync(notif.identifier);
@@ -116,14 +119,14 @@ export async function cancelAllScheduledNotifications(): Promise<void> {
 export function isSlotNearScheduledNotification(
   slotHour: number,
   slotMinute: number,
-  windowMinutes: number,
+  windowMinutes: number
 ): boolean {
   const today = new Date();
   const todayDayOfWeek = today.getDay(); // 0=Sunday, 6=Saturday
   const slotMinutesOfDay = slotHour * 60 + slotMinute;
 
   const schedules = getScheduledNotifications();
-  const enabled = schedules.filter(s => s.enabled === 1);
+  const enabled = schedules.filter((s) => s.enabled === 1);
 
   for (const schedule of enabled) {
     if (!schedule.daysOfWeek.includes(todayDayOfWeek)) continue;
@@ -131,7 +134,7 @@ export function isSlotNearScheduledNotification(
     const scheduledMinutesOfDay = schedule.hour * 60 + schedule.minute;
     const diff = Math.abs(slotMinutesOfDay - scheduledMinutesOfDay);
 
-    if (diff <= windowMinutes || diff >= (MINUTES_IN_DAY - windowMinutes)) {
+    if (diff <= windowMinutes || diff >= MINUTES_IN_DAY - windowMinutes) {
       // Second condition handles day-boundary wraparound (e.g. slot at 23:30 near a notification at 00:10)
       return true;
     }
@@ -143,7 +146,7 @@ export function isSlotNearScheduledNotification(
 /**
  * Check if there's a scheduled notification within the given window (in minutes)
  * of the current time. Used to avoid conflicts with automatic reminders.
- * 
+ *
  * @param windowMinutes - How many minutes before/after to check (e.g., 60 for 1 hour window)
  * @returns true if a scheduled notification is nearby
  */
@@ -153,7 +156,7 @@ export function hasScheduledNotificationNearby(windowMinutes: number): boolean {
   const currentMinutes = now.getHours() * 60 + now.getMinutes();
 
   const schedules = getScheduledNotifications();
-  const enabled = schedules.filter(s => s.enabled === 1);
+  const enabled = schedules.filter((s) => s.enabled === 1);
 
   for (const schedule of enabled) {
     // Check if this schedule applies to today
@@ -163,7 +166,7 @@ export function hasScheduledNotificationNearby(windowMinutes: number): boolean {
     const diff = Math.abs(currentMinutes - scheduledMinutes);
 
     // Check if within window (also handle wrap-around at midnight)
-    if (diff <= windowMinutes || diff >= (24 * 60 - windowMinutes)) {
+    if (diff <= windowMinutes || diff >= 24 * 60 - windowMinutes) {
       return true;
     }
   }

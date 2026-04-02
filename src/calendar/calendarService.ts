@@ -44,7 +44,7 @@ async function hasDuplicateEvent(
   calendarId: string,
   startTime: Date,
   endTime: Date,
-  title: string,
+  title: string
 ): Promise<boolean> {
   try {
     const from = new Date(startTime.getTime() - 5 * 60 * 1000);
@@ -56,9 +56,11 @@ async function hasDuplicateEvent(
       const eventTitle = (event.title || '').trim().toLowerCase();
       const eventStart = eventDateMs(event.startDate);
       const eventEnd = eventDateMs(event.endDate);
-      return eventTitle === normalizedTitle
-        && sameMinute(eventStart, startTime.getTime())
-        && sameMinute(eventEnd, endTime.getTime());
+      return (
+        eventTitle === normalizedTitle &&
+        sameMinute(eventStart, startTime.getTime()) &&
+        sameMinute(eventEnd, endTime.getTime())
+      );
     });
   } catch {
     return false;
@@ -85,22 +87,23 @@ export async function cleanupTouchGrassCalendars(): Promise<CalendarCleanupResul
   try {
     const allCalendars = await Calendar.getCalendarsAsync(Calendar.EntityTypes.EVENT);
     const touchGrassLocalCalendars = allCalendars.filter(
-      (calendar) => calendar.source?.isLocalAccount
-        && matchesTouchGrassCalendar(calendar),
+      (calendar) => calendar.source?.isLocalAccount && matchesTouchGrassCalendar(calendar)
     );
 
     const savedId = getSetting(TOUCHGRASS_CALENDAR_SETTING, '');
     const preferred = touchGrassLocalCalendars.find(
-      (calendar) => calendar.id === savedId && calendar.allowsModifications,
+      (calendar) => calendar.id === savedId && calendar.allowsModifications
     );
-    const primaryCalendar = preferred
-      ?? touchGrassLocalCalendars.find(
-        (calendar) => calendar.allowsModifications
-          && (calendar.title || '').trim().toLowerCase() === 'touchgrass',
-      )
-      ?? touchGrassLocalCalendars.find((calendar) => calendar.allowsModifications)
-      ?? touchGrassLocalCalendars[0]
-      ?? null;
+    const primaryCalendar =
+      preferred ??
+      touchGrassLocalCalendars.find(
+        (calendar) =>
+          calendar.allowsModifications &&
+          (calendar.title || '').trim().toLowerCase() === 'touchgrass'
+      ) ??
+      touchGrassLocalCalendars.find((calendar) => calendar.allowsModifications) ??
+      touchGrassLocalCalendars[0] ??
+      null;
 
     let primaryCalendarId: string | null = primaryCalendar?.id ?? null;
     if (!primaryCalendarId) {
@@ -142,7 +145,9 @@ export async function cleanupTouchGrassCalendars(): Promise<CalendarCleanupResul
       }
     }
 
-    const duplicates = touchGrassLocalCalendars.filter((calendar) => calendar.id !== primaryCalendarId);
+    const duplicates = touchGrassLocalCalendars.filter(
+      (calendar) => calendar.id !== primaryCalendarId
+    );
     for (const duplicateCalendar of duplicates) {
       try {
         const duplicateEvents = await Calendar.getEventsAsync([duplicateCalendar.id], from, to);
@@ -227,7 +232,7 @@ export async function hasCalendarPermissions(): Promise<boolean> {
   try {
     const { status } = await Calendar.getCalendarPermissionsAsync();
     return status === 'granted';
-  } catch (e) {
+  } catch {
     return false;
   }
 }
@@ -291,9 +296,10 @@ export async function getOrCreateTouchGrassCalendar(forceCreate = false): Promis
       }
 
       const reusable = calendars.find(
-        (calendar) => calendar.allowsModifications
-          && calendar.source?.isLocalAccount
-          && matchesTouchGrassCalendar(calendar),
+        (calendar) =>
+          calendar.allowsModifications &&
+          calendar.source?.isLocalAccount &&
+          matchesTouchGrassCalendar(calendar)
       );
       if (reusable) {
         try {
@@ -357,7 +363,6 @@ export function setSelectedCalendarId(id: string): void {
   setSetting(SELECTED_CALENDAR_SETTING, id);
 }
 
-
 /**
  * Check whether any calendar event starts within the next `windowMinutes` minutes.
  * Used to skip smart reminders when a meeting is imminent.
@@ -413,7 +418,9 @@ export async function deleteFutureTouchGrassEvents(from: Date, daysAhead: number
       }
     }
     if (events.length > 0) {
-      console.log(`TouchGrass: Deleted ${events.length} stale planned calendar event(s) before fresh planning`);
+      console.log(
+        `TouchGrass: Deleted ${events.length} stale planned calendar event(s) before fresh planning`
+      );
     }
   } catch (e) {
     console.warn('TouchGrass: Failed to delete future TouchGrass events:', e);
@@ -444,7 +451,7 @@ export async function maybeAddOutdoorTimeToCalendar(startTime: Date): Promise<vo
 export async function addOutdoorTimeToCalendar(
   startTime: Date,
   durationMinutes: number,
-  title?: string,
+  title?: string
 ): Promise<boolean> {
   const permissionGranted = await hasCalendarPermissions();
   if (!permissionGranted) {
@@ -512,7 +519,10 @@ export async function addOutdoorTimeToCalendar(
 
     const fingerprint = eventFingerprint(eventTitle, startTime.getTime(), endTime.getTime());
 
-    const createEventWithFallback = async (calendarId: string, calendarLabel: string): Promise<void> => {
+    const createEventWithFallback = async (
+      calendarId: string,
+      calendarLabel: string
+    ): Promise<void> => {
       const duplicate = await hasDuplicateEvent(calendarId, startTime, endTime, eventTitle);
       if (duplicate) {
         logCalendarWriteDebug('duplicate event detected; skipping write', {
@@ -526,10 +536,19 @@ export async function addOutdoorTimeToCalendar(
       }
 
       // Stage 1: primary payload (with timeZone)
-      logCalendarWriteDebug('attempting primary event payload', { calendarId, calendarLabel, fingerprint, attempts: 0 });
+      logCalendarWriteDebug('attempting primary event payload', {
+        calendarId,
+        calendarLabel,
+        fingerprint,
+        attempts: 0,
+      });
       try {
         await Calendar.createEventAsync(calendarId, eventDetails);
-        logCalendarWriteDebug('event write succeeded', { calendarId, calendarLabel, payload: 'primary' });
+        logCalendarWriteDebug('event write succeeded', {
+          calendarId,
+          calendarLabel,
+          payload: 'primary',
+        });
         return;
       } catch (e1) {
         if (!isEventNotSavedError(e1)) throw e1;
@@ -537,10 +556,17 @@ export async function addOutdoorTimeToCalendar(
       }
 
       // Stage 2: fallback payload (no timeZone)
-      console.warn('TouchGrass: Primary event payload rejected (E_EVENT_NOT_SAVED); retrying without timeZone', { calendarId, calendarLabel });
+      console.warn(
+        'TouchGrass: Primary event payload rejected (E_EVENT_NOT_SAVED); retrying without timeZone',
+        { calendarId, calendarLabel }
+      );
       try {
         await Calendar.createEventAsync(calendarId, fallbackEventDetails);
-        logCalendarWriteDebug('event write succeeded', { calendarId, calendarLabel, payload: 'fallback' });
+        logCalendarWriteDebug('event write succeeded', {
+          calendarId,
+          calendarLabel,
+          payload: 'fallback',
+        });
         return;
       } catch (e2) {
         console.warn('TouchGrass: Fallback payload failed; retrying ultra-minimal payload', {
@@ -554,7 +580,11 @@ export async function addOutdoorTimeToCalendar(
       // Stage 3: ultra-minimal payload (title, startDate, endDate only — no allDay, no timeZone)
       try {
         await Calendar.createEventAsync(calendarId, ultraMinimalEventDetails);
-        logCalendarWriteDebug('event write succeeded', { calendarId, calendarLabel, payload: 'ultra-minimal' });
+        logCalendarWriteDebug('event write succeeded', {
+          calendarId,
+          calendarLabel,
+          payload: 'ultra-minimal',
+        });
         return;
       } catch (e3) {
         console.warn('TouchGrass: Ultra-minimal payload failed; will recreate calendar and retry', {
@@ -573,10 +603,10 @@ export async function addOutdoorTimeToCalendar(
       // will reveal which case we're in.  By passing forceCreate=true we always create a
       // genuinely new calendar owned by the current app UID; then we retry all payload
       // variants in case the fresh calendar accepts a different form.
-      console.warn(
-        'TouchGrass: All payload variants rejected; force-creating a new calendar',
-        { calendarId, calendarLabel },
-      );
+      console.warn('TouchGrass: All payload variants rejected; force-creating a new calendar', {
+        calendarId,
+        calendarLabel,
+      });
       setSetting(TOUCHGRASS_CALENDAR_SETTING, ''); // clear stale cached ID
       const freshCalendarId = await getOrCreateTouchGrassCalendar(true); // forceCreate: bypass any existing calendar
       if (!freshCalendarId) {
@@ -599,7 +629,9 @@ export async function addOutdoorTimeToCalendar(
             isVisible: (freshCal as unknown as { isVisible?: boolean }).isVisible,
           });
         } else {
-          console.warn('TouchGrass: Fresh calendar not found in calendar list after creation', { freshCalendarId });
+          console.warn('TouchGrass: Fresh calendar not found in calendar list after creation', {
+            freshCalendarId,
+          });
         }
       } catch {
         // Non-critical diagnostic — never block the write attempt
@@ -615,7 +647,11 @@ export async function addOutdoorTimeToCalendar(
       ] as const) {
         try {
           await Calendar.createEventAsync(freshCalendarId, payload);
-          logCalendarWriteDebug('event write succeeded after calendar recreation', { calendarId: freshCalendarId, calendarLabel, payload: label });
+          logCalendarWriteDebug('event write succeeded after calendar recreation', {
+            calendarId: freshCalendarId,
+            calendarLabel,
+            payload: label,
+          });
           return;
         } catch (err) {
           stage4Error = err;

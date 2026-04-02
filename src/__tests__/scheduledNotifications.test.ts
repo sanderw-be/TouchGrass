@@ -103,9 +103,9 @@ describe('scheduledNotifications', () => {
 
       // Should be called 3 times (Sunday, Monday, Saturday)
       expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledTimes(3);
-      
+
       const calls = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls;
-      
+
       // Each call should have WEEKLY trigger with correct weekday/hour/minute
       for (const call of calls) {
         const trigger = call[0].trigger;
@@ -128,10 +128,10 @@ describe('scheduledNotifications', () => {
       await scheduleAllScheduledNotifications();
 
       expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledTimes(1);
-      
+
       const call = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls[0];
       const trigger = call[0].trigger;
-      
+
       // WEEKLY trigger carries hour and minute directly - no timestamp conversion needed
       expect(trigger.type).toBe(Notifications.SchedulableTriggerInputTypes.WEEKLY);
       expect(trigger.weekday).toBe(3); // Wednesday (JS 2) + 1 = 3
@@ -152,17 +152,17 @@ describe('scheduledNotifications', () => {
 
       // Should not throw, but log error
       await expect(scheduleAllScheduledNotifications()).resolves.not.toThrow();
-      
+
       // Should still attempt to schedule the second one
       expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledTimes(2);
     });
 
     it('returns gracefully when notification permissions are not granted', async () => {
       (Notifications.getPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'denied' });
-      
+
       // Should not throw, but return gracefully
       await expect(scheduleAllScheduledNotifications()).resolves.not.toThrow();
-      
+
       // Should not attempt to schedule any notifications
       expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
     });
@@ -176,14 +176,18 @@ describe('scheduledNotifications', () => {
         { identifier: 'automatic_reminder' },
       ];
 
-      (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue(mockNotifications);
+      (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue(
+        mockNotifications
+      );
 
       await cancelAllScheduledNotifications();
 
       expect(Notifications.cancelScheduledNotificationAsync).toHaveBeenCalledTimes(2);
       expect(Notifications.cancelScheduledNotificationAsync).toHaveBeenCalledWith('scheduled_1_1');
       expect(Notifications.cancelScheduledNotificationAsync).toHaveBeenCalledWith('scheduled_2_3');
-      expect(Notifications.cancelScheduledNotificationAsync).not.toHaveBeenCalledWith('automatic_reminder');
+      expect(Notifications.cancelScheduledNotificationAsync).not.toHaveBeenCalledWith(
+        'automatic_reminder'
+      );
     });
   });
 

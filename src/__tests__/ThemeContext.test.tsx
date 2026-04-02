@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, act } from '@testing-library/react-native';
 import { Text } from 'react-native';
-import { ThemeProvider, useTheme, ThemePreference } from '../context/ThemeContext';
+import { ThemeProvider, useTheme } from '../context/ThemeContext';
 import { colors as lightColors, darkColors } from '../utils/theme';
 
 // Mock database
@@ -27,9 +27,15 @@ function TestConsumer() {
       <Text testID="isDark">{isDark ? 'dark' : 'light'}</Text>
       <Text testID="pref">{themePreference}</Text>
       <Text testID="bg">{colors.mist}</Text>
-      <Text testID="setPref" onPress={() => setThemePreference('dark')}>set-dark</Text>
-      <Text testID="setPrefLight" onPress={() => setThemePreference('light')}>set-light</Text>
-      <Text testID="setPrefSystem" onPress={() => setThemePreference('system')}>set-system</Text>
+      <Text testID="setPref" onPress={() => setThemePreference('dark')}>
+        set-dark
+      </Text>
+      <Text testID="setPrefLight" onPress={() => setThemePreference('light')}>
+        set-light
+      </Text>
+      <Text testID="setPrefSystem" onPress={() => setThemePreference('system')}>
+        set-system
+      </Text>
     </>
   );
 }

@@ -10,10 +10,8 @@ import * as HealthConnectIntent from '../detection/healthConnectIntent';
 import {
   syncHealthConnect,
   requestHealthPermissions,
-  MIN_DURATION_MS,
   STEPS_PER_MINUTE_AT_5KMH,
   STEPS_PER_MIN_AT_2_5KMH,
-  STEPS_PER_MIN_AT_4KMH,
   CONFIDENCE_ACTIVITY,
 } from '../detection/healthConnect';
 
@@ -34,9 +32,15 @@ describe('syncHealthConnect', () => {
     (Database.getKnownLocations as jest.Mock).mockReturnValue([]);
     (SessionMerger.buildSession as jest.Mock).mockImplementation(
       (startTime, endTime, source, confidence, notes, steps) => ({
-        startTime, endTime, durationMinutes: (endTime - startTime) / 60000,
-        source, confidence, userConfirmed: null, notes, steps,
-      }),
+        startTime,
+        endTime,
+        durationMinutes: (endTime - startTime) / 60000,
+        source,
+        confidence,
+        userConfirmed: null,
+        notes,
+        steps,
+      })
     );
     (SessionMerger.submitSession as jest.Mock).mockImplementation(() => undefined);
   });
@@ -246,14 +250,14 @@ describe('syncHealthConnect', () => {
     expect(result).toBe(false);
     // healthconnect_enabled should NOT have been set to '0' for a transient error
     const disableCalls = (Database.setSetting as jest.Mock).mock.calls.filter(
-      ([key, value]: [string, string]) => key === 'healthconnect_enabled' && value === '0',
+      ([key, value]: [string, string]) => key === 'healthconnect_enabled' && value === '0'
     );
     expect(disableCalls).toHaveLength(0);
   });
 
   it('disables Health Connect when a SecurityException (permission) error occurs', async () => {
     (HealthConnect.readRecords as jest.Mock).mockRejectedValue(
-      new Error('SecurityException: Missing READ_EXERCISE permission'),
+      new Error('SecurityException: Missing READ_EXERCISE permission')
     );
 
     const result = await syncHealthConnect();
@@ -265,8 +269,8 @@ describe('syncHealthConnect', () => {
   it('disables Health Connect when a SecurityException without READ_ in message occurs', async () => {
     (HealthConnect.readRecords as jest.Mock).mockRejectedValue(
       new Error(
-        'SecurityException: android.health.connect.HealthConnectException: java.lang.SecurityException: Caller does not have permission to read data for the following (recordType: class android.health.connect.datatypes.ExerciseSessionRecord) from other applications.',
-      ),
+        'SecurityException: android.health.connect.HealthConnectException: java.lang.SecurityException: Caller does not have permission to read data for the following (recordType: class android.health.connect.datatypes.ExerciseSessionRecord) from other applications.'
+      )
     );
 
     const result = await syncHealthConnect();
@@ -281,7 +285,7 @@ describe('syncHealthConnect', () => {
     await syncHealthConnect();
 
     const lastSyncCall = (Database.setSetting as jest.Mock).mock.calls.find(
-      ([key]: [string]) => key === 'healthconnect_last_sync',
+      ([key]: [string]) => key === 'healthconnect_last_sync'
     );
     expect(lastSyncCall).toBeDefined();
   });
@@ -294,7 +298,9 @@ describe('syncHealthConnect', () => {
     const after = Date.now();
 
     expect(Database.pruneShortDiscardedHealthConnectSessions).toHaveBeenCalledTimes(1);
-    const [beforeMs, minStepsPerMinute] = (Database.pruneShortDiscardedHealthConnectSessions as jest.Mock).mock.calls[0];
+    const [beforeMs, minStepsPerMinute] = (
+      Database.pruneShortDiscardedHealthConnectSessions as jest.Mock
+    ).mock.calls[0];
     // cutoff must be now - MIN_DURATION_MS (5 min), within the test execution window
     expect(beforeMs).toBeGreaterThanOrEqual(before - 5 * 60 * 1000);
     expect(beforeMs).toBeLessThanOrEqual(after - 5 * 60 * 1000 + 100); // +100 ms: allow for JS execution time
@@ -336,7 +342,15 @@ describe('syncHealthConnect', () => {
       return '0';
     });
     (Database.getKnownLocations as jest.Mock).mockReturnValue([
-      { id: 1, label: 'home', latitude: indoorLat, longitude: indoorLon, radiusMeters: 100, isIndoor: true, status: 'active' },
+      {
+        id: 1,
+        label: 'home',
+        latitude: indoorLat,
+        longitude: indoorLon,
+        radiusMeters: 100,
+        isIndoor: true,
+        status: 'active',
+      },
     ]);
 
     await syncHealthConnect();
@@ -357,16 +371,22 @@ describe('syncHealthConnect', () => {
     });
 
     // GPS sample is far from the known indoor location
-    const gpsSamples = [
-      { lat: 52.0, lon: 5.0, timestamp: NOW - 15 * 60 * 1000 },
-    ];
+    const gpsSamples = [{ lat: 52.0, lon: 5.0, timestamp: NOW - 15 * 60 * 1000 }];
     (Database.getSetting as jest.Mock).mockImplementation((key: string) => {
       if (key === 'healthconnect_user_enabled') return '1';
       if (key === 'location_clusters') return JSON.stringify(gpsSamples);
       return '0';
     });
     (Database.getKnownLocations as jest.Mock).mockReturnValue([
-      { id: 1, label: 'home', latitude: 51.0, longitude: 4.0, radiusMeters: 100, isIndoor: true, status: 'active' },
+      {
+        id: 1,
+        label: 'home',
+        latitude: 51.0,
+        longitude: 4.0,
+        radiusMeters: 100,
+        isIndoor: true,
+        status: 'active',
+      },
     ]);
 
     await syncHealthConnect();
@@ -398,7 +418,15 @@ describe('syncHealthConnect', () => {
       return '0';
     });
     (Database.getKnownLocations as jest.Mock).mockReturnValue([
-      { id: 1, label: 'home', latitude: indoorLat, longitude: indoorLon, radiusMeters: 100, isIndoor: true, status: 'active' },
+      {
+        id: 1,
+        label: 'home',
+        latitude: indoorLat,
+        longitude: indoorLon,
+        radiusMeters: 100,
+        isIndoor: true,
+        status: 'active',
+      },
     ]);
 
     await syncHealthConnect();
@@ -414,7 +442,9 @@ describe('requestHealthPermissions', () => {
     (Database.setSetting as jest.Mock).mockImplementation(() => undefined);
     (Database.getSetting as jest.Mock).mockReturnValue('0');
     (HealthConnectIntent.verifyHealthConnectPermissions as jest.Mock).mockResolvedValue(false);
-    (HealthConnectIntent.openHealthConnectPermissionsViaIntent as jest.Mock).mockResolvedValue(true);
+    (HealthConnectIntent.openHealthConnectPermissionsViaIntent as jest.Mock).mockResolvedValue(
+      true
+    );
   });
 
   it('returns true immediately when permissions are already granted', async () => {
@@ -443,8 +473,8 @@ describe('requestHealthPermissions', () => {
     // on some Android versions. The re-verify check should catch this.
     (HealthConnect.requestPermission as jest.Mock).mockResolvedValue(null);
     (HealthConnectIntent.verifyHealthConnectPermissions as jest.Mock)
-      .mockResolvedValueOnce(false)  // initial check before requestPermission
-      .mockResolvedValueOnce(true);  // re-verify after requestPermission returns null
+      .mockResolvedValueOnce(false) // initial check before requestPermission
+      .mockResolvedValueOnce(true); // re-verify after requestPermission returns null
 
     const result = await requestHealthPermissions();
 
@@ -455,8 +485,8 @@ describe('requestHealthPermissions', () => {
   it('returns true when requestPermission returns empty array but permissions are now granted (re-verify)', async () => {
     (HealthConnect.requestPermission as jest.Mock).mockResolvedValue([]);
     (HealthConnectIntent.verifyHealthConnectPermissions as jest.Mock)
-      .mockResolvedValueOnce(false)  // initial check
-      .mockResolvedValueOnce(true);  // re-verify
+      .mockResolvedValueOnce(false) // initial check
+      .mockResolvedValueOnce(true); // re-verify
 
     const result = await requestHealthPermissions();
 
@@ -486,7 +516,9 @@ describe('requestHealthPermissions', () => {
 
   it('returns false when Intent fallback also fails', async () => {
     (HealthConnect.requestPermission as jest.Mock).mockResolvedValue([]);
-    (HealthConnectIntent.openHealthConnectPermissionsViaIntent as jest.Mock).mockResolvedValue(false);
+    (HealthConnectIntent.openHealthConnectPermissionsViaIntent as jest.Mock).mockResolvedValue(
+      false
+    );
 
     const result = await requestHealthPermissions();
 

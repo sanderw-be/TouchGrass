@@ -5,20 +5,22 @@ import {
   SdkAvailabilityStatus,
   getSdkStatus,
 } from 'react-native-health-connect';
-import { getSetting, setSetting, pruneShortDiscardedHealthConnectSessions, getKnownLocations } from '../storage/database';
+import {
+  getSetting,
+  setSetting,
+  pruneShortDiscardedHealthConnectSessions,
+  getKnownLocations,
+} from '../storage/database';
 import { submitSession, buildSession } from './sessionMerger';
-import { openHealthConnectPermissionsViaIntent, verifyHealthConnectPermissions } from './healthConnectIntent';
+import {
+  openHealthConnectPermissionsViaIntent,
+  verifyHealthConnectPermissions,
+} from './healthConnectIntent';
 import { t } from '../i18n';
-import { useImperialUnits, kmhToMph } from '../utils/units';
+import { isImperialUnits, kmhToMph } from '../utils/units';
 import { emitSessionsChanged } from '../utils/sessionsChangedEmitter';
 
-// Activities that strongly suggest being outside
-const OUTDOOR_ACTIVITY_TYPES = [
-  'ExerciseSession', // walking, running, cycling etc.
-  'StepsRecord',
-];
-
-export const CONFIDENCE_ACTIVITY = 0.70;
+export const CONFIDENCE_ACTIVITY = 0.7;
 export const MIN_DURATION_MS = 5 * 60 * 1000; // ignore sessions under 5 minutes
 // Average walking cadence at 5 km/h (~110 steps/min); used to estimate walk
 // duration from step count when the recorded time window is unreliably short
@@ -30,24 +32,19 @@ const BASELINE_SPEED_KMH = 5;
 // outdoor walking (skip the record entirely); between 2.5 and 4 km/h is slow
 // but plausible (submit with reduced confidence).
 export const STEPS_PER_MIN_AT_2_5KMH = Math.round(STEPS_PER_MINUTE_AT_5KMH * 0.5); // 55
-export const STEPS_PER_MIN_AT_4KMH   = Math.round(STEPS_PER_MINUTE_AT_5KMH * 0.8); // 88
-const CONFIDENCE_SLOW_WALK = 0.50; // 2.5–4 km/h: plausible but below normal pace
+export const STEPS_PER_MIN_AT_4KMH = Math.round(STEPS_PER_MINUTE_AT_5KMH * 0.8); // 88
+const CONFIDENCE_SLOW_WALK = 0.5; // 2.5–4 km/h: plausible but below normal pace
 const PERMISSION_WARNING_KEY = 'healthconnect_permission_warning';
 
 const EARTH_RADIUS_METERS = 6_371_000;
 
 /** Haversine distance between two GPS coordinates in metres. */
-function haversineDistanceMeters(
-  lat1: number, lon1: number,
-  lat2: number, lon2: number,
-): number {
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
+function haversineDistanceMeters(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
   const a =
     Math.sin(dLat / 2) ** 2 +
-    Math.cos(lat1 * Math.PI / 180) *
-    Math.cos(lat2 * Math.PI / 180) *
-    Math.sin(dLon / 2) ** 2;
+    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLon / 2) ** 2;
   return EARTH_RADIUS_METERS * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
@@ -65,30 +62,30 @@ export async function isHealthConnectAvailable(): Promise<boolean> {
 
 /**
  * Request Health Connect permissions using a hybrid approach.
- * 
- * With expo-health-connect config plugin, the HealthConnectPermissionDelegate 
+ *
+ * With expo-health-connect config plugin, the HealthConnectPermissionDelegate
  * is properly initialized, so requestPermission() should work correctly.
- * 
+ *
  * Flow:
  * 1. Check if permissions are already granted
  * 2. Try library's requestPermission() - should now work with expo-health-connect plugin
  * 3. If that fails or doesn't show dialog, fall back to Intent-based flow
  * 4. Verification happens when app returns to foreground (via recheckHealthConnect)
- * 
+ *
  * Returns true if permissions were granted OR Settings was opened successfully.
  * Returns false if both methods failed.
  */
 export async function requestHealthPermissions(): Promise<boolean> {
   try {
     await initialize();
-    
+
     // First, check if permissions are already granted
     const alreadyGranted = await verifyHealthConnectPermissions();
     if (alreadyGranted) {
       setSetting(PERMISSION_WARNING_KEY, '0');
       return true;
     }
-    
+
     // Try the library's requestPermission() first
     // With expo-health-connect plugin, this should work properly
     try {
@@ -98,13 +95,13 @@ export async function requestHealthPermissions(): Promise<boolean> {
         { accessType: 'read', recordType: 'ActiveCaloriesBurned' },
         { accessType: 'read', recordType: 'Distance' },
       ]);
-      
+
       // Check if permissions were granted via the dialog
       if (granted && Array.isArray(granted) && granted.length > 0) {
         setSetting(PERMISSION_WARNING_KEY, '0');
         return true;
       }
-      
+
       // requestPermission() can return null/empty when permissions are already granted
       // (e.g. some devices return null instead of the full list). Re-verify before
       // falling back to the Intent flow.
@@ -117,14 +114,14 @@ export async function requestHealthPermissions(): Promise<boolean> {
       // If requestPermission fails, fall back to manual flow
       console.warn('Library requestPermission failed, using Intent fallback:', permError);
     }
-    
+
     // Fallback: Open Health Connect Settings so user can manually grant permissions
     const opened = await openHealthConnectPermissionsViaIntent();
     if (!opened) {
       console.warn('Could not open Health Connect settings');
       return false;
     }
-    
+
     // Successfully opened Health Connect - user will grant permissions there
     // Verification will happen when the app returns to foreground
     return true;
@@ -140,18 +137,18 @@ export async function requestHealthPermissions(): Promise<boolean> {
 
 /**
  * Open Health Connect settings for managing existing permissions.
- * 
+ *
  * This function opens Health Connect directly without trying requestPermission().
  * The user can then navigate to TouchGrass within Health Connect to manage permissions.
- * 
+ *
  * Use this for the "Manage permissions" button after initial connection.
- * 
+ *
  * Returns true if Health Connect was opened successfully.
  */
 export async function openHealthConnectForManagement(): Promise<boolean> {
   try {
     await initialize();
-    
+
     // Skip requestPermission() - it's not working reliably even with expo-health-connect
     // Just open Health Connect directly via Intent
     const opened = await openHealthConnectPermissionsViaIntent();
@@ -159,7 +156,7 @@ export async function openHealthConnectForManagement(): Promise<boolean> {
       console.warn('Could not open Health Connect settings');
       return false;
     }
-    
+
     return true;
   } catch (e) {
     console.warn('Health Connect open for management error:', e);
@@ -186,7 +183,7 @@ function stepsToSpeedKmh(steps: number, durationMs: number): number {
  */
 function buildHCStepsNotes(steps: number, speedKmh: number): string {
   const stepsFormatted = steps.toLocaleString();
-  const imperial = useImperialUnits();
+  const imperial = isImperialUnits();
   const speed = imperial ? kmhToMph(speedKmh).toFixed(1) : speedKmh.toFixed(1);
   const speedUnit = imperial ? t('unit_speed_imperial') : t('unit_speed_metric');
   return t('session_notes_hc_steps', { steps: stepsFormatted, speed, speedUnit });
@@ -209,15 +206,41 @@ function buildHCExerciseNotes(exerciseName: string, durationMs: number, steps?: 
  */
 function exerciseTypeName(type: number): string {
   const keyMap: Record<number, string> = {
-    2: 'exercise_badminton', 4: 'exercise_baseball', 5: 'exercise_basketball', 8: 'exercise_biking',
-    14: 'exercise_cricket', 28: 'exercise_american_football', 29: 'exercise_australian_football',
-    31: 'exercise_frisbee', 32: 'exercise_golf', 35: 'exercise_handball', 37: 'exercise_hiking',
-    38: 'exercise_ice_hockey', 39: 'exercise_ice_skating', 46: 'exercise_paddling', 47: 'exercise_paragliding',
-    51: 'exercise_rock_climbing', 52: 'exercise_roller_hockey', 53: 'exercise_rowing', 55: 'exercise_rugby',
-    56: 'exercise_running', 58: 'exercise_sailing', 59: 'exercise_scuba_diving', 60: 'exercise_skating',
-    61: 'exercise_skiing', 62: 'exercise_snowboarding', 63: 'exercise_snowshoeing', 64: 'exercise_soccer',
-    65: 'exercise_softball', 72: 'exercise_surfing', 73: 'exercise_open_water_swimming', 76: 'exercise_tennis',
-    78: 'exercise_volleyball', 79: 'exercise_walking', 80: 'exercise_water_polo', 82: 'exercise_wheelchair',
+    2: 'exercise_badminton',
+    4: 'exercise_baseball',
+    5: 'exercise_basketball',
+    8: 'exercise_biking',
+    14: 'exercise_cricket',
+    28: 'exercise_american_football',
+    29: 'exercise_australian_football',
+    31: 'exercise_frisbee',
+    32: 'exercise_golf',
+    35: 'exercise_handball',
+    37: 'exercise_hiking',
+    38: 'exercise_ice_hockey',
+    39: 'exercise_ice_skating',
+    46: 'exercise_paddling',
+    47: 'exercise_paragliding',
+    51: 'exercise_rock_climbing',
+    52: 'exercise_roller_hockey',
+    53: 'exercise_rowing',
+    55: 'exercise_rugby',
+    56: 'exercise_running',
+    58: 'exercise_sailing',
+    59: 'exercise_scuba_diving',
+    60: 'exercise_skating',
+    61: 'exercise_skiing',
+    62: 'exercise_snowboarding',
+    63: 'exercise_snowshoeing',
+    64: 'exercise_soccer',
+    65: 'exercise_softball',
+    72: 'exercise_surfing',
+    73: 'exercise_open_water_swimming',
+    76: 'exercise_tennis',
+    78: 'exercise_volleyball',
+    79: 'exercise_walking',
+    80: 'exercise_water_polo',
+    82: 'exercise_wheelchair',
   };
   const key = keyMap[type];
   return key ? t(key) : t('exercise_unknown', { type });
@@ -231,21 +254,22 @@ function exerciseTypeName(type: number): string {
 function wasDefinitelyAtKnownIndoorLocation(startMs: number, endMs: number): boolean {
   try {
     const parsed: unknown = JSON.parse(getSetting('location_clusters', '[]'));
-    const allSamples: Array<{ lat: number; lon: number; timestamp: number }> =
-      Array.isArray(parsed) ? parsed : [];
-    const sessionSamples = allSamples.filter(
-      s => s.timestamp >= startMs && s.timestamp <= endMs,
-    );
+    const allSamples: { lat: number; lon: number; timestamp: number }[] = Array.isArray(parsed)
+      ? parsed
+      : [];
+    const sessionSamples = allSamples.filter((s) => s.timestamp >= startMs && s.timestamp <= endMs);
     if (sessionSamples.length === 0) return false;
 
     const knownLocations = getKnownLocations();
     if (knownLocations.length === 0) return false;
 
-    return sessionSamples.every(sample =>
-      knownLocations.some(loc =>
-        loc.isIndoor &&
-        haversineDistanceMeters(sample.lat, sample.lon, loc.latitude, loc.longitude) <= loc.radiusMeters,
-      ),
+    return sessionSamples.every((sample) =>
+      knownLocations.some(
+        (loc) =>
+          loc.isIndoor &&
+          haversineDistanceMeters(sample.lat, sample.lon, loc.latitude, loc.longitude) <=
+            loc.radiusMeters
+      )
     );
   } catch (e) {
     console.warn('wasDefinitelyAtKnownIndoorLocation error:', e);
@@ -303,7 +327,7 @@ export async function syncHealthConnect(): Promise<boolean> {
 
       // Boost confidence for explicitly outdoor exercise types
       const isExplicitlyOutdoor = isOutdoorExerciseType(record.exerciseType);
-      const confidence = isExplicitlyOutdoor ? 0.80 : CONFIDENCE_ACTIVITY;
+      const confidence = isExplicitlyOutdoor ? 0.8 : CONFIDENCE_ACTIVITY;
 
       // Skip if GPS data shows the user was at a known indoor location throughout
       if (wasDefinitelyAtKnownIndoorLocation(start, end)) {
@@ -315,7 +339,7 @@ export async function syncHealthConnect(): Promise<boolean> {
         end,
         'health_connect',
         confidence,
-        buildHCExerciseNotes(exerciseTypeName(record.exerciseType), duration),
+        buildHCExerciseNotes(exerciseTypeName(record.exerciseType), duration)
       );
 
       submitSession(session);
@@ -370,7 +394,7 @@ export async function syncHealthConnect(): Promise<boolean> {
           buildHCStepsNotes(record.count, stepSpeedKmh),
           record.count,
           undefined,
-          stepSpeedKmh > 0 ? stepSpeedKmh : undefined,
+          stepSpeedKmh > 0 ? stepSpeedKmh : undefined
         );
 
         submitSession(session);
@@ -412,8 +436,10 @@ export async function syncHealthConnect(): Promise<boolean> {
 
 function isPermissionError(error: unknown): boolean {
   const message = String(error);
-  return message.includes('SecurityException') &&
-    (message.includes('READ_') || message.toLowerCase().includes('permission'));
+  return (
+    message.includes('SecurityException') &&
+    (message.includes('READ_') || message.toLowerCase().includes('permission'))
+  );
 }
 
 function logPermissionWarningOnce(): void {
@@ -432,41 +458,41 @@ function logPermissionWarningOnce(): void {
  */
 function isOutdoorExerciseType(type: number): boolean {
   const OUTDOOR_TYPES = [
-    2,   // BADMINTON
-    4,   // BASEBALL
-    5,   // BASKETBALL
-    8,   // BIKING
-    14,  // CRICKET
-    28,  // FOOTBALL_AMERICAN
-    29,  // FOOTBALL_AUSTRALIAN
-    31,  // FRISBEE_DISC
-    32,  // GOLF
-    35,  // HANDBALL
-    37,  // HIKING
-    38,  // ICE_HOCKEY
-    39,  // ICE_SKATING
-    46,  // PADDLING
-    47,  // PARAGLIDING
-    51,  // ROCK_CLIMBING
-    52,  // ROLLER_HOCKEY
-    53,  // ROWING
-    55,  // RUGBY
-    56,  // RUNNING
-    58,  // SAILING
-    59,  // SCUBA_DIVING
-    60,  // SKATING
-    61,  // SKIING
-    62,  // SNOWBOARDING
-    63,  // SNOWSHOEING
-    64,  // SOCCER
-    65,  // SOFTBALL
-    72,  // SURFING
-    73,  // SWIMMING_OPEN_WATER
-    76,  // TENNIS
-    78,  // VOLLEYBALL
-    79,  // WALKING
-    80,  // WATER_POLO
-    82,  // WHEELCHAIR
+    2, // BADMINTON
+    4, // BASEBALL
+    5, // BASKETBALL
+    8, // BIKING
+    14, // CRICKET
+    28, // FOOTBALL_AMERICAN
+    29, // FOOTBALL_AUSTRALIAN
+    31, // FRISBEE_DISC
+    32, // GOLF
+    35, // HANDBALL
+    37, // HIKING
+    38, // ICE_HOCKEY
+    39, // ICE_SKATING
+    46, // PADDLING
+    47, // PARAGLIDING
+    51, // ROCK_CLIMBING
+    52, // ROLLER_HOCKEY
+    53, // ROWING
+    55, // RUGBY
+    56, // RUNNING
+    58, // SAILING
+    59, // SCUBA_DIVING
+    60, // SKATING
+    61, // SKIING
+    62, // SNOWBOARDING
+    63, // SNOWSHOEING
+    64, // SOCCER
+    65, // SOFTBALL
+    72, // SURFING
+    73, // SWIMMING_OPEN_WATER
+    76, // TENNIS
+    78, // VOLLEYBALL
+    79, // WALKING
+    80, // WATER_POLO
+    82, // WHEELCHAIR
   ];
   return OUTDOOR_TYPES.includes(type);
 }

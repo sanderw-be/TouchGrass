@@ -1,15 +1,28 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView,
-  TouchableOpacity, TextInput, Alert, Switch, Platform, Linking, AppState, AppStateStatus,
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  TextInput,
+  Alert,
+  Switch,
+  Platform,
+  Linking,
+  AppState,
+  AppStateStatus,
 } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
-  getCurrentDailyGoal, getCurrentWeeklyGoal,
-  setDailyGoal, setWeeklyGoal,
-  getSetting, setSetting,
+  getCurrentDailyGoal,
+  getCurrentWeeklyGoal,
+  setDailyGoal,
+  setWeeklyGoal,
+  getSetting,
+  setSetting,
 } from '../storage/database';
 import {
   requestCalendarPermissions,
@@ -81,18 +94,20 @@ export default function GoalsScreen() {
     }
   }, []);
 
-  useFocusEffect(useCallback(() => {
-    loadGoalSettings();
-    checkCalendarPermissions();
+  useFocusEffect(
+    useCallback(() => {
+      loadGoalSettings();
+      checkCalendarPermissions();
 
-    const sub = AppState.addEventListener('change', (state: AppStateStatus) => {
-      if (state === 'active') {
-        loadGoalSettings();
-        checkCalendarPermissions();
-      }
-    });
-    return () => sub.remove();
-  }, [loadGoalSettings, checkCalendarPermissions]));
+      const sub = AppState.addEventListener('change', (state: AppStateStatus) => {
+        if (state === 'active') {
+          loadGoalSettings();
+          checkCalendarPermissions();
+        }
+      });
+      return () => sub.remove();
+    }, [loadGoalSettings, checkCalendarPermissions])
+  );
 
   const saveDaily = (minutes: number) => {
     if (isNaN(minutes) || minutes < 1 || minutes > 720) {
@@ -148,7 +163,9 @@ export default function GoalsScreen() {
     if (parent) {
       parent.navigate('Settings');
     } else {
-      console.warn('GoalsScreen: could not navigate to Settings tab — parent navigator unavailable');
+      console.warn(
+        'GoalsScreen: could not navigate to Settings tab — parent navigator unavailable'
+      );
     }
   };
 
@@ -161,10 +178,7 @@ export default function GoalsScreen() {
       }
     } catch (error) {
       console.error('Error opening app settings:', error);
-      Alert.alert(
-        t('settings_error_title'),
-        t('settings_error_open_settings_failed'),
-      );
+      Alert.alert(t('settings_error_title'), t('settings_error_open_settings_failed'));
     }
   };
 
@@ -182,7 +196,7 @@ export default function GoalsScreen() {
           [
             { text: t('settings_calendar_permission_cancel'), style: 'cancel' },
             { text: t('settings_calendar_permission_open'), onPress: handleOpenAppSettings },
-          ],
+          ]
         );
         return;
       }
@@ -206,7 +220,9 @@ export default function GoalsScreen() {
   };
 
   const handleSelectCalendar = async () => {
-    const hasAlternatives = calendarOptions.some((c) => !c.title.toLowerCase().includes('touchgrass'));
+    const hasAlternatives = calendarOptions.some(
+      (c) => !c.title.toLowerCase().includes('touchgrass')
+    );
     if (!hasAlternatives) return;
 
     const otherCalendars = calendarOptions.filter((c) => !c.title.includes('TouchGrass'));
@@ -216,27 +232,23 @@ export default function GoalsScreen() {
     ];
     const isSelected = (optId: string) =>
       optId === calendarSelectedId || (optId === '__touchgrass__' && !calendarSelectedId);
-    Alert.alert(
-      t('settings_calendar_select_title'),
-      undefined,
-      [
-        ...options.map((opt) => ({
-          text: isSelected(opt.id) ? `${opt.title} ✓` : opt.title,
-          onPress: async () => {
-            if (opt.id === '__touchgrass__') {
-              const id = await getOrCreateTouchGrassCalendar();
-              const newId = id ?? '';
-              setSelectedCalendarId(newId);
-              setCalendarSelectedIdState(newId);
-            } else {
-              setSelectedCalendarId(opt.id);
-              setCalendarSelectedIdState(opt.id);
-            }
-          },
-        })),
-        { text: t('settings_calendar_permission_cancel'), style: 'cancel' },
-      ],
-    );
+    Alert.alert(t('settings_calendar_select_title'), undefined, [
+      ...options.map((opt) => ({
+        text: isSelected(opt.id) ? `${opt.title} ✓` : opt.title,
+        onPress: async () => {
+          if (opt.id === '__touchgrass__') {
+            const id = await getOrCreateTouchGrassCalendar();
+            const newId = id ?? '';
+            setSelectedCalendarId(newId);
+            setCalendarSelectedIdState(newId);
+          } else {
+            setSelectedCalendarId(opt.id);
+            setCalendarSelectedIdState(opt.id);
+          }
+        },
+      })),
+      { text: t('settings_calendar_permission_cancel'), style: 'cancel' },
+    ]);
   };
 
   const calendarSelectedTitle = (): string => {
@@ -245,7 +257,9 @@ export default function GoalsScreen() {
     return match?.title ?? t('settings_calendar_select_touchgrass');
   };
 
-  const hasAlternativeCalendars = calendarOptions.some((c) => !c.title.toLowerCase().includes('touchgrass'));
+  const hasAlternativeCalendars = calendarOptions.some(
+    (c) => !c.title.toLowerCase().includes('touchgrass')
+  );
 
   return (
     <>
@@ -254,13 +268,10 @@ export default function GoalsScreen() {
       </View>
 
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-
         {/* WHO recommendation note */}
         <View style={styles.tipCard}>
           <Text style={styles.tipIcon}>💡</Text>
-          <Text style={styles.tipText}>
-            {t('goals_who_tip')}
-          </Text>
+          <Text style={styles.tipText}>{t('goals_who_tip')}</Text>
         </View>
 
         {/* Daily goal */}
@@ -278,7 +289,9 @@ export default function GoalsScreen() {
                 setCustomDaily(String(dailyTarget));
               }}
             >
-              <Text style={styles.editButtonText}>{editingDaily ? t('goals_cancel') : t('goals_edit')}</Text>
+              <Text style={styles.editButtonText}>
+                {editingDaily ? t('goals_cancel') : t('goals_edit')}
+              </Text>
             </TouchableOpacity>
           </View>
 
@@ -335,7 +348,9 @@ export default function GoalsScreen() {
                 setCustomWeekly(String(weeklyTarget));
               }}
             >
-              <Text style={styles.editButtonText}>{editingWeekly ? t('goals_cancel') : t('goals_edit')}</Text>
+              <Text style={styles.editButtonText}>
+                {editingWeekly ? t('goals_cancel') : t('goals_edit')}
+              </Text>
             </TouchableOpacity>
           </View>
 
@@ -349,7 +364,9 @@ export default function GoalsScreen() {
                     style={[styles.preset, weeklyTarget === p && styles.presetActive]}
                     onPress={() => saveWeekly(p)}
                   >
-                    <Text style={[styles.presetText, weeklyTarget === p && styles.presetTextActive]}>
+                    <Text
+                      style={[styles.presetText, weeklyTarget === p && styles.presetTextActive]}
+                    >
                       {formatMinutes(p)}
                     </Text>
                   </TouchableOpacity>
@@ -429,7 +446,7 @@ export default function GoalsScreen() {
                 onPress={async () => {
                   try {
                     await IntentLauncher.startActivityAsync(
-                      'android.settings.IGNORE_BATTERY_OPTIMIZATION_SETTINGS',
+                      'android.settings.IGNORE_BATTERY_OPTIMIZATION_SETTINGS'
                     );
                   } catch (error) {
                     console.error('Error opening battery settings:', error);
@@ -548,22 +565,22 @@ export default function GoalsScreen() {
                   icon="📋"
                   label={t('settings_calendar_select')}
                   sublabel={t('settings_calendar_select_desc')}
-                  right={
-                    <Text style={styles.valueChip}>{calendarSelectedTitle()}</Text>
-                  }
+                  right={<Text style={styles.valueChip}>{calendarSelectedTitle()}</Text>}
                 />
               </TouchableOpacity>
             </>
           )}
         </View>
-
       </ScrollView>
     </>
   );
 }
 
 function SettingRow({
-  icon, label, sublabel, right,
+  icon,
+  label,
+  sublabel,
+  right,
 }: {
   icon: string;
   label: string;
@@ -592,133 +609,155 @@ function Divider() {
 
 function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
   return StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.mist },
-  content: { padding: spacing.md, paddingBottom: spacing.xxl },
+    container: { flex: 1, backgroundColor: colors.mist },
+    content: { padding: spacing.md, paddingBottom: spacing.xxl },
 
-  header: {
-    backgroundColor: colors.mist,
-    paddingBottom: spacing.md,
-    paddingHorizontal: spacing.md,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
+    header: {
+      backgroundColor: colors.mist,
+      paddingBottom: spacing.md,
+      paddingHorizontal: spacing.md,
+    },
+    headerTitle: {
+      fontSize: 20,
+      fontWeight: '700',
+      color: colors.textPrimary,
+    },
 
-  sectionHeader: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.textMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginBottom: spacing.xs,
-    marginTop: spacing.md,
-    marginLeft: spacing.xs,
-  },
+    sectionHeader: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: colors.textMuted,
+      textTransform: 'uppercase',
+      letterSpacing: 1,
+      marginBottom: spacing.xs,
+      marginTop: spacing.md,
+      marginLeft: spacing.xs,
+    },
 
-  card: {
-    backgroundColor: colors.card,
-    borderRadius: radius.lg,
-    padding: spacing.lg,
-    marginBottom: spacing.md,
-    ...shadows.soft,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  cardTitle: { fontSize: 13, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: 1 },
-  cardValue: { fontSize: 32, fontWeight: '700', color: colors.textPrimary, marginTop: 2, letterSpacing: -1 },
+    card: {
+      backgroundColor: colors.card,
+      borderRadius: radius.lg,
+      padding: spacing.lg,
+      marginBottom: spacing.md,
+      ...shadows.soft,
+    },
+    cardHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    cardTitle: {
+      fontSize: 13,
+      color: colors.textMuted,
+      textTransform: 'uppercase',
+      letterSpacing: 1,
+    },
+    cardValue: {
+      fontSize: 32,
+      fontWeight: '700',
+      color: colors.textPrimary,
+      marginTop: 2,
+      letterSpacing: -1,
+    },
 
-  editButton: {
-    backgroundColor: colors.grassPale,
-    borderRadius: radius.full,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-  },
-  editButtonText: { fontSize: 13, fontWeight: '600', color: colors.grass },
+    editButton: {
+      backgroundColor: colors.grassPale,
+      borderRadius: radius.full,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.xs,
+    },
+    editButtonText: { fontSize: 13, fontWeight: '600', color: colors.grass },
 
-  editor: { marginTop: spacing.lg, borderTopWidth: 1, borderTopColor: colors.fog, paddingTop: spacing.lg },
-  editorLabel: { fontSize: 12, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: spacing.sm },
+    editor: {
+      marginTop: spacing.lg,
+      borderTopWidth: 1,
+      borderTopColor: colors.fog,
+      paddingTop: spacing.lg,
+    },
+    editorLabel: {
+      fontSize: 12,
+      color: colors.textMuted,
+      textTransform: 'uppercase',
+      letterSpacing: 1,
+      marginBottom: spacing.sm,
+    },
 
-  presets: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, marginBottom: spacing.lg },
-  preset: {
-    borderRadius: radius.full,
-    borderWidth: 1.5,
-    borderColor: colors.fog,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-  },
-  presetActive: { backgroundColor: colors.grass, borderColor: colors.grass },
-  presetText: { fontSize: 14, color: colors.textSecondary, fontWeight: '500' },
-  presetTextActive: { color: colors.textInverse, fontWeight: '700' },
+    presets: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, marginBottom: spacing.lg },
+    preset: {
+      borderRadius: radius.full,
+      borderWidth: 1.5,
+      borderColor: colors.fog,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.xs,
+    },
+    presetActive: { backgroundColor: colors.grass, borderColor: colors.grass },
+    presetText: { fontSize: 14, color: colors.textSecondary, fontWeight: '500' },
+    presetTextActive: { color: colors.textInverse, fontWeight: '700' },
 
-  customRow: { flexDirection: 'row', gap: spacing.sm, alignItems: 'center' },
-  input: {
-    flex: 1,
-    borderWidth: 1.5,
-    borderColor: colors.fog,
-    borderRadius: radius.md,
-    padding: spacing.sm,
-    fontSize: 16,
-    color: colors.textPrimary,
-    backgroundColor: colors.mist,
-  },
-  saveButton: {
-    backgroundColor: colors.grass,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-  },
-  saveButtonText: { color: colors.textInverse, fontWeight: '700', fontSize: 15 },
+    customRow: { flexDirection: 'row', gap: spacing.sm, alignItems: 'center' },
+    input: {
+      flex: 1,
+      borderWidth: 1.5,
+      borderColor: colors.fog,
+      borderRadius: radius.md,
+      padding: spacing.sm,
+      fontSize: 16,
+      color: colors.textPrimary,
+      backgroundColor: colors.mist,
+    },
+    saveButton: {
+      backgroundColor: colors.grass,
+      borderRadius: radius.md,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.sm,
+    },
+    saveButtonText: { color: colors.textInverse, fontWeight: '700', fontSize: 15 },
 
-  tipCard: {
-    flexDirection: 'row',
-    backgroundColor: colors.grassPale,
-    borderRadius: radius.lg,
-    padding: spacing.md,
-    gap: spacing.sm,
-    alignItems: 'flex-start',
-    marginBottom: spacing.md,
-  },
-  tipIcon: { fontSize: 18 },
-  tipText: { flex: 1, fontSize: 13, color: colors.grassDark, lineHeight: 20 },
+    tipCard: {
+      flexDirection: 'row',
+      backgroundColor: colors.grassPale,
+      borderRadius: radius.lg,
+      padding: spacing.md,
+      gap: spacing.sm,
+      alignItems: 'flex-start',
+      marginBottom: spacing.md,
+    },
+    tipIcon: { fontSize: 18 },
+    tipText: { flex: 1, fontSize: 13, color: colors.grassDark, lineHeight: 20 },
 
-  settingsCard: {
-    backgroundColor: colors.card,
-    borderRadius: radius.lg,
-    overflow: 'hidden',
-    ...shadows.soft,
-  },
-  settingsCardDisabled: {
-    opacity: 0.5,
-  },
+    settingsCard: {
+      backgroundColor: colors.card,
+      borderRadius: radius.lg,
+      overflow: 'hidden',
+      ...shadows.soft,
+    },
+    settingsCardDisabled: {
+      opacity: 0.5,
+    },
 
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: spacing.md,
-  },
-  rowIcon: { fontSize: 20, marginRight: spacing.md, width: 28, textAlign: 'center' },
-  rowContent: { flex: 1 },
-  rowLabel: { fontSize: 15, color: colors.textPrimary, fontWeight: '500' },
-  rowSublabel: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
-  rowRight: { marginLeft: spacing.sm },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: spacing.md,
+    },
+    rowIcon: { fontSize: 20, marginRight: spacing.md, width: 28, textAlign: 'center' },
+    rowContent: { flex: 1 },
+    rowLabel: { fontSize: 15, color: colors.textPrimary, fontWeight: '500' },
+    rowSublabel: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
+    rowRight: { marginLeft: spacing.sm },
 
-  divider: { height: 1, backgroundColor: colors.fog, marginLeft: spacing.md + 28 + spacing.md },
+    divider: { height: 1, backgroundColor: colors.fog, marginLeft: spacing.md + 28 + spacing.md },
 
-  chevron: { fontSize: 24, color: colors.textMuted, fontWeight: '300' },
+    chevron: { fontSize: 24, color: colors.textMuted, fontWeight: '300' },
 
-  valueChip: {
-    fontSize: 13,
-    color: colors.grass,
-    fontWeight: '600',
-    backgroundColor: colors.grassPale,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 3,
-    borderRadius: radius.full,
-  },
+    valueChip: {
+      fontSize: 13,
+      color: colors.grass,
+      fontWeight: '600',
+      backgroundColor: colors.grassPale,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 3,
+      borderRadius: radius.full,
+    },
   });
 }

@@ -11,6 +11,7 @@ We absolutely can and should! The project has now been updated to use `expo-heal
 ## What's the Difference?
 
 ### react-native-health-connect
+
 - Core library that provides Health Connect functionality
 - Works for React Native CLI projects
 - Requires manual setup in `MainActivity.kt`:
@@ -21,6 +22,7 @@ We absolutely can and should! The project has now been updated to use `expo-heal
 - Results in crash: `UninitializedPropertyAccessException: lateinit property requestPermission has not been initialized`
 
 ### expo-health-connect
+
 - **Expo Config Plugin** for `react-native-health-connect`
 - Automatically configures native code during `expo prebuild`
 - Sets up the `HealthConnectPermissionDelegate` properly
@@ -39,11 +41,12 @@ When you add `"expo-health-connect"` to your `app.json` plugins array:
 ## Implementation
 
 ### Before (Wrong Approach)
+
 ```json
 // app.json
 {
   "plugins": [
-    "react-native-health-connect"  // ❌ Direct use - doesn't set up delegate
+    "react-native-health-connect" // ❌ Direct use - doesn't set up delegate
   ]
 }
 ```
@@ -55,11 +58,12 @@ const opened = await openHealthConnectPermissionsViaIntent();
 ```
 
 ### After (Correct Approach)
+
 ```json
 // app.json
 {
   "plugins": [
-    "expo-health-connect"  // ✅ Config plugin - sets up delegate
+    "expo-health-connect" // ✅ Config plugin - sets up delegate
   ]
 }
 ```
@@ -80,26 +84,33 @@ try {
 ## Benefits
 
 ### 1. **No More Crashes**
+
 The permission delegate is properly initialized, so `requestPermission()` won't crash.
 
 ### 2. **Better User Experience**
+
 When the library's permission dialog works:
+
 - Faster permission flow
 - In-app dialog (no need to go to Settings)
 - Immediate permission grant
 
 ### 3. **Graceful Fallback**
+
 If the dialog doesn't appear (Android version differences, etc.):
+
 - Automatically falls back to Intent-based flow
 - Opens Settings → Health Connect
 - User can still grant permissions manually
 
 ### 4. **Proper Expo Integration**
+
 - Following Expo best practices
 - Uses official config plugin
 - No workarounds or hacks needed
 
 ### 5. **Maintainable**
+
 - Future updates to `expo-health-connect` will improve functionality
 - Easier to debug and maintain
 - Clear separation of concerns
@@ -107,17 +118,19 @@ If the dialog doesn't appear (Android version differences, etc.):
 ## Installation
 
 ### Dependencies Required
+
 ```json
 {
   "dependencies": {
-    "react-native-health-connect": "^3.5.0",  // Core library
-    "expo-health-connect": "^0.1.1",          // Config plugin
-    "expo-build-properties": "~1.0.10"        // For build config
+    "react-native-health-connect": "^3.5.0", // Core library
+    "expo-health-connect": "^0.1.1", // Config plugin
+    "expo-build-properties": "~1.0.10" // For build config
   }
 }
 ```
 
 ### App Configuration
+
 ```json
 {
   "expo": {
@@ -178,6 +191,7 @@ The prebuild step is when the config plugin sets up the native code.
 ## Testing
 
 ### What to Test
+
 1. **Permission Dialog**: Tap "Connect" - does a dialog appear?
 2. **No Crash**: App should not crash when requesting permissions
 3. **Fallback**: If dialog doesn't appear, Settings should open
@@ -187,6 +201,7 @@ The prebuild step is when the config plugin sets up the native code.
 ### Expected Flows
 
 #### Best Case (Dialog Works)
+
 ```
 User taps "Connect"
   → Permission dialog appears ✨
@@ -196,6 +211,7 @@ User taps "Connect"
 ```
 
 #### Fallback Case (Dialog Doesn't Work)
+
 ```
 User taps "Connect"
   → requestPermission() called but fails gracefully
@@ -217,6 +233,7 @@ User taps "Connect"
 **Q: Why couldn't we use expo-health-connect?**
 
 **A: We can and we should!** The project was incorrectly using `react-native-health-connect` directly, which doesn't work properly in Expo managed projects. Switching to `expo-health-connect` provides the proper config plugin that:
+
 - Sets up the permission delegate correctly
 - Enables the permission dialog to work
 - Provides better user experience

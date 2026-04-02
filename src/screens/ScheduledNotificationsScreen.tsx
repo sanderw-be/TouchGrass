@@ -1,7 +1,15 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch,
-  Modal, TextInput, Platform, Alert,
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Switch,
+  Modal,
+  TextInput,
+  Platform,
+  Alert,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -68,44 +76,40 @@ export default function ScheduledNotificationsScreen() {
   const handleDelete = (schedule: ScheduledNotification) => {
     if (!schedule.id) return;
 
-    Alert.alert(
-      t('scheduled_delete_confirm_title'),
-      t('scheduled_delete_confirm_body'),
-      [
-        { text: t('scheduled_delete_cancel'), style: 'cancel' },
-        {
-          text: t('scheduled_delete_confirm'),
-          style: 'destructive',
-          onPress: async () => {
-            // Delete from database
-            deleteScheduledNotification(schedule.id!);
-            
-            // Update state immediately
-            const updated = getScheduledNotifications();
-            setSchedules(updated);
-            
-            // Schedule notifications in background (with await to catch errors)
-            try {
-              await scheduleAllScheduledNotifications();
-            } catch (error) {
-              console.error('Failed to reschedule notifications after delete:', error);
-            }
-          },
+    Alert.alert(t('scheduled_delete_confirm_title'), t('scheduled_delete_confirm_body'), [
+      { text: t('scheduled_delete_cancel'), style: 'cancel' },
+      {
+        text: t('scheduled_delete_confirm'),
+        style: 'destructive',
+        onPress: async () => {
+          // Delete from database
+          deleteScheduledNotification(schedule.id!);
+
+          // Update state immediately
+          const updated = getScheduledNotifications();
+          setSchedules(updated);
+
+          // Schedule notifications in background (with await to catch errors)
+          try {
+            await scheduleAllScheduledNotifications();
+          } catch (error) {
+            console.error('Failed to reschedule notifications after delete:', error);
+          }
         },
-      ]
-    );
+      },
+    ]);
   };
 
   const handleToggle = async (schedule: ScheduledNotification, value: boolean) => {
     if (!schedule.id) return;
-    
+
     // Update database
     toggleScheduledNotification(schedule.id, value);
-    
+
     // Update state immediately
     const updated = getScheduledNotifications();
     setSchedules(updated);
-    
+
     // Schedule notifications in background (with await to catch errors)
     try {
       await scheduleAllScheduledNotifications();
@@ -142,10 +146,10 @@ export default function ScheduledNotificationsScreen() {
     // Reload the list from database
     const updated = getScheduledNotifications();
     setSchedules(updated);
-    
+
     // Close modal after state update
     setIsModalVisible(false);
-    
+
     // Schedule notifications in background (with await to catch errors)
     try {
       await scheduleAllScheduledNotifications();
@@ -160,7 +164,7 @@ export default function ScheduledNotificationsScreen() {
 
   const toggleDay = (day: number) => {
     if (selectedDays.includes(day)) {
-      setSelectedDays(selectedDays.filter(d => d !== day));
+      setSelectedDays(selectedDays.filter((d) => d !== day));
     } else {
       setSelectedDays([...selectedDays, day].sort((a, b) => a - b));
     }
@@ -173,7 +177,11 @@ export default function ScheduledNotificationsScreen() {
   const formatTime = (hour: number, minute: number): string => {
     const d = new Date();
     d.setHours(hour, minute, 0, 0);
-    const raw = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: !uses24HourClock() });
+    const raw = d.toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: !uses24HourClock(),
+    });
     return uses24HourClock() ? raw : normalizeAmPm(raw);
   };
 
@@ -182,7 +190,7 @@ export default function ScheduledNotificationsScreen() {
     if (days.length === 5 && JSON.stringify(days) === JSON.stringify([1, 2, 3, 4, 5])) {
       return t('scheduled_weekdays');
     }
-    return days.map(d => t(DAY_LABELS[d])).join(', ');
+    return days.map((d) => t(DAY_LABELS[d])).join(', ');
   };
 
   const onTimeChange = (event: any, date?: Date) => {
@@ -203,7 +211,7 @@ export default function ScheduledNotificationsScreen() {
             <Text style={styles.emptyHint}>{t('scheduled_empty_hint')}</Text>
           </View>
         ) : (
-          schedules.map(schedule => (
+          schedules.map((schedule) => (
             <View key={schedule.id} style={styles.scheduleCard}>
               <View style={styles.scheduleHeader}>
                 <View style={styles.scheduleInfo}>
@@ -223,10 +231,7 @@ export default function ScheduledNotificationsScreen() {
                 />
               </View>
               <View style={styles.scheduleActions}>
-                <TouchableOpacity
-                  style={styles.actionButton}
-                  onPress={() => handleEdit(schedule)}
-                >
+                <TouchableOpacity style={styles.actionButton} onPress={() => handleEdit(schedule)}>
                   <Text style={styles.actionButtonText}>{t('scheduled_edit')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -303,7 +308,7 @@ export default function ScheduledNotificationsScreen() {
                 </TouchableOpacity>
               </View>
               <View style={styles.daysRow}>
-                {[0, 1, 2, 3, 4, 5, 6].map(day => (
+                {[0, 1, 2, 3, 4, 5, 6].map((day) => (
                   <TouchableOpacity
                     key={day}
                     style={[
@@ -361,212 +366,212 @@ export default function ScheduledNotificationsScreen() {
 
 function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
   return StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.mist,
-  },
-  scroll: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: spacing.md,
-    paddingBottom: spacing.xxl + spacing.lg,
-  },
-  emptyState: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: spacing.xxl * 2,
-  },
-  emptyText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.textSecondary,
-    marginBottom: spacing.xs,
-  },
-  emptyHint: {
-    fontSize: 14,
-    color: colors.textMuted,
-    textAlign: 'center',
-  },
-  scheduleCard: {
-    backgroundColor: colors.card,
-    borderRadius: radius.lg,
-    padding: spacing.md,
-    marginBottom: spacing.md,
-    ...shadows.soft,
-  },
-  scheduleHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.sm,
-  },
-  scheduleInfo: {
-    flex: 1,
-  },
-  scheduleTime: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginBottom: spacing.xs / 2,
-  },
-  scheduleLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.grass,
-    marginBottom: spacing.xs / 2,
-  },
-  scheduleDays: {
-    fontSize: 14,
-    color: colors.textSecondary,
-  },
-  scheduleActions: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  actionButton: {
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.md,
-    borderRadius: radius.md,
-    backgroundColor: colors.fog,
-  },
-  actionButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.grass,
-  },
-  deleteButton: {
-    backgroundColor: '#FFE5E5',
-  },
-  deleteButtonText: {
-    color: '#D32F2F',
-  },
-  addButton: {
-    position: 'absolute',
-    bottom: spacing.lg,
-    left: spacing.md,
-    right: spacing.md,
-    backgroundColor: colors.grass,
-    paddingVertical: spacing.md,
-    borderRadius: radius.lg,
-    alignItems: 'center',
-    ...shadows.medium,
-  },
-  addButtonText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    backgroundColor: colors.card,
-    borderTopLeftRadius: radius.lg,
-    borderTopRightRadius: radius.lg,
-    padding: spacing.lg,
-    maxHeight: '80%',
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginBottom: spacing.lg,
-  },
-  formGroup: {
-    marginBottom: spacing.lg,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.textSecondary,
-    marginBottom: spacing.sm,
-  },
-  labelRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.sm,
-  },
-  selectAllText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.grass,
-  },
-  timePicker: {
-    alignSelf: 'flex-start',
-  },
-  timeButton: {
-    backgroundColor: colors.fog,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    borderRadius: radius.md,
-    alignItems: 'center',
-  },
-  timeButtonText: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  daysRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  dayButton: {
-    width: 40,
-    height: 40,
-    borderRadius: radius.full,
-    backgroundColor: colors.fog,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  dayButtonSelected: {
-    backgroundColor: colors.grass,
-  },
-  dayButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.textSecondary,
-  },
-  dayButtonTextSelected: {
-    color: '#FFFFFF',
-  },
-  input: {
-    backgroundColor: colors.fog,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderRadius: radius.md,
-    fontSize: 16,
-    color: colors.textPrimary,
-  },
-  modalActions: {
-    flexDirection: 'row',
-    gap: spacing.md,
-    marginTop: spacing.lg,
-  },
-  modalButton: {
-    flex: 1,
-    paddingVertical: spacing.md,
-    borderRadius: radius.lg,
-    alignItems: 'center',
-  },
-  cancelButton: {
-    backgroundColor: colors.fog,
-  },
-  cancelButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.textSecondary,
-  },
-  saveButton: {
-    backgroundColor: colors.grass,
-  },
-  saveButtonText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
+    container: {
+      flex: 1,
+      backgroundColor: colors.mist,
+    },
+    scroll: {
+      flex: 1,
+    },
+    scrollContent: {
+      padding: spacing.md,
+      paddingBottom: spacing.xxl + spacing.lg,
+    },
+    emptyState: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: spacing.xxl * 2,
+    },
+    emptyText: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.textSecondary,
+      marginBottom: spacing.xs,
+    },
+    emptyHint: {
+      fontSize: 14,
+      color: colors.textMuted,
+      textAlign: 'center',
+    },
+    scheduleCard: {
+      backgroundColor: colors.card,
+      borderRadius: radius.lg,
+      padding: spacing.md,
+      marginBottom: spacing.md,
+      ...shadows.soft,
+    },
+    scheduleHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: spacing.sm,
+    },
+    scheduleInfo: {
+      flex: 1,
+    },
+    scheduleTime: {
+      fontSize: 24,
+      fontWeight: '700',
+      color: colors.textPrimary,
+      marginBottom: spacing.xs / 2,
+    },
+    scheduleLabel: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.grass,
+      marginBottom: spacing.xs / 2,
+    },
+    scheduleDays: {
+      fontSize: 14,
+      color: colors.textSecondary,
+    },
+    scheduleActions: {
+      flexDirection: 'row',
+      gap: spacing.sm,
+    },
+    actionButton: {
+      paddingVertical: spacing.xs,
+      paddingHorizontal: spacing.md,
+      borderRadius: radius.md,
+      backgroundColor: colors.fog,
+    },
+    actionButtonText: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.grass,
+    },
+    deleteButton: {
+      backgroundColor: '#FFE5E5',
+    },
+    deleteButtonText: {
+      color: '#D32F2F',
+    },
+    addButton: {
+      position: 'absolute',
+      bottom: spacing.lg,
+      left: spacing.md,
+      right: spacing.md,
+      backgroundColor: colors.grass,
+      paddingVertical: spacing.md,
+      borderRadius: radius.lg,
+      alignItems: 'center',
+      ...shadows.medium,
+    },
+    addButtonText: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: '#FFFFFF',
+    },
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      justifyContent: 'flex-end',
+    },
+    modalContent: {
+      backgroundColor: colors.card,
+      borderTopLeftRadius: radius.lg,
+      borderTopRightRadius: radius.lg,
+      padding: spacing.lg,
+      maxHeight: '80%',
+    },
+    modalTitle: {
+      fontSize: 20,
+      fontWeight: '700',
+      color: colors.textPrimary,
+      marginBottom: spacing.lg,
+    },
+    formGroup: {
+      marginBottom: spacing.lg,
+    },
+    label: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.textSecondary,
+      marginBottom: spacing.sm,
+    },
+    labelRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: spacing.sm,
+    },
+    selectAllText: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.grass,
+    },
+    timePicker: {
+      alignSelf: 'flex-start',
+    },
+    timeButton: {
+      backgroundColor: colors.fog,
+      paddingVertical: spacing.md,
+      paddingHorizontal: spacing.lg,
+      borderRadius: radius.md,
+      alignItems: 'center',
+    },
+    timeButtonText: {
+      fontSize: 24,
+      fontWeight: '700',
+      color: colors.textPrimary,
+    },
+    daysRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+    },
+    dayButton: {
+      width: 40,
+      height: 40,
+      borderRadius: radius.full,
+      backgroundColor: colors.fog,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    dayButtonSelected: {
+      backgroundColor: colors.grass,
+    },
+    dayButtonText: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.textSecondary,
+    },
+    dayButtonTextSelected: {
+      color: '#FFFFFF',
+    },
+    input: {
+      backgroundColor: colors.fog,
+      paddingVertical: spacing.sm,
+      paddingHorizontal: spacing.md,
+      borderRadius: radius.md,
+      fontSize: 16,
+      color: colors.textPrimary,
+    },
+    modalActions: {
+      flexDirection: 'row',
+      gap: spacing.md,
+      marginTop: spacing.lg,
+    },
+    modalButton: {
+      flex: 1,
+      paddingVertical: spacing.md,
+      borderRadius: radius.lg,
+      alignItems: 'center',
+    },
+    cancelButton: {
+      backgroundColor: colors.fog,
+    },
+    cancelButtonText: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.textSecondary,
+    },
+    saveButton: {
+      backgroundColor: colors.grass,
+    },
+    saveButtonText: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: '#FFFFFF',
+    },
   });
 }

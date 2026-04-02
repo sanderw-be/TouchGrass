@@ -87,24 +87,26 @@ src/
 
 When multiple sources (GPS, Health Connect) detect overlapping outdoor time, TouchGrass merges them intelligently while always preserving the user's own decisions:
 
-| Situation | Behaviour |
-|-----------|-----------|
-| Two unconfirmed automated sessions overlap | Merged into one session pending user review |
+| Situation                                                           | Behaviour                                                                                                             |
+| ------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| Two unconfirmed automated sessions overlap                          | Merged into one session pending user review                                                                           |
 | New automated session overlaps a **confirmed** session (any source) | Confirmed session is left intact; only the time outside the confirmed window is proposed as a new unconfirmed session |
-| New automated session is fully covered by a confirmed session | No new session is created |
-| New automated session overlaps a **denied** session | Sessions are merged; the denied (`userConfirmed = 0`) status is preserved |
-| Manual session submitted | Always inserted as a standalone entry, bypassing all merge logic entirely — regardless of `userConfirmed` status |
+| New automated session is fully covered by a confirmed session       | No new session is created                                                                                             |
+| New automated session overlaps a **denied** session                 | Sessions are merged; the denied (`userConfirmed = 0`) status is preserved                                             |
+| Manual session submitted                                            | Always inserted as a standalone entry, bypassing all merge logic entirely — regardless of `userConfirmed` status      |
 
 In short: **confirmed and manual sessions are never overwritten.** Automated sessions are only ever trimmed or split to fit around time the user has already approved.
 
 ## Platform-Specific Features
 
 ### Android
+
 - Health Connect integration for fitness data
 - Background location tracking
 - Notification channels for smart reminders
 
 ### iOS
+
 - HealthKit integration (coming soon)
 - Background location tracking
 - Notification permissions
@@ -160,6 +162,7 @@ For AI-assisted development, see [.gitlab/duo/agents.md](.gitlab/duo/agents.md).
 ## Privacy
 
 TouchGrass is designed with privacy in mind:
+
 - All location and health data is stored locally on your device
 - No data is sent to external servers
 - No user tracking or analytics

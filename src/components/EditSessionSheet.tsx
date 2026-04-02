@@ -1,7 +1,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
-  View, Text, StyleSheet, Modal, TouchableOpacity,
-  ScrollView, Platform, Alert,
+  View,
+  Text,
+  StyleSheet,
+  Modal,
+  TouchableOpacity,
+  ScrollView,
+  Platform,
+  Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -79,12 +85,7 @@ export default function EditSessionSheet({ visible, session, onClose, onSessionU
   if (!session) return null;
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="slide"
-      onRequestClose={onClose}
-    >
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onClose} />
 
       <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, spacing.sm) }]}>
@@ -117,13 +118,8 @@ export default function EditSessionSheet({ visible, session, onClose, onSessionU
             />
           ) : (
             <>
-              <TouchableOpacity
-                style={styles.timeButton}
-                onPress={() => setShowStartPicker(true)}
-              >
-                <Text style={styles.timeButtonText}>
-                  {formatLocalTime(startTime.getTime())}
-                </Text>
+              <TouchableOpacity style={styles.timeButton} onPress={() => setShowStartPicker(true)}>
+                <Text style={styles.timeButtonText}>{formatLocalTime(startTime.getTime())}</Text>
               </TouchableOpacity>
               {showStartPicker && (
                 <DateTimePicker
@@ -149,13 +145,8 @@ export default function EditSessionSheet({ visible, session, onClose, onSessionU
             />
           ) : (
             <>
-              <TouchableOpacity
-                style={styles.timeButton}
-                onPress={() => setShowEndPicker(true)}
-              >
-                <Text style={styles.timeButtonText}>
-                  {formatLocalTime(endTime.getTime())}
-                </Text>
+              <TouchableOpacity style={styles.timeButton} onPress={() => setShowEndPicker(true)}>
+                <Text style={styles.timeButtonText}>{formatLocalTime(endTime.getTime())}</Text>
               </TouchableOpacity>
               {showEndPicker && (
                 <DateTimePicker
@@ -176,11 +167,13 @@ export default function EditSessionSheet({ visible, session, onClose, onSessionU
               <Text style={styles.previewTime}>
                 {formatLocalTime(startTime.getTime())} – {formatLocalTime(endTime.getTime())}
               </Text>
-              <Text style={styles.previewDuration}>
-                {formatMinutes(calculatedDuration)}
-              </Text>
+              <Text style={styles.previewDuration}>{formatMinutes(calculatedDuration)}</Text>
               <Text style={styles.previewDate}>
-                {formatLocalDate(startTime.getTime(), { weekday: 'long', month: 'short', day: 'numeric' })}
+                {formatLocalDate(startTime.getTime(), {
+                  weekday: 'long',
+                  month: 'short',
+                  day: 'numeric',
+                })}
               </Text>
             </View>
           )}
@@ -197,132 +190,132 @@ export default function EditSessionSheet({ visible, session, onClose, onSessionU
 
 function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
   return StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-  },
-  sheet: {
-    backgroundColor: colors.mist,
-    borderTopLeftRadius: radius.lg,
-    borderTopRightRadius: radius.lg,
-    maxHeight: '85%',
-    ...shadows.medium,
-  },
-  handle: {
-    width: 40,
-    height: 4,
-    backgroundColor: colors.fog,
-    borderRadius: radius.full,
-    alignSelf: 'center',
-    marginTop: spacing.sm,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: spacing.md,
-    paddingBottom: spacing.sm,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  closeBtn: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: colors.fog,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  closeBtnText: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    fontWeight: '700',
-  },
-  content: {
-    padding: spacing.md,
-    paddingBottom: spacing.xxl,
-  },
-  hint: {
-    backgroundColor: colors.grassPale,
-    borderRadius: radius.md,
-    padding: spacing.sm,
-    marginBottom: spacing.sm,
-  },
-  hintText: {
-    fontSize: 13,
-    color: colors.grassDark,
-    textAlign: 'center',
-  },
-  sectionLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.textMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginBottom: spacing.sm,
-    marginTop: spacing.md,
-  },
-  timePicker: {
-    alignSelf: 'flex-start',
-    marginBottom: spacing.md,
-  },
-  timeButton: {
-    backgroundColor: colors.fog,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    borderRadius: radius.md,
-    alignItems: 'center',
-    marginBottom: spacing.md,
-  },
-  timeButtonText: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  preview: {
-    backgroundColor: colors.grassPale,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    marginBottom: spacing.md,
-    alignItems: 'center',
-  },
-  previewLabel: {
-    fontSize: 11,
-    color: colors.grassDark,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginBottom: spacing.xs,
-  },
-  previewTime: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: colors.grassDark,
-  },
-  previewDate: {
-    fontSize: 13,
-    color: colors.grass,
-    marginTop: 2,
-  },
-  previewDuration: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.grass,
-    marginTop: spacing.xs,
-  },
-  primaryBtn: {
-    backgroundColor: colors.grass,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    alignItems: 'center',
-    marginTop: spacing.sm,
-  },
-  primaryBtnText: {
-    color: colors.textInverse,
-    fontSize: 16,
-    fontWeight: '700',
-  },
+    backdrop: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.4)',
+    },
+    sheet: {
+      backgroundColor: colors.mist,
+      borderTopLeftRadius: radius.lg,
+      borderTopRightRadius: radius.lg,
+      maxHeight: '85%',
+      ...shadows.medium,
+    },
+    handle: {
+      width: 40,
+      height: 4,
+      backgroundColor: colors.fog,
+      borderRadius: radius.full,
+      alignSelf: 'center',
+      marginTop: spacing.sm,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      padding: spacing.md,
+      paddingBottom: spacing.sm,
+    },
+    title: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: colors.textPrimary,
+    },
+    closeBtn: {
+      width: 30,
+      height: 30,
+      borderRadius: 15,
+      backgroundColor: colors.fog,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    closeBtnText: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      fontWeight: '700',
+    },
+    content: {
+      padding: spacing.md,
+      paddingBottom: spacing.xxl,
+    },
+    hint: {
+      backgroundColor: colors.grassPale,
+      borderRadius: radius.md,
+      padding: spacing.sm,
+      marginBottom: spacing.sm,
+    },
+    hintText: {
+      fontSize: 13,
+      color: colors.grassDark,
+      textAlign: 'center',
+    },
+    sectionLabel: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: colors.textMuted,
+      textTransform: 'uppercase',
+      letterSpacing: 1,
+      marginBottom: spacing.sm,
+      marginTop: spacing.md,
+    },
+    timePicker: {
+      alignSelf: 'flex-start',
+      marginBottom: spacing.md,
+    },
+    timeButton: {
+      backgroundColor: colors.fog,
+      paddingVertical: spacing.md,
+      paddingHorizontal: spacing.lg,
+      borderRadius: radius.md,
+      alignItems: 'center',
+      marginBottom: spacing.md,
+    },
+    timeButtonText: {
+      fontSize: 24,
+      fontWeight: '700',
+      color: colors.textPrimary,
+    },
+    preview: {
+      backgroundColor: colors.grassPale,
+      borderRadius: radius.md,
+      padding: spacing.md,
+      marginBottom: spacing.md,
+      alignItems: 'center',
+    },
+    previewLabel: {
+      fontSize: 11,
+      color: colors.grassDark,
+      textTransform: 'uppercase',
+      letterSpacing: 1,
+      marginBottom: spacing.xs,
+    },
+    previewTime: {
+      fontSize: 20,
+      fontWeight: '700',
+      color: colors.grassDark,
+    },
+    previewDate: {
+      fontSize: 13,
+      color: colors.grass,
+      marginTop: 2,
+    },
+    previewDuration: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.grass,
+      marginTop: spacing.xs,
+    },
+    primaryBtn: {
+      backgroundColor: colors.grass,
+      borderRadius: radius.md,
+      padding: spacing.md,
+      alignItems: 'center',
+      marginTop: spacing.sm,
+    },
+    primaryBtnText: {
+      color: colors.textInverse,
+      fontSize: 16,
+      fontWeight: '700',
+    },
   });
 }

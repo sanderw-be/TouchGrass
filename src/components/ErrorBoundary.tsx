@@ -1,9 +1,15 @@
 import React from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, Linking, ScrollView, Platform,
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Linking,
+  ScrollView,
+  Platform,
 } from 'react-native';
 import Constants from 'expo-constants';
-import i18n from '../i18n';
+import i18n, { t } from '../i18n';
 import { colors as themeColors, spacing, radius, shadows } from '../utils/theme';
 
 // Google Form URLs — same as FeedbackSupportScreen
@@ -81,21 +87,21 @@ export default class ErrorBoundary extends React.Component<Props, State> {
         <View style={styles.container}>
           <ScrollView contentContainerStyle={styles.content} bounces={false}>
             <Text style={styles.emoji}>🌿</Text>
-            <Text style={styles.title}>{i18n.t('error_boundary_title')}</Text>
-            <Text style={styles.subtitle}>{i18n.t('error_boundary_subtitle')}</Text>
+            <Text style={styles.title}>{t('error_boundary_title')}</Text>
+            <Text style={styles.subtitle}>{t('error_boundary_subtitle')}</Text>
             <TouchableOpacity
               style={styles.primaryButton}
               onPress={this.handleReset}
               accessibilityRole="button"
             >
-              <Text style={styles.primaryButtonText}>{i18n.t('error_boundary_restart')}</Text>
+              <Text style={styles.primaryButtonText}>{t('error_boundary_restart')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.secondaryButton}
               onPress={this.handleReport}
               accessibilityRole="button"
             >
-              <Text style={styles.secondaryButtonText}>{i18n.t('error_boundary_report')}</Text>
+              <Text style={styles.secondaryButtonText}>{t('error_boundary_report')}</Text>
             </TouchableOpacity>
           </ScrollView>
         </View>

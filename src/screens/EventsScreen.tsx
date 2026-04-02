@@ -1,13 +1,23 @@
 import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView,
-  TouchableOpacity, RefreshControl, Alert,
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  RefreshControl,
+  Alert,
 } from 'react-native';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { useFocusEffect } from '@react-navigation/native';
 import {
-  getApprovedSessions, getStandardSessions, getAllSessionsIncludingDiscarded,
-  confirmSession, deleteSession, unDiscardSession, OutsideSession,
+  getApprovedSessions,
+  getStandardSessions,
+  getAllSessionsIncludingDiscarded,
+  confirmSession,
+  deleteSession,
+  unDiscardSession,
+  OutsideSession,
 } from '../storage/database';
 import { spacing, radius, shadows } from '../utils/theme';
 import { useTheme } from '../context/ThemeContext';
@@ -57,7 +67,11 @@ export default function EventsScreen() {
     setAllSessions(getAllSessionsIncludingDiscarded(from, to));
   }, []);
 
-  useFocusEffect(useCallback(() => { loadData(); }, [loadData]));
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [loadData])
+  );
 
   // Refresh whenever background work (e.g. Health Connect sync) inserts new sessions.
   useEffect(() => onSessionsChanged(loadData), [loadData]);
@@ -80,22 +94,18 @@ export default function EventsScreen() {
   };
 
   const handleDelete = (id: number) => {
-    Alert.alert(
-      t('session_delete_confirm_title'),
-      t('session_delete_confirm_body'),
-      [
-        { text: t('session_delete_cancel'), style: 'cancel' },
-        {
-          text: t('session_delete'),
-          style: 'destructive',
-          onPress: () => {
-            deleteSession(id);
-            setExpandedId(null);
-            loadData();
-          },
+    Alert.alert(t('session_delete_confirm_title'), t('session_delete_confirm_body'), [
+      { text: t('session_delete_cancel'), style: 'cancel' },
+      {
+        text: t('session_delete'),
+        style: 'destructive',
+        onPress: () => {
+          deleteSession(id);
+          setExpandedId(null);
+          loadData();
         },
-      ]
-    );
+      },
+    ]);
   };
 
   const handleReReview = (id: number) => {
@@ -111,13 +121,13 @@ export default function EventsScreen() {
   };
 
   const sessions =
-    tab === 'approved' ? approvedSessions :
-    tab === 'standard' ? standardSessions :
-    allSessions;
+    tab === 'approved' ? approvedSessions : tab === 'standard' ? standardSessions : allSessions;
 
   // standardSessions never contains discarded sessions (getStandardSessions filters them out),
   // but we guard explicitly so the intent is clear.
-  const pendingCount = standardSessions.filter(s => s.userConfirmed === null && s.discarded !== 1).length;
+  const pendingCount = standardSessions.filter(
+    (s) => s.userConfirmed === null && s.discarded !== 1
+  ).length;
 
   const grouped = groupByDay(sessions);
 
@@ -132,7 +142,10 @@ export default function EventsScreen() {
         visible={editSession !== null}
         session={editSession}
         onClose={() => setEditSession(null)}
-        onSessionUpdated={() => { setExpandedId(null); loadData(); }}
+        onSessionUpdated={() => {
+          setExpandedId(null);
+          loadData();
+        }}
       />
 
       {/* Tab switcher */}
@@ -150,7 +163,8 @@ export default function EventsScreen() {
           onPress={() => setTab('standard')}
         >
           <Text style={[styles.tabText, tab === 'standard' && styles.tabTextActive]}>
-            {t('events_tab_standard')}{pendingCount > 0 ? ` (${pendingCount})` : ''}
+            {t('events_tab_standard')}
+            {pendingCount > 0 ? ` (${pendingCount})` : ''}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -169,7 +183,9 @@ export default function EventsScreen() {
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.content}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.grass} />}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.grass} />
+        }
       >
         {sessions.length === 0 && (
           <View style={styles.empty}>
@@ -247,33 +263,36 @@ function SessionRow({
   const statusLabel = isDiscarded
     ? t('events_discarded')
     : isConfirmed
-    ? t('events_confirmed')
-    : isRejected
-    ? t('events_rejected')
-    : t('events_proposed');
+      ? t('events_confirmed')
+      : isRejected
+        ? t('events_rejected')
+        : t('events_proposed');
 
   const statusStyle = isDiscarded
     ? styles.badgeDiscarded
     : isConfirmed
-    ? styles.badgeConfirmed
-    : isRejected
-    ? styles.badgeRejected
-    : styles.badgeProposed;
+      ? styles.badgeConfirmed
+      : isRejected
+        ? styles.badgeRejected
+        : styles.badgeProposed;
 
   const statusTextStyle = isDiscarded
     ? styles.badgeDiscardedText
     : isConfirmed
-    ? styles.badgeConfirmedText
-    : isRejected
-    ? styles.badgeRejectedText
-    : styles.badgeProposedText;
+      ? styles.badgeConfirmedText
+      : isRejected
+        ? styles.badgeRejectedText
+        : styles.badgeProposedText;
 
   const isPending = !isConfirmed && !isRejected && !isDiscarded;
 
   const renderConfirmAction = () => (
     <TouchableOpacity
       style={[styles.swipeAction, styles.swipeConfirm]}
-      onPress={() => { swipeableRef.current?.close(); onConfirm(true); }}
+      onPress={() => {
+        swipeableRef.current?.close();
+        onConfirm(true);
+      }}
       testID="swipe-confirm-action"
     >
       <Text style={styles.swipeConfirmIcon}>✓</Text>
@@ -284,7 +303,10 @@ function SessionRow({
   const renderRejectAction = () => (
     <TouchableOpacity
       style={[styles.swipeAction, styles.swipeReject]}
-      onPress={() => { swipeableRef.current?.close(); onConfirm(false); }}
+      onPress={() => {
+        swipeableRef.current?.close();
+        onConfirm(false);
+      }}
       testID="swipe-reject-action"
     >
       <Text style={styles.swipeRejectIcon}>✕</Text>
@@ -314,7 +336,11 @@ function SessionRow({
             <Text style={styles.cardIcon}>{sourceIcon[session.source] ?? '🌿'}</Text>
             <View style={styles.cardInfo}>
               <Text style={styles.cardDate}>
-                {formatLocalDate(session.startTime, { weekday: 'short', month: 'short', day: 'numeric' })}
+                {formatLocalDate(session.startTime, {
+                  weekday: 'short',
+                  month: 'short',
+                  day: 'numeric',
+                })}
               </Text>
               <Text style={styles.cardTime}>
                 {formatLocalTime(session.startTime)} – {formatLocalTime(session.endTime)}
@@ -335,9 +361,7 @@ function SessionRow({
             <Text style={styles.confidencePct}>{confidencePct}%</Text>
           </View>
 
-          {session.notes && (
-            <Text style={styles.notes}>{session.notes}</Text>
-          )}
+          {session.notes && <Text style={styles.notes}>{session.notes}</Text>}
 
           {/* Edit times — always available */}
           <TouchableOpacity
@@ -431,155 +455,165 @@ function SessionRow({
 
 function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
   return StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.mist },
+    container: { flex: 1, backgroundColor: colors.mist },
 
-  tabs: {
-    flexDirection: 'row',
-    backgroundColor: colors.card,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.fog,
-    alignItems: 'center',
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-    borderBottomWidth: 2,
-    borderBottomColor: 'transparent',
-  },
-  tabActive: { borderBottomColor: colors.grass },
-  tabText: { fontSize: 13, color: colors.textMuted, fontWeight: '500' },
-  tabTextActive: { color: colors.grass, fontWeight: '700' },
-  addBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: colors.grass,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: spacing.md,
-    ...shadows.soft,
-  },
-  addBtnText: { fontSize: 22, color: colors.textInverse, lineHeight: 28, fontWeight: '300' },
+    tabs: {
+      flexDirection: 'row',
+      backgroundColor: colors.card,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.fog,
+      alignItems: 'center',
+    },
+    tab: {
+      flex: 1,
+      paddingVertical: spacing.md,
+      alignItems: 'center',
+      borderBottomWidth: 2,
+      borderBottomColor: 'transparent',
+    },
+    tabActive: { borderBottomColor: colors.grass },
+    tabText: { fontSize: 13, color: colors.textMuted, fontWeight: '500' },
+    tabTextActive: { color: colors.grass, fontWeight: '700' },
+    addBtn: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: colors.grass,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: spacing.md,
+      ...shadows.soft,
+    },
+    addBtnText: { fontSize: 22, color: colors.textInverse, lineHeight: 28, fontWeight: '300' },
 
-  scroll: { flex: 1 },
-  content: { paddingHorizontal: spacing.md, paddingBottom: spacing.xxl, paddingTop: spacing.sm },
+    scroll: { flex: 1 },
+    content: { paddingHorizontal: spacing.md, paddingBottom: spacing.xxl, paddingTop: spacing.sm },
 
-  empty: { alignItems: 'center', paddingVertical: spacing.xxl },
-  emptyIcon: { fontSize: 40, marginBottom: spacing.md },
-  emptyText: { fontSize: 15, color: colors.textSecondary },
+    empty: { alignItems: 'center', paddingVertical: spacing.xxl },
+    emptyIcon: { fontSize: 40, marginBottom: spacing.md },
+    emptyText: { fontSize: 15, color: colors.textSecondary },
 
-  dayHeader: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: colors.textMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginTop: spacing.md,
-    marginBottom: spacing.xs,
-  },
+    dayHeader: {
+      fontSize: 13,
+      fontWeight: '700',
+      color: colors.textMuted,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+      marginTop: spacing.md,
+      marginBottom: spacing.xs,
+    },
 
-  rowCard: {
-    backgroundColor: colors.card,
-    borderRadius: radius.md,
-    marginBottom: 6,
-    ...shadows.soft,
-  },
-  rowCardMuted: { opacity: 0.6 },
+    rowCard: {
+      backgroundColor: colors.card,
+      borderRadius: radius.md,
+      marginBottom: 6,
+      ...shadows.soft,
+    },
+    rowCardMuted: { opacity: 0.6 },
 
-  rowSummary: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    gap: spacing.sm,
-  },
-  rowTime: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.textPrimary,
-    minWidth: 110,
-  },
-  statusBadge: {
-    borderRadius: radius.full,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
-  },
-  statusBadgeText: { fontSize: 11, fontWeight: '600' },
-  badgeConfirmed: { backgroundColor: colors.grassPale },
-  badgeConfirmedText: { color: colors.grass },
-  badgeRejected: { backgroundColor: colors.fog },
-  badgeRejectedText: { color: colors.textMuted },
-  badgeProposed: { backgroundColor: colors.grassPale },
-  badgeProposedText: { color: colors.grass },
-  badgeDiscarded: { backgroundColor: colors.fog },
-  badgeDiscardedText: { color: colors.textMuted },
+    rowSummary: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      gap: spacing.sm,
+    },
+    rowTime: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.textPrimary,
+      minWidth: 110,
+    },
+    statusBadge: {
+      borderRadius: radius.full,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 2,
+    },
+    statusBadgeText: { fontSize: 11, fontWeight: '600' },
+    badgeConfirmed: { backgroundColor: colors.grassPale },
+    badgeConfirmedText: { color: colors.grass },
+    badgeRejected: { backgroundColor: colors.fog },
+    badgeRejectedText: { color: colors.textMuted },
+    badgeProposed: { backgroundColor: colors.grassPale },
+    badgeProposedText: { color: colors.grass },
+    badgeDiscarded: { backgroundColor: colors.fog },
+    badgeDiscardedText: { color: colors.textMuted },
 
-  rowIcon: { fontSize: 18, marginLeft: 'auto' },
-  rowChevron: { fontSize: 10, color: colors.textMuted },
+    rowIcon: { fontSize: 18, marginLeft: 'auto' },
+    rowChevron: { fontSize: 10, color: colors.textMuted },
 
-  rowDetail: {
-    paddingHorizontal: spacing.md,
-    paddingBottom: spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: colors.fog,
-  },
+    rowDetail: {
+      paddingHorizontal: spacing.md,
+      paddingBottom: spacing.md,
+      borderTopWidth: 1,
+      borderTopColor: colors.fog,
+    },
 
-  cardTop: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.sm, marginTop: spacing.sm },
-  cardIcon: { fontSize: 24, marginRight: spacing.sm },
-  cardInfo: { flex: 1 },
-  cardDate: { fontSize: 13, color: colors.textMuted },
-  cardTime: { fontSize: 14, color: colors.textSecondary, marginTop: 2 },
-  cardRight: { alignItems: 'flex-end' },
-  cardDuration: { fontSize: 18, fontWeight: '700', color: colors.textPrimary },
-  cardSource: { fontSize: 11, color: colors.textMuted, marginTop: 2 },
+    cardTop: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: spacing.sm,
+      marginTop: spacing.sm,
+    },
+    cardIcon: { fontSize: 24, marginRight: spacing.sm },
+    cardInfo: { flex: 1 },
+    cardDate: { fontSize: 13, color: colors.textMuted },
+    cardTime: { fontSize: 14, color: colors.textSecondary, marginTop: 2 },
+    cardRight: { alignItems: 'flex-end' },
+    cardDuration: { fontSize: 18, fontWeight: '700', color: colors.textPrimary },
+    cardSource: { fontSize: 11, color: colors.textMuted, marginTop: 2 },
 
-  confidenceRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    marginBottom: spacing.xs,
-  },
-  confidenceLabel: { fontSize: 11, color: colors.textMuted, width: 72 },
-  confidenceBar: {
-    flex: 1,
-    height: 4,
-    backgroundColor: colors.fog,
-    borderRadius: radius.full,
-    overflow: 'hidden',
-  },
-  confidenceFill: { height: '100%', backgroundColor: colors.grass, borderRadius: radius.full },
-  confidencePct: { fontSize: 11, color: colors.textMuted, width: 32, textAlign: 'right' },
+    confidenceRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      marginBottom: spacing.xs,
+    },
+    confidenceLabel: { fontSize: 11, color: colors.textMuted, width: 72 },
+    confidenceBar: {
+      flex: 1,
+      height: 4,
+      backgroundColor: colors.fog,
+      borderRadius: radius.full,
+      overflow: 'hidden',
+    },
+    confidenceFill: { height: '100%', backgroundColor: colors.grass, borderRadius: radius.full },
+    confidencePct: { fontSize: 11, color: colors.textMuted, width: 32, textAlign: 'right' },
 
-  notes: { fontSize: 12, color: colors.textMuted, marginBottom: spacing.sm, fontStyle: 'italic' },
+    notes: { fontSize: 12, color: colors.textMuted, marginBottom: spacing.sm, fontStyle: 'italic' },
 
-  actions: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm },
-  actionBtn: {
-    flex: 1,
-    borderRadius: radius.md,
-    paddingVertical: spacing.sm,
-    alignItems: 'center',
-  },
-  actionReject: { backgroundColor: colors.fog },
-  actionConfirm: { backgroundColor: colors.grass },
-  actionSecondary: { backgroundColor: colors.errorSurface },
-  actionEditTimes: { backgroundColor: colors.fog, marginTop: spacing.sm },
-  actionRejectText: { fontSize: 14, color: colors.textSecondary, fontWeight: '600' },
-  actionConfirmText: { fontSize: 14, color: colors.textInverse, fontWeight: '600' },
-  actionSecondaryText: { fontSize: 14, color: colors.error, fontWeight: '600' },
-  actionEditTimesText: { fontSize: 14, color: colors.textPrimary, fontWeight: '600' },
+    actions: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm },
+    actionBtn: {
+      flex: 1,
+      borderRadius: radius.md,
+      paddingVertical: spacing.sm,
+      alignItems: 'center',
+    },
+    actionReject: { backgroundColor: colors.fog },
+    actionConfirm: { backgroundColor: colors.grass },
+    actionSecondary: { backgroundColor: colors.errorSurface },
+    actionEditTimes: { backgroundColor: colors.fog, marginTop: spacing.sm },
+    actionRejectText: { fontSize: 14, color: colors.textSecondary, fontWeight: '600' },
+    actionConfirmText: { fontSize: 14, color: colors.textInverse, fontWeight: '600' },
+    actionSecondaryText: { fontSize: 14, color: colors.error, fontWeight: '600' },
+    actionEditTimesText: { fontSize: 14, color: colors.textPrimary, fontWeight: '600' },
 
-  swipeAction: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: 88,
-    borderRadius: radius.md,
-  },
-  swipeConfirm: { backgroundColor: colors.grass },
-  swipeConfirmIcon: { fontSize: 22, color: colors.textInverse, fontWeight: '700' },
-  swipeConfirmLabel: { fontSize: 11, color: colors.textInverse, fontWeight: '600', marginTop: 2 },
-  swipeReject: { backgroundColor: colors.fog },
-  swipeRejectIcon: { fontSize: 22, color: colors.textSecondary, fontWeight: '700' },
-  swipeRejectLabel: { fontSize: 11, color: colors.textSecondary, fontWeight: '600', marginTop: 2 },
+    swipeAction: {
+      justifyContent: 'center',
+      alignItems: 'center',
+      width: 88,
+      borderRadius: radius.md,
+    },
+    swipeConfirm: { backgroundColor: colors.grass },
+    swipeConfirmIcon: { fontSize: 22, color: colors.textInverse, fontWeight: '700' },
+    swipeConfirmLabel: { fontSize: 11, color: colors.textInverse, fontWeight: '600', marginTop: 2 },
+    swipeReject: { backgroundColor: colors.fog },
+    swipeRejectIcon: { fontSize: 22, color: colors.textSecondary, fontWeight: '700' },
+    swipeRejectLabel: {
+      fontSize: 11,
+      color: colors.textSecondary,
+      fontWeight: '600',
+      marginTop: 2,
+    },
   });
 }

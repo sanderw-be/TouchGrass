@@ -29,7 +29,7 @@
         "android.permission.USE_EXACT_ALARM",
         "android.permission.health.READ_EXERCISE",
         "android.permission.health.READ_STEPS",
-       "android.permission.health.READ_ACTIVE_CALORIES_BURNED",
+        "android.permission.health.READ_ACTIVE_CALORIES_BURNED",
         "android.permission.health.READ_DISTANCE"
       ]
     },
@@ -53,43 +53,41 @@
       [
         "./withAbiFilters",
         {
-          "abiFilters": [
-            "arm64-v8a"
-          ]
+          "abiFilters": ["arm64-v8a"]
         }
       ],
-  [
-  "expo-build-properties",
-  {
-    "android": {
-      "minSdkVersion": 26,
-      "buildArchs": ["arm64-v8a"],
-      "enableProguardInReleaseBuilds": true,
-      "enableShrinkResourcesInReleaseBuilds": true,
-      "extraProguardRules": "-keep class expo.modules.adapters.react.apploader.RNHeadlessAppLoader { *; }\n-keep interface expo.modules.apploader.HeadlessAppLoader { *; }\n-keep class expo.modules.apploader.AppLoaderProvider { *; }\n-keep class expo.modules.calendar.** { *; }",
-      "manifestQueries": {
-        "intents": [
-          {
-            "action": "androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE"
-          },
-          {
-            "action": "android.settings.HEALTH_CONNECT_SETTINGS"
-          },
-          {
-            "action": "android.health.connect.action.MANAGE_HEALTH_PERMISSIONS"
-          },
-          {
-            "action": "android.health.connect.action.HEALTH_HOME_SETTINGS"
-          }
-        ]
-      },
-      "queries": [
+      [
+        "expo-build-properties",
         {
-          "package": "com.google.android.apps.healthdata"
+          "android": {
+            "minSdkVersion": 26,
+            "buildArchs": ["arm64-v8a"],
+            "enableProguardInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true,
+            "extraProguardRules": "-keep class expo.modules.adapters.react.apploader.RNHeadlessAppLoader { *; }\n-keep interface expo.modules.apploader.HeadlessAppLoader { *; }\n-keep class expo.modules.apploader.AppLoaderProvider { *; }\n-keep class expo.modules.calendar.** { *; }",
+            "manifestQueries": {
+              "intents": [
+                {
+                  "action": "androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE"
+                },
+                {
+                  "action": "android.settings.HEALTH_CONNECT_SETTINGS"
+                },
+                {
+                  "action": "android.health.connect.action.MANAGE_HEALTH_PERMISSIONS"
+                },
+                {
+                  "action": "android.health.connect.action.HEALTH_HOME_SETTINGS"
+                }
+              ]
+            },
+            "queries": [
+              {
+                "package": "com.google.android.apps.healthdata"
+              }
+            ]
+          }
         }
-      ]
-    }
-  }
       ],
       "expo-health-connect",
       "expo-sqlite",
