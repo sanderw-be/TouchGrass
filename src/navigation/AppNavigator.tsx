@@ -12,11 +12,12 @@ import EventsScreen from '../screens/EventsScreen';
 import GoalsScreen from '../screens/GoalsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import { fetchWeatherForecast, isWeatherDataAvailable } from '../weather/weatherService';
-import { getSetting } from '../storage/database';
+import { getSetting, countProposedSessions } from '../storage/database';
 import { countPermissionIssues } from '../utils/permissionIssues';
 import { spacing } from '../utils/theme';
 import { useTheme } from '../context/ThemeContext';
 import { t } from '../i18n';
+import { onSessionsChanged } from '../utils/sessionsChangedEmitter';
 const WeatherSettingsScreen = lazy(() => import('../screens/WeatherSettingsScreen'));
 const ScheduledNotificationsScreen = lazy(() => import('../screens/ScheduledNotificationsScreen'));
 const KnownLocationsScreen = lazy(() => import('../screens/KnownLocationsScreen'));
@@ -156,9 +157,11 @@ function SettingsStackNavigator() {
 function TabNavigator({
   goalsBadge,
   settingsBadge,
+  eventsBadge,
 }: {
   goalsBadge?: number;
   settingsBadge?: number;
+  eventsBadge?: number;
 }) {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
@@ -192,7 +195,15 @@ function TabNavigator({
         component={HomeScreen}
         options={{ title: t('nav_home'), headerTitle: () => <HomeHeaderTitle /> }}
       />
-      <Tab.Screen name="Events" component={EventsScreen} options={{ title: t('nav_events') }} />
+      <Tab.Screen
+        name="Events"
+        component={EventsScreen}
+        options={{
+          title: t('nav_events'),
+          tabBarBadge: eventsBadge,
+          tabBarBadgeStyle: { backgroundColor: colors.grass },
+        }}
+      />
       <Tab.Screen name="History" component={HistoryScreen} options={{ title: t('nav_history') }} />
       <Tab.Screen
         name="Goals"
@@ -226,6 +237,16 @@ export default function AppNavigator({
   const appState = useRef(AppState.currentState);
   const [goalsBadge, setGoalsBadge] = useState<number | undefined>(undefined);
   const [settingsBadge, setSettingsBadge] = useState<number | undefined>(undefined);
+  const [eventsBadge, setEventsBadge] = useState<number | undefined>(undefined);
+
+  const refreshEventsBadge = useCallback(() => {
+    try {
+      const count = countProposedSessions();
+      setEventsBadge(count > 0 ? count : undefined);
+    } catch {
+      // Badge refresh is best-effort; never crash the navigator
+    }
+  }, []);
 
   const refreshPermissionBadges = useCallback(async () => {
     try {
@@ -243,6 +264,10 @@ export default function AppNavigator({
   useEffect(() => {
     // Initial badge check
     refreshPermissionBadges();
+    refreshEventsBadge();
+
+    // Refresh events badge whenever sessions change (e.g. background sync)
+    const unsubscribe = onSessionsChanged(refreshEventsBadge);
 
     const subscription = AppState.addEventListener('change', async (nextAppState) => {
       // When app comes to foreground, refresh weather if stale and recheck permission badges
@@ -256,18 +281,24 @@ export default function AppNavigator({
           }
         }
         refreshPermissionBadges();
+        refreshEventsBadge();
       }
       appState.current = nextAppState;
     });
 
     return () => {
+      unsubscribe();
       subscription.remove();
     };
-  }, [refreshPermissionBadges]);
+  }, [refreshPermissionBadges, refreshEventsBadge]);
 
   return (
     <NavigationContainer initialState={initialState} onStateChange={onStateChange}>
-      <TabNavigator goalsBadge={goalsBadge} settingsBadge={settingsBadge} />
+      <TabNavigator
+        goalsBadge={goalsBadge}
+        settingsBadge={settingsBadge}
+        eventsBadge={eventsBadge}
+      />
     </NavigationContainer>
   );
 }

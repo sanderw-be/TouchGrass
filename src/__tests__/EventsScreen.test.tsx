@@ -8,12 +8,16 @@ jest.mock('../i18n', () => ({
 }));
 
 jest.mock('../storage/database', () => ({
-  getApprovedSessions: jest.fn(() => []),
-  getStandardSessions: jest.fn(() => []),
   getAllSessionsIncludingDiscarded: jest.fn(() => []),
+  autoCloseOldProposedSessions: jest.fn(() => 0),
   confirmSession: jest.fn(),
   deleteSession: jest.fn(),
   unDiscardSession: jest.fn(),
+}));
+
+jest.mock('../utils/sessionsChangedEmitter', () => ({
+  onSessionsChanged: jest.fn(() => () => {}),
+  emitSessionsChanged: jest.fn(),
 }));
 
 jest.mock('../utils/helpers', () => ({
@@ -46,7 +50,13 @@ jest.mock('@react-navigation/native', () => {
 });
 
 import EventsScreen from '../screens/EventsScreen';
-import { getStandardSessions, confirmSession, OutsideSession } from '../storage/database';
+import {
+  getAllSessionsIncludingDiscarded,
+  autoCloseOldProposedSessions,
+  confirmSession,
+  OutsideSession,
+} from '../storage/database';
+import { emitSessionsChanged } from '../utils/sessionsChangedEmitter';
 
 const mockPendingSession: OutsideSession = {
   id: 1,
@@ -74,12 +84,38 @@ const mockRejectedSession: OutsideSession = {
 describe('EventsScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    (getStandardSessions as jest.Mock).mockReturnValue([mockPendingSession]);
+    (getAllSessionsIncludingDiscarded as jest.Mock).mockReturnValue([mockPendingSession]);
   });
 
-  it('renders without crashing', () => {
+  it('renders without crashing with all three toggles', () => {
+    const { getByTestId } = render(<EventsScreen />);
+    expect(getByTestId('toggle-confirmed')).toBeTruthy();
+    expect(getByTestId('toggle-review')).toBeTruthy();
+    expect(getByTestId('toggle-rejected')).toBeTruthy();
+  });
+
+  it('calls autoCloseOldProposedSessions on load', () => {
+    render(<EventsScreen />);
+    expect(autoCloseOldProposedSessions).toHaveBeenCalled();
+  });
+
+  it('shows pending sessions by default (includeReview = true)', () => {
     const { getByText } = render(<EventsScreen />);
-    expect(getByText('events_tab_standard (1)')).toBeTruthy();
+    // The pending session is visible because includeReview is enabled by default
+    expect(getByText('10:00–10:00')).toBeTruthy();
+  });
+
+  it('shows confirmed sessions by default (includeConfirmed = true)', () => {
+    (getAllSessionsIncludingDiscarded as jest.Mock).mockReturnValue([mockConfirmedSession]);
+    const { getByText } = render(<EventsScreen />);
+    expect(getByText('10:00–10:00')).toBeTruthy();
+  });
+
+  it('hides confirmed sessions when Confirmed toggle is turned off', () => {
+    (getAllSessionsIncludingDiscarded as jest.Mock).mockReturnValue([mockConfirmedSession]);
+    const { getByTestId, queryByText } = render(<EventsScreen />);
+    fireEvent.press(getByTestId('toggle-confirmed'));
+    expect(queryByText('10:00–10:00')).toBeNull();
   });
 
   it('shows swipe confirm action for pending sessions', () => {
@@ -100,16 +136,49 @@ describe('EventsScreen', () => {
     expect(confirmSession).toHaveBeenCalledWith(1, false);
   });
 
+  it('emits session change after swipe confirm so the nav badge updates', () => {
+    const { getByTestId } = render(<EventsScreen />);
+    fireEvent.press(getByTestId('swipe-confirm-action'));
+    expect(emitSessionsChanged).toHaveBeenCalled();
+  });
+
+  it('emits session change after swipe reject so the nav badge updates', () => {
+    const { getByTestId } = render(<EventsScreen />);
+    fireEvent.press(getByTestId('swipe-reject-action'));
+    expect(emitSessionsChanged).toHaveBeenCalled();
+  });
+
   it('does not show swipe actions for confirmed sessions', () => {
-    (getStandardSessions as jest.Mock).mockReturnValue([mockConfirmedSession]);
+    (getAllSessionsIncludingDiscarded as jest.Mock).mockReturnValue([mockConfirmedSession]);
     const { queryByTestId } = render(<EventsScreen />);
     expect(queryByTestId('swipe-confirm-action')).toBeNull();
     expect(queryByTestId('swipe-reject-action')).toBeNull();
   });
 
+  it('hides rejected sessions by default (includeRejected = false)', () => {
+    (getAllSessionsIncludingDiscarded as jest.Mock).mockReturnValue([mockRejectedSession]);
+    const { queryByText } = render(<EventsScreen />);
+    // Rejected sessions are hidden by default; only approved/in-review are shown
+    expect(queryByText('10:00–10:00')).toBeNull();
+  });
+
+  it('shows rejected sessions after toggling includeRejected on', () => {
+    (getAllSessionsIncludingDiscarded as jest.Mock).mockReturnValue([
+      mockConfirmedSession,
+      mockRejectedSession,
+    ]);
+    const { getByTestId, getAllByText } = render(<EventsScreen />);
+    // Toggle "Rejected" on
+    fireEvent.press(getByTestId('toggle-rejected'));
+    // Both sessions should now be visible (they share the same time mock)
+    expect(getAllByText('10:00–10:00').length).toBeGreaterThanOrEqual(2);
+  });
+
   it('does not show swipe actions for rejected sessions', () => {
-    (getStandardSessions as jest.Mock).mockReturnValue([mockRejectedSession]);
-    const { queryByTestId } = render(<EventsScreen />);
+    (getAllSessionsIncludingDiscarded as jest.Mock).mockReturnValue([mockRejectedSession]);
+    const { queryByTestId, getByTestId } = render(<EventsScreen />);
+    // Toggle rejected on to make the session visible
+    fireEvent.press(getByTestId('toggle-rejected'));
     expect(queryByTestId('swipe-confirm-action')).toBeNull();
     expect(queryByTestId('swipe-reject-action')).toBeNull();
   });

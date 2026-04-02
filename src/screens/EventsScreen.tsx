@@ -13,9 +13,8 @@ import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import {
-  getApprovedSessions,
-  getStandardSessions,
   getAllSessionsIncludingDiscarded,
+  autoCloseOldProposedSessions,
   confirmSession,
   deleteSession,
   unDiscardSession,
@@ -28,10 +27,8 @@ import { t, formatLocalDate, formatLocalTime } from '../i18n';
 import ManualSessionSheet from '../components/ManualSessionSheet';
 import EditSessionSheet from '../components/EditSessionSheet';
 import { updateTimeSlotProbability } from '../detection/sessionConfidence';
-import { onSessionsChanged } from '../utils/sessionsChangedEmitter';
+import { onSessionsChanged, emitSessionsChanged } from '../utils/sessionsChangedEmitter';
 import { cancelRemindersIfGoalReached } from '../notifications/notificationManager';
-
-type Tab = 'approved' | 'standard' | 'all';
 
 const FOUR_WEEKS_AGO = () => Date.now() - 28 * 24 * 60 * 60 * 1000;
 
@@ -52,9 +49,9 @@ function groupByDay(sessions: OutsideSession[]): { dayMs: number; sessions: Outs
 export default function EventsScreen() {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
-  const [tab, setTab] = useState<Tab>('standard');
-  const [approvedSessions, setApprovedSessions] = useState<OutsideSession[]>([]);
-  const [standardSessions, setStandardSessions] = useState<OutsideSession[]>([]);
+  const [includeConfirmed, setIncludeConfirmed] = useState(true);
+  const [includeReview, setIncludeReview] = useState(true);
+  const [includeRejected, setIncludeRejected] = useState(false);
   const [allSessions, setAllSessions] = useState<OutsideSession[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [sheetVisible, setSheetVisible] = useState(false);
@@ -62,10 +59,9 @@ export default function EventsScreen() {
   const [editSession, setEditSession] = useState<OutsideSession | null>(null);
 
   const loadData = useCallback(() => {
+    autoCloseOldProposedSessions();
     const from = FOUR_WEEKS_AGO();
     const to = Date.now();
-    setApprovedSessions(getApprovedSessions(from, to));
-    setStandardSessions(getStandardSessions(from, to));
     setAllSessions(getAllSessionsIncludingDiscarded(from, to));
   }, []);
 
@@ -88,11 +84,12 @@ export default function EventsScreen() {
     confirmSession(id, confirmed);
     const d = new Date(startTime);
     updateTimeSlotProbability(d.getHours(), d.getDay(), confirmed);
+    emitSessionsChanged();
+    loadData();
     if (confirmed) {
       await cancelRemindersIfGoalReached();
     }
     setExpandedId(null);
-    loadData();
   };
 
   const handleDelete = (id: number) => {
@@ -103,6 +100,7 @@ export default function EventsScreen() {
         style: 'destructive',
         onPress: () => {
           deleteSession(id);
+          emitSessionsChanged();
           setExpandedId(null);
           loadData();
         },
@@ -112,24 +110,27 @@ export default function EventsScreen() {
 
   const handleReReview = (id: number) => {
     confirmSession(id, null);
+    emitSessionsChanged();
     setExpandedId(null);
     loadData();
   };
 
   const handleUnDiscard = (id: number) => {
     unDiscardSession(id);
+    emitSessionsChanged();
     setExpandedId(null);
     loadData();
   };
 
-  const sessions =
-    tab === 'approved' ? approvedSessions : tab === 'standard' ? standardSessions : allSessions;
-
-  // standardSessions never contains discarded sessions (getStandardSessions filters them out),
-  // but we guard explicitly so the intent is clear.
-  const pendingCount = standardSessions.filter(
+  const reviewCount = allSessions.filter(
     (s) => s.userConfirmed === null && s.discarded !== 1
   ).length;
+
+  const sessions = allSessions.filter((s) => {
+    if (s.userConfirmed === 1) return includeConfirmed; // approved — shown when Confirmed toggle is on
+    if (s.userConfirmed === null && s.discarded !== 1) return includeReview; // proposed/in-review
+    return includeRejected; // rejected (userConfirmed = 0) or discarded
+  });
 
   const grouped = groupByDay(sessions);
 
@@ -150,31 +151,39 @@ export default function EventsScreen() {
         }}
       />
 
-      {/* Tab switcher */}
+      {/* Filter toggles */}
       <View style={styles.tabs}>
         <TouchableOpacity
-          style={[styles.tab, tab === 'approved' && styles.tabActive]}
-          onPress={() => setTab('approved')}
+          style={[styles.toggle, includeConfirmed && styles.toggleActive]}
+          onPress={() => setIncludeConfirmed((v) => !v)}
+          testID="toggle-confirmed"
         >
-          <Text style={[styles.tabText, tab === 'approved' && styles.tabTextActive]}>
-            {t('events_tab_approved')}
+          <Text style={[styles.toggleText, includeConfirmed && styles.toggleTextActive]}>
+            {t('events_toggle_confirmed')}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.tab, tab === 'standard' && styles.tabActive]}
-          onPress={() => setTab('standard')}
+          style={[styles.toggle, includeReview && styles.toggleActive]}
+          onPress={() => setIncludeReview((v) => !v)}
+          testID="toggle-review"
         >
-          <Text style={[styles.tabText, tab === 'standard' && styles.tabTextActive]}>
-            {t('events_tab_standard')}
-            {pendingCount > 0 ? ` (${pendingCount})` : ''}
+          <Text style={[styles.toggleText, includeReview && styles.toggleTextActive]}>
+            {t('events_toggle_review')}
+            {reviewCount > 0 ? (
+              <Text style={[styles.toggleBadge, includeReview && styles.toggleBadgeActive]}>
+                {' '}
+                {reviewCount}
+              </Text>
+            ) : null}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.tab, tab === 'all' && styles.tabActive]}
-          onPress={() => setTab('all')}
+          style={[styles.toggle, includeRejected && styles.toggleActive]}
+          onPress={() => setIncludeRejected((v) => !v)}
+          testID="toggle-rejected"
         >
-          <Text style={[styles.tabText, tab === 'all' && styles.tabTextActive]}>
-            {t('events_tab_all')}
+          <Text style={[styles.toggleText, includeRejected && styles.toggleTextActive]}>
+            {t('events_toggle_rejected')}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.addBtn} onPress={() => setSheetVisible(true)}>
@@ -481,17 +490,21 @@ function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
       borderBottomWidth: 1,
       borderBottomColor: colors.fog,
       alignItems: 'center',
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.sm,
+      gap: spacing.sm,
     },
-    tab: {
-      flex: 1,
-      paddingVertical: spacing.md,
-      alignItems: 'center',
-      borderBottomWidth: 2,
-      borderBottomColor: 'transparent',
+    toggle: {
+      borderRadius: radius.full,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.xs,
+      backgroundColor: colors.fog,
     },
-    tabActive: { borderBottomColor: colors.grass },
-    tabText: { fontSize: 13, color: colors.textMuted, fontWeight: '500' },
-    tabTextActive: { color: colors.grass, fontWeight: '700' },
+    toggleActive: { backgroundColor: colors.grassPale },
+    toggleText: { fontSize: 13, color: colors.textMuted, fontWeight: '600' },
+    toggleTextActive: { color: colors.grass },
+    toggleBadge: { fontSize: 13, color: colors.textMuted, fontWeight: '700' },
+    toggleBadgeActive: { color: colors.grass },
     addBtn: {
       width: 32,
       height: 32,
@@ -499,7 +512,7 @@ function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
       backgroundColor: colors.grass,
       alignItems: 'center',
       justifyContent: 'center',
-      marginRight: spacing.md,
+      marginLeft: 'auto',
       ...shadows.soft,
     },
     addBtnText: { fontSize: 22, color: colors.textInverse, lineHeight: 28, fontWeight: '300' },
