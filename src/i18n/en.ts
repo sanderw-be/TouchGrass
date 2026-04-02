@@ -349,8 +349,8 @@ export default {
   notif_reason_more_often: 'you prefer reminders around this time',
 
   // Streak encouragement for notifications
-  notif_streak_daily: "Keep your {{count}} day streak going!",
-  notif_streak_weekly: "Maintain your {{count}} week streak!",
+  notif_streak_daily: 'Keep your {{count}} day streak going!',
+  notif_streak_weekly: 'Maintain your {{count}} week streak!',
   notif_streak_daily_at_risk: "Don't break your {{count}} day streak!",
   notif_streak_weekly_at_risk: "Don't break your {{count}} week streak!",
 

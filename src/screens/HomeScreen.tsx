@@ -195,7 +195,9 @@ export default function HomeScreen() {
           <View style={styles.streakContainer}>
             {dailyStreak > 0 && (
               <Text style={styles.streakText}>
-                {t(dailyStreak === 1 ? 'streak_daily_singular' : 'streak_daily_plural', { count: dailyStreak })}
+                {t(dailyStreak === 1 ? 'streak_daily_singular' : 'streak_daily_plural', {
+                  count: dailyStreak,
+                })}
               </Text>
             )}
             {dailyStreak > 0 && weeklyStreak > 0 && (
@@ -203,7 +205,9 @@ export default function HomeScreen() {
             )}
             {weeklyStreak > 0 && (
               <Text style={styles.streakText}>
-                {t(weeklyStreak === 1 ? 'streak_weekly_singular' : 'streak_weekly_plural', { count: weeklyStreak })}
+                {t(weeklyStreak === 1 ? 'streak_weekly_singular' : 'streak_weekly_plural', {
+                  count: weeklyStreak,
+                })}
               </Text>
             )}
           </View>

@@ -352,7 +352,13 @@ export async function scheduleNextReminder(): Promise<void> {
   await cancelAutomaticReminders();
 
   // Build message based on progress (this is a planned smart reminder)
-  const { title, body } = buildReminderMessage(todayMinutes, dailyTarget, undefined, contributors, false);
+  const { title, body } = buildReminderMessage(
+    todayMinutes,
+    dailyTarget,
+    undefined,
+    contributors,
+    false
+  );
 
   await Notifications.scheduleNotificationAsync({
     content: {

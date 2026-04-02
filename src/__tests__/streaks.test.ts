@@ -1,16 +1,7 @@
 // Mock expo-sqlite before importing database module
 jest.mock('expo-sqlite');
 
-import {
-  initDatabase,
-  insertSession,
-  setDailyGoal,
-  setWeeklyGoal,
-  getDailyStreak,
-  getWeeklyStreak,
-  startOfDay,
-  confirmSession,
-} from '../storage/database';
+import { getDailyStreak, getWeeklyStreak } from '../storage/database';
 
 describe('Streak Tracking', () => {
   describe('getDailyStreak', () => {
@@ -54,4 +45,3 @@ describe('Streak Tracking', () => {
     });
   });
 });
-

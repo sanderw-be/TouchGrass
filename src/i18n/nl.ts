@@ -354,10 +354,10 @@ export default {
   notif_reason_more_often: 'je geeft de voorkeur aan herinneringen rond deze tijd',
 
   // Streak encouragement for notifications
-  notif_streak_daily: "Houd je {{count}} dagen streak vol!",
-  notif_streak_weekly: "Behoud je {{count}} weken streak!",
-  notif_streak_daily_at_risk: "Breek je {{count}} dagen streak niet!",
-  notif_streak_weekly_at_risk: "Breek je {{count}} weken streak niet!",
+  notif_streak_daily: 'Houd je {{count}} dagen streak vol!',
+  notif_streak_weekly: 'Behoud je {{count}} weken streak!',
+  notif_streak_daily_at_risk: 'Breek je {{count}} dagen streak niet!',
+  notif_streak_weekly_at_risk: 'Breek je {{count}} weken streak niet!',
 
   // Verbindingswoord tussen twee reden-beschrijvingen ("X, en Y.")
   notif_contributor_and: 'en',
