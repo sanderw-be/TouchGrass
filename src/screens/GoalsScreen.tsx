@@ -16,6 +16,7 @@ import {
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import {
   getCurrentDailyGoal,
   getCurrentWeeklyGoal,
@@ -270,7 +271,7 @@ export default function GoalsScreen() {
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
         {/* WHO recommendation note */}
         <View style={styles.tipCard}>
-          <Text style={styles.tipIcon}>💡</Text>
+          <Ionicons name="bulb-outline" size={18} color={colors.grassDark} style={styles.tipIcon} />
           <Text style={styles.tipText}>{t('goals_who_tip')}</Text>
         </View>
 
@@ -399,7 +400,9 @@ export default function GoalsScreen() {
         <View style={styles.settingsCard}>
           <TouchableOpacity onPress={cycleSmartRemindersCount}>
             <SettingRow
-              icon="🔔"
+              icon={
+                <Ionicons name="notifications-outline" size={20} color={colors.textSecondary} />
+              }
               label={t('settings_reminders_label')}
               sublabel={t('settings_reminders_sublabel')}
               right={
@@ -414,7 +417,7 @@ export default function GoalsScreen() {
           <Divider />
           <TouchableOpacity onPress={cycleCatchupRemindersCount}>
             <SettingRow
-              icon="🎯"
+              icon={<Ionicons name="flag-outline" size={20} color={colors.textSecondary} />}
               label={t('settings_catchup_label')}
               sublabel={t('settings_catchup_sublabel')}
               right={
@@ -427,15 +430,15 @@ export default function GoalsScreen() {
           <Divider />
           <TouchableOpacity onPress={() => navigation.navigate('ScheduledNotifications')}>
             <SettingRow
-              icon="📅"
+              icon={<Ionicons name="calendar-outline" size={20} color={colors.textSecondary} />}
               label={t('settings_scheduled_reminders')}
               sublabel={t('settings_scheduled_reminders_sublabel')}
-              right={<Text style={styles.chevron}>›</Text>}
+              right={<Ionicons name="chevron-forward" size={20} color={colors.textMuted} />}
             />
           </TouchableOpacity>
           <Divider />
           <SettingRow
-            icon="📡"
+            icon={<Ionicons name="radio-outline" size={20} color={colors.textSecondary} />}
             label={t('settings_background_tracking_label')}
             sublabel={t('settings_background_tracking_sublabel')}
           />
@@ -454,10 +457,16 @@ export default function GoalsScreen() {
                 }}
               >
                 <SettingRow
-                  icon="🔋"
+                  icon={
+                    <Ionicons
+                      name="battery-charging-outline"
+                      size={20}
+                      color={colors.textSecondary}
+                    />
+                  }
                   label={t('settings_battery_optimization')}
                   sublabel={t('settings_battery_optimization_sublabel')}
-                  right={<Text style={styles.chevron}>›</Text>}
+                  right={<Ionicons name="chevron-forward" size={20} color={colors.textMuted} />}
                 />
               </TouchableOpacity>
             </>
@@ -473,7 +482,7 @@ export default function GoalsScreen() {
         >
           <View style={[styles.settingsCard, !gpsEnabled && styles.settingsCardDisabled]}>
             <SettingRow
-              icon="🌤️"
+              icon={<Ionicons name="partly-sunny-outline" size={20} color={colors.textSecondary} />}
               label={t('settings_weather_enabled')}
               sublabel={t('settings_weather_enabled_desc')}
               right={
@@ -490,7 +499,13 @@ export default function GoalsScreen() {
               <>
                 <Divider />
                 <View style={styles.row}>
-                  <Text style={styles.rowIcon}>ℹ️</Text>
+                  <View style={styles.rowIconContainer}>
+                    <Ionicons
+                      name="information-circle-outline"
+                      size={20}
+                      color={colors.textSecondary}
+                    />
+                  </View>
                   <View style={styles.rowContent}>
                     <Text style={styles.rowSublabel}>{t('settings_weather_gps_disabled')}</Text>
                   </View>
@@ -502,10 +517,12 @@ export default function GoalsScreen() {
                 <Divider />
                 <TouchableOpacity onPress={() => navigation.navigate('WeatherSettings')}>
                   <SettingRow
-                    icon="⚙️"
+                    icon={
+                      <Ionicons name="settings-outline" size={20} color={colors.textSecondary} />
+                    }
                     label={t('settings_weather_more')}
                     sublabel={t('settings_weather_more_desc')}
-                    right={<Text style={styles.chevron}>›</Text>}
+                    right={<Ionicons name="chevron-forward" size={20} color={colors.textMuted} />}
                   />
                 </TouchableOpacity>
               </>
@@ -517,7 +534,7 @@ export default function GoalsScreen() {
         <Text style={styles.sectionHeader}>{t('settings_section_calendar')}</Text>
         <View style={styles.settingsCard}>
           <SettingRow
-            icon="📆"
+            icon={<Ionicons name="calendar-outline" size={20} color={colors.textSecondary} />}
             label={t('settings_calendar_integration')}
             sublabel={t('settings_calendar_integration_desc')}
             right={
@@ -534,7 +551,7 @@ export default function GoalsScreen() {
               <Divider />
               <TouchableOpacity onPress={cycleCalendarBuffer}>
                 <SettingRow
-                  icon="⏱️"
+                  icon={<Ionicons name="timer-outline" size={20} color={colors.textSecondary} />}
                   label={t('settings_calendar_buffer')}
                   sublabel={t('settings_calendar_buffer_desc')}
                   right={
@@ -547,7 +564,7 @@ export default function GoalsScreen() {
               <Divider />
               <TouchableOpacity onPress={cycleCalendarDuration}>
                 <SettingRow
-                  icon="🕐"
+                  icon={<Ionicons name="time-outline" size={20} color={colors.textSecondary} />}
                   label={t('settings_calendar_duration')}
                   sublabel={t('settings_calendar_duration_desc')}
                   right={
@@ -562,7 +579,7 @@ export default function GoalsScreen() {
               <Divider />
               <TouchableOpacity onPress={handleSelectCalendar} disabled={!hasAlternativeCalendars}>
                 <SettingRow
-                  icon="📋"
+                  icon={<Ionicons name="list-outline" size={20} color={colors.textSecondary} />}
                   label={t('settings_calendar_select')}
                   sublabel={t('settings_calendar_select_desc')}
                   right={<Text style={styles.valueChip}>{calendarSelectedTitle()}</Text>}
@@ -582,7 +599,7 @@ function SettingRow({
   sublabel,
   right,
 }: {
-  icon: string;
+  icon: React.ReactNode;
   label: string;
   sublabel?: string;
   right?: React.ReactNode;
@@ -591,7 +608,7 @@ function SettingRow({
   const styles = useMemo(() => makeStyles(colors), [colors]);
   return (
     <View style={styles.row}>
-      <Text style={styles.rowIcon}>{icon}</Text>
+      <View style={styles.rowIconContainer}>{icon}</View>
       <View style={styles.rowContent}>
         <Text style={styles.rowLabel}>{label}</Text>
         {sublabel && <Text style={styles.rowSublabel}>{sublabel}</Text>}
@@ -722,7 +739,7 @@ function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
       alignItems: 'flex-start',
       marginBottom: spacing.md,
     },
-    tipIcon: { fontSize: 18 },
+    tipIcon: { marginTop: 1 },
     tipText: { flex: 1, fontSize: 13, color: colors.grassDark, lineHeight: 20 },
 
     settingsCard: {
@@ -740,7 +757,12 @@ function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
       alignItems: 'center',
       padding: spacing.md,
     },
-    rowIcon: { fontSize: 20, marginRight: spacing.md, width: 28, textAlign: 'center' },
+    rowIconContainer: {
+      width: 28,
+      marginRight: spacing.md,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
     rowContent: { flex: 1 },
     rowLabel: { fontSize: 15, color: colors.textPrimary, fontWeight: '500' },
     rowSublabel: { fontSize: 12, color: colors.textMuted, marginTop: 2 },

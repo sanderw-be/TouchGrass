@@ -7,8 +7,10 @@ import {
   TouchableOpacity,
   RefreshControl,
   StatusBar,
+  Image,
 } from 'react-native';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
+import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import ManualSessionSheet from '../components/ManualSessionSheet';
 import ProgressRing from '../components/ProgressRing';
@@ -166,7 +168,7 @@ export default function HomeScreen() {
           </Text>
         </View>
         <TouchableOpacity style={styles.addBtn} onPress={() => setSheetVisible(true)}>
-          <Text style={styles.addBtnText}>+</Text>
+          <Ionicons name="add" size={24} color={colors.textInverse} />
         </TouchableOpacity>
       </View>
 
@@ -218,7 +220,11 @@ export default function HomeScreen() {
 
       {todaySessions.length === 0 && (
         <View style={styles.emptyState}>
-          <Text style={styles.emptyIcon}>🌿</Text>
+          <Image
+            source={require('../../assets/herb.png')}
+            style={styles.emptyIcon}
+            resizeMode="contain"
+          />
           <Text style={styles.emptyText}>{t('no_sessions_title')}</Text>
           <Text style={styles.emptySubtext}>{t('no_sessions_sub')}</Text>
         </View>
@@ -267,11 +273,11 @@ function SessionRow({
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const swipeableRef = useRef<Swipeable>(null);
   const isPending = session.userConfirmed === null && session.discarded !== 1;
-  const sourceIcon: Record<string, string> = {
-    health_connect: '👟',
-    gps: '📍',
-    manual: '✏️',
-    timeline: '🗓️',
+  const sourceIcon: Record<string, keyof typeof Ionicons.glyphMap> = {
+    health_connect: 'fitness-outline',
+    gps: 'location-outline',
+    manual: 'pencil-outline',
+    timeline: 'calendar-outline',
   };
 
   const renderConfirmAction = () => (
@@ -283,7 +289,7 @@ function SessionRow({
       }}
       testID="home-swipe-confirm-action"
     >
-      <Text style={styles.swipeConfirmIcon}>✓</Text>
+      <Ionicons name="checkmark" size={24} color={colors.textInverse} />
       <Text style={styles.swipeConfirmLabel}>{t('events_confirm')}</Text>
     </TouchableOpacity>
   );
@@ -297,16 +303,20 @@ function SessionRow({
       }}
       testID="home-swipe-reject-action"
     >
-      <Text style={styles.swipeRejectIcon}>✕</Text>
+      <Ionicons name="close" size={24} color={colors.textSecondary} />
       <Text style={styles.swipeRejectLabel}>{t('events_not_outside')}</Text>
     </TouchableOpacity>
   );
 
   const rowContent = (
     <View style={styles.sessionRow}>
-      <Text style={[styles.sessionIcon, isPending && styles.sessionPending]}>
-        {sourceIcon[session.source] ?? '🌿'}
-      </Text>
+      <View style={styles.sessionIconContainer}>
+        <Ionicons
+          name={sourceIcon[session.source] ?? 'leaf-outline'}
+          size={20}
+          color={isPending ? colors.textMuted : colors.grass}
+        />
+      </View>
       <View style={[styles.sessionInfo, isPending && styles.sessionPending]}>
         <Text style={styles.sessionTime}>
           {formatTime(session.startTime)} – {formatTime(session.endTime)}
@@ -369,7 +379,6 @@ function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
       marginTop: spacing.xs,
       ...shadows.soft,
     },
-    addBtnText: { fontSize: 24, color: colors.textInverse, lineHeight: 30, fontWeight: '300' },
 
     ringCard: {
       backgroundColor: colors.card,
@@ -440,7 +449,7 @@ function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
       marginBottom: spacing.xs,
       ...shadows.soft,
     },
-    sessionIcon: { fontSize: 20, marginRight: spacing.sm },
+    sessionIconContainer: { width: 28, marginRight: spacing.sm, alignItems: 'center' },
     sessionInfo: { flex: 1 },
     sessionPending: { opacity: 0.5 },
     sessionTime: { fontSize: 14, color: colors.textSecondary },
@@ -461,10 +470,8 @@ function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
       marginBottom: spacing.xs,
     },
     swipeConfirm: { backgroundColor: colors.grass },
-    swipeConfirmIcon: { fontSize: 22, color: colors.textInverse, fontWeight: '700' },
     swipeConfirmLabel: { fontSize: 11, color: colors.textInverse, fontWeight: '600', marginTop: 2 },
     swipeReject: { backgroundColor: colors.fog },
-    swipeRejectIcon: { fontSize: 22, color: colors.textSecondary, fontWeight: '700' },
     swipeRejectLabel: {
       fontSize: 11,
       color: colors.textSecondary,
@@ -473,7 +480,7 @@ function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
     },
 
     emptyState: { alignItems: 'center', paddingVertical: spacing.xxl },
-    emptyIcon: { fontSize: 48, marginBottom: spacing.md },
+    emptyIcon: { width: 64, height: 64, marginBottom: spacing.md },
     emptyText: { fontSize: 16, color: colors.textSecondary, fontWeight: '500' },
     emptySubtext: { fontSize: 13, color: colors.textMuted, marginTop: spacing.xs },
   });

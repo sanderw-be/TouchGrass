@@ -3,7 +3,8 @@ import { NavigationContainer } from '@react-navigation/native';
 import type { InitialState } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
-import { Text, AppState, ActivityIndicator, View } from 'react-native';
+import { AppState, ActivityIndicator, View, Image, Text, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import HomeScreen from '../screens/HomeScreen';
 import HistoryScreen from '../screens/HistoryScreen';
@@ -52,13 +53,33 @@ function ScreenFallback() {
   );
 }
 
-const icons: Record<string, string> = {
-  Home: '🌿',
-  History: '📊',
-  Events: '📋',
-  Goals: '🎯',
-  Settings: '⚙️',
+const icons: Record<string, keyof typeof Ionicons.glyphMap> = {
+  Home: 'leaf-outline',
+  History: 'bar-chart-outline',
+  Events: 'list-outline',
+  Goals: 'trophy-outline',
+  Settings: 'settings-outline',
 };
+
+function HomeHeaderTitle() {
+  const { colors } = useTheme();
+  return (
+    <View style={headerStyles.row}>
+      <Image
+        source={require('../../assets/seedling.png')}
+        style={headerStyles.seedling}
+        resizeMode="contain"
+      />
+      <Text style={[headerStyles.title, { color: colors.textPrimary }]}>TouchGrass</Text>
+    </View>
+  );
+}
+
+const headerStyles = StyleSheet.create({
+  row: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  seedling: { width: 22, height: 22 },
+  title: { fontSize: 17, fontWeight: '700' },
+});
 
 function GoalsStackNavigator() {
   const { colors } = useTheme();
@@ -138,10 +159,8 @@ function TabNavigator() {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
-        tabBarIcon: ({ focused }) => (
-          <Text style={{ fontSize: focused ? 22 : 20, opacity: focused ? 1 : 0.5 }}>
-            {icons[route.name]}
-          </Text>
+        tabBarIcon: ({ focused, color }) => (
+          <Ionicons name={icons[route.name]} size={focused ? 24 : 22} color={color} />
         ),
         tabBarActiveTintColor: colors.grass,
         tabBarInactiveTintColor: colors.inactive,
@@ -164,7 +183,7 @@ function TabNavigator() {
       <Tab.Screen
         name="Home"
         component={HomeScreen}
-        options={{ title: t('nav_home'), headerTitle: '🌱 TouchGrass' }}
+        options={{ title: t('nav_home'), headerTitle: () => <HomeHeaderTitle /> }}
       />
       <Tab.Screen name="Events" component={EventsScreen} options={{ title: t('nav_events') }} />
       <Tab.Screen name="History" component={HistoryScreen} options={{ title: t('nav_history') }} />

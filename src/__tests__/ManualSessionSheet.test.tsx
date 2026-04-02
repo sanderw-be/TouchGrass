@@ -170,10 +170,10 @@ describe('ManualSessionSheet', () => {
 
   it('calls onClose when the close button is pressed', () => {
     const onClose = jest.fn();
-    const { getByText } = render(
+    const { getByTestId } = render(
       <ManualSessionSheet visible={true} onClose={onClose} onSessionLogged={jest.fn()} />
     );
-    fireEvent.press(getByText('✕'));
+    fireEvent.press(getByTestId('sheet-close-btn'));
     expect(onClose).toHaveBeenCalled();
   });
 });

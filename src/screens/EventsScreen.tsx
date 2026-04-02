@@ -7,8 +7,10 @@ import {
   TouchableOpacity,
   RefreshControl,
   Alert,
+  Image,
 } from 'react-native';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
+import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import {
   getApprovedSessions,
@@ -176,7 +178,7 @@ export default function EventsScreen() {
           </Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.addBtn} onPress={() => setSheetVisible(true)}>
-          <Text style={styles.addBtnText}>+</Text>
+          <Ionicons name="add" size={24} color={colors.textInverse} />
         </TouchableOpacity>
       </View>
 
@@ -189,7 +191,11 @@ export default function EventsScreen() {
       >
         {sessions.length === 0 && (
           <View style={styles.empty}>
-            <Text style={styles.emptyIcon}>🌿</Text>
+            <Image
+              source={require('../../assets/herb.png')}
+              style={styles.emptyIcon}
+              resizeMode="contain"
+            />
             <Text style={styles.emptyText}>{t('events_none_recorded')}</Text>
           </View>
         )}
@@ -241,11 +247,11 @@ function SessionRow({
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const swipeableRef = useRef<Swipeable>(null);
-  const sourceIcon: Record<string, string> = {
-    health_connect: '👟',
-    gps: '📍',
-    manual: '✏️',
-    timeline: '🗓️',
+  const sourceIcon: Record<string, keyof typeof Ionicons.glyphMap> = {
+    health_connect: 'fitness-outline',
+    gps: 'location-outline',
+    manual: 'pencil-outline',
+    timeline: 'calendar-outline',
   };
 
   const sourceLabel: Record<string, string> = {
@@ -295,7 +301,7 @@ function SessionRow({
       }}
       testID="swipe-confirm-action"
     >
-      <Text style={styles.swipeConfirmIcon}>✓</Text>
+      <Ionicons name="checkmark" size={22} color={colors.textInverse} />
       <Text style={styles.swipeConfirmLabel}>{t('events_confirm')}</Text>
     </TouchableOpacity>
   );
@@ -309,7 +315,7 @@ function SessionRow({
       }}
       testID="swipe-reject-action"
     >
-      <Text style={styles.swipeRejectIcon}>✕</Text>
+      <Ionicons name="close" size={22} color={colors.textSecondary} />
       <Text style={styles.swipeRejectLabel}>{t('events_not_outside')}</Text>
     </TouchableOpacity>
   );
@@ -324,7 +330,13 @@ function SessionRow({
         <View style={[styles.statusBadge, statusStyle]}>
           <Text style={[styles.statusBadgeText, statusTextStyle]}>{statusLabel}</Text>
         </View>
-        <Text style={styles.rowIcon}>{sourceIcon[session.source] ?? '🌿'}</Text>
+        <View style={styles.rowIconContainer}>
+          <Ionicons
+            name={sourceIcon[session.source] ?? 'leaf-outline'}
+            size={18}
+            color={colors.textSecondary}
+          />
+        </View>
         <Text style={styles.rowChevron}>{expanded ? '▲' : '▼'}</Text>
       </TouchableOpacity>
 
@@ -333,7 +345,13 @@ function SessionRow({
         <View style={styles.rowDetail}>
           {/* Top info */}
           <View style={styles.cardTop}>
-            <Text style={styles.cardIcon}>{sourceIcon[session.source] ?? '🌿'}</Text>
+            <View style={styles.cardIconContainer}>
+              <Ionicons
+                name={sourceIcon[session.source] ?? 'leaf-outline'}
+                size={22}
+                color={colors.grass}
+              />
+            </View>
             <View style={styles.cardInfo}>
               <Text style={styles.cardDate}>
                 {formatLocalDate(session.startTime, {
@@ -490,7 +508,7 @@ function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
     content: { paddingHorizontal: spacing.md, paddingBottom: spacing.xxl, paddingTop: spacing.sm },
 
     empty: { alignItems: 'center', paddingVertical: spacing.xxl },
-    emptyIcon: { fontSize: 40, marginBottom: spacing.md },
+    emptyIcon: { width: 64, height: 64, marginBottom: spacing.md },
     emptyText: { fontSize: 15, color: colors.textSecondary },
 
     dayHeader: {
@@ -539,7 +557,7 @@ function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
     badgeDiscarded: { backgroundColor: colors.fog },
     badgeDiscardedText: { color: colors.textMuted },
 
-    rowIcon: { fontSize: 18, marginLeft: 'auto' },
+    rowIconContainer: { marginLeft: 'auto', width: 24, alignItems: 'center' },
     rowChevron: { fontSize: 10, color: colors.textMuted },
 
     rowDetail: {
@@ -555,7 +573,12 @@ function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
       marginBottom: spacing.sm,
       marginTop: spacing.sm,
     },
-    cardIcon: { fontSize: 24, marginRight: spacing.sm },
+    cardIconContainer: {
+      width: 32,
+      marginRight: spacing.sm,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
     cardInfo: { flex: 1 },
     cardDate: { fontSize: 13, color: colors.textMuted },
     cardTime: { fontSize: 14, color: colors.textSecondary, marginTop: 2 },
@@ -605,10 +628,8 @@ function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
       borderRadius: radius.md,
     },
     swipeConfirm: { backgroundColor: colors.grass },
-    swipeConfirmIcon: { fontSize: 22, color: colors.textInverse, fontWeight: '700' },
     swipeConfirmLabel: { fontSize: 11, color: colors.textInverse, fontWeight: '600', marginTop: 2 },
     swipeReject: { backgroundColor: colors.fog },
-    swipeRejectIcon: { fontSize: 22, color: colors.textSecondary, fontWeight: '700' },
     swipeRejectLabel: {
       fontSize: 11,
       color: colors.textSecondary,

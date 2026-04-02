@@ -100,7 +100,7 @@ describe('HomeScreen inline timer', () => {
   });
 
   it('starts the timer when the ring centre is pressed', () => {
-    const { getByText, queryByText } = render(<HomeScreen />);
+    const { getByText, getByTestId, queryByTestId } = render(<HomeScreen />);
 
     act(() => {
       fireEvent.press(getByText('ring_timer_start'));
@@ -110,8 +110,8 @@ describe('HomeScreen inline timer', () => {
     // After starting, the OUTSIDE badge and stop hint should appear
     expect(getByText('ring_timer_outside')).toBeTruthy();
     expect(getByText('ring_timer_tap_stop')).toBeTruthy();
-    expect(getByText('⬛')).toBeTruthy();
-    expect(queryByText('ring_timer_start')).toBeNull();
+    expect(getByTestId('icon-stop')).toBeTruthy();
+    expect(queryByTestId('icon-play')).toBeNull();
 
     // Clean up: stop the timer so the interval does not outlive this test
     act(() => {
@@ -120,7 +120,7 @@ describe('HomeScreen inline timer', () => {
   });
 
   it('stops and saves the session when the running timer is pressed', () => {
-    const { getByText } = render(<HomeScreen />);
+    const { getByText, getByTestId } = render(<HomeScreen />);
 
     // Start the timer
     act(() => {
@@ -137,14 +137,14 @@ describe('HomeScreen inline timer', () => {
     // Data should be refreshed (getTodayMinutes is called on loadData)
     expect(mockGetTodayMinutes).toHaveBeenCalled();
     // Ring should be back to idle state showing the play icon
-    expect(getByText('▶')).toBeTruthy();
+    expect(getByTestId('icon-play')).toBeTruthy();
     expect(getByText('ring_timer_start')).toBeTruthy();
   });
 
   it('shows the running state indicators immediately when timer starts', () => {
     // The OUTSIDE badge renders as soon as timerRunning=true — no need to advance
     // fake timers, which would interfere with React's scheduler and cause cleanup hangs.
-    const { getByText, queryByText } = render(<HomeScreen />);
+    const { getByText, getByTestId, queryByTestId } = render(<HomeScreen />);
 
     act(() => {
       fireEvent.press(getByText('ring_timer_start'));
@@ -152,8 +152,8 @@ describe('HomeScreen inline timer', () => {
 
     expect(getByText('ring_timer_outside')).toBeTruthy();
     expect(getByText('ring_timer_tap_stop')).toBeTruthy();
-    expect(getByText('⬛')).toBeTruthy();
-    expect(queryByText('▶')).toBeNull();
+    expect(getByTestId('icon-stop')).toBeTruthy();
+    expect(queryByTestId('icon-play')).toBeNull();
 
     // Clean up: stop the timer so the interval does not outlive this test
     act(() => {

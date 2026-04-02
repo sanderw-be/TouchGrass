@@ -13,6 +13,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { getSetting, setSetting } from '../storage/database';
 import { spacing, radius, shadows } from '../utils/theme';
 import { useTheme } from '../context/ThemeContext';
+import { Ionicons } from '@expo/vector-icons';
 import { t } from '../i18n';
 import {
   fetchWeatherForecast,
@@ -140,7 +141,9 @@ export default function WeatherSettingsScreen() {
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.card}>
         <View style={styles.tempRow}>
-          <Text style={styles.tempRowIcon}>🌡️</Text>
+          <View style={styles.tempRowIconContainer}>
+            <Ionicons name="thermometer-outline" size={20} color={colors.textSecondary} />
+          </View>
           <Text style={styles.tempRowLabel}>{t('settings_temp_preference')}</Text>
         </View>
         <View style={styles.tempOptionsContainer}>
@@ -163,7 +166,7 @@ export default function WeatherSettingsScreen() {
         </View>
         <Divider />
         <SettingRow
-          icon="☔"
+          icon={<Ionicons name="rainy-outline" size={20} color={colors.textSecondary} />}
           label={t('settings_weather_avoid_rain')}
           right={
             <Switch
@@ -176,7 +179,7 @@ export default function WeatherSettingsScreen() {
         />
         <Divider />
         <SettingRow
-          icon="🌡️"
+          icon={<Ionicons name="thermometer-outline" size={20} color={colors.textSecondary} />}
           label={t('settings_weather_avoid_heat')}
           right={
             <Switch
@@ -189,7 +192,7 @@ export default function WeatherSettingsScreen() {
         />
         <Divider />
         <SettingRow
-          icon="☀️"
+          icon={<Ionicons name="sunny-outline" size={20} color={colors.textSecondary} />}
           label={t('settings_weather_consider_uv')}
           right={
             <Switch
@@ -202,15 +205,15 @@ export default function WeatherSettingsScreen() {
         />
         <Divider />
         <SettingRow
-          icon="📍"
+          icon={<Ionicons name="location-outline" size={20} color={colors.textSecondary} />}
           label={t('settings_weather_current')}
           sublabel={currentWeather || t('settings_weather_unavailable')}
           right={
             weatherLoading ? (
               <ActivityIndicator size="small" color={colors.grass} />
             ) : weatherSuccess ? (
-              <View style={styles.successIndicator}>
-                <Text style={styles.successIndicatorText}>✓</Text>
+              <View style={styles.successIndicator} testID="weather-refresh-success">
+                <Ionicons name="checkmark" size={16} color={colors.grass} />
               </View>
             ) : (
               <TouchableOpacity style={styles.editBtn} onPress={handleRefreshWeather}>
@@ -230,7 +233,7 @@ function SettingRow({
   sublabel,
   right,
 }: {
-  icon: string;
+  icon: React.ReactNode;
   label: string;
   sublabel?: string;
   right?: React.ReactNode;
@@ -239,7 +242,7 @@ function SettingRow({
   const styles = useMemo(() => makeStyles(colors), [colors]);
   return (
     <View style={styles.row}>
-      <Text style={styles.rowIcon}>{icon}</Text>
+      <View style={styles.rowIconContainer}>{icon}</View>
       <View style={styles.rowContent}>
         <Text style={styles.rowLabel}>{label}</Text>
         {sublabel && <Text style={styles.rowSublabel}>{sublabel}</Text>}
@@ -272,7 +275,12 @@ function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
       alignItems: 'center',
       padding: spacing.md,
     },
-    rowIcon: { fontSize: 20, marginRight: spacing.md, width: 28, textAlign: 'center' },
+    rowIconContainer: {
+      width: 28,
+      marginRight: spacing.md,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
     rowContent: { flex: 1 },
     rowLabel: { fontSize: 15, color: colors.textPrimary, fontWeight: '500' },
     rowSublabel: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
@@ -293,8 +301,9 @@ function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
       borderRadius: radius.full,
       paddingHorizontal: spacing.sm,
       paddingVertical: 4,
+      alignItems: 'center',
+      justifyContent: 'center',
     },
-    successIndicatorText: { fontSize: 12, color: colors.grass, fontWeight: '700' },
 
     tempRow: {
       flexDirection: 'row',
@@ -303,7 +312,12 @@ function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
       paddingHorizontal: spacing.md,
       paddingBottom: spacing.xs,
     },
-    tempRowIcon: { fontSize: 20, marginRight: spacing.md, width: 28, textAlign: 'center' },
+    tempRowIconContainer: {
+      width: 28,
+      marginRight: spacing.md,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
     tempRowLabel: { fontSize: 15, color: colors.textPrimary, fontWeight: '500' },
 
     tempOptionsContainer: {
