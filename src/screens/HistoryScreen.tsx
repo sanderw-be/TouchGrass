@@ -153,80 +153,92 @@ export function BarChart({
   const barCount = data.length || 1;
   const effectiveWidth = Math.max(chartWidth, 1);
   const barWidth = Math.max(4, effectiveWidth / barCount - 4);
-
-  if (data.length === 0) {
-    return (
-      <View
-        style={[
-          styles.chartArea,
-          { height: CHART_HEIGHT, justifyContent: 'center', alignItems: 'center' },
-        ]}
-      >
-        <Text style={{ color: colors.textMuted, fontSize: 14 }}>{t('history_no_data')}</Text>
-      </View>
-    );
-  }
+  const xAxisLabel =
+    period === 'week' ? t('history_axis_days_week') : t('history_axis_days_month');
+  const isEmpty = data.length === 0;
 
   return (
     <View>
-      <View
-        testID="history-chart-area"
-        style={[styles.chartArea, { height: CHART_HEIGHT }]}
-        onLayout={({ nativeEvent: { layout } }) => {
-          if (layout.width && Math.abs(layout.width - chartWidth) > 0.5) {
-            setChartWidth(layout.width);
-          }
-        }}
-      >
-        {/* Target line */}
-        <View style={[styles.targetLine, { top: targetY }]} />
+      <View style={styles.chartWithAxis}>
+        <View style={styles.yAxisLabelContainer}>
+          <Text style={[styles.axisLabel, styles.yAxisLabelText]}>{t('history_axis_minutes')}</Text>
+        </View>
 
-        {/* Bars */}
-        <View style={styles.barsRow}>
-          {data.map((d, i) => {
-            const fillRatio = Math.min(d.minutes / maxValue, 1);
-            const barHeight = Math.max(fillRatio * CHART_HEIGHT, d.minutes > 0 ? 4 : 0);
-            const metGoal = d.minutes >= target;
-            const isToday = startOfDay(d.date) === startOfDay(Date.now());
+        <View style={styles.chartColumn}>
+          <View
+            testID="history-chart-area"
+            style={[styles.chartArea, { height: CHART_HEIGHT }]}
+            onLayout={({ nativeEvent: { layout } }) => {
+              if (layout.width && Math.abs(layout.width - chartWidth) > 0.5) {
+                setChartWidth(layout.width);
+              }
+            }}
+          >
+            {/* Target line */}
+            <View style={[styles.targetLine, { top: targetY }]} />
 
-            return (
-              <View
-                key={i}
-                testID="history-bar-wrapper"
-                style={[styles.barWrapper, { width: barWidth }]}
-              >
-                <View
-                  style={[
-                    styles.bar,
-                    {
-                      height: barHeight,
-                      width: barWidth - 2,
-                      backgroundColor: metGoal ? colors.grass : isToday ? colors.sky : colors.fog,
-                    },
-                  ]}
-                />
+            {/* Bars / empty state */}
+            {isEmpty ? (
+              <View style={styles.chartEmptyState}>
+                <Text style={{ color: colors.textMuted, fontSize: 14 }}>{t('history_no_data')}</Text>
               </View>
-            );
-          })}
+            ) : (
+              <View style={styles.barsRow}>
+                {data.map((d, i) => {
+                  const fillRatio = Math.min(d.minutes / maxValue, 1);
+                  const barHeight = Math.max(fillRatio * CHART_HEIGHT, d.minutes > 0 ? 4 : 0);
+                  const metGoal = d.minutes >= target;
+                  const isToday = startOfDay(d.date) === startOfDay(Date.now());
+
+                  return (
+                    <View
+                      key={i}
+                      testID="history-bar-wrapper"
+                      style={[styles.barWrapper, { width: barWidth }]}
+                    >
+                      <View
+                        style={[
+                          styles.bar,
+                          {
+                            height: barHeight,
+                            width: barWidth - 2,
+                            backgroundColor: metGoal
+                              ? colors.grass
+                              : isToday
+                              ? colors.sky
+                              : colors.fog,
+                          },
+                        ]}
+                      />
+                    </View>
+                  );
+                })}
+              </View>
+            )}
+          </View>
+
+          {/* X-axis labels */}
+          <View style={styles.xLabels}>
+            {data.map((d, i) => {
+              const showLabel = period === 'week' || i % 5 === 0 || i === data.length - 1;
+              return (
+                <View key={i} style={[styles.xLabel, { width: barWidth }]}>
+                  {showLabel && (
+                    <Text style={styles.xLabelText}>
+                      {period === 'week'
+                        ? formatLocalDate(d.date, { weekday: 'narrow' })
+                        : new Date(d.date).getDate()}
+                    </Text>
+                  )}
+                </View>
+              );
+            })}
+          </View>
         </View>
       </View>
 
-      {/* X-axis labels */}
-      <View style={styles.xLabels}>
-        {data.map((d, i) => {
-          const showLabel = period === 'week' || i % 5 === 0 || i === data.length - 1;
-          return (
-            <View key={i} style={[styles.xLabel, { width: barWidth }]}>
-              {showLabel && (
-                <Text style={styles.xLabelText}>
-                  {period === 'week'
-                    ? formatLocalDate(d.date, { weekday: 'narrow' })
-                    : new Date(d.date).getDate()}
-                </Text>
-              )}
-            </View>
-          );
-        })}
+      <View style={styles.xAxisLabelContainer}>
+        <Text style={styles.axisLabel}>{xAxisLabel}</Text>
       </View>
 
       {/* Legend */}
@@ -234,6 +246,10 @@ export function BarChart({
         <View style={styles.legendItem}>
           <View style={[styles.legendDot, { backgroundColor: colors.grass }]} />
           <Text style={styles.legendText}>{t('history_legend_goal_met')}</Text>
+        </View>
+        <View style={styles.legendItem}>
+          <View style={[styles.legendDot, { backgroundColor: colors.fog }]} />
+          <Text style={styles.legendText}>{t('history_legend_below_goal')}</Text>
         </View>
         <View style={styles.legendItem}>
           <View style={[styles.legendDot, { backgroundColor: colors.sky }]} />
@@ -318,6 +334,11 @@ function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
       width: '100%',
       ...shadows.soft,
     },
+    chartWithAxis: { flexDirection: 'row', alignItems: 'stretch', gap: spacing.sm },
+    yAxisLabelContainer: { width: 36, alignItems: 'center', justifyContent: 'center' },
+    chartColumn: { flex: 1 },
+    axisLabel: { fontSize: 11, color: colors.textMuted },
+    yAxisLabelText: { transform: [{ rotate: '-90deg' }], textAlign: 'center' },
     chartArea: {
       position: 'relative',
       width: '100%',
@@ -339,14 +360,24 @@ function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
     },
     barWrapper: { alignItems: 'center', justifyContent: 'flex-end', height: '100%' },
     bar: { borderRadius: 3 },
-
+    chartEmptyState: {
+      position: 'absolute',
+      top: 0,
+      bottom: 0,
+      left: 0,
+      right: 0,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
     xLabels: { flexDirection: 'row', marginTop: spacing.xs, width: '100%' },
     xLabel: { alignItems: 'center' },
     xLabelText: { fontSize: 10, color: colors.textMuted },
+    xAxisLabelContainer: { alignItems: 'center', marginTop: spacing.xs },
 
     legend: {
       flexDirection: 'row',
       justifyContent: 'center',
+      flexWrap: 'wrap',
       gap: spacing.lg,
       marginTop: spacing.md,
       paddingTop: spacing.sm,
