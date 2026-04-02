@@ -52,7 +52,6 @@ interface State {
 // See: https://react.dev/reference/react/Component#catching-rendering-errors-with-an-error-boundary
 export default class ErrorBoundary extends React.Component<Props, State> {
   static contextType = ThemeContext;
-  context!: ThemeContextType;
 
   state: State = { hasError: false, error: null };
 
@@ -77,7 +76,7 @@ export default class ErrorBoundary extends React.Component<Props, State> {
   };
 
   render() {
-    const { colors, shadows } = this.context;
+    const { colors, shadows } = this.context as ThemeContextType;
     const styles = makeStyles(colors, shadows);
 
     if (this.state.hasError) {
@@ -114,10 +113,7 @@ export default class ErrorBoundary extends React.Component<Props, State> {
   }
 }
 
-function makeStyles(
-  colors: ThemeContextType['colors'],
-  shadows: ThemeContextType['shadows']
-) {
+function makeStyles(colors: ThemeContextType['colors'], shadows: ThemeContextType['shadows']) {
   return StyleSheet.create({
     container: {
       flex: 1,
