@@ -19,7 +19,10 @@ import { spacing, radius, shadows } from '../utils/theme';
 import { useTheme } from '../context/ThemeContext';
 import { t } from '../i18n';
 import { PRIVACY_POLICY_URL } from '../utils/constants';
-import { openBatteryOptimizationSettings } from '../utils/batteryOptimization';
+import {
+  BATTERY_OPTIMIZATION_SETTING_KEY,
+  openBatteryOptimizationSettings,
+} from '../utils/batteryOptimization';
 import {
   toggleHealthConnect,
   toggleGPS,
@@ -54,7 +57,9 @@ export default function IntroScreen({ onComplete }: Props) {
   const [healthConnectGranted, setHealthConnectGranted] = useState(false);
   const [locationGranted, setLocationGranted] = useState(false);
   const [notificationsGranted, setNotificationsGranted] = useState(false);
-  const [batteryVisited, setBatteryVisited] = useState(false);
+  const [batteryVisited, setBatteryVisited] = useState(
+    () => getSetting(BATTERY_OPTIMIZATION_SETTING_KEY, '0') === '1'
+  );
   const [calendarGranted, setCalendarGranted] = useState(false);
   const [calendarBuffer, setCalendarBuffer] = useState(30);
   const [calendarDuration, setCalendarDuration] = useState(0);
@@ -323,12 +328,18 @@ export default function IntroScreen({ onComplete }: Props) {
             <NotificationsStep
               onRequest={handleRequestNotifications}
               granted={notificationsGranted}
-              requesting={requestingPermission}
-            />
-          )}
-          {currentStep === 'battery' && (
-            <BatteryStep visited={batteryVisited} onOpen={() => setBatteryVisited(true)} />
-          )}
+          requesting={requestingPermission}
+        />
+      )}
+      {currentStep === 'battery' && (
+        <BatteryStep
+          visited={batteryVisited}
+          onOpen={() => {
+            setBatteryVisited(true);
+            setSetting(BATTERY_OPTIMIZATION_SETTING_KEY, '1');
+          }}
+        />
+      )}
           {currentStep === 'calendar' && (
             <CalendarStep
               onRequest={handleRequestCalendar}

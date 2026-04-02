@@ -18,6 +18,8 @@ const getAndroidPackageName = () => {
   );
 };
 
+export const BATTERY_OPTIMIZATION_SETTING_KEY = 'battery_optimization_granted';
+
 export const openBatteryOptimizationSettings = async (): Promise<boolean> => {
   const packageName = getAndroidPackageName();
   const requestParams = packageName ? { data: `package:${packageName}` } : undefined;

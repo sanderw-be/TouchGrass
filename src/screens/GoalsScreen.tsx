@@ -41,7 +41,10 @@ import type { GoalsStackParamList } from '../navigation/AppNavigator';
 import PermissionExplainerSheet, {
   PermissionSheetConfig,
 } from '../components/PermissionExplainerSheet';
-import { openBatteryOptimizationSettings } from '../utils/batteryOptimization';
+import {
+  BATTERY_OPTIMIZATION_SETTING_KEY,
+  openBatteryOptimizationSettings,
+} from '../utils/batteryOptimization';
 
 const DAILY_PRESETS = [15, 20, 30, 45, 60, 90];
 const WEEKLY_PRESETS = [60, 90, 120, 150, 210, 300];
@@ -75,6 +78,7 @@ export default function GoalsScreen() {
   const [calendarDuration, setCalendarDuration] = useState(0);
   const [calendarSelectedId, setCalendarSelectedIdState] = useState('');
   const [calendarOptions, setCalendarOptions] = useState<{ id: string; title: string }[]>([]);
+  const [batteryOptimizationGranted, setBatteryOptimizationGranted] = useState(false);
 
   // Permission explainer sheet state
   const [permissionSheet, setPermissionSheet] = useState<PermissionSheetConfig | null>(null);
@@ -95,6 +99,7 @@ export default function GoalsScreen() {
     setCalendarBuffer(parseInt(getSetting('calendar_buffer_minutes', '30'), 10));
     setCalendarDuration(parseInt(getSetting('calendar_default_duration', '0'), 10));
     setCalendarSelectedIdState(getSelectedCalendarId());
+    setBatteryOptimizationGranted(getSetting(BATTERY_OPTIMIZATION_SETTING_KEY, '0') === '1');
   }, []);
 
   const checkWeatherPermissions = useCallback(async () => {
@@ -212,6 +217,20 @@ export default function GoalsScreen() {
       title: t('settings_calendar_permission_title'),
       body: t('settings_calendar_permission_body'),
       onOpen: handleOpenAppSettings,
+    });
+  }, []);
+
+  const showBatteryPermissionSheet = useCallback(() => {
+    setPermissionSheet({
+      title: t('settings_battery_optimization'),
+      body: t('settings_battery_optimization_sublabel'),
+      onOpen: async () => {
+        const opened = await openBatteryOptimizationSettings();
+        if (opened) {
+          setBatteryOptimizationGranted(true);
+          setSetting(BATTERY_OPTIMIZATION_SETTING_KEY, '1');
+        }
+      },
     });
   }, []);
 
@@ -481,7 +500,12 @@ export default function GoalsScreen() {
           {Platform.OS === 'android' && (
             <>
               <Divider />
-              <TouchableOpacity onPress={openBatteryOptimizationSettings}>
+              <TouchableOpacity
+                onPress={showBatteryPermissionSheet}
+                disabled={batteryOptimizationGranted}
+                testID="battery-optimization-row"
+                style={batteryOptimizationGranted && styles.disabledRow}
+              >
                 <SettingRow
                   icon={
                     <Ionicons
@@ -492,7 +516,13 @@ export default function GoalsScreen() {
                   }
                   label={t('settings_battery_optimization')}
                   sublabel={t('settings_battery_optimization_sublabel')}
-                  right={<Ionicons name="chevron-forward" size={20} color={colors.textMuted} />}
+                  right={
+                    batteryOptimizationGranted ? (
+                      <Ionicons name="checkmark-circle" size={20} color={colors.grass} />
+                    ) : (
+                      <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+                    )
+                  }
                 />
               </TouchableOpacity>
             </>
@@ -835,6 +865,7 @@ function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
     rowRight: { marginLeft: spacing.sm },
 
     divider: { height: 1, backgroundColor: colors.fog, marginLeft: spacing.md + 28 + spacing.md },
+    disabledRow: { opacity: 0.5 },
 
     chevron: { fontSize: 24, color: colors.textMuted, fontWeight: '300' },
 
