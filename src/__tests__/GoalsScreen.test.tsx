@@ -74,8 +74,9 @@ import GoalsScreen from '../screens/GoalsScreen';
 import * as CalendarService from '../calendar/calendarService';
 import { openBatteryOptimizationSettings } from '../utils/batteryOptimization';
 
-const mockOpenBatteryOptimizationSettings =
-  openBatteryOptimizationSettings as jest.MockedFunction<typeof openBatteryOptimizationSettings>;
+const mockOpenBatteryOptimizationSettings = openBatteryOptimizationSettings as jest.MockedFunction<
+  typeof openBatteryOptimizationSettings
+>;
 
 describe('GoalsScreen', () => {
   beforeEach(() => {
