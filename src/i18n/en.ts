@@ -79,6 +79,7 @@ export default {
   events_tab_approved: 'Approved',
   events_tab_standard: 'Standard',
   events_tab_all: 'All',
+  events_toggle_confirmed: 'Confirmed',
   events_toggle_review: 'In Review',
   events_toggle_rejected: 'Rejected',
   events_none_recorded: 'No sessions recorded yet.',

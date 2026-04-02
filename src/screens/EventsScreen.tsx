@@ -27,7 +27,7 @@ import { t, formatLocalDate, formatLocalTime } from '../i18n';
 import ManualSessionSheet from '../components/ManualSessionSheet';
 import EditSessionSheet from '../components/EditSessionSheet';
 import { updateTimeSlotProbability } from '../detection/sessionConfidence';
-import { onSessionsChanged } from '../utils/sessionsChangedEmitter';
+import { onSessionsChanged, emitSessionsChanged } from '../utils/sessionsChangedEmitter';
 import { cancelRemindersIfGoalReached } from '../notifications/notificationManager';
 
 const FOUR_WEEKS_AGO = () => Date.now() - 28 * 24 * 60 * 60 * 1000;
@@ -49,6 +49,7 @@ function groupByDay(sessions: OutsideSession[]): { dayMs: number; sessions: Outs
 export default function EventsScreen() {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
+  const [includeConfirmed, setIncludeConfirmed] = useState(true);
   const [includeReview, setIncludeReview] = useState(true);
   const [includeRejected, setIncludeRejected] = useState(false);
   const [allSessions, setAllSessions] = useState<OutsideSession[]>([]);
@@ -83,11 +84,12 @@ export default function EventsScreen() {
     confirmSession(id, confirmed);
     const d = new Date(startTime);
     updateTimeSlotProbability(d.getHours(), d.getDay(), confirmed);
+    emitSessionsChanged();
+    loadData();
     if (confirmed) {
       await cancelRemindersIfGoalReached();
     }
     setExpandedId(null);
-    loadData();
   };
 
   const handleDelete = (id: number) => {
@@ -98,6 +100,7 @@ export default function EventsScreen() {
         style: 'destructive',
         onPress: () => {
           deleteSession(id);
+          emitSessionsChanged();
           setExpandedId(null);
           loadData();
         },
@@ -107,12 +110,14 @@ export default function EventsScreen() {
 
   const handleReReview = (id: number) => {
     confirmSession(id, null);
+    emitSessionsChanged();
     setExpandedId(null);
     loadData();
   };
 
   const handleUnDiscard = (id: number) => {
     unDiscardSession(id);
+    emitSessionsChanged();
     setExpandedId(null);
     loadData();
   };
@@ -122,7 +127,7 @@ export default function EventsScreen() {
   ).length;
 
   const sessions = allSessions.filter((s) => {
-    if (s.userConfirmed === 1) return true; // always show approved
+    if (s.userConfirmed === 1) return includeConfirmed; // approved — shown when Confirmed toggle is on
     if (s.userConfirmed === null && s.discarded !== 1) return includeReview; // proposed/in-review
     return includeRejected; // rejected (userConfirmed = 0) or discarded
   });
@@ -148,6 +153,15 @@ export default function EventsScreen() {
 
       {/* Filter toggles */}
       <View style={styles.tabs}>
+        <TouchableOpacity
+          style={[styles.toggle, includeConfirmed && styles.toggleActive]}
+          onPress={() => setIncludeConfirmed((v) => !v)}
+          testID="toggle-confirmed"
+        >
+          <Text style={[styles.toggleText, includeConfirmed && styles.toggleTextActive]}>
+            {t('events_toggle_confirmed')}
+          </Text>
+        </TouchableOpacity>
         <TouchableOpacity
           style={[styles.toggle, includeReview && styles.toggleActive]}
           onPress={() => setIncludeReview((v) => !v)}

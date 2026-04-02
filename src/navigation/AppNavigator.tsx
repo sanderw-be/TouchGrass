@@ -198,7 +198,11 @@ function TabNavigator({
       <Tab.Screen
         name="Events"
         component={EventsScreen}
-        options={{ title: t('nav_events'), tabBarBadge: eventsBadge }}
+        options={{
+          title: t('nav_events'),
+          tabBarBadge: eventsBadge,
+          tabBarBadgeStyle: { backgroundColor: colors.grass },
+        }}
       />
       <Tab.Screen name="History" component={HistoryScreen} options={{ title: t('nav_history') }} />
       <Tab.Screen
