@@ -253,5 +253,46 @@ describe('Date helpers', () => {
         expect.arrayContaining([4])
       );
     });
+
+    it('countProposedSessions returns the count of unreviewed non-discarded sessions', () => {
+      const { countProposedSessions } = require('../storage/database');
+      mockDb.getFirstSync.mockReturnValueOnce({ cnt: 2 });
+      const result = countProposedSessions();
+      expect(result).toBe(2);
+      expect(mockDb.getFirstSync).toHaveBeenCalledWith(
+        expect.stringContaining('userConfirmed IS NULL')
+      );
+    });
+
+    it('countProposedSessions returns 0 when no proposed sessions exist', () => {
+      const { countProposedSessions } = require('../storage/database');
+      mockDb.getFirstSync.mockReturnValueOnce(null);
+      const result = countProposedSessions();
+      expect(result).toBe(0);
+    });
+
+    it('autoCloseOldProposedSessions marks old proposed sessions as rejected', () => {
+      const { autoCloseOldProposedSessions } = require('../storage/database');
+      mockDb.runSync.mockReturnValueOnce({ changes: 3 });
+      const result = autoCloseOldProposedSessions();
+      expect(result).toBe(3);
+      expect(mockDb.runSync).toHaveBeenCalledWith(
+        expect.stringContaining('userConfirmed = 0'),
+        expect.any(Array)
+      );
+    });
+
+    it('autoCloseOldProposedSessions uses 7-day default cutoff', () => {
+      const { autoCloseOldProposedSessions } = require('../storage/database');
+      const before = Date.now();
+      mockDb.runSync.mockReturnValueOnce({ changes: 0 });
+      autoCloseOldProposedSessions();
+      const after = Date.now();
+      const callArgs = mockDb.runSync.mock.calls[mockDb.runSync.mock.calls.length - 1];
+      const cutoff = callArgs[1][0] as number;
+      // cutoff should be approximately 7 days ago
+      expect(cutoff).toBeGreaterThanOrEqual(before - 7 * 24 * 60 * 60 * 1000 - 100);
+      expect(cutoff).toBeLessThanOrEqual(after - 7 * 24 * 60 * 60 * 1000 + 100);
+    });
   });
 });

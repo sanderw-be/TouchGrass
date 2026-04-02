@@ -3,6 +3,9 @@ import { WeatherCondition, WeatherCache } from '../weather/types';
 
 const db = SQLite.openDatabaseSync('touchgrass.db');
 
+/** 7 days in milliseconds — used as the default auto-close age for unreviewed sessions. */
+const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+
 export interface OutsideSession {
   id?: number;
   startTime: number; // unix timestamp ms
@@ -359,6 +362,33 @@ export function getAllSessionsIncludingDiscarded(fromMs: number, toMs: number): 
      ORDER BY startTime DESC`,
     [toMs, fromMs]
   );
+}
+
+/**
+ * Returns the count of proposed (unreviewed) sessions that have not been discarded.
+ * Used for the navigation tab badge.
+ */
+export function countProposedSessions(): number {
+  const row = db.getFirstSync<{ cnt: number }>(
+    'SELECT COUNT(*) AS cnt FROM outside_sessions WHERE userConfirmed IS NULL AND (discarded IS NULL OR discarded = 0)'
+  );
+  return row?.cnt ?? 0;
+}
+
+/**
+ * Auto-closes proposed sessions older than the given age by marking them as rejected
+ * (userConfirmed = 0). This guards the "In Review" list from growing indefinitely.
+ * Returns the number of rows updated.
+ */
+export function autoCloseOldProposedSessions(maxAgeMs: number = SEVEN_DAYS_MS): number {
+  const cutoff = Date.now() - maxAgeMs;
+  const result = db.runSync(
+    `UPDATE outside_sessions
+     SET userConfirmed = 0
+     WHERE userConfirmed IS NULL AND (discarded IS NULL OR discarded = 0) AND endTime < ?`,
+    [cutoff]
+  );
+  return result.changes;
 }
 
 /**
