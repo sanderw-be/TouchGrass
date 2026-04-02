@@ -267,7 +267,8 @@ export default {
   intro_location_why_title: 'Waarom hebben we dit nodig?',
   intro_location_why_body:
     'GPS-tracking gebruikt geofencing om te detecteren wanneer je bekende binnenlocaties (bijv. thuis, werk) verlaat en terugkeert, zodat buitensessies automatisch worden voorgesteld — zelfs wanneer de app gesloten is. "Altijd toestaan" is hiervoor vereist.\n\nAls je weerbewuste herinneringen inschakelt, wordt alleen een geschatte locatie gebruikt om lokale weersomstandigheden op te halen.',
-  intro_location_hint: 'Je wordt gevraagd "Altijd toestaan" te selecteren voor achtergronddetectie.',
+  intro_location_hint:
+    'Je wordt gevraagd "Altijd toestaan" te selecteren voor achtergronddetectie.',
   intro_location_button: 'Sta locatie toe',
   intro_location_button_granted: 'Locatie toegestaan ✓',
   intro_location_known_title: 'Verbeter buitendetectie',

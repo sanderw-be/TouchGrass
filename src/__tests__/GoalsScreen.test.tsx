@@ -329,9 +329,7 @@ describe('GoalsScreen weather location permission', () => {
     mockCheckWeatherLocation.mockResolvedValue(false);
 
     const { findByText } = render(<GoalsScreen />);
-    await expect(
-      findByText('settings_weather_location_permission_missing')
-    ).resolves.toBeTruthy();
+    await expect(findByText('settings_weather_location_permission_missing')).resolves.toBeTruthy();
     await expect(findByText('settings_weather_location_request')).resolves.toBeTruthy();
   });
 

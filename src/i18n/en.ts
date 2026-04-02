@@ -264,7 +264,8 @@ export default {
   intro_location_why_title: 'Why do we need this?',
   intro_location_why_body:
     'GPS tracking uses geofencing to detect when you leave and return to known indoor locations (e.g. home, work), so outdoor sessions are proposed automatically — even when the app is closed. "Allow all the time" is required for this to work in the background.\n\nIf you enable weather-aware reminders, only approximate location is used to fetch local weather conditions.',
-  intro_location_hint: 'You\'ll be asked to select "Allow all the time" for background session detection.',
+  intro_location_hint:
+    'You\'ll be asked to select "Allow all the time" for background session detection.',
   intro_location_button: 'Grant Location Access',
   intro_location_button_granted: 'Location Granted ✓',
   intro_location_known_title: 'Improve outdoor detection',

@@ -33,10 +33,7 @@ import {
   getSelectedCalendarId,
   setSelectedCalendarId,
 } from '../calendar/calendarService';
-import {
-  checkWeatherLocationPermissions,
-  requestWeatherLocationPermissions,
-} from '../detection';
+import { checkWeatherLocationPermissions, requestWeatherLocationPermissions } from '../detection';
 import * as IntentLauncher from 'expo-intent-launcher';
 import { spacing, radius, shadows } from '../utils/theme';
 import { useTheme } from '../context/ThemeContext';
@@ -509,11 +506,7 @@ export default function GoalsScreen() {
               <TouchableOpacity onPress={() => toggleWeatherEnabled(true)}>
                 <View style={styles.row}>
                   <View style={styles.rowIconContainer}>
-                    <Ionicons
-                      name="location-outline"
-                      size={20}
-                      color={colors.textSecondary}
-                    />
+                    <Ionicons name="location-outline" size={20} color={colors.textSecondary} />
                   </View>
                   <View style={styles.rowContent}>
                     <Text style={styles.rowSublabel}>
@@ -532,9 +525,7 @@ export default function GoalsScreen() {
               <Divider />
               <TouchableOpacity onPress={() => navigation.navigate('WeatherSettings')}>
                 <SettingRow
-                  icon={
-                    <Ionicons name="settings-outline" size={20} color={colors.textSecondary} />
-                  }
+                  icon={<Ionicons name="settings-outline" size={20} color={colors.textSecondary} />}
                   label={t('settings_weather_more')}
                   sublabel={t('settings_weather_more_desc')}
                   right={<Ionicons name="chevron-forward" size={20} color={colors.textMuted} />}
