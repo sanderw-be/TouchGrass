@@ -1,5 +1,12 @@
 # Release Notes
 
+## 1.2.0
+
+- **Battery optimization UX**: Uses the app-specific exemption intent with a fallback, shares the permission explainer sheet with a granted state, and refreshes exemption status when opening the app or Goals.
+- **History context**: The history chart now shows axis labels and a legend so goal progress, today, and the target line are easy to read.
+- **Swipe affordance**: Pending session cards display swipe hints to guide approve/skip gestures.
+- **Theme polish**: Shadows adapt to light/dark themes and weather preference controls have clearer contrast.
+
 ## 1.1.0
 
 - **Smart reminder overhaul**: Rewrote the reminder scheduling engine with a stateful queue, 60-minute grace period after going outside, slot spreading to avoid bunching, and automatic cleanup when the daily goal is reached.
