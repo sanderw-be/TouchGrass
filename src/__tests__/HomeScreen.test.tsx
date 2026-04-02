@@ -1,5 +1,6 @@
 import React from 'react';
 import { render, fireEvent, act } from '@testing-library/react-native';
+import type { OutsideSession } from '../storage/database';
 
 jest.mock('../i18n', () => ({
   t: (key: string) => key,
@@ -17,7 +18,7 @@ const mockGetTodayMinutes = jest.fn(() => 20);
 const mockGetWeekMinutes = jest.fn(() => 100);
 const mockGetCurrentDailyGoal = jest.fn(() => ({ targetMinutes: 60 }));
 const mockGetCurrentWeeklyGoal = jest.fn(() => ({ targetMinutes: 300 }));
-const mockGetSessionsForDay = jest.fn(() => []);
+const mockGetSessionsForDay = jest.fn<OutsideSession[], [number]>(() => []);
 const mockConfirmSession = jest.fn();
 
 jest.mock('../storage/database', () => ({
@@ -25,7 +26,7 @@ jest.mock('../storage/database', () => ({
   getWeekMinutes: () => mockGetWeekMinutes(),
   getCurrentDailyGoal: () => mockGetCurrentDailyGoal(),
   getCurrentWeeklyGoal: () => mockGetCurrentWeeklyGoal(),
-  getSessionsForDay: () => mockGetSessionsForDay(),
+  getSessionsForDay: (dateMs: number) => mockGetSessionsForDay(dateMs),
   confirmSession: (...args: any[]) => mockConfirmSession(...args),
 }));
 
@@ -168,6 +169,7 @@ describe('HomeScreen inline timer', () => {
         startTime: Date.now(),
         endTime: Date.now() + 30 * 60 * 1000,
         durationMinutes: 30,
+        confidence: 1,
         userConfirmed: null,
         discarded: 0,
         source: 'gps',
@@ -185,6 +187,7 @@ describe('HomeScreen inline timer', () => {
         startTime: Date.now(),
         endTime: Date.now() + 20 * 60 * 1000,
         durationMinutes: 20,
+        confidence: 1,
         userConfirmed: 1,
         discarded: 0,
         source: 'gps',
