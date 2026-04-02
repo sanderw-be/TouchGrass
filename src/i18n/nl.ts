@@ -38,6 +38,7 @@ export default {
   session_edit_title: 'Sessietijden bewerken',
   session_edit_save: '✓ Opslaan & goedkeuren',
   session_edit_hint: 'Opslaan met aangepaste tijden keurt deze sessie automatisch goed.',
+  session_swipe_hint: 'Swipe naar links om te bevestigen, naar rechts als je binnen was.',
 
   // Doelen
   of: 'van',

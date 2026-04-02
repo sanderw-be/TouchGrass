@@ -160,4 +160,38 @@ describe('HomeScreen inline timer', () => {
       fireEvent.press(getByText('ring_timer_tap_stop'));
     });
   });
+
+  it('shows a swipe hint for pending session cards', () => {
+    mockGetSessionsForDay.mockReturnValueOnce([
+      {
+        id: 1,
+        startTime: Date.now(),
+        endTime: Date.now() + 30 * 60 * 1000,
+        durationMinutes: 30,
+        userConfirmed: null,
+        discarded: 0,
+        source: 'gps',
+      },
+    ]);
+
+    const { getByTestId } = render(<HomeScreen />);
+    expect(getByTestId('home-swipe-hint')).toBeTruthy();
+  });
+
+  it('hides the swipe hint for confirmed sessions', () => {
+    mockGetSessionsForDay.mockReturnValueOnce([
+      {
+        id: 2,
+        startTime: Date.now(),
+        endTime: Date.now() + 20 * 60 * 1000,
+        durationMinutes: 20,
+        userConfirmed: 1,
+        discarded: 0,
+        source: 'gps',
+      },
+    ]);
+
+    const { queryByTestId } = render(<HomeScreen />);
+    expect(queryByTestId('home-swipe-hint')).toBeNull();
+  });
 });

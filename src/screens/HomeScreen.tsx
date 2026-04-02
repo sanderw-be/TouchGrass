@@ -309,23 +309,33 @@ function SessionRow({
   );
 
   const rowContent = (
-    <View style={styles.sessionRow}>
-      <View style={styles.sessionIconContainer}>
-        <Ionicons
-          name={sourceIcon[session.source] ?? 'leaf-outline'}
-          size={20}
-          color={isPending ? colors.textMuted : colors.grass}
-        />
+    <View style={styles.sessionCard}>
+      <View style={styles.sessionRow}>
+        <View style={styles.sessionIconContainer}>
+          <Ionicons
+            name={sourceIcon[session.source] ?? 'leaf-outline'}
+            size={20}
+            color={isPending ? colors.textMuted : colors.grass}
+          />
+        </View>
+        <View style={[styles.sessionInfo, isPending && styles.sessionPending]}>
+          <Text style={styles.sessionTime}>
+            {formatTime(session.startTime)} – {formatTime(session.endTime)}
+          </Text>
+          <Text style={styles.sessionDuration}>{formatMinutes(session.durationMinutes)}</Text>
+        </View>
+        {isPending && (
+          <View style={styles.reviewBadge}>
+            <Text style={styles.reviewText}>{t('review')}</Text>
+          </View>
+        )}
       </View>
-      <View style={[styles.sessionInfo, isPending && styles.sessionPending]}>
-        <Text style={styles.sessionTime}>
-          {formatTime(session.startTime)} – {formatTime(session.endTime)}
-        </Text>
-        <Text style={styles.sessionDuration}>{formatMinutes(session.durationMinutes)}</Text>
-      </View>
+
       {isPending && (
-        <View style={styles.reviewBadge}>
-          <Text style={styles.reviewText}>{t('review')}</Text>
+        <View style={styles.swipeHint} pointerEvents="none" testID="home-swipe-hint">
+          <Ionicons name="arrow-back-outline" size={14} color={colors.textMuted} />
+          <Text style={styles.swipeHintText}>{t('session_swipe_hint')}</Text>
+          <Ionicons name="arrow-forward-outline" size={14} color={colors.textMuted} />
         </View>
       )}
     </View>
@@ -440,14 +450,16 @@ function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
       marginBottom: spacing.sm,
     },
 
+    sessionCard: {
+      backgroundColor: colors.card,
+      borderRadius: radius.md,
+      marginBottom: spacing.xs,
+      ...shadows.soft,
+    },
     sessionRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      backgroundColor: colors.card,
-      borderRadius: radius.md,
       padding: spacing.md,
-      marginBottom: spacing.xs,
-      ...shadows.soft,
     },
     sessionIconContainer: { width: 28, marginRight: spacing.sm, alignItems: 'center' },
     sessionInfo: { flex: 1 },
@@ -479,6 +491,17 @@ function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
       marginTop: 2,
     },
 
+    swipeHint: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: spacing.xs,
+      borderTopWidth: 1,
+      borderTopColor: colors.fog,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.xs,
+    },
+    swipeHintText: { fontSize: 12, color: colors.textMuted },
     emptyState: { alignItems: 'center', paddingVertical: spacing.xxl },
     emptyIcon: { width: 64, height: 64, marginBottom: spacing.md },
     emptyText: { fontSize: 16, color: colors.textSecondary, fontWeight: '500' },
