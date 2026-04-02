@@ -13,7 +13,7 @@ import {
 import * as Location from 'expo-location';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { upsertKnownLocation, deleteKnownLocation, KnownLocation } from '../storage/database';
-import { spacing, radius, shadows } from '../utils/theme';
+import { spacing, radius } from '../utils/theme';
 import { useTheme } from '../context/ThemeContext';
 import { t } from '../i18n';
 
@@ -64,8 +64,8 @@ export default function EditLocationSheet({
   onClose,
   onSave,
 }: Props) {
-  const { colors } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { colors, shadows } = useTheme();
+  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const insets = useSafeAreaInsets();
   const [label, setLabel] = useState('');
   const [radiusIdx, setRadiusIdx] = useState(findRadiusIdx(100));
@@ -508,7 +508,10 @@ function makeSliderStyles(colors: ReturnType<typeof useTheme>['colors']) {
   });
 }
 
-function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
+function makeStyles(
+  colors: ReturnType<typeof useTheme>['colors'],
+  shadows: ReturnType<typeof useTheme>['shadows']
+) {
   return StyleSheet.create({
     backdrop: {
       flex: 1,

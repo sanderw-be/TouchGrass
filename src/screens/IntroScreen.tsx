@@ -15,6 +15,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Notifications from 'expo-notifications';
 import * as Location from 'expo-location';
+import * as IntentLauncher from 'expo-intent-launcher';
 import { spacing, radius, shadows } from '../utils/theme';
 import { useTheme } from '../context/ThemeContext';
 import { t } from '../i18n';
@@ -51,8 +52,8 @@ type Step =
   | 'ready';
 
 export default function IntroScreen({ onComplete }: Props) {
-  const { colors } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { colors, shadows } = useTheme();
+  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const [currentStep, setCurrentStep] = useState<Step>('welcome');
   const [healthConnectGranted, setHealthConnectGranted] = useState(false);
   const [locationGranted, setLocationGranted] = useState(false);
@@ -381,8 +382,8 @@ export default function IntroScreen({ onComplete }: Props) {
 }
 
 function WelcomeStep() {
-  const { colors } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { colors, shadows } = useTheme();
+  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   return (
     <View style={styles.stepContainer}>
       <Text style={styles.emoji}>🌱</Text>
@@ -410,8 +411,8 @@ function HealthConnectStep({
   granted: boolean;
   requesting: boolean;
 }) {
-  const { colors } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { colors, shadows } = useTheme();
+  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   return (
     <View style={styles.stepContainer}>
       <Text style={styles.emoji}>👟</Text>
@@ -458,8 +459,8 @@ function LocationStep({
   settingLocation: 'home' | 'work' | null;
   onSetLocation: (type: 'home' | 'work') => void;
 }) {
-  const { colors } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { colors, shadows } = useTheme();
+  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   return (
     <View style={styles.stepContainer}>
       <Text style={styles.emoji}>📍</Text>
@@ -545,8 +546,8 @@ function NotificationsStep({
   granted: boolean;
   requesting: boolean;
 }) {
-  const { colors } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { colors, shadows } = useTheme();
+  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   return (
     <View style={styles.stepContainer}>
       <Text style={styles.emoji}>🔔</Text>
@@ -575,8 +576,8 @@ function NotificationsStep({
 }
 
 function BatteryStep({ visited, onOpen }: { visited: boolean; onOpen: () => void }) {
-  const { colors } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { colors, shadows } = useTheme();
+  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
 
   const handleOpenBatterySettings = async () => {
     const opened = await openBatteryOptimizationSettings();
@@ -621,8 +622,8 @@ function ReadyStep({
   batteryVisited: boolean;
   calendarGranted: boolean;
 }) {
-  const { colors } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { colors, shadows } = useTheme();
+  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   // Determine the status symbol for each permission
   const getStatusSymbol = (granted: boolean) => (granted ? '✓' : '-');
   const getStatusColor = (granted: boolean) => (granted ? colors.grass : colors.textMuted);
@@ -692,8 +693,8 @@ function CalendarStep({
   onCycleBuffer: () => void;
   onCycleDuration: () => void;
 }) {
-  const { colors } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { colors, shadows } = useTheme();
+  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   return (
     <View style={styles.stepContainer}>
       <Text style={styles.emoji}>📆</Text>
@@ -745,8 +746,8 @@ function CalendarStep({
 }
 
 function FeatureItem({ icon, text }: { icon: string; text: string }) {
-  const { colors } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { colors, shadows } = useTheme();
+  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   return (
     <View style={styles.featureItem}>
       <Text style={styles.featureIcon}>{icon}</Text>
@@ -755,7 +756,10 @@ function FeatureItem({ icon, text }: { icon: string; text: string }) {
   );
 }
 
-function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
+function makeStyles(
+  colors: ReturnType<typeof useTheme>['colors'],
+  shadows: ReturnType<typeof useTheme>['shadows']
+) {
   return StyleSheet.create({
     container: {
       flex: 1,

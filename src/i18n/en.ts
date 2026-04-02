@@ -38,6 +38,7 @@ export default {
   session_edit_title: 'Edit session times',
   session_edit_save: '✓ Save & approve',
   session_edit_hint: 'Saving edited times will auto-approve this session.',
+  session_swipe_hint: 'Swipe left to confirm, right if not outside.',
 
   // Goals
   of: 'of',
@@ -97,8 +98,12 @@ export default {
   history_stat_total: 'Total',
   history_stat_avg: 'Daily avg',
   history_stat_goals_met: 'Goals met',
+  history_axis_minutes: 'Minutes per day',
+  history_axis_days_week: 'Day of week',
+  history_axis_days_month: 'Day of month',
   history_no_data: 'No data for this period',
   history_legend_goal_met: 'Goal met',
+  history_legend_below_goal: 'Below goal',
   history_legend_today: 'Today',
   history_legend_target: 'Target',
 

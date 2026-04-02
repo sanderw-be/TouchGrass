@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { getSetting, setSetting } from '../storage/database';
-import { spacing, radius, shadows } from '../utils/theme';
+import { spacing, radius } from '../utils/theme';
 import { useTheme } from '../context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import { t } from '../i18n';
@@ -24,8 +24,8 @@ import { getWeatherDescription, getWeatherEmoji } from '../weather/weatherAlgori
 import { formatTemperature } from '../utils/temperature';
 
 export default function WeatherSettingsScreen() {
-  const { colors } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { colors, shadows } = useTheme();
+  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const [tempPreference, setTempPreference] = useState<'cold' | 'moderate' | 'hot'>('moderate');
   const [avoidRain, setAvoidRain] = useState(true);
   const [avoidHeat, setAvoidHeat] = useState(true);
@@ -238,8 +238,8 @@ function SettingRow({
   sublabel?: string;
   right?: React.ReactNode;
 }) {
-  const { colors } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { colors, shadows } = useTheme();
+  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   return (
     <View style={styles.row}>
       <View style={styles.rowIconContainer}>{icon}</View>
@@ -253,12 +253,15 @@ function SettingRow({
 }
 
 function Divider() {
-  const { colors } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { colors, shadows } = useTheme();
+  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   return <View style={styles.divider} />;
 }
 
-function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
+function makeStyles(
+  colors: ReturnType<typeof useTheme>['colors'],
+  shadows: ReturnType<typeof useTheme>['shadows']
+) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.mist },
     content: { padding: spacing.md, paddingBottom: spacing.xxl },
@@ -337,8 +340,8 @@ function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
       minWidth: 70,
     },
     tempOptionActive: {
-      backgroundColor: colors.grassLight,
-      borderColor: colors.grass,
+      backgroundColor: colors.grass,
+      borderColor: colors.grassDark,
     },
     tempOptionText: {
       fontSize: 12,
@@ -347,8 +350,8 @@ function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
       textAlign: 'center',
     },
     tempOptionTextActive: {
-      color: colors.grass,
-      fontWeight: '600',
+      color: colors.textInverse,
+      fontWeight: '700',
     },
   });
 }

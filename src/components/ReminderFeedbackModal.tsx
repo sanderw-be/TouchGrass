@@ -2,15 +2,15 @@ import React, { useMemo, useState } from 'react';
 import { Modal, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useReminderFeedback } from '../context/ReminderFeedbackContext';
 import { useTheme } from '../context/ThemeContext';
-import { spacing, radius, shadows } from '../utils/theme';
+import { spacing, radius } from '../utils/theme';
 import { t } from '../i18n';
 import { uses24HourClock, normalizeAmPm } from '../utils/helpers';
 import { insertReminderFeedback, getSetting, setSetting } from '../storage/database';
 
 export default function ReminderFeedbackModal() {
   const { visible, data, dismiss } = useReminderFeedback();
-  const { colors } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { colors, shadows } = useTheme();
+  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const [showFewerConfirmation, setShowFewerConfirmation] = useState(false);
   const [fewerConfirmationMessage, setFewerConfirmationMessage] = useState('');
 
@@ -158,7 +158,10 @@ export default function ReminderFeedbackModal() {
   );
 }
 
-function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
+function makeStyles(
+  colors: ReturnType<typeof useTheme>['colors'],
+  shadows: ReturnType<typeof useTheme>['shadows']
+) {
   return StyleSheet.create({
     overlay: {
       flex: 1,

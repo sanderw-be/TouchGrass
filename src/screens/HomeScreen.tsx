@@ -22,7 +22,7 @@ import {
   getSessionsForDay,
   confirmSession,
 } from '../storage/database';
-import { spacing, radius, shadows } from '../utils/theme';
+import { spacing, radius } from '../utils/theme';
 import { useTheme } from '../context/ThemeContext';
 import { formatMinutes, formatTime } from '../utils/helpers';
 import { t, formatLocalDate } from '../i18n';
@@ -32,8 +32,8 @@ import { onSessionsChanged } from '../utils/sessionsChangedEmitter';
 import { cancelRemindersIfGoalReached } from '../notifications/notificationManager';
 
 export default function HomeScreen() {
-  const { colors, isDark } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { colors, shadows, isDark } = useTheme();
+  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const [todayMinutes, setTodayMinutes] = useState(0);
   const [weekMinutes, setWeekMinutes] = useState(0);
   const [dailyTarget, setDailyTarget] = useState(30);
@@ -234,8 +234,8 @@ export default function HomeScreen() {
 }
 
 function WeekDots() {
-  const { colors } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { colors, shadows } = useTheme();
+  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const today = new Date().getDay();
   const days = [
     t('day_mon'),
@@ -269,8 +269,8 @@ function SessionRow({
   session: any;
   onConfirm: (confirmed: boolean) => void;
 }) {
-  const { colors } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { colors, shadows } = useTheme();
+  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const swipeableRef = useRef<Swipeable>(null);
   const isPending = session.userConfirmed === null && session.discarded !== 1;
   const sourceIcon: Record<string, keyof typeof Ionicons.glyphMap> = {
@@ -309,23 +309,33 @@ function SessionRow({
   );
 
   const rowContent = (
-    <View style={styles.sessionRow}>
-      <View style={styles.sessionIconContainer}>
-        <Ionicons
-          name={sourceIcon[session.source] ?? 'leaf-outline'}
-          size={20}
-          color={isPending ? colors.textMuted : colors.grass}
-        />
+    <View style={styles.sessionCard}>
+      <View style={styles.sessionRow}>
+        <View style={styles.sessionIconContainer}>
+          <Ionicons
+            name={sourceIcon[session.source] ?? 'leaf-outline'}
+            size={20}
+            color={isPending ? colors.textMuted : colors.grass}
+          />
+        </View>
+        <View style={[styles.sessionInfo, isPending && styles.sessionPending]}>
+          <Text style={styles.sessionTime}>
+            {formatTime(session.startTime)} – {formatTime(session.endTime)}
+          </Text>
+          <Text style={styles.sessionDuration}>{formatMinutes(session.durationMinutes)}</Text>
+        </View>
+        {isPending && (
+          <View style={styles.reviewBadge}>
+            <Text style={styles.reviewText}>{t('review')}</Text>
+          </View>
+        )}
       </View>
-      <View style={[styles.sessionInfo, isPending && styles.sessionPending]}>
-        <Text style={styles.sessionTime}>
-          {formatTime(session.startTime)} – {formatTime(session.endTime)}
-        </Text>
-        <Text style={styles.sessionDuration}>{formatMinutes(session.durationMinutes)}</Text>
-      </View>
+
       {isPending && (
-        <View style={styles.reviewBadge}>
-          <Text style={styles.reviewText}>{t('review')}</Text>
+        <View style={styles.swipeHint} pointerEvents="none" testID="home-swipe-hint">
+          <Ionicons name="arrow-back-outline" size={14} color={colors.textMuted} />
+          <Text style={styles.swipeHintText}>{t('session_swipe_hint')}</Text>
+          <Ionicons name="arrow-forward-outline" size={14} color={colors.textMuted} />
         </View>
       )}
     </View>
@@ -355,7 +365,10 @@ function SessionRow({
   );
 }
 
-function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
+function makeStyles(
+  colors: ReturnType<typeof useTheme>['colors'],
+  shadows: ReturnType<typeof useTheme>['shadows']
+) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.mist },
     content: { padding: spacing.md, paddingBottom: spacing.xxl },
@@ -440,14 +453,16 @@ function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
       marginBottom: spacing.sm,
     },
 
+    sessionCard: {
+      backgroundColor: colors.card,
+      borderRadius: radius.md,
+      marginBottom: spacing.xs,
+      ...shadows.soft,
+    },
     sessionRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      backgroundColor: colors.card,
-      borderRadius: radius.md,
       padding: spacing.md,
-      marginBottom: spacing.xs,
-      ...shadows.soft,
     },
     sessionIconContainer: { width: 28, marginRight: spacing.sm, alignItems: 'center' },
     sessionInfo: { flex: 1 },
@@ -479,6 +494,17 @@ function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
       marginTop: 2,
     },
 
+    swipeHint: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: spacing.xs,
+      borderTopWidth: 1,
+      borderTopColor: colors.fog,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.xs,
+    },
+    swipeHintText: { fontSize: 12, color: colors.textMuted },
     emptyState: { alignItems: 'center', paddingVertical: spacing.xxl },
     emptyIcon: { width: 64, height: 64, marginBottom: spacing.md },
     emptyText: { fontSize: 16, color: colors.textSecondary, fontWeight: '500' },

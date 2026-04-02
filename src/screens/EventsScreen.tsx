@@ -20,7 +20,7 @@ import {
   unDiscardSession,
   OutsideSession,
 } from '../storage/database';
-import { spacing, radius, shadows } from '../utils/theme';
+import { spacing, radius } from '../utils/theme';
 import { useTheme } from '../context/ThemeContext';
 import { formatMinutes } from '../utils/helpers';
 import { t, formatLocalDate, formatLocalTime } from '../i18n';
@@ -47,8 +47,8 @@ function groupByDay(sessions: OutsideSession[]): { dayMs: number; sessions: Outs
 }
 
 export default function EventsScreen() {
-  const { colors } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { colors, shadows } = useTheme();
+  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const [includeConfirmed, setIncludeConfirmed] = useState(true);
   const [includeReview, setIncludeReview] = useState(true);
   const [includeRejected, setIncludeRejected] = useState(false);
@@ -253,8 +253,8 @@ function SessionRow({
   onUnDiscard: () => void;
   onEditTimes: () => void;
 }) {
-  const { colors } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { colors, shadows } = useTheme();
+  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const swipeableRef = useRef<Swipeable>(null);
   const sourceIcon: Record<string, keyof typeof Ionicons.glyphMap> = {
     health_connect: 'fitness-outline',
@@ -348,6 +348,14 @@ function SessionRow({
         </View>
         <Text style={styles.rowChevron}>{expanded ? '▲' : '▼'}</Text>
       </TouchableOpacity>
+
+      {isPending && !expanded && (
+        <View style={styles.swipeHint} pointerEvents="none" testID="session-swipe-hint">
+          <Ionicons name="arrow-back-outline" size={14} color={colors.textMuted} />
+          <Text style={styles.swipeHintText}>{t('session_swipe_hint')}</Text>
+          <Ionicons name="arrow-forward-outline" size={14} color={colors.textMuted} />
+        </View>
+      )}
 
       {/* Expanded detail */}
       {expanded && (
@@ -480,7 +488,10 @@ function SessionRow({
   );
 }
 
-function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
+function makeStyles(
+  colors: ReturnType<typeof useTheme>['colors'],
+  shadows: ReturnType<typeof useTheme>['shadows']
+) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.mist },
 
@@ -634,6 +645,15 @@ function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
     actionSecondaryText: { fontSize: 14, color: colors.error, fontWeight: '600' },
     actionEditTimesText: { fontSize: 14, color: colors.textPrimary, fontWeight: '600' },
 
+    swipeHint: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: spacing.xs,
+      paddingHorizontal: spacing.md,
+      paddingBottom: spacing.sm,
+    },
+    swipeHintText: { fontSize: 12, color: colors.textMuted },
     swipeAction: {
       justifyContent: 'center',
       alignItems: 'center',

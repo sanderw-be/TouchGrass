@@ -31,6 +31,22 @@ jest.mock('../context/ThemeContext', () => ({
       textMuted: '#8FA892',
       textInverse: '#FFFFFF',
     },
+    shadows: {
+      soft: {
+        shadowColor: '#2D5240',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+        elevation: 3,
+      },
+      medium: {
+        shadowColor: '#2D5240',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.12,
+        shadowRadius: 16,
+        elevation: 6,
+      },
+    },
     isDark: false,
   }),
 }));
@@ -170,5 +186,22 @@ describe('HistoryScreen BarChart', () => {
     barWrappers.forEach((barWrapper) => {
       expect(barWrapper).toHaveStyle({ width: expectedWidth });
     });
+  });
+
+  it('shows axis labels and a full legend for context', () => {
+    const baseDate = new Date(2024, 0, 1).getTime();
+    const data = [
+      { date: baseDate, minutes: 10 },
+      { date: baseDate + 86400000, minutes: 0 },
+    ];
+
+    const { getByText } = render(<BarChart data={data} target={30} maxValue={60} period="month" />);
+
+    expect(getByText('history_axis_minutes')).toBeTruthy();
+    expect(getByText('history_axis_days_month')).toBeTruthy();
+    expect(getByText('history_legend_goal_met')).toBeTruthy();
+    expect(getByText('history_legend_below_goal')).toBeTruthy();
+    expect(getByText('history_legend_today')).toBeTruthy();
+    expect(getByText('history_legend_target')).toBeTruthy();
   });
 });

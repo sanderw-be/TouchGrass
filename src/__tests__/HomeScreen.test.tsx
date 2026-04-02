@@ -1,5 +1,6 @@
 import React from 'react';
 import { render, fireEvent, act } from '@testing-library/react-native';
+import type { OutsideSession } from '../storage/database';
 
 jest.mock('../i18n', () => ({
   t: (key: string) => key,
@@ -17,7 +18,7 @@ const mockGetTodayMinutes = jest.fn(() => 20);
 const mockGetWeekMinutes = jest.fn(() => 100);
 const mockGetCurrentDailyGoal = jest.fn(() => ({ targetMinutes: 60 }));
 const mockGetCurrentWeeklyGoal = jest.fn(() => ({ targetMinutes: 300 }));
-const mockGetSessionsForDay = jest.fn(() => []);
+const mockGetSessionsForDay = jest.fn<OutsideSession[], [number]>(() => []);
 const mockConfirmSession = jest.fn();
 
 jest.mock('../storage/database', () => ({
@@ -25,7 +26,7 @@ jest.mock('../storage/database', () => ({
   getWeekMinutes: () => mockGetWeekMinutes(),
   getCurrentDailyGoal: () => mockGetCurrentDailyGoal(),
   getCurrentWeeklyGoal: () => mockGetCurrentWeeklyGoal(),
-  getSessionsForDay: () => mockGetSessionsForDay(),
+  getSessionsForDay: (dateMs: number) => mockGetSessionsForDay(dateMs),
   confirmSession: (...args: any[]) => mockConfirmSession(...args),
 }));
 
@@ -71,6 +72,22 @@ jest.mock('../context/ThemeContext', () => ({
       textSecondary: '#5A7060',
       textMuted: '#8FA892',
       textInverse: '#FFFFFF',
+    },
+    shadows: {
+      soft: {
+        shadowColor: '#2D5240',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+        elevation: 3,
+      },
+      medium: {
+        shadowColor: '#2D5240',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.12,
+        shadowRadius: 16,
+        elevation: 6,
+      },
     },
     isDark: false,
   }),
@@ -159,5 +176,41 @@ describe('HomeScreen inline timer', () => {
     act(() => {
       fireEvent.press(getByText('ring_timer_tap_stop'));
     });
+  });
+
+  it('shows a swipe hint for pending session cards', () => {
+    mockGetSessionsForDay.mockReturnValueOnce([
+      {
+        id: 1,
+        startTime: Date.now(),
+        endTime: Date.now() + 30 * 60 * 1000,
+        durationMinutes: 30,
+        confidence: 1,
+        userConfirmed: null,
+        discarded: 0,
+        source: 'gps',
+      },
+    ]);
+
+    const { getByTestId } = render(<HomeScreen />);
+    expect(getByTestId('home-swipe-hint')).toBeTruthy();
+  });
+
+  it('hides the swipe hint for confirmed sessions', () => {
+    mockGetSessionsForDay.mockReturnValueOnce([
+      {
+        id: 2,
+        startTime: Date.now(),
+        endTime: Date.now() + 20 * 60 * 1000,
+        durationMinutes: 20,
+        confidence: 1,
+        userConfirmed: 1,
+        discarded: 0,
+        source: 'gps',
+      },
+    ]);
+
+    const { queryByTestId } = render(<HomeScreen />);
+    expect(queryByTestId('home-swipe-hint')).toBeNull();
   });
 });

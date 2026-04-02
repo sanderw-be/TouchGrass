@@ -97,22 +97,45 @@ export const radius = {
   full: 9999,
 };
 
-export const shadows = {
+export type ThemeColors = typeof colors;
+
+export type Shadows = {
   soft: {
-    shadowColor: colors.grassDark,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
-  },
+    shadowColor: string;
+    shadowOffset: { width: number; height: number };
+    shadowOpacity: number;
+    shadowRadius: number;
+    elevation: number;
+  };
   medium: {
-    shadowColor: colors.grassDark,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 16,
-    elevation: 6,
-  },
+    shadowColor: string;
+    shadowOffset: { width: number; height: number };
+    shadowOpacity: number;
+    shadowRadius: number;
+    elevation: number;
+  };
 };
+
+export function makeShadows(themeColors: ThemeColors): Shadows {
+  return {
+    soft: {
+      shadowColor: themeColors.grassDark,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.08,
+      shadowRadius: 8,
+      elevation: 3,
+    },
+    medium: {
+      shadowColor: themeColors.grassDark,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.12,
+      shadowRadius: 16,
+      elevation: 6,
+    },
+  };
+}
+
+export const shadows = makeShadows(colors);
 
 // Progress ring helper
 export function progressColor(percent: number): string {
