@@ -38,6 +38,7 @@ export default {
   session_edit_title: 'Edit session times',
   session_edit_save: '✓ Save & approve',
   session_edit_hint: 'Saving edited times will auto-approve this session.',
+  session_swipe_hint: 'Swipe left to confirm, right if not outside.',
 
   // Goals
   of: 'of',

@@ -124,6 +124,11 @@ describe('EventsScreen', () => {
     expect(getByTestId('swipe-reject-action')).toBeTruthy();
   });
 
+  it('shows a swipe hint for pending sessions', () => {
+    const { getByTestId } = render(<EventsScreen />);
+    expect(getByTestId('session-swipe-hint')).toBeTruthy();
+  });
+
   it('calls confirmSession(true) when swipe confirm action is tapped', () => {
     const { getByTestId } = render(<EventsScreen />);
     fireEvent.press(getByTestId('swipe-confirm-action'));
@@ -153,6 +158,7 @@ describe('EventsScreen', () => {
     const { queryByTestId } = render(<EventsScreen />);
     expect(queryByTestId('swipe-confirm-action')).toBeNull();
     expect(queryByTestId('swipe-reject-action')).toBeNull();
+    expect(queryByTestId('session-swipe-hint')).toBeNull();
   });
 
   it('hides rejected sessions by default (includeRejected = false)', () => {
@@ -181,5 +187,6 @@ describe('EventsScreen', () => {
     fireEvent.press(getByTestId('toggle-rejected'));
     expect(queryByTestId('swipe-confirm-action')).toBeNull();
     expect(queryByTestId('swipe-reject-action')).toBeNull();
+    expect(queryByTestId('session-swipe-hint')).toBeNull();
   });
 });

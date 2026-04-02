@@ -349,6 +349,14 @@ function SessionRow({
         <Text style={styles.rowChevron}>{expanded ? '▲' : '▼'}</Text>
       </TouchableOpacity>
 
+      {isPending && !expanded && (
+        <View style={styles.swipeHint} pointerEvents="none" testID="session-swipe-hint">
+          <Ionicons name="arrow-back-outline" size={14} color={colors.textMuted} />
+          <Text style={styles.swipeHintText}>{t('session_swipe_hint')}</Text>
+          <Ionicons name="arrow-forward-outline" size={14} color={colors.textMuted} />
+        </View>
+      )}
+
       {/* Expanded detail */}
       {expanded && (
         <View style={styles.rowDetail}>
@@ -634,6 +642,15 @@ function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
     actionSecondaryText: { fontSize: 14, color: colors.error, fontWeight: '600' },
     actionEditTimesText: { fontSize: 14, color: colors.textPrimary, fontWeight: '600' },
 
+    swipeHint: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: spacing.xs,
+      paddingHorizontal: spacing.md,
+      paddingBottom: spacing.sm,
+    },
+    swipeHintText: { fontSize: 12, color: colors.textMuted },
     swipeAction: {
       justifyContent: 'center',
       alignItems: 'center',
