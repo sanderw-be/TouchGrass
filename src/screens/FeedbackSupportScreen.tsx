@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Linking, Alert } from 'react-native';
 import { spacing, radius, shadows } from '../utils/theme';
 import { useTheme } from '../context/ThemeContext';
+import { Ionicons } from '@expo/vector-icons';
 import i18n, { t } from '../i18n';
 
 const FEEDBACK_URLS: Record<string, string> = {
@@ -39,19 +40,19 @@ export default function FeedbackSupportScreen() {
       <View style={styles.card}>
         <TouchableOpacity onPress={() => openUrl(getFeedbackUrl())}>
           <SettingRow
-            icon="📋"
+            icon={<Ionicons name="chatbubble-outline" size={20} color={colors.textSecondary} />}
             label={t('feedback_send_feedback')}
             sublabel={t('feedback_send_feedback_sublabel')}
-            right={<Text style={styles.chevron}>›</Text>}
+            right={<Ionicons name="chevron-forward" size={20} color={colors.textMuted} />}
           />
         </TouchableOpacity>
         <Divider />
         <TouchableOpacity onPress={() => openUrl(KOFI_URL)}>
           <SettingRow
-            icon="☕"
+            icon={<Ionicons name="cafe-outline" size={20} color={colors.textSecondary} />}
             label={t('feedback_support_kofi')}
             sublabel={t('feedback_support_kofi_sublabel')}
-            right={<Text style={styles.chevron}>›</Text>}
+            right={<Ionicons name="chevron-forward" size={20} color={colors.textMuted} />}
           />
         </TouchableOpacity>
       </View>
@@ -65,7 +66,7 @@ function SettingRow({
   sublabel,
   right,
 }: {
-  icon: string;
+  icon: React.ReactNode;
   label: string;
   sublabel?: string;
   right?: React.ReactNode;
@@ -74,7 +75,7 @@ function SettingRow({
   const styles = useMemo(() => makeStyles(colors), [colors]);
   return (
     <View style={styles.row}>
-      <Text style={styles.rowIcon}>{icon}</Text>
+      <View style={styles.rowIconContainer}>{icon}</View>
       <View style={styles.rowContent}>
         <Text style={styles.rowLabel}>{label}</Text>
         {sublabel && <Text style={styles.rowSublabel}>{sublabel}</Text>}
@@ -114,11 +115,11 @@ function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
       paddingVertical: spacing.md,
       minHeight: 56,
     },
-    rowIcon: {
-      fontSize: 20,
-      marginRight: spacing.md,
+    rowIconContainer: {
       width: 28,
-      textAlign: 'center' as const,
+      marginRight: spacing.md,
+      alignItems: 'center' as const,
+      justifyContent: 'center' as const,
     },
     rowContent: {
       flex: 1,
@@ -140,10 +141,6 @@ function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
       height: 1,
       backgroundColor: colors.fog,
       marginLeft: spacing.md + 28 + spacing.md,
-    },
-    chevron: {
-      fontSize: 20,
-      color: colors.textMuted,
     },
   };
 }

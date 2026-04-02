@@ -160,4 +160,24 @@ if (typeof global.structuredClone === 'undefined') {
   global.structuredClone = (obj) => JSON.parse(JSON.stringify(obj));
 }
 
+// Mock @expo/vector-icons
+jest.mock('@expo/vector-icons', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  const MockIcon = ({ name, testID, size, color, style }) =>
+    React.createElement(View, {
+      testID: testID || `icon-${name}`,
+      style: [{ width: size, height: size }, style],
+      accessibilityLabel: name,
+    });
+  return {
+    Ionicons: MockIcon,
+    MaterialIcons: MockIcon,
+    Feather: MockIcon,
+    FontAwesome: MockIcon,
+    FontAwesome5: MockIcon,
+    MaterialCommunityIcons: MockIcon,
+  };
+});
+
 // Add any additional setup here if needed

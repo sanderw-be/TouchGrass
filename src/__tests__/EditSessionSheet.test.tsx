@@ -132,8 +132,8 @@ describe('EditSessionSheet', () => {
 
   it('calls onClose when the close button is pressed', () => {
     const onClose = jest.fn();
-    const { getByText } = render(<EditSessionSheet {...defaultProps} onClose={onClose} />);
-    fireEvent.press(getByText('✕'));
+    const { getByTestId } = render(<EditSessionSheet {...defaultProps} onClose={onClose} />);
+    fireEvent.press(getByTestId('sheet-close-btn'));
     expect(onClose).toHaveBeenCalled();
   });
 

@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useMemo } from 'react';
 import { Animated, View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
+import { Ionicons } from '@expo/vector-icons';
 import { progressColor } from '../utils/theme';
 import { useTheme } from '../context/ThemeContext';
 import { formatMinutes, formatTimer } from '../utils/helpers';
@@ -96,7 +97,13 @@ export default function ProgressRing({
               <Text style={styles.timerValue}>{formatTimer(timerSeconds)}</Text>
               <Text style={styles.timerOutside}>{t('ring_timer_outside')}</Text>
               <Text style={styles.timerHint}>{t('ring_timer_tap_stop')}</Text>
-              <Text style={styles.stopIcon}>⬛</Text>
+              <Ionicons
+                name="stop"
+                size={28}
+                color={colors.grass}
+                style={styles.actionIcon}
+                testID="icon-stop"
+              />
             </View>
           ) : (
             <View style={styles.innerBlock}>
@@ -105,7 +112,13 @@ export default function ProgressRing({
                 {t('of')} {formatMinutes(target)}
               </Text>
               <Text style={styles.startHint}>{t('ring_timer_start')}</Text>
-              <Text style={styles.playIcon}>▶</Text>
+              <Ionicons
+                name="play"
+                size={28}
+                color={colors.grass}
+                style={styles.actionIcon}
+                testID="icon-play"
+              />
             </View>
           )}
         </TouchableOpacity>
@@ -164,11 +177,8 @@ function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
       marginTop: 6,
       fontWeight: '600',
     },
-    playIcon: {
-      fontSize: 28,
-      color: colors.grass,
+    actionIcon: {
       marginTop: 6,
-      lineHeight: 32,
     },
     timerValue: {
       fontSize: 36,
@@ -188,12 +198,6 @@ function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
       fontSize: 11,
       color: colors.textMuted,
       marginTop: 4,
-    },
-    stopIcon: {
-      fontSize: 28,
-      color: colors.grass,
-      marginTop: 8,
-      lineHeight: 32,
     },
   });
 }

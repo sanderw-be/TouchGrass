@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { Ionicons } from '@expo/vector-icons';
 import { logManualSession, startManualSession } from '../detection/manualCheckin';
 import { spacing, radius, shadows } from '../utils/theme';
 import { useTheme } from '../context/ThemeContext';
@@ -170,8 +171,8 @@ export default function ManualSessionSheet({ visible, onClose, onSessionLogged }
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.title}>{t('manual_title')}</Text>
-          <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
-            <Text style={styles.closeBtnText}>✕</Text>
+          <TouchableOpacity style={styles.closeBtn} onPress={onClose} testID="sheet-close-btn">
+            <Ionicons name="close" size={20} color={colors.textSecondary} />
           </TouchableOpacity>
         </View>
 
@@ -366,11 +367,6 @@ function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
       backgroundColor: colors.fog,
       alignItems: 'center',
       justifyContent: 'center',
-    },
-    closeBtnText: {
-      fontSize: 12,
-      color: colors.textSecondary,
-      fontWeight: '700',
     },
 
     tabs: {
