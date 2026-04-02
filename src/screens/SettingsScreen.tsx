@@ -33,6 +33,7 @@ import { spacing, radius, shadows } from '../utils/theme';
 import { useTheme, ThemePreference } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { t } from '../i18n';
+import { PRIVACY_POLICY_URL } from '../utils/constants';
 import type { SettingsStackParamList } from '../navigation/AppNavigator';
 import { useShowIntro } from '../context/IntroContext';
 
@@ -289,22 +290,30 @@ export default function SettingsScreen() {
           ))}
         </View>
 
+
         <Text style={styles.sectionHeader}>{t('settings_section_about')}</Text>
         <View style={styles.card}>
           <SettingRow icon="🌿" label="TouchGrass" sublabel={t('settings_app_sublabel')} />
           <Divider />
-          <SettingRow
-            icon="🔒"
-            label={t('settings_privacy')}
-            sublabel={t('settings_privacy_sublabel')}
-          />
+          <TouchableOpacity onPress={() => Linking.openURL(PRIVACY_POLICY_URL)}>
+            <SettingRow
+              icon="🔒"
+              label={t('settings_privacy')}
+              sublabel={t('settings_privacy_sublabel')}
+              hint={t('settings_privacy_hint')}
+              right={<Text style={styles.chevron}>›</Text>}
+            />
+          </TouchableOpacity>
           <Divider />
           <SettingRow
             icon="🎓"
             label={t('settings_rerun_tutorial')}
             sublabel={t('settings_rerun_tutorial_sublabel')}
             right={
-              <TouchableOpacity style={styles.editBtn} onPress={showIntro}>
+              <TouchableOpacity
+                style={styles.editBtn}
+                onPress={showIntro}
+              >
                 <Text style={styles.editBtnText}>{t('settings_rerun_tutorial')}</Text>
               </TouchableOpacity>
             }
@@ -339,11 +348,13 @@ function SettingRow({
   icon,
   label,
   sublabel,
+  hint,
   right,
 }: {
   icon: string;
   label: string;
   sublabel?: string;
+  hint?: string;
   right?: React.ReactNode;
 }) {
   const { colors } = useTheme();
@@ -354,6 +365,7 @@ function SettingRow({
       <View style={styles.rowContent}>
         <Text style={styles.rowLabel}>{label}</Text>
         {sublabel && <Text style={styles.rowSublabel}>{sublabel}</Text>}
+        {hint && <Text style={styles.rowHint}>{hint}</Text>}
       </View>
       {right && <View style={styles.rowRight}>{right}</View>}
     </View>
@@ -480,6 +492,7 @@ function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
     rowContent: { flex: 1 },
     rowLabel: { fontSize: 15, color: colors.textPrimary, fontWeight: '500' },
     rowSublabel: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
+    rowHint: { fontSize: 12, color: colors.grass, marginTop: 2 },
     rowRight: { marginLeft: spacing.sm },
 
     divider: { height: 1, backgroundColor: colors.fog, marginLeft: spacing.md + 28 + spacing.md },

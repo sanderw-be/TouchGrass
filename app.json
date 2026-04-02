@@ -98,7 +98,8 @@
     "extra": {
       "eas": {
         "projectId": "34928510-f2c8-47b0-9d37-c911af91d506"
-      }
+      },
+      "privacyPolicyUrl": "https://sanderw-be.github.io/TouchGrass-Legal/privacy-policy.html"
     },
     "owner": "wubbewubben",
     "ios": {

@@ -1,5 +1,7 @@
 import React from 'react';
 import { render, fireEvent, act, waitFor } from '@testing-library/react-native';
+import { Linking } from 'react-native';
+import { PRIVACY_POLICY_URL } from '../utils/constants';
 
 // Mock i18n
 jest.mock('../i18n', () => ({
@@ -191,5 +193,32 @@ describe('SettingsScreen detection toggles', () => {
 
     const { queryByText } = render(<SettingsScreen />);
     await waitFor(() => expect(queryByText('settings_hc_permission_missing')).toBeNull());
+  });
+});
+
+describe('SettingsScreen privacy policy link', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
+  });
+
+  it('renders privacy row with label and hint', async () => {
+    const { getByText } = render(<SettingsScreen />);
+    await waitFor(() => {
+      expect(getByText('settings_privacy')).toBeTruthy();
+      expect(getByText('settings_privacy_sublabel')).toBeTruthy();
+      expect(getByText('settings_privacy_hint')).toBeTruthy();
+    });
+  });
+
+  it('opens privacy policy URL when privacy row is pressed', async () => {
+    const { getByText } = render(<SettingsScreen />);
+    await waitFor(() => expect(getByText('settings_privacy_hint')).toBeTruthy());
+
+    fireEvent.press(getByText('settings_privacy_hint'));
+
+    await waitFor(() => {
+      expect(Linking.openURL).toHaveBeenCalledWith(PRIVACY_POLICY_URL);
+    });
   });
 });

@@ -162,6 +162,7 @@ export default {
   settings_app_sublabel: 'Your outdoor time companion',
   settings_privacy: 'Privacy',
   settings_privacy_sublabel: 'All data stays on your device',
+  settings_privacy_hint: 'Tap to read our privacy policy',
   settings_clear_data: 'Clear all data',
   settings_clear_data_sublabel: 'Permanently delete all sessions and settings',
   settings_clear_data_confirm_title: 'Clear all data',
@@ -247,6 +248,7 @@ export default {
   intro_welcome_feature_2: 'Set and monitor daily goals',
   intro_welcome_feature_3: 'Get smart reminders',
   intro_welcome_feature_4: 'All data stays private on your device',
+  intro_privacy_policy: 'Privacy Policy',
   intro_hc_title: 'Health Connect',
   intro_hc_body:
     'TouchGrass uses Health Connect to automatically detect outdoor exercise activities.',
