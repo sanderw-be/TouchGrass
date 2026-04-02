@@ -1,9 +1,20 @@
 import * as IntentLauncher from 'expo-intent-launcher';
-import { openBatteryOptimizationSettings } from '../utils/batteryOptimization';
+import * as Battery from 'expo-battery';
+import { Platform } from 'react-native';
+import {
+  BATTERY_OPTIMIZATION_SETTING_KEY,
+  isBatteryOptimizationDisabled,
+  openBatteryOptimizationSettings,
+  refreshBatteryOptimizationSetting,
+} from '../utils/batteryOptimization';
 
 jest.mock('expo-constants', () => ({
   expoConfig: { android: { package: 'com.jollyheron.touchgrass' } },
   manifest: { android: { package: 'com.jollyheron.touchgrass' } },
+}));
+
+jest.mock('expo-battery', () => ({
+  isBatteryOptimizationEnabledAsync: jest.fn(),
 }));
 
 jest.mock('expo-intent-launcher', () => ({
@@ -13,6 +24,17 @@ jest.mock('expo-intent-launcher', () => ({
     IGNORE_BATTERY_OPTIMIZATION_SETTINGS: 'android.settings.IGNORE_BATTERY_OPTIMIZATION_SETTINGS',
   },
 }));
+
+const mockSetSetting = jest.fn();
+jest.mock('../storage/database', () => ({
+  setSetting: (key: string, value: string) => mockSetSetting(key, value),
+}));
+
+const mockIsBatteryOptimizationEnabledAsync =
+  Battery.isBatteryOptimizationEnabledAsync as jest.MockedFunction<
+    typeof Battery.isBatteryOptimizationEnabledAsync
+  >;
+const originalPlatformOS = Platform.OS;
 
 describe('openBatteryOptimizationSettings', () => {
   beforeEach(() => {
@@ -56,5 +78,42 @@ describe('openBatteryOptimizationSettings', () => {
     const opened = await openBatteryOptimizationSettings();
 
     expect(opened).toBe(false);
+  });
+});
+
+describe('battery optimization status helpers', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    (Platform as any).OS = originalPlatformOS;
+  });
+
+  afterAll(() => {
+    (Platform as any).OS = originalPlatformOS;
+  });
+
+  it('returns true when optimization is disabled', async () => {
+    (Platform as any).OS = 'android';
+    mockIsBatteryOptimizationEnabledAsync.mockResolvedValue(false);
+
+    await expect(isBatteryOptimizationDisabled()).resolves.toBe(true);
+  });
+
+  it('returns false when optimization is enabled', async () => {
+    (Platform as any).OS = 'android';
+    mockIsBatteryOptimizationEnabledAsync.mockResolvedValue(true);
+
+    await expect(isBatteryOptimizationDisabled()).resolves.toBe(false);
+  });
+
+  it('stores granted status when refreshed', async () => {
+    (Platform as any).OS = 'android';
+    mockIsBatteryOptimizationEnabledAsync.mockResolvedValue(true);
+
+    await expect(refreshBatteryOptimizationSetting()).resolves.toBe(false);
+    expect(mockSetSetting).toHaveBeenCalledWith(BATTERY_OPTIMIZATION_SETTING_KEY, '0');
+
+    mockIsBatteryOptimizationEnabledAsync.mockResolvedValue(false);
+    await expect(refreshBatteryOptimizationSetting()).resolves.toBe(true);
+    expect(mockSetSetting).toHaveBeenCalledWith(BATTERY_OPTIMIZATION_SETTING_KEY, '1');
   });
 });

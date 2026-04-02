@@ -43,6 +43,10 @@ jest.mock('../background/unifiedBackgroundTask', () => ({
   registerUnifiedBackgroundTask: jest.fn().mockResolvedValue(undefined),
 }));
 
+jest.mock('../utils/batteryOptimization', () => ({
+  refreshBatteryOptimizationSetting: jest.fn().mockResolvedValue(true),
+}));
+
 // Mock database module
 jest.mock('../storage/database', () => ({
   initDatabase: jest.fn(),

@@ -43,6 +43,7 @@ import PermissionExplainerSheet, {
 } from '../components/PermissionExplainerSheet';
 import {
   BATTERY_OPTIMIZATION_SETTING_KEY,
+  refreshBatteryOptimizationSetting,
   openBatteryOptimizationSettings,
 } from '../utils/batteryOptimization';
 
@@ -102,6 +103,13 @@ export default function GoalsScreen() {
     setBatteryOptimizationGranted(getSetting(BATTERY_OPTIMIZATION_SETTING_KEY, '0') === '1');
   }, []);
 
+  const refreshBatteryOptimizationStatus = useCallback(async () => {
+    if (Platform.OS !== 'android') return;
+
+    const granted = await refreshBatteryOptimizationSetting();
+    setBatteryOptimizationGranted(granted);
+  }, []);
+
   const checkWeatherPermissions = useCallback(async () => {
     const granted = await checkWeatherLocationPermissions();
     setWeatherLocationGranted(granted);
@@ -133,16 +141,23 @@ export default function GoalsScreen() {
       loadGoalSettings();
       checkCalendarPermissions();
       checkWeatherPermissions();
+      refreshBatteryOptimizationStatus();
 
       const sub = AppState.addEventListener('change', (state: AppStateStatus) => {
         if (state === 'active') {
           loadGoalSettings();
           checkCalendarPermissions();
           checkWeatherPermissions();
+          refreshBatteryOptimizationStatus();
         }
       });
       return () => sub.remove();
-    }, [loadGoalSettings, checkCalendarPermissions, checkWeatherPermissions])
+    }, [
+      loadGoalSettings,
+      checkCalendarPermissions,
+      checkWeatherPermissions,
+      refreshBatteryOptimizationStatus,
+    ])
   );
 
   const saveDaily = (minutes: number) => {
