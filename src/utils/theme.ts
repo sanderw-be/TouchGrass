@@ -71,9 +71,13 @@ export const darkColors: typeof colors = {
 };
 
 export const fonts = {
-  // Display — characterful, nature-inspired
-  display: 'serif', // fallback; we'll load custom fonts later
-  body: 'System',
+  // Display — characterful, nature-inspired (Nunito loaded via expo-font)
+  display: 'Nunito_700Bold',
+  displayLight: 'Nunito_400Regular',
+  displaySemiBold: 'Nunito_600SemiBold',
+  displayExtraBold: 'Nunito_800ExtraBold',
+  body: 'Nunito_400Regular',
+  bodySemiBold: 'Nunito_600SemiBold',
   mono: 'monospace',
 };
 
