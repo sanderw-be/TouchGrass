@@ -76,9 +76,8 @@ export default {
     'De WHO beveelt minimaal 150 minuten matige buitenactiviteit per week aan — dat is ongeveer 30 minuten per dag op werkdagen.',
 
   // Sessiescherm
-  events_tab_approved: 'Goedgekeurd',
-  events_tab_standard: 'Standaard',
-  events_tab_all: 'Alles',
+  events_toggle_review: 'Ter beoordeling',
+  events_toggle_rejected: 'Afgewezen',
   events_none_recorded: 'Nog geen sessies geregistreerd.',
   events_confidence: 'Betrouwbaarheid',
   events_not_outside: '✕ Binnen',

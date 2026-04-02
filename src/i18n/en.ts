@@ -47,7 +47,7 @@ export default {
   // Navigation
   nav_home: 'Home',
   nav_history: 'History',
-  nav_events: 'Events',
+  nav_events: 'Sessions',
   nav_goals: 'Goals',
   nav_settings: 'Settings',
   nav_weather_settings: 'Weather Settings',
@@ -75,10 +75,9 @@ export default {
   goals_who_tip:
     "The WHO recommends at least 150 minutes of moderate outdoor activity per week — that's about 30 minutes a day on weekdays.",
 
-  // Events screen
-  events_tab_approved: 'Approved',
-  events_tab_standard: 'Standard',
-  events_tab_all: 'All',
+  // Events/Sessions screen
+  events_toggle_review: 'In Review',
+  events_toggle_rejected: 'Rejected',
   events_none_recorded: 'No sessions recorded yet.',
   events_confidence: 'Confidence',
   events_not_outside: '✕ Inside',

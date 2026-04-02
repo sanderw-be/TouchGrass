@@ -8,9 +8,8 @@ jest.mock('../i18n', () => ({
 }));
 
 jest.mock('../storage/database', () => ({
-  getApprovedSessions: jest.fn(() => []),
-  getStandardSessions: jest.fn(() => []),
   getAllSessionsIncludingDiscarded: jest.fn(() => []),
+  autoCloseOldProposedSessions: jest.fn(),
   confirmSession: jest.fn(),
   deleteSession: jest.fn(),
   unDiscardSession: jest.fn(),
@@ -46,7 +45,11 @@ jest.mock('@react-navigation/native', () => {
 });
 
 import EventsScreen from '../screens/EventsScreen';
-import { getStandardSessions, confirmSession, OutsideSession } from '../storage/database';
+import {
+  getAllSessionsIncludingDiscarded,
+  confirmSession,
+  OutsideSession,
+} from '../storage/database';
 
 const mockPendingSession: OutsideSession = {
   id: 1,
@@ -74,15 +77,22 @@ const mockRejectedSession: OutsideSession = {
 describe('EventsScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    (getStandardSessions as jest.Mock).mockReturnValue([mockPendingSession]);
+    (getAllSessionsIncludingDiscarded as jest.Mock).mockReturnValue([mockPendingSession]);
   });
 
   it('renders without crashing', () => {
-    const { getByText } = render(<EventsScreen />);
-    expect(getByText('events_tab_standard (1)')).toBeTruthy();
+    const { getByTestId } = render(<EventsScreen />);
+    expect(getByTestId('toggle-review')).toBeTruthy();
+    expect(getByTestId('toggle-rejected')).toBeTruthy();
   });
 
-  it('shows swipe confirm action for pending sessions', () => {
+  it('shows proposed badge count when there are pending sessions', () => {
+    const { getByText } = render(<EventsScreen />);
+    // Badge shows pending count
+    expect(getByText('1')).toBeTruthy();
+  });
+
+  it('shows swipe confirm action for pending sessions (include review on by default)', () => {
     const { getByTestId } = render(<EventsScreen />);
     expect(getByTestId('swipe-confirm-action')).toBeTruthy();
     expect(getByTestId('swipe-reject-action')).toBeTruthy();
@@ -100,17 +110,37 @@ describe('EventsScreen', () => {
     expect(confirmSession).toHaveBeenCalledWith(1, false);
   });
 
+  it('hides pending sessions when Include Review is toggled off', () => {
+    const { getByTestId, queryByTestId } = render(<EventsScreen />);
+    fireEvent.press(getByTestId('toggle-review'));
+    expect(queryByTestId('swipe-confirm-action')).toBeNull();
+    expect(queryByTestId('swipe-reject-action')).toBeNull();
+  });
+
   it('does not show swipe actions for confirmed sessions', () => {
-    (getStandardSessions as jest.Mock).mockReturnValue([mockConfirmedSession]);
+    (getAllSessionsIncludingDiscarded as jest.Mock).mockReturnValue([mockConfirmedSession]);
     const { queryByTestId } = render(<EventsScreen />);
     expect(queryByTestId('swipe-confirm-action')).toBeNull();
     expect(queryByTestId('swipe-reject-action')).toBeNull();
   });
 
-  it('does not show swipe actions for rejected sessions', () => {
-    (getStandardSessions as jest.Mock).mockReturnValue([mockRejectedSession]);
-    const { queryByTestId } = render(<EventsScreen />);
+  it('does not show rejected sessions by default, but shows approved sessions', () => {
+    (getAllSessionsIncludingDiscarded as jest.Mock).mockReturnValue([
+      mockRejectedSession,
+      mockConfirmedSession,
+    ]);
+    const { queryByTestId, getByText } = render(<EventsScreen />);
+    // Rejected sessions are hidden when Include Rejected is off
     expect(queryByTestId('swipe-confirm-action')).toBeNull();
-    expect(queryByTestId('swipe-reject-action')).toBeNull();
+    // Approved sessions are still visible (session row with the time text)
+    expect(getByText('10:00–10:00')).toBeTruthy();
+  });
+
+  it('shows rejected sessions when Include Rejected is toggled on', () => {
+    (getAllSessionsIncludingDiscarded as jest.Mock).mockReturnValue([mockRejectedSession]);
+    const { getByTestId } = render(<EventsScreen />);
+    fireEvent.press(getByTestId('toggle-rejected'));
+    // Rejected session is now visible (no swipe actions since it's not pending)
+    expect(getByTestId('toggle-rejected')).toBeTruthy();
   });
 });

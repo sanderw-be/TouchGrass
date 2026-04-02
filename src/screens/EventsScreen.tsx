@@ -13,9 +13,8 @@ import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import {
-  getApprovedSessions,
-  getStandardSessions,
   getAllSessionsIncludingDiscarded,
+  autoCloseOldProposedSessions,
   confirmSession,
   deleteSession,
   unDiscardSession,
@@ -30,8 +29,6 @@ import EditSessionSheet from '../components/EditSessionSheet';
 import { updateTimeSlotProbability } from '../detection/sessionConfidence';
 import { onSessionsChanged } from '../utils/sessionsChangedEmitter';
 import { cancelRemindersIfGoalReached } from '../notifications/notificationManager';
-
-type Tab = 'approved' | 'standard' | 'all';
 
 const FOUR_WEEKS_AGO = () => Date.now() - 28 * 24 * 60 * 60 * 1000;
 
@@ -52,9 +49,8 @@ function groupByDay(sessions: OutsideSession[]): { dayMs: number; sessions: Outs
 export default function EventsScreen() {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
-  const [tab, setTab] = useState<Tab>('standard');
-  const [approvedSessions, setApprovedSessions] = useState<OutsideSession[]>([]);
-  const [standardSessions, setStandardSessions] = useState<OutsideSession[]>([]);
+  const [includeReview, setIncludeReview] = useState(true);
+  const [includeRejected, setIncludeRejected] = useState(false);
   const [allSessions, setAllSessions] = useState<OutsideSession[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [sheetVisible, setSheetVisible] = useState(false);
@@ -62,10 +58,9 @@ export default function EventsScreen() {
   const [editSession, setEditSession] = useState<OutsideSession | null>(null);
 
   const loadData = useCallback(() => {
+    autoCloseOldProposedSessions();
     const from = FOUR_WEEKS_AGO();
     const to = Date.now();
-    setApprovedSessions(getApprovedSessions(from, to));
-    setStandardSessions(getStandardSessions(from, to));
     setAllSessions(getAllSessionsIncludingDiscarded(from, to));
   }, []);
 
@@ -122,14 +117,19 @@ export default function EventsScreen() {
     loadData();
   };
 
-  const sessions =
-    tab === 'approved' ? approvedSessions : tab === 'standard' ? standardSessions : allSessions;
-
-  // standardSessions never contains discarded sessions (getStandardSessions filters them out),
-  // but we guard explicitly so the intent is clear.
-  const pendingCount = standardSessions.filter(
+  const proposedCount = allSessions.filter(
     (s) => s.userConfirmed === null && s.discarded !== 1
   ).length;
+
+  const sessions = allSessions.filter((s) => {
+    const isApproved = s.userConfirmed === 1;
+    const isProposed = s.userConfirmed === null && s.discarded !== 1;
+    const isRejected = s.userConfirmed === 0 || s.discarded === 1;
+    if (isApproved) return true;
+    if (isProposed && includeReview) return true;
+    if (isRejected && includeRejected) return true;
+    return false;
+  });
 
   const grouped = groupByDay(sessions);
 
@@ -150,33 +150,33 @@ export default function EventsScreen() {
         }}
       />
 
-      {/* Tab switcher */}
-      <View style={styles.tabs}>
-        <TouchableOpacity
-          style={[styles.tab, tab === 'approved' && styles.tabActive]}
-          onPress={() => setTab('approved')}
-        >
-          <Text style={[styles.tabText, tab === 'approved' && styles.tabTextActive]}>
-            {t('events_tab_approved')}
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tab, tab === 'standard' && styles.tabActive]}
-          onPress={() => setTab('standard')}
-        >
-          <Text style={[styles.tabText, tab === 'standard' && styles.tabTextActive]}>
-            {t('events_tab_standard')}
-            {pendingCount > 0 ? ` (${pendingCount})` : ''}
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tab, tab === 'all' && styles.tabActive]}
-          onPress={() => setTab('all')}
-        >
-          <Text style={[styles.tabText, tab === 'all' && styles.tabTextActive]}>
-            {t('events_tab_all')}
-          </Text>
-        </TouchableOpacity>
+      {/* Toggles + add button */}
+      <View style={styles.toolbar}>
+        <View style={styles.toggleRow}>
+          <TouchableOpacity
+            style={[styles.toggle, includeReview && styles.toggleActive]}
+            onPress={() => setIncludeReview((v) => !v)}
+            testID="toggle-review"
+          >
+            <Text style={[styles.toggleText, includeReview && styles.toggleTextActive]}>
+              {t('events_toggle_review')}
+            </Text>
+            {proposedCount > 0 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{proposedCount}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.toggle, includeRejected && styles.toggleActive]}
+            onPress={() => setIncludeRejected((v) => !v)}
+            testID="toggle-rejected"
+          >
+            <Text style={[styles.toggleText, includeRejected && styles.toggleTextActive]}>
+              {t('events_toggle_rejected')}
+            </Text>
+          </TouchableOpacity>
+        </View>
         <TouchableOpacity style={styles.addBtn} onPress={() => setSheetVisible(true)}>
           <Ionicons name="add" size={24} color={colors.textInverse} />
         </TouchableOpacity>
@@ -475,23 +475,48 @@ function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.mist },
 
-    tabs: {
+    toolbar: {
       flexDirection: 'row',
       backgroundColor: colors.card,
       borderBottomWidth: 1,
       borderBottomColor: colors.fog,
       alignItems: 'center',
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      gap: spacing.sm,
     },
-    tab: {
+    toggleRow: {
       flex: 1,
-      paddingVertical: spacing.md,
-      alignItems: 'center',
-      borderBottomWidth: 2,
-      borderBottomColor: 'transparent',
+      flexDirection: 'row',
+      gap: spacing.sm,
     },
-    tabActive: { borderBottomColor: colors.grass },
-    tabText: { fontSize: 13, color: colors.textMuted, fontWeight: '500' },
-    tabTextActive: { color: colors.grass, fontWeight: '700' },
+    toggle: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 6,
+      borderRadius: radius.full,
+      borderWidth: 1,
+      borderColor: colors.fog,
+      backgroundColor: colors.mist,
+    },
+    toggleActive: {
+      borderColor: colors.grass,
+      backgroundColor: colors.grassPale,
+    },
+    toggleText: { fontSize: 13, color: colors.textMuted, fontWeight: '500' },
+    toggleTextActive: { color: colors.grass, fontWeight: '700' },
+    badge: {
+      minWidth: 18,
+      height: 18,
+      borderRadius: 9,
+      backgroundColor: colors.grass,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 4,
+    },
+    badgeText: { fontSize: 11, fontWeight: '700', color: colors.textInverse },
     addBtn: {
       width: 32,
       height: 32,
@@ -499,10 +524,8 @@ function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
       backgroundColor: colors.grass,
       alignItems: 'center',
       justifyContent: 'center',
-      marginRight: spacing.md,
       ...shadows.soft,
     },
-    addBtnText: { fontSize: 22, color: colors.textInverse, lineHeight: 28, fontWeight: '300' },
 
     scroll: { flex: 1 },
     content: { paddingHorizontal: spacing.md, paddingBottom: spacing.xxl, paddingTop: spacing.sm },

@@ -362,6 +362,31 @@ export function getAllSessionsIncludingDiscarded(fromMs: number, toMs: number): 
 }
 
 /**
+ * Returns the count of proposed sessions (not yet reviewed by user).
+ * Proposed = userConfirmed IS NULL AND discarded = 0.
+ */
+export function countProposedSessions(): number {
+  const row = db.getFirstSync<{ cnt: number }>(
+    'SELECT COUNT(*) AS cnt FROM outside_sessions WHERE userConfirmed IS NULL AND (discarded IS NULL OR discarded = 0)'
+  );
+  return row?.cnt ?? 0;
+}
+
+/**
+ * Auto-closes proposed sessions older than 7 days by marking them as rejected.
+ * This prevents an unbounded queue of unreviewed sessions.
+ */
+export function autoCloseOldProposedSessions(): void {
+  const sevenDaysAgoMs = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  db.runSync(
+    `UPDATE outside_sessions SET userConfirmed = 0
+     WHERE userConfirmed IS NULL AND (discarded IS NULL OR discarded = 0)
+     AND startTime < ?`,
+    [sevenDaysAgoMs]
+  );
+}
+
+/**
  * Clears the discarded flag so the user can manually review the session.
  * Sets discarded = 0 and userConfirmed = null so it surfaces in the Standard tab for review.
  */
