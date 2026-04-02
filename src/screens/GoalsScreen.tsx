@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -26,19 +26,22 @@ import {
   setSetting,
 } from '../storage/database';
 import {
-  requestCalendarPermissions,
   hasCalendarPermissions,
   getWritableCalendars,
   getOrCreateTouchGrassCalendar,
   getSelectedCalendarId,
   setSelectedCalendarId,
 } from '../calendar/calendarService';
+import { checkWeatherLocationPermissions } from '../detection';
 import * as IntentLauncher from 'expo-intent-launcher';
 import { spacing, radius, shadows } from '../utils/theme';
 import { useTheme } from '../context/ThemeContext';
 import { formatMinutes } from '../utils/helpers';
 import { t } from '../i18n';
 import type { GoalsStackParamList } from '../navigation/AppNavigator';
+import PermissionExplainerSheet, {
+  PermissionSheetConfig,
+} from '../components/PermissionExplainerSheet';
 
 const DAILY_PRESETS = [15, 20, 30, 45, 60, 90];
 const WEEKLY_PRESETS = [60, 90, 120, 150, 210, 300];
@@ -63,7 +66,7 @@ export default function GoalsScreen() {
 
   // Weather state
   const [weatherEnabled, setWeatherEnabled] = useState(true);
-  const [gpsEnabled, setGpsEnabled] = useState(false);
+  const [weatherLocationGranted, setWeatherLocationGranted] = useState(false);
 
   // Calendar state
   const [calendarEnabled, setCalendarEnabled] = useState(false);
@@ -73,17 +76,36 @@ export default function GoalsScreen() {
   const [calendarSelectedId, setCalendarSelectedIdState] = useState('');
   const [calendarOptions, setCalendarOptions] = useState<{ id: string; title: string }[]>([]);
 
+  // Permission explainer sheet state
+  const [permissionSheet, setPermissionSheet] = useState<PermissionSheetConfig | null>(null);
+
+  // Tracks whether the user tried to enable weather/calendar but was blocked by missing
+  // permissions. If true and the permission is later granted (on app resume), the setting
+  // is automatically enabled so the user doesn't have to toggle it again.
+  const pendingWeatherEnableRef = useRef(false);
+  const pendingCalendarEnableRef = useRef(false);
+
   const loadGoalSettings = useCallback(() => {
     setDailyTargetState(getCurrentDailyGoal()?.targetMinutes ?? 30);
     setWeeklyTargetState(getCurrentWeeklyGoal()?.targetMinutes ?? 150);
     setSmartRemindersCount(parseInt(getSetting('smart_reminders_count', '2'), 10));
     setCatchupRemindersCount(parseInt(getSetting('smart_catchup_reminders_count', '2'), 10));
     setWeatherEnabled(getSetting('weather_enabled', '1') === '1');
-    setGpsEnabled(getSetting('gps_user_enabled', '0') === '1');
     setCalendarEnabled(getSetting('calendar_integration_enabled', '0') === '1');
     setCalendarBuffer(parseInt(getSetting('calendar_buffer_minutes', '30'), 10));
     setCalendarDuration(parseInt(getSetting('calendar_default_duration', '0'), 10));
     setCalendarSelectedIdState(getSelectedCalendarId());
+  }, []);
+
+  const checkWeatherPermissions = useCallback(async () => {
+    const granted = await checkWeatherLocationPermissions();
+    setWeatherLocationGranted(granted);
+    // Auto-enable weather if the user was blocked by missing permissions and just granted them
+    if (granted && pendingWeatherEnableRef.current) {
+      pendingWeatherEnableRef.current = false;
+      setSetting('weather_enabled', '1');
+      setWeatherEnabled(true);
+    }
   }, []);
 
   const checkCalendarPermissions = useCallback(async () => {
@@ -92,6 +114,12 @@ export default function GoalsScreen() {
     if (granted) {
       const cals = await getWritableCalendars();
       setCalendarOptions(cals.map((c) => ({ id: c.id, title: c.title })));
+      // Auto-enable calendar if the user was blocked by missing permissions and just granted them
+      if (pendingCalendarEnableRef.current) {
+        pendingCalendarEnableRef.current = false;
+        setSetting('calendar_integration_enabled', '1');
+        setCalendarEnabled(true);
+      }
     }
   }, []);
 
@@ -99,15 +127,17 @@ export default function GoalsScreen() {
     useCallback(() => {
       loadGoalSettings();
       checkCalendarPermissions();
+      checkWeatherPermissions();
 
       const sub = AppState.addEventListener('change', (state: AppStateStatus) => {
         if (state === 'active') {
           loadGoalSettings();
           checkCalendarPermissions();
+          checkWeatherPermissions();
         }
       });
       return () => sub.remove();
-    }, [loadGoalSettings, checkCalendarPermissions])
+    }, [loadGoalSettings, checkCalendarPermissions, checkWeatherPermissions])
   );
 
   const saveDaily = (minutes: number) => {
@@ -154,22 +184,6 @@ export default function GoalsScreen() {
     setCatchupRemindersCount(next);
   };
 
-  const toggleWeatherEnabled = (value: boolean) => {
-    setSetting('weather_enabled', value ? '1' : '0');
-    setWeatherEnabled(value);
-  };
-
-  const handleNavigateToSettings = () => {
-    const parent = navigation.getParent();
-    if (parent) {
-      parent.navigate('Settings');
-    } else {
-      console.warn(
-        'GoalsScreen: could not navigate to Settings tab — parent navigator unavailable'
-      );
-    }
-  };
-
   const handleOpenAppSettings = async () => {
     try {
       if (Platform.OS === 'android') {
@@ -183,24 +197,46 @@ export default function GoalsScreen() {
     }
   };
 
+  const showWeatherPermissionSheet = useCallback(() => {
+    pendingWeatherEnableRef.current = true;
+    setPermissionSheet({
+      title: t('settings_weather_permission_title'),
+      body: t('settings_weather_location_permission_missing'),
+      onOpen: handleOpenAppSettings,
+    });
+  }, []);
+
+  const showCalendarPermissionSheet = useCallback(() => {
+    pendingCalendarEnableRef.current = true;
+    setPermissionSheet({
+      title: t('settings_calendar_permission_title'),
+      body: t('settings_calendar_permission_body'),
+      onOpen: handleOpenAppSettings,
+    });
+  }, []);
+
+  const toggleWeatherEnabled = (value: boolean) => {
+    if (!value) {
+      // User explicitly disabled weather – clear any pending enable
+      pendingWeatherEnableRef.current = false;
+    } else if (!weatherLocationGranted) {
+      showWeatherPermissionSheet();
+      return;
+    }
+    setSetting('weather_enabled', value ? '1' : '0');
+    setWeatherEnabled(value);
+  };
+
   const CALENDAR_BUFFER_OPTIONS = [10, 20, 30, 45, 60];
   const CALENDAR_DURATION_OPTIONS = [0, 5, 10, 15, 20, 30];
 
-  const toggleCalendarIntegration = async (value: boolean) => {
-    if (value && !calendarPermissionGranted) {
-      const granted = await requestCalendarPermissions();
-      setCalendarPermissionGranted(granted);
-      if (!granted) {
-        Alert.alert(
-          t('settings_calendar_permission_title'),
-          t('settings_calendar_permission_body'),
-          [
-            { text: t('settings_calendar_permission_cancel'), style: 'cancel' },
-            { text: t('settings_calendar_permission_open'), onPress: handleOpenAppSettings },
-          ]
-        );
-        return;
-      }
+  const toggleCalendarIntegration = (value: boolean) => {
+    if (!value) {
+      // User explicitly disabled calendar – clear any pending enable
+      pendingCalendarEnableRef.current = false;
+    } else if (!calendarPermissionGranted) {
+      showCalendarPermissionSheet();
+      return;
     }
     setSetting('calendar_integration_enabled', value ? '1' : '0');
     setCalendarEnabled(value);
@@ -475,78 +511,46 @@ export default function GoalsScreen() {
 
         {/* Weather */}
         <Text style={styles.sectionHeader}>{t('settings_weather_title')}</Text>
-        <TouchableOpacity
-          onPress={!gpsEnabled ? handleNavigateToSettings : undefined}
-          disabled={gpsEnabled}
-          activeOpacity={gpsEnabled ? 1 : 0.7}
-        >
-          <View style={[styles.settingsCard, !gpsEnabled && styles.settingsCardDisabled]}>
-            <SettingRow
-              icon={<Ionicons name="partly-sunny-outline" size={20} color={colors.textSecondary} />}
-              label={t('settings_weather_enabled')}
-              sublabel={t('settings_weather_enabled_desc')}
-              right={
-                <Switch
-                  value={weatherEnabled}
-                  onValueChange={toggleWeatherEnabled}
-                  trackColor={{ false: colors.fog, true: colors.grassLight }}
-                  thumbColor={weatherEnabled ? colors.grass : colors.inactive}
-                  disabled={!gpsEnabled}
+        <View style={styles.settingsCard}>
+          <PermissionToggleRow
+            icon={<Ionicons name="partly-sunny-outline" size={20} color={colors.textSecondary} />}
+            label={t('settings_weather_enabled')}
+            desc={t('settings_weather_enabled_desc')}
+            permissionMissingLabel={t('settings_weather_permission_missing')}
+            enabled={weatherEnabled}
+            permissionGranted={weatherLocationGranted}
+            onToggle={toggleWeatherEnabled}
+            onPermissionFix={showWeatherPermissionSheet}
+          />
+          {weatherEnabled && weatherLocationGranted && (
+            <>
+              <Divider />
+              <TouchableOpacity onPress={() => navigation.navigate('WeatherSettings')}>
+                <SettingRow
+                  icon={<Ionicons name="settings-outline" size={20} color={colors.textSecondary} />}
+                  label={t('settings_weather_more')}
+                  sublabel={t('settings_weather_more_desc')}
+                  right={<Ionicons name="chevron-forward" size={20} color={colors.textMuted} />}
                 />
-              }
-            />
-            {!gpsEnabled && (
-              <>
-                <Divider />
-                <View style={styles.row}>
-                  <View style={styles.rowIconContainer}>
-                    <Ionicons
-                      name="information-circle-outline"
-                      size={20}
-                      color={colors.textSecondary}
-                    />
-                  </View>
-                  <View style={styles.rowContent}>
-                    <Text style={styles.rowSublabel}>{t('settings_weather_gps_disabled')}</Text>
-                  </View>
-                </View>
-              </>
-            )}
-            {gpsEnabled && weatherEnabled && (
-              <>
-                <Divider />
-                <TouchableOpacity onPress={() => navigation.navigate('WeatherSettings')}>
-                  <SettingRow
-                    icon={
-                      <Ionicons name="settings-outline" size={20} color={colors.textSecondary} />
-                    }
-                    label={t('settings_weather_more')}
-                    sublabel={t('settings_weather_more_desc')}
-                    right={<Ionicons name="chevron-forward" size={20} color={colors.textMuted} />}
-                  />
-                </TouchableOpacity>
-              </>
-            )}
-          </View>
-        </TouchableOpacity>
+              </TouchableOpacity>
+            </>
+          )}
+        </View>
 
         {/* Calendar integration */}
         <Text style={styles.sectionHeader}>{t('settings_section_calendar')}</Text>
         <View style={styles.settingsCard}>
-          <SettingRow
+          <PermissionToggleRow
             icon={<Ionicons name="calendar-outline" size={20} color={colors.textSecondary} />}
             label={t('settings_calendar_integration')}
-            sublabel={t('settings_calendar_integration_desc')}
-            right={
-              <Switch
-                value={calendarEnabled}
-                onValueChange={toggleCalendarIntegration}
-                trackColor={{ false: colors.fog, true: colors.grassLight }}
-                thumbColor={calendarEnabled ? colors.grass : colors.inactive}
-              />
-            }
+            desc={t('settings_calendar_integration_desc')}
+            permissionMissingLabel={t('settings_calendar_permission_missing')}
+            enabled={calendarEnabled}
+            permissionGranted={calendarPermissionGranted}
+            onToggle={toggleCalendarIntegration}
+            onPermissionFix={showCalendarPermissionSheet}
           />
-          {calendarEnabled && (
+          {calendarEnabled && calendarPermissionGranted && (
             <>
               <Divider />
               <TouchableOpacity onPress={cycleCalendarBuffer}>
@@ -589,6 +593,17 @@ export default function GoalsScreen() {
           )}
         </View>
       </ScrollView>
+
+      {permissionSheet && (
+        <PermissionExplainerSheet
+          visible
+          title={permissionSheet.title}
+          body={permissionSheet.body}
+          openSettingsLabel={permissionSheet.openLabel}
+          onOpenSettings={permissionSheet.onOpen}
+          onClose={() => setPermissionSheet(null)}
+        />
+      )}
     </>
   );
 }
@@ -622,6 +637,67 @@ function Divider() {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   return <View style={styles.divider} />;
+}
+
+/**
+ * A toggle row that mirrors the `DetectionSettingRow` pattern from SettingsScreen.
+ * When the feature is enabled but the required permission is missing, the desc
+ * text is replaced by a tappable red "Permissions missing — tap to fix" label.
+ */
+function PermissionToggleRow({
+  icon,
+  label,
+  desc,
+  permissionMissingLabel,
+  enabled,
+  permissionGranted,
+  onToggle,
+  onPermissionFix,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  desc: string;
+  permissionMissingLabel: string;
+  enabled: boolean;
+  permissionGranted: boolean;
+  onToggle: (value: boolean) => void;
+  onPermissionFix?: () => void;
+}) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const hasError = enabled && !permissionGranted;
+
+  return (
+    <View style={styles.row}>
+      <View style={styles.rowIconContainer}>{icon}</View>
+      <View style={styles.rowContent}>
+        <Text style={styles.rowLabel}>{label}</Text>
+        {hasError ? (
+          <TouchableOpacity
+            onPress={onPermissionFix}
+            disabled={!onPermissionFix}
+            accessibilityRole="button"
+            accessibilityLabel={permissionMissingLabel}
+            accessibilityHint={t('settings_permission_open')}
+          >
+            <Text style={[styles.rowSublabel, { color: colors.error }]}>
+              {permissionMissingLabel}
+            </Text>
+          </TouchableOpacity>
+        ) : (
+          <Text style={styles.rowSublabel}>{desc}</Text>
+        )}
+      </View>
+      <View style={styles.rowRight}>
+        <Switch
+          value={enabled}
+          onValueChange={onToggle}
+          trackColor={{ false: colors.fog, true: colors.grassLight }}
+          thumbColor={enabled ? colors.grass : colors.inactive}
+        />
+      </View>
+    </View>
+  );
 }
 
 function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {

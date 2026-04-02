@@ -108,6 +108,10 @@ export default {
   settings_health_connect: 'Health Connect',
   settings_health_connect_desc: 'Stappen & activiteit automatisch bijhouden',
   settings_hc_permission_missing: 'Machtigingen ontbreken — tik om te herstellen',
+  settings_hc_permission_title: 'Health Connect-toestemming',
+  settings_hc_permission_body:
+    'Health Connect-machtigingen zijn nodig om buitenactiviteiten automatisch bij te houden via je stappen en workouts.',
+  settings_hc_open_btn: 'Health Connect openen',
   settings_hc_failed_title: 'Verbinding mislukt',
   settings_hc_failed_body:
     'Geef TouchGrass machtigingen voor Health Connect:\n\n**Als er een machtigingsdialoog verscheen:**\n• Verleen de gevraagde machtigingen\n• Keer terug naar TouchGrass\n\n**Als er geen dialoog verscheen:**\n1. Open Instellingen → Privacy → Health Connect\n2. Zoek en tik op TouchGrass in de app-lijst\n3. Schakel de gegevenstypen in (Oefening, Stappen, enz.)\n4. Keer terug naar TouchGrass\n\nAls TouchGrass niet verschijnt:\n• Herstart de app en probeer opnieuw\n• Zorg dat Health Connect geïnstalleerd is vanuit Play Store',
@@ -122,7 +126,7 @@ export default {
   settings_error_open_settings_failed: 'Kon instellingen niet openen. Open Instellingen handmatig.',
   settings_gps_permission_required_title: 'GPS-toestemming vereist',
   settings_gps_permission_required_body:
-    'Achtergrondlocatietoestemming is vereist voor GPS-detectie. Geef toestemming in Instellingen.',
+    'Achtergrondlocatie ("Altijd toestaan") is vereist voor GPS-sessiëdetectie. TouchGrass gebruikt geofencing om te detecteren wanneer je bekende binnenlocaties verlaat en terugkeert. Geef de toestemming in Instellingen.',
   settings_permission_cancel: 'Annuleren',
   settings_permission_open: 'Instellingen openen',
   settings_gps: 'GPS-tracking',
@@ -263,11 +267,12 @@ export default {
   intro_hc_button_granted: 'Verbonden ✓',
   intro_location_title: 'Locatietoegang',
   intro_location_body:
-    'TouchGrass heeft locatiemachtigingen nodig om te detecteren wanneer je buiten bent.',
+    'TouchGrass gebruikt je locatie om buitensessies automatisch te detecteren via geofencing.',
   intro_location_why_title: 'Waarom hebben we dit nodig?',
   intro_location_why_body:
-    'Achtergrondlocatie helpt ons je buitentijd te volgen, zelfs wanneer de app gesloten is. We gebruiken het om onderscheid te maken tussen binnen- en buitenlocaties.',
-  intro_location_hint: 'Je wordt gevraagd om "Altijd toestaan" toestemming.',
+    'GPS-tracking gebruikt geofencing om te detecteren wanneer je bekende binnenlocaties (bijv. thuis, werk) verlaat en terugkeert, zodat buitensessies automatisch worden voorgesteld — zelfs wanneer de app gesloten is. "Altijd toestaan" is hiervoor vereist.\n\nAls je weerbewuste herinneringen inschakelt, wordt alleen een geschatte locatie gebruikt om lokale weersomstandigheden op te halen.',
+  intro_location_hint:
+    'Je wordt gevraagd "Altijd toestaan" te selecteren voor achtergronddetectie.',
   intro_location_button: 'Sta locatie toe',
   intro_location_button_granted: 'Locatie toegestaan ✓',
   intro_location_known_title: 'Verbeter buitendetectie',
@@ -372,8 +377,11 @@ export default {
     'Houd rekening met weersomstandigheden bij het voorstellen van tijden',
   settings_weather_more: 'Meer weerinstellingen',
   settings_weather_more_desc: 'Temperatuurvoorkeur, regen, hitte, UV',
-  settings_weather_gps_disabled:
-    'GPS is uitgeschakeld — weerbewuste herinneringen hebben GPS nodig om je locatie te kennen. Tik hier om GPS in te schakelen via Instellingen.',
+  settings_weather_permission_title: 'Locatietoestemming',
+  settings_weather_permission_missing: 'Machtigingen ontbreken — tik om te herstellen',
+  settings_weather_location_permission_missing:
+    'Locatietoestemming is nodig om lokaal weer op te halen. Geschatte locatie wordt alleen gebruikt voor weersomstandigheden en wordt nooit opgeslagen.',
+  settings_weather_location_request: 'Locatietoegang verlenen',
   settings_temp_preference: 'Klimaatvoorkeur',
   settings_temp_cold: 'Voorkeur voor koeler weer',
   settings_temp_moderate: 'Gematigd klimaat',
@@ -446,6 +454,7 @@ export default {
   settings_calendar_integration_desc:
     'Controleer je agenda om herinneringen te vermijden tijdens afspraken',
   settings_calendar_permission_title: 'Agendatoestemming',
+  settings_calendar_permission_missing: 'Machtigingen ontbreken — tik om te herstellen',
   settings_calendar_permission_body:
     'Toegang tot de agenda is nodig om je afspraken te controleren voor slimme herinneringen.',
   settings_calendar_permission_open: 'Instellingen openen',

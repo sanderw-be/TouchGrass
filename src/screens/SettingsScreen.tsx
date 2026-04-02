@@ -28,9 +28,11 @@ import {
   toggleGPS,
   recheckHealthConnect,
   checkGPSPermissions,
-  requestGPSPermissions,
   openHealthConnectSettings,
 } from '../detection/index';
+import PermissionExplainerSheet, {
+  PermissionSheetConfig,
+} from '../components/PermissionExplainerSheet';
 
 import { spacing, radius, shadows } from '../utils/theme';
 import { useTheme, ThemePreference } from '../context/ThemeContext';
@@ -61,6 +63,7 @@ export default function SettingsScreen() {
   const [suggestedCount, setSuggestedCount] = useState(0);
   const [togglingHC, setTogglingHC] = useState(false);
   const [togglingGPS, setTogglingGPS] = useState(false);
+  const [permissionSheet, setPermissionSheet] = useState<PermissionSheetConfig | null>(null);
 
   const styles = useMemo(() => makeStyles(colors), [colors]);
 
@@ -97,6 +100,41 @@ export default function SettingsScreen() {
     }, [loadStatus, checkAndUpdatePermissions])
   );
 
+  const handleOpenAppSettings = async () => {
+    try {
+      if (Platform.OS === 'android') {
+        await Linking.openSettings();
+      } else if (Platform.OS === 'ios') {
+        await Linking.openURL('app-settings:');
+      }
+    } catch (error) {
+      console.error('Error opening app settings:', error);
+      Alert.alert(t('settings_error_title'), t('settings_error_open_settings_failed'));
+    }
+  };
+
+  const showHCPermissionSheet = useCallback(() => {
+    setPermissionSheet({
+      title: t('settings_hc_permission_title'),
+      body: t('settings_hc_permission_body'),
+      openLabel: t('settings_hc_open_btn'),
+      onOpen: async () => {
+        const opened = await openHealthConnectSettings();
+        if (!opened) {
+          Alert.alert(t('settings_hc_open_error_title'), t('settings_hc_open_error_body'));
+        }
+      },
+    });
+  }, []);
+
+  const showGPSPermissionSheet = useCallback(() => {
+    setPermissionSheet({
+      title: t('settings_gps_permission_required_title'),
+      body: t('settings_gps_permission_required_body'),
+      onOpen: handleOpenAppSettings,
+    });
+  }, []);
+
   const handleToggleHC = async (value: boolean) => {
     if (togglingHC) return;
     setTogglingHC(true);
@@ -105,13 +143,7 @@ export default function SettingsScreen() {
       setDetectionStatus(getDetectionStatus());
 
       if (value && result.needsPermissions) {
-        // Permissions are not yet granted — open Health Connect so the user can allow them.
-        const opened = await openHealthConnectSettings();
-        if (!opened) {
-          Alert.alert(t('settings_hc_open_error_title'), t('settings_hc_open_error_body'));
-        }
-        // When the user returns from HC, AppState 'active' fires and
-        // checkAndUpdatePermissions silently refreshes the permission status.
+        showHCPermissionSheet();
       }
     } catch (error) {
       console.error('Error toggling Health Connect:', error);
@@ -129,19 +161,7 @@ export default function SettingsScreen() {
       setDetectionStatus(getDetectionStatus());
 
       if (value && result.needsPermissions) {
-        // OS permissions not granted — request them inline.
-        const granted = await requestGPSPermissions();
-        setDetectionStatus(getDetectionStatus());
-        if (!granted) {
-          Alert.alert(
-            t('settings_gps_permission_required_title'),
-            t('settings_gps_permission_required_body'),
-            [
-              { text: t('settings_permission_cancel'), style: 'cancel' },
-              { text: t('settings_permission_open'), onPress: handleOpenAppSettings },
-            ]
-          );
-        }
+        showGPSPermissionSheet();
       }
     } catch (error) {
       console.error('Error toggling GPS:', error);
@@ -178,19 +198,6 @@ export default function SettingsScreen() {
     ]);
   };
 
-  const handleOpenAppSettings = async () => {
-    try {
-      if (Platform.OS === 'android') {
-        await Linking.openSettings();
-      } else if (Platform.OS === 'ios') {
-        await Linking.openURL('app-settings:');
-      }
-    } catch (error) {
-      console.error('Error opening app settings:', error);
-      Alert.alert(t('settings_error_title'), t('settings_error_open_settings_failed'));
-    }
-  };
-
   return (
     <>
       <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
@@ -210,7 +217,7 @@ export default function SettingsScreen() {
             permissionMissingLabel={t('settings_hc_permission_missing')}
             onToggle={handleToggleHC}
             isLoading={togglingHC}
-            onPermissionFix={openHealthConnectSettings}
+            onPermissionFix={showHCPermissionSheet}
             testID="hc-toggle"
           />
           <Divider />
@@ -223,7 +230,7 @@ export default function SettingsScreen() {
             permissionMissingLabel={t('settings_gps_permission_missing')}
             onToggle={handleToggleGPS}
             isLoading={togglingGPS}
-            onPermissionFix={handleOpenAppSettings}
+            onPermissionFix={showGPSPermissionSheet}
             testID="gps-toggle"
           />
         </View>
@@ -365,6 +372,17 @@ export default function SettingsScreen() {
           />
         </View>
       </ScrollView>
+
+      {permissionSheet && (
+        <PermissionExplainerSheet
+          visible
+          title={permissionSheet.title}
+          body={permissionSheet.body}
+          openSettingsLabel={permissionSheet.openLabel}
+          onOpenSettings={permissionSheet.onOpen}
+          onClose={() => setPermissionSheet(null)}
+        />
+      )}
     </>
   );
 }
