@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   RefreshControl,
   StatusBar,
+  Image,
 } from 'react-native';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { Ionicons } from '@expo/vector-icons';
@@ -219,7 +220,11 @@ export default function HomeScreen() {
 
       {todaySessions.length === 0 && (
         <View style={styles.emptyState}>
-          <Ionicons name="leaf-outline" size={48} color={colors.grass} style={styles.emptyIcon} />
+          <Image
+            source={require('../../assets/herb.png')}
+            style={styles.emptyIcon}
+            resizeMode="contain"
+          />
           <Text style={styles.emptyText}>{t('no_sessions_title')}</Text>
           <Text style={styles.emptySubtext}>{t('no_sessions_sub')}</Text>
         </View>
@@ -475,7 +480,7 @@ function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
     },
 
     emptyState: { alignItems: 'center', paddingVertical: spacing.xxl },
-    emptyIcon: { marginBottom: spacing.md },
+    emptyIcon: { width: 64, height: 64, marginBottom: spacing.md },
     emptyText: { fontSize: 16, color: colors.textSecondary, fontWeight: '500' },
     emptySubtext: { fontSize: 13, color: colors.textMuted, marginTop: spacing.xs },
   });
