@@ -165,7 +165,9 @@ describe('GoalsScreen battery optimization', () => {
       await findByText('settings_battery_optimization');
 
       await waitFor(() =>
-        expect(getByTestId('battery-optimization-row').props.accessibilityState?.disabled).toBe(true)
+        expect(getByTestId('battery-optimization-row').props.accessibilityState?.disabled).toBe(
+          true
+        )
       );
       expect(getByTestId('icon-checkmark-circle')).toBeTruthy();
 

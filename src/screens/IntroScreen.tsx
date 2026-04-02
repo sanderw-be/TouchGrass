@@ -328,18 +328,18 @@ export default function IntroScreen({ onComplete }: Props) {
             <NotificationsStep
               onRequest={handleRequestNotifications}
               granted={notificationsGranted}
-          requesting={requestingPermission}
-        />
-      )}
-      {currentStep === 'battery' && (
-        <BatteryStep
-          visited={batteryVisited}
-          onOpen={() => {
-            setBatteryVisited(true);
-            setSetting(BATTERY_OPTIMIZATION_SETTING_KEY, '1');
-          }}
-        />
-      )}
+              requesting={requestingPermission}
+            />
+          )}
+          {currentStep === 'battery' && (
+            <BatteryStep
+              visited={batteryVisited}
+              onOpen={() => {
+                setBatteryVisited(true);
+                setSetting(BATTERY_OPTIMIZATION_SETTING_KEY, '1');
+              }}
+            />
+          )}
           {currentStep === 'calendar' && (
             <CalendarStep
               onRequest={handleRequestCalendar}
