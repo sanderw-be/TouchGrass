@@ -7,6 +7,7 @@ import {
   Linking,
   ScrollView,
   Platform,
+  Image,
 } from 'react-native';
 import Constants from 'expo-constants';
 import i18n, { t } from '../i18n';
@@ -86,7 +87,11 @@ export default class ErrorBoundary extends React.Component<Props, State> {
       return (
         <View style={styles.container}>
           <ScrollView contentContainerStyle={styles.content} bounces={false}>
-            <Text style={styles.emoji}>🌿</Text>
+            <Image
+              source={require('../../assets/herb.png')}
+              style={styles.herbImage}
+              resizeMode="contain"
+            />
             <Text style={styles.title}>{t('error_boundary_title')}</Text>
             <Text style={styles.subtitle}>{t('error_boundary_subtitle')}</Text>
             <TouchableOpacity
@@ -124,8 +129,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     flexGrow: 1,
   },
-  emoji: {
-    fontSize: 64,
+  herbImage: {
+    width: 80,
+    height: 80,
     marginBottom: spacing.md,
   },
   title: {
