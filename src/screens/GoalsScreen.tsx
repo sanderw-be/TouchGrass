@@ -26,20 +26,22 @@ import {
   setSetting,
 } from '../storage/database';
 import {
-  requestCalendarPermissions,
   hasCalendarPermissions,
   getWritableCalendars,
   getOrCreateTouchGrassCalendar,
   getSelectedCalendarId,
   setSelectedCalendarId,
 } from '../calendar/calendarService';
-import { checkWeatherLocationPermissions, requestWeatherLocationPermissions } from '../detection';
+import { checkWeatherLocationPermissions } from '../detection';
 import * as IntentLauncher from 'expo-intent-launcher';
 import { spacing, radius, shadows } from '../utils/theme';
 import { useTheme } from '../context/ThemeContext';
 import { formatMinutes } from '../utils/helpers';
 import { t } from '../i18n';
 import type { GoalsStackParamList } from '../navigation/AppNavigator';
+import PermissionExplainerSheet, {
+  PermissionSheetConfig,
+} from '../components/PermissionExplainerSheet';
 
 const DAILY_PRESETS = [15, 20, 30, 45, 60, 90];
 const WEEKLY_PRESETS = [60, 90, 120, 150, 210, 300];
@@ -73,6 +75,9 @@ export default function GoalsScreen() {
   const [calendarDuration, setCalendarDuration] = useState(0);
   const [calendarSelectedId, setCalendarSelectedIdState] = useState('');
   const [calendarOptions, setCalendarOptions] = useState<{ id: string; title: string }[]>([]);
+
+  // Permission explainer sheet state
+  const [permissionSheet, setPermissionSheet] = useState<PermissionSheetConfig | null>(null);
 
   const loadGoalSettings = useCallback(() => {
     setDailyTargetState(getCurrentDailyGoal()?.targetMinutes ?? 30);
@@ -161,26 +166,6 @@ export default function GoalsScreen() {
     setCatchupRemindersCount(next);
   };
 
-  const toggleWeatherEnabled = async (value: boolean) => {
-    if (value && !weatherLocationGranted) {
-      const granted = await requestWeatherLocationPermissions();
-      setWeatherLocationGranted(granted);
-      if (!granted) {
-        Alert.alert(
-          t('settings_gps_permission_required_title'),
-          t('settings_weather_location_permission_missing'),
-          [
-            { text: t('settings_permission_cancel'), style: 'cancel' },
-            { text: t('settings_permission_open'), onPress: handleOpenAppSettings },
-          ]
-        );
-        return;
-      }
-    }
-    setSetting('weather_enabled', value ? '1' : '0');
-    setWeatherEnabled(value);
-  };
-
   const handleOpenAppSettings = async () => {
     try {
       if (Platform.OS === 'android') {
@@ -194,24 +179,38 @@ export default function GoalsScreen() {
     }
   };
 
+  const showWeatherPermissionSheet = useCallback(() => {
+    setPermissionSheet({
+      title: t('settings_weather_permission_title'),
+      body: t('settings_weather_location_permission_missing'),
+      onOpen: handleOpenAppSettings,
+    });
+  }, []);
+
+  const showCalendarPermissionSheet = useCallback(() => {
+    setPermissionSheet({
+      title: t('settings_calendar_permission_title'),
+      body: t('settings_calendar_permission_body'),
+      onOpen: handleOpenAppSettings,
+    });
+  }, []);
+
+  const toggleWeatherEnabled = (value: boolean) => {
+    if (value && !weatherLocationGranted) {
+      showWeatherPermissionSheet();
+      return;
+    }
+    setSetting('weather_enabled', value ? '1' : '0');
+    setWeatherEnabled(value);
+  };
+
   const CALENDAR_BUFFER_OPTIONS = [10, 20, 30, 45, 60];
   const CALENDAR_DURATION_OPTIONS = [0, 5, 10, 15, 20, 30];
 
-  const toggleCalendarIntegration = async (value: boolean) => {
+  const toggleCalendarIntegration = (value: boolean) => {
     if (value && !calendarPermissionGranted) {
-      const granted = await requestCalendarPermissions();
-      setCalendarPermissionGranted(granted);
-      if (!granted) {
-        Alert.alert(
-          t('settings_calendar_permission_title'),
-          t('settings_calendar_permission_body'),
-          [
-            { text: t('settings_calendar_permission_cancel'), style: 'cancel' },
-            { text: t('settings_calendar_permission_open'), onPress: handleOpenAppSettings },
-          ]
-        );
-        return;
-      }
+      showCalendarPermissionSheet();
+      return;
     }
     setSetting('calendar_integration_enabled', value ? '1' : '0');
     setCalendarEnabled(value);
@@ -503,13 +502,13 @@ export default function GoalsScreen() {
           {weatherEnabled && !weatherLocationGranted && (
             <>
               <Divider />
-              <TouchableOpacity onPress={() => toggleWeatherEnabled(true)}>
+              <TouchableOpacity onPress={showWeatherPermissionSheet}>
                 <View style={styles.row}>
                   <View style={styles.rowIconContainer}>
-                    <Ionicons name="location-outline" size={20} color={colors.textSecondary} />
+                    <Ionicons name="location-outline" size={20} color={colors.error} />
                   </View>
                   <View style={styles.rowContent}>
-                    <Text style={styles.rowSublabel}>
+                    <Text style={[styles.rowSublabel, { color: colors.error }]}>
                       {t('settings_weather_location_permission_missing')}
                     </Text>
                     <Text style={[styles.rowSublabel, { color: colors.grass }]}>
@@ -551,7 +550,27 @@ export default function GoalsScreen() {
               />
             }
           />
-          {calendarEnabled && (
+          {calendarEnabled && !calendarPermissionGranted && (
+            <>
+              <Divider />
+              <TouchableOpacity onPress={showCalendarPermissionSheet}>
+                <View style={styles.row}>
+                  <View style={styles.rowIconContainer}>
+                    <Ionicons name="calendar-outline" size={20} color={colors.error} />
+                  </View>
+                  <View style={styles.rowContent}>
+                    <Text style={[styles.rowSublabel, { color: colors.error }]}>
+                      {t('settings_calendar_permission_missing')}
+                    </Text>
+                    <Text style={[styles.rowSublabel, { color: colors.grass }]}>
+                      {t('settings_calendar_permission_open')}
+                    </Text>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            </>
+          )}
+          {calendarEnabled && calendarPermissionGranted && (
             <>
               <Divider />
               <TouchableOpacity onPress={cycleCalendarBuffer}>
@@ -594,6 +613,17 @@ export default function GoalsScreen() {
           )}
         </View>
       </ScrollView>
+
+      {permissionSheet && (
+        <PermissionExplainerSheet
+          visible
+          title={permissionSheet.title}
+          body={permissionSheet.body}
+          openSettingsLabel={permissionSheet.openLabel}
+          onOpenSettings={permissionSheet.onOpen}
+          onClose={() => setPermissionSheet(null)}
+        />
+      )}
     </>
   );
 }

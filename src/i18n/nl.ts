@@ -108,6 +108,10 @@ export default {
   settings_health_connect: 'Health Connect',
   settings_health_connect_desc: 'Stappen & activiteit automatisch bijhouden',
   settings_hc_permission_missing: 'Machtigingen ontbreken — tik om te herstellen',
+  settings_hc_permission_title: 'Health Connect-toestemming',
+  settings_hc_permission_body:
+    'Health Connect-machtigingen zijn nodig om buitenactiviteiten automatisch bij te houden via je stappen en workouts.',
+  settings_hc_open_btn: 'Health Connect openen',
   settings_hc_failed_title: 'Verbinding mislukt',
   settings_hc_failed_body:
     'Geef TouchGrass machtigingen voor Health Connect:\n\n**Als er een machtigingsdialoog verscheen:**\n• Verleen de gevraagde machtigingen\n• Keer terug naar TouchGrass\n\n**Als er geen dialoog verscheen:**\n1. Open Instellingen → Privacy → Health Connect\n2. Zoek en tik op TouchGrass in de app-lijst\n3. Schakel de gegevenstypen in (Oefening, Stappen, enz.)\n4. Keer terug naar TouchGrass\n\nAls TouchGrass niet verschijnt:\n• Herstart de app en probeer opnieuw\n• Zorg dat Health Connect geïnstalleerd is vanuit Play Store',
@@ -373,6 +377,7 @@ export default {
     'Houd rekening met weersomstandigheden bij het voorstellen van tijden',
   settings_weather_more: 'Meer weerinstellingen',
   settings_weather_more_desc: 'Temperatuurvoorkeur, regen, hitte, UV',
+  settings_weather_permission_title: 'Locatietoestemming',
   settings_weather_location_permission_missing:
     'Locatietoestemming is nodig om lokaal weer op te halen. Geschatte locatie wordt alleen gebruikt voor weersomstandigheden en wordt nooit opgeslagen.',
   settings_weather_location_request: 'Locatietoegang verlenen',
@@ -448,6 +453,7 @@ export default {
   settings_calendar_integration_desc:
     'Controleer je agenda om herinneringen te vermijden tijdens afspraken',
   settings_calendar_permission_title: 'Agendatoestemming',
+  settings_calendar_permission_missing: 'Agendamachtiging ontbreekt — tik om te herstellen',
   settings_calendar_permission_body:
     'Toegang tot de agenda is nodig om je afspraken te controleren voor slimme herinneringen.',
   settings_calendar_permission_open: 'Instellingen openen',

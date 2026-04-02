@@ -109,6 +109,8 @@ describe('GoalsScreen calendar duration', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockGetSetting.mockImplementation((key: string, def: string) => def);
+    // Calendar settings sub-rows only show when permission is granted
+    (CalendarService.hasCalendarPermissions as jest.Mock).mockResolvedValue(true);
   });
 
   it('shows "Off" label when calendar is enabled and duration is 0', async () => {
@@ -360,38 +362,35 @@ describe('GoalsScreen weather location permission', () => {
     );
   });
 
-  it('requests location permission and enables weather when toggle turned on without permission', async () => {
+  it('shows permission sheet when weather toggle is turned on without location permission', async () => {
     mockGetSetting.mockImplementation((key: string, def: string) => {
       if (key === 'weather_enabled') return '0';
       return def;
     });
     mockCheckWeatherLocation.mockResolvedValue(false);
-    mockRequestWeatherLocation.mockResolvedValue(true);
 
-    const { getAllByRole } = render(<GoalsScreen />);
+    const { getAllByRole, findByTestId } = render(<GoalsScreen />);
 
     // Wait for the weather switch to be rendered
     await waitFor(() => getAllByRole('switch'));
 
-    // The first switch in GoalsScreen is the weather switch
     const switches = getAllByRole('switch');
     await act(async () => {
       fireEvent(switches[0], 'valueChange', true);
     });
 
-    await waitFor(() => {
-      expect(mockRequestWeatherLocation).toHaveBeenCalled();
-      expect(mockSetSetting).toHaveBeenCalledWith('weather_enabled', '1');
-    });
+    // Modal sheet should appear; permission request is not called inline
+    await expect(findByTestId('permission-explainer-sheet')).resolves.toBeTruthy();
+    expect(mockRequestWeatherLocation).not.toHaveBeenCalled();
+    expect(mockSetSetting).not.toHaveBeenCalledWith('weather_enabled', '1');
   });
 
-  it('shows Alert when permission request is denied while enabling weather', async () => {
+  it('does not show Alert when permission is missing while enabling weather', async () => {
     mockGetSetting.mockImplementation((key: string, def: string) => {
       if (key === 'weather_enabled') return '0';
       return def;
     });
     mockCheckWeatherLocation.mockResolvedValue(false);
-    mockRequestWeatherLocation.mockResolvedValue(false);
 
     const { getAllByRole } = render(<GoalsScreen />);
     await waitFor(() => getAllByRole('switch'));
@@ -402,8 +401,60 @@ describe('GoalsScreen weather location permission', () => {
     });
 
     await waitFor(() => {
-      expect(alertSpy).toHaveBeenCalled();
+      expect(alertSpy).not.toHaveBeenCalled();
       expect(mockSetSetting).not.toHaveBeenCalledWith('weather_enabled', '1');
     });
+  });
+});
+
+describe('GoalsScreen calendar permission missing state', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockGetSetting.mockImplementation((key: string, def: string) => def);
+    mockCheckWeatherLocation.mockResolvedValue(false);
+  });
+
+  it('shows calendar permission missing red text when calendar is on but permission revoked', async () => {
+    mockGetSetting.mockImplementation((key: string, def: string) => {
+      if (key === 'calendar_integration_enabled') return '1';
+      return def;
+    });
+    (CalendarService.hasCalendarPermissions as jest.Mock).mockResolvedValue(false);
+
+    const { findByText } = render(<GoalsScreen />);
+    await expect(findByText('settings_calendar_permission_missing')).resolves.toBeTruthy();
+  });
+
+  it('does not show calendar permission missing text when permission is granted', async () => {
+    mockGetSetting.mockImplementation((key: string, def: string) => {
+      if (key === 'calendar_integration_enabled') return '1';
+      return def;
+    });
+    (CalendarService.hasCalendarPermissions as jest.Mock).mockResolvedValue(true);
+    (CalendarService.getWritableCalendars as jest.Mock).mockResolvedValue([]);
+
+    const { queryByText } = render(<GoalsScreen />);
+    await waitFor(() => expect(queryByText('settings_calendar_permission_missing')).toBeNull());
+  });
+
+  it('shows permission sheet when calendar toggle is turned on without permission', async () => {
+    mockGetSetting.mockImplementation((key: string, def: string) => {
+      if (key === 'calendar_integration_enabled') return '0';
+      return def;
+    });
+    (CalendarService.hasCalendarPermissions as jest.Mock).mockResolvedValue(false);
+
+    const { getAllByRole, findByTestId } = render(<GoalsScreen />);
+    await waitFor(() => getAllByRole('switch'));
+
+    // The second switch in GoalsScreen is the calendar switch
+    const switches = getAllByRole('switch');
+    const calendarSwitch = switches[switches.length - 1];
+    await act(async () => {
+      fireEvent(calendarSwitch, 'valueChange', true);
+    });
+
+    await expect(findByTestId('permission-explainer-sheet')).resolves.toBeTruthy();
+    expect(mockSetSetting).not.toHaveBeenCalledWith('calendar_integration_enabled', '1');
   });
 });
