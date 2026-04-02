@@ -21,12 +21,13 @@ jest.mock('react-native/Libraries/Utilities/useColorScheme', () => ({
 const useColorSchemeMock = require('react-native/Libraries/Utilities/useColorScheme').default;
 
 function TestConsumer() {
-  const { colors, isDark, themePreference, setThemePreference } = useTheme();
+  const { colors, shadows, isDark, themePreference, setThemePreference } = useTheme();
   return (
     <>
       <Text testID="isDark">{isDark ? 'dark' : 'light'}</Text>
       <Text testID="pref">{themePreference}</Text>
       <Text testID="bg">{colors.mist}</Text>
+      <Text testID="shadowColor">{shadows.soft.shadowColor}</Text>
       <Text testID="setPref" onPress={() => setThemePreference('dark')}>
         set-dark
       </Text>
@@ -56,6 +57,7 @@ describe('ThemeContext', () => {
     expect(getByTestId('pref').props.children).toBe('system');
     expect(getByTestId('isDark').props.children).toBe('light');
     expect(getByTestId('bg').props.children).toBe(lightColors.mist);
+    expect(getByTestId('shadowColor').props.children).toBe(lightColors.grassDark);
   });
 
   it('uses dark colors when system is dark and preference is system', () => {
@@ -67,6 +69,7 @@ describe('ThemeContext', () => {
     );
     expect(getByTestId('isDark').props.children).toBe('dark');
     expect(getByTestId('bg').props.children).toBe(darkColors.mist);
+    expect(getByTestId('shadowColor').props.children).toBe(darkColors.grassDark);
   });
 
   it('uses stored preference from database', () => {

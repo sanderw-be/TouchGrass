@@ -1,12 +1,13 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { useColorScheme } from 'react-native';
-import { colors as lightColors, darkColors } from '../utils/theme';
+import { colors as lightColors, darkColors, makeShadows, Shadows } from '../utils/theme';
 import { getSetting, setSetting } from '../storage/database';
 
 export type ThemePreference = 'system' | 'light' | 'dark';
 
 export interface ThemeContextType {
   colors: typeof lightColors;
+  shadows: Shadows;
   isDark: boolean;
   themePreference: ThemePreference;
   setThemePreference: (pref: ThemePreference) => void;
@@ -14,6 +15,7 @@ export interface ThemeContextType {
 
 export const ThemeContext = createContext<ThemeContextType>({
   colors: lightColors,
+  shadows: makeShadows(lightColors),
   isDark: false,
   themePreference: 'system',
   setThemePreference: () => {},
@@ -39,10 +41,17 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     themePreference === 'dark' || (themePreference === 'system' && systemColorScheme === 'dark');
 
   const activeColors = isDark ? darkColors : lightColors;
+  const activeShadows = useMemo(() => makeShadows(activeColors), [activeColors]);
 
   return (
     <ThemeContext.Provider
-      value={{ colors: activeColors, isDark, themePreference, setThemePreference }}
+      value={{
+        colors: activeColors,
+        shadows: activeShadows,
+        isDark,
+        themePreference,
+        setThemePreference,
+      }}
     >
       {children}
     </ThemeContext.Provider>

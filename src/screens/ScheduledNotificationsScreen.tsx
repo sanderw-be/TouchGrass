@@ -22,7 +22,7 @@ import {
   ScheduledNotification,
 } from '../storage/database';
 import { scheduleAllScheduledNotifications } from '../notifications/scheduledNotifications';
-import { spacing, radius, shadows } from '../utils/theme';
+import { spacing, radius } from '../utils/theme';
 import { useTheme } from '../context/ThemeContext';
 import { t } from '../i18n';
 import { uses24HourClock, normalizeAmPm } from '../utils/helpers';
@@ -30,8 +30,8 @@ import { uses24HourClock, normalizeAmPm } from '../utils/helpers';
 const DAY_LABELS = ['day_sun', 'day_mon', 'day_tue', 'day_wed', 'day_thu', 'day_fri', 'day_sat'];
 
 export default function ScheduledNotificationsScreen() {
-  const { colors } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { colors, shadows } = useTheme();
+  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const [schedules, setSchedules] = useState<ScheduledNotification[]>([]);
   const [editingSchedule, setEditingSchedule] = useState<ScheduledNotification | null>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -364,7 +364,10 @@ export default function ScheduledNotificationsScreen() {
   );
 }
 
-function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
+function makeStyles(
+  colors: ReturnType<typeof useTheme>['colors'],
+  shadows: ReturnType<typeof useTheme>['shadows']
+) {
   return StyleSheet.create({
     container: {
       flex: 1,

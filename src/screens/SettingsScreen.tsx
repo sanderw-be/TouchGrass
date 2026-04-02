@@ -34,7 +34,7 @@ import PermissionExplainerSheet, {
   PermissionSheetConfig,
 } from '../components/PermissionExplainerSheet';
 
-import { spacing, radius, shadows } from '../utils/theme';
+import { spacing, radius } from '../utils/theme';
 import { useTheme, ThemePreference } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { t } from '../i18n';
@@ -49,7 +49,7 @@ const LANGUAGES = [
 
 export default function SettingsScreen() {
   const showIntro = useShowIntro();
-  const { colors, themePreference, setThemePreference } = useTheme();
+  const { colors, shadows, themePreference, setThemePreference } = useTheme();
   const { locale, setLocale } = useLanguage();
   const navigation = useNavigation<StackNavigationProp<SettingsStackParamList>>();
   const insets = useSafeAreaInsets();
@@ -65,7 +65,7 @@ export default function SettingsScreen() {
   const [togglingGPS, setTogglingGPS] = useState(false);
   const [permissionSheet, setPermissionSheet] = useState<PermissionSheetConfig | null>(null);
 
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
 
   const loadStatus = useCallback(() => {
     setDetectionStatus(getDetectionStatus());
@@ -400,8 +400,8 @@ function SettingRow({
   hint?: string;
   right?: React.ReactNode;
 }) {
-  const { colors } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { colors, shadows } = useTheme();
+  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   return (
     <View style={styles.row}>
       <View style={styles.rowIconContainer}>{icon}</View>
@@ -416,8 +416,8 @@ function SettingRow({
 }
 
 function Divider() {
-  const { colors } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { colors, shadows } = useTheme();
+  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   return <View style={styles.divider} />;
 }
 
@@ -444,8 +444,8 @@ function DetectionSettingRow({
   onPermissionFix?: () => void;
   testID?: string;
 }) {
-  const { colors } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { colors, shadows } = useTheme();
+  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const hasError = enabled && !permissionGranted;
 
   return (
@@ -483,7 +483,10 @@ function DetectionSettingRow({
   );
 }
 
-function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
+function makeStyles(
+  colors: ReturnType<typeof useTheme>['colors'],
+  shadows: ReturnType<typeof useTheme>['shadows']
+) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.mist },
     content: { padding: spacing.md, paddingBottom: spacing.xxl },
