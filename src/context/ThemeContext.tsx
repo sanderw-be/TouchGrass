@@ -45,7 +45,13 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <ThemeContext.Provider
-      value={{ colors: activeColors, shadows: activeShadows, isDark, themePreference, setThemePreference }}
+      value={{
+        colors: activeColors,
+        shadows: activeShadows,
+        isDark,
+        themePreference,
+        setThemePreference,
+      }}
     >
       {children}
     </ThemeContext.Provider>
