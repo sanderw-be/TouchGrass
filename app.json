@@ -38,9 +38,9 @@
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "TouchGrass needs background location to detect when you go outside.",
-          "locationAlwaysPermission": "TouchGrass needs background location to detect when you go outside.",
-          "locationWhenInUsePermission": "TouchGrass needs location to detect when you go outside."
+          "locationAlwaysAndWhenInUsePermission": "TouchGrass uses background location to automatically detect outdoor sessions via geofencing. Approximate location is also used for local weather conditions when weather-aware reminders are enabled.",
+          "locationAlwaysPermission": "TouchGrass uses background location to automatically detect outdoor sessions via geofencing (detecting when you leave and return to known indoor places like home or work).",
+          "locationWhenInUsePermission": "TouchGrass uses your location for outdoor session detection and to fetch local weather conditions for weather-aware reminders."
         }
       ],
       [

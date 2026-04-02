@@ -122,7 +122,7 @@ export default {
   settings_error_open_settings_failed: 'Could not open settings. Please open Settings manually.',
   settings_gps_permission_required_title: 'GPS Permission Required',
   settings_gps_permission_required_body:
-    'Background location permission is required for GPS detection. Please grant permissions in Settings.',
+    'Background location ("Allow all the time") is required for GPS session detection. TouchGrass uses geofencing to detect when you leave and return to known indoor locations. Please grant the permission in Settings.',
   settings_permission_cancel: 'Cancel',
   settings_permission_open: 'Open Settings',
   settings_gps: 'GPS tracking',
@@ -259,11 +259,12 @@ export default {
   intro_hc_button: 'Connect Health Connect',
   intro_hc_button_granted: 'Connected ✓',
   intro_location_title: 'Location Access',
-  intro_location_body: "TouchGrass needs location permissions to detect when you're outside.",
+  intro_location_body:
+    'TouchGrass uses your location to automatically detect outdoor sessions via geofencing.',
   intro_location_why_title: 'Why do we need this?',
   intro_location_why_body:
-    'Background location helps us track your outdoor time even when the app is closed. We use it to distinguish between indoor and outdoor locations.',
-  intro_location_hint: 'You\'ll be prompted for "Allow all the time" permission.',
+    'GPS tracking uses geofencing to detect when you leave and return to known indoor locations (e.g. home, work), so outdoor sessions are proposed automatically — even when the app is closed. "Allow all the time" is required for this to work in the background.\n\nIf you enable weather-aware reminders, only approximate location is used to fetch local weather conditions.',
+  intro_location_hint: 'You\'ll be asked to select "Allow all the time" for background session detection.',
   intro_location_button: 'Grant Location Access',
   intro_location_button_granted: 'Location Granted ✓',
   intro_location_known_title: 'Improve outdoor detection',
@@ -365,8 +366,9 @@ export default {
   settings_weather_enabled_desc: 'Consider weather conditions when suggesting outdoor times',
   settings_weather_more: 'More weather settings',
   settings_weather_more_desc: 'Temperature preference, rain, heat, UV',
-  settings_weather_gps_disabled:
-    'GPS is disabled — weather-aware reminders need GPS to know your location. Tap here to enable GPS in Settings.',
+  settings_weather_location_permission_missing:
+    'Location permission is needed to fetch local weather. Approximate location is only used to determine weather conditions and is never stored.',
+  settings_weather_location_request: 'Grant Location Access',
   settings_temp_preference: 'Climate preference',
   settings_temp_cold: 'Prefer cooler weather',
   settings_temp_moderate: 'Moderate climate',

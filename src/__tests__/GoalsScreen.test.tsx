@@ -32,6 +32,14 @@ jest.mock('../calendar/calendarService', () => ({
   getOrCreateTouchGrassCalendar: jest.fn(() => Promise.resolve('local-tg-id')),
 }));
 
+// Mock detection module — weather location permission helpers
+const mockCheckWeatherLocation = jest.fn(() => Promise.resolve(false));
+const mockRequestWeatherLocation = jest.fn(() => Promise.resolve(false));
+jest.mock('../detection', () => ({
+  checkWeatherLocationPermissions: () => mockCheckWeatherLocation(),
+  requestWeatherLocationPermissions: () => mockRequestWeatherLocation(),
+}));
+
 // Mock expo-intent-launcher
 jest.mock('expo-intent-launcher', () => ({
   startActivityAsync: jest.fn(() => Promise.resolve()),
@@ -64,6 +72,8 @@ describe('GoalsScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockGetSetting.mockImplementation((key: string, def: string) => def);
+    mockCheckWeatherLocation.mockResolvedValue(false);
+    mockRequestWeatherLocation.mockResolvedValue(false);
   });
 
   it('renders without crashing', async () => {
@@ -287,5 +297,115 @@ describe('GoalsScreen catch-up reminders setting', () => {
     });
 
     expect(mockSetSetting).toHaveBeenCalledWith('smart_catchup_reminders_count', '0');
+  });
+});
+
+describe('GoalsScreen weather location permission', () => {
+  let alertSpy: jest.SpyInstance;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockGetSetting.mockImplementation((key: string, def: string) => def);
+    mockCheckWeatherLocation.mockResolvedValue(false);
+    mockRequestWeatherLocation.mockResolvedValue(false);
+    alertSpy = jest.spyOn(require('react-native').Alert, 'alert').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    alertSpy.mockRestore();
+  });
+
+  it('shows the weather section without GPS dependency', async () => {
+    const { findByText } = render(<GoalsScreen />);
+    await expect(findByText('settings_weather_title')).resolves.toBeTruthy();
+    await expect(findByText('settings_weather_enabled')).resolves.toBeTruthy();
+  });
+
+  it('shows location permission missing hint when weather is enabled but permission not granted', async () => {
+    mockGetSetting.mockImplementation((key: string, def: string) => {
+      if (key === 'weather_enabled') return '1';
+      return def;
+    });
+    mockCheckWeatherLocation.mockResolvedValue(false);
+
+    const { findByText } = render(<GoalsScreen />);
+    await expect(
+      findByText('settings_weather_location_permission_missing')
+    ).resolves.toBeTruthy();
+    await expect(findByText('settings_weather_location_request')).resolves.toBeTruthy();
+  });
+
+  it('shows weather settings link when weather is enabled and location is granted', async () => {
+    mockGetSetting.mockImplementation((key: string, def: string) => {
+      if (key === 'weather_enabled') return '1';
+      return def;
+    });
+    mockCheckWeatherLocation.mockResolvedValue(true);
+
+    const { findByText, queryByText } = render(<GoalsScreen />);
+    await expect(findByText('settings_weather_more')).resolves.toBeTruthy();
+    await waitFor(() =>
+      expect(queryByText('settings_weather_location_permission_missing')).toBeNull()
+    );
+  });
+
+  it('does not show the permission hint when weather is disabled', async () => {
+    mockGetSetting.mockImplementation((key: string, def: string) => {
+      if (key === 'weather_enabled') return '0';
+      return def;
+    });
+    mockCheckWeatherLocation.mockResolvedValue(false);
+
+    const { queryByText } = render(<GoalsScreen />);
+    await waitFor(() =>
+      expect(queryByText('settings_weather_location_permission_missing')).toBeNull()
+    );
+  });
+
+  it('requests location permission and enables weather when toggle turned on without permission', async () => {
+    mockGetSetting.mockImplementation((key: string, def: string) => {
+      if (key === 'weather_enabled') return '0';
+      return def;
+    });
+    mockCheckWeatherLocation.mockResolvedValue(false);
+    mockRequestWeatherLocation.mockResolvedValue(true);
+
+    const { getAllByRole } = render(<GoalsScreen />);
+
+    // Wait for the weather switch to be rendered
+    await waitFor(() => getAllByRole('switch'));
+
+    // The first switch in GoalsScreen is the weather switch
+    const switches = getAllByRole('switch');
+    await act(async () => {
+      fireEvent(switches[0], 'valueChange', true);
+    });
+
+    await waitFor(() => {
+      expect(mockRequestWeatherLocation).toHaveBeenCalled();
+      expect(mockSetSetting).toHaveBeenCalledWith('weather_enabled', '1');
+    });
+  });
+
+  it('shows Alert when permission request is denied while enabling weather', async () => {
+    mockGetSetting.mockImplementation((key: string, def: string) => {
+      if (key === 'weather_enabled') return '0';
+      return def;
+    });
+    mockCheckWeatherLocation.mockResolvedValue(false);
+    mockRequestWeatherLocation.mockResolvedValue(false);
+
+    const { getAllByRole } = render(<GoalsScreen />);
+    await waitFor(() => getAllByRole('switch'));
+
+    const switches = getAllByRole('switch');
+    await act(async () => {
+      fireEvent(switches[0], 'valueChange', true);
+    });
+
+    await waitFor(() => {
+      expect(alertSpy).toHaveBeenCalled();
+      expect(mockSetSetting).not.toHaveBeenCalledWith('weather_enabled', '1');
+    });
   });
 });

@@ -33,6 +33,10 @@ import {
   getSelectedCalendarId,
   setSelectedCalendarId,
 } from '../calendar/calendarService';
+import {
+  checkWeatherLocationPermissions,
+  requestWeatherLocationPermissions,
+} from '../detection';
 import * as IntentLauncher from 'expo-intent-launcher';
 import { spacing, radius, shadows } from '../utils/theme';
 import { useTheme } from '../context/ThemeContext';
@@ -63,7 +67,7 @@ export default function GoalsScreen() {
 
   // Weather state
   const [weatherEnabled, setWeatherEnabled] = useState(true);
-  const [gpsEnabled, setGpsEnabled] = useState(false);
+  const [weatherLocationGranted, setWeatherLocationGranted] = useState(false);
 
   // Calendar state
   const [calendarEnabled, setCalendarEnabled] = useState(false);
@@ -79,11 +83,15 @@ export default function GoalsScreen() {
     setSmartRemindersCount(parseInt(getSetting('smart_reminders_count', '2'), 10));
     setCatchupRemindersCount(parseInt(getSetting('smart_catchup_reminders_count', '2'), 10));
     setWeatherEnabled(getSetting('weather_enabled', '1') === '1');
-    setGpsEnabled(getSetting('gps_user_enabled', '0') === '1');
     setCalendarEnabled(getSetting('calendar_integration_enabled', '0') === '1');
     setCalendarBuffer(parseInt(getSetting('calendar_buffer_minutes', '30'), 10));
     setCalendarDuration(parseInt(getSetting('calendar_default_duration', '0'), 10));
     setCalendarSelectedIdState(getSelectedCalendarId());
+  }, []);
+
+  const checkWeatherPermissions = useCallback(async () => {
+    const granted = await checkWeatherLocationPermissions();
+    setWeatherLocationGranted(granted);
   }, []);
 
   const checkCalendarPermissions = useCallback(async () => {
@@ -99,15 +107,17 @@ export default function GoalsScreen() {
     useCallback(() => {
       loadGoalSettings();
       checkCalendarPermissions();
+      checkWeatherPermissions();
 
       const sub = AppState.addEventListener('change', (state: AppStateStatus) => {
         if (state === 'active') {
           loadGoalSettings();
           checkCalendarPermissions();
+          checkWeatherPermissions();
         }
       });
       return () => sub.remove();
-    }, [loadGoalSettings, checkCalendarPermissions])
+    }, [loadGoalSettings, checkCalendarPermissions, checkWeatherPermissions])
   );
 
   const saveDaily = (minutes: number) => {
@@ -154,20 +164,24 @@ export default function GoalsScreen() {
     setCatchupRemindersCount(next);
   };
 
-  const toggleWeatherEnabled = (value: boolean) => {
+  const toggleWeatherEnabled = async (value: boolean) => {
+    if (value && !weatherLocationGranted) {
+      const granted = await requestWeatherLocationPermissions();
+      setWeatherLocationGranted(granted);
+      if (!granted) {
+        Alert.alert(
+          t('settings_gps_permission_required_title'),
+          t('settings_weather_location_permission_missing'),
+          [
+            { text: t('settings_permission_cancel'), style: 'cancel' },
+            { text: t('settings_permission_open'), onPress: handleOpenAppSettings },
+          ]
+        );
+        return;
+      }
+    }
     setSetting('weather_enabled', value ? '1' : '0');
     setWeatherEnabled(value);
-  };
-
-  const handleNavigateToSettings = () => {
-    const parent = navigation.getParent();
-    if (parent) {
-      parent.navigate('Settings');
-    } else {
-      console.warn(
-        'GoalsScreen: could not navigate to Settings tab — parent navigator unavailable'
-      );
-    }
   };
 
   const handleOpenAppSettings = async () => {
@@ -475,60 +489,60 @@ export default function GoalsScreen() {
 
         {/* Weather */}
         <Text style={styles.sectionHeader}>{t('settings_weather_title')}</Text>
-        <TouchableOpacity
-          onPress={!gpsEnabled ? handleNavigateToSettings : undefined}
-          disabled={gpsEnabled}
-          activeOpacity={gpsEnabled ? 1 : 0.7}
-        >
-          <View style={[styles.settingsCard, !gpsEnabled && styles.settingsCardDisabled]}>
-            <SettingRow
-              icon={<Ionicons name="partly-sunny-outline" size={20} color={colors.textSecondary} />}
-              label={t('settings_weather_enabled')}
-              sublabel={t('settings_weather_enabled_desc')}
-              right={
-                <Switch
-                  value={weatherEnabled}
-                  onValueChange={toggleWeatherEnabled}
-                  trackColor={{ false: colors.fog, true: colors.grassLight }}
-                  thumbColor={weatherEnabled ? colors.grass : colors.inactive}
-                  disabled={!gpsEnabled}
-                />
-              }
-            />
-            {!gpsEnabled && (
-              <>
-                <Divider />
+        <View style={styles.settingsCard}>
+          <SettingRow
+            icon={<Ionicons name="partly-sunny-outline" size={20} color={colors.textSecondary} />}
+            label={t('settings_weather_enabled')}
+            sublabel={t('settings_weather_enabled_desc')}
+            right={
+              <Switch
+                value={weatherEnabled}
+                onValueChange={toggleWeatherEnabled}
+                trackColor={{ false: colors.fog, true: colors.grassLight }}
+                thumbColor={weatherEnabled ? colors.grass : colors.inactive}
+              />
+            }
+          />
+          {weatherEnabled && !weatherLocationGranted && (
+            <>
+              <Divider />
+              <TouchableOpacity onPress={() => toggleWeatherEnabled(true)}>
                 <View style={styles.row}>
                   <View style={styles.rowIconContainer}>
                     <Ionicons
-                      name="information-circle-outline"
+                      name="location-outline"
                       size={20}
                       color={colors.textSecondary}
                     />
                   </View>
                   <View style={styles.rowContent}>
-                    <Text style={styles.rowSublabel}>{t('settings_weather_gps_disabled')}</Text>
+                    <Text style={styles.rowSublabel}>
+                      {t('settings_weather_location_permission_missing')}
+                    </Text>
+                    <Text style={[styles.rowSublabel, { color: colors.grass }]}>
+                      {t('settings_weather_location_request')}
+                    </Text>
                   </View>
                 </View>
-              </>
-            )}
-            {gpsEnabled && weatherEnabled && (
-              <>
-                <Divider />
-                <TouchableOpacity onPress={() => navigation.navigate('WeatherSettings')}>
-                  <SettingRow
-                    icon={
-                      <Ionicons name="settings-outline" size={20} color={colors.textSecondary} />
-                    }
-                    label={t('settings_weather_more')}
-                    sublabel={t('settings_weather_more_desc')}
-                    right={<Ionicons name="chevron-forward" size={20} color={colors.textMuted} />}
-                  />
-                </TouchableOpacity>
-              </>
-            )}
-          </View>
-        </TouchableOpacity>
+              </TouchableOpacity>
+            </>
+          )}
+          {weatherEnabled && weatherLocationGranted && (
+            <>
+              <Divider />
+              <TouchableOpacity onPress={() => navigation.navigate('WeatherSettings')}>
+                <SettingRow
+                  icon={
+                    <Ionicons name="settings-outline" size={20} color={colors.textSecondary} />
+                  }
+                  label={t('settings_weather_more')}
+                  sublabel={t('settings_weather_more_desc')}
+                  right={<Ionicons name="chevron-forward" size={20} color={colors.textMuted} />}
+                />
+              </TouchableOpacity>
+            </>
+          )}
+        </View>
 
         {/* Calendar integration */}
         <Text style={styles.sectionHeader}>{t('settings_section_calendar')}</Text>

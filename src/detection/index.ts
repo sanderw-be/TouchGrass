@@ -301,3 +301,36 @@ export interface DetectionStatus {
   /** Whether GPS OS permissions are actually granted (meaningful when gps=true). */
   gpsPermission: boolean;
 }
+
+/**
+ * Check whether foreground location permission is granted for weather.
+ * Weather only requires "While using the app" (foreground) location access.
+ * In the background task, location falls back to the SQLite-cached coordinates
+ * from the last foreground fetch if foreground-only permission is in effect.
+ */
+export async function checkWeatherLocationPermissions(): Promise<boolean> {
+  try {
+    const { status } = await Location.getForegroundPermissionsAsync();
+    return status === 'granted';
+  } catch (e) {
+    console.warn('Weather location permission check error:', e);
+    return false;
+  }
+}
+
+/**
+ * Request foreground location permission for weather-aware reminders.
+ * Weather only needs "While using the app" — it does NOT request background
+ * ("Allow all the time") access.  Background weather fetches gracefully degrade
+ * to cached coordinates when background permission is not available.
+ * Returns true if foreground permission is granted.
+ */
+export async function requestWeatherLocationPermissions(): Promise<boolean> {
+  try {
+    const { status } = await Location.requestForegroundPermissionsAsync();
+    return status === 'granted';
+  } catch (e) {
+    console.warn('Weather location permission request error:', e);
+    return false;
+  }
+}
