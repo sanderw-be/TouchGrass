@@ -153,8 +153,7 @@ export function BarChart({
   const barCount = data.length || 1;
   const effectiveWidth = Math.max(chartWidth, 1);
   const barWidth = Math.max(4, effectiveWidth / barCount - 4);
-  const xAxisLabel =
-    period === 'week' ? t('history_axis_days_week') : t('history_axis_days_month');
+  const xAxisLabel = period === 'week' ? t('history_axis_days_week') : t('history_axis_days_month');
   const isEmpty = data.length === 0;
 
   return (
@@ -180,7 +179,9 @@ export function BarChart({
             {/* Bars / empty state */}
             {isEmpty ? (
               <View style={styles.chartEmptyState}>
-                <Text style={{ color: colors.textMuted, fontSize: 14 }}>{t('history_no_data')}</Text>
+                <Text style={{ color: colors.textMuted, fontSize: 14 }}>
+                  {t('history_no_data')}
+                </Text>
               </View>
             ) : (
               <View style={styles.barsRow}>
@@ -205,8 +206,8 @@ export function BarChart({
                             backgroundColor: metGoal
                               ? colors.grass
                               : isToday
-                              ? colors.sky
-                              : colors.fog,
+                                ? colors.sky
+                                : colors.fog,
                           },
                         ]}
                       />
