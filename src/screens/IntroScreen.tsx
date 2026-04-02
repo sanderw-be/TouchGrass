@@ -16,10 +16,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Notifications from 'expo-notifications';
 import * as Location from 'expo-location';
 import * as IntentLauncher from 'expo-intent-launcher';
-import { spacing, radius } from '../utils/theme';
+import { spacing, radius, shadows } from '../utils/theme';
 import { useTheme } from '../context/ThemeContext';
 import { t } from '../i18n';
 import { PRIVACY_POLICY_URL } from '../utils/constants';
+import {
+  BATTERY_OPTIMIZATION_SETTING_KEY,
+  openBatteryOptimizationSettings,
+} from '../utils/batteryOptimization';
 import {
   toggleHealthConnect,
   toggleGPS,
@@ -54,7 +58,9 @@ export default function IntroScreen({ onComplete }: Props) {
   const [healthConnectGranted, setHealthConnectGranted] = useState(false);
   const [locationGranted, setLocationGranted] = useState(false);
   const [notificationsGranted, setNotificationsGranted] = useState(false);
-  const [batteryVisited, setBatteryVisited] = useState(false);
+  const [batteryVisited, setBatteryVisited] = useState(
+    () => getSetting(BATTERY_OPTIMIZATION_SETTING_KEY, '0') === '1'
+  );
   const [calendarGranted, setCalendarGranted] = useState(false);
   const [calendarBuffer, setCalendarBuffer] = useState(30);
   const [calendarDuration, setCalendarDuration] = useState(0);
@@ -327,7 +333,13 @@ export default function IntroScreen({ onComplete }: Props) {
             />
           )}
           {currentStep === 'battery' && (
-            <BatteryStep visited={batteryVisited} onOpen={() => setBatteryVisited(true)} />
+            <BatteryStep
+              visited={batteryVisited}
+              onOpen={() => {
+                setBatteryVisited(true);
+                setSetting(BATTERY_OPTIMIZATION_SETTING_KEY, '1');
+              }}
+            />
           )}
           {currentStep === 'calendar' && (
             <CalendarStep
@@ -568,13 +580,9 @@ function BatteryStep({ visited, onOpen }: { visited: boolean; onOpen: () => void
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
 
   const handleOpenBatterySettings = async () => {
-    try {
-      await IntentLauncher.startActivityAsync(
-        'android.settings.IGNORE_BATTERY_OPTIMIZATION_SETTINGS'
-      );
+    const opened = await openBatteryOptimizationSettings();
+    if (opened) {
       onOpen();
-    } catch (error) {
-      console.error('Error opening battery settings:', error);
     }
   };
 

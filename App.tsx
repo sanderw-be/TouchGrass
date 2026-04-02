@@ -36,6 +36,7 @@ import { LanguageContext } from './src/context/LanguageContext';
 import { ReminderFeedbackProvider } from './src/context/ReminderFeedbackContext';
 import ReminderFeedbackModal from './src/components/ReminderFeedbackModal';
 import ErrorBoundary from './src/components/ErrorBoundary';
+import { refreshBatteryOptimizationSetting } from './src/utils/batteryOptimization';
 
 enableScreens();
 
@@ -62,6 +63,9 @@ function AppContent() {
       if (appState.current !== 'active' && nextAppState === 'active') {
         const hasCompletedIntro = getSetting('hasCompletedIntro', '0') === '1';
         if (hasCompletedIntro) {
+          refreshBatteryOptimizationSetting().catch((e) =>
+            console.warn('Battery optimization status check error:', e)
+          );
           InteractionManager.runAfterInteractions(() => {
             scheduleDayReminders().catch((e) =>
               console.warn('TouchGrass: foreground scheduleDayReminders error:', e)
@@ -104,6 +108,14 @@ function AppContent() {
 
     setReady(true);
   }, []);
+
+  useEffect(() => {
+    if (!ready) return;
+
+    refreshBatteryOptimizationSetting().catch((e) =>
+      console.warn('Battery optimization status check error:', e)
+    );
+  }, [ready]);
 
   // Non-critical init: runs after the first interactive frame so it does not
   // block the loading spinner → navigator transition.

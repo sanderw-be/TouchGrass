@@ -1,5 +1,6 @@
 import React from 'react';
 import { render, fireEvent, act, waitFor } from '@testing-library/react-native';
+import { Platform } from 'react-native';
 
 // Mock i18n
 jest.mock('../i18n', () => ({
@@ -40,6 +41,12 @@ jest.mock('../detection', () => ({
   requestWeatherLocationPermissions: () => mockRequestWeatherLocation(),
 }));
 
+jest.mock('../utils/batteryOptimization', () => ({
+  BATTERY_OPTIMIZATION_SETTING_KEY: 'battery_optimization_granted',
+  openBatteryOptimizationSettings: jest.fn(() => Promise.resolve(true)),
+  refreshBatteryOptimizationSetting: jest.fn(() => Promise.resolve(false)),
+}));
+
 // Mock expo-intent-launcher
 jest.mock('expo-intent-launcher', () => ({
   startActivityAsync: jest.fn(() => Promise.resolve()),
@@ -67,10 +74,27 @@ jest.mock('react-native-safe-area-context', () => ({
 
 import GoalsScreen from '../screens/GoalsScreen';
 import * as CalendarService from '../calendar/calendarService';
+import {
+  BATTERY_OPTIMIZATION_SETTING_KEY,
+  openBatteryOptimizationSettings,
+  refreshBatteryOptimizationSetting,
+} from '../utils/batteryOptimization';
+
+const mockOpenBatteryOptimizationSettings = openBatteryOptimizationSettings as jest.MockedFunction<
+  typeof openBatteryOptimizationSettings
+>;
+const mockRefreshBatteryOptimizationSetting =
+  refreshBatteryOptimizationSetting as jest.MockedFunction<
+    typeof refreshBatteryOptimizationSetting
+  >;
+const originalPlatformOS = Platform.OS;
 
 describe('GoalsScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    (Platform as any).OS = originalPlatformOS;
+    mockOpenBatteryOptimizationSettings.mockResolvedValue(true);
+    mockRefreshBatteryOptimizationSetting.mockResolvedValue(false);
     mockGetSetting.mockImplementation((key: string, def: string) => def);
     mockCheckWeatherLocation.mockResolvedValue(false);
     mockRequestWeatherLocation.mockResolvedValue(false);
@@ -105,9 +129,98 @@ describe('GoalsScreen', () => {
   });
 });
 
+describe('GoalsScreen battery optimization', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    (Platform as any).OS = originalPlatformOS;
+    mockOpenBatteryOptimizationSettings.mockResolvedValue(true);
+    mockRefreshBatteryOptimizationSetting.mockResolvedValue(false);
+    mockGetSetting.mockImplementation((key: string, def: string) => def);
+  });
+
+  it('shows the explainer sheet and opens settings on Android', async () => {
+    const originalOS = Platform.OS;
+    try {
+      (Platform as any).OS = 'android';
+      const { findByText, findByTestId, getByTestId } = render(<GoalsScreen />);
+
+      const batteryRow = await findByText('settings_battery_optimization');
+
+      await act(async () => {
+        fireEvent.press(batteryRow);
+      });
+
+      await findByTestId('permission-explainer-sheet');
+
+      await act(async () => {
+        fireEvent.press(getByTestId('permission-open-settings-btn'));
+      });
+
+      expect(openBatteryOptimizationSettings).toHaveBeenCalled();
+    } finally {
+      (Platform as any).OS = originalOS;
+    }
+  });
+
+  it('disables the battery row when already granted', async () => {
+    const originalOS = Platform.OS;
+    try {
+      (Platform as any).OS = 'android';
+      mockGetSetting.mockImplementation((key: string, def: string) =>
+        key === BATTERY_OPTIMIZATION_SETTING_KEY ? '1' : def
+      );
+      mockRefreshBatteryOptimizationSetting.mockResolvedValue(true);
+      const { findByText, getByTestId } = render(<GoalsScreen />);
+
+      await findByText('settings_battery_optimization');
+
+      await waitFor(() =>
+        expect(getByTestId('battery-optimization-row').props.accessibilityState?.disabled).toBe(
+          true
+        )
+      );
+      expect(getByTestId('icon-checkmark-circle')).toBeTruthy();
+
+      await act(async () => {
+        fireEvent.press(getByTestId('battery-optimization-row'));
+      });
+
+      expect(openBatteryOptimizationSettings).not.toHaveBeenCalled();
+    } finally {
+      (Platform as any).OS = originalOS;
+    }
+  });
+
+  it('re-enables the battery row when optimization is no longer ignored', async () => {
+    const originalOS = Platform.OS;
+    try {
+      (Platform as any).OS = 'android';
+      mockGetSetting.mockImplementation((key: string, def: string) =>
+        key === BATTERY_OPTIMIZATION_SETTING_KEY ? '1' : def
+      );
+      mockRefreshBatteryOptimizationSetting.mockResolvedValue(false);
+      const { findByText, getByTestId, queryByTestId } = render(<GoalsScreen />);
+
+      await findByText('settings_battery_optimization');
+
+      await waitFor(() =>
+        expect(getByTestId('battery-optimization-row').props.accessibilityState?.disabled).toBe(
+          false
+        )
+      );
+      expect(queryByTestId('icon-checkmark-circle')).toBeNull();
+    } finally {
+      (Platform as any).OS = originalOS;
+    }
+  });
+});
+
 describe('GoalsScreen calendar duration', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    (Platform as any).OS = originalPlatformOS;
+    mockOpenBatteryOptimizationSettings.mockResolvedValue(true);
+    mockRefreshBatteryOptimizationSetting.mockResolvedValue(false);
     mockGetSetting.mockImplementation((key: string, def: string) => def);
     // Calendar settings sub-rows only show when permission is granted
     (CalendarService.hasCalendarPermissions as jest.Mock).mockResolvedValue(true);
@@ -225,6 +338,8 @@ describe('GoalsScreen calendar duration', () => {
 describe('GoalsScreen catch-up reminders setting', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    (Platform as any).OS = originalPlatformOS;
+    mockOpenBatteryOptimizationSettings.mockResolvedValue(true);
     mockGetSetting.mockImplementation((key: string, def: string) => def);
   });
 
@@ -307,9 +422,11 @@ describe('GoalsScreen weather location permission', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockOpenBatteryOptimizationSettings.mockResolvedValue(true);
     mockGetSetting.mockImplementation((key: string, def: string) => def);
     mockCheckWeatherLocation.mockResolvedValue(false);
     mockRequestWeatherLocation.mockResolvedValue(false);
+    (Platform as any).OS = originalPlatformOS;
     alertSpy = jest.spyOn(require('react-native').Alert, 'alert').mockImplementation(() => {});
   });
 
@@ -405,6 +522,7 @@ describe('GoalsScreen weather location permission', () => {
 describe('GoalsScreen calendar permission missing state', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    (Platform as any).OS = originalPlatformOS;
     mockGetSetting.mockImplementation((key: string, def: string) => def);
     mockCheckWeatherLocation.mockResolvedValue(false);
   });
@@ -467,6 +585,7 @@ function getLastAppStateChangeHandler(): ((state: string) => void) | undefined {
 describe('GoalsScreen auto-enable on permission grant', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    (Platform as any).OS = originalPlatformOS;
     mockGetSetting.mockImplementation((key: string, def: string) => def);
     mockCheckWeatherLocation.mockResolvedValue(false);
     (CalendarService.hasCalendarPermissions as jest.Mock).mockResolvedValue(false);

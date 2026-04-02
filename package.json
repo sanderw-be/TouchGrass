@@ -29,6 +29,7 @@
     "@react-navigation/stack": "^7.7.2",
     "expo": "~55.0.9",
     "expo-background-task": "~55.0.10",
+    "expo-battery": "~55.0.9",
     "expo-build-properties": "~55.0.10",
     "expo-calendar": "~55.0.10",
     "expo-dev-client": "~55.0.19",
