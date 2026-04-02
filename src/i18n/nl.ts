@@ -98,8 +98,12 @@ export default {
   history_stat_total: 'Totaal',
   history_stat_avg: 'Daggemiddelde',
   history_stat_goals_met: 'Doelen gehaald',
+  history_axis_minutes: 'Minuten per dag',
+  history_axis_days_week: 'Weekdag',
+  history_axis_days_month: 'Dag van de maand',
   history_no_data: 'Geen gegevens voor deze periode',
   history_legend_goal_met: 'Doel gehaald',
+  history_legend_below_goal: 'Onder doel',
   history_legend_today: 'Vandaag',
   history_legend_target: 'Doelstelling',
 
