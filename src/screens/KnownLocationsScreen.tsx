@@ -78,7 +78,7 @@ export default function KnownLocationsScreen() {
         </TouchableOpacity>
       ),
     });
-  }, [navigation, handleAddLocation]);
+  }, [navigation, handleAddLocation, styles.headerAddBtn, styles.headerAddBtnText]);
 
   const closeSheet = useCallback(() => {
     setEditingLocation(null);

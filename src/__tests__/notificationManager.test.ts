@@ -30,7 +30,6 @@ import {
   processReminderQueue,
   cancelRemindersIfGoalReached,
   setupNotificationInfrastructure,
-  DAILY_PLANNER_NOTIF_PREFIX,
   FAILSAFE_REMINDER_PREFIX,
 } from '../notifications/notificationManager';
 import type { ReminderQueueEntry } from '../notifications/notificationManager';
@@ -1789,8 +1788,6 @@ describe('notificationManager', () => {
     it('dismisses a daily planner notification tap but does not insert reminder feedback', async () => {
       // Simulate the notification response listener being registered and called
       // We need to trigger handleNotificationResponse via the listener registration
-      const listenerCalls = (Notifications.addNotificationResponseReceivedListener as jest.Mock)
-        .mock.calls;
       // Find the response listener registered during setupNotificationInfrastructure
       await setupNotificationInfrastructure();
       const allCalls = (Notifications.addNotificationResponseReceivedListener as jest.Mock).mock
@@ -2158,10 +2155,6 @@ describe('notificationManager', () => {
   });
 
   describe('processReminderQueue', () => {
-    function makeQueueSetting(entries: ReminderQueueEntry[]): Record<string, string> {
-      return { smart_reminder_queue: JSON.stringify(entries) };
-    }
-
     function mockSettingsWithQueue(
       queue: ReminderQueueEntry[],
       extra: Record<string, string> = {}

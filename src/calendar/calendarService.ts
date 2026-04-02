@@ -232,7 +232,7 @@ export async function hasCalendarPermissions(): Promise<boolean> {
   try {
     const { status } = await Calendar.getCalendarPermissionsAsync();
     return status === 'granted';
-  } catch (e) {
+  } catch {
     return false;
   }
 }

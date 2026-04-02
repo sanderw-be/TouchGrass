@@ -11,8 +11,7 @@ import {
 import { spacing, radius, shadows } from '../utils/theme';
 import { useTheme } from '../context/ThemeContext';
 import { formatMinutes } from '../utils/helpers';
-import { formatLocalDate } from '../i18n';
-import { t } from '../i18n';
+import { formatLocalDate, t } from '../i18n';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const BAR_AREA_WIDTH = SCREEN_WIDTH - spacing.md * 2 - spacing.lg * 2;

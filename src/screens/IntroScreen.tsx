@@ -25,8 +25,10 @@ import {
   toggleGPS,
   recheckHealthConnect,
   openHealthConnectSettings,
+  requestGPSPermissions,
+  checkGPSPermissions,
 } from '../detection/index';
-import { requestGPSPermissions, checkGPSPermissions } from '../detection/index';
+
 import { requestNotificationPermissions } from '../notifications/notificationManager';
 import { requestCalendarPermissions, hasCalendarPermissions } from '../calendar/calendarService';
 import { getSetting, setSetting } from '../storage/database';

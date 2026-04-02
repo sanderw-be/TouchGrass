@@ -45,7 +45,7 @@ jest.mock('@react-navigation/native', () => ({
     const React = require('react');
     React.useEffect(() => {
       cb();
-    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    }, []);
   },
 }));
 

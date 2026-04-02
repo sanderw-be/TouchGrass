@@ -9,7 +9,6 @@ import * as WeatherAlgorithm from '../weather/weatherAlgorithm';
 import {
   scoreReminderHours,
   shouldRemindNow,
-  HourScore,
   ScoreContributor,
 } from '../notifications/reminderAlgorithm';
 
@@ -92,7 +91,6 @@ describe('reminderAlgorithm', () => {
     it('gives lunch-hour slots (12 and 13) a bonus', () => {
       const scores = scoreReminderHours(0, 30, 0, 0);
       const slot1200 = scores.find((s) => s.hour === 12 && s.minute === 0)!;
-      const slot1800 = scores.find((s) => s.hour === 18 && s.minute === 0)!;
       // Lunch bonus adds 0.1, after-work adds 0.15; without other factors both start at 0.5
       // 12:00 should benefit from lunch +0.10
       expect(slot1200.score).toBeGreaterThan(0.5);

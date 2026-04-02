@@ -1,9 +1,4 @@
-import {
-  getReminderFeedback,
-  getSessionsForRange,
-  startOfDay,
-  startOfWeek,
-} from '../storage/database';
+import { getReminderFeedback, getSessionsForRange, startOfWeek } from '../storage/database';
 import { getWeatherForHour } from '../weather/weatherService';
 import {
   scoreWeatherCondition,
@@ -54,7 +49,7 @@ export function scoreReminderHours(
   dailyTargetMinutes: number,
   currentHour: number,
   currentMinute: number = 0,
-  plannedSlots: Array<{ hour: number; minute: 0 | 30 }> = []
+  plannedSlots: { hour: number; minute: 0 | 30 }[] = []
 ): HourScore[] {
   const feedback = getReminderFeedback();
   const scores: HourScore[] = [];

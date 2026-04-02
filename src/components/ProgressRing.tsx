@@ -45,7 +45,7 @@ export default function ProgressRing({
       friction: 8,
       useNativeDriver: false,
     }).start();
-  }, [percent]);
+  }, [animatedPercent, percent]);
 
   const strokeDashoffset = animatedPercent.interpolate({
     inputRange: [0, 1],

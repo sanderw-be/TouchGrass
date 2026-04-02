@@ -1,5 +1,4 @@
-import { OutsideSession } from '../storage/database';
-import { getSetting, setSetting } from '../storage/database';
+import { OutsideSession, getSetting, setSetting } from '../storage/database';
 
 /**
  * Combined confidence score below this threshold causes a session to be stored

@@ -10,15 +10,15 @@ import HistoryScreen from '../screens/HistoryScreen';
 import EventsScreen from '../screens/EventsScreen';
 import GoalsScreen from '../screens/GoalsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
-const WeatherSettingsScreen = lazy(() => import('../screens/WeatherSettingsScreen'));
-const ScheduledNotificationsScreen = lazy(() => import('../screens/ScheduledNotificationsScreen'));
-const KnownLocationsScreen = lazy(() => import('../screens/KnownLocationsScreen'));
-const FeedbackSupportScreen = lazy(() => import('../screens/FeedbackSupportScreen'));
 import { fetchWeatherForecast, isWeatherDataAvailable } from '../weather/weatherService';
 import { getSetting } from '../storage/database';
 import { spacing } from '../utils/theme';
 import { useTheme } from '../context/ThemeContext';
 import { t } from '../i18n';
+const WeatherSettingsScreen = lazy(() => import('../screens/WeatherSettingsScreen'));
+const ScheduledNotificationsScreen = lazy(() => import('../screens/ScheduledNotificationsScreen'));
+const KnownLocationsScreen = lazy(() => import('../screens/KnownLocationsScreen'));
+const FeedbackSupportScreen = lazy(() => import('../screens/FeedbackSupportScreen'));
 
 export type GoalsStackParamList = {
   GoalsMain: undefined;

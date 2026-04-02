@@ -1,7 +1,6 @@
 import React from 'react';
 import { fireEvent, render } from '@testing-library/react-native';
-import { BarChart } from '../screens/HistoryScreen';
-import HistoryScreen from '../screens/HistoryScreen';
+import HistoryScreen, { BarChart } from '../screens/HistoryScreen';
 
 // ── Shared mocks for HistoryScreen component tests ──────────────────────────
 
@@ -41,7 +40,7 @@ jest.mock('@react-navigation/native', () => ({
   // deps like period/viewDate change), matching the real focus-effect behaviour.
   useFocusEffect: (cb: () => void) => {
     const React = require('react');
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
     React.useEffect(() => {
       cb();
     }, [cb]);

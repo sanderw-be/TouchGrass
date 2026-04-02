@@ -156,7 +156,7 @@ export function submitSession(candidate: OutsideSession): void {
     console.log(`TouchGrass: Session split around ${sortedConfirmed.length} confirmed session(s)`);
   }
 
-  const segments: Array<[number, number]> = [];
+  const segments: [number, number][] = [];
   let cursor = mergedStart;
 
   for (const confirmed of sortedConfirmed) {

@@ -26,6 +26,12 @@ module.exports = defineConfig([
     },
     rules: {
       'react/display-name': 'off',
+      // Common in Jest tests for module isolation and inline mock factories.
+      '@typescript-eslint/no-require-imports': 'off',
+      // Tests often intentionally place imports after mock setup.
+      'import/first': 'off',
+      // In tests, mocked navigation hooks often delegate callbacks indirectly.
+      'react-hooks/exhaustive-deps': 'off',
     },
   },
 ]);

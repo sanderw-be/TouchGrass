@@ -9,6 +9,8 @@ import {
   Alert,
   Linking,
   Platform,
+  AppState,
+  AppStateStatus,
 } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -28,7 +30,7 @@ import {
   requestGPSPermissions,
   openHealthConnectSettings,
 } from '../detection/index';
-import { AppState, AppStateStatus } from 'react-native';
+
 import { spacing, radius, shadows } from '../utils/theme';
 import { useTheme, ThemePreference } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -48,8 +50,6 @@ export default function SettingsScreen() {
   const { locale, setLocale } = useLanguage();
   const navigation = useNavigation<StackNavigationProp<SettingsStackParamList>>();
   const insets = useSafeAreaInsets();
-  const [smartRemindersCount, setSmartRemindersCount] = useState(2);
-  const [catchupRemindersCount, setCatchupRemindersCount] = useState(2);
   const [detectionStatus, setDetectionStatus] = useState({
     healthConnect: false,
     healthConnectPermission: false,
@@ -290,7 +290,6 @@ export default function SettingsScreen() {
           ))}
         </View>
 
-
         <Text style={styles.sectionHeader}>{t('settings_section_about')}</Text>
         <View style={styles.card}>
           <SettingRow icon="🌿" label="TouchGrass" sublabel={t('settings_app_sublabel')} />
@@ -310,10 +309,7 @@ export default function SettingsScreen() {
             label={t('settings_rerun_tutorial')}
             sublabel={t('settings_rerun_tutorial_sublabel')}
             right={
-              <TouchableOpacity
-                style={styles.editBtn}
-                onPress={showIntro}
-              >
+              <TouchableOpacity style={styles.editBtn} onPress={showIntro}>
                 <Text style={styles.editBtnText}>{t('settings_rerun_tutorial')}</Text>
               </TouchableOpacity>
             }
@@ -376,14 +372,6 @@ function Divider() {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   return <View style={styles.divider} />;
-}
-
-function StatusDot({ active }: { active: boolean }) {
-  const { colors } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
-  return (
-    <View style={[styles.statusDot, active ? styles.statusDotActive : styles.statusDotInactive]} />
-  );
 }
 
 function DetectionSettingRow({

@@ -35,7 +35,6 @@ export function startManualSession(): () => void {
 
   return function stopManualSession() {
     const endTime = Date.now();
-    const durationMinutes = (endTime - startTime) / 60000;
 
     // Record all sessions, even very short ones (no minimum)
     const session = buildSession(

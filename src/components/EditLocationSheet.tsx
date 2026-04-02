@@ -84,10 +84,17 @@ export default function EditLocationSheet({
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Working coordinates: manual override > existing location > initial coords
-  const baseCoords: Coords | null = location
-    ? { latitude: location.latitude, longitude: location.longitude }
-    : (initialCoords ?? null);
-  const coords: Coords | null = manualCoords ?? baseCoords;
+  const baseCoords: Coords | null = useMemo(
+    () =>
+      location
+        ? { latitude: location.latitude, longitude: location.longitude }
+        : (initialCoords ?? null),
+    [location, initialCoords]
+  );
+  const coords: Coords | null = useMemo(
+    () => manualCoords ?? baseCoords,
+    [manualCoords, baseCoords]
+  );
 
   const isNew = location === null;
   const isSuggested = location?.status === 'suggested';
@@ -133,7 +140,7 @@ export default function EditLocationSheet({
     return () => {
       cancelled = true;
     };
-  }, [visible, coords?.latitude, coords?.longitude, addressEditing]);
+  }, [visible, coords, addressEditing]);
 
   // Geocode search with 500ms debounce
   const handleAddressQueryChange = useCallback((text: string) => {

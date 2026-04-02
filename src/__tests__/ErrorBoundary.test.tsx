@@ -70,7 +70,7 @@ describe('ErrorBoundary', () => {
       return null;
     }
 
-    const { getByText, queryByText, rerender } = render(
+    const { getByText, queryByText } = render(
       <ErrorBoundary>
         <TogglableThrow />
       </ErrorBoundary>

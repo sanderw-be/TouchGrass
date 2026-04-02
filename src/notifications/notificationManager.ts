@@ -1,5 +1,4 @@
 import * as Notifications from 'expo-notifications';
-import * as TaskManager from 'expo-task-manager';
 import { Platform } from 'react-native';
 import {
   getTodayMinutes,
@@ -22,7 +21,6 @@ import {
 import {
   hasScheduledNotificationNearby,
   isSlotNearScheduledNotification,
-  scheduleAllScheduledNotifications,
 } from './scheduledNotifications';
 import {
   hasUpcomingEvent,
@@ -609,7 +607,7 @@ export async function scheduleDayReminders(): Promise<void> {
   }
 
   const seenSlots = new Set<string>();
-  const topSlots: Array<{ hour: number; minute: 0 | 30; contributors: ScoreContributor[] }> = [];
+  const topSlots: { hour: number; minute: 0 | 30; contributors: ScoreContributor[] }[] = [];
   const currentSlotMinutes = currentHour * 60 + currentMinute;
 
   // Pick slots one at a time. After each pick, re-score with the chosen slots as
@@ -621,7 +619,7 @@ export async function scheduleDayReminders(): Promise<void> {
       dailyTarget,
       currentHour,
       currentMinute,
-      topSlots as Array<{ hour: number; minute: 0 | 30 }>
+      topSlots as { hour: number; minute: 0 | 30 }[]
     );
 
     let picked = false;
@@ -655,7 +653,7 @@ export async function scheduleDayReminders(): Promise<void> {
     if (!picked) break;
   }
 
-  const scheduledSlots: Array<{ hour: number; minute: number }> = [];
+  const scheduledSlots: { hour: number; minute: number }[] = [];
   // Clear queue before rebuilding for the new day
   saveQueue([]);
   const newQueueEntries: ReminderQueueEntry[] = [];
@@ -761,7 +759,7 @@ export async function maybeScheduleCatchUpReminder(): Promise<void> {
   }
 
   // Load the planned slots for today
-  let plannedSlots: Array<{ hour: number; minute: number }> = [];
+  let plannedSlots: { hour: number; minute: number }[] = [];
   try {
     plannedSlots = JSON.parse(getSetting('reminders_planned_slots', '[]'));
   } catch {
@@ -965,9 +963,7 @@ async function cancelFailsafeReminders(): Promise<void> {
  *
  * @param slots  The time slots chosen by scheduleDayReminders() for today.
  */
-async function scheduleFailsafeReminders(
-  slots: Array<{ hour: number; minute: 0 | 30 }>
-): Promise<void> {
+async function scheduleFailsafeReminders(slots: { hour: number; minute: 0 | 30 }[]): Promise<void> {
   if (slots.length === 0) return;
 
   const dailyTarget = getCurrentDailyGoal()?.targetMinutes ?? 30;

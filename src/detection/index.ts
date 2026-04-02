@@ -6,7 +6,7 @@ import {
   openHealthConnectForManagement,
 } from './healthConnect';
 import { verifyHealthConnectPermissions } from './healthConnectIntent';
-import { startLocationTracking, stopLocationTracking, autoDetectLocations } from './gpsDetection';
+import { startLocationTracking, stopLocationTracking } from './gpsDetection';
 import { getSetting, setSetting } from '../storage/database';
 
 // Setting keys for the user's explicit intent (independent of OS permission state)
@@ -180,9 +180,6 @@ export async function checkGPSPermissions(): Promise<boolean> {
  */
 export async function requestGPSPermissions(): Promise<boolean> {
   try {
-    // Check current foreground permission status
-    const { status: currentFgStatus } = await Location.getForegroundPermissionsAsync();
-
     // Request foreground permission
     const { status: fgStatus } = await Location.requestForegroundPermissionsAsync();
     if (fgStatus !== 'granted') {
@@ -190,9 +187,6 @@ export async function requestGPSPermissions(): Promise<boolean> {
       // If user explicitly denied, return false immediately
       return false;
     }
-
-    // Check current background permission status
-    const { status: currentBgStatus } = await Location.getBackgroundPermissionsAsync();
 
     // Request background permission
     const { status: bgStatus } = await Location.requestBackgroundPermissionsAsync();

@@ -72,7 +72,7 @@ describe('GoalsScreen', () => {
   });
 
   it('shows the WHO tip at the top before the goal cards', async () => {
-    const { getByText, getAllByText } = render(<GoalsScreen />);
+    const { getByText } = render(<GoalsScreen />);
     await waitFor(() => {
       expect(getByText('goals_who_tip')).toBeTruthy();
     });

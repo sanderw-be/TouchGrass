@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, act } from '@testing-library/react-native';
 import { Text } from 'react-native';
-import { ThemeProvider, useTheme, ThemePreference } from '../context/ThemeContext';
+import { ThemeProvider, useTheme } from '../context/ThemeContext';
 import { colors as lightColors, darkColors } from '../utils/theme';
 
 // Mock database

@@ -15,11 +15,9 @@ import { t } from '../i18n';
 import { isImperialUnits, kmToMiles, kmhToMph } from '../utils/units';
 import { emitSessionsChanged } from '../utils/sessionsChangedEmitter';
 
-const GEOFENCE_TASK = 'TOUCHGRASS_GEOFENCE';
 const LOCATION_TRACK_TASK = 'TOUCHGRASS_LOCATION_TRACK';
 
 const CONFIDENCE_GPS_ONLY = 0.8;
-const CONFIDENCE_GPS_AND_ACTIVITY = 0.95;
 export const MIN_OUTSIDE_DURATION_MS = 5 * 60 * 1000;
 
 // How many times the geofence radius to search for the departure/arrival location.

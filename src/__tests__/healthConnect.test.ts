@@ -10,10 +10,8 @@ import * as HealthConnectIntent from '../detection/healthConnectIntent';
 import {
   syncHealthConnect,
   requestHealthPermissions,
-  MIN_DURATION_MS,
   STEPS_PER_MINUTE_AT_5KMH,
   STEPS_PER_MIN_AT_2_5KMH,
-  STEPS_PER_MIN_AT_4KMH,
   CONFIDENCE_ACTIVITY,
 } from '../detection/healthConnect';
 

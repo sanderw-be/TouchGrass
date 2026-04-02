@@ -20,12 +20,6 @@ import { t } from '../i18n';
 import { isImperialUnits, kmhToMph } from '../utils/units';
 import { emitSessionsChanged } from '../utils/sessionsChangedEmitter';
 
-// Activities that strongly suggest being outside
-const OUTDOOR_ACTIVITY_TYPES = [
-  'ExerciseSession', // walking, running, cycling etc.
-  'StepsRecord',
-];
-
 export const CONFIDENCE_ACTIVITY = 0.7;
 export const MIN_DURATION_MS = 5 * 60 * 1000; // ignore sessions under 5 minutes
 // Average walking cadence at 5 km/h (~110 steps/min); used to estimate walk
@@ -260,7 +254,7 @@ function exerciseTypeName(type: number): string {
 function wasDefinitelyAtKnownIndoorLocation(startMs: number, endMs: number): boolean {
   try {
     const parsed: unknown = JSON.parse(getSetting('location_clusters', '[]'));
-    const allSamples: Array<{ lat: number; lon: number; timestamp: number }> = Array.isArray(parsed)
+    const allSamples: { lat: number; lon: number; timestamp: number }[] = Array.isArray(parsed)
       ? parsed
       : [];
     const sessionSamples = allSamples.filter((s) => s.timestamp >= startMs && s.timestamp <= endMs);

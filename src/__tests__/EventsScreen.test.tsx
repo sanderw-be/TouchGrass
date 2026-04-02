@@ -29,12 +29,10 @@ jest.mock('../notifications/notificationManager', () => ({
 }));
 
 jest.mock('../components/ManualSessionSheet', () => {
-  const React = require('react');
   return jest.fn(() => null);
 });
 
 jest.mock('../components/EditSessionSheet', () => {
-  const React = require('react');
   return jest.fn(() => null);
 });
 
@@ -48,8 +46,7 @@ jest.mock('@react-navigation/native', () => {
 });
 
 import EventsScreen from '../screens/EventsScreen';
-import { getStandardSessions, confirmSession } from '../storage/database';
-import { OutsideSession } from '../storage/database';
+import { getStandardSessions, confirmSession, OutsideSession } from '../storage/database';
 
 const mockPendingSession: OutsideSession = {
   id: 1,

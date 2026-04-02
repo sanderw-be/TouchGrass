@@ -6,7 +6,6 @@ import {
   Modal,
   TouchableOpacity,
   ScrollView,
-  TextInput,
   Platform,
   Alert,
 } from 'react-native';
@@ -26,8 +25,6 @@ interface Props {
 
 type Tab = 'log' | 'timer';
 
-const DURATION_PRESETS = [15, 20, 30, 45, 60, 90];
-
 export default function ManualSessionSheet({ visible, onClose, onSessionLogged }: Props) {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
@@ -35,9 +32,6 @@ export default function ManualSessionSheet({ visible, onClose, onSessionLogged }
   const [tab, setTab] = useState<Tab>('log');
 
   // Log past session state
-  const [durationMinutes, setDurationMinutes] = useState(30);
-  const [customDuration, setCustomDuration] = useState('');
-  const [useCustom, setUseCustom] = useState(false);
 
   // Time pickers for start and end time
   const [startTime, setStartTime] = useState(new Date());
@@ -57,9 +51,6 @@ export default function ManualSessionSheet({ visible, onClose, onSessionLogged }
   useEffect(() => {
     if (visible) {
       setTab('log');
-      setDurationMinutes(30);
-      setCustomDuration('');
-      setUseCustom(false);
       setFromTimer(false);
 
       // Set default times: end time is now, start time is 30 minutes ago
