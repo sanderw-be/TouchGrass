@@ -73,6 +73,22 @@ jest.mock('../context/ThemeContext', () => ({
       textMuted: '#8FA892',
       textInverse: '#FFFFFF',
     },
+    shadows: {
+      soft: {
+        shadowColor: '#2D5240',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+        elevation: 3,
+      },
+      medium: {
+        shadowColor: '#2D5240',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.12,
+        shadowRadius: 16,
+        elevation: 6,
+      },
+    },
     isDark: false,
   }),
 }));

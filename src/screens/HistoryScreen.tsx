@@ -8,7 +8,7 @@ import {
   startOfDay,
   startOfWeek,
 } from '../storage/database';
-import { spacing, radius, shadows } from '../utils/theme';
+import { spacing, radius } from '../utils/theme';
 import { useTheme } from '../context/ThemeContext';
 import { formatMinutes } from '../utils/helpers';
 import { formatLocalDate, t } from '../i18n';
@@ -20,8 +20,8 @@ const DAY_MS = 86400000;
 type Period = 'week' | 'month';
 
 export default function HistoryScreen() {
-  const { colors } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { colors, shadows } = useTheme();
+  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const [period, setPeriod] = useState<Period>('week');
   const [dailyData, setDailyData] = useState<{ date: number; minutes: number }[]>([]);
   const [dailyTarget, setDailyTarget] = useState(30);
@@ -124,8 +124,8 @@ export default function HistoryScreen() {
 }
 
 function StatBox({ label, value }: { label: string; value: string }) {
-  const { colors } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { colors, shadows } = useTheme();
+  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   return (
     <View style={styles.statBox}>
       <Text style={styles.statValue}>{value}</Text>
@@ -145,8 +145,8 @@ export function BarChart({
   maxValue: number;
   period: Period;
 }) {
-  const { colors } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { colors, shadows } = useTheme();
+  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const CHART_HEIGHT = 160;
   const targetY = CHART_HEIGHT - (target / maxValue) * CHART_HEIGHT;
   const [chartWidth, setChartWidth] = useState(BAR_AREA_WIDTH);
@@ -248,7 +248,10 @@ export function BarChart({
   );
 }
 
-function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
+function makeStyles(
+  colors: ReturnType<typeof useTheme>['colors'],
+  shadows: ReturnType<typeof useTheme>['shadows']
+) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.mist },
     content: { padding: spacing.md, paddingBottom: spacing.xxl },

@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { spacing, radius, shadows } from '../utils/theme';
+import { spacing, radius } from '../utils/theme';
 import { useTheme } from '../context/ThemeContext';
 import { t } from '../i18n';
 
@@ -31,8 +31,8 @@ export default function PermissionExplainerSheet({
   body,
   openSettingsLabel,
 }: Props) {
-  const { colors } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { colors, shadows } = useTheme();
+  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const insets = useSafeAreaInsets();
 
   const handleOpen = () => {
@@ -82,7 +82,10 @@ export default function PermissionExplainerSheet({
   );
 }
 
-function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
+function makeStyles(
+  colors: ReturnType<typeof useTheme>['colors'],
+  shadows: ReturnType<typeof useTheme>['shadows']
+) {
   return StyleSheet.create({
     backdrop: {
       flex: 1,

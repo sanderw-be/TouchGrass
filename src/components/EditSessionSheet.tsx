@@ -13,7 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
 import { updateSessionTimes, OutsideSession } from '../storage/database';
-import { spacing, radius, shadows } from '../utils/theme';
+import { spacing, radius } from '../utils/theme';
 import { useTheme } from '../context/ThemeContext';
 import { formatMinutes, uses24HourClock } from '../utils/helpers';
 import { t, formatLocalDate, formatLocalTime } from '../i18n';
@@ -26,8 +26,8 @@ interface Props {
 }
 
 export default function EditSessionSheet({ visible, session, onClose, onSessionUpdated }: Props) {
-  const { colors } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { colors, shadows } = useTheme();
+  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const insets = useSafeAreaInsets();
   const [startTime, setStartTime] = useState(new Date());
   const [endTime, setEndTime] = useState(new Date());
@@ -189,7 +189,10 @@ export default function EditSessionSheet({ visible, session, onClose, onSessionU
   );
 }
 
-function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
+function makeStyles(
+  colors: ReturnType<typeof useTheme>['colors'],
+  shadows: ReturnType<typeof useTheme>['shadows']
+) {
   return StyleSheet.create({
     backdrop: {
       flex: 1,

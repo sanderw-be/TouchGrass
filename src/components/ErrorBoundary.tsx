@@ -11,7 +11,8 @@ import {
 } from 'react-native';
 import Constants from 'expo-constants';
 import { t } from '../i18n';
-import { colors as themeColors, spacing, radius, shadows } from '../utils/theme';
+import { spacing, radius } from '../utils/theme';
+import { ThemeContext, ThemeContextType } from '../context/ThemeContext';
 
 // Google Form URL for crash reports (same for all locales)
 const CRASH_REPORT_FORM_URL =
@@ -50,6 +51,9 @@ interface State {
 // React Error Boundaries must be class components — hooks cannot be used here.
 // See: https://react.dev/reference/react/Component#catching-rendering-errors-with-an-error-boundary
 export default class ErrorBoundary extends React.Component<Props, State> {
+  static contextType = ThemeContext;
+  context!: ThemeContextType;
+
   state: State = { hasError: false, error: null };
 
   static getDerivedStateFromError(error: Error): State {
@@ -73,6 +77,9 @@ export default class ErrorBoundary extends React.Component<Props, State> {
   };
 
   render() {
+    const { colors, shadows } = this.context;
+    const styles = makeStyles(colors, shadows);
+
     if (this.state.hasError) {
       return (
         <View style={styles.container}>
@@ -107,64 +114,69 @@ export default class ErrorBoundary extends React.Component<Props, State> {
   }
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: themeColors.mist,
-    justifyContent: 'center',
-  },
-  content: {
-    padding: spacing.lg,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexGrow: 1,
-  },
-  herbImage: {
-    width: 80,
-    height: 80,
-    marginBottom: spacing.md,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: themeColors.textPrimary,
-    textAlign: 'center',
-    marginBottom: spacing.sm,
-  },
-  subtitle: {
-    fontSize: 15,
-    color: themeColors.textSecondary,
-    textAlign: 'center',
-    marginBottom: spacing.xl,
-    lineHeight: 22,
-  },
-  primaryButton: {
-    backgroundColor: themeColors.grass,
-    borderRadius: radius.md,
-    paddingVertical: spacing.sm + 4,
-    paddingHorizontal: spacing.xl,
-    width: '100%',
-    alignItems: 'center',
-    marginBottom: spacing.sm,
-    ...shadows.soft,
-  },
-  primaryButtonText: {
-    color: themeColors.textInverse,
-    fontWeight: '600',
-    fontSize: 16,
-  },
-  secondaryButton: {
-    borderRadius: radius.md,
-    paddingVertical: spacing.sm + 4,
-    paddingHorizontal: spacing.xl,
-    width: '100%',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: themeColors.grass,
-  },
-  secondaryButtonText: {
-    color: themeColors.grass,
-    fontWeight: '600',
-    fontSize: 16,
-  },
-});
+function makeStyles(
+  colors: ThemeContextType['colors'],
+  shadows: ThemeContextType['shadows']
+) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.mist,
+      justifyContent: 'center',
+    },
+    content: {
+      padding: spacing.lg,
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexGrow: 1,
+    },
+    herbImage: {
+      width: 80,
+      height: 80,
+      marginBottom: spacing.md,
+    },
+    title: {
+      fontSize: 22,
+      fontWeight: '700',
+      color: colors.textPrimary,
+      textAlign: 'center',
+      marginBottom: spacing.sm,
+    },
+    subtitle: {
+      fontSize: 15,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      marginBottom: spacing.xl,
+      lineHeight: 22,
+    },
+    primaryButton: {
+      backgroundColor: colors.grass,
+      borderRadius: radius.md,
+      paddingVertical: spacing.sm + 4,
+      paddingHorizontal: spacing.xl,
+      width: '100%',
+      alignItems: 'center',
+      marginBottom: spacing.sm,
+      ...shadows.soft,
+    },
+    primaryButtonText: {
+      color: colors.textInverse,
+      fontWeight: '600',
+      fontSize: 16,
+    },
+    secondaryButton: {
+      borderRadius: radius.md,
+      paddingVertical: spacing.sm + 4,
+      paddingHorizontal: spacing.xl,
+      width: '100%',
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: colors.grass,
+    },
+    secondaryButtonText: {
+      color: colors.grass,
+      fontWeight: '600',
+      fontSize: 16,
+    },
+  });
+}

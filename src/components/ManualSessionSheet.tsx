@@ -13,7 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
 import { logManualSession, startManualSession } from '../detection/manualCheckin';
-import { spacing, radius, shadows } from '../utils/theme';
+import { spacing, radius } from '../utils/theme';
 import { useTheme } from '../context/ThemeContext';
 import { formatMinutes, formatTimer, uses24HourClock } from '../utils/helpers';
 import { t, formatLocalDate, formatLocalTime } from '../i18n';
@@ -27,8 +27,8 @@ interface Props {
 type Tab = 'log' | 'timer';
 
 export default function ManualSessionSheet({ visible, onClose, onSessionLogged }: Props) {
-  const { colors } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { colors, shadows } = useTheme();
+  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const insets = useSafeAreaInsets();
   const [tab, setTab] = useState<Tab>('log');
 
@@ -327,7 +327,10 @@ export default function ManualSessionSheet({ visible, onClose, onSessionLogged }
   );
 }
 
-function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
+function makeStyles(
+  colors: ReturnType<typeof useTheme>['colors'],
+  shadows: ReturnType<typeof useTheme>['shadows']
+) {
   return StyleSheet.create({
     backdrop: {
       flex: 1,
