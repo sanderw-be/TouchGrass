@@ -48,6 +48,13 @@ npm run test:watch
 # TypeScript type checking (no emit)
 npm run type-check
 
+# Lint the codebase
+npm run lint
+
+# Prettier code formatting
+npm run format:check  # Check for formatting issues
+npm run format       # Automatically fix formatting issues
+
 # Start the Expo development server
 npm start
 
@@ -67,6 +74,7 @@ npm run ios
 - Prefer **named exports** over default exports for utilities and hooks; screens and components may use default exports.
 - Use the `theme` object from `src/utils/` for colors and spacing rather than inline style values.
 - Database access must go through `src/storage/`; never call `expo-sqlite` directly from screens or components.
+- ALWAYS run linter and prettier before finalizing PR to ensure code style consistency.
 
 ## Testing Requirements
 
@@ -76,6 +84,7 @@ npm run ios
 - Code coverage must not decrease with new changes.
 - All existing tests must continue to pass.
 - Mock platform-specific APIs (location, notifications, health connect, SQLite) using `jest.mock()`.
+- ALWAYS run tests and check coverage before finalizing PR to ensure test quality and prevent regressions.
 
 Example test structure:
 
