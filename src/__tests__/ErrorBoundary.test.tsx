@@ -86,7 +86,7 @@ describe('ErrorBoundary', () => {
     expect(queryByText('error_boundary_title')).toBeNull();
   });
 
-  it('opens the English feedback form URL when Report button is pressed (locale en)', async () => {
+  it('opens the crash report feedback form URL when Report button is pressed (locale en)', async () => {
     const { getByText } = render(
       <ErrorBoundary>
         <ThrowingComponent shouldThrow />
@@ -98,11 +98,11 @@ describe('ErrorBoundary', () => {
     await Promise.resolve();
 
     expect(Linking.openURL).toHaveBeenCalledWith(
-      expect.stringContaining('forms.gle/P6Www1U1yiurgk2D6')
+      expect.stringContaining('1FAIpQLSffz8JgoPPf2KxIpn86iYQxkNY33-k3wO3MOLDO7CQvbFNitg')
     );
   });
 
-  it('opens the Dutch feedback form URL when Report button is pressed (locale nl)', async () => {
+  it('opens the crash report feedback form URL when Report button is pressed (locale nl)', async () => {
     const i18n = require('../i18n');
     i18n.default.locale = 'nl';
 
@@ -117,7 +117,7 @@ describe('ErrorBoundary', () => {
     await Promise.resolve();
 
     expect(Linking.openURL).toHaveBeenCalledWith(
-      expect.stringContaining('forms.gle/SSavqQgWFqYmiJaZA')
+      expect.stringContaining('1FAIpQLSffz8JgoPPf2KxIpn86iYQxkNY33-k3wO3MOLDO7CQvbFNitg')
     );
 
     i18n.default.locale = 'en';
@@ -136,6 +136,8 @@ describe('ErrorBoundary', () => {
 
     const calledUrl = (Linking.openURL as jest.Mock).mock.calls[0][0] as string;
     expect(calledUrl).toContain('usp=pp_url');
+    expect(calledUrl).toContain('entry.1795846861');
+    expect(calledUrl).toContain('entry.411078901');
     expect(calledUrl).toContain(encodeURIComponent('App: 1.0.0'));
     expect(calledUrl).toContain(encodeURIComponent('Device: Test Device'));
   });

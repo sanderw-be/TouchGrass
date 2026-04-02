@@ -10,39 +10,31 @@ import {
   Image,
 } from 'react-native';
 import Constants from 'expo-constants';
-import i18n, { t } from '../i18n';
+import { t } from '../i18n';
 import { colors as themeColors, spacing, radius, shadows } from '../utils/theme';
 
-// Google Form URLs — same as FeedbackSupportScreen
-const FEEDBACK_URLS: Record<string, string> = {
-  nl: 'https://forms.gle/SSavqQgWFqYmiJaZA',
-  en: 'https://forms.gle/P6Www1U1yiurgk2D6',
-};
+// Google Form URL for crash reports (same for all locales)
+const CRASH_REPORT_FORM_URL =
+  'https://docs.google.com/forms/d/e/1FAIpQLSffz8JgoPPf2KxIpn86iYQxkNY33-k3wO3MOLDO7CQvbFNitg/viewform';
 
-// TODO: Replace these placeholder IDs with the real entry IDs from the Google Form.
-// Open the form → three-dot menu → "Get pre-filled link" → fill in sample data
-// → copy the resulting URL and extract the entry.XXXXXX field IDs.
-// Until replaced, the form will open without prefilled values.
-const DEVICE_ENTRY_ID = 'entry.DEVICE_FIELD';
-const DESCRIPTION_ENTRY_ID = 'entry.DESCRIPTION_FIELD';
+// Pre-filled entry IDs from the Google Form
+const CATEGORY_ENTRY_ID = 'entry.1795846861';
+const REPORT_ENTRY_ID = 'entry.411078901';
 
 function buildFeedbackUrl(error: Error): string {
-  const locale = i18n.locale ?? 'en';
-  const lang = locale.startsWith('nl') ? 'nl' : 'en';
-  const baseFormUrl = FEEDBACK_URLS[lang];
-
   const deviceInfo = [
+    `Device: ${Constants.deviceName ?? 'unknown'}`,
     `OS: ${Platform.OS} ${Platform.Version}`,
     `App: ${Constants.expoConfig?.version ?? 'unknown'}`,
-    `Device: ${Constants.deviceName ?? 'unknown'}`,
   ].join('\n');
 
-  const errorMessage = error.message ?? 'unknown error';
+  const description = error.message ?? 'unknown error';
+  const reportContent = `${deviceInfo}\nDescription: ${description}`;
 
   return (
-    `${baseFormUrl}?usp=pp_url` +
-    `&${DEVICE_ENTRY_ID}=${encodeURIComponent(deviceInfo)}` +
-    `&${DESCRIPTION_ENTRY_ID}=${encodeURIComponent(errorMessage)}`
+    `${CRASH_REPORT_FORM_URL}?usp=pp_url` +
+    `&${CATEGORY_ENTRY_ID}=${encodeURIComponent('🪲 Bug report')}` +
+    `&${REPORT_ENTRY_ID}=${encodeURIComponent(reportContent)}`
   );
 }
 
@@ -76,9 +68,7 @@ export default class ErrorBoundary extends React.Component<Props, State> {
     const { error } = this.state;
     const url = buildFeedbackUrl(error ?? new Error('unknown error'));
     Linking.openURL(url).catch(() => {
-      const locale = i18n.locale ?? 'en';
-      const lang = locale.startsWith('nl') ? 'nl' : 'en';
-      Linking.openURL(FEEDBACK_URLS[lang]).catch(() => {});
+      Linking.openURL(CRASH_REPORT_FORM_URL).catch(() => {});
     });
   };
 

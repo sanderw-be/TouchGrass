@@ -480,7 +480,7 @@ export default {
   // Error boundary crash screen
   error_boundary_title: 'Something went wrong',
   error_boundary_subtitle:
-    'The app encountered an unexpected error. You can try restarting it or report the issue to help us fix it.',
+    'The app encountered an unexpected error. You can try restarting it or report the issue to help us fix it. Reporting will share your device type and app version with Google Forms.',
   error_boundary_restart: 'Restart app',
   error_boundary_report: 'Report this issue',
 

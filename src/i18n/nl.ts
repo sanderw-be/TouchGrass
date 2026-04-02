@@ -487,7 +487,7 @@ export default {
   // Foutgrens crashscherm
   error_boundary_title: 'Er is iets misgegaan',
   error_boundary_subtitle:
-    'De app is vastgelopen door een onverwachte fout. Probeer de app opnieuw te starten of meld het probleem zodat we het kunnen oplossen.',
+    'De app is vastgelopen door een onverwachte fout. Probeer de app opnieuw te starten of meld het probleem zodat we het kunnen oplossen. Melden deelt je apparaattype en appversie met Google Formulieren.',
   error_boundary_restart: 'App herstarten',
   error_boundary_report: 'Probleem melden',
 
