@@ -3,10 +3,20 @@ import * as IntentLauncher from 'expo-intent-launcher';
 
 const DEFAULT_ANDROID_PACKAGE = 'com.jollyheron.touchgrass';
 
-const getAndroidPackageName = () =>
-  Constants.expoConfig?.android?.package ??
-  Constants.manifest?.android?.package ??
-  DEFAULT_ANDROID_PACKAGE;
+type AndroidPackageConfig = {
+  android?: {
+    package?: string;
+  };
+};
+
+const getAndroidPackageName = () => {
+  const manifestAndroidPackage = (Constants.manifest as AndroidPackageConfig | null)?.android
+    ?.package;
+
+  return (
+    Constants.expoConfig?.android?.package ?? manifestAndroidPackage ?? DEFAULT_ANDROID_PACKAGE
+  );
+};
 
 export const openBatteryOptimizationSettings = async (): Promise<boolean> => {
   const packageName = getAndroidPackageName();
