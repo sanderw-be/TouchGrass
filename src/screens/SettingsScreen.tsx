@@ -15,6 +15,7 @@ import {
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import {
   getKnownLocations,
   getSuggestedLocations,
@@ -203,7 +204,7 @@ export default function SettingsScreen() {
           <DetectionSettingRow
             enabled={detectionStatus.healthConnect}
             permissionGranted={detectionStatus.healthConnectPermission}
-            icon="👟"
+            icon={<Ionicons name="fitness-outline" size={20} color={colors.textSecondary} />}
             label={t('settings_health_connect')}
             desc={t('settings_health_connect_desc')}
             permissionMissingLabel={t('settings_hc_permission_missing')}
@@ -216,7 +217,7 @@ export default function SettingsScreen() {
           <DetectionSettingRow
             enabled={detectionStatus.gps}
             permissionGranted={detectionStatus.gpsPermission}
-            icon="📍"
+            icon={<Ionicons name="location-outline" size={20} color={colors.textSecondary} />}
             label={t('settings_gps')}
             desc={t('settings_gps_desc')}
             permissionMissingLabel={t('settings_gps_permission_missing')}
@@ -232,7 +233,7 @@ export default function SettingsScreen() {
         <View style={styles.card}>
           <TouchableOpacity onPress={() => navigation.navigate('KnownLocations')}>
             <SettingRow
-              icon="📍"
+              icon={<Ionicons name="location-outline" size={20} color={colors.textSecondary} />}
               label={t('settings_locations_manage')}
               sublabel={
                 knownLocations.length > 0
@@ -246,7 +247,7 @@ export default function SettingsScreen() {
                       <Text style={styles.badgeText}>{suggestedCount}</Text>
                     </View>
                   )}
-                  <Text style={styles.chevron}>›</Text>
+                  <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
                 </View>
               }
             />
@@ -259,9 +260,19 @@ export default function SettingsScreen() {
             <View key={pref}>
               {i > 0 && <Divider />}
               <TouchableOpacity style={styles.row} onPress={() => setThemePreference(pref)}>
-                <Text style={styles.rowIcon}>
-                  {pref === 'system' ? '🌗' : pref === 'light' ? '☀️' : '🌙'}
-                </Text>
+                <View style={styles.rowIconContainer}>
+                  <Ionicons
+                    name={
+                      pref === 'system'
+                        ? 'phone-portrait-outline'
+                        : pref === 'light'
+                          ? 'sunny-outline'
+                          : 'moon-outline'
+                    }
+                    size={20}
+                    color={colors.textSecondary}
+                  />
+                </View>
                 <View style={styles.rowContent}>
                   <Text style={styles.rowLabel}>
                     {pref === 'system'
@@ -271,7 +282,14 @@ export default function SettingsScreen() {
                         : t('settings_theme_dark')}
                   </Text>
                 </View>
-                {themePreference === pref && <Text style={styles.checkmark}>✓</Text>}
+                {themePreference === pref && (
+                  <Ionicons
+                    name="checkmark"
+                    size={20}
+                    color={colors.grass}
+                    style={styles.checkmark}
+                  />
+                )}
               </TouchableOpacity>
             </View>
           ))}
@@ -284,7 +302,14 @@ export default function SettingsScreen() {
               {i > 0 && <Divider />}
               <TouchableOpacity style={styles.row} onPress={() => changeLanguage(lang.code)}>
                 <Text style={styles.rowLabel}>{lang.label}</Text>
-                {locale === lang.code && <Text style={styles.checkmark}>✓</Text>}
+                {locale === lang.code && (
+                  <Ionicons
+                    name="checkmark"
+                    size={20}
+                    color={colors.grass}
+                    style={styles.checkmark}
+                  />
+                )}
               </TouchableOpacity>
             </View>
           ))}
@@ -292,20 +317,24 @@ export default function SettingsScreen() {
 
         <Text style={styles.sectionHeader}>{t('settings_section_about')}</Text>
         <View style={styles.card}>
-          <SettingRow icon="🌿" label="TouchGrass" sublabel={t('settings_app_sublabel')} />
+          <SettingRow
+            icon={<Ionicons name="leaf-outline" size={20} color={colors.textSecondary} />}
+            label="TouchGrass"
+            sublabel={t('settings_app_sublabel')}
+          />
           <Divider />
           <TouchableOpacity onPress={() => Linking.openURL(PRIVACY_POLICY_URL)}>
             <SettingRow
-              icon="🔒"
+              icon={<Ionicons name="lock-closed-outline" size={20} color={colors.textSecondary} />}
               label={t('settings_privacy')}
               sublabel={t('settings_privacy_sublabel')}
               hint={t('settings_privacy_hint')}
-              right={<Text style={styles.chevron}>›</Text>}
+              right={<Ionicons name="chevron-forward" size={20} color={colors.textMuted} />}
             />
           </TouchableOpacity>
           <Divider />
           <SettingRow
-            icon="🎓"
+            icon={<Ionicons name="school-outline" size={20} color={colors.textSecondary} />}
             label={t('settings_rerun_tutorial')}
             sublabel={t('settings_rerun_tutorial_sublabel')}
             right={
@@ -317,15 +346,15 @@ export default function SettingsScreen() {
           <Divider />
           <TouchableOpacity onPress={() => navigation.navigate('FeedbackSupport')}>
             <SettingRow
-              icon="☕"
+              icon={<Ionicons name="cafe-outline" size={20} color={colors.textSecondary} />}
               label={t('settings_feedback_support')}
               sublabel={t('settings_feedback_support_sublabel')}
-              right={<Text style={styles.chevron}>›</Text>}
+              right={<Ionicons name="chevron-forward" size={20} color={colors.textMuted} />}
             />
           </TouchableOpacity>
           <Divider />
           <SettingRow
-            icon="🗑️"
+            icon={<Ionicons name="trash-outline" size={20} color={colors.textSecondary} />}
             label={t('settings_clear_data')}
             sublabel={t('settings_clear_data_sublabel')}
             right={
@@ -347,7 +376,7 @@ function SettingRow({
   hint,
   right,
 }: {
-  icon: string;
+  icon: React.ReactNode;
   label: string;
   sublabel?: string;
   hint?: string;
@@ -357,7 +386,7 @@ function SettingRow({
   const styles = useMemo(() => makeStyles(colors), [colors]);
   return (
     <View style={styles.row}>
-      <Text style={styles.rowIcon}>{icon}</Text>
+      <View style={styles.rowIconContainer}>{icon}</View>
       <View style={styles.rowContent}>
         <Text style={styles.rowLabel}>{label}</Text>
         {sublabel && <Text style={styles.rowSublabel}>{sublabel}</Text>}
@@ -388,7 +417,7 @@ function DetectionSettingRow({
 }: {
   enabled: boolean;
   permissionGranted: boolean;
-  icon: string;
+  icon: React.ReactNode;
   label: string;
   desc: string;
   permissionMissingLabel: string;
@@ -404,7 +433,7 @@ function DetectionSettingRow({
   return (
     <View>
       <View style={styles.row}>
-        <Text style={styles.rowIcon}>{icon}</Text>
+        <View style={styles.rowIconContainer}>{icon}</View>
         <View style={styles.rowContent}>
           <Text style={styles.rowLabel}>{label}</Text>
           {hasError ? (
@@ -475,8 +504,12 @@ function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
       alignItems: 'center',
       padding: spacing.md,
     },
-    rowIcon: { fontSize: 20, marginRight: spacing.md, width: 28, textAlign: 'center' },
-    rowIconWithDot: { marginLeft: spacing.sm },
+    rowIconContainer: {
+      width: 28,
+      marginRight: spacing.md,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
     rowContent: { flex: 1 },
     rowLabel: { fontSize: 15, color: colors.textPrimary, fontWeight: '500' },
     rowSublabel: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
@@ -522,8 +555,7 @@ function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
     },
     dangerBtnText: { fontSize: 12, color: colors.error, fontWeight: '600' },
 
-    checkmark: { fontSize: 18, color: colors.grass, fontWeight: '700', marginLeft: spacing.md },
-    chevron: { fontSize: 24, color: colors.textMuted, fontWeight: '300' },
+    checkmark: { marginLeft: spacing.md },
 
     valueChip: {
       fontSize: 13,

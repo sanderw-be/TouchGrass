@@ -58,7 +58,7 @@ describe('WeatherSettingsScreen', () => {
   });
 
   it('shows checkmark after successful refresh and hides it after 2 seconds', async () => {
-    const { getByText, queryByText } = render(<WeatherSettingsScreen />);
+    const { getByText, queryByText, queryByTestId } = render(<WeatherSettingsScreen />);
 
     const refreshBtn = getByText('settings_weather_refresh');
 
@@ -66,22 +66,22 @@ describe('WeatherSettingsScreen', () => {
       fireEvent.press(refreshBtn);
     });
 
-    // After successful refresh, checkmark should be visible and refresh button hidden
-    expect(queryByText('✓')).toBeTruthy();
+    // After successful refresh, success indicator should be visible and refresh button hidden
+    expect(queryByTestId('weather-refresh-success')).toBeTruthy();
     expect(queryByText('settings_weather_refresh')).toBeNull();
 
-    // After 2 seconds, checkmark should disappear and refresh button returns
+    // After 2 seconds, success indicator should disappear and refresh button returns
     act(() => {
       jest.advanceTimersByTime(2000);
     });
 
-    expect(queryByText('✓')).toBeNull();
+    expect(queryByTestId('weather-refresh-success')).toBeNull();
     expect(getByText('settings_weather_refresh')).toBeTruthy();
   });
 
   it('shows refresh button again after failed refresh (no checkmark)', async () => {
     mockFetchWeatherForecast.mockResolvedValue({ success: false, error: 'Network error' });
-    const { getByText, queryByText } = render(<WeatherSettingsScreen />);
+    const { getByText, queryByTestId } = render(<WeatherSettingsScreen />);
 
     const refreshBtn = getByText('settings_weather_refresh');
 
@@ -89,8 +89,8 @@ describe('WeatherSettingsScreen', () => {
       fireEvent.press(refreshBtn);
     });
 
-    // On failure, no checkmark should appear
-    expect(queryByText('✓')).toBeNull();
+    // On failure, no success indicator should appear
+    expect(queryByTestId('weather-refresh-success')).toBeNull();
     expect(getByText('settings_weather_refresh')).toBeTruthy();
   });
 
