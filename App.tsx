@@ -3,10 +3,16 @@ import type { InitialState } from '@react-navigation/native';
 import {
   View,
   ActivityIndicator,
+  StyleSheet,
   AppState,
   AppStateStatus,
   InteractionManager,
 } from 'react-native';
+import { useFonts } from 'expo-font';
+import { Nunito_400Regular } from '@expo-google-fonts/nunito/400Regular';
+import { Nunito_600SemiBold } from '@expo-google-fonts/nunito/600SemiBold';
+import { Nunito_700Bold } from '@expo-google-fonts/nunito/700Bold';
+import { Nunito_800ExtraBold } from '@expo-google-fonts/nunito/800ExtraBold';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { enableScreens } from 'react-native-screens';
@@ -205,6 +211,21 @@ function AppContent() {
 }
 
 export default function App() {
+  const [fontsLoaded] = useFonts({
+    Nunito_400Regular,
+    Nunito_600SemiBold,
+    Nunito_700Bold,
+    Nunito_800ExtraBold,
+  });
+
+  if (!fontsLoaded) {
+    return (
+      <View style={appStyles.fontLoadingContainer}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
@@ -220,3 +241,11 @@ export default function App() {
     </GestureHandlerRootView>
   );
 }
+
+const appStyles = StyleSheet.create({
+  fontLoadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+});

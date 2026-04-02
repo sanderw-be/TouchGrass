@@ -180,4 +180,23 @@ jest.mock('@expo/vector-icons', () => {
   };
 });
 
+// Mock expo-font
+jest.mock('expo-font', () => ({
+  useFonts: jest.fn(() => [true, null]),
+  loadAsync: jest.fn(() => Promise.resolve()),
+  isLoaded: jest.fn(() => true),
+}));
+
+// Mock @expo-google-fonts/nunito
+jest.mock('@expo-google-fonts/nunito/400Regular', () => ({
+  Nunito_400Regular: 'Nunito_400Regular',
+}));
+jest.mock('@expo-google-fonts/nunito/600SemiBold', () => ({
+  Nunito_600SemiBold: 'Nunito_600SemiBold',
+}));
+jest.mock('@expo-google-fonts/nunito/700Bold', () => ({ Nunito_700Bold: 'Nunito_700Bold' }));
+jest.mock('@expo-google-fonts/nunito/800ExtraBold', () => ({
+  Nunito_800ExtraBold: 'Nunito_800ExtraBold',
+}));
+
 // Add any additional setup here if needed
