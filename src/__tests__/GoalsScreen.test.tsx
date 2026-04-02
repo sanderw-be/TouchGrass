@@ -331,8 +331,7 @@ describe('GoalsScreen weather location permission', () => {
     mockCheckWeatherLocation.mockResolvedValue(false);
 
     const { findByText } = render(<GoalsScreen />);
-    await expect(findByText('settings_weather_location_permission_missing')).resolves.toBeTruthy();
-    await expect(findByText('settings_weather_location_request')).resolves.toBeTruthy();
+    await expect(findByText('settings_weather_permission_missing')).resolves.toBeTruthy();
   });
 
   it('shows weather settings link when weather is enabled and location is granted', async () => {
@@ -344,9 +343,7 @@ describe('GoalsScreen weather location permission', () => {
 
     const { findByText, queryByText } = render(<GoalsScreen />);
     await expect(findByText('settings_weather_more')).resolves.toBeTruthy();
-    await waitFor(() =>
-      expect(queryByText('settings_weather_location_permission_missing')).toBeNull()
-    );
+    await waitFor(() => expect(queryByText('settings_weather_permission_missing')).toBeNull());
   });
 
   it('does not show the permission hint when weather is disabled', async () => {
@@ -357,9 +354,7 @@ describe('GoalsScreen weather location permission', () => {
     mockCheckWeatherLocation.mockResolvedValue(false);
 
     const { queryByText } = render(<GoalsScreen />);
-    await waitFor(() =>
-      expect(queryByText('settings_weather_location_permission_missing')).toBeNull()
-    );
+    await waitFor(() => expect(queryByText('settings_weather_permission_missing')).toBeNull());
   });
 
   it('shows permission sheet when weather toggle is turned on without location permission', async () => {
@@ -456,5 +451,86 @@ describe('GoalsScreen calendar permission missing state', () => {
 
     await expect(findByTestId('permission-explainer-sheet')).resolves.toBeTruthy();
     expect(mockSetSetting).not.toHaveBeenCalledWith('calendar_integration_enabled', '1');
+  });
+});
+
+/** Retrieves the most recently registered AppState 'change' handler from the RN mock. */
+function getLastAppStateChangeHandler(): ((state: string) => void) | undefined {
+  const { AppState } = require('react-native');
+  const calls = (AppState.addEventListener as jest.Mock).mock.calls;
+  return calls
+    .filter(([event]: [string]) => event === 'change')
+    .map(([, handler]: [string, (s: string) => void]) => handler)
+    .at(-1);
+}
+
+describe('GoalsScreen auto-enable on permission grant', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockGetSetting.mockImplementation((key: string, def: string) => def);
+    mockCheckWeatherLocation.mockResolvedValue(false);
+    (CalendarService.hasCalendarPermissions as jest.Mock).mockResolvedValue(false);
+  });
+
+  it('auto-enables weather when permission is granted after the user opened the sheet', async () => {
+    mockGetSetting.mockImplementation((key: string, def: string) => {
+      if (key === 'weather_enabled') return '0';
+      return def;
+    });
+    mockCheckWeatherLocation.mockResolvedValue(false);
+
+    const { getAllByRole } = render(<GoalsScreen />);
+    await waitFor(() => getAllByRole('switch'));
+
+    // User tries to enable weather → sheet opens, pending flag is set
+    const switches = getAllByRole('switch');
+    await act(async () => {
+      fireEvent(switches[0], 'valueChange', true);
+    });
+
+    // Simulate user granting the permission and returning to the app
+    mockCheckWeatherLocation.mockResolvedValue(true);
+    const changeHandler = getLastAppStateChangeHandler();
+    if (changeHandler) {
+      await act(async () => {
+        await changeHandler('active');
+      });
+    }
+
+    await waitFor(() => {
+      expect(mockSetSetting).toHaveBeenCalledWith('weather_enabled', '1');
+    });
+  });
+
+  it('auto-enables calendar when permission is granted after the user opened the sheet', async () => {
+    mockGetSetting.mockImplementation((key: string, def: string) => {
+      if (key === 'calendar_integration_enabled') return '0';
+      return def;
+    });
+    (CalendarService.hasCalendarPermissions as jest.Mock).mockResolvedValue(false);
+
+    const { getAllByRole } = render(<GoalsScreen />);
+    await waitFor(() => getAllByRole('switch'));
+
+    // User tries to enable calendar → sheet opens, pending flag is set
+    const switches = getAllByRole('switch');
+    const calendarSwitch = switches[switches.length - 1];
+    await act(async () => {
+      fireEvent(calendarSwitch, 'valueChange', true);
+    });
+
+    // Simulate user granting the permission and returning to the app
+    (CalendarService.hasCalendarPermissions as jest.Mock).mockResolvedValue(true);
+    (CalendarService.getWritableCalendars as jest.Mock).mockResolvedValue([]);
+    const changeHandler = getLastAppStateChangeHandler();
+    if (changeHandler) {
+      await act(async () => {
+        await changeHandler('active');
+      });
+    }
+
+    await waitFor(() => {
+      expect(mockSetSetting).toHaveBeenCalledWith('calendar_integration_enabled', '1');
+    });
   });
 });

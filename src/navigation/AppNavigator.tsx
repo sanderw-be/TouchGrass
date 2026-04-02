@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, Suspense, lazy } from 'react';
+import React, { useEffect, useRef, useState, useCallback, Suspense, lazy } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import type { InitialState } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -13,6 +13,7 @@ import GoalsScreen from '../screens/GoalsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import { fetchWeatherForecast, isWeatherDataAvailable } from '../weather/weatherService';
 import { getSetting } from '../storage/database';
+import { countPermissionIssues } from '../utils/permissionIssues';
 import { spacing } from '../utils/theme';
 import { useTheme } from '../context/ThemeContext';
 import { t } from '../i18n';
@@ -152,7 +153,13 @@ function SettingsStackNavigator() {
   );
 }
 
-function TabNavigator() {
+function TabNavigator({
+  goalsBadge,
+  settingsBadge,
+}: {
+  goalsBadge?: number;
+  settingsBadge?: number;
+}) {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
 
@@ -190,12 +197,20 @@ function TabNavigator() {
       <Tab.Screen
         name="Goals"
         component={GoalsStackNavigator}
-        options={{ title: t('nav_goals'), headerShown: false }}
+        options={{
+          title: t('nav_goals'),
+          headerShown: false,
+          tabBarBadge: goalsBadge,
+        }}
       />
       <Tab.Screen
         name="Settings"
         component={SettingsStackNavigator}
-        options={{ title: t('nav_settings'), headerShown: false }}
+        options={{
+          title: t('nav_settings'),
+          headerShown: false,
+          tabBarBadge: settingsBadge,
+        }}
       />
     </Tab.Navigator>
   );
@@ -209,10 +224,28 @@ export default function AppNavigator({
   onStateChange?: (state: InitialState | undefined) => void;
 }) {
   const appState = useRef(AppState.currentState);
+  const [goalsBadge, setGoalsBadge] = useState<number | undefined>(undefined);
+  const [settingsBadge, setSettingsBadge] = useState<number | undefined>(undefined);
+
+  const refreshPermissionBadges = useCallback(async () => {
+    try {
+      const { goals, settings } = await countPermissionIssues();
+      setGoalsBadge(goals > 0 ? goals : undefined);
+      setSettingsBadge(settings > 0 ? settings : undefined);
+    } catch (error) {
+      // Permission checks are best-effort; never crash the navigator
+      if (__DEV__) {
+        console.warn('Permission badge refresh failed:', error);
+      }
+    }
+  }, []);
 
   useEffect(() => {
+    // Initial badge check
+    refreshPermissionBadges();
+
     const subscription = AppState.addEventListener('change', async (nextAppState) => {
-      // When app comes to foreground, refresh weather if stale
+      // When app comes to foreground, refresh weather if stale and recheck permission badges
       if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
         const weatherEnabled = getSetting('weather_enabled', '1') === '1';
         if (weatherEnabled && !isWeatherDataAvailable()) {
@@ -222,6 +255,7 @@ export default function AppNavigator({
             console.warn('Foreground weather refresh error:', error);
           }
         }
+        refreshPermissionBadges();
       }
       appState.current = nextAppState;
     });
@@ -229,11 +263,11 @@ export default function AppNavigator({
     return () => {
       subscription.remove();
     };
-  }, []);
+  }, [refreshPermissionBadges]);
 
   return (
     <NavigationContainer initialState={initialState} onStateChange={onStateChange}>
-      <TabNavigator />
+      <TabNavigator goalsBadge={goalsBadge} settingsBadge={settingsBadge} />
     </NavigationContainer>
   );
 }

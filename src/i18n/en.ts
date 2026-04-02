@@ -372,6 +372,7 @@ export default {
   settings_weather_more: 'More weather settings',
   settings_weather_more_desc: 'Temperature preference, rain, heat, UV',
   settings_weather_permission_title: 'Location Permission',
+  settings_weather_permission_missing: 'Permissions missing — tap to fix',
   settings_weather_location_permission_missing:
     'Location permission is needed to fetch local weather. Approximate location is only used to determine weather conditions and is never stored.',
   settings_weather_location_request: 'Grant Location Access',
@@ -447,7 +448,7 @@ export default {
   settings_calendar_integration_desc:
     'Check your calendar to avoid scheduling reminders during meetings',
   settings_calendar_permission_title: 'Calendar Permission',
-  settings_calendar_permission_missing: 'Calendar permission missing — tap to fix',
+  settings_calendar_permission_missing: 'Permissions missing — tap to fix',
   settings_calendar_permission_body:
     'Calendar access is needed to check your appointments for smart reminders.',
   settings_calendar_permission_open: 'Open Settings',

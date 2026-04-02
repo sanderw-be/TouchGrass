@@ -378,6 +378,7 @@ export default {
   settings_weather_more: 'Meer weerinstellingen',
   settings_weather_more_desc: 'Temperatuurvoorkeur, regen, hitte, UV',
   settings_weather_permission_title: 'Locatietoestemming',
+  settings_weather_permission_missing: 'Machtigingen ontbreken — tik om te herstellen',
   settings_weather_location_permission_missing:
     'Locatietoestemming is nodig om lokaal weer op te halen. Geschatte locatie wordt alleen gebruikt voor weersomstandigheden en wordt nooit opgeslagen.',
   settings_weather_location_request: 'Locatietoegang verlenen',
@@ -453,7 +454,7 @@ export default {
   settings_calendar_integration_desc:
     'Controleer je agenda om herinneringen te vermijden tijdens afspraken',
   settings_calendar_permission_title: 'Agendatoestemming',
-  settings_calendar_permission_missing: 'Agendamachtiging ontbreekt — tik om te herstellen',
+  settings_calendar_permission_missing: 'Machtigingen ontbreken — tik om te herstellen',
   settings_calendar_permission_body:
     'Toegang tot de agenda is nodig om je afspraken te controleren voor slimme herinneringen.',
   settings_calendar_permission_open: 'Instellingen openen',
