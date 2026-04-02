@@ -179,9 +179,7 @@ describe('HistoryScreen BarChart', () => {
       { date: baseDate + 86400000, minutes: 0 },
     ];
 
-    const { getByText } = render(
-      <BarChart data={data} target={30} maxValue={60} period="month" />
-    );
+    const { getByText } = render(<BarChart data={data} target={30} maxValue={60} period="month" />);
 
     expect(getByText('history_axis_minutes')).toBeTruthy();
     expect(getByText('history_axis_days_month')).toBeTruthy();
