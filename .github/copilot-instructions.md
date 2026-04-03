@@ -34,7 +34,7 @@ src/
 
 ```bash
 # Install dependencies
-npm ci --legacy-peer-deps
+npm ci
 
 # Run all tests
 npm test
