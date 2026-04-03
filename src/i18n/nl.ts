@@ -509,6 +509,8 @@ export default {
   feedback_send_feedback_sublabel: 'Deel een bugrapport, idee of algemene feedback',
   feedback_support_kofi: 'Jolly Heron steunen',
   feedback_support_kofi_sublabel: 'Trakteer me op een kopje koffie — elke bijdrage helpt ☕',
+  feedback_google_disclosure:
+    'Feedback wordt ingediend via Google Formulieren en valt onder het privacybeleid van Google. Zie ons Privacybeleid.',
   settings_feedback_support: 'Feedback & Ondersteuning',
   settings_feedback_support_sublabel: 'Stuur feedback of steun de ontwikkelaar',
 
