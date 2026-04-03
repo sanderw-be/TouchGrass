@@ -536,6 +536,113 @@ export async function processReminderQueue(): Promise<void> {
 }
 
 /**
+ * Update notification content for scheduled reminders that are <30 minutes away.
+ * This refreshes the message with current outdoor minutes and latest weather data.
+ * Called from the unified background task on each ~15-minute tick.
+ */
+export async function updateUpcomingReminderContent(): Promise<void> {
+  const remindersCount = parseInt(getSetting('smart_reminders_count', '0'), 10);
+  if (remindersCount === 0) return;
+
+  const UPDATE_WINDOW_MINUTES = 30;
+  const now = new Date();
+  const nowMinutes = now.getHours() * 60 + now.getMinutes();
+
+  const queue = getQueue();
+  if (queue.length === 0) return;
+
+  const todayMinutes = getTodayMinutes();
+  const dailyTarget = getCurrentDailyGoal()?.targetMinutes ?? 30;
+
+  // Get all currently scheduled notifications
+  const allScheduled = await Notifications.getAllScheduledNotificationsAsync();
+
+  // Build a map of scheduled notification identifiers to their trigger details
+  const scheduledMap = new Map<string, { trigger: any; content: any }>();
+  for (const notif of allScheduled) {
+    scheduledMap.set(notif.identifier, {
+      trigger: notif.trigger,
+      content: notif.content,
+    });
+  }
+
+  let updatedCount = 0;
+
+  for (const entry of queue) {
+    // Only update date_planned entries (not consumed or legacy tick_planned)
+    if (entry.status !== 'date_planned') continue;
+
+    // Check if this notification is scheduled to fire within the next 30 minutes
+    const minutesUntilSlot = entry.slotMinutes - nowMinutes;
+    if (minutesUntilSlot < 0 || minutesUntilSlot > UPDATE_WINDOW_MINUTES) {
+      continue; // Skip: either already passed or too far in the future
+    }
+
+    // Verify this notification is actually scheduled
+    const scheduledNotif = scheduledMap.get(entry.id);
+    if (!scheduledNotif) {
+      console.log(
+        `TouchGrass: [UpdateContent] Skipping ${entry.id} at ${formatSlotMinutes(entry.slotMinutes)} — not found in scheduled notifications`
+      );
+      continue;
+    }
+
+    // Calculate trigger time and regenerate message with fresh data
+    const slotHour = Math.floor(entry.slotMinutes / 60);
+
+    // Regenerate the message content with current data
+    const { title, body } = buildReminderMessage(
+      todayMinutes,
+      dailyTarget,
+      slotHour,
+      undefined, // No contributors available during update
+      false
+    );
+
+    // Check if body content has actually changed (title is random so we ignore it)
+    const currentBody = scheduledNotif.content.body;
+
+    if (currentBody === body) {
+      // Content hasn't changed, no need to reschedule
+      continue;
+    }
+
+    // Cancel the existing notification
+    await Notifications.cancelScheduledNotificationAsync(entry.id);
+
+    // Calculate seconds until slot time
+    const triggerDate = new Date();
+    triggerDate.setHours(slotHour, entry.slotMinutes % 60, 0, 0);
+    const secondsUntilTrigger = Math.max(1, Math.floor((triggerDate.getTime() - Date.now()) / 1000));
+
+    // Reschedule with updated content
+    await Notifications.scheduleNotificationAsync({
+      identifier: entry.id,
+      content: {
+        title,
+        body,
+        categoryIdentifier: 'reminder',
+        color: '#4A7C59',
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds: secondsUntilTrigger,
+        channelId: CHANNEL_ID,
+      },
+    });
+
+    updatedCount++;
+    console.log(
+      `TouchGrass: [UpdateContent] Updated ${entry.id} at ${formatSlotMinutes(entry.slotMinutes)} (${minutesUntilSlot} min away) — new content: "${title}" / "${body}"`
+    );
+  }
+
+  if (updatedCount > 0) {
+    console.log(`TouchGrass: [UpdateContent] Updated ${updatedCount} notification(s) with fresh data`);
+  }
+}
+
+/**
  * Schedule reminders for optimal times throughout the day.
  * Call this once at the start of each day to plan the day's reminders.
  * Records today's date in settings so the background task can call it

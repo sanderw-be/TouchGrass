@@ -9,6 +9,7 @@ jest.mock('../notifications/notificationManager', () => ({
   maybeScheduleCatchUpReminder: jest.fn(),
   processReminderQueue: jest.fn(),
   logReminderQueueSnapshot: jest.fn(),
+  updateUpcomingReminderContent: jest.fn(),
 }));
 
 jest.mock('../weather/weatherService', () => ({
@@ -115,7 +116,7 @@ describe('unifiedBackgroundTask', () => {
       expect(Database.initDatabase).toHaveBeenCalledTimes(1);
     });
 
-    it('runs all three reminder operations when reminders are enabled', async () => {
+    it('runs all four reminder operations when reminders are enabled', async () => {
       (Database.getSetting as jest.Mock).mockImplementation((key: string) => {
         if (key === 'smart_reminders_count') return '2';
         if (key === 'weather_enabled') return '0';
@@ -124,13 +125,15 @@ describe('unifiedBackgroundTask', () => {
       (NotificationManager.scheduleDayReminders as jest.Mock).mockResolvedValue(undefined);
       (NotificationManager.maybeScheduleCatchUpReminder as jest.Mock).mockResolvedValue(undefined);
       (NotificationManager.processReminderQueue as jest.Mock).mockResolvedValue(undefined);
+      (NotificationManager.updateUpcomingReminderContent as jest.Mock).mockResolvedValue(undefined);
 
       const result = await taskCallback();
 
       expect(NotificationManager.logReminderQueueSnapshot).toHaveBeenCalledTimes(1);
       expect(NotificationManager.scheduleDayReminders).toHaveBeenCalledTimes(1);
-      expect(NotificationManager.maybeScheduleCatchUpReminder).toHaveBeenCalledTimes(1);
       expect(NotificationManager.processReminderQueue).toHaveBeenCalledTimes(1);
+      expect(NotificationManager.updateUpcomingReminderContent).toHaveBeenCalledTimes(1);
+      expect(NotificationManager.maybeScheduleCatchUpReminder).toHaveBeenCalledTimes(1);
       expect(result).toBe(BackgroundTask.BackgroundTaskResult.Success);
     });
 
@@ -145,8 +148,9 @@ describe('unifiedBackgroundTask', () => {
 
       expect(NotificationManager.logReminderQueueSnapshot).not.toHaveBeenCalled();
       expect(NotificationManager.scheduleDayReminders).not.toHaveBeenCalled();
-      expect(NotificationManager.maybeScheduleCatchUpReminder).not.toHaveBeenCalled();
       expect(NotificationManager.processReminderQueue).not.toHaveBeenCalled();
+      expect(NotificationManager.updateUpcomingReminderContent).not.toHaveBeenCalled();
+      expect(NotificationManager.maybeScheduleCatchUpReminder).not.toHaveBeenCalled();
     });
 
     it('fetches weather when weather is enabled', async () => {
