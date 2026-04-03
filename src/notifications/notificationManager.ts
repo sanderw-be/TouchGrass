@@ -613,7 +613,10 @@ export async function updateUpcomingReminderContent(): Promise<void> {
     // Calculate seconds until slot time
     const triggerDate = new Date();
     triggerDate.setHours(slotHour, entry.slotMinutes % 60, 0, 0);
-    const secondsUntilTrigger = Math.max(1, Math.floor((triggerDate.getTime() - Date.now()) / 1000));
+    const secondsUntilTrigger = Math.max(
+      1,
+      Math.floor((triggerDate.getTime() - Date.now()) / 1000)
+    );
 
     // Reschedule with updated content
     await Notifications.scheduleNotificationAsync({
@@ -638,7 +641,9 @@ export async function updateUpcomingReminderContent(): Promise<void> {
   }
 
   if (updatedCount > 0) {
-    console.log(`TouchGrass: [UpdateContent] Updated ${updatedCount} notification(s) with fresh data`);
+    console.log(
+      `TouchGrass: [UpdateContent] Updated ${updatedCount} notification(s) with fresh data`
+    );
   }
 }
 
