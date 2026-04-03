@@ -240,4 +240,20 @@ describe('ActivityLogScreen', () => {
       expect(mockGetBackgroundLogs).toHaveBeenCalledWith('reminder');
     });
   });
+
+  it('reloads logs when pull-to-refresh is triggered', async () => {
+    const { UNSAFE_getByType } = render(<ActivityLogScreen />);
+    await waitFor(() => expect(mockGetBackgroundLogs).toHaveBeenCalledTimes(3));
+
+    mockGetBackgroundLogs.mockClear();
+
+    // Trigger the RefreshControl's onRefresh callback
+    const scrollView = UNSAFE_getByType(require('react-native').ScrollView);
+    const { onRefresh } = scrollView.props.refreshControl.props;
+    expect(typeof onRefresh).toBe('function');
+    onRefresh();
+
+    // After refresh, logs should be reloaded
+    await waitFor(() => expect(mockGetBackgroundLogs).toHaveBeenCalledTimes(3));
+  });
 });

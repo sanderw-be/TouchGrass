@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -9,6 +9,9 @@ import { useTheme } from '../context/ThemeContext';
 import { t } from '../i18n';
 
 type SectionKey = BackgroundLogCategory;
+
+/** Minimum duration (ms) to show the refresh spinner so users can see it. */
+const MIN_REFRESH_MS = 600;
 
 /** Group reminder log entries by calendar day (YYYY-MM-DD in local time). */
 function groupByDay(entries: BackgroundTaskLog[]): { day: string; items: BackgroundTaskLog[] }[] {
@@ -47,6 +50,7 @@ export default function ActivityLogScreen() {
   const [hcLogs, setHcLogs] = useState<BackgroundTaskLog[]>([]);
   const [gpsLogs, setGpsLogs] = useState<BackgroundTaskLog[]>([]);
   const [reminderLogs, setReminderLogs] = useState<BackgroundTaskLog[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
 
   // Exactly one top-level section open at a time (null = all closed)
   const [openSection, setOpenSection] = useState<SectionKey | null>(null);
@@ -66,6 +70,16 @@ export default function ActivityLogScreen() {
     }, [loadLogs])
   );
 
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    const start = Date.now();
+    loadLogs();
+    // Ensure the spinner shows for at least MIN_REFRESH_MS so the user can see it
+    const elapsed = Date.now() - start;
+    const remaining = Math.max(0, MIN_REFRESH_MS - elapsed);
+    setTimeout(() => setRefreshing(false), remaining);
+  }, [loadLogs]);
+
   const toggleSection = (key: SectionKey) => {
     setOpenSection((prev) => (prev === key ? null : key));
     setOpenReminderDay(null);
@@ -81,6 +95,9 @@ export default function ActivityLogScreen() {
     <ScrollView
       style={[styles.container, { paddingTop: insets.top }]}
       contentContainerStyle={styles.content}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.grass} />
+      }
     >
       {/* Health Connect section */}
       <SectionHeader
