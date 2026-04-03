@@ -16,6 +16,7 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import Constants from 'expo-constants';
 import {
   getKnownLocations,
   getSuggestedLocations,
@@ -334,6 +335,11 @@ export default function SettingsScreen() {
             icon={<Ionicons name="leaf-outline" size={20} color={colors.textSecondary} />}
             label="TouchGrass"
             sublabel={t('settings_app_sublabel')}
+            right={
+              Constants.expoConfig?.version ? (
+                <Text style={styles.rowSublabel}>{`v${Constants.expoConfig.version}`}</Text>
+              ) : undefined
+            }
           />
           <Divider />
           <TouchableOpacity onPress={() => Linking.openURL(PRIVACY_POLICY_URL)}>
