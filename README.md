@@ -15,7 +15,7 @@ A React Native mobile app that encourages users to spend more time outdoors by t
 
 ## Tech Stack
 
-- **Framework**: React Native with Expo SDK (~54.0)
+- **Framework**: React Native with Expo SDK (~55.0)
 - **Language**: TypeScript with strict mode enabled
 - **Navigation**: React Navigation (bottom tabs + stack)
 - **Database**: SQLite (expo-sqlite)
@@ -35,7 +35,7 @@ A React Native mobile app that encourages users to spend more time outdoors by t
 
 ```bash
 # Clone and install
-git clone https://gitlab.com/JollyHeron2/TouchGrass.git
+git clone https://github.com/sanderw-be/TouchGrass.git
 cd TouchGrass
 npm install
 
@@ -157,7 +157,21 @@ For AI-assisted development, see [.gitlab/duo/agents.md](.gitlab/duo/agents.md).
 
 ## License
 
-[Add your license here]
+**All Rights Reserved** © 2026
+
+This software and its source code are proprietary. All rights are reserved by the copyright holder.
+
+You may:
+
+- Run the binary/application on your device
+
+You may NOT:
+
+- Modify, distribute, sublicense, or sell copies of this software
+- Reverse engineer, decompile, or disassemble the software
+- Use this software for any commercial purposes without explicit permission
+
+For licensing inquiries or permissions, please contact the repository owner.
 
 ## Privacy
 
