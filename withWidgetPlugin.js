@@ -4,7 +4,7 @@
  * into the native Android project during prebuild.
  */
 
-const { withAndroidManifest, withStringsXml, AndroidConfig } = require('@expo/config-plugins');
+const { withAndroidManifest, withStringsXml, withDangerousMod } = require('@expo/config-plugins');
 const fs = require('fs');
 const path = require('path');
 
@@ -93,63 +93,66 @@ function withWidgetStrings(config) {
  * Create widget source files in android directory
  */
 function withWidgetSourceFiles(config) {
-  return AndroidConfig.withAndroidBaseMods(config, async (config) => {
-    const projectRoot = config.modRequest.projectRoot;
-    const androidDir = path.join(projectRoot, 'android');
+  return withDangerousMod(config, [
+    'android',
+    async (config) => {
+      const projectRoot = config.modRequest.projectRoot;
+      const androidDir = path.join(projectRoot, 'android');
 
-    // Ensure android directory exists (it will during prebuild)
-    if (fs.existsSync(androidDir)) {
-      const packagePath = path.join(androidDir, 'app/src/main/java/com/jollyheron/touchgrass');
-      const resPath = path.join(androidDir, 'app/src/main/res');
+      // Ensure android directory exists (it will during prebuild)
+      if (fs.existsSync(androidDir)) {
+        const packagePath = path.join(androidDir, 'app/src/main/java/com/jollyheron/touchgrass');
+        const resPath = path.join(androidDir, 'app/src/main/res');
 
-      // Create ProgressWidgetProvider.kt
-      const widgetProviderPath = path.join(packagePath, 'ProgressWidgetProvider.kt');
-      if (!fs.existsSync(widgetProviderPath)) {
-        fs.mkdirSync(packagePath, { recursive: true });
-        fs.writeFileSync(widgetProviderPath, getWidgetProviderKotlin());
-      }
+        // Create ProgressWidgetProvider.kt
+        const widgetProviderPath = path.join(packagePath, 'ProgressWidgetProvider.kt');
+        if (!fs.existsSync(widgetProviderPath)) {
+          fs.mkdirSync(packagePath, { recursive: true });
+          fs.writeFileSync(widgetProviderPath, getWidgetProviderKotlin());
+        }
 
-      // Create widget layout XML
-      const layoutDir = path.join(resPath, 'layout');
-      const widgetLayoutPath = path.join(layoutDir, 'widget_progress.xml');
-      if (!fs.existsSync(widgetLayoutPath)) {
-        fs.mkdirSync(layoutDir, { recursive: true });
-        fs.writeFileSync(widgetLayoutPath, getWidgetLayoutXml());
-      }
+        // Create widget layout XML
+        const layoutDir = path.join(resPath, 'layout');
+        const widgetLayoutPath = path.join(layoutDir, 'widget_progress.xml');
+        if (!fs.existsSync(widgetLayoutPath)) {
+          fs.mkdirSync(layoutDir, { recursive: true });
+          fs.writeFileSync(widgetLayoutPath, getWidgetLayoutXml());
+        }
 
-      // Create widget info XML
-      const xmlDir = path.join(resPath, 'xml');
-      const widgetInfoPath = path.join(xmlDir, 'widget_info.xml');
-      if (!fs.existsSync(widgetInfoPath)) {
-        fs.mkdirSync(xmlDir, { recursive: true });
-        fs.writeFileSync(widgetInfoPath, getWidgetInfoXml());
-      }
+        // Create widget info XML
+        const xmlDir = path.join(resPath, 'xml');
+        const widgetInfoPath = path.join(xmlDir, 'widget_info.xml');
+        if (!fs.existsSync(widgetInfoPath)) {
+          fs.mkdirSync(xmlDir, { recursive: true });
+          fs.writeFileSync(widgetInfoPath, getWidgetInfoXml());
+        }
 
-      // Create drawable resources
-      const drawableDir = path.join(resPath, 'drawable');
-      fs.mkdirSync(drawableDir, { recursive: true });
+        // Create drawable resources
+        const drawableDir = path.join(resPath, 'drawable');
+        fs.mkdirSync(drawableDir, { recursive: true });
 
-      const drawables = {
-        widget_background: getWidgetBackgroundXml(),
-        widget_button_background: getWidgetButtonBackgroundXml(),
-        widget_play_icon: getWidgetPlayIconXml(),
-        widget_preview: getWidgetPreviewXml(),
-        widget_ring_low: getWidgetRingXml('low', '#7EB8D4'),
-        widget_ring_medium: getWidgetRingXml('medium', '#F5C842'),
-        widget_ring_good: getWidgetRingXml('good', '#4A7C59'),
-        widget_ring_complete: getWidgetRingXml('complete', '#6BAF7A'),
-      };
+        const drawables = {
+          widget_background: getWidgetBackgroundXml(),
+          widget_button_background: getWidgetButtonBackgroundXml(),
+          widget_play_icon: getWidgetPlayIconXml(),
+          widget_preview: getWidgetPreviewXml(),
+          widget_ring_low: getWidgetRingXml('low', '#7EB8D4'),
+          widget_ring_medium: getWidgetRingXml('medium', '#F5C842'),
+          widget_ring_good: getWidgetRingXml('good', '#4A7C59'),
+          widget_ring_complete: getWidgetRingXml('complete', '#6BAF7A'),
+        };
 
-      for (const [name, content] of Object.entries(drawables)) {
-        const drawablePath = path.join(drawableDir, `${name}.xml`);
-        if (!fs.existsSync(drawablePath)) {
-          fs.writeFileSync(drawablePath, content);
+        for (const [name, content] of Object.entries(drawables)) {
+          const drawablePath = path.join(drawableDir, `${name}.xml`);
+          if (!fs.existsSync(drawablePath)) {
+            fs.writeFileSync(drawablePath, content);
+          }
         }
       }
-    }
 
-    return config;
-  });
+      return config;
+    },
+  ]);
 }
 
 // Kotlin source for ProgressWidgetProvider
