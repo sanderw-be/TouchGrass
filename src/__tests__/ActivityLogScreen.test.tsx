@@ -242,6 +242,7 @@ describe('ActivityLogScreen', () => {
   });
 
   it('reloads logs when pull-to-refresh is triggered', async () => {
+    jest.useFakeTimers();
     const { UNSAFE_getByType } = render(<ActivityLogScreen />);
     await waitFor(() => expect(mockGetBackgroundLogs).toHaveBeenCalledTimes(3));
 
@@ -253,7 +254,11 @@ describe('ActivityLogScreen', () => {
     expect(typeof onRefresh).toBe('function');
     onRefresh();
 
-    // After refresh, logs should be reloaded
+    // Advance timers past the minimum refresh duration
+    jest.runAllTimers();
+
+    // After the timer fires, logs should be reloaded
     await waitFor(() => expect(mockGetBackgroundLogs).toHaveBeenCalledTimes(3));
+    jest.useRealTimers();
   });
 });

@@ -72,12 +72,13 @@ export default function ActivityLogScreen() {
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    const start = Date.now();
-    loadLogs();
-    // Ensure the spinner shows for at least MIN_REFRESH_MS so the user can see it
-    const elapsed = Date.now() - start;
-    const remaining = Math.max(0, MIN_REFRESH_MS - elapsed);
-    setTimeout(() => setRefreshing(false), remaining);
+    // Run the load and a minimum-duration timer in parallel.
+    // The spinner stays visible until both complete, ensuring the user can see it.
+    const minDelay = new Promise<void>((resolve) => setTimeout(resolve, MIN_REFRESH_MS));
+    Promise.all([minDelay]).then(() => {
+      loadLogs();
+      setRefreshing(false);
+    });
   }, [loadLogs]);
 
   const toggleSection = (key: SectionKey) => {

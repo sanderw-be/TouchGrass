@@ -310,11 +310,15 @@ export async function syncHealthConnect(): Promise<boolean> {
 
     await initialize();
 
+    // Re-capture current time after initialization completes to get an accurate
+    // end-of-window timestamp for the record query.
+    const syncTime = Date.now();
+
     // Only fetch since last sync
-    const startTime = lastSync > 0 ? lastSync : now - 7 * 24 * 60 * 60 * 1000; // default: last 7 days
+    const startTime = lastSync > 0 ? lastSync : syncTime - 7 * 24 * 60 * 60 * 1000; // default: last 7 days
 
     const startTimeISO = new Date(startTime).toISOString();
-    const endTimeISO = new Date(now).toISOString();
+    const endTimeISO = new Date(syncTime).toISOString();
 
     // Read exercise sessions
     const exerciseResult = await readRecords('ExerciseSession', {
@@ -431,15 +435,15 @@ export async function syncHealthConnect(): Promise<boolean> {
     );
 
     // Prune settled sessions from previous syncs that are too short or too slow.
-    // A session is settled when its endTime is before (now - MIN_DURATION_MS):
+    // A session is settled when its endTime is before (syncTime - MIN_DURATION_MS):
     // no new records can merge into it. At that point remove it if:
     //   - it was discarded and is still under 5 minutes in duration, OR
     //   - its aggregated step rate is below the minimum walking speed (2.5 km/h).
-    const pruneBeforeMs = now - MIN_DURATION_MS;
+    const pruneBeforeMs = syncTime - MIN_DURATION_MS;
     pruneShortDiscardedHealthConnectSessions(pruneBeforeMs, STEPS_PER_MIN_AT_2_5KMH);
 
     // Update last sync timestamp
-    setSetting('healthconnect_last_sync', String(now));
+    setSetting('healthconnect_last_sync', String(syncTime));
     // Notify UI screens so they can refresh without requiring navigation.
     emitSessionsChanged();
     return true;
