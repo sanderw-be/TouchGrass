@@ -241,7 +241,7 @@ export default function HomeScreen() {
             <SessionRow
               key={session.id}
               session={session}
-              onConfirm={(confirmed) => handleConfirm(session.id, session.startTime, confirmed)}
+              onConfirm={(confirmed) => handleConfirm(session.id!, session.startTime, confirmed)}
             />
           ))}
         </View>
