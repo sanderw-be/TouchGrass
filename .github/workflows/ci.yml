@@ -4,6 +4,10 @@ on:
   pull_request:
     branches: [main, master]
   workflow_dispatch:
+  workflow_run:
+    workflows: ['Release']
+    types: [completed]
+    branches: [main, master]
 
 # Set minimal permissions for GITHUB_TOKEN
 permissions:
@@ -13,6 +17,7 @@ jobs:
   test:
     name: Build and Test
     runs-on: ubuntu-latest
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     permissions:
       contents: read
 

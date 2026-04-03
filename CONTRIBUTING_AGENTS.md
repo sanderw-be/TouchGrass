@@ -18,17 +18,17 @@ Every commit message **must** follow [Conventional Commits](https://www.conventi
 
 ### Allowed types
 
-| Type       | When to use                                                     | Release bump |
-| ---------- | --------------------------------------------------------------- | ------------ |
-| `feat`     | A new feature visible to the end user                           | **minor**    |
-| `fix`      | A bug fix visible to the end user                               | **patch**    |
-| `chore`    | Build system, tooling, dependency updates, CI changes           | none         |
-| `docs`     | Documentation only                                              | none         |
-| `refactor` | Code restructuring with no behaviour change                     | none         |
-| `test`     | Adding or updating tests only                                   | none         |
-| `style`    | Formatting, whitespace, missing semicolons — no logic change    | none         |
-| `perf`     | Performance improvement                                         | **patch**    |
-| `revert`   | Reverts a previous commit                                       | patch/minor  |
+| Type       | When to use                                                  | Release bump |
+| ---------- | ------------------------------------------------------------ | ------------ |
+| `feat`     | A new feature visible to the end user                        | **minor**    |
+| `fix`      | A bug fix visible to the end user                            | **patch**    |
+| `chore`    | Build system, tooling, dependency updates, CI changes        | none         |
+| `docs`     | Documentation only                                           | none         |
+| `refactor` | Code restructuring with no behaviour change                  | none         |
+| `test`     | Adding or updating tests only                                | none         |
+| `style`    | Formatting, whitespace, missing semicolons — no logic change | none         |
+| `perf`     | Performance improvement                                      | **patch**    |
+| `revert`   | Reverts a previous commit                                    | patch/minor  |
 
 > **Breaking changes**: append `!` after the type/scope (`feat!:` or `feat(api)!:`) **and** add a `BREAKING CHANGE:` footer. This triggers a **major** version bump.
 
@@ -59,21 +59,21 @@ Use a scope whenever the change is clearly contained in one area. This makes cha
 
 ### Recommended scopes
 
-| Scope           | Area of the codebase                                  |
-| --------------- | ----------------------------------------------------- |
-| `ui`            | Visual components, screens, theme, layout             |
-| `gps`           | GPS detection and session tracking                    |
-| `health`        | Health Connect / HealthKit integration                |
-| `notifications` | Reminder scheduling and notification logic            |
-| `storage`       | SQLite database, migrations, queries                  |
-| `background`    | Background tasks, alarm bridge, Pulsar                |
-| `widget`        | Android home-screen widget                            |
-| `weather`       | Weather integration and settings                      |
-| `i18n`          | Translations (EN, NL), locale files                   |
-| `api`           | External API calls (weather service, etc.)            |
-| `ci`            | GitHub Actions workflows, EAS build config            |
-| `deps`          | Dependency updates (`chore(deps):`)                   |
-| `release`       | Release tooling, semantic-release config              |
+| Scope           | Area of the codebase                       |
+| --------------- | ------------------------------------------ |
+| `ui`            | Visual components, screens, theme, layout  |
+| `gps`           | GPS detection and session tracking         |
+| `health`        | Health Connect / HealthKit integration     |
+| `notifications` | Reminder scheduling and notification logic |
+| `storage`       | SQLite database, migrations, queries       |
+| `background`    | Background tasks, alarm bridge, Pulsar     |
+| `widget`        | Android home-screen widget                 |
+| `weather`       | Weather integration and settings           |
+| `i18n`          | Translations (EN, NL), locale files        |
+| `api`           | External API calls (weather service, etc.) |
+| `ci`            | GitHub Actions workflows, EAS build config |
+| `deps`          | Dependency updates (`chore(deps):`)        |
+| `release`       | Release tooling, semantic-release config   |
 
 Omit the scope only when the change truly crosses multiple areas with no single dominant one.
 
