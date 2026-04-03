@@ -13,6 +13,7 @@ import {
   AppState,
   AppStateStatus,
 } from 'react-native';
+import * as Notifications from 'expo-notifications';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -50,6 +51,7 @@ import {
 
 const DAILY_PRESETS = [15, 20, 30, 45, 60, 90];
 const WEEKLY_PRESETS = [60, 90, 120, 150, 210, 300];
+const SMART_REMINDERS_OPTIONS = [0, 1, 2, 3];
 
 export default function GoalsScreen() {
   const { colors, shadows } = useTheme();
@@ -68,6 +70,7 @@ export default function GoalsScreen() {
   // Reminders state
   const [smartRemindersCount, setSmartRemindersCount] = useState(2);
   const [catchupRemindersCount, setCatchupRemindersCount] = useState(2);
+  const [notificationPermissionGranted, setNotificationPermissionGranted] = useState(false);
 
   // Weather state
   const [weatherEnabled, setWeatherEnabled] = useState(true);
@@ -90,6 +93,7 @@ export default function GoalsScreen() {
   // is automatically enabled so the user doesn't have to toggle it again.
   const pendingWeatherEnableRef = useRef(false);
   const pendingCalendarEnableRef = useRef(false);
+  const pendingSmartRemindersEnableRef = useRef(false);
 
   const loadGoalSettings = useCallback(() => {
     setDailyTargetState(getCurrentDailyGoal()?.targetMinutes ?? 30);
@@ -137,11 +141,25 @@ export default function GoalsScreen() {
     }
   }, []);
 
+  const checkNotificationPermissions = useCallback(async () => {
+    const { status } = await Notifications.getPermissionsAsync();
+    const granted = status === 'granted';
+    setNotificationPermissionGranted(granted);
+    // Auto-enable smart reminders if the user was blocked by missing permissions and just granted them
+    if (granted && pendingSmartRemindersEnableRef.current) {
+      pendingSmartRemindersEnableRef.current = false;
+      const firstNonZero = SMART_REMINDERS_OPTIONS.find((v) => v > 0) ?? 1;
+      setSetting('smart_reminders_count', String(firstNonZero));
+      setSmartRemindersCount(firstNonZero);
+    }
+  }, []);
+
   useFocusEffect(
     useCallback(() => {
       loadGoalSettings();
       checkCalendarPermissions();
       checkWeatherPermissions();
+      checkNotificationPermissions();
       refreshBatteryOptimizationStatus();
 
       const sub = AppState.addEventListener('change', (state: AppStateStatus) => {
@@ -149,6 +167,7 @@ export default function GoalsScreen() {
           loadGoalSettings();
           checkCalendarPermissions();
           checkWeatherPermissions();
+          checkNotificationPermissions();
           refreshBatteryOptimizationStatus();
         }
       });
@@ -157,6 +176,7 @@ export default function GoalsScreen() {
       loadGoalSettings,
       checkCalendarPermissions,
       checkWeatherPermissions,
+      checkNotificationPermissions,
       refreshBatteryOptimizationStatus,
     ])
   );
@@ -181,11 +201,15 @@ export default function GoalsScreen() {
     setEditingWeekly(false);
   };
 
-  const SMART_REMINDERS_OPTIONS = [0, 1, 2, 3];
-
   const cycleSmartRemindersCount = () => {
     const idx = SMART_REMINDERS_OPTIONS.indexOf(smartRemindersCount);
     const next = SMART_REMINDERS_OPTIONS[(idx + 1) % SMART_REMINDERS_OPTIONS.length];
+    // When enabling smart reminders (0 → positive value), check notification permission first
+    if (smartRemindersCount === 0 && next > 0 && !notificationPermissionGranted) {
+      pendingSmartRemindersEnableRef.current = true;
+      showNotificationPermissionSheet();
+      return;
+    }
     setSetting('smart_reminders_count', String(next));
     setSmartRemindersCount(next);
   };
@@ -232,6 +256,14 @@ export default function GoalsScreen() {
     setPermissionSheet({
       title: t('settings_calendar_permission_title'),
       body: t('settings_calendar_permission_body'),
+      onOpen: handleOpenAppSettings,
+    });
+  }, []);
+
+  const showNotificationPermissionSheet = useCallback(() => {
+    setPermissionSheet({
+      title: t('settings_notification_permission_title'),
+      body: t('settings_notification_permission_body'),
       onOpen: handleOpenAppSettings,
     });
   }, []);
@@ -469,21 +501,36 @@ export default function GoalsScreen() {
         {/* Reminders */}
         <Text style={styles.sectionHeader}>{t('settings_section_reminders')}</Text>
         <View style={styles.settingsCard}>
-          <TouchableOpacity onPress={cycleSmartRemindersCount}>
-            <SettingRow
-              icon={
+          <TouchableOpacity
+            onPress={
+              smartRemindersCount > 0 && !notificationPermissionGranted
+                ? showNotificationPermissionSheet
+                : cycleSmartRemindersCount
+            }
+            testID="smart-reminders-row"
+          >
+            <View style={styles.row}>
+              <View style={styles.rowIconContainer}>
                 <Ionicons name="notifications-outline" size={20} color={colors.textSecondary} />
-              }
-              label={t('settings_reminders_label')}
-              sublabel={t('settings_reminders_sublabel')}
-              right={
+              </View>
+              <View style={styles.rowContent}>
+                <Text style={styles.rowLabel}>{t('settings_reminders_label')}</Text>
+                {smartRemindersCount > 0 && !notificationPermissionGranted ? (
+                  <Text style={[styles.rowSublabel, { color: colors.error }]}>
+                    {t('settings_notification_permission_missing')}
+                  </Text>
+                ) : (
+                  <Text style={styles.rowSublabel}>{t('settings_reminders_sublabel')}</Text>
+                )}
+              </View>
+              <View style={styles.rowRight}>
                 <Text style={styles.valueChip}>
                   {smartRemindersCount === 0
                     ? t('settings_reminders_count_off')
                     : t('settings_reminders_count_per_day', { count: smartRemindersCount })}
                 </Text>
-              }
-            />
+              </View>
+            </View>
           </TouchableOpacity>
           <Divider />
           <TouchableOpacity onPress={cycleCatchupRemindersCount}>
