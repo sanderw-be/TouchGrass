@@ -10,6 +10,7 @@ A React Native mobile app that encourages users to spend more time outdoors by t
 - 🎯 **Customizable Goals** - Set daily and weekly outdoor activity targets
 - 🔔 **Smart Reminders** - Get personalized notifications to encourage outdoor time
 - 📊 **Progress Tracking** - View daily, weekly, and monthly outdoor activity statistics
+- 🏠 **Home Screen Widget** - Quick access to progress and timer on your Android home screen
 - 🔒 **Privacy First** - All data stays on your device, no external servers
 - 🌍 **Multi-language Support** - Available in English and Dutch
 
@@ -104,6 +105,7 @@ In short: **confirmed and manual sessions are never overwritten.** Automated ses
 - Health Connect integration for fitness data
 - Background location tracking
 - Notification channels for smart reminders
+- Home screen widget with progress ring and timer button
 
 ### iOS
 
@@ -141,6 +143,7 @@ eas build --platform android --profile production   # AAB for Play Store
 
 - [Testing Guide](docs/TESTING.md) - Automated testing setup and guidelines
 - [Health Connect Setup](docs/HEALTH_CONNECT_SETUP.md) - Configure Health Connect integration
+- [Home Screen Widget](docs/widget.md) - Setup and usage for the Android home screen widget
 - [Release Process](docs/RELEASE.md) - How to build and release the app
 
 ## Contributing
