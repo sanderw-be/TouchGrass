@@ -6,6 +6,8 @@ import {
   getSetting,
   setSetting,
   insertReminderFeedback,
+  getDailyStreak,
+  getWeeklyStreak,
 } from '../storage/database';
 import { shouldRemindNow, scoreReminderHours, ScoreContributor } from './reminderAlgorithm';
 import {
@@ -349,8 +351,14 @@ export async function scheduleNextReminder(): Promise<void> {
   // Cancel existing automatic reminders (but preserve scheduled ones)
   await cancelAutomaticReminders();
 
-  // Build message based on progress
-  const { title, body } = buildReminderMessage(todayMinutes, dailyTarget, undefined, contributors);
+  // Build message based on progress (this is a planned smart reminder)
+  const { title, body } = buildReminderMessage(
+    todayMinutes,
+    dailyTarget,
+    undefined,
+    contributors,
+    false
+  );
 
   await Notifications.scheduleNotificationAsync({
     content: {
@@ -472,11 +480,13 @@ export async function processReminderQueue(): Promise<void> {
     if (entry.status === 'tick_planned') {
       const minutesSince = nowMinutes - entry.slotMinutes;
       if (minutesSince >= 0 && minutesSince <= WINDOW) {
-        // Fire immediately
+        // Fire immediately (this is a planned smart reminder)
         const { title, body } = buildReminderMessage(
           todayMinutes,
           dailyTarget,
-          Math.floor(entry.slotMinutes / 60)
+          Math.floor(entry.slotMinutes / 60),
+          undefined,
+          false
         );
         await Notifications.scheduleNotificationAsync({
           content: {
@@ -662,11 +672,13 @@ export async function scheduleDayReminders(): Promise<void> {
     const triggerDate = new Date();
     triggerDate.setHours(slot.hour, slot.minute, 0, 0);
 
+    // These are planned smart reminders
     const { title, body } = buildReminderMessage(
       todayMinutes,
       dailyTarget,
       slot.hour,
-      slot.contributors
+      slot.contributors,
+      false
     );
 
     const dateKey = formatLocalDateKey(triggerDate);
@@ -875,11 +887,13 @@ export async function maybeScheduleCatchUpReminder(): Promise<void> {
   const triggerDate = new Date();
   triggerDate.setHours(best.hour, best.minute, 0, 0);
 
+  // This is a catch-up reminder
   const { title, body } = buildReminderMessage(
     todayMinutes,
     dailyTarget,
     best.hour,
-    best.contributors ?? []
+    best.contributors ?? [],
+    true
   );
 
   const dateKey = formatLocalDateKey(triggerDate);
@@ -979,7 +993,8 @@ async function scheduleFailsafeReminders(slots: { hour: number; minute: 0 | 30 }
       triggerDate.setHours(slot.hour, slot.minute, 0, 0);
 
       // Use 0 progress since we don't know tomorrow's outdoor minutes.
-      const { title, body } = buildReminderMessage(0, dailyTarget, slot.hour);
+      // These are failsafe reminders (treat as planned smart reminders)
+      const { title, body } = buildReminderMessage(0, dailyTarget, slot.hour, undefined, false);
 
       await Notifications.scheduleNotificationAsync({
         identifier: `${FAILSAFE_REMINDER_PREFIX}${dateKey}_${i}`,
@@ -1128,13 +1143,15 @@ async function handleNotificationResponse(
   }
 
   if (action === 'snoozed') {
-    // Reschedule for SNOOZE_DURATION_MINUTES later
+    // Reschedule for SNOOZE_DURATION_MINUTES later (treat as planned smart reminder)
     const snoozeDate = new Date(now + SNOOZE_DURATION_MINUTES * 60 * 1000);
     const snoozeHour = snoozeDate.getHours();
     const { title, body } = buildReminderMessage(
       getTodayMinutes(),
       getCurrentDailyGoal()?.targetMinutes ?? 30,
-      snoozeHour
+      snoozeHour,
+      undefined,
+      false
     );
     await Notifications.scheduleNotificationAsync({
       content: { title, body, categoryIdentifier: 'reminder', color: '#4A7C59' },
@@ -1150,12 +1167,14 @@ async function handleNotificationResponse(
 /**
  * Build a friendly reminder message based on current progress.
  * Optionally includes weather context if available.
+ * Adds streak encouragement based on streak state and reminder type.
  */
 function buildReminderMessage(
   todayMinutes: number,
   dailyTarget: number,
   hour?: number,
-  contributors?: ScoreContributor[]
+  contributors?: ScoreContributor[],
+  isCatchupReminder?: boolean
 ): { title: string; body: string } {
   const remaining = Math.max(0, Math.round(dailyTarget - todayMinutes));
   const percent = todayMinutes / dailyTarget;
@@ -1172,6 +1191,31 @@ function buildReminderMessage(
     body = t('notif_body_almost', { remaining });
   } else {
     body = t('notif_body_done');
+  }
+
+  // Add streak encouragement based on settings:
+  // - If catch-up reminders enabled: only on catch-up reminders
+  // - If catch-up reminders disabled: on planned smart reminders
+  const catchupEnabled = parseInt(getSetting('smart_catchup_reminders_count', '2'), 10) > 0;
+  const shouldShowStreak = catchupEnabled ? isCatchupReminder === true : isCatchupReminder !== true;
+
+  if (shouldShowStreak) {
+    const dailyStreak = getDailyStreak();
+    const weeklyStreak = getWeeklyStreak();
+
+    // Show streak encouragement if user has an active streak
+    if (dailyStreak > 0 || weeklyStreak > 0) {
+      // If goal not yet reached today, show "at risk" message
+      const atRisk = percent < 1;
+
+      if (dailyStreak > 0) {
+        const key = atRisk ? 'notif_streak_daily_at_risk' : 'notif_streak_daily';
+        body += ` ${t(key, { count: dailyStreak })}`;
+      } else if (weeklyStreak > 0) {
+        const key = atRisk ? 'notif_streak_weekly_at_risk' : 'notif_streak_weekly';
+        body += ` ${t(key, { count: weeklyStreak })}`;
+      }
+    }
   }
 
   // Append top 2 contributor reason descriptions when available ("Why this time?" transparency)

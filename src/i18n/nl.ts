@@ -14,6 +14,13 @@ export default {
   no_sessions_sub: 'Ga naar buiten of log het handmatig!',
   todays_sessions: 'Sessies vandaag',
 
+  // Streaks
+  streak_daily_singular: '{{count}} dag streak',
+  streak_daily_plural: '{{count}} dagen streak',
+  streak_weekly_singular: '{{count}} week streak',
+  streak_weekly_plural: '{{count}} weken streak',
+  streak_separator: ' · ',
+
   // Timer in voortgangsring
   ring_timer_start: 'tik om te starten',
   ring_timer_tap_stop: 'tik om te stoppen',
@@ -345,6 +352,12 @@ export default {
   notif_reason_urgent: 'je hebt je doel nog niet bereikt vandaag',
   notif_reason_acted: 'je bent eerder buiten geweest rond deze tijd',
   notif_reason_more_often: 'je geeft de voorkeur aan herinneringen rond deze tijd',
+
+  // Streak encouragement for notifications
+  notif_streak_daily: 'Houd je {{count}} dagen streak vol!',
+  notif_streak_weekly: 'Behoud je {{count}} weken streak!',
+  notif_streak_daily_at_risk: 'Breek je {{count}} dagen streak niet!',
+  notif_streak_weekly_at_risk: 'Breek je {{count}} weken streak niet!',
 
   // Verbindingswoord tussen twee reden-beschrijvingen ("X, en Y.")
   notif_contributor_and: 'en',

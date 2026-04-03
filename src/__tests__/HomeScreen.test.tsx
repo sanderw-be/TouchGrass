@@ -20,6 +20,8 @@ const mockGetCurrentDailyGoal = jest.fn(() => ({ targetMinutes: 60 }));
 const mockGetCurrentWeeklyGoal = jest.fn(() => ({ targetMinutes: 300 }));
 const mockGetSessionsForDay = jest.fn<OutsideSession[], [number]>(() => []);
 const mockConfirmSession = jest.fn();
+const mockGetDailyStreak = jest.fn(() => 0);
+const mockGetWeeklyStreak = jest.fn(() => 0);
 
 jest.mock('../storage/database', () => ({
   getTodayMinutes: () => mockGetTodayMinutes(),
@@ -28,6 +30,8 @@ jest.mock('../storage/database', () => ({
   getCurrentWeeklyGoal: () => mockGetCurrentWeeklyGoal(),
   getSessionsForDay: (dateMs: number) => mockGetSessionsForDay(dateMs),
   confirmSession: (...args: any[]) => mockConfirmSession(...args),
+  getDailyStreak: () => mockGetDailyStreak(),
+  getWeeklyStreak: () => mockGetWeeklyStreak(),
 }));
 
 const mockStopFn = jest.fn();
