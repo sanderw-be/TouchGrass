@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import ManualSessionSheet from '../components/ManualSessionSheet';
 import ProgressRing from '../components/ProgressRing';
+import UndoSnackbar from '../components/UndoSnackbar';
 import {
   getTodayMinutes,
   getWeekMinutes,
@@ -46,6 +47,10 @@ export default function HomeScreen() {
   const [sheetVisible, setSheetVisible] = useState(false);
   const [dailyStreak, setDailyStreak] = useState(0);
   const [weeklyStreak, setWeeklyStreak] = useState(0);
+  const [undoSnackbar, setUndoSnackbar] = useState<{
+    visible: boolean;
+    sessionId: number | null;
+  }>({ visible: false, sessionId: null });
 
   // Inline ring timer
   const [timerRunning, setTimerRunning] = useState(false);
@@ -105,8 +110,19 @@ export default function HomeScreen() {
     emitSessionsChanged();
     if (confirmed) {
       await cancelRemindersIfGoalReached();
+    } else {
+      setUndoSnackbar({ visible: true, sessionId: id });
     }
     loadData();
+  };
+
+  const handleUndoReject = () => {
+    if (undoSnackbar.sessionId !== null) {
+      confirmSession(undoSnackbar.sessionId, null);
+      emitSessionsChanged();
+      loadData();
+    }
+    setUndoSnackbar({ visible: false, sessionId: null });
   };
 
   const handleTimerPress = () => {
@@ -149,116 +165,125 @@ export default function HomeScreen() {
   };
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.grass} />
-      }
-    >
-      <StatusBar
-        barStyle={isDark ? 'light-content' : 'dark-content'}
-        backgroundColor={colors.mist}
-      />
-
-      <ManualSessionSheet
-        visible={sheetVisible}
-        onClose={() => setSheetVisible(false)}
-        onSessionLogged={loadData}
-      />
-
-      {/* Header */}
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.greeting}>{greeting()}</Text>
-          <Text style={styles.date}>
-            {formatLocalDate(Date.now(), { weekday: 'long', month: 'long', day: 'numeric' })}
-          </Text>
-        </View>
-        <TouchableOpacity style={styles.addBtn} onPress={() => setSheetVisible(true)}>
-          <Ionicons name="add" size={24} color={colors.textInverse} />
-        </TouchableOpacity>
-      </View>
-
-      {/* Main progress ring */}
-      <View style={styles.ringCard}>
-        <ProgressRing
-          current={todayMinutes}
-          target={dailyTarget}
-          size={200}
-          strokeWidth={16}
-          label={t('today')}
-          onTimerPress={handleTimerPress}
-          timerRunning={timerRunning}
-          timerSeconds={timerSeconds}
+    <View style={styles.screenContainer}>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.content}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.grass} />
+        }
+      >
+        <StatusBar
+          barStyle={isDark ? 'light-content' : 'dark-content'}
+          backgroundColor={colors.mist}
         />
-        <Text style={styles.motivation}>{motivationText()}</Text>
-        {(dailyStreak > 0 || weeklyStreak > 0) && (
-          <View style={styles.streakContainer}>
-            {dailyStreak > 0 && (
-              <Text style={styles.streakText}>
-                {t(dailyStreak === 1 ? 'streak_daily_singular' : 'streak_daily_plural', {
-                  count: dailyStreak,
-                })}
+
+        <ManualSessionSheet
+          visible={sheetVisible}
+          onClose={() => setSheetVisible(false)}
+          onSessionLogged={loadData}
+        />
+
+        {/* Header */}
+        <View style={styles.header}>
+          <View>
+            <Text style={styles.greeting}>{greeting()}</Text>
+            <Text style={styles.date}>
+              {formatLocalDate(Date.now(), { weekday: 'long', month: 'long', day: 'numeric' })}
+            </Text>
+          </View>
+          <TouchableOpacity style={styles.addBtn} onPress={() => setSheetVisible(true)}>
+            <Ionicons name="add" size={24} color={colors.textInverse} />
+          </TouchableOpacity>
+        </View>
+
+        {/* Main progress ring */}
+        <View style={styles.ringCard}>
+          <ProgressRing
+            current={todayMinutes}
+            target={dailyTarget}
+            size={200}
+            strokeWidth={16}
+            label={t('today')}
+            onTimerPress={handleTimerPress}
+            timerRunning={timerRunning}
+            timerSeconds={timerSeconds}
+          />
+          <Text style={styles.motivation}>{motivationText()}</Text>
+          {(dailyStreak > 0 || weeklyStreak > 0) && (
+            <View style={styles.streakContainer}>
+              {dailyStreak > 0 && (
+                <Text style={styles.streakText}>
+                  {t(dailyStreak === 1 ? 'streak_daily_singular' : 'streak_daily_plural', {
+                    count: dailyStreak,
+                  })}
+                </Text>
+              )}
+              {dailyStreak > 0 && weeklyStreak > 0 && (
+                <Text style={styles.streakSeparator}>{t('streak_separator')}</Text>
+              )}
+              {weeklyStreak > 0 && (
+                <Text style={styles.streakText}>
+                  {t(weeklyStreak === 1 ? 'streak_weekly_singular' : 'streak_weekly_plural', {
+                    count: weeklyStreak,
+                  })}
+                </Text>
+              )}
+            </View>
+          )}
+        </View>
+
+        {/* Weekly strip */}
+        <View style={styles.weekCard}>
+          <View style={styles.weekHeader}>
+            <Text style={styles.weekTitle}>{t('this_week')}</Text>
+            <Text style={styles.weekValue}>
+              {formatMinutes(weekMinutes)}{' '}
+              <Text style={styles.weekOf}>
+                {t('of')} {formatMinutes(weeklyTarget)}
               </Text>
-            )}
-            {dailyStreak > 0 && weeklyStreak > 0 && (
-              <Text style={styles.streakSeparator}>{t('streak_separator')}</Text>
-            )}
-            {weeklyStreak > 0 && (
-              <Text style={styles.streakText}>
-                {t(weeklyStreak === 1 ? 'streak_weekly_singular' : 'streak_weekly_plural', {
-                  count: weeklyStreak,
-                })}
-              </Text>
-            )}
+            </Text>
+          </View>
+          <View style={styles.weekBar}>
+            <View style={[styles.weekBarFill, { width: `${weeklyPercent * 100}%` }]} />
+          </View>
+          <WeekDots />
+        </View>
+
+        {/* Today's sessions */}
+        {todaySessions.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>{t('todays_sessions')}</Text>
+            {todaySessions.map((session) => (
+              <SessionRow
+                key={session.id}
+                session={session}
+                onConfirm={(confirmed) => handleConfirm(session.id!, session.startTime, confirmed)}
+              />
+            ))}
           </View>
         )}
-      </View>
 
-      {/* Weekly strip */}
-      <View style={styles.weekCard}>
-        <View style={styles.weekHeader}>
-          <Text style={styles.weekTitle}>{t('this_week')}</Text>
-          <Text style={styles.weekValue}>
-            {formatMinutes(weekMinutes)}{' '}
-            <Text style={styles.weekOf}>
-              {t('of')} {formatMinutes(weeklyTarget)}
-            </Text>
-          </Text>
-        </View>
-        <View style={styles.weekBar}>
-          <View style={[styles.weekBarFill, { width: `${weeklyPercent * 100}%` }]} />
-        </View>
-        <WeekDots />
-      </View>
-
-      {/* Today's sessions */}
-      {todaySessions.length > 0 && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('todays_sessions')}</Text>
-          {todaySessions.map((session) => (
-            <SessionRow
-              key={session.id}
-              session={session}
-              onConfirm={(confirmed) => handleConfirm(session.id!, session.startTime, confirmed)}
+        {todaySessions.length === 0 && (
+          <View style={styles.emptyState}>
+            <Image
+              source={require('../../assets/herb.png')}
+              style={styles.emptyIcon}
+              resizeMode="contain"
             />
-          ))}
-        </View>
-      )}
+            <Text style={styles.emptyText}>{t('no_sessions_title')}</Text>
+            <Text style={styles.emptySubtext}>{t('no_sessions_sub')}</Text>
+          </View>
+        )}
+      </ScrollView>
 
-      {todaySessions.length === 0 && (
-        <View style={styles.emptyState}>
-          <Image
-            source={require('../../assets/herb.png')}
-            style={styles.emptyIcon}
-            resizeMode="contain"
-          />
-          <Text style={styles.emptyText}>{t('no_sessions_title')}</Text>
-          <Text style={styles.emptySubtext}>{t('no_sessions_sub')}</Text>
-        </View>
-      )}
-    </ScrollView>
+      <UndoSnackbar
+        visible={undoSnackbar.visible}
+        message={t('session_rejected_snackbar')}
+        onUndo={handleUndoReject}
+        onDismiss={() => setUndoSnackbar({ visible: false, sessionId: null })}
+      />
+    </View>
   );
 }
 
@@ -399,6 +424,7 @@ function makeStyles(
   shadows: ReturnType<typeof useTheme>['shadows']
 ) {
   return StyleSheet.create({
+    screenContainer: { flex: 1, backgroundColor: colors.mist },
     container: { flex: 1, backgroundColor: colors.mist },
     content: { padding: spacing.md, paddingBottom: spacing.xxl },
 

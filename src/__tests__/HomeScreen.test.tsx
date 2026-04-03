@@ -275,4 +275,95 @@ describe('HomeScreen inline timer', () => {
     });
     expect(emitSessionsChanged).toHaveBeenCalled();
   });
+
+  it('shows undo snackbar after swipe reject action', async () => {
+    mockGetSessionsForDay.mockReturnValueOnce([
+      {
+        id: 1,
+        startTime: Date.now(),
+        endTime: Date.now() + 30 * 60 * 1000,
+        durationMinutes: 30,
+        confidence: 1,
+        userConfirmed: null,
+        discarded: 0,
+        source: 'gps',
+      },
+    ]);
+
+    const { getByTestId, queryByTestId } = render(<HomeScreen />);
+    expect(queryByTestId('undo-snackbar')).toBeNull();
+    await act(async () => {
+      fireEvent.press(getByTestId('home-swipe-reject-action'));
+    });
+    expect(getByTestId('undo-snackbar')).toBeTruthy();
+  });
+
+  it('calls confirmSession(id, null) when undo button is pressed after reject', async () => {
+    mockGetSessionsForDay.mockReturnValueOnce([
+      {
+        id: 1,
+        startTime: Date.now(),
+        endTime: Date.now() + 30 * 60 * 1000,
+        durationMinutes: 30,
+        confidence: 1,
+        userConfirmed: null,
+        discarded: 0,
+        source: 'gps',
+      },
+    ]);
+
+    const { getByTestId } = render(<HomeScreen />);
+    await act(async () => {
+      fireEvent.press(getByTestId('home-swipe-reject-action'));
+    });
+    await act(async () => {
+      fireEvent.press(getByTestId('undo-snackbar-button'));
+    });
+    expect(mockConfirmSession).toHaveBeenCalledWith(1, null);
+  });
+
+  it('hides undo snackbar after undo button is pressed', async () => {
+    mockGetSessionsForDay.mockReturnValueOnce([
+      {
+        id: 1,
+        startTime: Date.now(),
+        endTime: Date.now() + 30 * 60 * 1000,
+        durationMinutes: 30,
+        confidence: 1,
+        userConfirmed: null,
+        discarded: 0,
+        source: 'gps',
+      },
+    ]);
+
+    const { getByTestId, queryByTestId } = render(<HomeScreen />);
+    await act(async () => {
+      fireEvent.press(getByTestId('home-swipe-reject-action'));
+    });
+    await act(async () => {
+      fireEvent.press(getByTestId('undo-snackbar-button'));
+    });
+    expect(queryByTestId('undo-snackbar')).toBeNull();
+  });
+
+  it('does not show undo snackbar after swipe confirm action', async () => {
+    mockGetSessionsForDay.mockReturnValueOnce([
+      {
+        id: 1,
+        startTime: Date.now(),
+        endTime: Date.now() + 30 * 60 * 1000,
+        durationMinutes: 30,
+        confidence: 1,
+        userConfirmed: null,
+        discarded: 0,
+        source: 'gps',
+      },
+    ]);
+
+    const { getByTestId, queryByTestId } = render(<HomeScreen />);
+    await act(async () => {
+      fireEvent.press(getByTestId('home-swipe-confirm-action'));
+    });
+    expect(queryByTestId('undo-snackbar')).toBeNull();
+  });
 });
