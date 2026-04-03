@@ -4,6 +4,7 @@ import { spacing, radius } from '../utils/theme';
 import { useTheme } from '../context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import i18n, { t } from '../i18n';
+import { PRIVACY_POLICY_URL } from '../utils/constants';
 
 const FEEDBACK_URLS: Record<string, string> = {
   nl: 'https://forms.gle/SSavqQgWFqYmiJaZA',
@@ -56,6 +57,9 @@ export default function FeedbackSupportScreen() {
           />
         </TouchableOpacity>
       </View>
+      <TouchableOpacity onPress={() => openUrl(PRIVACY_POLICY_URL)}>
+        <Text style={styles.disclosure}>{t('feedback_google_disclosure')}</Text>
+      </TouchableOpacity>
     </ScrollView>
   );
 }
@@ -144,6 +148,13 @@ function makeStyles(
       height: 1,
       backgroundColor: colors.fog,
       marginLeft: spacing.md + 28 + spacing.md,
+    },
+    disclosure: {
+      fontSize: 12,
+      color: colors.textMuted,
+      textAlign: 'center' as const,
+      paddingHorizontal: spacing.md,
+      textDecorationLine: 'underline' as const,
     },
   };
 }

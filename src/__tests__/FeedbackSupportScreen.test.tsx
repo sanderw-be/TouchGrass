@@ -88,4 +88,18 @@ describe('FeedbackSupportScreen', () => {
     await Promise.resolve();
     expect(Alert.alert).toHaveBeenCalledWith('https://ko-fi.com/jollyheron');
   });
+
+  it('renders the Google disclosure note', () => {
+    const { getByText } = render(<FeedbackSupportScreen />);
+    expect(getByText('feedback_google_disclosure')).toBeTruthy();
+  });
+
+  it('opens the privacy policy when the disclosure note is pressed', async () => {
+    const { getByText } = render(<FeedbackSupportScreen />);
+    fireEvent.press(getByText('feedback_google_disclosure'));
+    await Promise.resolve();
+    expect(Linking.openURL).toHaveBeenCalledWith(
+      'https://sanderw-be.github.io/TouchGrass-Legal/privacy-policy.html'
+    );
+  });
 });
