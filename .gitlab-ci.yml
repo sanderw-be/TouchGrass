@@ -13,7 +13,7 @@ image: node:20
 test:
   stage: test
   script:
-    - npm ci --legacy-peer-deps
+    - npm ci
     - npm run type-check
     - npm test -- --passWithNoTests || true
   artifacts:
@@ -32,7 +32,7 @@ build-android:
     - test
   script:
     # Setup Node and dependencies
-    - npm ci --legacy-peer-deps
+    - npm ci
 
     # Install EAS CLI
     - npm install -g eas-cli@latest
