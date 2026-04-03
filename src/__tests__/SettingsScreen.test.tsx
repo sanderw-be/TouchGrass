@@ -60,6 +60,14 @@ jest.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
 }));
 
+// Mock expo-constants
+jest.mock('expo-constants', () => ({
+  __esModule: true,
+  default: {
+    expoConfig: { version: '1.2.0' },
+  },
+}));
+
 // Mock IntroContext so useShowIntro returns a no-op in tests
 jest.mock('../context/IntroContext', () => ({
   useShowIntro: () => jest.fn(),
@@ -86,6 +94,11 @@ describe('SettingsScreen', () => {
   it('renders without crashing', async () => {
     const { getByText } = render(<SettingsScreen />);
     await waitFor(() => expect(getByText('nav_settings')).toBeTruthy());
+  });
+
+  it('shows the app version in the About section', async () => {
+    const { getByText } = render(<SettingsScreen />);
+    await waitFor(() => expect(getByText('v1.2.0')).toBeTruthy());
   });
 });
 
