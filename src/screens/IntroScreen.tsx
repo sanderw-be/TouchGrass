@@ -703,6 +703,9 @@ function CalendarStep({
       <View style={styles.permissionCard}>
         <Text style={styles.permissionTitle}>{t('intro_calendar_why_title')}</Text>
         <Text style={styles.permissionBody}>{t('intro_calendar_why_body')}</Text>
+        <Text style={[styles.permissionBody, styles.dataScope]}>
+          {t('intro_calendar_data_scope')}
+        </Text>
       </View>
       <TouchableOpacity
         style={[styles.permissionButton, granted && styles.permissionButtonGranted]}
@@ -849,6 +852,10 @@ function makeStyles(
       fontSize: 14,
       color: colors.textSecondary,
       lineHeight: 20,
+    },
+    dataScope: {
+      marginTop: spacing.sm,
+      fontStyle: 'italic',
     },
 
     permissionButton: {

@@ -139,6 +139,12 @@ describe('IntroScreen', () => {
       expect(getByText('intro_calendar_hint')).toBeTruthy();
     });
 
+    it('shows the data scope explainer in the calendar step', async () => {
+      const { getByText } = await navigateToCalendarStep();
+
+      expect(getByText('intro_calendar_data_scope')).toBeTruthy();
+    });
+
     it('calls requestCalendarPermissions and enables integration when connect button is pressed', async () => {
       mockRequestCalendarPermissions.mockResolvedValueOnce(true);
       const { getByText } = await navigateToCalendarStep();

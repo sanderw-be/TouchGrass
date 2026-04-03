@@ -309,6 +309,8 @@ export default {
   intro_calendar_why_title: 'Why do we need this?',
   intro_calendar_why_body:
     'With calendar access, TouchGrass avoids sending reminders when you have a meeting coming up and can automatically add outdoor time slots to your calendar.',
+  intro_calendar_data_scope:
+    'TouchGrass reads only event titles and times — no descriptions, attendees, or other data. Nothing leaves your device.',
   intro_calendar_hint: 'You can configure this later in Settings.',
   intro_calendar_button: 'Connect Calendar',
   intro_calendar_button_granted: 'Calendar Connected ✓',
@@ -471,7 +473,7 @@ export default {
   settings_calendar_permission_title: 'Calendar Permission',
   settings_calendar_permission_missing: 'Permissions missing — tap to fix',
   settings_calendar_permission_body:
-    'Calendar access is needed to check your appointments for smart reminders.',
+    'Calendar access is needed to check your appointments for smart reminders.\n\nTouchGrass reads only event titles and times — no descriptions, attendees, or other data. Nothing leaves your device.',
   settings_calendar_permission_open: 'Open Settings',
   settings_calendar_permission_cancel: 'Cancel',
   settings_calendar_buffer: 'Meeting buffer',
