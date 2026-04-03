@@ -164,7 +164,7 @@ describe('autoDetectLocations', () => {
     );
   });
 
-  it('uses 10h threshold when known locations already exist', async () => {
+  it('uses 3h threshold when known locations already exist', async () => {
     // Mock: 1 known active location exists
     (Database.getKnownLocations as jest.Mock).mockReturnValue([
       {
@@ -189,7 +189,7 @@ describe('autoDetectLocations', () => {
       },
     ]);
 
-    // 25 samples × 5 min at a NEW location — only 2h dwell, below 10h threshold
+    // 25 samples × 5 min at a NEW location — only 2h dwell, below 3h threshold
     const samples = Array.from({ length: 25 }, (_, i) => ({
       lat: 51.52,
       lon: 4.32,
@@ -203,8 +203,53 @@ describe('autoDetectLocations', () => {
 
     await autoDetectLocations();
 
-    // 2h dwell < 10h threshold → should NOT suggest
+    // 2h dwell < 3h threshold → should NOT suggest
     expect(Database.upsertKnownLocation).not.toHaveBeenCalled();
+  });
+
+  it('suggests a location after 3h+ dwell when known locations already exist', async () => {
+    // Mock: 1 known active location exists
+    (Database.getKnownLocations as jest.Mock).mockReturnValue([
+      {
+        id: 1,
+        label: 'Home',
+        latitude: 51.5,
+        longitude: 4.3,
+        radiusMeters: 100,
+        isIndoor: true,
+        status: 'active',
+      },
+    ]);
+    (Database.getAllKnownLocations as jest.Mock).mockReturnValue([
+      {
+        id: 1,
+        label: 'Home',
+        latitude: 51.5,
+        longitude: 4.3,
+        radiusMeters: 100,
+        isIndoor: true,
+        status: 'active',
+      },
+    ]);
+
+    // 37 samples × 5 min at a NEW location — 3h dwell, meets 3h threshold
+    const samples = Array.from({ length: 37 }, (_, i) => ({
+      lat: 51.52,
+      lon: 4.32,
+      timestamp: BASE_TIME + i * FIVE_MIN,
+    }));
+    (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
+      if (key === 'location_suggestions_enabled') return '1';
+      if (key === 'location_clusters') return JSON.stringify(samples);
+      return fallback;
+    });
+
+    await autoDetectLocations();
+
+    // 3h dwell >= 3h threshold → should suggest
+    expect(Database.upsertKnownLocation).toHaveBeenCalledWith(
+      expect.objectContaining({ status: 'suggested', label: '' })
+    );
   });
 
   it('does not re-suggest a place already tracked in known locations', async () => {
