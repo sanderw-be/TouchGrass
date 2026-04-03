@@ -296,3 +296,11 @@ describe('Date helpers', () => {
     });
   });
 });
+
+describe('Background task logs', () => {
+  it('insertBackgroundLog and getBackgroundLogs functions exist', () => {
+    const { insertBackgroundLog, getBackgroundLogs } = require('../storage/database');
+    expect(typeof insertBackgroundLog).toBe('function');
+    expect(typeof getBackgroundLogs).toBe('function');
+  });
+});

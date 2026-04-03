@@ -9,6 +9,7 @@ import {
   setSetting,
   KnownLocation,
   initDatabase,
+  insertBackgroundLog,
 } from '../storage/database';
 import { submitSession, buildSession } from './sessionMerger';
 import { t } from '../i18n';
@@ -254,6 +255,12 @@ export function processLocationUpdate(
     gpsSessionSpeedSum = 0;
     gpsSessionSpeedCount = 0;
     console.log('TouchGrass: GPS update - now outside, session started');
+    insertBackgroundLog(
+      'gps',
+      gpsSessionStartLocationLabel
+        ? `Left ${gpsSessionStartLocationLabel} — outside`
+        : 'Outside (no known location)'
+    );
   } else if (!isOutside && lastKnownOutside && outsideSessionStart !== null) {
     // Just came back inside
     const duration = timestamp - outsideSessionStart;
@@ -286,6 +293,15 @@ export function processLocationUpdate(
       );
       submitSession(session);
       emitSessionsChanged();
+      insertBackgroundLog(
+        'gps',
+        `Back inside at ${locationLabel} — recorded ${Math.round(duration / 60000)} min session`
+      );
+    } else {
+      insertBackgroundLog(
+        'gps',
+        `Back inside at ${locationLabel} — too short (${Math.round(duration / 60000)} min), not recorded`
+      );
     }
     outsideSessionStart = null;
     lastKnownOutside = false;
@@ -301,6 +317,7 @@ export function processLocationUpdate(
     console.log(
       `TouchGrass: GPS update - still outside, current session length: ${Math.round(duration / 60000)} min`
     );
+    insertBackgroundLog('gps', `Still outside — ${Math.round(duration / 60000)} min so far`);
     if (duration >= MIN_OUTSIDE_DURATION_MS) {
       const avgSpeed = gpsSessionSpeedCount > 0 ? gpsSessionSpeedSum / gpsSessionSpeedCount : 0;
       const notes = buildGpsNotes(
@@ -329,6 +346,17 @@ export function processLocationUpdate(
   }
 
   saveGPSState();
+
+  // Log "inside at known location" only when the user is not currently outside
+  if (!isOutside && !lastKnownOutside) {
+    const matchedLocation = knownLocations.find(
+      (loc) =>
+        loc.isIndoor && haversineDistance(lat, lon, loc.latitude, loc.longitude) <= loc.radiusMeters
+    );
+    if (matchedLocation) {
+      insertBackgroundLog('gps', `Inside at ${matchedLocation.label}`);
+    }
+  }
 
   // Update location clusters for auto-detect
   recordLocationForClustering(lat, lon, timestamp);

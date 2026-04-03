@@ -233,6 +233,12 @@ export default function SettingsScreen() {
             onPermissionFix={showGPSPermissionSheet}
             testID="gps-toggle"
           />
+          <Divider />
+          <SettingRow
+            icon={<Ionicons name="radio-outline" size={20} color={colors.textSecondary} />}
+            label={t('settings_background_tracking_label')}
+            sublabel={t('settings_background_tracking_sublabel')}
+          />
         </View>
 
         {/* Known locations */}
@@ -370,6 +376,21 @@ export default function SettingsScreen() {
               </TouchableOpacity>
             }
           />
+        </View>
+
+        {/* Activity Log (Transparency) */}
+        <Text style={styles.sectionHeader}>{t('settings_section_activity_log')}</Text>
+        <View style={styles.card}>
+          <TouchableOpacity onPress={() => navigation.navigate('ActivityLog')}>
+            <SettingRow
+              icon={
+                <Ionicons name="document-text-outline" size={20} color={colors.textSecondary} />
+              }
+              label={t('settings_activity_log')}
+              sublabel={t('settings_activity_log_sublabel')}
+              right={<Ionicons name="chevron-forward" size={20} color={colors.textMuted} />}
+            />
+          </TouchableOpacity>
         </View>
       </ScrollView>
 

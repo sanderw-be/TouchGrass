@@ -8,6 +8,7 @@ import {
   insertReminderFeedback,
   getDailyStreak,
   getWeeklyStreak,
+  insertBackgroundLog,
 } from '../storage/database';
 import { shouldRemindNow, scoreReminderHours, ScoreContributor } from './reminderAlgorithm';
 import {
@@ -429,6 +430,10 @@ export async function processReminderQueue(): Promise<void> {
     console.log(
       `TouchGrass: [Queue] Daily goal reached (${todayMinutes}/${dailyTarget} min) — cancelling ${queue.length} queued reminder(s)`
     );
+    insertBackgroundLog(
+      'reminder',
+      `Goal reached (${todayMinutes}/${dailyTarget} min) — cancelled ${queue.length} reminder(s)`
+    );
     for (const entry of queue) {
       // Consumed entries already fired — no notification to cancel
       if (entry.status !== 'consumed') {
@@ -467,6 +472,10 @@ export async function processReminderQueue(): Promise<void> {
         entry.status = 'consumed';
         console.log(
           `TouchGrass: [Queue] Consumed: ${entry.id} at ${formatSlotMinutes(entry.slotMinutes)} — slot passed, marked consumed`
+        );
+        insertBackgroundLog(
+          'reminder',
+          `Reminder fired at ${formatSlotMinutes(entry.slotMinutes)}`
         );
         updatedQueue.push(entry);
       } else {
@@ -849,8 +858,10 @@ export async function scheduleDayReminders(): Promise<void> {
     console.log(
       `TouchGrass: [DayPlan] Planned ${newQueueEntries.length} reminder(s) for today: ${summary}`
     );
+    insertBackgroundLog('reminder', `Daily plan: ${summary}`);
   } else {
     console.log('TouchGrass: [DayPlan] No suitable reminder slots found for today');
+    insertBackgroundLog('reminder', 'Daily plan: no suitable slots found');
   }
 
   // Pre-schedule the same time slots for the next FAILSAFE_DAYS_AHEAD days so
@@ -1045,6 +1056,10 @@ export async function maybeScheduleCatchUpReminder(): Promise<void> {
   console.log(
     `TouchGrass: [CatchUp] Scheduled: ${id} at ${formatSlotMinutes(best.hour * 60 + best.minute)} ` +
       `(${additionalCount + 1}/${catchupLimit}; progress: ${todayMinutes}/${dailyTarget} min)`
+  );
+  insertBackgroundLog(
+    'reminder',
+    `Catch-up planned at ${formatSlotMinutes(best.hour * 60 + best.minute)} (${todayMinutes}/${dailyTarget} min reached)`
   );
 }
 

@@ -98,12 +98,6 @@ export default function RemindersSection({
             right={<Ionicons name="chevron-forward" size={20} color={colors.textMuted} />}
           />
         </TouchableOpacity>
-        <Divider />
-        <SettingRow
-          icon={<Ionicons name="radio-outline" size={20} color={colors.textSecondary} />}
-          label={t('settings_background_tracking_label')}
-          sublabel={t('settings_background_tracking_sublabel')}
-        />
         {Platform.OS === 'android' && (
           <>
             <Divider />

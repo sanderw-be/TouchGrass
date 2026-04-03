@@ -10,6 +10,7 @@ import {
   setSetting,
   pruneShortDiscardedHealthConnectSessions,
   getKnownLocations,
+  insertBackgroundLog,
 } from '../storage/database';
 import { submitSession, buildSession } from './sessionMerger';
 import {
@@ -316,6 +317,7 @@ export async function syncHealthConnect(): Promise<boolean> {
       },
     });
 
+    let exerciseSessionsRecorded = 0;
     for (const record of exerciseResult.records) {
       const start = new Date(record.startTime).getTime();
       const end = new Date(record.endTime).getTime();
@@ -343,7 +345,14 @@ export async function syncHealthConnect(): Promise<boolean> {
       );
 
       submitSession(session);
+      exerciseSessionsRecorded++;
     }
+
+    insertBackgroundLog(
+      'health_connect',
+      `Read ${exerciseResult.records.length} exercise record(s)` +
+        (exerciseSessionsRecorded > 0 ? `, recorded ${exerciseSessionsRecorded} session(s)` : '')
+    );
 
     // Also read step-count records — Google Fit writes auto-detected walks here
     // even when they are not tracked as explicit ExerciseSession entries.
@@ -356,6 +365,7 @@ export async function syncHealthConnect(): Promise<boolean> {
         },
       });
 
+      let stepSessionsRecorded = 0;
       for (const record of stepsResult.records) {
         const start = new Date(record.startTime).getTime();
         const end = new Date(record.endTime).getTime();
@@ -398,7 +408,14 @@ export async function syncHealthConnect(): Promise<boolean> {
         );
 
         submitSession(session);
+        stepSessionsRecorded++;
       }
+
+      insertBackgroundLog(
+        'health_connect',
+        `Read ${stepsResult.records.length} step record(s)` +
+          (stepSessionsRecorded > 0 ? `, recorded ${stepSessionsRecorded} session(s)` : '')
+      );
     } catch (stepsError) {
       // Steps reading is supplementary — don't fail the whole sync if it errors
       if (!isPermissionError(stepsError)) {
