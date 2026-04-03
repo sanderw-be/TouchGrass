@@ -10,6 +10,7 @@ import {
   setSetting,
   pruneShortDiscardedHealthConnectSessions,
   getKnownLocations,
+  insertBackgroundLog,
 } from '../storage/database';
 import { submitSession, buildSession } from './sessionMerger';
 import {
@@ -280,6 +281,9 @@ function wasDefinitelyAtKnownIndoorLocation(startMs: number, endMs: number): boo
 /** Prevents two concurrent syncs from processing the same HC records. */
 let syncInProgress = false;
 
+/** Minimum time between Health Connect syncs (10 minutes). */
+const HC_SYNC_COOLDOWN_MS = 10 * 60 * 1000;
+
 /**
  * Poll Health Connect for recent activity and submit any outside sessions found.
  * Called periodically by the background fetch task.
@@ -292,6 +296,13 @@ export async function syncHealthConnect(): Promise<boolean> {
   if (getSetting('healthconnect_user_enabled', '0') !== '1') {
     return false;
   }
+  // Enforce a 10-minute cooldown to prevent excessive syncing (e.g. every time
+  // the Settings screen is opened via recheckHealthConnect).
+  const lastSync = parseInt(getSetting('healthconnect_last_sync', '0'), 10);
+  const now = Date.now();
+  if (lastSync > 0 && now - lastSync < HC_SYNC_COOLDOWN_MS) {
+    return false;
+  }
   syncInProgress = true;
   try {
     const available = await isHealthConnectAvailable();
@@ -299,13 +310,15 @@ export async function syncHealthConnect(): Promise<boolean> {
 
     await initialize();
 
+    // Re-capture current time after initialization completes to get an accurate
+    // end-of-window timestamp for the record query.
+    const syncTime = Date.now();
+
     // Only fetch since last sync
-    const lastSync = parseInt(getSetting('healthconnect_last_sync', '0'), 10);
-    const now = Date.now();
-    const startTime = lastSync > 0 ? lastSync : now - 7 * 24 * 60 * 60 * 1000; // default: last 7 days
+    const startTime = lastSync > 0 ? lastSync : syncTime - 7 * 24 * 60 * 60 * 1000; // default: last 7 days
 
     const startTimeISO = new Date(startTime).toISOString();
-    const endTimeISO = new Date(now).toISOString();
+    const endTimeISO = new Date(syncTime).toISOString();
 
     // Read exercise sessions
     const exerciseResult = await readRecords('ExerciseSession', {
@@ -316,6 +329,7 @@ export async function syncHealthConnect(): Promise<boolean> {
       },
     });
 
+    let exerciseSessionsRecorded = 0;
     for (const record of exerciseResult.records) {
       const start = new Date(record.startTime).getTime();
       const end = new Date(record.endTime).getTime();
@@ -343,10 +357,14 @@ export async function syncHealthConnect(): Promise<boolean> {
       );
 
       submitSession(session);
+      exerciseSessionsRecorded++;
     }
 
     // Also read step-count records — Google Fit writes auto-detected walks here
     // even when they are not tracked as explicit ExerciseSession entries.
+    // stepCounts is set below; used for the merged log entry.
+    let stepRecordCount = 0;
+    let stepSessionsRecorded = 0;
     try {
       const stepsResult = await readRecords('Steps', {
         timeRangeFilter: {
@@ -356,6 +374,7 @@ export async function syncHealthConnect(): Promise<boolean> {
         },
       });
 
+      stepRecordCount = stepsResult.records.length;
       for (const record of stepsResult.records) {
         const start = new Date(record.startTime).getTime();
         const end = new Date(record.endTime).getTime();
@@ -398,6 +417,7 @@ export async function syncHealthConnect(): Promise<boolean> {
         );
 
         submitSession(session);
+        stepSessionsRecorded++;
       }
     } catch (stepsError) {
       // Steps reading is supplementary — don't fail the whole sync if it errors
@@ -406,16 +426,24 @@ export async function syncHealthConnect(): Promise<boolean> {
       }
     }
 
+    // Single merged log entry for both exercise and step records
+    const totalSessionsRecorded = exerciseSessionsRecorded + stepSessionsRecorded;
+    insertBackgroundLog(
+      'health_connect',
+      `Read: ${stepRecordCount} step record(s), ${exerciseResult.records.length} exercise record(s)` +
+        (totalSessionsRecorded > 0 ? ` — recorded ${totalSessionsRecorded} session(s)` : '')
+    );
+
     // Prune settled sessions from previous syncs that are too short or too slow.
-    // A session is settled when its endTime is before (now - MIN_DURATION_MS):
+    // A session is settled when its endTime is before (syncTime - MIN_DURATION_MS):
     // no new records can merge into it. At that point remove it if:
     //   - it was discarded and is still under 5 minutes in duration, OR
     //   - its aggregated step rate is below the minimum walking speed (2.5 km/h).
-    const pruneBeforeMs = now - MIN_DURATION_MS;
+    const pruneBeforeMs = syncTime - MIN_DURATION_MS;
     pruneShortDiscardedHealthConnectSessions(pruneBeforeMs, STEPS_PER_MIN_AT_2_5KMH);
 
     // Update last sync timestamp
-    setSetting('healthconnect_last_sync', String(now));
+    setSetting('healthconnect_last_sync', String(syncTime));
     // Notify UI screens so they can refresh without requiring navigation.
     emitSessionsChanged();
     return true;

@@ -22,6 +22,7 @@ const WeatherSettingsScreen = lazy(() => import('../screens/WeatherSettingsScree
 const ScheduledNotificationsScreen = lazy(() => import('../screens/ScheduledNotificationsScreen'));
 const KnownLocationsScreen = lazy(() => import('../screens/KnownLocationsScreen'));
 const FeedbackSupportScreen = lazy(() => import('../screens/FeedbackSupportScreen'));
+const ActivityLogScreen = lazy(() => import('../screens/ActivityLogScreen'));
 
 export type GoalsStackParamList = {
   GoalsMain: undefined;
@@ -33,6 +34,7 @@ export type SettingsStackParamList = {
   SettingsMain: undefined;
   KnownLocations: undefined;
   FeedbackSupport: undefined;
+  ActivityLog: undefined;
 };
 
 const Tab = createBottomTabNavigator();
@@ -147,6 +149,13 @@ function SettingsStackNavigator() {
         {() => (
           <Suspense fallback={<ScreenFallback />}>
             <FeedbackSupportScreen />
+          </Suspense>
+        )}
+      </SettingsStack.Screen>
+      <SettingsStack.Screen name="ActivityLog" options={{ title: t('nav_activity_log') }}>
+        {() => (
+          <Suspense fallback={<ScreenFallback />}>
+            <ActivityLogScreen />
           </Suspense>
         )}
       </SettingsStack.Screen>

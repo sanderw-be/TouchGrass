@@ -520,6 +520,16 @@ export default {
   background_task_title: 'Smart Reminders',
   background_task_desc: 'Checking for the best time to remind you to go outside.',
 
+  // Activity Log screen
+  nav_activity_log: 'Activity Log',
+  settings_section_activity_log: 'Transparency',
+  settings_activity_log: 'Activity log',
+  settings_activity_log_sublabel: 'View what the app does in the background',
+  activity_log_empty: 'No events recorded yet.',
+  activity_log_section_hc: 'Health Connect',
+  activity_log_section_gps: 'GPS',
+  activity_log_section_reminders: 'Smart Reminders',
+
   // Battery optimization (Android intro)
   intro_battery_title: 'Background Activity',
   intro_battery_body:

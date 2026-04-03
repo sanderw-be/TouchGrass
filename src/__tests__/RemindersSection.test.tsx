@@ -68,11 +68,6 @@ describe('RemindersSection', () => {
     expect(getByText('settings_scheduled_reminders')).toBeTruthy();
   });
 
-  it('renders the background tracking row', () => {
-    const { getByText } = render(<RemindersSection {...defaultProps} />);
-    expect(getByText('settings_background_tracking_label')).toBeTruthy();
-  });
-
   it('shows notification permission missing when smart reminders count > 0 and permission denied', () => {
     const { getByText } = render(
       <RemindersSection

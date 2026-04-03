@@ -528,6 +528,16 @@ export default {
   background_task_desc:
     'Controleren wat de beste tijd is om je te herinneren om naar buiten te gaan.',
 
+  // Activiteitenlog scherm
+  nav_activity_log: 'Activiteitenlog',
+  settings_section_activity_log: 'Transparantie',
+  settings_activity_log: 'Activiteitenlog',
+  settings_activity_log_sublabel: 'Bekijk wat de app op de achtergrond doet',
+  activity_log_empty: 'Nog geen gebeurtenissen opgeslagen.',
+  activity_log_section_hc: 'Health Connect',
+  activity_log_section_gps: 'GPS',
+  activity_log_section_reminders: 'Slimme Herinneringen',
+
   // Batterij-optimalisatie (Android intro)
   intro_battery_title: 'Achtergrondactiviteit',
   intro_battery_body:

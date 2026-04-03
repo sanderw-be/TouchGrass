@@ -63,6 +63,31 @@ describe('syncHealthConnect', () => {
     expect(SessionMerger.submitSession).not.toHaveBeenCalled();
   });
 
+  it('returns false without syncing when within 10-minute cooldown', async () => {
+    const recentSync = String(Date.now() - 5 * 60 * 1000); // 5 min ago — within cooldown
+    (Database.getSetting as jest.Mock).mockImplementation((key: string) => {
+      if (key === 'healthconnect_user_enabled') return '1';
+      if (key === 'healthconnect_last_sync') return recentSync;
+      return '0';
+    });
+    const result = await syncHealthConnect();
+    expect(result).toBe(false);
+    expect(HealthConnect.getSdkStatus).not.toHaveBeenCalled();
+  });
+
+  it('proceeds with sync when 10-minute cooldown has elapsed', async () => {
+    const oldSync = String(Date.now() - 11 * 60 * 1000); // 11 min ago — past cooldown
+    (Database.getSetting as jest.Mock).mockImplementation((key: string) => {
+      if (key === 'healthconnect_user_enabled') return '1';
+      if (key === 'healthconnect_last_sync') return oldSync;
+      return '0';
+    });
+    (HealthConnect.readRecords as jest.Mock).mockResolvedValue({ records: [] });
+    const result = await syncHealthConnect();
+    expect(result).toBe(true);
+    expect(HealthConnect.getSdkStatus).toHaveBeenCalled();
+  });
+
   it('submits exercise sessions from Health Connect', async () => {
     const sessionStart = new Date(NOW - 30 * 60 * 1000).toISOString();
     const sessionEnd = new Date(NOW).toISOString();
@@ -306,6 +331,44 @@ describe('syncHealthConnect', () => {
     expect(beforeMs).toBeLessThanOrEqual(after - 5 * 60 * 1000 + 100); // +100 ms: allow for JS execution time
     // speed threshold must be passed so the DB can prune too-slow settled sessions
     expect(minStepsPerMinute).toBe(STEPS_PER_MIN_AT_2_5KMH);
+  });
+
+  it('writes a single merged log entry with step and exercise counts', async () => {
+    const sessionStart = new Date(NOW - 30 * 60 * 1000).toISOString();
+    const sessionEnd = new Date(NOW).toISOString();
+
+    (HealthConnect.readRecords as jest.Mock).mockImplementation((type: string) => {
+      if (type === 'ExerciseSession') {
+        return Promise.resolve({
+          records: [{ startTime: sessionStart, endTime: sessionEnd, exerciseType: 79 }],
+        });
+      }
+      if (type === 'Steps') {
+        return Promise.resolve({
+          records: [
+            { startTime: sessionStart, endTime: sessionEnd, count: 3000 },
+            { startTime: sessionStart, endTime: sessionEnd, count: 2000 },
+          ],
+        });
+      }
+      return Promise.resolve({ records: [] });
+    });
+
+    await syncHealthConnect();
+
+    const logCall = (Database.insertBackgroundLog as jest.Mock).mock.calls.find(
+      ([cat]: [string]) => cat === 'health_connect'
+    );
+    expect(logCall).toBeDefined();
+    const [, message] = logCall as [string, string];
+    // Should contain step record count and exercise record count
+    expect(message).toMatch(/2 step record/);
+    expect(message).toMatch(/1 exercise record/);
+    // Both from a single insertBackgroundLog call (not two separate calls)
+    const logCalls = (Database.insertBackgroundLog as jest.Mock).mock.calls.filter(
+      ([cat]: [string]) => cat === 'health_connect'
+    );
+    expect(logCalls).toHaveLength(1);
   });
 
   it('does not prune when sync fails', async () => {

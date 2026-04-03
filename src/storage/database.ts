@@ -142,6 +142,13 @@ export function initDatabase(): void {
       enabled INTEGER NOT NULL DEFAULT 1,
       label TEXT NOT NULL DEFAULT ''
     );
+
+    CREATE TABLE IF NOT EXISTS background_task_logs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      timestamp INTEGER NOT NULL,
+      category TEXT NOT NULL,
+      message TEXT NOT NULL
+    );
   `);
 
   // Seed default goals if none exist
@@ -695,6 +702,9 @@ export function clearAllData(): void {
   // Delete reminder feedback
   db.runSync('DELETE FROM reminder_feedback');
 
+  // Delete background task logs
+  db.runSync('DELETE FROM background_task_logs');
+
   // Reset goals to defaults
   db.runSync('DELETE FROM daily_goals');
   db.runSync('DELETE FROM weekly_goals');
@@ -894,4 +904,71 @@ export function cleanupInvalidScheduledNotifications(): number {
   }
 
   return deletedCount;
+}
+
+// ── Background task logs ──────────────────────────────────
+
+export type BackgroundLogCategory = 'gps' | 'health_connect' | 'reminder';
+
+export interface BackgroundTaskLog {
+  id?: number;
+  timestamp: number;
+  category: BackgroundLogCategory;
+  message: string;
+}
+
+/** Maximum number of log entries to keep per category (oldest are pruned). */
+const MAX_LOGS_PER_CATEGORY = 200;
+
+/**
+ * Insert a background task log entry. Prunes oldest entries when the per-category
+ * limit is exceeded so the log table stays bounded in size.
+ */
+export function insertBackgroundLog(category: BackgroundLogCategory, message: string): void {
+  try {
+    const now = Date.now();
+    db.runSync('INSERT INTO background_task_logs (timestamp, category, message) VALUES (?, ?, ?)', [
+      now,
+      category,
+      message,
+    ]);
+    // Prune oldest beyond limit
+    db.runSync(
+      `DELETE FROM background_task_logs
+       WHERE category = ?
+         AND id NOT IN (
+           SELECT id FROM background_task_logs
+           WHERE category = ?
+           ORDER BY timestamp DESC
+           LIMIT ?
+         )`,
+      [category, category, MAX_LOGS_PER_CATEGORY]
+    );
+  } catch {
+    // Log writing is best-effort — never crash the background task
+  }
+}
+
+/**
+ * Retrieve background task log entries, optionally filtered by category.
+ * Returns entries ordered newest first.
+ */
+export function getBackgroundLogs(
+  category?: BackgroundLogCategory,
+  limit = 200
+): BackgroundTaskLog[] {
+  try {
+    if (category) {
+      return db.getAllSync<BackgroundTaskLog>(
+        'SELECT id, timestamp, category, message FROM background_task_logs WHERE category = ? ORDER BY timestamp DESC LIMIT ?',
+        [category, limit]
+      );
+    }
+    return db.getAllSync<BackgroundTaskLog>(
+      'SELECT id, timestamp, category, message FROM background_task_logs ORDER BY timestamp DESC LIMIT ?',
+      [limit]
+    );
+  } catch {
+    return [];
+  }
 }
