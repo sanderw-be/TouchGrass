@@ -570,6 +570,25 @@ describe('GoalsScreen calendar permission missing state', () => {
     await expect(findByTestId('permission-explainer-sheet')).resolves.toBeTruthy();
     expect(mockSetSetting).not.toHaveBeenCalledWith('calendar_integration_enabled', '1');
   });
+
+  it('shows data scope info in calendar permission sheet', async () => {
+    mockGetSetting.mockImplementation((key: string, def: string) => {
+      if (key === 'calendar_integration_enabled') return '0';
+      return def;
+    });
+    (CalendarService.hasCalendarPermissions as jest.Mock).mockResolvedValue(false);
+
+    const { getAllByRole, findByText } = render(<GoalsScreen />);
+    await waitFor(() => getAllByRole('switch'));
+
+    const switches = getAllByRole('switch');
+    const calendarSwitch = switches[switches.length - 1];
+    await act(async () => {
+      fireEvent(calendarSwitch, 'valueChange', true);
+    });
+
+    await expect(findByText('settings_calendar_permission_body')).resolves.toBeTruthy();
+  });
 });
 
 /** Retrieves the most recently registered AppState 'change' handler from the RN mock. */

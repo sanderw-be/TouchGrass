@@ -314,6 +314,8 @@ export default {
   intro_calendar_why_title: 'Waarom hebben we dit nodig?',
   intro_calendar_why_body:
     'Met toegang tot je agenda vermijdt TouchGrass het sturen van herinneringen als je een afspraak hebt en kan het automatisch buitentijdslots aan je agenda toevoegen.',
+  intro_calendar_data_scope:
+    'TouchGrass leest alleen de titels en tijden van afspraken — geen beschrijvingen, deelnemers of andere gegevens. Niets verlaat je apparaat.',
   intro_calendar_hint: 'Je kunt dit later configureren in Instellingen.',
   intro_calendar_button: 'Verbind agenda',
   intro_calendar_button_granted: 'Agenda verbonden ✓',
@@ -477,7 +479,7 @@ export default {
   settings_calendar_permission_title: 'Agendatoestemming',
   settings_calendar_permission_missing: 'Machtigingen ontbreken — tik om te herstellen',
   settings_calendar_permission_body:
-    'Toegang tot de agenda is nodig om je afspraken te controleren voor slimme herinneringen.',
+    'Toegang tot de agenda is nodig om je afspraken te controleren voor slimme herinneringen.\n\nTouchGrass leest alleen de titels en tijden van afspraken — geen beschrijvingen, deelnemers of andere gegevens. Niets verlaat je apparaat.',
   settings_calendar_permission_open: 'Instellingen openen',
   settings_calendar_permission_cancel: 'Annuleren',
   settings_calendar_buffer: 'Afspraakbuffer',
