@@ -92,26 +92,6 @@ export default function HomeScreen() {
   // Refresh whenever background work (e.g. Health Connect sync) inserts new sessions.
   useEffect(() => onSessionsChanged(loadData), [loadData]);
 
-  // Handle widget timer intent
-  useEffect(() => {
-    // Check if app was opened from widget timer button
-    wasOpenedFromWidgetTimer().then((fromWidget) => {
-      if (fromWidget && !timerRunning) {
-        // Auto-start the timer
-        handleTimerPress();
-      }
-    });
-
-    // Listen for widget timer events while app is running
-    const cleanup = addWidgetTimerListener(() => {
-      if (!timerRunning) {
-        handleTimerPress();
-      }
-    });
-
-    return cleanup;
-  }, [timerRunning, handleTimerPress]);
-
   const onRefresh = () => {
     setRefreshing(true);
     loadData();
@@ -149,6 +129,26 @@ export default function HomeScreen() {
       setTimerRunning(true);
     }
   }, [timerRunning, loadData]);
+
+  // Handle widget timer intent
+  useEffect(() => {
+    // Check if app was opened from widget timer button
+    wasOpenedFromWidgetTimer().then((fromWidget) => {
+      if (fromWidget && !timerRunning) {
+        // Auto-start the timer
+        handleTimerPress();
+      }
+    });
+
+    // Listen for widget timer events while app is running
+    const cleanup = addWidgetTimerListener(() => {
+      if (!timerRunning) {
+        handleTimerPress();
+      }
+    });
+
+    return cleanup;
+  }, [timerRunning, handleTimerPress]);
 
   const dailyPercent = Math.min(todayMinutes / dailyTarget, 1);
   const weeklyPercent = Math.min(weekMinutes / weeklyTarget, 1);
