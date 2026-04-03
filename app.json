@@ -35,6 +35,7 @@
       ]
     },
     "plugins": [
+      "./withWidgetPlugin",
       "expo-calendar",
       [
         "expo-location",
