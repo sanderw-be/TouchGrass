@@ -2,7 +2,6 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getBackgroundLogs, BackgroundTaskLog, BackgroundLogCategory } from '../storage/database';
 import { spacing, radius } from '../utils/theme';
 import { useTheme } from '../context/ThemeContext';
@@ -45,7 +44,6 @@ function formatDayLabel(day: string): string {
 export default function ActivityLogScreen() {
   const { colors, shadows } = useTheme();
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
-  const insets = useSafeAreaInsets();
 
   const [hcLogs, setHcLogs] = useState<BackgroundTaskLog[]>([]);
   const [gpsLogs, setGpsLogs] = useState<BackgroundTaskLog[]>([]);
@@ -94,7 +92,7 @@ export default function ActivityLogScreen() {
 
   return (
     <ScrollView
-      style={[styles.container, { paddingTop: insets.top }]}
+      style={styles.container}
       contentContainerStyle={styles.content}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.grass} />
