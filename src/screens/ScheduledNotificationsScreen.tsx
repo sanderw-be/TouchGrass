@@ -12,7 +12,7 @@ import {
   Alert,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import {
   getScheduledNotifications,
   insertScheduledNotification,
@@ -193,7 +193,7 @@ export default function ScheduledNotificationsScreen() {
     return days.map((d) => t(DAY_LABELS[d])).join(', ');
   };
 
-  const onTimeChange = (event: any, date?: Date) => {
+  const onTimeChange = (event: DateTimePickerEvent, date?: Date) => {
     if (Platform.OS === 'android') {
       setShowTimePicker(false);
     }

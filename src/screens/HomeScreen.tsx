@@ -23,6 +23,7 @@ import {
   confirmSession,
   getDailyStreak,
   getWeeklyStreak,
+  OutsideSession,
 } from '../storage/database';
 import { spacing, radius } from '../utils/theme';
 import { useTheme } from '../context/ThemeContext';
@@ -40,7 +41,7 @@ export default function HomeScreen() {
   const [weekMinutes, setWeekMinutes] = useState(0);
   const [dailyTarget, setDailyTarget] = useState(30);
   const [weeklyTarget, setWeeklyTarget] = useState(150);
-  const [todaySessions, setTodaySessions] = useState<any[]>([]);
+  const [todaySessions, setTodaySessions] = useState<OutsideSession[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [sheetVisible, setSheetVisible] = useState(false);
   const [dailyStreak, setDailyStreak] = useState(0);
@@ -294,7 +295,7 @@ function SessionRow({
   session,
   onConfirm,
 }: {
-  session: any;
+  session: OutsideSession;
   onConfirm: (confirmed: boolean) => void;
 }) {
   const { colors, shadows } = useTheme();

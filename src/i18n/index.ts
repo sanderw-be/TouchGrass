@@ -15,7 +15,7 @@ i18n.defaultLocale = 'en';
 export default i18n;
 
 // Shorthand translate function
-export function t(key: string, options?: Record<string, any>): string {
+export function t(key: string, options?: Record<string, unknown>): string {
   return i18n.t(key, options);
 }
 
