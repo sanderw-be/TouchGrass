@@ -1,6 +1,7 @@
 import React from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
 import { Linking, Alert } from 'react-native';
+import { PRIVACY_POLICY_URL } from '../utils/constants';
 
 // Mock i18n
 jest.mock('../i18n', () => ({
@@ -98,8 +99,6 @@ describe('FeedbackSupportScreen', () => {
     const { getByText } = render(<FeedbackSupportScreen />);
     fireEvent.press(getByText('feedback_google_disclosure'));
     await Promise.resolve();
-    expect(Linking.openURL).toHaveBeenCalledWith(
-      'https://sanderw-be.github.io/TouchGrass-Legal/privacy-policy.html'
-    );
+    expect(Linking.openURL).toHaveBeenCalledWith(PRIVACY_POLICY_URL);
   });
 });
