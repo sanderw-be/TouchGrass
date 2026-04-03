@@ -1,5 +1,10 @@
 import * as Notifications from 'expo-notifications';
-import { getDetectionStatus, checkWeatherLocationPermissions } from '../detection';
+import {
+  getDetectionStatus,
+  checkWeatherLocationPermissions,
+  checkGPSPermissions,
+  recheckHealthConnect,
+} from '../detection';
 import { getSetting } from '../storage/database';
 import { hasCalendarPermissions } from '../calendar/calendarService';
 
@@ -15,9 +20,16 @@ import { hasCalendarPermissions } from '../calendar/calendarService';
 export async function countPermissionIssues(): Promise<{ goals: number; settings: number }> {
   const detection = getDetectionStatus();
 
+  // Perform live OS permission checks so that badge counts reflect the real
+  // permission state even when permissions are changed outside the Settings
+  // screen (e.g. via the Weather fix-flow on GoalsScreen, or vice-versa).
+  const [gpsPermission, hcPermission] = await Promise.all([
+    detection.gps ? checkGPSPermissions() : Promise.resolve(false),
+    detection.healthConnect ? recheckHealthConnect() : Promise.resolve(false),
+  ]);
+
   const settingsIssues =
-    (detection.gps && !detection.gpsPermission ? 1 : 0) +
-    (detection.healthConnect && !detection.healthConnectPermission ? 1 : 0);
+    (detection.gps && !gpsPermission ? 1 : 0) + (detection.healthConnect && !hcPermission ? 1 : 0);
 
   let goalsIssues = 0;
 
