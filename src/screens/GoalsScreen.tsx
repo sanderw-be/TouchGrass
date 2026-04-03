@@ -2,12 +2,10 @@ import React, { useState, useCallback, useMemo, useRef } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   ScrollView,
   TouchableOpacity,
   TextInput,
   Alert,
-  Switch,
   Platform,
   Linking,
   AppState,
@@ -34,8 +32,7 @@ import {
   setSelectedCalendarId,
 } from '../calendar/calendarService';
 import { checkWeatherLocationPermissions } from '../detection';
-import * as IntentLauncher from 'expo-intent-launcher';
-import { spacing, radius, shadows } from '../utils/theme';
+import { spacing } from '../utils/theme';
 import { useTheme } from '../context/ThemeContext';
 import { formatMinutes } from '../utils/helpers';
 import { t } from '../i18n';
@@ -48,6 +45,14 @@ import {
   refreshBatteryOptimizationSetting,
   openBatteryOptimizationSettings,
 } from '../utils/batteryOptimization';
+import RemindersSection from '../components/goals/RemindersSection';
+import WeatherSection from '../components/goals/WeatherSection';
+import CalendarSection from '../components/goals/CalendarSection';
+import {
+  makeStyles,
+  CATCHUP_REMINDERS_OPTIONS,
+  CatchupRemindersOption,
+} from '../components/goals/GoalsShared';
 
 const DAILY_PRESETS = [15, 20, 30, 45, 60, 90];
 const WEEKLY_PRESETS = [60, 90, 120, 150, 210, 300];
@@ -213,16 +218,8 @@ export default function GoalsScreen() {
     setSmartRemindersCount(next);
   };
 
-  const CATCHUP_REMINDERS_OPTIONS = [0, 1, 2, 3] as const;
-  const CATCHUP_REMINDERS_LABELS: Record<number, string> = {
-    0: t('settings_catchup_off'),
-    1: t('settings_catchup_mellow'),
-    2: t('settings_catchup_medium'),
-    3: t('settings_catchup_aggressive'),
-  };
-
   const cycleCatchupRemindersCount = () => {
-    const idx = CATCHUP_REMINDERS_OPTIONS.indexOf(catchupRemindersCount as 0 | 1 | 2 | 3);
+    const idx = CATCHUP_REMINDERS_OPTIONS.indexOf(catchupRemindersCount as CatchupRemindersOption);
     const next = CATCHUP_REMINDERS_OPTIONS[(idx + 1) % CATCHUP_REMINDERS_OPTIONS.length];
     setSetting('smart_catchup_reminders_count', String(next));
     setCatchupRemindersCount(next);
@@ -353,16 +350,6 @@ export default function GoalsScreen() {
       { text: t('settings_calendar_permission_cancel'), style: 'cancel' },
     ]);
   };
-
-  const calendarSelectedTitle = (): string => {
-    if (!calendarSelectedId) return t('settings_calendar_select_touchgrass');
-    const match = calendarOptions.find((c) => c.id === calendarSelectedId);
-    return match?.title ?? t('settings_calendar_select_touchgrass');
-  };
-
-  const hasAlternativeCalendars = calendarOptions.some(
-    (c) => !c.title.toLowerCase().includes('touchgrass')
-  );
 
   return (
     <>
@@ -498,182 +485,41 @@ export default function GoalsScreen() {
         </View>
 
         {/* Reminders */}
-        <Text style={styles.sectionHeader}>{t('settings_section_reminders')}</Text>
-        <View style={styles.settingsCard}>
-          <TouchableOpacity
-            onPress={
-              smartRemindersCount > 0 && !notificationPermissionGranted
-                ? showNotificationPermissionSheet
-                : cycleSmartRemindersCount
-            }
-            testID="smart-reminders-row"
-          >
-            <View style={styles.row}>
-              <View style={styles.rowIconContainer}>
-                <Ionicons name="notifications-outline" size={20} color={colors.textSecondary} />
-              </View>
-              <View style={styles.rowContent}>
-                <Text style={styles.rowLabel}>{t('settings_reminders_label')}</Text>
-                {smartRemindersCount > 0 && !notificationPermissionGranted ? (
-                  <Text style={[styles.rowSublabel, { color: colors.error }]}>
-                    {t('settings_notification_permission_missing')}
-                  </Text>
-                ) : (
-                  <Text style={styles.rowSublabel}>{t('settings_reminders_sublabel')}</Text>
-                )}
-              </View>
-              <View style={styles.rowRight}>
-                <Text style={styles.valueChip}>
-                  {smartRemindersCount === 0
-                    ? t('settings_reminders_count_off')
-                    : t('settings_reminders_count_per_day', { count: smartRemindersCount })}
-                </Text>
-              </View>
-            </View>
-          </TouchableOpacity>
-          <Divider />
-          <TouchableOpacity onPress={cycleCatchupRemindersCount}>
-            <SettingRow
-              icon={<Ionicons name="flag-outline" size={20} color={colors.textSecondary} />}
-              label={t('settings_catchup_label')}
-              sublabel={t('settings_catchup_sublabel')}
-              right={
-                <Text style={styles.valueChip}>
-                  {CATCHUP_REMINDERS_LABELS[catchupRemindersCount] ?? t('settings_catchup_medium')}
-                </Text>
-              }
-            />
-          </TouchableOpacity>
-          <Divider />
-          <TouchableOpacity onPress={() => navigation.navigate('ScheduledNotifications')}>
-            <SettingRow
-              icon={<Ionicons name="calendar-outline" size={20} color={colors.textSecondary} />}
-              label={t('settings_scheduled_reminders')}
-              sublabel={t('settings_scheduled_reminders_sublabel')}
-              right={<Ionicons name="chevron-forward" size={20} color={colors.textMuted} />}
-            />
-          </TouchableOpacity>
-          <Divider />
-          <SettingRow
-            icon={<Ionicons name="radio-outline" size={20} color={colors.textSecondary} />}
-            label={t('settings_background_tracking_label')}
-            sublabel={t('settings_background_tracking_sublabel')}
-          />
-          {Platform.OS === 'android' && (
-            <>
-              <Divider />
-              <TouchableOpacity
-                onPress={showBatteryPermissionSheet}
-                disabled={batteryOptimizationGranted}
-                testID="battery-optimization-row"
-                style={batteryOptimizationGranted && styles.disabledRow}
-              >
-                <SettingRow
-                  icon={
-                    <Ionicons
-                      name="battery-charging-outline"
-                      size={20}
-                      color={colors.textSecondary}
-                    />
-                  }
-                  label={t('settings_battery_optimization')}
-                  sublabel={t('settings_battery_optimization_sublabel')}
-                  right={
-                    batteryOptimizationGranted ? (
-                      <Ionicons name="checkmark-circle" size={20} color={colors.grass} />
-                    ) : (
-                      <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
-                    )
-                  }
-                />
-              </TouchableOpacity>
-            </>
-          )}
-        </View>
+        <RemindersSection
+          smartRemindersCount={smartRemindersCount}
+          catchupRemindersCount={catchupRemindersCount}
+          notificationPermissionGranted={notificationPermissionGranted}
+          batteryOptimizationGranted={batteryOptimizationGranted}
+          onCycleSmartReminders={cycleSmartRemindersCount}
+          onCycleCatchupReminders={cycleCatchupRemindersCount}
+          onNavigateScheduledNotifications={() => navigation.navigate('ScheduledNotifications')}
+          onShowNotificationPermissionSheet={showNotificationPermissionSheet}
+          onShowBatteryPermissionSheet={showBatteryPermissionSheet}
+        />
 
         {/* Weather */}
-        <Text style={styles.sectionHeader}>{t('settings_weather_title')}</Text>
-        <View style={styles.settingsCard}>
-          <PermissionToggleRow
-            icon={<Ionicons name="partly-sunny-outline" size={20} color={colors.textSecondary} />}
-            label={t('settings_weather_enabled')}
-            desc={t('settings_weather_enabled_desc')}
-            permissionMissingLabel={t('settings_weather_permission_missing')}
-            enabled={weatherEnabled}
-            permissionGranted={weatherLocationGranted}
-            onToggle={toggleWeatherEnabled}
-            onPermissionFix={showWeatherPermissionSheet}
-          />
-          {weatherEnabled && weatherLocationGranted && (
-            <>
-              <Divider />
-              <TouchableOpacity onPress={() => navigation.navigate('WeatherSettings')}>
-                <SettingRow
-                  icon={<Ionicons name="settings-outline" size={20} color={colors.textSecondary} />}
-                  label={t('settings_weather_more')}
-                  sublabel={t('settings_weather_more_desc')}
-                  right={<Ionicons name="chevron-forward" size={20} color={colors.textMuted} />}
-                />
-              </TouchableOpacity>
-            </>
-          )}
-        </View>
+        <WeatherSection
+          weatherEnabled={weatherEnabled}
+          weatherLocationGranted={weatherLocationGranted}
+          onToggleWeather={toggleWeatherEnabled}
+          onShowWeatherPermissionSheet={showWeatherPermissionSheet}
+          onNavigateWeatherSettings={() => navigation.navigate('WeatherSettings')}
+        />
 
         {/* Calendar integration */}
-        <Text style={styles.sectionHeader}>{t('settings_section_calendar')}</Text>
-        <View style={styles.settingsCard}>
-          <PermissionToggleRow
-            icon={<Ionicons name="calendar-outline" size={20} color={colors.textSecondary} />}
-            label={t('settings_calendar_integration')}
-            desc={t('settings_calendar_integration_desc')}
-            permissionMissingLabel={t('settings_calendar_permission_missing')}
-            enabled={calendarEnabled}
-            permissionGranted={calendarPermissionGranted}
-            onToggle={toggleCalendarIntegration}
-            onPermissionFix={showCalendarPermissionSheet}
-          />
-          {calendarEnabled && calendarPermissionGranted && (
-            <>
-              <Divider />
-              <TouchableOpacity onPress={cycleCalendarBuffer}>
-                <SettingRow
-                  icon={<Ionicons name="timer-outline" size={20} color={colors.textSecondary} />}
-                  label={t('settings_calendar_buffer')}
-                  sublabel={t('settings_calendar_buffer_desc')}
-                  right={
-                    <Text style={styles.valueChip}>
-                      {t('settings_calendar_buffer_minutes', { minutes: calendarBuffer })}
-                    </Text>
-                  }
-                />
-              </TouchableOpacity>
-              <Divider />
-              <TouchableOpacity onPress={cycleCalendarDuration}>
-                <SettingRow
-                  icon={<Ionicons name="time-outline" size={20} color={colors.textSecondary} />}
-                  label={t('settings_calendar_duration')}
-                  sublabel={t('settings_calendar_duration_desc')}
-                  right={
-                    <Text style={styles.valueChip}>
-                      {calendarDuration === 0
-                        ? t('settings_calendar_duration_off')
-                        : t('settings_calendar_duration_minutes', { minutes: calendarDuration })}
-                    </Text>
-                  }
-                />
-              </TouchableOpacity>
-              <Divider />
-              <TouchableOpacity onPress={handleSelectCalendar} disabled={!hasAlternativeCalendars}>
-                <SettingRow
-                  icon={<Ionicons name="list-outline" size={20} color={colors.textSecondary} />}
-                  label={t('settings_calendar_select')}
-                  sublabel={t('settings_calendar_select_desc')}
-                  right={<Text style={styles.valueChip}>{calendarSelectedTitle()}</Text>}
-                />
-              </TouchableOpacity>
-            </>
-          )}
-        </View>
+        <CalendarSection
+          calendarEnabled={calendarEnabled}
+          calendarPermissionGranted={calendarPermissionGranted}
+          calendarBuffer={calendarBuffer}
+          calendarDuration={calendarDuration}
+          calendarSelectedId={calendarSelectedId}
+          calendarOptions={calendarOptions}
+          onToggleCalendar={toggleCalendarIntegration}
+          onCycleCalendarBuffer={cycleCalendarBuffer}
+          onCycleCalendarDuration={cycleCalendarDuration}
+          onSelectCalendar={handleSelectCalendar}
+          onShowCalendarPermissionSheet={showCalendarPermissionSheet}
+        />
       </ScrollView>
 
       {permissionSheet && (
@@ -688,260 +534,4 @@ export default function GoalsScreen() {
       )}
     </>
   );
-}
-
-function SettingRow({
-  icon,
-  label,
-  sublabel,
-  right,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  sublabel?: string;
-  right?: React.ReactNode;
-}) {
-  const { colors, shadows } = useTheme();
-  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
-  return (
-    <View style={styles.row}>
-      <View style={styles.rowIconContainer}>{icon}</View>
-      <View style={styles.rowContent}>
-        <Text style={styles.rowLabel}>{label}</Text>
-        {sublabel && <Text style={styles.rowSublabel}>{sublabel}</Text>}
-      </View>
-      {right && <View style={styles.rowRight}>{right}</View>}
-    </View>
-  );
-}
-
-function Divider() {
-  const { colors, shadows } = useTheme();
-  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
-  return <View style={styles.divider} />;
-}
-
-/**
- * A toggle row that mirrors the `DetectionSettingRow` pattern from SettingsScreen.
- * When the feature is enabled but the required permission is missing, the desc
- * text is replaced by a tappable red "Permissions missing — tap to fix" label.
- */
-function PermissionToggleRow({
-  icon,
-  label,
-  desc,
-  permissionMissingLabel,
-  enabled,
-  permissionGranted,
-  onToggle,
-  onPermissionFix,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  desc: string;
-  permissionMissingLabel: string;
-  enabled: boolean;
-  permissionGranted: boolean;
-  onToggle: (value: boolean) => void;
-  onPermissionFix?: () => void;
-}) {
-  const { colors, shadows } = useTheme();
-  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
-  const hasError = enabled && !permissionGranted;
-
-  return (
-    <View style={styles.row}>
-      <View style={styles.rowIconContainer}>{icon}</View>
-      <View style={styles.rowContent}>
-        <Text style={styles.rowLabel}>{label}</Text>
-        {hasError ? (
-          <TouchableOpacity
-            onPress={onPermissionFix}
-            disabled={!onPermissionFix}
-            accessibilityRole="button"
-            accessibilityLabel={permissionMissingLabel}
-            accessibilityHint={t('settings_permission_open')}
-          >
-            <Text style={[styles.rowSublabel, { color: colors.error }]}>
-              {permissionMissingLabel}
-            </Text>
-          </TouchableOpacity>
-        ) : (
-          <Text style={styles.rowSublabel}>{desc}</Text>
-        )}
-      </View>
-      <View style={styles.rowRight}>
-        <Switch
-          value={enabled}
-          onValueChange={onToggle}
-          trackColor={{ false: colors.fog, true: colors.grassLight }}
-          thumbColor={enabled ? colors.grass : colors.inactive}
-        />
-      </View>
-    </View>
-  );
-}
-
-function makeStyles(
-  colors: ReturnType<typeof useTheme>['colors'],
-  shadows: ReturnType<typeof useTheme>['shadows']
-) {
-  return StyleSheet.create({
-    container: { flex: 1, backgroundColor: colors.mist },
-    content: { padding: spacing.md, paddingBottom: spacing.xxl },
-
-    header: {
-      backgroundColor: colors.mist,
-      paddingBottom: spacing.md,
-      paddingHorizontal: spacing.md,
-    },
-    headerTitle: {
-      fontSize: 20,
-      fontWeight: '700',
-      color: colors.textPrimary,
-    },
-
-    sectionHeader: {
-      fontSize: 12,
-      fontWeight: '700',
-      color: colors.textMuted,
-      textTransform: 'uppercase',
-      letterSpacing: 1,
-      marginBottom: spacing.xs,
-      marginTop: spacing.md,
-      marginLeft: spacing.xs,
-    },
-
-    card: {
-      backgroundColor: colors.card,
-      borderRadius: radius.lg,
-      padding: spacing.lg,
-      marginBottom: spacing.md,
-      ...shadows.soft,
-    },
-    cardHeader: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-    },
-    cardTitle: {
-      fontSize: 13,
-      color: colors.textMuted,
-      textTransform: 'uppercase',
-      letterSpacing: 1,
-    },
-    cardValue: {
-      fontSize: 32,
-      fontWeight: '700',
-      color: colors.textPrimary,
-      marginTop: 2,
-      letterSpacing: -1,
-    },
-
-    editButton: {
-      backgroundColor: colors.grassPale,
-      borderRadius: radius.full,
-      paddingHorizontal: spacing.md,
-      paddingVertical: spacing.xs,
-    },
-    editButtonText: { fontSize: 13, fontWeight: '600', color: colors.grass },
-
-    editor: {
-      marginTop: spacing.lg,
-      borderTopWidth: 1,
-      borderTopColor: colors.fog,
-      paddingTop: spacing.lg,
-    },
-    editorLabel: {
-      fontSize: 12,
-      color: colors.textMuted,
-      textTransform: 'uppercase',
-      letterSpacing: 1,
-      marginBottom: spacing.sm,
-    },
-
-    presets: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, marginBottom: spacing.lg },
-    preset: {
-      borderRadius: radius.full,
-      borderWidth: 1.5,
-      borderColor: colors.fog,
-      paddingHorizontal: spacing.md,
-      paddingVertical: spacing.xs,
-    },
-    presetActive: { backgroundColor: colors.grass, borderColor: colors.grass },
-    presetText: { fontSize: 14, color: colors.textSecondary, fontWeight: '500' },
-    presetTextActive: { color: colors.textInverse, fontWeight: '700' },
-
-    customRow: { flexDirection: 'row', gap: spacing.sm, alignItems: 'center' },
-    input: {
-      flex: 1,
-      borderWidth: 1.5,
-      borderColor: colors.fog,
-      borderRadius: radius.md,
-      padding: spacing.sm,
-      fontSize: 16,
-      color: colors.textPrimary,
-      backgroundColor: colors.mist,
-    },
-    saveButton: {
-      backgroundColor: colors.grass,
-      borderRadius: radius.md,
-      paddingHorizontal: spacing.lg,
-      paddingVertical: spacing.sm,
-    },
-    saveButtonText: { color: colors.textInverse, fontWeight: '700', fontSize: 15 },
-
-    tipCard: {
-      flexDirection: 'row',
-      backgroundColor: colors.grassPale,
-      borderRadius: radius.lg,
-      padding: spacing.md,
-      gap: spacing.sm,
-      alignItems: 'flex-start',
-      marginBottom: spacing.md,
-    },
-    tipIcon: { marginTop: 1 },
-    tipText: { flex: 1, fontSize: 13, color: colors.grassDark, lineHeight: 20 },
-
-    settingsCard: {
-      backgroundColor: colors.card,
-      borderRadius: radius.lg,
-      overflow: 'hidden',
-      ...shadows.soft,
-    },
-    settingsCardDisabled: {
-      opacity: 0.5,
-    },
-
-    row: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      padding: spacing.md,
-    },
-    rowIconContainer: {
-      width: 28,
-      marginRight: spacing.md,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    rowContent: { flex: 1 },
-    rowLabel: { fontSize: 15, color: colors.textPrimary, fontWeight: '500' },
-    rowSublabel: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
-    rowRight: { marginLeft: spacing.sm },
-
-    divider: { height: 1, backgroundColor: colors.fog, marginLeft: spacing.md + 28 + spacing.md },
-    disabledRow: { opacity: 0.5 },
-
-    chevron: { fontSize: 24, color: colors.textMuted, fontWeight: '300' },
-
-    valueChip: {
-      fontSize: 13,
-      color: colors.grass,
-      fontWeight: '600',
-      backgroundColor: colors.grassPale,
-      paddingHorizontal: spacing.sm,
-      paddingVertical: 3,
-      borderRadius: radius.full,
-    },
-  });
 }
