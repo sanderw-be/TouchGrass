@@ -45,6 +45,15 @@ jest.mock('../detection/sessionConfidence', () => ({
   updateTimeSlotProbability: jest.fn(),
 }));
 
+jest.mock('../utils/sessionsChangedEmitter', () => ({
+  onSessionsChanged: jest.fn(() => () => {}),
+  emitSessionsChanged: jest.fn(),
+}));
+
+jest.mock('../notifications/notificationManager', () => ({
+  cancelRemindersIfGoalReached: jest.fn(() => Promise.resolve()),
+}));
+
 jest.mock('@react-navigation/native', () => ({
   useFocusEffect: (cb: () => void) => {
     const React = require('react');
@@ -56,7 +65,13 @@ jest.mock('@react-navigation/native', () => ({
 
 jest.mock('react-native-gesture-handler/Swipeable', () => {
   const { View } = require('react-native');
-  return ({ children }: any) => <View>{children}</View>;
+  return ({ children, renderRightActions, renderLeftActions }: any) => (
+    <View>
+      {renderLeftActions ? renderLeftActions() : null}
+      {children}
+      {renderRightActions ? renderRightActions() : null}
+    </View>
+  );
 });
 
 jest.mock('../context/ThemeContext', () => ({
@@ -109,6 +124,7 @@ jest.mock('react-native-svg', () => {
 });
 
 import HomeScreen from '../screens/HomeScreen';
+import { emitSessionsChanged } from '../utils/sessionsChangedEmitter';
 
 describe('HomeScreen inline timer', () => {
   beforeEach(() => {
@@ -216,5 +232,47 @@ describe('HomeScreen inline timer', () => {
 
     const { queryByTestId } = render(<HomeScreen />);
     expect(queryByTestId('home-swipe-hint')).toBeNull();
+  });
+
+  it('emits session change after swipe confirm so the nav badge updates', async () => {
+    mockGetSessionsForDay.mockReturnValueOnce([
+      {
+        id: 1,
+        startTime: Date.now(),
+        endTime: Date.now() + 30 * 60 * 1000,
+        durationMinutes: 30,
+        confidence: 1,
+        userConfirmed: null,
+        discarded: 0,
+        source: 'gps',
+      },
+    ]);
+
+    const { getByTestId } = render(<HomeScreen />);
+    await act(async () => {
+      fireEvent.press(getByTestId('home-swipe-confirm-action'));
+    });
+    expect(emitSessionsChanged).toHaveBeenCalled();
+  });
+
+  it('emits session change after swipe reject so the nav badge updates', async () => {
+    mockGetSessionsForDay.mockReturnValueOnce([
+      {
+        id: 1,
+        startTime: Date.now(),
+        endTime: Date.now() + 30 * 60 * 1000,
+        durationMinutes: 30,
+        confidence: 1,
+        userConfirmed: null,
+        discarded: 0,
+        source: 'gps',
+      },
+    ]);
+
+    const { getByTestId } = render(<HomeScreen />);
+    await act(async () => {
+      fireEvent.press(getByTestId('home-swipe-reject-action'));
+    });
+    expect(emitSessionsChanged).toHaveBeenCalled();
   });
 });
