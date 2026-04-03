@@ -10,7 +10,7 @@ import {
   Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
 import { updateSessionTimes, OutsideSession } from '../storage/database';
 import { spacing, radius } from '../utils/theme';
@@ -43,7 +43,7 @@ export default function EditSessionSheet({ visible, session, onClose, onSessionU
     }
   }, [visible, session]);
 
-  const onStartTimeChange = (event: any, date?: Date) => {
+  const onStartTimeChange = (event: DateTimePickerEvent, date?: Date) => {
     if (Platform.OS === 'android') {
       setShowStartPicker(false);
     }
@@ -55,7 +55,7 @@ export default function EditSessionSheet({ visible, session, onClose, onSessionU
     }
   };
 
-  const onEndTimeChange = (event: any, date?: Date) => {
+  const onEndTimeChange = (event: DateTimePickerEvent, date?: Date) => {
     if (Platform.OS === 'android') {
       setShowEndPicker(false);
     }

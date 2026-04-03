@@ -577,21 +577,54 @@ export function getReminderFeedback(): ReminderFeedback[] {
 
 export function getKnownLocations(): KnownLocation[] {
   return db
-    .getAllSync<any>('SELECT * FROM known_locations WHERE status = ?', ['active'])
+    .getAllSync<KnownLocationRow>('SELECT * FROM known_locations WHERE status = ?', ['active'])
     .map(mapLocation);
 }
 
 export function getAllKnownLocations(): KnownLocation[] {
-  return db.getAllSync<any>('SELECT * FROM known_locations').map(mapLocation);
+  return db.getAllSync<KnownLocationRow>('SELECT * FROM known_locations').map(mapLocation);
 }
 
 export function getSuggestedLocations(): KnownLocation[] {
   return db
-    .getAllSync<any>('SELECT * FROM known_locations WHERE status = ?', ['suggested'])
+    .getAllSync<KnownLocationRow>('SELECT * FROM known_locations WHERE status = ?', ['suggested'])
     .map(mapLocation);
 }
 
-function mapLocation(row: any): KnownLocation {
+interface KnownLocationRow {
+  id: number;
+  label: string;
+  latitude: number;
+  longitude: number;
+  radiusMeters: number;
+  isIndoor: number;
+  status: string;
+}
+
+interface WeatherConditionRow {
+  id: number;
+  timestamp: number;
+  forecastHour: number;
+  forecastDate: number;
+  temperature: number;
+  precipitationProbability: number;
+  cloudCover: number;
+  uvIndex: number;
+  windSpeed: number;
+  weatherCode: number;
+  isDay: number;
+}
+
+interface ScheduledNotificationRow {
+  id: number;
+  hour: number;
+  minute: number;
+  daysOfWeek: string | null;
+  enabled: number;
+  label: string;
+}
+
+function mapLocation(row: KnownLocationRow): KnownLocation {
   return {
     id: row.id,
     label: row.label,
@@ -731,7 +764,7 @@ export function getWeatherConditionsForHour(
   startHour: number,
   endHour: number
 ): WeatherCondition[] {
-  const rows = db.getAllSync<any>(
+  const rows = db.getAllSync<WeatherConditionRow>(
     `SELECT * FROM weather_conditions 
      WHERE forecastDate = ? AND forecastHour >= ? AND forecastHour < ?
      ORDER BY forecastHour ASC`,
@@ -774,7 +807,9 @@ export function clearExpiredWeatherData(now: number): void {
 // ── Scheduled Notifications ───────────────────────────────
 
 export function getScheduledNotifications(): ScheduledNotification[] {
-  const rows = db.getAllSync<any>('SELECT * FROM scheduled_notifications ORDER BY hour, minute');
+  const rows = db.getAllSync<ScheduledNotificationRow>(
+    'SELECT * FROM scheduled_notifications ORDER BY hour, minute'
+  );
   return rows.map((row) => ({
     id: row.id,
     hour: row.hour,

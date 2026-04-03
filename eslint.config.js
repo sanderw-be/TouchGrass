@@ -2,6 +2,7 @@ const expoConfig = require('eslint-config-expo/flat/default');
 const prettierConfig = require('eslint-config-prettier');
 const { defineConfig } = require('eslint/config');
 const globals = require('globals');
+const tsPlugin = require('@typescript-eslint/eslint-plugin');
 
 module.exports = defineConfig([
   {
@@ -18,6 +19,14 @@ module.exports = defineConfig([
   ...expoConfig,
   prettierConfig,
   {
+    plugins: {
+      '@typescript-eslint': tsPlugin,
+    },
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'error',
+    },
+  },
+  {
     files: ['**/__tests__/**/*', '**/*.test.*', '**/*.spec.*', 'jest.setup.js'],
     languageOptions: {
       globals: {
@@ -32,6 +41,8 @@ module.exports = defineConfig([
       'import/first': 'off',
       // In tests, mocked navigation hooks often delegate callbacks indirectly.
       'react-hooks/exhaustive-deps': 'off',
+      // Tests often need `any` for mocking and type overrides.
+      '@typescript-eslint/no-explicit-any': 'off',
     },
   },
 ]);

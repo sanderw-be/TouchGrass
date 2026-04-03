@@ -558,7 +558,10 @@ export async function updateUpcomingReminderContent(): Promise<void> {
   const allScheduled = await Notifications.getAllScheduledNotificationsAsync();
 
   // Build a map of scheduled notification identifiers to their trigger details
-  const scheduledMap = new Map<string, { trigger: any; content: any }>();
+  const scheduledMap = new Map<
+    string,
+    { trigger: Notifications.NotificationTrigger; content: Notifications.NotificationContent }
+  >();
   for (const notif of allScheduled) {
     scheduledMap.set(notif.identifier, {
       trigger: notif.trigger,

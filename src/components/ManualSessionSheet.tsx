@@ -10,7 +10,7 @@ import {
   Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
 import { logManualSession, startManualSession } from '../detection/manualCheckin';
 import { spacing, radius } from '../utils/theme';
@@ -95,7 +95,7 @@ export default function ManualSessionSheet({ visible, onClose, onSessionLogged }
     onClose();
   };
 
-  const onStartTimeChange = (event: any, date?: Date) => {
+  const onStartTimeChange = (event: DateTimePickerEvent, date?: Date) => {
     if (Platform.OS === 'android') {
       setShowStartPicker(false);
     }
@@ -109,7 +109,7 @@ export default function ManualSessionSheet({ visible, onClose, onSessionLogged }
     }
   };
 
-  const onEndTimeChange = (event: any, date?: Date) => {
+  const onEndTimeChange = (event: DateTimePickerEvent, date?: Date) => {
     if (Platform.OS === 'android') {
       setShowEndPicker(false);
     }

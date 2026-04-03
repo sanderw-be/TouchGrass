@@ -91,7 +91,7 @@ export async function requestHealthPermissions(): Promise<boolean> {
     try {
       const granted = await requestPermission([
         { accessType: 'read', recordType: 'ExerciseSession' },
-        { accessType: 'read', recordType: 'Steps' as any },
+        { accessType: 'read', recordType: 'Steps' },
         { accessType: 'read', recordType: 'ActiveCaloriesBurned' },
         { accessType: 'read', recordType: 'Distance' },
       ]);

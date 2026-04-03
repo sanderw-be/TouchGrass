@@ -18,6 +18,21 @@ const OPEN_METEO_API = 'https://api.open-meteo.com/v1/forecast';
 const CACHE_DURATION_MS = 30 * 60 * 1000; // 30 minutes
 const DEFAULT_TEMPERATURE_CELSIUS = 15; // Fallback when API doesn't provide data
 
+interface OpenMeteoHourly {
+  time: string[];
+  temperature_2m?: number[];
+  precipitation_probability?: number[];
+  cloud_cover?: number[];
+  uv_index?: number[];
+  wind_speed_10m?: number[];
+  weather_code?: number[];
+  is_day?: number[];
+}
+
+interface OpenMeteoResponse {
+  hourly?: OpenMeteoHourly;
+}
+
 export interface WeatherFetchResult {
   success: boolean;
   conditions?: WeatherCondition[];
@@ -199,7 +214,7 @@ export function isWeatherDataAvailable(): boolean {
 
 // ── Helpers ───────────────────────────────────────────────
 
-function parseWeatherData(data: any, fetchTime: number): WeatherCondition[] {
+function parseWeatherData(data: OpenMeteoResponse, fetchTime: number): WeatherCondition[] {
   const conditions: WeatherCondition[] = [];
 
   if (!data.hourly || !data.hourly.time) {
