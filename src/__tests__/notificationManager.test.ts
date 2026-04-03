@@ -30,6 +30,7 @@ import {
   processReminderQueue,
   cancelRemindersIfGoalReached,
   setupNotificationInfrastructure,
+  updateUpcomingReminderContent,
   FAILSAFE_REMINDER_PREFIX,
 } from '../notifications/notificationManager';
 import type { ReminderQueueEntry } from '../notifications/notificationManager';
@@ -2443,6 +2444,266 @@ describe('notificationManager', () => {
       const updatedQueue: ReminderQueueEntry[] = JSON.parse(store['smart_reminder_queue']);
       expect(updatedQueue).toHaveLength(1);
       expect(updatedQueue[0].status).toBe('consumed');
+
+      jest.restoreAllMocks();
+    });
+  });
+
+  describe('updateUpcomingReminderContent', () => {
+    // Helper function to create a mock settings store with queue
+    const mockSettingsWithQueue = (queue: ReminderQueueEntry[]): Record<string, string> => {
+      const store: Record<string, string> = {
+        smart_reminder_queue: JSON.stringify(queue),
+        smart_reminders_count: '2',
+      };
+      (Database.getSetting as jest.Mock).mockImplementation(
+        (key: string, fallback: string) => store[key] ?? fallback
+      );
+      (Database.setSetting as jest.Mock).mockImplementation((key: string, value: string) => {
+        store[key] = value;
+      });
+      return store;
+    };
+
+    it('does nothing when reminders are disabled', async () => {
+      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
+        if (key === 'smart_reminders_count') return '0';
+        return fallback;
+      });
+
+      await updateUpcomingReminderContent();
+
+      expect(Notifications.getAllScheduledNotificationsAsync).not.toHaveBeenCalled();
+      expect(Notifications.cancelScheduledNotificationAsync).not.toHaveBeenCalled();
+      expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
+    });
+
+    it('does nothing when queue is empty', async () => {
+      mockSettingsWithQueue([]);
+
+      await updateUpcomingReminderContent();
+
+      expect(Notifications.getAllScheduledNotificationsAsync).not.toHaveBeenCalled();
+      expect(Notifications.cancelScheduledNotificationAsync).not.toHaveBeenCalled();
+      expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
+    });
+
+    it('does nothing when notification is too far in the future (>30 min)', async () => {
+      // Now = 10:00, slot = 11:00 (60 minutes away)
+      const queue: ReminderQueueEntry[] = [
+        { id: 'smart_2026-03-30_11:00', slotMinutes: 660, status: 'date_planned' },
+      ];
+      mockSettingsWithQueue(queue);
+      jest.spyOn(Date.prototype, 'getHours').mockReturnValue(10);
+      jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
+      (Database.getTodayMinutes as jest.Mock).mockReturnValue(5);
+
+      await updateUpcomingReminderContent();
+
+      expect(Notifications.cancelScheduledNotificationAsync).not.toHaveBeenCalled();
+      expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
+
+      jest.restoreAllMocks();
+    });
+
+    it('does nothing when notification has already passed', async () => {
+      // Now = 15:00, slot = 14:00 (already passed)
+      const queue: ReminderQueueEntry[] = [
+        { id: 'smart_2026-03-30_14:00', slotMinutes: 840, status: 'date_planned' },
+      ];
+      mockSettingsWithQueue(queue);
+      jest.spyOn(Date.prototype, 'getHours').mockReturnValue(15);
+      jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
+      (Database.getTodayMinutes as jest.Mock).mockReturnValue(5);
+
+      await updateUpcomingReminderContent();
+
+      expect(Notifications.cancelScheduledNotificationAsync).not.toHaveBeenCalled();
+      expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
+
+      jest.restoreAllMocks();
+    });
+
+    it('does not update consumed entries', async () => {
+      // Now = 14:00, slot = 14:30 (30 minutes away, but consumed)
+      const queue: ReminderQueueEntry[] = [
+        { id: 'smart_2026-03-30_14:30', slotMinutes: 870, status: 'consumed' },
+      ];
+      mockSettingsWithQueue(queue);
+      jest.spyOn(Date.prototype, 'getHours').mockReturnValue(14);
+      jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
+      (Database.getTodayMinutes as jest.Mock).mockReturnValue(5);
+
+      await updateUpcomingReminderContent();
+
+      expect(Notifications.cancelScheduledNotificationAsync).not.toHaveBeenCalled();
+      expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
+
+      jest.restoreAllMocks();
+    });
+
+    it('updates notification content when scheduled <30 min away with fresh data', async () => {
+      // Now = 14:00, slot = 14:20 (20 minutes away)
+      const queue: ReminderQueueEntry[] = [
+        { id: 'smart_2026-03-30_14:20', slotMinutes: 860, status: 'date_planned' },
+      ];
+      mockSettingsWithQueue(queue);
+      jest.spyOn(Date.prototype, 'getHours').mockReturnValue(14);
+      jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
+      (Database.getTodayMinutes as jest.Mock).mockReturnValue(15); // User has now spent 15 minutes outside
+      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
+
+      // Mock scheduled notification with old content (when user had 0 minutes)
+      (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([
+        {
+          identifier: 'smart_2026-03-30_14:20',
+          content: { title: 'notif_title_1', body: 'notif_body_none' },
+          trigger: { type: 'timeInterval', seconds: 1200 },
+        },
+      ]);
+
+      await updateUpcomingReminderContent();
+
+      // Should cancel the old notification
+      expect(Notifications.cancelScheduledNotificationAsync).toHaveBeenCalledWith(
+        'smart_2026-03-30_14:20'
+      );
+
+      // Should reschedule with updated content
+      expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledWith(
+        expect.objectContaining({
+          identifier: 'smart_2026-03-30_14:20',
+          content: expect.objectContaining({
+            title: expect.any(String),
+            body: expect.any(String), // New body reflecting 15 minutes done
+            categoryIdentifier: 'reminder',
+          }),
+          trigger: expect.objectContaining({
+            type: 'timeInterval',
+            seconds: expect.any(Number),
+          }),
+        })
+      );
+
+      jest.restoreAllMocks();
+    });
+
+    it('does not update when content has not changed', async () => {
+      // Now = 14:00, slot = 14:20 (20 minutes away)
+      const queue: ReminderQueueEntry[] = [
+        { id: 'smart_2026-03-30_14:20', slotMinutes: 860, status: 'date_planned' },
+      ];
+      mockSettingsWithQueue(queue);
+      jest.spyOn(Date.prototype, 'getHours').mockReturnValue(14);
+      jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
+      (Database.getTodayMinutes as jest.Mock).mockReturnValue(0);
+      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
+
+      // Mock scheduled notification with current content (matches what would be generated)
+      const expectedBody = 'notif_body_none'; // When todayMinutes = 0
+      (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([
+        {
+          identifier: 'smart_2026-03-30_14:20',
+          content: { title: 'notif_title_1', body: expectedBody },
+          trigger: { type: 'timeInterval', seconds: 1200 },
+        },
+      ]);
+
+      await updateUpcomingReminderContent();
+
+      // Content hasn't changed, so should not cancel or reschedule
+      expect(Notifications.cancelScheduledNotificationAsync).not.toHaveBeenCalled();
+      expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
+
+      jest.restoreAllMocks();
+    });
+
+    it('skips notification not found in scheduled list', async () => {
+      // Now = 14:00, slot = 14:20 (20 minutes away)
+      const queue: ReminderQueueEntry[] = [
+        { id: 'smart_2026-03-30_14:20', slotMinutes: 860, status: 'date_planned' },
+      ];
+      mockSettingsWithQueue(queue);
+      jest.spyOn(Date.prototype, 'getHours').mockReturnValue(14);
+      jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
+      (Database.getTodayMinutes as jest.Mock).mockReturnValue(5);
+
+      // Notification not in scheduled list (already fired or cancelled)
+      (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([]);
+
+      await updateUpcomingReminderContent();
+
+      expect(Notifications.cancelScheduledNotificationAsync).not.toHaveBeenCalled();
+      expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
+
+      jest.restoreAllMocks();
+    });
+
+    it('updates multiple notifications when multiple are within 30 min window', async () => {
+      // Now = 14:00, two slots within 30 min
+      const queue: ReminderQueueEntry[] = [
+        { id: 'smart_2026-03-30_14:10', slotMinutes: 850, status: 'date_planned' },
+        { id: 'smart_2026-03-30_14:25', slotMinutes: 865, status: 'date_planned' },
+      ];
+      mockSettingsWithQueue(queue);
+      jest.spyOn(Date.prototype, 'getHours').mockReturnValue(14);
+      jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
+      (Database.getTodayMinutes as jest.Mock).mockReturnValue(10);
+      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
+
+      // Both notifications have old content
+      (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([
+        {
+          identifier: 'smart_2026-03-30_14:10',
+          content: { title: 'notif_title_1', body: 'notif_body_none' },
+          trigger: { type: 'timeInterval', seconds: 600 },
+        },
+        {
+          identifier: 'smart_2026-03-30_14:25',
+          content: { title: 'notif_title_2', body: 'notif_body_none' },
+          trigger: { type: 'timeInterval', seconds: 1500 },
+        },
+      ]);
+
+      await updateUpcomingReminderContent();
+
+      // Should update both
+      expect(Notifications.cancelScheduledNotificationAsync).toHaveBeenCalledTimes(2);
+      expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledTimes(2);
+
+      jest.restoreAllMocks();
+    });
+
+    it('updates notification at exactly 30 minutes away (boundary case)', async () => {
+      // Now = 14:00, slot = 14:30 (exactly 30 minutes away)
+      const queue: ReminderQueueEntry[] = [
+        { id: 'smart_2026-03-30_14:30', slotMinutes: 870, status: 'date_planned' },
+      ];
+      mockSettingsWithQueue(queue);
+      jest.spyOn(Date.prototype, 'getHours').mockReturnValue(14);
+      jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
+      (Database.getTodayMinutes as jest.Mock).mockReturnValue(5);
+      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
+
+      (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([
+        {
+          identifier: 'smart_2026-03-30_14:30',
+          content: { title: 'notif_title_1', body: 'notif_body_none' },
+          trigger: { type: 'timeInterval', seconds: 1800 },
+        },
+      ]);
+
+      await updateUpcomingReminderContent();
+
+      // Should update (30 min is inclusive)
+      expect(Notifications.cancelScheduledNotificationAsync).toHaveBeenCalledWith(
+        'smart_2026-03-30_14:30'
+      );
+      expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledWith(
+        expect.objectContaining({
+          identifier: 'smart_2026-03-30_14:30',
+        })
+      );
 
       jest.restoreAllMocks();
     });

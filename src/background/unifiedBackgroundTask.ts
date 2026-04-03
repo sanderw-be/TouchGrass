@@ -18,6 +18,7 @@ import {
   maybeScheduleCatchUpReminder,
   processReminderQueue,
   logReminderQueueSnapshot,
+  updateUpcomingReminderContent,
 } from '../notifications/notificationManager';
 import { fetchWeatherForecast } from '../weather/weatherService';
 import { getSetting, initDatabase } from '../storage/database';
@@ -63,6 +64,7 @@ TaskManager.defineTask(UNIFIED_BACKGROUND_TASK, async () => {
       try {
         await scheduleDayReminders();
         await processReminderQueue(); // update consumed states before catch-up check
+        await updateUpcomingReminderContent(); // update notification content if <30min away
         await maybeScheduleCatchUpReminder(); // uses consumed entries for 60-min wait guard
       } catch (reminderError) {
         console.error('TouchGrass: [UnifiedTask] Reminder operations failed', reminderError);
