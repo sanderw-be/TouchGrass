@@ -36,6 +36,9 @@ let gpsSessionSpeedCount = 0;
 let gpsSessionStartLocationLabel: string | null = null;
 let gpsSessionLastLat: number | null = null;
 let gpsSessionLastLon: number | null = null;
+// Track last logged indoor location label to suppress duplicate log entries.
+// undefined = never logged; null = last event was "outside"; string = last logged indoor label.
+let lastLoggedIndoorLocationLabel: string | null | undefined = undefined;
 
 // Persistence keys for GPS session state
 const GPS_SESSION_START_KEY = 'gps_session_start';
@@ -347,15 +350,20 @@ export function processLocationUpdate(
 
   saveGPSState();
 
-  // Log "inside at known location" only when the user is not currently outside
+  // Log "inside at known location" only when the matched location changes from the last
+  // logged one. This prevents flooding the log on every GPS update during indoor periods.
   if (!isOutside && !lastKnownOutside) {
     const matchedLocation = knownLocations.find(
       (loc) =>
         loc.isIndoor && haversineDistance(lat, lon, loc.latitude, loc.longitude) <= loc.radiusMeters
     );
-    if (matchedLocation) {
-      insertBackgroundLog('gps', `Inside at ${matchedLocation.label}`);
+    const label = matchedLocation?.label ?? null;
+    if (label !== null && label !== lastLoggedIndoorLocationLabel) {
+      insertBackgroundLog('gps', `Inside at ${label}`);
+      lastLoggedIndoorLocationLabel = label;
     }
+  } else if (isOutside) {
+    lastLoggedIndoorLocationLabel = null;
   }
 
   // Update location clusters for auto-detect

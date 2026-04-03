@@ -298,9 +298,75 @@ describe('Date helpers', () => {
 });
 
 describe('Background task logs', () => {
+  let mockDb: {
+    getAllSync: jest.Mock;
+    runSync: jest.Mock;
+    execSync: jest.Mock;
+    getFirstSync: jest.Mock;
+  };
+
+  beforeAll(() => {
+    const SQLite = require('expo-sqlite');
+    mockDb = SQLite.openDatabaseSync.mock.results[0].value;
+  });
+
   it('insertBackgroundLog and getBackgroundLogs functions exist', () => {
     const { insertBackgroundLog, getBackgroundLogs } = require('../storage/database');
     expect(typeof insertBackgroundLog).toBe('function');
     expect(typeof getBackgroundLogs).toBe('function');
+  });
+
+  it('insertBackgroundLog calls runSync to insert a row', () => {
+    const { insertBackgroundLog } = require('../storage/database');
+    mockDb.runSync.mockClear();
+    insertBackgroundLog('gps', 'Outside (no known location)');
+    // First call: INSERT, second call: DELETE prune
+    expect(mockDb.runSync).toHaveBeenCalledWith(
+      expect.stringContaining('INSERT INTO background_task_logs'),
+      expect.arrayContaining(['gps', 'Outside (no known location)'])
+    );
+  });
+
+  it('getBackgroundLogs with category calls getAllSync with category filter', () => {
+    const { getBackgroundLogs } = require('../storage/database');
+    const fakeLogs = [{ id: 1, timestamp: Date.now(), category: 'gps', message: 'test' }];
+    mockDb.getAllSync.mockReturnValueOnce(fakeLogs);
+    const result = getBackgroundLogs('gps');
+    expect(mockDb.getAllSync).toHaveBeenCalledWith(
+      expect.stringContaining('WHERE category = ?'),
+      expect.arrayContaining(['gps'])
+    );
+    expect(result).toEqual(fakeLogs);
+  });
+
+  it('getBackgroundLogs without category calls getAllSync without category filter', () => {
+    const { getBackgroundLogs } = require('../storage/database');
+    const fakeLogs = [
+      { id: 2, timestamp: Date.now(), category: 'reminder', message: 'Daily plan: 13:00' },
+    ];
+    mockDb.getAllSync.mockReturnValueOnce(fakeLogs);
+    const result = getBackgroundLogs();
+    expect(mockDb.getAllSync).toHaveBeenCalledWith(
+      expect.not.stringContaining('WHERE category'),
+      expect.any(Array)
+    );
+    expect(result).toEqual(fakeLogs);
+  });
+
+  it('getBackgroundLogs returns empty array on error', () => {
+    const { getBackgroundLogs } = require('../storage/database');
+    mockDb.getAllSync.mockImplementationOnce(() => {
+      throw new Error('DB error');
+    });
+    const result = getBackgroundLogs('gps');
+    expect(result).toEqual([]);
+  });
+
+  it('insertBackgroundLog does not throw on error', () => {
+    const { insertBackgroundLog } = require('../storage/database');
+    mockDb.runSync.mockImplementationOnce(() => {
+      throw new Error('DB error');
+    });
+    expect(() => insertBackgroundLog('health_connect', 'test')).not.toThrow();
   });
 });
