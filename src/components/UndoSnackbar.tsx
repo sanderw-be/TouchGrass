@@ -23,18 +23,20 @@ export default function UndoSnackbar({
   const styles = makeStyles(colors);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const clearTimer = () => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+  };
+
   useEffect(() => {
     if (visible) {
       timerRef.current = setTimeout(() => {
         onDismiss();
       }, duration);
     }
-    return () => {
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
-        timerRef.current = null;
-      }
-    };
+    return clearTimer;
   }, [visible, duration, onDismiss]);
 
   if (!visible) return null;
@@ -44,10 +46,7 @@ export default function UndoSnackbar({
       <Text style={styles.message}>{message}</Text>
       <TouchableOpacity
         onPress={() => {
-          if (timerRef.current) {
-            clearTimeout(timerRef.current);
-            timerRef.current = null;
-          }
+          clearTimer();
           onUndo();
           onDismiss();
         }}
