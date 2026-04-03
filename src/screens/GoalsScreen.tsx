@@ -48,7 +48,11 @@ import {
 import RemindersSection from '../components/goals/RemindersSection';
 import WeatherSection from '../components/goals/WeatherSection';
 import CalendarSection from '../components/goals/CalendarSection';
-import { makeStyles, CATCHUP_REMINDERS_OPTIONS, CatchupRemindersOption } from '../components/goals/GoalsShared';
+import {
+  makeStyles,
+  CATCHUP_REMINDERS_OPTIONS,
+  CatchupRemindersOption,
+} from '../components/goals/GoalsShared';
 
 const DAILY_PRESETS = [15, 20, 30, 45, 60, 90];
 const WEEKLY_PRESETS = [60, 90, 120, 150, 210, 300];
