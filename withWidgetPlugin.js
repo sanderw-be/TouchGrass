@@ -216,10 +216,9 @@ class ProgressWidgetProvider : AppWidgetProvider() {
             }
 
             // Set progress text
-            views.setTextViewText(R.id.widget_current_minutes, "\${widgetData.current}m")
             views.setTextViewText(
-                R.id.widget_target_minutes,
-                "of \${widgetData.target}m"
+                R.id.widget_progress_text,
+                "\${widgetData.current} / \${widgetData.target} min"
             )
 
             // Update progress ring color based on percentage
@@ -230,9 +229,6 @@ class ProgressWidgetProvider : AppWidgetProvider() {
                 else -> R.drawable.widget_ring_low
             }
             views.setImageViewResource(R.id.widget_progress_ring, ringDrawable)
-
-            // Set progress percentage text
-            views.setTextViewText(R.id.widget_progress_percent, "$progress%")
 
             // Setup Start Timer button click
             val startTimerIntent = Intent(context, MainActivity::class.java).apply {
@@ -248,18 +244,6 @@ class ProgressWidgetProvider : AppWidgetProvider() {
             )
             views.setOnClickPendingIntent(R.id.widget_start_button, startTimerPendingIntent)
 
-            // Setup widget click to open app
-            val openAppIntent = Intent(context, MainActivity::class.java).apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-            }
-            val openAppPendingIntent = PendingIntent.getActivity(
-                context,
-                appWidgetId + 1000,
-                openAppIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-            views.setOnClickPendingIntent(R.id.widget_container, openAppPendingIntent)
-
             // Update the widget
             appWidgetManager.updateAppWidget(appWidgetId, views)
         }
@@ -267,9 +251,13 @@ class ProgressWidgetProvider : AppWidgetProvider() {
         private fun getWidgetData(context: Context): WidgetData {
             try {
                 // Path to expo-sqlite database
-                val dbPath = File(context.getDatabasePath("touchgrass.db").absolutePath)
+                val dbPath = context.getDatabasePath("touchgrass.db")
+
+                android.util.Log.d("TouchGrassWidget", "Database path: \${dbPath.absolutePath}")
+                android.util.Log.d("TouchGrassWidget", "Database exists: \${dbPath.exists()}")
 
                 if (!dbPath.exists()) {
+                    android.util.Log.w("TouchGrassWidget", "Database not found, using defaults")
                     return WidgetData(0, 30) // Default: 0 minutes of 30 minute goal
                 }
 
@@ -282,12 +270,15 @@ class ProgressWidgetProvider : AppWidgetProvider() {
                 try {
                     // Get today's date in YYYY-MM-DD format
                     val today = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
+                    android.util.Log.d("TouchGrassWidget", "Querying for date: \$today")
 
                     // Get today's total minutes
                     val currentMinutes = getTodayMinutes(db, today)
+                    android.util.Log.d("TouchGrassWidget", "Current minutes: \$currentMinutes")
 
                     // Get daily goal from settings
                     val targetMinutes = getDailyGoal(db)
+                    android.util.Log.d("TouchGrassWidget", "Target minutes: \$targetMinutes")
 
                     return WidgetData(currentMinutes, targetMinutes)
                 } finally {
@@ -344,11 +335,10 @@ function getWidgetLayoutXml() {
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/widget_background"
-    android:padding="16dp">
+    android:padding="8dp">
 
     <!-- Progress Ring Container -->
     <RelativeLayout
-        android:id="@+id/progress_ring_container"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerInParent="true">
@@ -356,91 +346,42 @@ function getWidgetLayoutXml() {
         <!-- Progress Ring Background -->
         <ImageView
             android:id="@+id/widget_progress_ring"
-            android:layout_width="120dp"
-            android:layout_height="120dp"
+            android:layout_width="140dp"
+            android:layout_height="140dp"
             android:src="@drawable/widget_ring_low"
             android:contentDescription="Progress ring" />
 
-        <!-- Center Content -->
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+        <!-- Center Play/Stop Button -->
+        <FrameLayout
+            android:id="@+id/widget_start_button"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
             android:layout_centerInParent="true"
-            android:orientation="vertical"
-            android:gravity="center">
+            android:background="@drawable/widget_button_background"
+            android:clickable="true"
+            android:focusable="true">
 
-            <TextView
-                android:id="@+id/widget_current_minutes"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="0m"
-                android:textSize="24sp"
-                android:textStyle="bold"
-                android:textColor="#2C3E2E" />
+            <ImageView
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_gravity="center"
+                android:src="@drawable/widget_play_icon"
+                android:contentDescription="Start timer" />
+        </FrameLayout>
 
-            <TextView
-                android:id="@+id/widget_target_minutes"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="of 30m"
-                android:textSize="11sp"
-                android:textColor="#6C7A6D"
-                android:layout_marginTop="2dp" />
-
-            <TextView
-                android:id="@+id/widget_progress_percent"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="0%"
-                android:textSize="10sp"
-                android:textColor="#4A7C59"
-                android:textStyle="bold"
-                android:layout_marginTop="2dp" />
-        </LinearLayout>
-    </RelativeLayout>
-
-    <!-- Start Timer Button -->
-    <LinearLayout
-        android:id="@+id/widget_start_button"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/progress_ring_container"
-        android:layout_marginTop="12dp"
-        android:background="@drawable/widget_button_background"
-        android:gravity="center"
-        android:orientation="horizontal"
-        android:padding="12dp"
-        android:clickable="true"
-        android:focusable="true">
-
-        <ImageView
-            android:layout_width="20dp"
-            android:layout_height="20dp"
-            android:src="@drawable/widget_play_icon"
-            android:contentDescription="Play icon"
-            android:layout_marginEnd="8dp" />
-
+        <!-- Progress text below ring -->
         <TextView
+            android:id="@+id/widget_progress_text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Start Timer"
-            android:textSize="14sp"
+            android:layout_below="@id/widget_progress_ring"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="4dp"
+            android:text="0 / 30 min"
+            android:textSize="12sp"
             android:textStyle="bold"
-            android:textColor="#FFFFFF" />
-    </LinearLayout>
-
-    <!-- App Name/Label at top -->
-    <TextView
-        android:id="@+id/widget_label"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
-        android:layout_centerHorizontal="true"
-        android:text="TouchGrass"
-        android:textSize="12sp"
-        android:textStyle="bold"
-        android:textColor="#4A7C59"
-        android:letterSpacing="0.05" />
+            android:textColor="#4A7C59" />
+    </RelativeLayout>
 
 </RelativeLayout>
 `;
@@ -481,9 +422,8 @@ function getWidgetBackgroundXml() {
 function getWidgetButtonBackgroundXml() {
   return `<?xml version="1.0" encoding="utf-8"?>
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
-    android:shape="rectangle">
+    android:shape="oval">
     <solid android:color="#4A7C59" />
-    <corners android:radius="8dp" />
 </shape>
 `;
 }

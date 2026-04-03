@@ -32,6 +32,7 @@ import { updateTimeSlotProbability } from '../detection/sessionConfidence';
 import { startManualSession } from '../detection/manualCheckin';
 import { onSessionsChanged } from '../utils/sessionsChangedEmitter';
 import { cancelRemindersIfGoalReached } from '../notifications/notificationManager';
+import { wasOpenedFromWidgetTimer, addWidgetTimerListener } from '../utils/widgetHelper';
 
 export default function HomeScreen() {
   const { colors, shadows, isDark } = useTheme();
@@ -91,6 +92,26 @@ export default function HomeScreen() {
   // Refresh whenever background work (e.g. Health Connect sync) inserts new sessions.
   useEffect(() => onSessionsChanged(loadData), [loadData]);
 
+  // Handle widget timer intent
+  useEffect(() => {
+    // Check if app was opened from widget timer button
+    wasOpenedFromWidgetTimer().then((fromWidget) => {
+      if (fromWidget && !timerRunning) {
+        // Auto-start the timer
+        handleTimerPress();
+      }
+    });
+
+    // Listen for widget timer events while app is running
+    const cleanup = addWidgetTimerListener(() => {
+      if (!timerRunning) {
+        handleTimerPress();
+      }
+    });
+
+    return cleanup;
+  }, [timerRunning, handleTimerPress]);
+
   const onRefresh = () => {
     setRefreshing(true);
     loadData();
@@ -107,7 +128,7 @@ export default function HomeScreen() {
     loadData();
   };
 
-  const handleTimerPress = () => {
+  const handleTimerPress = useCallback(() => {
     if (timerRunning) {
       // Stop timer — auto-save and refresh
       if (timerIntervalRef.current) {
@@ -127,7 +148,7 @@ export default function HomeScreen() {
       setTimerSeconds(0);
       setTimerRunning(true);
     }
-  };
+  }, [timerRunning, loadData]);
 
   const dailyPercent = Math.min(todayMinutes / dailyTarget, 1);
   const weeklyPercent = Math.min(weekMinutes / weeklyTarget, 1);
