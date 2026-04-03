@@ -338,7 +338,7 @@ export function processLocationUpdate(
  * Auto-detect frequently-visited locations from GPS dwell time.
  * Suggests a location after the user spends:
  *   - 2 hours at the same place when no known locations exist yet
- *   - 10 hours at the same place when known locations already exist
+ *   - 3 hours at the same place when known locations already exist
  * Only runs when GPS is permitted and location suggestions are enabled.
  */
 export async function autoDetectLocations(): Promise<void> {
@@ -362,7 +362,7 @@ export async function autoDetectLocations(): Promise<void> {
     const thresholdMs =
       existingActive.length === 0
         ? 2 * 60 * 60 * 1000 // 2 hours when no known locations
-        : 10 * 60 * 60 * 1000; // 10 hours when known locations exist
+        : 3 * 60 * 60 * 1000; // 3 hours when known locations exist
 
     const allLocations = getAllKnownLocations();
 
