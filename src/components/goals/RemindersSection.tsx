@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
 import { t } from '../../i18n';
-import { SettingRow, Divider, makeStyles } from './GoalsShared';
+import { SettingRow, Divider, makeStyles, CATCHUP_REMINDERS_OPTIONS } from './GoalsShared';
 
 interface RemindersSectionProps {
   smartRemindersCount: number;
@@ -31,12 +31,15 @@ export default function RemindersSection({
   const { colors, shadows } = useTheme();
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
 
-  const catchupRemindersLabels: Record<number, string> = {
-    0: t('settings_catchup_off'),
-    1: t('settings_catchup_mellow'),
-    2: t('settings_catchup_medium'),
-    3: t('settings_catchup_aggressive'),
-  };
+  const catchupRemindersLabels = useMemo<Record<number, string>>(
+    () => ({
+      [CATCHUP_REMINDERS_OPTIONS[0]]: t('settings_catchup_off'),
+      [CATCHUP_REMINDERS_OPTIONS[1]]: t('settings_catchup_mellow'),
+      [CATCHUP_REMINDERS_OPTIONS[2]]: t('settings_catchup_medium'),
+      [CATCHUP_REMINDERS_OPTIONS[3]]: t('settings_catchup_aggressive'),
+    }),
+    []
+  );
 
   return (
     <>

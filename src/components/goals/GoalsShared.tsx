@@ -4,6 +4,9 @@ import { useTheme } from '../../context/ThemeContext';
 import { spacing, radius } from '../../utils/theme';
 import { t } from '../../i18n';
 
+export const CATCHUP_REMINDERS_OPTIONS = [0, 1, 2, 3] as const;
+export type CatchupRemindersOption = (typeof CATCHUP_REMINDERS_OPTIONS)[number];
+
 export function SettingRow({
   icon,
   label,

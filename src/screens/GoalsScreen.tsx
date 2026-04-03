@@ -48,7 +48,7 @@ import {
 import RemindersSection from '../components/goals/RemindersSection';
 import WeatherSection from '../components/goals/WeatherSection';
 import CalendarSection from '../components/goals/CalendarSection';
-import { makeStyles } from '../components/goals/GoalsShared';
+import { makeStyles, CATCHUP_REMINDERS_OPTIONS, CatchupRemindersOption } from '../components/goals/GoalsShared';
 
 const DAILY_PRESETS = [15, 20, 30, 45, 60, 90];
 const WEEKLY_PRESETS = [60, 90, 120, 150, 210, 300];
@@ -215,9 +215,8 @@ export default function GoalsScreen() {
   };
 
   const cycleCatchupRemindersCount = () => {
-    const catchupOptions = [0, 1, 2, 3] as const;
-    const idx = catchupOptions.indexOf(catchupRemindersCount as 0 | 1 | 2 | 3);
-    const next = catchupOptions[(idx + 1) % catchupOptions.length];
+    const idx = CATCHUP_REMINDERS_OPTIONS.indexOf(catchupRemindersCount as CatchupRemindersOption);
+    const next = CATCHUP_REMINDERS_OPTIONS[(idx + 1) % CATCHUP_REMINDERS_OPTIONS.length];
     setSetting('smart_catchup_reminders_count', String(next));
     setCatchupRemindersCount(next);
   };
