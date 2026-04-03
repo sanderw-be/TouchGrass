@@ -46,6 +46,8 @@ export default {
   session_edit_save: '✓ Save & approve',
   session_edit_hint: 'Saving edited times will auto-approve this session.',
   session_swipe_hint: 'Swipe left to confirm, right if not outside.',
+  session_rejected_snackbar: 'Marked as inside',
+  undo: 'Undo',
 
   // Goals
   of: 'of',

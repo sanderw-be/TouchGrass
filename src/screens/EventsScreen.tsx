@@ -26,6 +26,7 @@ import { formatMinutes } from '../utils/helpers';
 import { t, formatLocalDate, formatLocalTime } from '../i18n';
 import ManualSessionSheet from '../components/ManualSessionSheet';
 import EditSessionSheet from '../components/EditSessionSheet';
+import UndoSnackbar from '../components/UndoSnackbar';
 import { updateTimeSlotProbability } from '../detection/sessionConfidence';
 import { onSessionsChanged, emitSessionsChanged } from '../utils/sessionsChangedEmitter';
 import { cancelRemindersIfGoalReached } from '../notifications/notificationManager';
@@ -57,6 +58,10 @@ export default function EventsScreen() {
   const [sheetVisible, setSheetVisible] = useState(false);
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [editSession, setEditSession] = useState<OutsideSession | null>(null);
+  const [undoSnackbar, setUndoSnackbar] = useState<{
+    visible: boolean;
+    sessionId: number | null;
+  }>({ visible: false, sessionId: null });
 
   const loadData = useCallback(() => {
     autoCloseOldProposedSessions();
@@ -88,8 +93,19 @@ export default function EventsScreen() {
     loadData();
     if (confirmed) {
       await cancelRemindersIfGoalReached();
+    } else {
+      setUndoSnackbar({ visible: true, sessionId: id });
     }
     setExpandedId(null);
+  };
+
+  const handleUndoReject = () => {
+    if (undoSnackbar.sessionId !== null) {
+      confirmSession(undoSnackbar.sessionId, null);
+      emitSessionsChanged();
+      loadData();
+    }
+    setUndoSnackbar({ visible: false, sessionId: null });
   };
 
   const handleDelete = (id: number) => {
@@ -230,6 +246,13 @@ export default function EventsScreen() {
           </View>
         ))}
       </ScrollView>
+
+      <UndoSnackbar
+        visible={undoSnackbar.visible}
+        message={t('session_rejected_snackbar')}
+        onUndo={handleUndoReject}
+        onDismiss={() => setUndoSnackbar({ visible: false, sessionId: null })}
+      />
     </View>
   );
 }

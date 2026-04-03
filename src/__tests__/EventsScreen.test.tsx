@@ -153,6 +153,33 @@ describe('EventsScreen', () => {
     expect(emitSessionsChanged).toHaveBeenCalled();
   });
 
+  it('shows undo snackbar after swipe reject action', () => {
+    const { getByTestId, queryByTestId } = render(<EventsScreen />);
+    expect(queryByTestId('undo-snackbar')).toBeNull();
+    fireEvent.press(getByTestId('swipe-reject-action'));
+    expect(getByTestId('undo-snackbar')).toBeTruthy();
+  });
+
+  it('calls confirmSession(id, null) when undo button is pressed after reject', () => {
+    const { getByTestId } = render(<EventsScreen />);
+    fireEvent.press(getByTestId('swipe-reject-action'));
+    fireEvent.press(getByTestId('undo-snackbar-button'));
+    expect(confirmSession).toHaveBeenCalledWith(1, null);
+  });
+
+  it('hides undo snackbar after undo button is pressed', () => {
+    const { getByTestId, queryByTestId } = render(<EventsScreen />);
+    fireEvent.press(getByTestId('swipe-reject-action'));
+    fireEvent.press(getByTestId('undo-snackbar-button'));
+    expect(queryByTestId('undo-snackbar')).toBeNull();
+  });
+
+  it('does not show undo snackbar after swipe confirm action', () => {
+    const { getByTestId, queryByTestId } = render(<EventsScreen />);
+    fireEvent.press(getByTestId('swipe-confirm-action'));
+    expect(queryByTestId('undo-snackbar')).toBeNull();
+  });
+
   it('does not show swipe actions for confirmed sessions', () => {
     (getAllSessionsIncludingDiscarded as jest.Mock).mockReturnValue([mockConfirmedSession]);
     const { queryByTestId } = render(<EventsScreen />);
