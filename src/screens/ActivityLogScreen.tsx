@@ -33,8 +33,10 @@ function formatTime(ts: number): string {
 
 /** Format a YYYY-MM-DD key as a human-readable date. */
 function formatDayLabel(day: string): string {
-  const d = new Date(`${day}T12:00:00`);
-  return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+  const [y, m, d] = day.split('-').map(Number);
+  // Use explicit year/month/day args so the Date is always in local time
+  const date = new Date(y, m - 1, d);
+  return date.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
 }
 
 export default function ActivityLogScreen() {
