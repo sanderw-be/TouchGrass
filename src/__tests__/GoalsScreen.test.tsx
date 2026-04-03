@@ -672,3 +672,133 @@ describe('GoalsScreen auto-enable on permission grant', () => {
     });
   });
 });
+
+describe('GoalsScreen smart reminders notification permission', () => {
+  let mockGetPermissions: jest.Mock;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    (Platform as any).OS = originalPlatformOS;
+    mockOpenBatteryOptimizationSettings.mockResolvedValue(true);
+    mockRefreshBatteryOptimizationSetting.mockResolvedValue(false);
+    mockGetSetting.mockImplementation((key: string, def: string) => def);
+    mockCheckWeatherLocation.mockResolvedValue(false);
+    (CalendarService.hasCalendarPermissions as jest.Mock).mockResolvedValue(false);
+    // Access the globally mocked expo-notifications
+    mockGetPermissions = require('expo-notifications').getPermissionsAsync as jest.Mock;
+    mockGetPermissions.mockResolvedValue({ status: 'denied' });
+  });
+
+  it('shows notification permission missing text when smart reminders are on and permission is denied', async () => {
+    mockGetSetting.mockImplementation((key: string, def: string) => {
+      if (key === 'smart_reminders_count') return '2';
+      return def;
+    });
+    mockGetPermissions.mockResolvedValue({ status: 'denied' });
+
+    const { findByText } = render(<GoalsScreen />);
+    await expect(findByText('settings_notification_permission_missing')).resolves.toBeTruthy();
+  });
+
+  it('does not show notification permission missing text when smart reminders are off', async () => {
+    mockGetSetting.mockImplementation((key: string, def: string) => {
+      if (key === 'smart_reminders_count') return '0';
+      return def;
+    });
+    mockGetPermissions.mockResolvedValue({ status: 'denied' });
+
+    const { queryByText } = render(<GoalsScreen />);
+    await waitFor(() => expect(queryByText('settings_notification_permission_missing')).toBeNull());
+  });
+
+  it('does not show notification permission missing text when permission is granted', async () => {
+    mockGetSetting.mockImplementation((key: string, def: string) => {
+      if (key === 'smart_reminders_count') return '2';
+      return def;
+    });
+    mockGetPermissions.mockResolvedValue({ status: 'granted' });
+
+    const { queryByText } = render(<GoalsScreen />);
+    await waitFor(() => expect(queryByText('settings_notification_permission_missing')).toBeNull());
+  });
+
+  it('shows permission sheet when smart reminders row is tapped with count > 0 and permission denied', async () => {
+    mockGetSetting.mockImplementation((key: string, def: string) => {
+      if (key === 'smart_reminders_count') return '2';
+      return def;
+    });
+    mockGetPermissions.mockResolvedValue({ status: 'denied' });
+
+    const { findByTestId } = render(<GoalsScreen />);
+    const row = await findByTestId('smart-reminders-row');
+    await act(async () => {
+      fireEvent.press(row);
+    });
+
+    await expect(findByTestId('permission-explainer-sheet')).resolves.toBeTruthy();
+  });
+
+  it('shows permission sheet when smart reminders are tapped from off without notification permission', async () => {
+    mockGetSetting.mockImplementation((key: string, def: string) => {
+      if (key === 'smart_reminders_count') return '0';
+      return def;
+    });
+    mockGetPermissions.mockResolvedValue({ status: 'denied' });
+
+    const { findByTestId } = render(<GoalsScreen />);
+    const row = await findByTestId('smart-reminders-row');
+    await act(async () => {
+      fireEvent.press(row);
+    });
+
+    await expect(findByTestId('permission-explainer-sheet')).resolves.toBeTruthy();
+    expect(mockSetSetting).not.toHaveBeenCalledWith('smart_reminders_count', expect.anything());
+  });
+
+  it('cycles count normally when notification permission is granted', async () => {
+    mockGetSetting.mockImplementation((key: string, def: string) => {
+      if (key === 'smart_reminders_count') return '0';
+      return def;
+    });
+    mockGetPermissions.mockResolvedValue({ status: 'granted' });
+
+    const { findByTestId } = render(<GoalsScreen />);
+    const row = await findByTestId('smart-reminders-row');
+    await act(async () => {
+      fireEvent.press(row);
+    });
+
+    await waitFor(() => {
+      expect(mockSetSetting).toHaveBeenCalledWith('smart_reminders_count', '1');
+    });
+  });
+
+  it('auto-enables smart reminders when notification permission is granted after sheet was shown', async () => {
+    mockGetSetting.mockImplementation((key: string, def: string) => {
+      if (key === 'smart_reminders_count') return '0';
+      return def;
+    });
+    mockGetPermissions.mockResolvedValue({ status: 'denied' });
+
+    const { findByTestId } = render(<GoalsScreen />);
+    const row = await findByTestId('smart-reminders-row');
+
+    // User taps to enable smart reminders → permission sheet opens, pending flag set
+    await act(async () => {
+      fireEvent.press(row);
+    });
+
+    // Simulate user granting notification permission and returning to the app
+    mockGetPermissions.mockResolvedValue({ status: 'granted' });
+    const changeHandler = getLastAppStateChangeHandler();
+    if (changeHandler) {
+      await act(async () => {
+        await changeHandler('active');
+      });
+    }
+
+    await waitFor(() => {
+      expect(mockSetSetting).toHaveBeenCalledWith('smart_reminders_count', '1');
+    });
+  });
+});

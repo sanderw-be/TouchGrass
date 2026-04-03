@@ -166,9 +166,14 @@ export default {
   location_delete_confirm_body:
     'Are you sure you want to delete this location? This cannot be undone.',
   settings_reminders_label: 'Smart reminders',
-  settings_reminders_sublabel: 'Learns your patterns over time',
+  settings_reminders_sublabel:
+    'Nudges you at the best moment — learns your schedule over time. Requires notification permission.',
   settings_reminders_count_off: 'Off',
   settings_reminders_count_per_day: '{{count}}/day',
+  settings_notification_permission_title: 'Notification Permission',
+  settings_notification_permission_missing: 'Permissions missing — tap to fix',
+  settings_notification_permission_body:
+    'Notification permission is needed to send smart reminders. TouchGrass only uses this to nudge you at the best moment to go outside — never for marketing.',
   settings_catchup_label: 'Help me reach my goal',
   settings_catchup_sublabel: "Extra reminders when you're falling behind",
   settings_catchup_off: 'Off',

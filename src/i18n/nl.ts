@@ -166,9 +166,14 @@ export default {
   location_delete_confirm_body:
     'Weet je zeker dat je deze locatie wilt verwijderen? Dit kan niet ongedaan worden gemaakt.',
   settings_reminders_label: 'Slimme herinneringen',
-  settings_reminders_sublabel: 'Leert je patronen over tijd',
+  settings_reminders_sublabel:
+    'Herinnert je op het beste moment — leert je schema over tijd. Vereist meldingstoestemming.',
   settings_reminders_count_off: 'Uit',
   settings_reminders_count_per_day: '{{count}}/dag',
+  settings_notification_permission_title: 'Meldingstoestemming',
+  settings_notification_permission_missing: 'Machtigingen ontbreken — tik om te herstellen',
+  settings_notification_permission_body:
+    'Meldingstoestemming is nodig voor slimme herinneringen. TouchGrass gebruikt dit alleen om je op het beste moment te herinneren buiten te gaan — nooit voor marketing.',
   settings_catchup_label: 'Help me mijn doel halen',
   settings_catchup_sublabel: 'Extra herinneringen als je achterloopt',
   settings_catchup_off: 'Uit',
