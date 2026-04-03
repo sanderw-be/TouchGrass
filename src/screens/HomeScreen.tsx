@@ -30,7 +30,7 @@ import { formatMinutes, formatTime } from '../utils/helpers';
 import { t, formatLocalDate } from '../i18n';
 import { updateTimeSlotProbability } from '../detection/sessionConfidence';
 import { startManualSession } from '../detection/manualCheckin';
-import { onSessionsChanged } from '../utils/sessionsChangedEmitter';
+import { onSessionsChanged, emitSessionsChanged } from '../utils/sessionsChangedEmitter';
 import { cancelRemindersIfGoalReached } from '../notifications/notificationManager';
 
 export default function HomeScreen() {
@@ -101,6 +101,7 @@ export default function HomeScreen() {
     confirmSession(id, confirmed);
     const d = new Date(startTime);
     updateTimeSlotProbability(d.getHours(), d.getDay(), confirmed);
+    emitSessionsChanged();
     if (confirmed) {
       await cancelRemindersIfGoalReached();
     }
