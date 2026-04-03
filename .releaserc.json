@@ -8,13 +8,19 @@
     [
       "@semantic-release/exec",
       {
-        "prepareCmd": "node scripts/update-app-version.js ${nextRelease.version}"
+        "prepareCmd": "node scripts/update-app-version.js ${nextRelease.version} && node scripts/generate-play-store-notes.js ${nextRelease.version}"
       }
     ],
     [
       "@semantic-release/git",
       {
-        "assets": ["package.json", "package-lock.json", "CHANGELOG.md", "app.json"],
+        "assets": [
+          "package.json",
+          "package-lock.json",
+          "CHANGELOG.md",
+          "app.json",
+          "docs/play-store-release-notes/"
+        ],
         "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
       }
     ],
