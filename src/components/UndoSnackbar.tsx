@@ -66,7 +66,7 @@ function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
       bottom: spacing.lg,
       left: spacing.md,
       right: spacing.md,
-      backgroundColor: colors.textPrimary,
+      backgroundColor: colors.grassDark,
       borderRadius: radius.md,
       paddingVertical: spacing.sm + 2,
       paddingHorizontal: spacing.md,
