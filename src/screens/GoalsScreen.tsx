@@ -148,9 +148,8 @@ export default function GoalsScreen() {
     // Auto-enable smart reminders if the user was blocked by missing permissions and just granted them
     if (granted && pendingSmartRemindersEnableRef.current) {
       pendingSmartRemindersEnableRef.current = false;
-      const firstNonZero = SMART_REMINDERS_OPTIONS.find((v) => v > 0) ?? 1;
-      setSetting('smart_reminders_count', String(firstNonZero));
-      setSmartRemindersCount(firstNonZero);
+      setSetting('smart_reminders_count', '1');
+      setSmartRemindersCount(1);
     }
   }, []);
 
