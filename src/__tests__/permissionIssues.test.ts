@@ -7,6 +7,8 @@ jest.mock('../detection', () => ({
     healthConnectPermission: true,
   })),
   checkWeatherLocationPermissions: jest.fn(() => Promise.resolve(true)),
+  checkGPSPermissions: jest.fn(() => Promise.resolve(true)),
+  recheckHealthConnect: jest.fn(() => Promise.resolve(true)),
 }));
 
 // Mock database
@@ -37,6 +39,8 @@ describe('countPermissionIssues', () => {
       healthConnectPermission: true,
     });
     (detection.checkWeatherLocationPermissions as jest.Mock).mockResolvedValue(true);
+    (detection.checkGPSPermissions as jest.Mock).mockResolvedValue(true);
+    (detection.recheckHealthConnect as jest.Mock).mockResolvedValue(true);
     (CalendarService.hasCalendarPermissions as jest.Mock).mockResolvedValue(true);
     // Default: notifications denied
     const Notifications = require('expo-notifications');
@@ -62,6 +66,7 @@ describe('countPermissionIssues', () => {
       healthConnect: false,
       healthConnectPermission: true,
     });
+    (detection.checkGPSPermissions as jest.Mock).mockResolvedValue(false);
     mockGetSetting.mockImplementation((key: string, def: string) => {
       if (key === 'smart_reminders_count') return '0';
       return def;
@@ -69,6 +74,44 @@ describe('countPermissionIssues', () => {
 
     const result = await countPermissionIssues();
     expect(result.settings).toBe(1);
+  });
+
+  it('clears GPS settings badge when permission is re-granted even if SQLite cache is stale', async () => {
+    // Simulate the bug scenario: GPS enabled, cached gpsPermission=false (stale),
+    // but OS permission has since been granted (e.g. via Weather fix-flow).
+    (detection.getDetectionStatus as jest.Mock).mockReturnValue({
+      gps: true,
+      gpsPermission: false, // stale cache value
+      healthConnect: false,
+      healthConnectPermission: false,
+    });
+    (detection.checkGPSPermissions as jest.Mock).mockResolvedValue(true); // live OS check: granted
+    mockGetSetting.mockImplementation((key: string, def: string) => {
+      if (key === 'smart_reminders_count') return '0';
+      if (key === 'weather_enabled') return '0';
+      return def;
+    });
+
+    const result = await countPermissionIssues();
+    expect(result.settings).toBe(0);
+  });
+
+  it('clears HC settings badge when permission is re-granted even if SQLite cache is stale', async () => {
+    (detection.getDetectionStatus as jest.Mock).mockReturnValue({
+      gps: false,
+      gpsPermission: false,
+      healthConnect: true,
+      healthConnectPermission: false, // stale cache value
+    });
+    (detection.recheckHealthConnect as jest.Mock).mockResolvedValue(true); // live OS check: granted
+    mockGetSetting.mockImplementation((key: string, def: string) => {
+      if (key === 'smart_reminders_count') return '0';
+      if (key === 'weather_enabled') return '0';
+      return def;
+    });
+
+    const result = await countPermissionIssues();
+    expect(result.settings).toBe(0);
   });
 
   it('counts weather permission issue as goals issue', async () => {
