@@ -1,10 +1,9 @@
 ## [1.3.1](https://github.com/sanderw-be/TouchGrass/compare/v1.3.0...v1.3.1) (2026-04-04)
 
-
 ### Bug Fixes
 
-* prevent double-scheduling and race conditions on concurrent Tick+PulseTick ([#341](https://github.com/sanderw-be/TouchGrass/issues/341)) ([c0d673b](https://github.com/sanderw-be/TouchGrass/commit/c0d673bd40685f07ce64dd3cb1c0721d32c8025e))
-* resolve Prettier formatting failures in app.json and CHANGELOG.md ([#339](https://github.com/sanderw-be/TouchGrass/issues/339)) ([fea8f8b](https://github.com/sanderw-be/TouchGrass/commit/fea8f8b29ea4d2a5b81ac6e058e34e6ae7de4f28))
+- prevent double-scheduling and race conditions on concurrent Tick+PulseTick ([#341](https://github.com/sanderw-be/TouchGrass/issues/341)) ([c0d673b](https://github.com/sanderw-be/TouchGrass/commit/c0d673bd40685f07ce64dd3cb1c0721d32c8025e))
+- resolve Prettier formatting failures in app.json and CHANGELOG.md ([#339](https://github.com/sanderw-be/TouchGrass/issues/339)) ([fea8f8b](https://github.com/sanderw-be/TouchGrass/commit/fea8f8b29ea4d2a5b81ac6e058e34e6ae7de4f28))
 
 # [1.3.0](https://github.com/sanderw-be/TouchGrass/compare/v1.2.0...v1.3.0) (2026-04-04)
 
