@@ -1,5 +1,9 @@
 import { Platform } from 'react-native';
-import { WIDGET_TIMER_KEY, requestWidgetRefresh } from '../utils/widgetHelper';
+import {
+  WIDGET_TIMER_KEY,
+  requestWidgetRefresh,
+  isWidgetTimerRunning,
+} from '../utils/widgetHelper';
 
 jest.mock('react-native-android-widget', () => ({
   requestWidgetUpdate: jest.fn(() => Promise.resolve()),
@@ -78,6 +82,24 @@ describe('widgetHelper', () => {
       expect(consoleSpy).toHaveBeenCalledWith('Widget refresh failed:', expect.any(Error));
 
       consoleSpy.mockRestore();
+    });
+  });
+
+  describe('isWidgetTimerRunning', () => {
+    it('returns false for empty string', () => {
+      expect(isWidgetTimerRunning('')).toBe(false);
+    });
+
+    it('returns false for non-numeric string', () => {
+      expect(isWidgetTimerRunning('abc')).toBe(false);
+    });
+
+    it('returns false for zero', () => {
+      expect(isWidgetTimerRunning('0')).toBe(false);
+    });
+
+    it('returns true for valid timestamp', () => {
+      expect(isWidgetTimerRunning('1712345678000')).toBe(true);
     });
   });
 });

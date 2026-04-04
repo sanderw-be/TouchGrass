@@ -23,6 +23,16 @@ import {
 export const WIDGET_TIMER_KEY = 'widget_timer_start';
 
 /**
+ * Parse the widget timer marker and return whether the timer is running.
+ * Shared across widgetHelper, widget-task-handler, and HomeScreen.
+ */
+export function isWidgetTimerRunning(marker: string): boolean {
+  if (marker === '') return false;
+  const ts = parseInt(marker, 10);
+  return !isNaN(ts) && ts > 0;
+}
+
+/**
  * Request an immediate update of all widget instances.
  *
  * On Android this triggers the task handler's WIDGET_UPDATE action via
@@ -36,7 +46,7 @@ export async function requestWidgetRefresh(): Promise<void> {
     const current = getTodayMinutes();
     const target = getCurrentDailyGoal()?.targetMinutes ?? 30;
     const marker = getSetting(WIDGET_TIMER_KEY, '');
-    const timerRunning = marker !== '' && !isNaN(parseInt(marker, 10)) && parseInt(marker, 10) > 0;
+    const timerRunning = isWidgetTimerRunning(marker);
 
     await requestWidgetUpdate({
       widgetName: 'Progress',

@@ -10,7 +10,7 @@ import {
   initDatabase,
 } from '../storage/database';
 import { logManualSession } from '../detection/manualCheckin';
-import { WIDGET_TIMER_KEY } from '../utils/widgetHelper';
+import { WIDGET_TIMER_KEY, isWidgetTimerRunning } from '../utils/widgetHelper';
 
 /** Read current progress data from SQLite. */
 function getWidgetData(): { current: number; target: number; timerRunning: boolean } {
@@ -18,7 +18,7 @@ function getWidgetData(): { current: number; target: number; timerRunning: boole
   const current = getTodayMinutes();
   const target = getCurrentDailyGoal()?.targetMinutes ?? 30;
   const marker = getSetting(WIDGET_TIMER_KEY, '');
-  const timerRunning = marker !== '' && !isNaN(parseInt(marker, 10)) && parseInt(marker, 10) > 0;
+  const timerRunning = isWidgetTimerRunning(marker);
   return { current, target, timerRunning };
 }
 
@@ -44,11 +44,10 @@ export async function widgetTaskHandler(props: WidgetTaskHandlerProps): Promise<
       if (clickAction === 'TOGGLE_TIMER') {
         initDatabase();
         const marker = getSetting(WIDGET_TIMER_KEY, '');
-        const ts = marker ? parseInt(marker, 10) : 0;
 
-        if (ts > 0) {
+        if (isWidgetTimerRunning(marker)) {
           // Stop timer — save session and clear marker
-          const startTime = ts;
+          const startTime = parseInt(marker, 10);
           const endTime = Date.now();
           const durationMinutes = (endTime - startTime) / 60000;
 
