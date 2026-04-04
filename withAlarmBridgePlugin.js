@@ -203,7 +203,7 @@ class AlarmPulseService : HeadlessJsTaskService() {
     }
   }
 
-  override fun getTaskConfig(intent: Intent): HeadlessJsTaskConfig =
+  override fun getTaskConfig(intent: Intent?): HeadlessJsTaskConfig? =
     HeadlessJsTaskConfig(
       PULSE_TASK_NAME,
       Arguments.createMap(),
