@@ -523,6 +523,10 @@ export async function processReminderQueue(): Promise<void> {
         console.log(
           `TouchGrass: [Queue] Consumed: ${entry.id} at ${formatSlotMinutes(entry.slotMinutes)} — fired via JS (${minutesSince} min since slot)`
         );
+        insertBackgroundLog(
+          'reminder',
+          `Reminder fired at ${formatSlotMinutes(entry.slotMinutes)}`
+        );
         tickFiredCount++;
         entry.status = 'consumed';
         updatedQueue.push(entry); // keep as consumed for CONSUMED_TTL
@@ -697,10 +701,7 @@ export async function scheduleDayReminders(): Promise<void> {
       console.log(
         `TouchGrass: [DayPlan] Already planned today — queue (${queue.length}): ${summary}`
       );
-      insertBackgroundLog(
-        'reminder',
-        `Daily plan: already planned (${queue.length}) — ${summary}`
-      );
+      insertBackgroundLog('reminder', `Daily plan: already planned (${queue.length}) — ${summary}`);
     } else {
       console.log('TouchGrass: [DayPlan] Already planned today — queue: empty');
       insertBackgroundLog('reminder', 'Daily plan: already planned — queue empty');
