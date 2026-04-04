@@ -18,6 +18,7 @@ jest.mock('../weather/weatherService', () => ({
 jest.mock('../storage/database', () => ({
   getSetting: jest.fn(),
   initDatabase: jest.fn(),
+  insertBackgroundLog: jest.fn(),
 }));
 
 import * as NotificationManager from '../notifications/notificationManager';
@@ -123,6 +124,26 @@ describe('performBackgroundTick', () => {
     expect(callOrder[1]).toBe('reminders');
   });
 
+  it('logs start/end and skip reasons when weather and reminders are disabled', async () => {
+    (Database.getSetting as jest.Mock).mockImplementation((key: string) => {
+      if (key === 'smart_reminders_count') return '0';
+      if (key === 'weather_enabled') return '0';
+      return '';
+    });
+
+    await performBackgroundTick();
+
+    const messages = (Database.insertBackgroundLog as jest.Mock).mock.calls.map(
+      ([, msg]: [string, string]) => msg
+    );
+    expect(messages).toEqual([
+      'Background tick start',
+      'Weather disabled — skipping refresh',
+      'Reminders disabled — skipping background tick work',
+      'Background tick done',
+    ]);
+  });
+
   it('continues reminder operations even if weather fetch throws', async () => {
     (Database.getSetting as jest.Mock).mockImplementation((key: string) => {
       if (key === 'smart_reminders_count') return '2';
@@ -139,6 +160,25 @@ describe('performBackgroundTick', () => {
     await expect(performBackgroundTick()).resolves.not.toThrow();
 
     expect(NotificationManager.scheduleDayReminders).toHaveBeenCalled();
+  });
+
+  it('logs weather failure without stopping the tick', async () => {
+    (Database.getSetting as jest.Mock).mockImplementation((key: string) => {
+      if (key === 'smart_reminders_count') return '0';
+      if (key === 'weather_enabled') return '1';
+      return '';
+    });
+    (WeatherService.fetchWeatherForecast as jest.Mock).mockRejectedValue(
+      new Error('network error')
+    );
+
+    await expect(performBackgroundTick()).resolves.not.toThrow();
+
+    const messages = (Database.insertBackgroundLog as jest.Mock).mock.calls.map(
+      ([, msg]: [string, string]) => msg
+    );
+    expect(messages).toContain('Weather refresh failed');
+    expect(messages).toContain('Background tick done');
   });
 
   it('continues when reminder operations throw', async () => {
