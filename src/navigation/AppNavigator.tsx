@@ -23,6 +23,7 @@ const ScheduledNotificationsScreen = lazy(() => import('../screens/ScheduledNoti
 const KnownLocationsScreen = lazy(() => import('../screens/KnownLocationsScreen'));
 const FeedbackSupportScreen = lazy(() => import('../screens/FeedbackSupportScreen'));
 const ActivityLogScreen = lazy(() => import('../screens/ActivityLogScreen'));
+const AboutAppScreen = lazy(() => import('../screens/AboutAppScreen'));
 
 export type GoalsStackParamList = {
   GoalsMain: undefined;
@@ -35,6 +36,7 @@ export type SettingsStackParamList = {
   KnownLocations: undefined;
   FeedbackSupport: undefined;
   ActivityLog: undefined;
+  AboutApp: undefined;
 };
 
 const Tab = createBottomTabNavigator();
@@ -156,6 +158,13 @@ function SettingsStackNavigator() {
         {() => (
           <Suspense fallback={<ScreenFallback />}>
             <ActivityLogScreen />
+          </Suspense>
+        )}
+      </SettingsStack.Screen>
+      <SettingsStack.Screen name="AboutApp" options={{ title: t('nav_about_app') }}>
+        {() => (
+          <Suspense fallback={<ScreenFallback />}>
+            <AboutAppScreen />
           </Suspense>
         )}
       </SettingsStack.Screen>

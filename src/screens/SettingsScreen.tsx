@@ -331,16 +331,21 @@ export default function SettingsScreen() {
 
         <Text style={styles.sectionHeader}>{t('settings_section_about')}</Text>
         <View style={styles.card}>
-          <SettingRow
-            icon={<Ionicons name="leaf-outline" size={20} color={colors.textSecondary} />}
-            label="TouchGrass"
-            sublabel={t('settings_app_sublabel')}
-            right={
-              Constants.expoConfig?.version ? (
-                <Text style={styles.rowSublabel}>{`v${Constants.expoConfig.version}`}</Text>
-              ) : undefined
-            }
-          />
+          <TouchableOpacity onPress={() => navigation.navigate('AboutApp')}>
+            <SettingRow
+              icon={<Ionicons name="leaf-outline" size={20} color={colors.textSecondary} />}
+              label="TouchGrass"
+              sublabel={t('settings_app_sublabel')}
+              right={
+                <View style={styles.rowRightInline}>
+                  {Constants.expoConfig?.version ? (
+                    <Text style={styles.rowSublabel}>{`v${Constants.expoConfig.version}`}</Text>
+                  ) : null}
+                  <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+                </View>
+              }
+            />
+          </TouchableOpacity>
           <Divider />
           <TouchableOpacity onPress={() => Linking.openURL(PRIVACY_POLICY_URL)}>
             <SettingRow
@@ -563,6 +568,7 @@ function makeStyles(
     rowSublabel: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
     rowHint: { fontSize: 12, color: colors.grass, marginTop: 2 },
     rowRight: { marginLeft: spacing.sm },
+    rowRightInline: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
 
     divider: { height: 1, backgroundColor: colors.fog, marginLeft: spacing.md + 28 + spacing.md },
 
