@@ -323,6 +323,10 @@ describe('notificationManager', () => {
 
       expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
       expect(Database.setSetting).not.toHaveBeenCalledWith('reminders_last_planned_date', today);
+      expect(Database.insertBackgroundLog).toHaveBeenCalledWith(
+        'reminder',
+        'Daily plan: already planned — queue empty'
+      );
     });
 
     it('does not schedule any reminders and cancels existing ones when daily goal is already reached', async () => {
@@ -375,6 +379,10 @@ describe('notificationManager', () => {
 
       expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
       expect(Notifications.cancelScheduledNotificationAsync).not.toHaveBeenCalled();
+      expect(Database.insertBackgroundLog).toHaveBeenCalledWith(
+        'reminder',
+        'Daily plan: reminders disabled (count=0)'
+      );
     });
 
     it('schedules reminders using half-hour slots when goal is not yet reached', async () => {
@@ -700,6 +708,21 @@ describe('notificationManager', () => {
       expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
     });
 
+    it('logs when no day plan exists yet', async () => {
+      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
+        if (key === 'smart_reminders_count') return '2';
+        if (key === 'reminders_last_planned_date') return '';
+        return fallback;
+      });
+
+      await maybeScheduleCatchUpReminder();
+
+      expect(Database.insertBackgroundLog).toHaveBeenCalledWith(
+        'reminder',
+        'Catch-up skipped — no day plan yet'
+      );
+    });
+
     it('does nothing when no planned slots exist', async () => {
       const todayStr = new Date().toDateString();
       (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
@@ -713,6 +736,10 @@ describe('notificationManager', () => {
       await maybeScheduleCatchUpReminder();
 
       expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
+      expect(Database.insertBackgroundLog).toHaveBeenCalledWith(
+        'reminder',
+        'Catch-up skipped — no planned slots'
+      );
     });
 
     it('cancels remaining smart reminders and stops when daily goal is met', async () => {
@@ -2199,6 +2226,10 @@ describe('notificationManager', () => {
 
       expect(Notifications.cancelScheduledNotificationAsync).not.toHaveBeenCalled();
       expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
+      expect(Database.insertBackgroundLog).toHaveBeenCalledWith(
+        'reminder',
+        'Queue processed — empty'
+      );
     });
 
     it('goal reached → cancels pending queued triggers (not consumed) and clears queue', async () => {
@@ -2595,6 +2626,10 @@ describe('notificationManager', () => {
             seconds: expect.any(Number),
           }),
         })
+      );
+      expect(Database.insertBackgroundLog).toHaveBeenCalledWith(
+        'reminder',
+        'Updated content for 1 reminder(s) within 30 min window'
       );
 
       jest.restoreAllMocks();

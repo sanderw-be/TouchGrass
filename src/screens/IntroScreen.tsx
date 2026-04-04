@@ -15,8 +15,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Notifications from 'expo-notifications';
 import * as Location from 'expo-location';
-import * as IntentLauncher from 'expo-intent-launcher';
-import { spacing, radius, shadows } from '../utils/theme';
+import { spacing, radius } from '../utils/theme';
 import { useTheme } from '../context/ThemeContext';
 import { t } from '../i18n';
 import { PRIVACY_POLICY_URL } from '../utils/constants';
