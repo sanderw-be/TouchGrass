@@ -15,7 +15,7 @@ import {
   updateUpcomingReminderContent,
 } from '../notifications/notificationManager';
 import { fetchWeatherForecast } from '../weather/weatherService';
-import { getSetting, initDatabase } from '../storage/database';
+import { getSetting, initDatabase, insertBackgroundLog } from '../storage/database';
 
 /**
  * Perform one background tick: weather refresh (optional) + reminder planning.
@@ -28,6 +28,8 @@ export async function performBackgroundTick(): Promise<void> {
   // no guarantee that App.tsx has run first.
   initDatabase();
 
+  insertBackgroundLog('reminder', 'Background tick start');
+
   // --- Weather refresh (runs first to warm the 30-min cache) ---
   // scheduleDayReminders and maybeScheduleCatchUpReminder both call
   // fetchWeatherForecast internally; by fetching once up-front they get an
@@ -36,9 +38,13 @@ export async function performBackgroundTick(): Promise<void> {
   if (weatherEnabled) {
     try {
       await fetchWeatherForecast({ allowPermissionPrompt: false });
+      insertBackgroundLog('reminder', 'Weather refresh succeeded');
     } catch (weatherError) {
       console.error('TouchGrass: [BackgroundTick] Weather fetch failed', weatherError);
+      insertBackgroundLog('reminder', 'Weather refresh failed');
     }
+  } else {
+    insertBackgroundLog('reminder', 'Weather disabled — skipping refresh');
   }
 
   // --- Reminder planning ---
@@ -57,5 +63,9 @@ export async function performBackgroundTick(): Promise<void> {
     } catch (reminderError) {
       console.error('TouchGrass: [BackgroundTick] Reminder operations failed', reminderError);
     }
+  } else {
+    insertBackgroundLog('reminder', 'Reminders disabled — skipping background tick work');
   }
+
+  insertBackgroundLog('reminder', 'Background tick done');
 }
