@@ -88,6 +88,15 @@ function saveQueue(queue: ReminderQueueEntry[]): void {
   setSetting('smart_reminder_queue', JSON.stringify(queue));
 }
 
+// ---------------------------------------------------------------------------
+// Concurrency guard for maybeScheduleCatchUpReminder
+// ---------------------------------------------------------------------------
+// Prevents two overlapping calls (e.g. Pulsar tick + WorkManager tick firing
+// at the same millisecond) from both scheduling a catch-up reminder within
+// the same JS runtime. JS is single-threaded, so checking and setting this
+// flag before the first `await` is fully atomic.
+let catchUpSchedulingInProgress = false;
+
 /** Format a slot-minutes value as HH:MM for log output. */
 function formatSlotMinutes(slotMinutes: number): string {
   const h = Math.floor(slotMinutes / 60);
@@ -911,213 +920,237 @@ export async function scheduleDayReminders(): Promise<void> {
  * These never create calendar events.
  */
 export async function maybeScheduleCatchUpReminder(): Promise<void> {
-  const remindersCount = parseInt(getSetting('smart_reminders_count', '2'), 10);
-  if (remindersCount === 0) return;
-
-  const todayStr = new Date().toDateString();
-  const lastPlannedDate = getSetting('reminders_last_planned_date', '');
-  if (lastPlannedDate !== todayStr) {
-    insertBackgroundLog('reminder', 'Catch-up skipped — no day plan yet');
+  // Same-runtime concurrency guard: check and set atomically (no await between).
+  // Handles the case where a Pulsar tick and a WorkManager tick both call this
+  // function and their async paths interleave inside the same JS runtime.
+  if (catchUpSchedulingInProgress) {
+    insertBackgroundLog('reminder', 'Catch-up skipped — concurrent call in progress');
     return;
   }
-
-  const additionalCount = parseInt(getSetting('additional_reminders_today', '0'), 10);
-  const catchupLimit = parseInt(getSetting('smart_catchup_reminders_count', '2'), 10);
-  if (additionalCount >= catchupLimit) {
-    console.log(
-      `TouchGrass: [CatchUp] Limit reached (${additionalCount}/${catchupLimit}) — skipping`
-    );
-    insertBackgroundLog(
-      'reminder',
-      `Catch-up skipped — limit reached (${additionalCount}/${catchupLimit})`
-    );
-    return;
-  }
-
-  // Load the planned slots for today
-  let plannedSlots: { hour: number; minute: number }[] = [];
+  catchUpSchedulingInProgress = true;
   try {
-    plannedSlots = JSON.parse(getSetting('reminders_planned_slots', '[]'));
-  } catch {
-    return;
-  }
-  if (plannedSlots.length === 0) {
-    console.log('TouchGrass: [CatchUp] No planned slots for today — skipping');
-    insertBackgroundLog('reminder', 'Catch-up skipped — no planned slots');
-    return;
-  }
+    const remindersCount = parseInt(getSetting('smart_reminders_count', '2'), 10);
+    if (remindersCount === 0) return;
 
-  const now = new Date();
-  const currentMinutesOfDay = now.getHours() * 60 + now.getMinutes();
+    const todayStr = new Date().toDateString();
+    const lastPlannedDate = getSetting('reminders_last_planned_date', '');
+    if (lastPlannedDate !== todayStr) {
+      insertBackgroundLog('reminder', 'Catch-up skipped — no day plan yet');
+      return;
+    }
 
-  // How many planned reminders have their time already passed?
-  const passedCount = plannedSlots.filter(
-    (s) => s.hour * 60 + s.minute <= currentMinutesOfDay
-  ).length;
-  if (passedCount === 0) {
-    insertBackgroundLog('reminder', 'Catch-up skipped — no reminders have fired yet');
-    return;
-  }
+    const additionalCount = parseInt(getSetting('additional_reminders_today', '0'), 10);
+    const catchupLimit = parseInt(getSetting('smart_catchup_reminders_count', '2'), 10);
+    if (additionalCount >= catchupLimit) {
+      console.log(
+        `TouchGrass: [CatchUp] Limit reached (${additionalCount}/${catchupLimit}) — skipping`
+      );
+      insertBackgroundLog(
+        'reminder',
+        `Catch-up skipped — limit reached (${additionalCount}/${catchupLimit})`
+      );
+      return;
+    }
 
-  // Read the queue early — used for both the 60-minute wait guard and
-  // duplicate-slot prevention below.
-  const queue = getQueue();
+    // Load the planned slots for today
+    let plannedSlots: { hour: number; minute: number }[] = [];
+    try {
+      plannedSlots = JSON.parse(getSetting('reminders_planned_slots', '[]'));
+    } catch {
+      return;
+    }
+    if (plannedSlots.length === 0) {
+      console.log('TouchGrass: [CatchUp] No planned slots for today — skipping');
+      insertBackgroundLog('reminder', 'Catch-up skipped — no planned slots');
+      return;
+    }
 
-  // Don't schedule a catch-up within 60 minutes of the last consumed planned
-  // reminder — give the user time to go outside before sending a follow-up.
-  // Consumed entries are written by processReminderQueue() (which runs before
-  // this function in the background task).  As a fallback we also check the
-  // plannedSlots setting for slots that have passed but haven't been marked
-  // consumed yet (e.g. on the very first tick after a reminder fires).
-  const lastConsumedMin = queue
-    .filter((e) => e.status === 'consumed')
-    .map((e) => e.slotMinutes)
-    .filter((m) => m <= currentMinutesOfDay)
-    .reduce((max, m) => Math.max(max, m), -1);
+    const now = new Date();
+    const currentMinutesOfDay = now.getHours() * 60 + now.getMinutes();
 
-  const mostRecentPassedSlotMin = plannedSlots
-    .map((s) => s.hour * 60 + s.minute)
-    .filter((m) => m <= currentMinutesOfDay)
-    .reduce((max, m) => Math.max(max, m), -1);
+    // How many planned reminders have their time already passed?
+    const passedCount = plannedSlots.filter(
+      (s) => s.hour * 60 + s.minute <= currentMinutesOfDay
+    ).length;
+    if (passedCount === 0) {
+      insertBackgroundLog('reminder', 'Catch-up skipped — no reminders have fired yet');
+      return;
+    }
 
-  // Use whichever is more recent (consumed queue entry or passed planned slot)
-  const lastReminderMin = Math.max(lastConsumedMin, mostRecentPassedSlotMin);
+    // Read the queue early — used for both the 60-minute wait guard and
+    // duplicate-slot prevention below.
+    const queue = getQueue();
 
-  if (lastReminderMin >= 0 && currentMinutesOfDay - lastReminderMin < 60) {
-    console.log('TouchGrass: [CatchUp] Postponed — waiting 60 min after last planned reminder');
-    insertBackgroundLog(
-      'reminder',
-      `Catch-up postponed — last reminder ${currentMinutesOfDay - lastReminderMin} min ago`
+    // Don't schedule a catch-up within 60 minutes of the last consumed planned
+    // reminder — give the user time to go outside before sending a follow-up.
+    // Consumed entries are written by processReminderQueue() (which runs before
+    // this function in the background task).  As a fallback we also check the
+    // plannedSlots setting for slots that have passed but haven't been marked
+    // consumed yet (e.g. on the very first tick after a reminder fires).
+    const lastConsumedMin = queue
+      .filter((e) => e.status === 'consumed')
+      .map((e) => e.slotMinutes)
+      .filter((m) => m <= currentMinutesOfDay)
+      .reduce((max, m) => Math.max(max, m), -1);
+
+    const mostRecentPassedSlotMin = plannedSlots
+      .map((s) => s.hour * 60 + s.minute)
+      .filter((m) => m <= currentMinutesOfDay)
+      .reduce((max, m) => Math.max(max, m), -1);
+
+    // Use whichever is more recent (consumed queue entry or passed planned slot)
+    const lastReminderMin = Math.max(lastConsumedMin, mostRecentPassedSlotMin);
+
+    if (lastReminderMin >= 0 && currentMinutesOfDay - lastReminderMin < 60) {
+      console.log('TouchGrass: [CatchUp] Postponed — waiting 60 min after last planned reminder');
+      insertBackgroundLog(
+        'reminder',
+        `Catch-up postponed — last reminder ${currentMinutesOfDay - lastReminderMin} min ago`
+      );
+      return;
+    }
+
+    // % of planned reminders that have passed
+    // remindersCount is guaranteed >= 1 (we returned early when it was 0)
+    const passedPercent = passedCount / remindersCount;
+
+    // % of daily target already reached
+    const todayMinutes = getTodayMinutes();
+    const dailyTarget = getCurrentDailyGoal()?.targetMinutes ?? 30;
+    const targetPercent = Math.min(todayMinutes / dailyTarget, 1);
+
+    // If the daily goal is already met, cancel any remaining smart reminders and stop.
+    if (targetPercent >= 1) {
+      console.log(
+        `TouchGrass: [CatchUp] Daily goal reached (${todayMinutes}/${dailyTarget} min) — cancelling remaining smart reminders`
+      );
+      await cancelAutomaticReminders();
+      setSetting('reminders_planned_slots', '[]');
+      setSetting('catchup_reminder_slot_minutes', '');
+      insertBackgroundLog(
+        'reminder',
+        `Catch-up skipped — goal reached (${todayMinutes}/${dailyTarget} min)`
+      );
+      return;
+    }
+
+    // Only schedule a catch-up if more reminders have passed than target % reached
+    if (passedPercent <= targetPercent) {
+      console.log(
+        `TouchGrass: [CatchUp] On track — ${Math.round(targetPercent * 100)}% of goal reached vs ${Math.round(passedPercent * 100)}% of reminders passed — skipping`
+      );
+      insertBackgroundLog(
+        'reminder',
+        `Catch-up skipped — on track (${Math.round(targetPercent * 100)}% goal vs ${Math.round(
+          passedPercent * 100
+        )}% reminders passed)`
+      );
+      return;
+    }
+
+    // Find the best remaining future slot
+    // Ensure weather data is current before scoring so catch-up picks the best
+    // remaining slot accounting for current conditions.
+    const weatherPrefs = getWeatherPreferences();
+    if (weatherPrefs.enabled) {
+      await fetchWeatherForecast({ allowPermissionPrompt: false });
+    }
+    const scores = scoreReminderHours(todayMinutes, dailyTarget, now.getHours(), now.getMinutes());
+
+    // Exclude slots that are already in the queue (any status) to prevent
+    // scheduling two catch-up reminders for the same time from different ticks.
+    const queuedSlotMinutes = new Set(queue.map((e) => e.slotMinutes));
+
+    const candidateSlots = scores.filter((s) => {
+      const slotMin = s.hour * 60 + s.minute;
+      return (
+        slotMin > currentMinutesOfDay &&
+        s.score >= 0.3 &&
+        !isSlotNearScheduledNotification(s.hour, s.minute, 30) &&
+        !queuedSlotMinutes.has(slotMin)
+      );
+    });
+
+    if (candidateSlots.length === 0) {
+      console.log('TouchGrass: [CatchUp] No suitable future slots found — skipping');
+      insertBackgroundLog('reminder', 'Catch-up skipped — no suitable future slots');
+      return;
+    }
+
+    // Take the top (remaining catch-ups) best-scored slots, then schedule the
+    // earliest of those — this spreads reminders across the rest of the day and
+    // leaves room in the day for subsequent catch-up reminders.
+    const remainingCatchups = catchupLimit - additionalCount;
+    const topCandidates = candidateSlots.slice(0, remainingCatchups);
+    const best = topCandidates.reduce((earliest, s) =>
+      s.hour * 60 + s.minute < earliest.hour * 60 + earliest.minute ? s : earliest
     );
-    return;
-  }
+    const triggerDate = new Date();
+    triggerDate.setHours(best.hour, best.minute, 0, 0);
 
-  // % of planned reminders that have passed
-  // remindersCount is guaranteed >= 1 (we returned early when it was 0)
-  const passedPercent = passedCount / remindersCount;
+    // This is a catch-up reminder
+    const { title, body } = buildReminderMessage(
+      todayMinutes,
+      dailyTarget,
+      best.hour,
+      best.contributors ?? [],
+      true
+    );
 
-  // % of daily target already reached
-  const todayMinutes = getTodayMinutes();
-  const dailyTarget = getCurrentDailyGoal()?.targetMinutes ?? 30;
-  const targetPercent = Math.min(todayMinutes / dailyTarget, 1);
+    const dateKey = formatLocalDateKey(triggerDate);
+    const id = `catchup_${dateKey}_${best.hour}:${String(best.minute).padStart(2, '0')}_${Date.now()}`;
 
-  // If the daily goal is already met, cancel any remaining smart reminders and stop.
-  if (targetPercent >= 1) {
+    // Cross-runtime concurrency guard: re-read the counter immediately before
+    // scheduling to catch a parallel JS context (separate headless runtime) that
+    // may have already incremented it since our initial read above.
+    const freshAdditionalCount = parseInt(getSetting('additional_reminders_today', '0'), 10);
+    if (freshAdditionalCount >= catchupLimit) {
+      insertBackgroundLog(
+        'reminder',
+        `Catch-up skipped — concurrent cross-runtime call already scheduled (${freshAdditionalCount}/${catchupLimit})`
+      );
+      return;
+    }
+
+    await Notifications.scheduleNotificationAsync({
+      identifier: id,
+      content: {
+        title,
+        body,
+        categoryIdentifier: 'reminder',
+        color: '#4A7C59',
+      },
+      trigger: {
+        // Use TIME_INTERVAL (non-exact) instead of DATE (exact) — same rationale
+        // as smart reminders: avoids SCHEDULE_EXACT_ALARM, battery-friendlier.
+        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds: Math.max(1, Math.floor((triggerDate.getTime() - Date.now()) / 1000)),
+        channelId: CHANNEL_ID,
+      },
+    });
+
+    // Append catch-up entry to the queue
+    queue.push({
+      id,
+      slotMinutes: best.hour * 60 + best.minute,
+      status: 'date_planned',
+    });
+    saveQueue(queue);
+
+    // Additional reminders never create calendar events
+    setSetting('additional_reminders_today', String(additionalCount + 1));
+    setSetting('catchup_reminder_slot_minutes', String(best.hour * 60 + best.minute));
     console.log(
-      `TouchGrass: [CatchUp] Daily goal reached (${todayMinutes}/${dailyTarget} min) — cancelling remaining smart reminders`
-    );
-    await cancelAutomaticReminders();
-    setSetting('reminders_planned_slots', '[]');
-    setSetting('catchup_reminder_slot_minutes', '');
-    insertBackgroundLog(
-      'reminder',
-      `Catch-up skipped — goal reached (${todayMinutes}/${dailyTarget} min)`
-    );
-    return;
-  }
-
-  // Only schedule a catch-up if more reminders have passed than target % reached
-  if (passedPercent <= targetPercent) {
-    console.log(
-      `TouchGrass: [CatchUp] On track — ${Math.round(targetPercent * 100)}% of goal reached vs ${Math.round(passedPercent * 100)}% of reminders passed — skipping`
+      `TouchGrass: [CatchUp] Scheduled: ${id} at ${formatSlotMinutes(best.hour * 60 + best.minute)} ` +
+        `(${additionalCount + 1}/${catchupLimit}; progress: ${todayMinutes}/${dailyTarget} min)`
     );
     insertBackgroundLog(
       'reminder',
-      `Catch-up skipped — on track (${Math.round(targetPercent * 100)}% goal vs ${Math.round(
-        passedPercent * 100
-      )}% reminders passed)`
+      `Catch-up planned at ${formatSlotMinutes(best.hour * 60 + best.minute)} (${todayMinutes}/${dailyTarget} min reached)`
     );
-    return;
+  } finally {
+    catchUpSchedulingInProgress = false;
   }
-
-  // Find the best remaining future slot
-  // Ensure weather data is current before scoring so catch-up picks the best
-  // remaining slot accounting for current conditions.
-  const weatherPrefs = getWeatherPreferences();
-  if (weatherPrefs.enabled) {
-    await fetchWeatherForecast({ allowPermissionPrompt: false });
-  }
-  const scores = scoreReminderHours(todayMinutes, dailyTarget, now.getHours(), now.getMinutes());
-
-  // Exclude slots that are already in the queue (any status) to prevent
-  // scheduling two catch-up reminders for the same time from different ticks.
-  const queuedSlotMinutes = new Set(queue.map((e) => e.slotMinutes));
-
-  const candidateSlots = scores.filter((s) => {
-    const slotMin = s.hour * 60 + s.minute;
-    return (
-      slotMin > currentMinutesOfDay &&
-      s.score >= 0.3 &&
-      !isSlotNearScheduledNotification(s.hour, s.minute, 30) &&
-      !queuedSlotMinutes.has(slotMin)
-    );
-  });
-
-  if (candidateSlots.length === 0) {
-    console.log('TouchGrass: [CatchUp] No suitable future slots found — skipping');
-    insertBackgroundLog('reminder', 'Catch-up skipped — no suitable future slots');
-    return;
-  }
-
-  // Take the top (remaining catch-ups) best-scored slots, then schedule the
-  // earliest of those — this spreads reminders across the rest of the day and
-  // leaves room in the day for subsequent catch-up reminders.
-  const remainingCatchups = catchupLimit - additionalCount;
-  const topCandidates = candidateSlots.slice(0, remainingCatchups);
-  const best = topCandidates.reduce((earliest, s) =>
-    s.hour * 60 + s.minute < earliest.hour * 60 + earliest.minute ? s : earliest
-  );
-  const triggerDate = new Date();
-  triggerDate.setHours(best.hour, best.minute, 0, 0);
-
-  // This is a catch-up reminder
-  const { title, body } = buildReminderMessage(
-    todayMinutes,
-    dailyTarget,
-    best.hour,
-    best.contributors ?? [],
-    true
-  );
-
-  const dateKey = formatLocalDateKey(triggerDate);
-  const id = `catchup_${dateKey}_${best.hour}:${String(best.minute).padStart(2, '0')}_${Date.now()}`;
-
-  await Notifications.scheduleNotificationAsync({
-    identifier: id,
-    content: {
-      title,
-      body,
-      categoryIdentifier: 'reminder',
-      color: '#4A7C59',
-    },
-    trigger: {
-      // Use TIME_INTERVAL (non-exact) instead of DATE (exact) — same rationale
-      // as smart reminders: avoids SCHEDULE_EXACT_ALARM, battery-friendlier.
-      type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-      seconds: Math.max(1, Math.floor((triggerDate.getTime() - Date.now()) / 1000)),
-      channelId: CHANNEL_ID,
-    },
-  });
-
-  // Append catch-up entry to the queue
-  queue.push({
-    id,
-    slotMinutes: best.hour * 60 + best.minute,
-    status: 'date_planned',
-  });
-  saveQueue(queue);
-
-  // Additional reminders never create calendar events
-  setSetting('additional_reminders_today', String(additionalCount + 1));
-  setSetting('catchup_reminder_slot_minutes', String(best.hour * 60 + best.minute));
-  console.log(
-    `TouchGrass: [CatchUp] Scheduled: ${id} at ${formatSlotMinutes(best.hour * 60 + best.minute)} ` +
-      `(${additionalCount + 1}/${catchupLimit}; progress: ${todayMinutes}/${dailyTarget} min)`
-  );
-  insertBackgroundLog(
-    'reminder',
-    `Catch-up planned at ${formatSlotMinutes(best.hour * 60 + best.minute)} (${todayMinutes}/${dailyTarget} min reached)`
-  );
 }
 
 /**
