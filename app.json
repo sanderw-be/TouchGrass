@@ -94,7 +94,8 @@
       "expo-sqlite",
       "expo-background-task",
       "expo-localization",
-      "expo-system-ui"
+      "expo-system-ui",
+      "./withAlarmBridgePlugin"
     ],
     "extra": {
       "eas": {

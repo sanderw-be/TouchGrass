@@ -27,6 +27,7 @@
     "@react-navigation/bottom-tabs": "^7.13.0",
     "@react-navigation/native": "^7.1.28",
     "@react-navigation/stack": "^7.7.2",
+    "alarm-bridge-native": "file:./modules/alarm-bridge-native",
     "expo": "~55.0.9",
     "expo-background-task": "~55.0.10",
     "expo-battery": "~55.0.9",

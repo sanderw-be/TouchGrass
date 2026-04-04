@@ -1,27 +1,25 @@
 /**
- * Unified background task that merges reminder planning and weather refresh.
- * expo-background-task only allows ONE registered task per app, so all
- * background work is consolidated here.
+ * Unified background task — WorkManager fallback.
  *
- * On each ~15-minute wake:
- * 1. If weather is enabled: fetchWeatherForecast first — populates the 30-min cache so
- *    the reminder functions below hit the cache instead of making their own network calls.
- * 2. If reminders are enabled: scheduleDayReminders → processReminderQueue → maybeScheduleCatchUpReminder
- *    Both internally call fetchWeatherForecast too, but they get an instant cache-hit
- *    because step 1 has already refreshed the data.
+ * The primary background execution path is the Pulsar chained-alarm:
+ *   AlarmBridge.scheduleNextPulse → PulseAlarmReceiver → AlarmPulseService →
+ *   TOUCHGRASS_PULSE_TASK (registered in index.ts) → performBackgroundTick
+ *
+ * This WorkManager task remains registered as a best-effort fallback in case
+ * the alarm chain is interrupted (e.g. after an OTA update or first launch).
+ * It also re-arms the Pulsar chain on each WorkManager wake so the alarm
+ * self-heals even if it was lost.
+ *
+ * Root cause of the staleness bug: WorkManager cancels periodic tasks after
+ * ~12 h of no user interaction (CancellationException in WorkerWrapper), so
+ * the task fires but the JS body never executes. The Pulsar alarm bypasses
+ * WorkManager's quota entirely.
  */
 
 import * as BackgroundTask from 'expo-background-task';
 import * as TaskManager from 'expo-task-manager';
-import {
-  scheduleDayReminders,
-  maybeScheduleCatchUpReminder,
-  processReminderQueue,
-  logReminderQueueSnapshot,
-  updateUpcomingReminderContent,
-} from '../notifications/notificationManager';
-import { fetchWeatherForecast } from '../weather/weatherService';
-import { getSetting, initDatabase } from '../storage/database';
+import { performBackgroundTick } from './backgroundTick';
+import { scheduleNextAlarmPulse } from './alarmTiming';
 
 export const UNIFIED_BACKGROUND_TASK = 'TOUCHGRASS_UNIFIED_TASK';
 
@@ -32,44 +30,14 @@ export const UNIFIED_BACKGROUND_TASK = 'TOUCHGRASS_UNIFIED_TASK';
  */
 TaskManager.defineTask(UNIFIED_BACKGROUND_TASK, async () => {
   try {
-    console.log('TouchGrass: [UnifiedTask] Tick');
+    console.log('TouchGrass: [UnifiedTask] Tick (WorkManager fallback)');
 
-    // Ensure the DB schema and default settings are in place.
-    // The background JS runtime has no guarantee that App.tsx has run first.
-    initDatabase();
+    await performBackgroundTick();
 
-    // --- Weather refresh (runs first to warm the 30-min cache) ---
-    // scheduleDayReminders and maybeScheduleCatchUpReminder both call
-    // fetchWeatherForecast internally. By fetching once up-front, those
-    // internal calls return immediately from the cache instead of each
-    // making their own location + HTTP round-trip. This keeps the total
-    // task wall-time well within Android's background execution window.
-    const weatherEnabled = getSetting('weather_enabled', '1') === '1';
-    if (weatherEnabled) {
-      try {
-        await fetchWeatherForecast({ allowPermissionPrompt: false });
-      } catch (weatherError) {
-        console.error('TouchGrass: [UnifiedTask] Weather fetch failed', weatherError);
-      }
-    }
-
-    // --- Reminder planning ---
-    const remindersCountRaw = getSetting('smart_reminders_count', '0');
-    const remindersEnabled = parseInt(remindersCountRaw, 10) > 0;
-    console.log(
-      `TouchGrass: [UnifiedTask] smart_reminders_count=${remindersCountRaw} → reminders ${remindersEnabled ? 'enabled' : 'disabled'}`
+    // Re-arm the Pulsar chain in case it was interrupted.
+    await scheduleNextAlarmPulse().catch((e) =>
+      console.warn('TouchGrass: [UnifiedTask] Failed to re-arm alarm chain', e)
     );
-    if (remindersEnabled) {
-      logReminderQueueSnapshot();
-      try {
-        await scheduleDayReminders();
-        await processReminderQueue(); // update consumed states before catch-up check
-        await updateUpcomingReminderContent(); // update notification content if <30min away
-        await maybeScheduleCatchUpReminder(); // uses consumed entries for 60-min wait guard
-      } catch (reminderError) {
-        console.error('TouchGrass: [UnifiedTask] Reminder operations failed', reminderError);
-      }
-    }
 
     console.log('TouchGrass: [UnifiedTask] Tick done');
     return BackgroundTask.BackgroundTaskResult.Success;

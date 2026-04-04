@@ -1,6 +1,13 @@
 // Setup react-native-gesture-handler mocks
 import 'react-native-gesture-handler/jestSetup';
 
+// Mock alarm-bridge-native (Android-only local native module)
+jest.mock('alarm-bridge-native', () => ({
+  scheduleNextPulse: jest.fn(() => Promise.resolve()),
+  cancelPulse: jest.fn(() => Promise.resolve()),
+  PULSE_TASK_NAME: 'TOUCHGRASS_PULSE_TASK',
+}));
+
 // Mock react-native-safe-area-context
 jest.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
