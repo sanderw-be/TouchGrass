@@ -25,6 +25,7 @@ export default {
   ring_timer_start: 'tik om te starten',
   ring_timer_tap_stop: 'tik om te stoppen',
   ring_timer_outside: 'buiten',
+  ring_timer_info: 'Tik op de ring om een handmatige timer te starten',
 
   // Sessiebronnen
   source_health_connect: 'Activiteit',

@@ -209,6 +209,12 @@ export default function HomeScreen() {
             timerRunning={timerRunning}
             timerSeconds={timerSeconds}
           />
+          {!timerRunning && (
+            <View style={styles.timerInfoRow} testID="ring-timer-info">
+              <Ionicons name="information-circle-outline" size={14} color={colors.textMuted} />
+              <Text style={styles.timerInfoText}>{t('ring_timer_info')}</Text>
+            </View>
+          )}
           <Text style={styles.motivation}>{motivationText()}</Text>
           {(dailyStreak > 0 || weeklyStreak > 0) && (
             <View style={styles.streakContainer}>
@@ -467,6 +473,16 @@ function makeStyles(
       color: colors.textSecondary,
       textAlign: 'center',
       lineHeight: 20,
+    },
+    timerInfoRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.xs,
+      marginTop: spacing.sm,
+    },
+    timerInfoText: {
+      fontSize: 12,
+      color: colors.textMuted,
     },
     streakContainer: {
       flexDirection: 'row',

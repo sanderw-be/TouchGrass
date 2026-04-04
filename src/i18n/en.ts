@@ -25,6 +25,7 @@ export default {
   ring_timer_start: 'tap to start',
   ring_timer_tap_stop: 'tap to stop',
   ring_timer_outside: 'outside',
+  ring_timer_info: 'Tap the ring to start a manual timer',
 
   // Session sources
   source_health_connect: 'Activity',
