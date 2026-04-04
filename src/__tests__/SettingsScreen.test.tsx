@@ -41,6 +41,9 @@ jest.mock('../detection/index', () => ({
 }));
 
 // Mock navigation — useFocusEffect delegates to useEffect so it runs on mount
+// Shared navigate mock so tests can inspect navigation calls
+const mockNavigate = jest.fn();
+
 jest.mock('@react-navigation/native', () => {
   const React = require('react');
   const actual = jest.requireActual('@react-navigation/native');
@@ -49,7 +52,7 @@ jest.mock('@react-navigation/native', () => {
     useFocusEffect: (cb: () => void) => {
       React.useEffect(cb, []);
     },
-    useNavigation: () => ({ navigate: jest.fn() }),
+    useNavigation: () => ({ navigate: mockNavigate }),
   };
 });
 
@@ -233,5 +236,20 @@ describe('SettingsScreen privacy policy link', () => {
     await waitFor(() => {
       expect(Linking.openURL).toHaveBeenCalledWith(PRIVACY_POLICY_URL);
     });
+  });
+});
+
+describe('SettingsScreen About section navigation', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('navigates to AboutApp when the TouchGrass row is pressed', async () => {
+    const { getByText } = render(<SettingsScreen />);
+    await waitFor(() => expect(getByText('TouchGrass')).toBeTruthy());
+
+    fireEvent.press(getByText('TouchGrass'));
+
+    expect(mockNavigate).toHaveBeenCalledWith('AboutApp');
   });
 });

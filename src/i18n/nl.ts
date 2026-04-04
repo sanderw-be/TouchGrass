@@ -506,6 +506,27 @@ export default {
   calendar_event_notes: 'Gepland door TouchGrass',
   calendar_touchgrass_name: 'TouchGrass',
 
+  // Over TouchGrass scherm
+  nav_about_app: 'Over TouchGrass',
+  about_intro_title: 'Wat is TouchGrass?',
+  about_intro_body:
+    'TouchGrass is jouw persoonlijke buitentijd-metgezel. De app houdt automatisch bij hoeveel tijd je buiten doorbrengt, helpt je dagelijkse en wekelijkse doelen in te stellen en herinnert je er slim aan wanneer je nog niet buiten bent geweest.',
+  about_detection_title: 'Hoe buitentijd wordt bijgehouden',
+  about_detection_body:
+    'TouchGrass gebruikt twee detectiemethoden:\n\n\u2022 Health Connect \u2014 importeert oefensessies en op stappen gebaseerde buitenactiviteit uit je gezondheidsgegevens.\n\u2022 GPS \u2014 detecteert wanneer je een bekende locatie (thuis, werk) verlaat en terugkeert via de locatieservices van je apparaat.\n\nJe kunt \xe9\xe9n of beide methoden inschakelen via Instellingen \u2192 Detectie. Automatisch gedetecteerde sessies verschijnen op het tabblad Activiteiten ter beoordeling.',
+  about_goals_title: 'Doelen & voortgang',
+  about_goals_body:
+    'Stel een dagelijks buitentijddoel in (bijv. 30 minuten) en optioneel een wekelijks doel. TouchGrass houdt je reeks bij wanneer je je doel op opeenvolgende dagen of weken haalt. Je voortgang wordt getoond als een ring op het startscherm en als een staafdiagram op het tabblad Geschiedenis.',
+  about_reminders_title: 'Slimme herinneringen',
+  about_reminders_body:
+    'TouchGrass kan je een herinnering sturen wanneer je je dagelijkse doel nog niet hebt gehaald. Herinneringen zijn \u201cslim\u201d \u2014 ze controleren je agenda op aankomende afspraken en het plaatselijke weer voordat ze het beste moment om naar buiten te gaan voorstellen. Je kunt herinneringsvensters en drempelwaarden instellen via Instellingen \u2192 Herinneringen.',
+  about_manual_title: 'Handmatig loggen',
+  about_manual_body:
+    'Een sessie gemist? Je kunt buitentijd handmatig loggen via het startscherm. Tik op de ring of gebruik de knop voor handmatig loggen om een eerdere sessie in te voeren of een live timer te starten. Handmatige sessies worden altijd direct goedgekeurd.',
+  about_privacy_title: 'Privacy',
+  about_privacy_body:
+    'Al je gegevens blijven op je apparaat. TouchGrass stuurt geen persoonlijke informatie naar externe servers. Locatiegegevens worden alleen gebruikt om buitensessies te detecteren en worden niet langer bewaard dan nodig. Health Connect-gegevens worden lokaal gelezen en niet gedeeld.',
+
   // Feedback & ondersteuning scherm
   nav_feedback_support: 'Feedback & Ondersteuning',
   feedback_send_feedback: 'Feedback sturen',

@@ -499,6 +499,27 @@ export default {
   calendar_event_notes: 'Scheduled by TouchGrass',
   calendar_touchgrass_name: 'TouchGrass',
 
+  // About TouchGrass screen
+  nav_about_app: 'About TouchGrass',
+  about_intro_title: 'What is TouchGrass?',
+  about_intro_body:
+    'TouchGrass is your personal outdoor time companion. It automatically tracks the time you spend outside, helps you set daily and weekly goals, and nudges you with smart reminders when you haven\u2019t gone out yet.',
+  about_detection_title: 'How outdoor time is tracked',
+  about_detection_body:
+    'TouchGrass uses two detection methods:\n\n\u2022 Health Connect \u2014 imports exercise sessions and step-based outdoor activity from your health data.\n\u2022 GPS \u2014 detects when you leave a known location (home, work) and returns, using your device\u2019s location services.\n\nYou can enable one or both methods in Settings \u2192 Detection. Sessions detected automatically show up on the Events tab for your review.',
+  about_goals_title: 'Goals & progress',
+  about_goals_body:
+    'Set a daily outdoor time goal (e.g. 30 minutes) and optionally a weekly goal. TouchGrass tracks your streak when you hit your goal on consecutive days or weeks. Your progress is shown as a ring on the home screen and as a bar chart in the History tab.',
+  about_reminders_title: 'Smart reminders',
+  about_reminders_body:
+    'TouchGrass can send you a reminder when you haven\u2019t reached your daily goal yet. Reminders are \u201csmart\u201d \u2014 they check your calendar for upcoming meetings and your local weather before suggesting the best time to go outside. You can configure reminder windows and thresholds in Settings \u2192 Reminders.',
+  about_manual_title: 'Manual logging',
+  about_manual_body:
+    'Missed a session? You can log outdoor time manually from the home screen. Tap the ring or use the manual log button to enter a past session or start a live timer. Manual sessions are always approved immediately.',
+  about_privacy_title: 'Privacy',
+  about_privacy_body:
+    'All your data stays on your device. TouchGrass does not send any personal information to external servers. Location data is used only to detect outdoor sessions and is never stored beyond what is needed. Health Connect data is read locally and is not shared.',
+
   // Feedback & Support screen
   nav_feedback_support: 'Feedback & Support',
   feedback_send_feedback: 'Send feedback',
