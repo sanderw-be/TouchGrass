@@ -39,7 +39,7 @@ jobs:
         run: npm run type-check
 
       - name: Run Prettier format checking 
-        run: nom run format:check
+        run: npm run format:check
 
       - name: Run tests
         run: npm test -- --passWithNoTests
