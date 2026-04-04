@@ -2294,6 +2294,12 @@ describe('notificationManager', () => {
       expect(updatedQueue).toHaveLength(1);
       expect(updatedQueue[0].status).toBe('consumed');
 
+      // Firing a tick_planned reminder must write an activity log entry
+      expect(Database.insertBackgroundLog).toHaveBeenCalledWith(
+        'reminder',
+        'Reminder fired at 14:00'
+      );
+
       jest.restoreAllMocks();
     });
 
@@ -2422,6 +2428,12 @@ describe('notificationManager', () => {
       // Entry kept as consumed (not removed) for the 60-min catch-up wait guard
       expect(updatedQueue).toHaveLength(1);
       expect(updatedQueue[0].status).toBe('consumed');
+
+      // Firing a tick_planned reminder must write an activity log entry
+      expect(Database.insertBackgroundLog).toHaveBeenCalledWith(
+        'reminder',
+        'Reminder fired at 14:00'
+      );
 
       jest.restoreAllMocks();
     });

@@ -514,6 +514,10 @@ export async function processReminderQueue(): Promise<void> {
         console.log(
           `TouchGrass: [Queue] Consumed: ${entry.id} at ${formatSlotMinutes(entry.slotMinutes)} — fired via JS (${minutesSince} min since slot)`
         );
+        insertBackgroundLog(
+          'reminder',
+          `Reminder fired at ${formatSlotMinutes(entry.slotMinutes)}`
+        );
         entry.status = 'consumed';
         updatedQueue.push(entry); // keep as consumed for CONSUMED_TTL
         continue;
