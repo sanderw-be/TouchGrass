@@ -8,6 +8,19 @@ jest.mock('alarm-bridge-native', () => ({
   PULSE_TASK_NAME: 'TOUCHGRASS_PULSE_TASK',
 }));
 
+// Mock react-native-android-widget
+jest.mock('react-native-android-widget', () => ({
+  registerWidgetTaskHandler: jest.fn(),
+  requestWidgetUpdate: jest.fn(() => Promise.resolve()),
+  FlexWidget: ({ children }) => children,
+  TextWidget: () => null,
+  ImageWidget: () => null,
+  ListWidget: () => null,
+  SvgWidget: () => null,
+  IconWidget: () => null,
+  OverlapWidget: ({ children }) => children,
+}));
+
 // Mock react-native-safe-area-context
 jest.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),

@@ -1,0 +1,83 @@
+import { Platform } from 'react-native';
+import { WIDGET_TIMER_KEY, requestWidgetRefresh } from '../utils/widgetHelper';
+
+jest.mock('react-native-android-widget', () => ({
+  requestWidgetUpdate: jest.fn(() => Promise.resolve()),
+}));
+
+jest.mock('../storage/database', () => ({
+  initDatabase: jest.fn(),
+  getTodayMinutes: jest.fn(() => 15),
+  getCurrentDailyGoal: jest.fn(() => ({ targetMinutes: 60 })),
+  getSetting: jest.fn(() => ''),
+}));
+
+jest.mock('../widget/ProgressWidget', () => ({
+  ProgressWidget: jest.fn(() => null),
+}));
+
+describe('widgetHelper', () => {
+  const originalPlatform = Platform.OS;
+
+  afterEach(() => {
+    jest.clearAllMocks();
+    Object.defineProperty(Platform, 'OS', {
+      value: originalPlatform,
+      writable: true,
+    });
+  });
+
+  describe('WIDGET_TIMER_KEY', () => {
+    it('exports the expected settings key', () => {
+      expect(WIDGET_TIMER_KEY).toBe('widget_timer_start');
+    });
+  });
+
+  describe('requestWidgetRefresh', () => {
+    it('is a no-op on non-Android platforms', async () => {
+      Object.defineProperty(Platform, 'OS', {
+        value: 'ios',
+        writable: true,
+      });
+
+      await expect(requestWidgetRefresh()).resolves.toBeUndefined();
+
+      const { requestWidgetUpdate } = require('react-native-android-widget');
+      expect(requestWidgetUpdate).not.toHaveBeenCalled();
+    });
+
+    it('calls requestWidgetUpdate on Android', async () => {
+      Object.defineProperty(Platform, 'OS', {
+        value: 'android',
+        writable: true,
+      });
+
+      const { requestWidgetUpdate } = require('react-native-android-widget');
+
+      await requestWidgetRefresh();
+
+      expect(requestWidgetUpdate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          widgetName: 'Progress',
+        })
+      );
+    });
+
+    it('handles errors gracefully', async () => {
+      Object.defineProperty(Platform, 'OS', {
+        value: 'android',
+        writable: true,
+      });
+
+      const { requestWidgetUpdate } = require('react-native-android-widget');
+      requestWidgetUpdate.mockRejectedValueOnce(new Error('Native error'));
+
+      const consoleSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+
+      await expect(requestWidgetRefresh()).resolves.toBeUndefined();
+      expect(consoleSpy).toHaveBeenCalledWith('Widget refresh failed:', expect.any(Error));
+
+      consoleSpy.mockRestore();
+    });
+  });
+});

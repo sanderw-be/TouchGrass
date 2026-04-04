@@ -24,6 +24,8 @@ import {
   confirmSession,
   getDailyStreak,
   getWeeklyStreak,
+  getSetting,
+  setSetting,
   OutsideSession,
 } from '../storage/database';
 import { spacing, radius } from '../utils/theme';
@@ -34,6 +36,7 @@ import { updateTimeSlotProbability } from '../detection/sessionConfidence';
 import { startManualSession } from '../detection/manualCheckin';
 import { onSessionsChanged, emitSessionsChanged } from '../utils/sessionsChangedEmitter';
 import { cancelRemindersIfGoalReached } from '../notifications/notificationManager';
+import { WIDGET_TIMER_KEY, requestWidgetRefresh } from '../utils/widgetHelper';
 
 export default function HomeScreen() {
   const { colors, shadows, isDark } = useTheme();
@@ -58,8 +61,10 @@ export default function HomeScreen() {
   const timerStartRef = useRef<number>(0);
   const stopTimerRef = useRef<(() => void) | null>(null);
   const timerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const timerRunningRef = useRef(false);
 
   useEffect(() => {
+    timerRunningRef.current = timerRunning;
     if (timerRunning) {
       timerIntervalRef.current = setInterval(() => {
         setTimerSeconds(Math.floor((Date.now() - timerStartRef.current) / 1000));
@@ -92,6 +97,24 @@ export default function HomeScreen() {
     useCallback(() => {
       loadData();
     }, [loadData])
+  );
+
+  // On focus, detect if the widget started a timer while the app was in the
+  // background. If so, adopt it so the in-app ring shows the running state.
+  useFocusEffect(
+    useCallback(() => {
+      if (timerRunningRef.current) return; // already running
+      const marker = getSetting(WIDGET_TIMER_KEY, '');
+      const ts = marker ? parseInt(marker, 10) : 0;
+      if (ts > 0) {
+        // Adopt the widget-started timer
+        const stop = startManualSession();
+        stopTimerRef.current = stop;
+        timerStartRef.current = ts;
+        setTimerSeconds(Math.floor((Date.now() - ts) / 1000));
+        setTimerRunning(true);
+      }
+    }, [])
   );
 
   // Refresh whenever background work (e.g. Health Connect sync) inserts new sessions.
@@ -134,16 +157,22 @@ export default function HomeScreen() {
       }
       if (stopTimerRef.current) stopTimerRef.current();
       stopTimerRef.current = null;
+      // Clear widget marker so the widget shows the play icon again
+      setSetting(WIDGET_TIMER_KEY, '');
       setTimerRunning(false);
       setTimerSeconds(0);
       loadData();
+      requestWidgetRefresh();
     } else {
       // Start timer
       const stop = startManualSession();
       stopTimerRef.current = stop;
       timerStartRef.current = Date.now();
+      // Write marker so the widget can show the stop icon
+      setSetting(WIDGET_TIMER_KEY, String(Date.now()));
       setTimerSeconds(0);
       setTimerRunning(true);
+      requestWidgetRefresh();
     }
   };
 
