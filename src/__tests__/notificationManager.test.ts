@@ -1209,6 +1209,121 @@ describe('notificationManager', () => {
     });
   });
 
+  describe('maybeScheduleCatchUpReminder — concurrency guard', () => {
+    /** Helper: set up a typical "should schedule" scenario. */
+    function setupScheduleScenario(settingsStore: Record<string, string>) {
+      const todayStr = new Date().toDateString();
+      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
+        if (key in settingsStore) return settingsStore[key];
+        if (key === 'smart_reminders_count') return '2';
+        if (key === 'reminders_last_planned_date') return todayStr;
+        if (key === 'additional_reminders_today') return '0';
+        if (key === 'smart_catchup_reminders_count') return '2';
+        if (key === 'reminders_planned_slots') return JSON.stringify([{ hour: 9, minute: 0 }]);
+        return fallback;
+      });
+      (Database.setSetting as jest.Mock).mockImplementation((key: string, value: string) => {
+        settingsStore[key] = value;
+      });
+      (Database.getTodayMinutes as jest.Mock).mockReturnValue(0);
+      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
+      jest.spyOn(Date.prototype, 'getHours').mockReturnValue(10);
+      jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(30);
+      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockReturnValue([
+        { hour: 14, minute: 30, score: 0.8, reason: 'afternoon' },
+      ]);
+    }
+
+    it('skips the second call when two calls run concurrently in the same JS runtime', async () => {
+      const settingsStore: Record<string, string> = {};
+      setupScheduleScenario(settingsStore);
+
+      // Start the first call without awaiting — it runs synchronously until its
+      // first `await` (scheduleNotificationAsync) and sets catchUpSchedulingInProgress.
+      const firstCall = maybeScheduleCatchUpReminder();
+      // The second call starts before the first has finished: the in-progress
+      // flag is already true so it must return immediately without scheduling.
+      const secondCall = maybeScheduleCatchUpReminder();
+
+      await Promise.all([firstCall, secondCall]);
+
+      jest.restoreAllMocks();
+
+      // Only one notification should have been scheduled.
+      expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledTimes(1);
+      expect(Database.insertBackgroundLog).toHaveBeenCalledWith(
+        'reminder',
+        'Catch-up skipped — concurrent call in progress'
+      );
+    });
+
+    it('allows a new call after the previous one completes', async () => {
+      const settingsStore: Record<string, string> = {};
+      setupScheduleScenario(settingsStore);
+
+      await maybeScheduleCatchUpReminder();
+      // Reset mocks to simulate a fresh tick with the limit not yet reached.
+      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
+        if (key === 'smart_reminders_count') return '2';
+        if (key === 'reminders_last_planned_date') return new Date().toDateString();
+        if (key === 'additional_reminders_today') return '1';
+        if (key === 'smart_catchup_reminders_count') return '2';
+        if (key === 'reminders_planned_slots') return JSON.stringify([{ hour: 9, minute: 0 }]);
+        if (key === 'smart_reminder_queue') return '[]';
+        return fallback;
+      });
+      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockReturnValue([
+        { hour: 16, minute: 0, score: 0.8, reason: 'afternoon' },
+      ]);
+      await maybeScheduleCatchUpReminder();
+
+      jest.restoreAllMocks();
+
+      // Both sequential calls should have scheduled a notification.
+      expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledTimes(2);
+    });
+
+    it('skips scheduling when additional_reminders_today is incremented between reads (cross-runtime guard)', async () => {
+      const todayStr = new Date().toDateString();
+      let getSetting_callCount = 0;
+      // Simulate: first read of additional_reminders_today returns 0 (initial check passes),
+      // but by the time we re-read it just before scheduling, another runtime has
+      // already incremented it to the limit (1 == catchupLimit).
+      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
+        if (key === 'smart_reminders_count') return '2';
+        if (key === 'reminders_last_planned_date') return todayStr;
+        if (key === 'smart_catchup_reminders_count') return '1'; // limit is 1
+        if (key === 'additional_reminders_today') {
+          getSetting_callCount++;
+          // First read (initial limit check) → 0 (below limit, so we proceed).
+          // Second read (pre-schedule cross-runtime check) → 1 (at limit, bail out).
+          return getSetting_callCount === 1 ? '0' : '1';
+        }
+        if (key === 'reminders_planned_slots') return JSON.stringify([{ hour: 9, minute: 0 }]);
+        if (key === 'smart_reminder_queue') return '[]';
+        return fallback;
+      });
+      (Database.getTodayMinutes as jest.Mock).mockReturnValue(0);
+      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
+      jest.spyOn(Date.prototype, 'getHours').mockReturnValue(10);
+      jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(30);
+      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockReturnValue([
+        { hour: 14, minute: 30, score: 0.8, reason: 'afternoon' },
+      ]);
+
+      await maybeScheduleCatchUpReminder();
+
+      jest.restoreAllMocks();
+
+      // The pre-schedule guard should have caught the cross-runtime race.
+      expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
+      expect(Database.insertBackgroundLog).toHaveBeenCalledWith(
+        'reminder',
+        expect.stringContaining('concurrent cross-runtime call already scheduled')
+      );
+    });
+  });
+
   describe('cancelRemindersIfGoalReached', () => {
     it('cancels automatic reminders and clears the queue when goal is reached', async () => {
       const settingsStore: Record<string, string> = {

@@ -201,4 +201,64 @@ describe('performBackgroundTick', () => {
 
     await expect(performBackgroundTick()).rejects.toThrow('DB exploded');
   });
+
+  describe('concurrency guard', () => {
+    it('skips the second concurrent tick and logs a warning', async () => {
+      (Database.getSetting as jest.Mock).mockImplementation((key: string) => {
+        if (key === 'smart_reminders_count') return '0';
+        // Enable weather so the first tick hits `await fetchWeatherForecast` and
+        // yields control before completing — this is the yield point that makes
+        // the tickInProgress flag visible to the second call.
+        if (key === 'weather_enabled') return '1';
+        return '';
+      });
+      (WeatherService.fetchWeatherForecast as jest.Mock).mockResolvedValue({ success: true });
+
+      // Start the first tick without awaiting — it runs synchronously until the
+      // first `await` (fetchWeatherForecast) and sets tickInProgress = true.
+      const firstTick = performBackgroundTick();
+      // The second tick starts before the first has finished: the flag is set.
+      const secondTick = performBackgroundTick();
+
+      await Promise.all([firstTick, secondTick]);
+
+      // initDatabase should only have been called once (from the first tick).
+      expect(Database.initDatabase).toHaveBeenCalledTimes(1);
+      // The skip log must appear exactly once.
+      const skipCalls = (Database.insertBackgroundLog as jest.Mock).mock.calls.filter(
+        ([, msg]: [string, string]) => msg === 'Background tick skipped — already running'
+      );
+      expect(skipCalls).toHaveLength(1);
+    });
+
+    it('allows a new tick after the previous one completes', async () => {
+      (Database.getSetting as jest.Mock).mockImplementation((key: string) => {
+        if (key === 'smart_reminders_count') return '0';
+        if (key === 'weather_enabled') return '0';
+        return '';
+      });
+
+      await performBackgroundTick();
+      await performBackgroundTick();
+
+      // Both ticks ran to completion — initDatabase called twice.
+      expect(Database.initDatabase).toHaveBeenCalledTimes(2);
+    });
+
+    it('releases the guard even when the tick throws', async () => {
+      let callCount = 0;
+      (Database.getSetting as jest.Mock).mockImplementation(() => {
+        callCount++;
+        if (callCount === 1) throw new Error('DB exploded');
+        return '0';
+      });
+
+      // First tick throws — guard must still be cleared via finally.
+      await expect(performBackgroundTick()).rejects.toThrow('DB exploded');
+
+      // Second tick should run normally (not be blocked by a stale flag).
+      await expect(performBackgroundTick()).resolves.not.toThrow();
+      expect(Database.initDatabase).toHaveBeenCalledTimes(2);
+    });
+  });
 });
