@@ -3,6 +3,7 @@
 import React from 'react';
 import type { ColorProp } from 'react-native-android-widget';
 import { FlexWidget, OverlapWidget, SvgWidget, TextWidget } from 'react-native-android-widget';
+import { t } from '../i18n';
 
 /** Colors from the app theme (widget cannot use React context). */
 const COLORS = {
@@ -132,7 +133,7 @@ export function ProgressWidget({
               }}
             >
               <TextWidget
-                text={`started ${timerStartMs ? formatStartTime(timerStartMs) : '--:--'}`}
+                text={`${t('widget_started')} ${timerStartMs ? formatStartTime(timerStartMs) : '--:--'}`}
                 style={{
                   fontSize: 13,
                   color: COLORS.textSecondary,
@@ -147,7 +148,7 @@ export function ProgressWidget({
                 }}
               />
               <TextWidget
-                text="back inside"
+                text={t('widget_back_inside')}
                 style={{
                   fontSize: 11,
                   fontWeight: '600',
@@ -171,7 +172,7 @@ export function ProgressWidget({
                 }}
               />
               <TextWidget
-                text={`start outside\nsession`}
+                text={t('widget_start_outside')}
                 style={{
                   fontSize: 11,
                   fontWeight: '600',

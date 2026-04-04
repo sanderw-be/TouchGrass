@@ -6,6 +6,10 @@ import {
   formatStartTime,
 } from '../widget/ProgressWidget';
 
+jest.mock('../i18n', () => ({
+  t: (key: string) => key,
+}));
+
 // The widget uses react-native-android-widget primitives which are already
 // mocked in jest.setup.js. We test the component logic (color selection,
 // formatting, SVG generation, text output) by rendering and inspecting the
@@ -69,20 +73,20 @@ describe('ProgressWidget', () => {
     expect(element).toBeTruthy();
   });
 
-  it('shows play icon and "start outside" text in idle state', () => {
+  it('shows play icon and start-outside text in idle state', () => {
     const element = ProgressWidget(renderProps({ timerRunning: false }));
     const texts = collectTexts(element);
     expect(texts.some((t) => t.includes('▶'))).toBe(true);
-    expect(texts.some((t) => t.includes('start outside'))).toBe(true);
+    expect(texts.some((t) => t.includes('widget_start_outside'))).toBe(true);
   });
 
-  it('shows "started HH:MM", stop icon, and "back inside" in running state', () => {
+  it('shows "started HH:MM", stop icon, and back-inside text in running state', () => {
     const startMs = new Date(2025, 3, 4, 14, 30).getTime(); // 14:30
     const element = ProgressWidget(renderProps({ timerRunning: true, timerStartMs: startMs }));
     const texts = collectTexts(element);
-    expect(texts.some((t) => t.includes('started 14:30'))).toBe(true);
+    expect(texts.some((t) => t.includes('widget_started') && t.includes('14:30'))).toBe(true);
     expect(texts.some((t) => t.includes('⏹'))).toBe(true);
-    expect(texts.some((t) => t.includes('back inside'))).toBe(true);
+    expect(texts.some((t) => t.includes('widget_back_inside'))).toBe(true);
   });
 
   it('shows "--:--" when timer running but no timerStartMs', () => {
