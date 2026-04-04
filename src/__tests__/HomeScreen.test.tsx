@@ -346,6 +346,32 @@ describe('HomeScreen inline timer', () => {
     expect(queryByTestId('undo-snackbar')).toBeNull();
   });
 
+  it('shows the empty state illustration and tagline when there are no sessions', () => {
+    mockGetSessionsForDay.mockReturnValueOnce([]);
+    const { getByTestId, getByText } = render(<HomeScreen />);
+    expect(getByTestId('home-empty-state')).toBeTruthy();
+    expect(getByTestId('home-empty-icon')).toBeTruthy();
+    expect(getByText('no_sessions_title')).toBeTruthy();
+    expect(getByText('no_sessions_sub')).toBeTruthy();
+  });
+
+  it('hides the empty state when there are sessions', () => {
+    mockGetSessionsForDay.mockReturnValueOnce([
+      {
+        id: 1,
+        startTime: Date.now(),
+        endTime: Date.now() + 30 * 60 * 1000,
+        durationMinutes: 30,
+        confidence: 1,
+        userConfirmed: 1,
+        discarded: 0,
+        source: 'gps',
+      },
+    ]);
+    const { queryByTestId } = render(<HomeScreen />);
+    expect(queryByTestId('home-empty-state')).toBeNull();
+  });
+
   it('does not show undo snackbar after swipe confirm action', async () => {
     mockGetSessionsForDay.mockReturnValueOnce([
       {

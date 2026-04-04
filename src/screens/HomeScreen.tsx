@@ -265,14 +265,19 @@ export default function HomeScreen() {
         )}
 
         {todaySessions.length === 0 && (
-          <View style={styles.emptyState}>
+          <View style={styles.emptyState} testID="home-empty-state">
             <Image
               source={require('../../assets/herb.png')}
               style={styles.emptyIcon}
               resizeMode="contain"
+              testID="home-empty-icon"
             />
-            <Text style={styles.emptyText}>{t('no_sessions_title')}</Text>
-            <Text style={styles.emptySubtext}>{t('no_sessions_sub')}</Text>
+            <Text style={styles.emptyText} testID="home-empty-title">
+              {t('no_sessions_title')}
+            </Text>
+            <Text style={styles.emptySubtext} testID="home-empty-sub">
+              {t('no_sessions_sub')}
+            </Text>
           </View>
         )}
       </ScrollView>
