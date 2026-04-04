@@ -1,6 +1,6 @@
 # Home Screen Widget
 
-TouchGrass includes an Android home screen widget that displays your daily outdoor progress and provides quick access to start a timer.
+TouchGrass includes an Android home screen widget that displays your daily outdoor progress and provides quick access to start/stop a manual timer.
 
 ## Features
 
@@ -9,7 +9,7 @@ TouchGrass includes an Android home screen widget that displays your daily outdo
   - 30–60 %: Yellow (sun) — Making progress
   - 60–100 %: Green (grass) — Almost there!
   - 100 %+: Light green — Goal achieved!
-- **Start Timer Button**: Quick access to start a manual outdoor session timer
+- **Start/Stop Timer Button**: Start and stop a manual outdoor session directly from the widget — no app launch required
 - **Auto-updates**: Widget refreshes every 30 minutes automatically
 - **Live Data**: Reads directly from the SQLite database for accurate progress
 
@@ -31,26 +31,21 @@ TouchGrass includes an Android home screen widget that displays your daily outdo
 
 ### Interactions
 
+- **Tap Play/Stop Button**: Starts or stops a manual timer session directly — the widget writes/reads from the database without opening the app
 - **Tap Progress Ring**: Opens TouchGrass app to the home screen
-- **Tap Start Timer Button**: Opens app and automatically starts a manual timer
 
-### How the Timer Button Works
+### How the Timer Works
 
-The widget sends a deep link (`touchgrass://widget?startTimer=true`) which React
-Native's Linking API detects. `widgetHelper.ts` exposes two helpers:
+The widget handles the timer entirely on its own via broadcast intents:
 
-| Helper                       | Purpose                                                              |
-| ---------------------------- | -------------------------------------------------------------------- |
-| `wasOpenedFromWidgetTimer()` | Checks whether the app was cold-started from the widget timer button |
-| `addWidgetTimerListener(cb)` | Listens for widget timer deep links while the app is already running |
-
-HomeScreen uses both to auto-start the manual timer when the widget button is
-tapped.
+1. **Play tapped**: Writes `widget_timer_start` (epoch ms) into the `app_settings` table and switches to the stop icon
+2. **Stop tapped**: Reads the start time, inserts a completed session into `outside_sessions`, clears the marker, and refreshes the progress display
+3. **App opened**: If the app gains focus and finds a `widget_timer_start` marker, it adopts the timer and shows the running state in the in-app ring
 
 ### Updates
 
 - Widget automatically updates every 30 minutes
-- Widget updates when you open the app and approve/log sessions
+- Widget refreshes instantly after starting/stopping a timer
 - To manually force an update, remove and re-add the widget
 
 ## Implementation Details
@@ -75,6 +70,7 @@ android/app/src/main/
 │   │   ├── widget_background.xml          # Widget background styling
 │   │   ├── widget_button_background.xml   # Button styling
 │   │   ├── widget_play_icon.xml           # Play icon vector
+│   │   ├── widget_stop_icon.xml           # Stop icon vector
 │   │   ├── widget_preview.xml             # Widget picker preview
 │   │   ├── widget_ring_low.xml            # 0-30% progress (blue)
 │   │   ├── widget_ring_medium.xml         # 30-60% progress (yellow)
@@ -91,11 +87,11 @@ android/app/src/main/
 
 ### Database Access
 
-The widget directly reads from the Expo SQLite database (`touchgrass.db`):
+The widget directly reads/writes the Expo SQLite database (`touchgrass.db`):
 
-- **Sessions**: Queries confirmed sessions for today's date
-- **Settings**: Reads the `daily_goal` setting
-- **Date Format**: Uses `YYYY-MM-DD` format for date comparisons
+- **Sessions**: Table `outside_sessions` — `startTime` (epoch ms), `durationMinutes` (REAL), `userConfirmed` (1/0/null)
+- **Goals**: Table `daily_goals` — `targetMinutes` (INT), ordered by `createdAt` DESC
+- **Timer marker**: Table `app_settings` — key `widget_timer_start`, value is epoch ms string
 
 ### Color Scheme
 
@@ -114,7 +110,7 @@ Widget colors match the app's nature-inspired theme:
 
 - **Android Only**: Home screen widgets are an Android feature (iOS uses WidgetKit, not yet implemented)
 - **Static Ring**: The progress ring uses static drawable resources, not animated
-- **Update Frequency**: Limited to 30-minute intervals by Android's widget update mechanism
+- **Update Frequency**: Limited to 30-minute intervals by Android's widget update mechanism (but instant on timer toggle)
 
 ## Troubleshooting
 
@@ -130,11 +126,10 @@ Widget colors match the app's nature-inspired theme:
 - Open the app to trigger an immediate refresh
 - Check battery optimization settings aren't restricting the app
 
-### Start Timer Button Not Working
+### Timer Button Not Working
 
-- Ensure TouchGrass app is installed and not restricted
-- Check that the app has necessary permissions
-- Try force-stopping the app and reopening it
+- Ensure TouchGrass app is installed and has been opened at least once (so the database exists)
+- Check logcat for `TouchGrassWidget` tag for error messages
 
 ## Rebuilding Native Code
 

@@ -32,6 +32,8 @@ jest.mock('../storage/database', () => ({
   confirmSession: (...args: any[]) => mockConfirmSession(...args),
   getDailyStreak: () => mockGetDailyStreak(),
   getWeeklyStreak: () => mockGetWeeklyStreak(),
+  getSetting: jest.fn(() => ''),
+  setSetting: jest.fn(),
 }));
 
 const mockStopFn = jest.fn();
@@ -57,6 +59,7 @@ jest.mock('../notifications/notificationManager', () => ({
 jest.mock('../utils/widgetHelper', () => ({
   wasOpenedFromWidgetTimer: jest.fn(() => Promise.resolve(false)),
   addWidgetTimerListener: jest.fn(() => () => {}),
+  WIDGET_TIMER_KEY: 'widget_timer_start',
 }));
 
 jest.mock('@react-navigation/native', () => ({

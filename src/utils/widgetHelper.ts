@@ -2,18 +2,22 @@
  * Widget Helper Module
  *
  * Provides utilities for interacting with the Android home screen widget.
- * The widget communicates with the app via deep links (touchgrass://widget?startTimer=true).
+ *
+ * Timer integration: The widget writes a `widget_timer_start` key into the
+ * app_settings table when the user taps the play button on the widget.  The
+ * app reads this on focus to show the running timer in-app.  When the user
+ * stops the timer (either from the widget or from the app) the marker is
+ * cleared and a session is written.
  */
 
 import { Platform, Linking } from 'react-native';
 
 const WIDGET_TIMER_PARAM = 'startTimer=true';
+export const WIDGET_TIMER_KEY = 'widget_timer_start';
 
 /**
  * Check if the app was opened from the widget's "Start Timer" button.
  * The widget sends a deep link: touchgrass://widget?startTimer=true
- *
- * @returns Promise<boolean> True if opened from widget timer button
  */
 export async function wasOpenedFromWidgetTimer(): Promise<boolean> {
   if (Platform.OS !== 'android') {
@@ -32,9 +36,6 @@ export async function wasOpenedFromWidgetTimer(): Promise<boolean> {
 /**
  * Listen for widget deep link events while the app is running.
  * The widget sends: touchgrass://widget?startTimer=true
- *
- * @param callback Function to call when widget timer button is tapped
- * @returns Cleanup function to remove the listener
  */
 export function addWidgetTimerListener(callback: () => void): () => void {
   if (Platform.OS !== 'android') {

@@ -139,4 +139,10 @@ describe('widgetHelper', () => {
       consoleSpy.mockRestore();
     });
   });
+
+  describe('WIDGET_TIMER_KEY', () => {
+    it('exports the expected settings key', () => {
+      expect(widgetHelper.WIDGET_TIMER_KEY).toBe('widget_timer_start');
+    });
+  });
 });

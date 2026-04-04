@@ -24,6 +24,8 @@ import {
   confirmSession,
   getDailyStreak,
   getWeeklyStreak,
+  getSetting,
+  setSetting,
   OutsideSession,
 } from '../storage/database';
 import { spacing, radius } from '../utils/theme';
@@ -34,7 +36,11 @@ import { updateTimeSlotProbability } from '../detection/sessionConfidence';
 import { startManualSession } from '../detection/manualCheckin';
 import { onSessionsChanged, emitSessionsChanged } from '../utils/sessionsChangedEmitter';
 import { cancelRemindersIfGoalReached } from '../notifications/notificationManager';
-import { wasOpenedFromWidgetTimer, addWidgetTimerListener } from '../utils/widgetHelper';
+import {
+  wasOpenedFromWidgetTimer,
+  addWidgetTimerListener,
+  WIDGET_TIMER_KEY,
+} from '../utils/widgetHelper';
 
 export default function HomeScreen() {
   const { colors, shadows, isDark } = useTheme();
@@ -137,6 +143,8 @@ export default function HomeScreen() {
       }
       if (stopTimerRef.current) stopTimerRef.current();
       stopTimerRef.current = null;
+      // Clear widget marker so the widget shows the play icon again
+      setSetting(WIDGET_TIMER_KEY, '');
       setTimerRunning(false);
       setTimerSeconds(0);
       loadData();
@@ -145,6 +153,8 @@ export default function HomeScreen() {
       const stop = startManualSession();
       stopTimerRef.current = stop;
       timerStartRef.current = Date.now();
+      // Write marker so the widget can show the stop icon
+      setSetting(WIDGET_TIMER_KEY, String(Date.now()));
       setTimerSeconds(0);
       setTimerRunning(true);
     }
@@ -156,7 +166,25 @@ export default function HomeScreen() {
     handleTimerPressRef.current = handleTimerPress;
   }, [handleTimerPress]);
 
-  // Handle widget timer intent — runs once on mount only.
+  // On focus, detect if the widget started a timer while the app was in the
+  // background. If so, adopt it so the in-app ring shows the running state.
+  useFocusEffect(
+    useCallback(() => {
+      if (timerRunningRef.current) return; // already running
+      const marker = getSetting(WIDGET_TIMER_KEY, '');
+      const ts = marker ? parseInt(marker, 10) : 0;
+      if (ts > 0) {
+        // Adopt the widget-started timer
+        const stop = startManualSession();
+        stopTimerRef.current = stop;
+        timerStartRef.current = ts;
+        setTimerSeconds(Math.floor((Date.now() - ts) / 1000));
+        setTimerRunning(true);
+      }
+    }, [])
+  );
+
+  // Handle widget timer deep link — runs once on mount only.
   useEffect(() => {
     wasOpenedFromWidgetTimer().then((fromWidget) => {
       if (fromWidget && !timerRunningRef.current) {

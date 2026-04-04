@@ -124,6 +124,7 @@ function withWidgetSourceFiles(config) {
         widget_background: WIDGET_BACKGROUND_XML,
         widget_button_background: WIDGET_BUTTON_BG_XML,
         widget_play_icon: WIDGET_PLAY_ICON_XML,
+        widget_stop_icon: WIDGET_STOP_ICON_XML,
         widget_preview: WIDGET_PREVIEW_XML,
         widget_ring_low: ringXml('low', '#7EB8D4'),
         widget_ring_medium: ringXml('medium', '#F5C842'),
@@ -143,9 +144,15 @@ function withWidgetSourceFiles(config) {
 // ---------------------------------------------------------------------------
 // Kotlin: ProgressWidgetProvider
 //
-// Reads data from the SQLite database and renders a RemoteViews widget.
-// The "Start Timer" button sends a deep link Intent so that React Native's
-// Linking API sees it as a URL (touchgrass://widget?startTimer=true).
+// Reads data from the expo-sqlite database and renders a RemoteViews widget.
+//
+// DB schema (from src/storage/database.ts):
+//   Table: outside_sessions  — startTime/endTime (epoch ms), durationMinutes (REAL), userConfirmed (1/0/null)
+//   Table: daily_goals       — targetMinutes (INT), createdAt (epoch ms)
+//   Table: app_settings      — key TEXT PK, value TEXT
+//
+// Timer: tapping play/stop writes a marker (widget_timer_start) into
+// app_settings and inserts a completed session on stop — no app launch needed.
 // ---------------------------------------------------------------------------
 const WIDGET_PROVIDER_KT = `\
 package com.jollyheron.touchgrass
@@ -153,143 +160,217 @@ package com.jollyheron.touchgrass
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
+import android.content.ComponentName
+import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.database.sqlite.SQLiteDatabase
 import android.net.Uri
 import android.widget.RemoteViews
-import java.text.SimpleDateFormat
 import java.util.*
 
-/**
- * Home screen widget — shows daily progress ring and a "Start Timer" button.
- */
 class ProgressWidgetProvider : AppWidgetProvider() {
 
+    companion object {
+        private const val TAG = "TouchGrassWidget"
+        private const val ACTION_TOGGLE_TIMER = "com.jollyheron.touchgrass.WIDGET_TOGGLE_TIMER"
+        private const val TIMER_KEY = "widget_timer_start"
+    }
+
+    // Called by the system every updatePeriodMillis and on first add.
     override fun onUpdate(
         context: Context,
         appWidgetManager: AppWidgetManager,
         appWidgetIds: IntArray
     ) {
-        for (appWidgetId in appWidgetIds) {
-            updateWidget(context, appWidgetManager, appWidgetId)
+        for (id in appWidgetIds) refreshWidget(context, appWidgetManager, id)
+    }
+
+    // Handle our custom "toggle timer" broadcast.
+    override fun onReceive(context: Context, intent: Intent) {
+        super.onReceive(context, intent)
+        if (intent.action == ACTION_TOGGLE_TIMER) {
+            toggleTimer(context)
+            // Refresh all widget instances so the icon updates.
+            val mgr = AppWidgetManager.getInstance(context)
+            val ids = mgr.getAppWidgetIds(ComponentName(context, ProgressWidgetProvider::class.java))
+            for (id in ids) refreshWidget(context, mgr, id)
         }
     }
 
-    companion object {
+    // -----------------------------------------------------------------------
+    // Render
+    // -----------------------------------------------------------------------
+    private fun refreshWidget(context: Context, mgr: AppWidgetManager, widgetId: Int) {
+        val views = RemoteViews(context.packageName, R.layout.widget_progress)
+        val data = readWidgetData(context)
+        val timerRunning = isTimerRunning(context)
 
-        fun updateWidget(
-            context: Context,
-            appWidgetManager: AppWidgetManager,
-            appWidgetId: Int
-        ) {
-            val views = RemoteViews(context.packageName, R.layout.widget_progress)
-            val data = getWidgetData(context)
+        // Progress text — show rounded minutes
+        val displayCurrent = Math.round(data.current).toInt()
+        views.setTextViewText(R.id.widget_progress_text, "\$displayCurrent / \${data.target} min")
 
-            val progress = if (data.target > 0) {
-                ((data.current.toFloat() / data.target.toFloat()) * 100).toInt()
-            } else 0
-
-            // Progress text
-            views.setTextViewText(
-                R.id.widget_progress_text,
-                "\${data.current} / \${data.target} min"
-            )
-
-            // Ring colour
-            val ringDrawable = when {
-                progress >= 100 -> R.drawable.widget_ring_complete
-                progress >= 60  -> R.drawable.widget_ring_good
-                progress >= 30  -> R.drawable.widget_ring_medium
-                else            -> R.drawable.widget_ring_low
-            }
-            views.setImageViewResource(R.id.widget_progress_ring, ringDrawable)
-
-            // --- Start Timer button: deep-link Intent ---
-            // Using ACTION_VIEW + data URI so React Native Linking sees the URL.
-            val timerIntent = Intent(
-                Intent.ACTION_VIEW,
-                Uri.parse("touchgrass://widget?startTimer=true")
-            ).apply {
-                setClassName(context, "com.jollyheron.touchgrass.MainActivity")
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-            }
-            val timerPending = PendingIntent.getActivity(
-                context,
-                appWidgetId,
-                timerIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-            views.setOnClickPendingIntent(R.id.widget_start_button, timerPending)
-
-            // --- Tap anywhere else opens the app normally ---
-            val openIntent = Intent(
-                Intent.ACTION_VIEW,
-                Uri.parse("touchgrass://home")
-            ).apply {
-                setClassName(context, "com.jollyheron.touchgrass.MainActivity")
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-            }
-            val openPending = PendingIntent.getActivity(
-                context,
-                appWidgetId + 10000,
-                openIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-            views.setOnClickPendingIntent(R.id.widget_container, openPending)
-
-            appWidgetManager.updateAppWidget(appWidgetId, views)
+        // Ring colour
+        val pct = if (data.target > 0) (data.current / data.target * 100).toInt() else 0
+        val ringRes = when {
+            pct >= 100 -> R.drawable.widget_ring_complete
+            pct >= 60  -> R.drawable.widget_ring_good
+            pct >= 30  -> R.drawable.widget_ring_medium
+            else       -> R.drawable.widget_ring_low
         }
+        views.setImageViewResource(R.id.widget_progress_ring, ringRes)
 
-        // ---- SQLite helpers ------------------------------------------------
+        // Play / Stop icon
+        views.setImageViewResource(
+            R.id.widget_button_icon,
+            if (timerRunning) R.drawable.widget_stop_icon else R.drawable.widget_play_icon
+        )
 
-        private fun getWidgetData(context: Context): WidgetData {
+        // Toggle-timer broadcast on button tap
+        val toggleIntent = Intent(context, ProgressWidgetProvider::class.java).apply {
+            action = ACTION_TOGGLE_TIMER
+        }
+        val togglePending = PendingIntent.getBroadcast(
+            context, 0, toggleIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        views.setOnClickPendingIntent(R.id.widget_start_button, togglePending)
+
+        // Tap the ring area → open app via deep link (optionally with timer context)
+        val uri = if (timerRunning) "touchgrass://widget?timerRunning=true"
+                  else "touchgrass://home"
+        val openIntent = Intent(Intent.ACTION_VIEW, Uri.parse(uri)).apply {
+            setClassName(context, "com.jollyheron.touchgrass.MainActivity")
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        val openPending = PendingIntent.getActivity(
+            context, widgetId + 10000, openIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        views.setOnClickPendingIntent(R.id.widget_container, openPending)
+
+        mgr.updateAppWidget(widgetId, views)
+    }
+
+    // -----------------------------------------------------------------------
+    // Timer toggle — writes directly into the app_settings / outside_sessions
+    // tables so no app launch is required.
+    // -----------------------------------------------------------------------
+    private fun toggleTimer(context: Context) {
+        try {
+            val db = openDb(context, writable = true) ?: return
             try {
-                val dbPath = context.getDatabasePath("touchgrass.db")
-                if (!dbPath.exists()) return WidgetData(0, 30)
-
-                val db = SQLiteDatabase.openDatabase(
-                    dbPath.absolutePath, null, SQLiteDatabase.OPEN_READONLY
-                )
-                try {
-                    val today = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
-                    val current = getTodayMinutes(db, today)
-                    val target  = getDailyGoal(db)
-                    return WidgetData(current, target)
-                } finally {
-                    db.close()
+                val running = getTimerStart(db)
+                if (running != null) {
+                    // --- Stop: insert session & clear marker -----------------
+                    val now = System.currentTimeMillis()
+                    val durationMin = (now - running).toFloat() / 60_000f
+                    db.execSQL(
+                        """INSERT INTO outside_sessions
+                           (startTime, endTime, durationMinutes, source, confidence, userConfirmed, discarded)
+                           VALUES (?, ?, ?, 'manual', 1.0, 1, 0)""",
+                        arrayOf(running, now, durationMin)
+                    )
+                    db.delete("app_settings", "key = ?", arrayOf(TIMER_KEY))
+                    android.util.Log.d(TAG, "Timer stopped — session \${durationMin.toInt()} min")
+                } else {
+                    // --- Start: write marker ---------------------------------
+                    val cv = ContentValues().apply {
+                        put("key", TIMER_KEY)
+                        put("value", System.currentTimeMillis().toString())
+                    }
+                    db.insertWithOnConflict("app_settings", null, cv, SQLiteDatabase.CONFLICT_REPLACE)
+                    android.util.Log.d(TAG, "Timer started")
                 }
-            } catch (e: Exception) {
-                android.util.Log.e("TouchGrassWidget", "Error fetching widget data", e)
-                return WidgetData(0, 30)
+            } finally {
+                db.close()
             }
+        } catch (e: Exception) {
+            android.util.Log.e(TAG, "toggleTimer error", e)
         }
+    }
 
-        private fun getTodayMinutes(db: SQLiteDatabase, today: String): Int {
-            val query = """
-                SELECT COALESCE(SUM(duration), 0) as total
-                FROM sessions
-                WHERE date(start_time) = ?
-                AND user_confirmed = 1
-            """.trimIndent()
-            db.rawQuery(query, arrayOf(today)).use { cursor ->
-                if (cursor.moveToFirst()) return cursor.getInt(0)
-            }
-            return 0
+    // -----------------------------------------------------------------------
+    // DB helpers
+    // -----------------------------------------------------------------------
+    private fun openDb(context: Context, writable: Boolean = false): SQLiteDatabase? {
+        val dbFile = context.getDatabasePath("touchgrass.db")
+        if (!dbFile.exists()) {
+            android.util.Log.w(TAG, "DB not found at \${dbFile.absolutePath}")
+            return null
         }
+        val flags = if (writable) SQLiteDatabase.OPEN_READWRITE else SQLiteDatabase.OPEN_READONLY
+        return SQLiteDatabase.openDatabase(dbFile.absolutePath, null, flags)
+    }
 
-        private fun getDailyGoal(db: SQLiteDatabase): Int {
-            db.rawQuery(
-                "SELECT value FROM settings WHERE key = 'daily_goal'", null
-            ).use { cursor ->
-                if (cursor.moveToFirst()) return cursor.getString(0).toIntOrNull() ?: 30
-            }
-            return 30
+    private fun isTimerRunning(context: Context): Boolean {
+        val db = openDb(context) ?: return false
+        try {
+            return getTimerStart(db) != null
+        } finally {
+            db.close()
         }
+    }
+
+    private fun getTimerStart(db: SQLiteDatabase): Long? {
+        db.rawQuery(
+            "SELECT value FROM app_settings WHERE key = ?", arrayOf(TIMER_KEY)
+        ).use { c ->
+            if (c.moveToFirst()) return c.getString(0).toLongOrNull()
+        }
+        return null
+    }
+
+    private fun readWidgetData(context: Context): WidgetData {
+        val db = openDb(context) ?: return WidgetData(0f, 30)
+        try {
+            val current = getTodayMinutes(db)
+            val target  = getDailyGoal(db)
+            return WidgetData(current, target)
+        } catch (e: Exception) {
+            android.util.Log.e(TAG, "readWidgetData error", e)
+            return WidgetData(0f, 30)
+        } finally {
+            db.close()
+        }
+    }
+
+    /**
+     * Sum of confirmed session minutes for today.
+     * startTime is stored as epoch-ms; we compare against start-of-day.
+     */
+    private fun getTodayMinutes(db: SQLiteDatabase): Float {
+        val cal = Calendar.getInstance()
+        cal.set(Calendar.HOUR_OF_DAY, 0)
+        cal.set(Calendar.MINUTE, 0)
+        cal.set(Calendar.SECOND, 0)
+        cal.set(Calendar.MILLISECOND, 0)
+        val startOfDay = cal.timeInMillis
+        val endOfDay   = startOfDay + 86_400_000L
+
+        db.rawQuery(
+            """SELECT COALESCE(SUM(durationMinutes), 0)
+               FROM outside_sessions
+               WHERE startTime >= ? AND startTime < ? AND userConfirmed = 1""",
+            arrayOf(startOfDay.toString(), endOfDay.toString())
+        ).use { c ->
+            if (c.moveToFirst()) return c.getFloat(0)
+        }
+        return 0f
+    }
+
+    /** Latest daily goal from daily_goals table (most recent by createdAt). */
+    private fun getDailyGoal(db: SQLiteDatabase): Int {
+        db.rawQuery(
+            "SELECT targetMinutes FROM daily_goals ORDER BY createdAt DESC LIMIT 1", null
+        ).use { c ->
+            if (c.moveToFirst()) return c.getInt(0)
+        }
+        return 30
     }
 }
 
-data class WidgetData(val current: Int, val target: Int)
+data class WidgetData(val current: Float, val target: Int)
 `;
 
 // ---------------------------------------------------------------------------
@@ -317,7 +398,7 @@ const WIDGET_LAYOUT_XML = `\
             android:src="@drawable/widget_ring_low"
             android:contentDescription="Progress ring" />
 
-        <!-- Center play button -->
+        <!-- Center play/stop button -->
         <FrameLayout
             android:id="@+id/widget_start_button"
             android:layout_width="64dp"
@@ -328,6 +409,7 @@ const WIDGET_LAYOUT_XML = `\
             android:focusable="true">
 
             <ImageView
+                android:id="@+id/widget_button_icon"
                 android:layout_width="32dp"
                 android:layout_height="32dp"
                 android:layout_gravity="center"
@@ -403,6 +485,19 @@ const WIDGET_PLAY_ICON_XML = `\
     <path
         android:fillColor="#FFFFFF"
         android:pathData="M8,5v14l11,-7z" />
+</vector>
+`;
+
+const WIDGET_STOP_ICON_XML = `\
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M6,6h12v12H6z" />
 </vector>
 `;
 
