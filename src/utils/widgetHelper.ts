@@ -47,10 +47,11 @@ export async function requestWidgetRefresh(): Promise<void> {
     const target = getCurrentDailyGoal()?.targetMinutes ?? 30;
     const marker = getSetting(WIDGET_TIMER_KEY, '');
     const timerRunning = isWidgetTimerRunning(marker);
+    const timerStartMs = timerRunning ? parseInt(marker, 10) : undefined;
 
     await requestWidgetUpdate({
       widgetName: 'Progress',
-      renderWidget: () => ProgressWidget({ current, target, timerRunning }),
+      renderWidget: () => ProgressWidget({ current, target, timerRunning, timerStartMs }),
     });
   } catch (error) {
     console.warn('Widget refresh failed:', error);

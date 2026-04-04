@@ -27,6 +27,11 @@ export default {
   ring_timer_outside: 'buiten',
   ring_timer_info: 'Tik op de ring om een handmatige timer te starten',
 
+  // Widget
+  widget_start_outside: 'start buiten\nsessie',
+  widget_back_inside: 'terug binnen',
+  widget_started: 'gestart',
+
   // Sessiebronnen
   source_health_connect: 'Activiteit',
   source_gps: 'GPS',

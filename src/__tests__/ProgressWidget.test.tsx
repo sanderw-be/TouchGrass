@@ -3,6 +3,7 @@ import {
   ProgressWidgetProps,
   buildRingSvg,
   formatMinutes,
+  formatStartTime,
 } from '../widget/ProgressWidget';
 
 // The widget uses react-native-android-widget primitives which are already
@@ -68,54 +69,42 @@ describe('ProgressWidget', () => {
     expect(element).toBeTruthy();
   });
 
-  it('shows current and target minutes at zero progress', () => {
-    const element = ProgressWidget(renderProps({ current: 0, target: 30 }));
-    const texts = collectTexts(element);
-    expect(texts).toContain('0 min');
-    expect(texts).toContain('of 30 min');
-    expect(texts).toContain('0%');
-  });
-
-  it('shows "200%" when current exceeds target', () => {
-    const element = ProgressWidget(renderProps({ current: 60, target: 30 }));
-    const texts = collectTexts(element);
-    expect(texts).toContain('200%');
-  });
-
-  it('formats hours correctly for large values', () => {
-    const element = ProgressWidget(renderProps({ current: 90, target: 120 }));
-    const texts = collectTexts(element);
-    expect(texts).toContain('1 h 30 min');
-    expect(texts).toContain('of 2 h');
-  });
-
-  it('renders Start button when timer is not running', () => {
+  it('shows play icon and "start outside" text in idle state', () => {
     const element = ProgressWidget(renderProps({ timerRunning: false }));
-    const timerBtn = findByClickAction(element, 'TOGGLE_TIMER');
-    expect(timerBtn).toBeTruthy();
-    const texts = collectTexts(timerBtn);
-    expect(texts.some((t) => t.includes('Start'))).toBe(true);
+    const texts = collectTexts(element);
+    expect(texts.some((t) => t.includes('▶'))).toBe(true);
+    expect(texts.some((t) => t.includes('start outside'))).toBe(true);
   });
 
-  it('renders Stop button when timer is running', () => {
+  it('shows "started HH:MM", stop icon, and "back inside" in running state', () => {
+    const startMs = new Date(2025, 3, 4, 14, 30).getTime(); // 14:30
+    const element = ProgressWidget(renderProps({ timerRunning: true, timerStartMs: startMs }));
+    const texts = collectTexts(element);
+    expect(texts.some((t) => t.includes('started 14:30'))).toBe(true);
+    expect(texts.some((t) => t.includes('⏹'))).toBe(true);
+    expect(texts.some((t) => t.includes('back inside'))).toBe(true);
+  });
+
+  it('shows "--:--" when timer running but no timerStartMs', () => {
     const element = ProgressWidget(renderProps({ timerRunning: true }));
-    const timerBtn = findByClickAction(element, 'TOGGLE_TIMER');
-    expect(timerBtn).toBeTruthy();
-    const texts = collectTexts(timerBtn);
-    expect(texts.some((t) => t.includes('Stop'))).toBe(true);
+    const texts = collectTexts(element);
+    expect(texts.some((t) => t.includes('--:--'))).toBe(true);
   });
 
   it('handles zero target without division by zero', () => {
     const element = ProgressWidget(renderProps({ current: 10, target: 0 }));
-    const texts = collectTexts(element);
-    // Should show some percentage without crashing (Infinity protection)
     expect(element).toBeTruthy();
-    expect(texts).toBeDefined();
   });
 
   it('uses OPEN_APP click action on root container', () => {
     const element = ProgressWidget(renderProps());
     expect(element.props.clickAction).toBe('OPEN_APP');
+  });
+
+  it('has TOGGLE_TIMER click action on the centre area', () => {
+    const element = ProgressWidget(renderProps());
+    const timerBtn = findByClickAction(element, 'TOGGLE_TIMER');
+    expect(timerBtn).toBeTruthy();
   });
 
   it('embeds an SVG circular progress ring', () => {
@@ -126,21 +115,30 @@ describe('ProgressWidget', () => {
     expect(svg).toContain('stroke-dasharray');
     expect(svg).toContain('rotate(-90');
   });
+
+  it('has transparent (no backgroundColor) root container', () => {
+    const element = ProgressWidget(renderProps());
+    expect(element.props.style.backgroundColor).toBeUndefined();
+  });
+
+  it('SVG ring contains a filled centre circle for background', () => {
+    const element = ProgressWidget(renderProps({ current: 15, target: 30 }));
+    const svg = findSvgProp(element);
+    expect(svg).toContain('fill="#FFFFFF"');
+  });
 });
 
 describe('buildRingSvg', () => {
-  it('returns valid SVG with two circles', () => {
+  it('returns valid SVG with three circles (fill + track + progress)', () => {
     const svg = buildRingSvg(0.5, '#4A7C59');
     expect(svg).toMatch(/^<svg /);
     expect(svg).toMatch(/<\/svg>$/);
-    // Track + progress circle
-    expect((svg.match(/<circle/g) ?? []).length).toBe(2);
+    expect((svg.match(/<circle/g) ?? []).length).toBe(3);
   });
 
   it('has full circumference offset at 0%', () => {
     const svg = buildRingSvg(0, '#7EB8D4');
-    // At 0% the dashoffset equals circumference, meaning no visible arc
-    const r = (86 - 8) / 2; // RING_SIZE=86, STROKE_WIDTH=8
+    const r = (130 - 10) / 2; // RING_SIZE=130, STROKE_WIDTH=10
     const circumference = 2 * Math.PI * r;
     expect(svg).toContain(`stroke-dashoffset="${circumference}"`);
   });
@@ -148,6 +146,11 @@ describe('buildRingSvg', () => {
   it('has zero offset at 100%', () => {
     const svg = buildRingSvg(1, '#6BAF7A');
     expect(svg).toContain('stroke-dashoffset="0"');
+  });
+
+  it('includes a filled inner circle', () => {
+    const svg = buildRingSvg(0.5, '#4A7C59');
+    expect(svg).toContain('fill="#FFFFFF"');
   });
 });
 
@@ -162,5 +165,22 @@ describe('formatMinutes', () => {
 
   it('formats exact hours without remainder', () => {
     expect(formatMinutes(120)).toBe('2 h');
+  });
+});
+
+describe('formatStartTime', () => {
+  it('formats epoch-ms to HH:MM', () => {
+    const epoch = new Date(2025, 0, 15, 9, 5).getTime();
+    expect(formatStartTime(epoch)).toBe('09:05');
+  });
+
+  it('pads single-digit hours and minutes', () => {
+    const epoch = new Date(2025, 0, 1, 3, 7).getTime();
+    expect(formatStartTime(epoch)).toBe('03:07');
+  });
+
+  it('formats midnight correctly', () => {
+    const epoch = new Date(2025, 0, 1, 0, 0).getTime();
+    expect(formatStartTime(epoch)).toBe('00:00');
   });
 });

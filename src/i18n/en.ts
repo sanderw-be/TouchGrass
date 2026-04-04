@@ -27,6 +27,11 @@ export default {
   ring_timer_outside: 'outside',
   ring_timer_info: 'Tap the ring to start a manual timer',
 
+  // Widget
+  widget_start_outside: 'start outside\nsession',
+  widget_back_inside: 'back inside',
+  widget_started: 'started',
+
   // Session sources
   source_health_connect: 'Activity',
   source_gps: 'GPS',

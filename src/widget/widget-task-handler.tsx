@@ -13,13 +13,19 @@ import { logManualSession } from '../detection/manualCheckin';
 import { WIDGET_TIMER_KEY, isWidgetTimerRunning } from '../utils/widgetHelper';
 
 /** Read current progress data from SQLite. */
-function getWidgetData(): { current: number; target: number; timerRunning: boolean } {
+function getWidgetData(): {
+  current: number;
+  target: number;
+  timerRunning: boolean;
+  timerStartMs?: number;
+} {
   initDatabase();
   const current = getTodayMinutes();
   const target = getCurrentDailyGoal()?.targetMinutes ?? 30;
   const marker = getSetting(WIDGET_TIMER_KEY, '');
   const timerRunning = isWidgetTimerRunning(marker);
-  return { current, target, timerRunning };
+  const timerStartMs = timerRunning ? parseInt(marker, 10) : undefined;
+  return { current, target, timerRunning, timerStartMs };
 }
 
 export async function widgetTaskHandler(props: WidgetTaskHandlerProps): Promise<void> {
@@ -35,6 +41,7 @@ export async function widgetTaskHandler(props: WidgetTaskHandlerProps): Promise<
           current={data.current}
           target={data.target}
           timerRunning={data.timerRunning}
+          timerStartMs={data.timerStartMs}
         />
       );
       break;
@@ -68,6 +75,7 @@ export async function widgetTaskHandler(props: WidgetTaskHandlerProps): Promise<
             current={data.current}
             target={data.target}
             timerRunning={data.timerRunning}
+            timerStartMs={data.timerStartMs}
           />
         );
       }
