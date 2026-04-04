@@ -38,7 +38,7 @@ jobs:
       - name: Run TypeScript type checking
         run: npm run type-check
 
-      - name: Run Prettier format checking 
+      - name: Run Prettier format checking
         run: npm run format:check
 
       - name: Run tests
