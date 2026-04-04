@@ -26,10 +26,17 @@ export const MIN_OUTSIDE_DURATION_MS = 5 * 60 * 1000;
 // geofence boundary when they began tracking but clearly departed from that location.
 const DEPARTURE_LOCATION_RADIUS_MULTIPLIER = 2;
 
+/**
+ * Persisted GPS session state, stored in and restored from SQLite.
+ */
+export interface GpsState {
+  outsideSessionStart: number | null;
+  lastKnownOutside: boolean;
+}
+
 // In-memory state for the current outside session
 let outsideSessionStart: number | null = null;
 let lastKnownOutside = false;
-let gpsStateLoaded = false;
 let gpsSessionDistanceMeters = 0;
 let gpsSessionSpeedSum = 0;
 let gpsSessionSpeedCount = 0;
@@ -48,15 +55,14 @@ const GPS_LAST_OUTSIDE_KEY = 'gps_last_outside';
 
 /**
  * Load GPS session state from persistent storage.
- * Called lazily on the first location update after a (re)start.
+ * Must be called at the start of every background task invocation to ensure
+ * in-memory state reflects the latest values written to SQLite.
  */
-function loadGPSState(): void {
-  if (gpsStateLoaded) return;
+export function loadGPSState(): void {
   const start = parseInt(getSetting(GPS_SESSION_START_KEY, '0'), 10);
   const outside = getSetting(GPS_LAST_OUTSIDE_KEY, '0') === '1';
   outsideSessionStart = start > 0 ? start : null;
   lastKnownOutside = outside;
-  gpsStateLoaded = true;
 }
 
 /**
@@ -75,7 +81,6 @@ function saveGPSState(): void {
 export function _resetGPSStateForTesting(): void {
   outsideSessionStart = null;
   lastKnownOutside = false;
-  gpsStateLoaded = false;
   gpsSessionDistanceMeters = 0;
   gpsSessionSpeedSum = 0;
   gpsSessionSpeedCount = 0;
@@ -223,8 +228,6 @@ export function processLocationUpdate(
   timestamp: number,
   speedMs?: number
 ): void {
-  loadGPSState();
-
   const knownLocations = getKnownLocations();
   const isIndoor = isAtKnownIndoorLocation(lat, lon, knownLocations);
   const isOutside = !isIndoor;
@@ -591,6 +594,9 @@ TaskManager.defineTask(
     // Ensure the DB schema and migrations are applied before any DB access.
     // The background JS runtime does not guarantee App.tsx has run first.
     initDatabase();
+    // Always read persisted GPS state from SQLite at every task invocation so
+    // that in-memory state never lags behind what was last written to the DB.
+    loadGPSState();
     // Respect the user's toggle: if GPS was disabled while the OS task was
     // still alive, skip processing and do not submit any session.
     if (getSetting('gps_user_enabled', '0') !== '1') {

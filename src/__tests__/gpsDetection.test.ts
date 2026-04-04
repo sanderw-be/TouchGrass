@@ -8,6 +8,7 @@ import {
   processLocationUpdate,
   isAtKnownIndoorLocation,
   _resetGPSStateForTesting,
+  loadGPSState,
   MIN_OUTSIDE_DURATION_MS,
 } from '../detection/gpsDetection';
 
@@ -271,6 +272,9 @@ describe('processLocationUpdate', () => {
       return fallback;
     });
 
+    // Simulate task start: load persisted state from SQLite before processing
+    loadGPSState();
+
     // First update after restart — duration already >= MIN → should flush immediately
     processLocationUpdate(51.5001, 4.3001, NOW);
     expect(SessionMerger.submitSession).toHaveBeenCalledTimes(1);
@@ -289,6 +293,20 @@ describe('TOUCHGRASS_LOCATION_TRACK background task', () => {
     await _locationTrackCallback!({ data: { locations: [] }, error: null });
 
     expect(Database.initDatabase).toHaveBeenCalled();
+  });
+
+  it('loads GPS state from SQLite at every task invocation', async () => {
+    expect(_locationTrackCallback).toBeDefined();
+
+    jest.clearAllMocks();
+    _resetGPSStateForTesting();
+    (Database.getSetting as jest.Mock).mockImplementation((_k: string, fb: string) => fb);
+
+    await _locationTrackCallback!({ data: { locations: [] }, error: null });
+
+    // loadGPSState reads GPS_SESSION_START_KEY and GPS_LAST_OUTSIDE_KEY from SQLite
+    expect(Database.getSetting).toHaveBeenCalledWith('gps_session_start', expect.any(String));
+    expect(Database.getSetting).toHaveBeenCalledWith('gps_last_outside', expect.any(String));
   });
 
   it('skips processing when GPS is disabled by the user', async () => {
