@@ -54,6 +54,11 @@ jest.mock('../notifications/notificationManager', () => ({
   cancelRemindersIfGoalReached: jest.fn(() => Promise.resolve()),
 }));
 
+jest.mock('../utils/widgetHelper', () => ({
+  wasOpenedFromWidgetTimer: jest.fn(() => Promise.resolve(false)),
+  addWidgetTimerListener: jest.fn(() => () => {}),
+}));
+
 jest.mock('@react-navigation/native', () => ({
   useFocusEffect: (cb: () => void) => {
     const React = require('react');

@@ -34,6 +34,7 @@ import { updateTimeSlotProbability } from '../detection/sessionConfidence';
 import { startManualSession } from '../detection/manualCheckin';
 import { onSessionsChanged, emitSessionsChanged } from '../utils/sessionsChangedEmitter';
 import { cancelRemindersIfGoalReached } from '../notifications/notificationManager';
+import { wasOpenedFromWidgetTimer, addWidgetTimerListener } from '../utils/widgetHelper';
 
 export default function HomeScreen() {
   const { colors, shadows, isDark } = useTheme();
@@ -125,7 +126,7 @@ export default function HomeScreen() {
     setUndoSnackbar({ visible: false, sessionId: null });
   };
 
-  const handleTimerPress = () => {
+  const handleTimerPress = useCallback(() => {
     if (timerRunning) {
       // Stop timer — auto-save and refresh
       if (timerIntervalRef.current) {
@@ -145,7 +146,24 @@ export default function HomeScreen() {
       setTimerSeconds(0);
       setTimerRunning(true);
     }
-  };
+  }, [timerRunning, loadData]);
+
+  // Handle widget timer intent
+  useEffect(() => {
+    wasOpenedFromWidgetTimer().then((fromWidget) => {
+      if (fromWidget && !timerRunning) {
+        handleTimerPress();
+      }
+    });
+
+    const cleanup = addWidgetTimerListener(() => {
+      if (!timerRunning) {
+        handleTimerPress();
+      }
+    });
+
+    return cleanup;
+  }, [timerRunning, handleTimerPress]);
 
   const dailyPercent = Math.min(todayMinutes / dailyTarget, 1);
   const weeklyPercent = Math.min(weekMinutes / weeklyTarget, 1);
