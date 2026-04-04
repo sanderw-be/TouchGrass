@@ -2,7 +2,7 @@
 
 import React from 'react';
 import type { ColorProp } from 'react-native-android-widget';
-import { FlexWidget, TextWidget } from 'react-native-android-widget';
+import { FlexWidget, OverlapWidget, SvgWidget, TextWidget } from 'react-native-android-widget';
 
 /** Colors from the app theme (widget cannot use React context). */
 const COLORS = {
@@ -19,19 +19,49 @@ const COLORS = {
   textInverse: '#FFFFFF' as const,
 } satisfies Record<string, ColorProp>;
 
-/** Pick a ring color based on progress percentage. */
-function progressColor(pct: number): ColorProp {
+/** Pick a ring color based on progress percentage — mirrors progressColor() in theme.ts. */
+function progressColor(pct: number): string {
   if (pct >= 1) return COLORS.grassLight;
   if (pct >= 0.6) return COLORS.grass;
   if (pct >= 0.3) return COLORS.sun;
   return COLORS.sky;
 }
 
-function formatMinutes(m: number): string {
+export function formatMinutes(m: number): string {
   if (m < 60) return `${Math.round(m)} min`;
   const h = Math.floor(m / 60);
   const r = Math.round(m % 60);
   return r > 0 ? `${h} h ${r} min` : `${h} h`;
+}
+
+/** Size of the SVG ring in dp — fits comfortably in a 3×2 widget. */
+const RING_SIZE = 86;
+const STROKE_WIDTH = 8;
+
+/**
+ * Build an SVG string for a circular progress ring.
+ * Mirrors the ProgressRing component on the home screen:
+ *   - Background track circle in fog color
+ *   - Foreground arc using stroke-dasharray / stroke-dashoffset
+ *   - Rotated -90° so progress starts at 12 o'clock
+ *   - Round stroke-linecap for a polished look
+ */
+export function buildRingSvg(pct: number, ringColor: string): string {
+  const r = (RING_SIZE - STROKE_WIDTH) / 2;
+  const c = RING_SIZE / 2;
+  const circumference = 2 * Math.PI * r;
+  const offset = circumference * (1 - pct);
+
+  return [
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${RING_SIZE}" height="${RING_SIZE}" viewBox="0 0 ${RING_SIZE} ${RING_SIZE}">`,
+    // Track
+    `<circle cx="${c}" cy="${c}" r="${r}" stroke="${COLORS.fog}" stroke-width="${STROKE_WIDTH}" fill="none"/>`,
+    // Progress arc
+    `<circle cx="${c}" cy="${c}" r="${r}" stroke="${ringColor}" stroke-width="${STROKE_WIDTH}" fill="none"`,
+    ` stroke-dasharray="${circumference}" stroke-dashoffset="${offset}"`,
+    ` stroke-linecap="round" transform="rotate(-90 ${c} ${c})"/>`,
+    `</svg>`,
+  ].join('');
 }
 
 export interface ProgressWidgetProps {
@@ -44,17 +74,14 @@ export function ProgressWidget({ current, target, timerRunning }: ProgressWidget
   const pct = target > 0 ? Math.min(current / target, 1) : 0;
   const pctDisplay = Math.round((current / Math.max(target, 1)) * 100);
   const ringColor = progressColor(pct);
-  // Use flex weights to simulate a percentage-based progress bar.
-  // Minimum 1 for the filled portion so the bar is always visible when > 0%.
-  const filledFlex = Math.max(Math.round(pct * 100), pct > 0 ? 1 : 0);
-  const emptyFlex = 100 - filledFlex;
+  const ringSvg = buildRingSvg(pct, ringColor);
 
   return (
     <FlexWidget
       style={{
         height: 'match_parent',
         width: 'match_parent',
-        flexDirection: 'column',
+        flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
         backgroundColor: COLORS.background,
@@ -64,98 +91,87 @@ export function ProgressWidget({ current, target, timerRunning }: ProgressWidget
       clickAction="OPEN_APP"
       accessibilityLabel="TouchGrass progress widget"
     >
-      {/* Title */}
-      <TextWidget
-        text="TouchGrass"
+      {/* Circular progress ring with overlaid center text */}
+      <OverlapWidget
         style={{
-          fontSize: 14,
-          fontWeight: '700',
-          color: COLORS.grass,
-        }}
-      />
-
-      {/* Progress bar: flex-based fill */}
-      <FlexWidget
-        style={{
-          width: 'match_parent',
-          height: 8,
-          flexDirection: 'row',
-          backgroundColor: COLORS.fog,
-          borderRadius: 4,
-          marginTop: 8,
-          overflow: 'hidden',
+          width: RING_SIZE,
+          height: RING_SIZE,
         }}
       >
-        {filledFlex > 0 && (
-          <FlexWidget
-            style={{
-              flex: filledFlex,
-              height: 'match_parent',
-              backgroundColor: ringColor,
-              borderRadius: 4,
-            }}
-          />
-        )}
-        {emptyFlex > 0 && (
-          <FlexWidget
-            style={{
-              flex: emptyFlex,
-              height: 'match_parent',
-            }}
-          />
-        )}
-      </FlexWidget>
-
-      {/* Stats row */}
-      <FlexWidget
-        style={{
-          width: 'match_parent',
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginTop: 6,
-        }}
-      >
-        <TextWidget
-          text={`${formatMinutes(current)} / ${formatMinutes(target)}`}
+        <SvgWidget
+          svg={ringSvg}
           style={{
-            fontSize: 13,
-            fontWeight: '600',
-            color: COLORS.textPrimary,
+            width: RING_SIZE,
+            height: RING_SIZE,
           }}
         />
+        <FlexWidget
+          style={{
+            width: RING_SIZE,
+            height: RING_SIZE,
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+        >
+          <TextWidget
+            text={formatMinutes(current)}
+            style={{
+              fontSize: 16,
+              fontWeight: '700',
+              color: COLORS.textPrimary,
+            }}
+          />
+          <TextWidget
+            text={`of ${formatMinutes(target)}`}
+            style={{
+              fontSize: 9,
+              color: COLORS.textSecondary,
+            }}
+          />
+        </FlexWidget>
+      </OverlapWidget>
+
+      {/* Right side: percentage + timer button */}
+      <FlexWidget
+        style={{
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          marginLeft: 12,
+        }}
+      >
         <TextWidget
           text={`${pctDisplay}%`}
           style={{
-            fontSize: 13,
+            fontSize: 20,
             fontWeight: '700',
-            color: ringColor,
+            color: ringColor as ColorProp,
           }}
         />
-      </FlexWidget>
 
-      {/* Timer button */}
-      <FlexWidget
-        style={{
-          backgroundColor: timerRunning ? COLORS.sun : COLORS.grass,
-          borderRadius: 20,
-          paddingHorizontal: 20,
-          paddingVertical: 8,
-          marginTop: 8,
-          justifyContent: 'center',
-          alignItems: 'center',
-        }}
-        clickAction="TOGGLE_TIMER"
-        accessibilityLabel={timerRunning ? 'Stop timer' : 'Start timer'}
-      >
-        <TextWidget
-          text={timerRunning ? '⏹  Stop' : '▶  Start'}
+        {/* Timer button */}
+        <FlexWidget
           style={{
-            fontSize: 14,
-            fontWeight: '700',
-            color: COLORS.textInverse,
+            backgroundColor: timerRunning ? COLORS.sun : COLORS.grass,
+            borderRadius: 20,
+            paddingHorizontal: 16,
+            paddingVertical: 6,
+            marginTop: 8,
+            justifyContent: 'center',
+            alignItems: 'center',
           }}
-        />
+          clickAction="TOGGLE_TIMER"
+          accessibilityLabel={timerRunning ? 'Stop timer' : 'Start timer'}
+        >
+          <TextWidget
+            text={timerRunning ? '⏹  Stop' : '▶  Start'}
+            style={{
+              fontSize: 13,
+              fontWeight: '700',
+              color: COLORS.textInverse,
+            }}
+          />
+        </FlexWidget>
       </FlexWidget>
     </FlexWidget>
   );
