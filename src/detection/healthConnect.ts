@@ -20,20 +20,24 @@ import {
 import { t } from '../i18n';
 import { isImperialUnits, kmhToMph } from '../utils/units';
 import { emitSessionsChanged } from '../utils/sessionsChangedEmitter';
+import {
+  CONFIDENCE_ACTIVITY,
+  MIN_DURATION_MS,
+  STEPS_PER_MINUTE_AT_5KMH,
+  STEPS_PER_MIN_AT_2_5KMH,
+  STEPS_PER_MIN_AT_4KMH,
+} from './constants';
 
-export const CONFIDENCE_ACTIVITY = 0.7;
-export const MIN_DURATION_MS = 5 * 60 * 1000; // ignore sessions under 5 minutes
-// Average walking cadence at 5 km/h (~110 steps/min); used to estimate walk
-// duration from step count when the recorded time window is unreliably short
-// (e.g. batch-synced records from Google Fit).
-export const STEPS_PER_MINUTE_AT_5KMH = 110;
+export {
+  CONFIDENCE_ACTIVITY,
+  MIN_DURATION_MS,
+  STEPS_PER_MINUTE_AT_5KMH,
+  STEPS_PER_MIN_AT_2_5KMH,
+  STEPS_PER_MIN_AT_4KMH,
+};
+
 // The walking speed (km/h) corresponding to the baseline cadence above.
 const BASELINE_SPEED_KMH = 5;
-// Speed-based step-rate thresholds. Below 2.5 km/h is too slow to be real
-// outdoor walking (skip the record entirely); between 2.5 and 4 km/h is slow
-// but plausible (submit with reduced confidence).
-export const STEPS_PER_MIN_AT_2_5KMH = Math.round(STEPS_PER_MINUTE_AT_5KMH * 0.5); // 55
-export const STEPS_PER_MIN_AT_4KMH = Math.round(STEPS_PER_MINUTE_AT_5KMH * 0.8); // 88
 const CONFIDENCE_SLOW_WALK = 0.5; // 2.5–4 km/h: plausible but below normal pace
 const PERMISSION_WARNING_KEY = 'healthconnect_permission_warning';
 
