@@ -20,6 +20,7 @@ jest.mock('../weather/weatherService', () => ({
 jest.mock('../storage/database', () => ({
   getSetting: jest.fn(),
   initDatabase: jest.fn(),
+  insertBackgroundLog: jest.fn(),
 }));
 
 jest.mock('../background/alarmTiming', () => ({
