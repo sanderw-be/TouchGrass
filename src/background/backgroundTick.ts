@@ -1,0 +1,61 @@
+/**
+ * Core background tick logic shared by both execution paths:
+ *  - The Pulsar headless task (TOUCHGRASS_PULSE_TASK) — primary mechanism
+ *  - The unified background task (TOUCHGRASS_UNIFIED_TASK) — WorkManager fallback
+ *
+ * Extracted intentionally so that behaviour is identical regardless of which
+ * Android wake path is used.
+ */
+
+import {
+  scheduleDayReminders,
+  maybeScheduleCatchUpReminder,
+  processReminderQueue,
+  logReminderQueueSnapshot,
+  updateUpcomingReminderContent,
+} from '../notifications/notificationManager';
+import { fetchWeatherForecast } from '../weather/weatherService';
+import { getSetting, initDatabase } from '../storage/database';
+
+/**
+ * Perform one background tick: weather refresh (optional) + reminder planning.
+ *
+ * Must be called with an active React Native JS runtime.
+ * Safe to call from both HeadlessJsTask and WorkManager task callbacks.
+ */
+export async function performBackgroundTick(): Promise<void> {
+  // Ensure DB schema and defaults are in place — the background runtime has
+  // no guarantee that App.tsx has run first.
+  initDatabase();
+
+  // --- Weather refresh (runs first to warm the 30-min cache) ---
+  // scheduleDayReminders and maybeScheduleCatchUpReminder both call
+  // fetchWeatherForecast internally; by fetching once up-front they get an
+  // instant cache-hit instead of each making their own network round-trip.
+  const weatherEnabled = getSetting('weather_enabled', '1') === '1';
+  if (weatherEnabled) {
+    try {
+      await fetchWeatherForecast({ allowPermissionPrompt: false });
+    } catch (weatherError) {
+      console.error('TouchGrass: [BackgroundTick] Weather fetch failed', weatherError);
+    }
+  }
+
+  // --- Reminder planning ---
+  const remindersCountRaw = getSetting('smart_reminders_count', '0');
+  const remindersEnabled = parseInt(remindersCountRaw, 10) > 0;
+  console.log(
+    `TouchGrass: [BackgroundTick] smart_reminders_count=${remindersCountRaw} → reminders ${remindersEnabled ? 'enabled' : 'disabled'}`
+  );
+  if (remindersEnabled) {
+    logReminderQueueSnapshot();
+    try {
+      await scheduleDayReminders();
+      await processReminderQueue(); // update consumed states before catch-up check
+      await updateUpcomingReminderContent(); // update notification content if < 30 min away
+      await maybeScheduleCatchUpReminder(); // uses consumed entries for 60-min wait guard
+    } catch (reminderError) {
+      console.error('TouchGrass: [BackgroundTick] Reminder operations failed', reminderError);
+    }
+  }
+}

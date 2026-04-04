@@ -27,6 +27,7 @@ import {
 } from './src/notifications/notificationManager';
 import { cleanupTouchGrassCalendars } from './src/calendar/calendarService';
 import { registerUnifiedBackgroundTask } from './src/background/unifiedBackgroundTask';
+import { scheduleNextAlarmPulse } from './src/background/alarmTiming';
 
 import AppNavigator from './src/navigation/AppNavigator';
 import IntroScreen from './src/screens/IntroScreen';
@@ -75,6 +76,12 @@ function AppContent() {
             );
             cleanupTouchGrassCalendars().catch((e) =>
               console.warn('TouchGrass: foreground calendar cleanup error:', e)
+            );
+            // Re-arm the Pulsar alarm chain on every foreground wake.
+            // This keeps the chain alive and resets the timer from "now" so
+            // the next tick fires ~15 min after the user last used the app.
+            scheduleNextAlarmPulse().catch((e) =>
+              console.warn('TouchGrass: foreground alarm re-arm error:', e)
             );
           });
           // Calendar events are only created by scheduleDayReminders() at planned
@@ -166,6 +173,14 @@ function AppContent() {
           await registerUnifiedBackgroundTask();
         } catch (e) {
           console.warn('Background task registration error:', e);
+        }
+
+        // Arm the Pulsar alarm chain — the primary reliable background path.
+        // Uses setExactAndAllowWhileIdle which bypasses WorkManager quotas.
+        try {
+          await scheduleNextAlarmPulse();
+        } catch (e) {
+          console.warn('TouchGrass: Alarm chain init error:', e);
         }
       })();
     });

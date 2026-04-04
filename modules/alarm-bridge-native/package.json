@@ -1,0 +1,6 @@
+{
+  "name": "alarm-bridge-native",
+  "version": "1.0.0",
+  "description": "Native alarm bridge for TouchGrass Pulsar background task chaining",
+  "main": "src/index.ts"
+}

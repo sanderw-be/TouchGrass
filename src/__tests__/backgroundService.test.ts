@@ -1,7 +1,8 @@
 /**
- * Tests for the unified background task (replaces the old backgroundService tests).
- * The legacy react-native-background-actions foreground service has been replaced
- * by a single expo-background-task that handles both reminders and weather.
+ * Tests for the unified background task (WorkManager fallback).
+ * The primary background execution path is now the Pulsar chained-alarm
+ * (TOUCHGRASS_PULSE_TASK), but the unified task remains as a fallback and
+ * delegates to the shared performBackgroundTick() helper.
  */
 
 jest.mock('../notifications/notificationManager', () => ({
@@ -21,11 +22,20 @@ jest.mock('../storage/database', () => ({
   initDatabase: jest.fn(),
 }));
 
+jest.mock('../background/alarmTiming', () => ({
+  scheduleNextAlarmPulse: jest.fn(() => Promise.resolve()),
+  cancelAlarmPulse: jest.fn(() => Promise.resolve()),
+  computeNextSleepMs: jest.fn(() => 15 * 60 * 1000),
+  PULSE_INTERVAL_DAY_MS: 15 * 60 * 1000,
+  PULSE_INTERVAL_NIGHT_MS: 60 * 60 * 1000,
+}));
+
 import * as BackgroundTask from 'expo-background-task';
 import * as TaskManager from 'expo-task-manager';
 import * as NotificationManager from '../notifications/notificationManager';
 import * as WeatherService from '../weather/weatherService';
 import * as Database from '../storage/database';
+import * as AlarmTiming from '../background/alarmTiming';
 import {
   UNIFIED_BACKGROUND_TASK,
   registerUnifiedBackgroundTask,
@@ -246,6 +256,24 @@ describe('unifiedBackgroundTask', () => {
       const result = await taskCallback();
 
       expect(result).toBe(BackgroundTask.BackgroundTaskResult.Failed);
+    });
+
+    it('re-arms the Pulsar alarm chain on every successful tick', async () => {
+      (Database.getSetting as jest.Mock).mockReturnValue('0');
+
+      await taskCallback();
+
+      expect(AlarmTiming.scheduleNextAlarmPulse).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not re-arm the alarm chain when a fatal error occurs', async () => {
+      (Database.getSetting as jest.Mock).mockImplementation(() => {
+        throw new Error('DB exploded');
+      });
+
+      await taskCallback();
+
+      expect(AlarmTiming.scheduleNextAlarmPulse).not.toHaveBeenCalled();
     });
   });
 });
