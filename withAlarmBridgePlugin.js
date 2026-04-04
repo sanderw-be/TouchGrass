@@ -191,7 +191,7 @@ class AlarmPulseService : HeadlessJsTaskService() {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
       ensureNotificationChannel()
       val notification = buildSilentNotification()
-      if (Build.VERSION.SDK_INT >= 34 /* UPSIDE_DOWN_CAKE */) {
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
         startForeground(
           NOTIFICATION_ID,
           notification,
@@ -309,8 +309,21 @@ const withAlarmBridgePlugin = (config) => {
     // Skip if already patched
     if (contents.includes('AlarmBridgePackage')) return config;
 
-    // Add import after the last existing import line
-    contents = contents.replace(/(^import .+$)/m, `import ${JAVA_PACKAGE}.AlarmBridgePackage\n$1`);
+    // Insert the new import after the last existing import line so the
+    // import block stays together (more robust than inserting before the first).
+    const lines = contents.split('\n');
+    const lastImportIdx = lines.reduce(
+      (max, line, i) => (line.trimStart().startsWith('import ') ? i : max),
+      -1
+    );
+    if (lastImportIdx >= 0) {
+      lines.splice(lastImportIdx + 1, 0, `import ${JAVA_PACKAGE}.AlarmBridgePackage`);
+    } else {
+      // No existing imports (edge case) — add after the package declaration
+      const pkgIdx = lines.findIndex((l) => l.trimStart().startsWith('package '));
+      lines.splice(pkgIdx >= 0 ? pkgIdx + 2 : 0, 0, `import ${JAVA_PACKAGE}.AlarmBridgePackage`);
+    }
+    contents = lines.join('\n');
 
     // Insert add(AlarmBridgePackage()) inside the PackageList apply block.
     // The generated MainApplication.kt always has this comment placeholder.

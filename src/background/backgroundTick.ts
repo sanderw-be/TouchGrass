@@ -52,7 +52,7 @@ export async function performBackgroundTick(): Promise<void> {
     try {
       await scheduleDayReminders();
       await processReminderQueue(); // update consumed states before catch-up check
-      await updateUpcomingReminderContent(); // update notification content if <30 min away
+      await updateUpcomingReminderContent(); // update notification content if < 30 min away
       await maybeScheduleCatchUpReminder(); // uses consumed entries for 60-min wait guard
     } catch (reminderError) {
       console.error('TouchGrass: [BackgroundTick] Reminder operations failed', reminderError);
