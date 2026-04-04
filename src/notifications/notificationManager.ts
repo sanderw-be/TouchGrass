@@ -701,10 +701,7 @@ export async function scheduleDayReminders(): Promise<void> {
       console.log(
         `TouchGrass: [DayPlan] Already planned today — queue (${queue.length}): ${summary}`
       );
-      insertBackgroundLog(
-        'reminder',
-        `Daily plan: already planned (${queue.length}) — ${summary}`
-      );
+      insertBackgroundLog('reminder', `Daily plan: already planned (${queue.length}) — ${summary}`);
     } else {
       console.log('TouchGrass: [DayPlan] Already planned today — queue: empty');
       insertBackgroundLog('reminder', 'Daily plan: already planned — queue empty');
