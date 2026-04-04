@@ -23,6 +23,9 @@ const mockConfirmSession = jest.fn();
 const mockGetDailyStreak = jest.fn(() => 0);
 const mockGetWeeklyStreak = jest.fn(() => 0);
 
+const mockGetSetting = jest.fn((_key?: string, _fallback?: string) => '');
+const mockSetSetting = jest.fn((_key?: string, _value?: string) => {});
+
 jest.mock('../storage/database', () => ({
   getTodayMinutes: () => mockGetTodayMinutes(),
   getWeekMinutes: () => mockGetWeekMinutes(),
@@ -32,8 +35,8 @@ jest.mock('../storage/database', () => ({
   confirmSession: (...args: any[]) => mockConfirmSession(...args),
   getDailyStreak: () => mockGetDailyStreak(),
   getWeeklyStreak: () => mockGetWeeklyStreak(),
-  getSetting: jest.fn(() => ''),
-  setSetting: jest.fn(),
+  getSetting: (key: string, fallback: string) => mockGetSetting(key, fallback),
+  setSetting: (key: string, value: string) => mockSetSetting(key, value),
 }));
 
 const mockStopFn = jest.fn();
@@ -419,5 +422,57 @@ describe('HomeScreen inline timer', () => {
     act(() => {
       fireEvent.press(getByText('ring_timer_tap_stop'));
     });
+  });
+
+  it('adopts a widget-started timer on focus', () => {
+    const widgetStart = Date.now() - 120_000; // started 2 minutes ago
+    mockGetSetting.mockImplementation((key?: string) =>
+      key === 'widget_timer_start' ? String(widgetStart) : ''
+    );
+
+    const { getByText, getByTestId } = render(<HomeScreen />);
+
+    // Timer should be adopted — the running state should show
+    expect(getByText('ring_timer_outside')).toBeTruthy();
+    expect(getByText('ring_timer_tap_stop')).toBeTruthy();
+    expect(getByTestId('icon-stop')).toBeTruthy();
+    expect(mockStartManualSession).toHaveBeenCalledTimes(1);
+
+    // Clean up
+    act(() => {
+      fireEvent.press(getByText('ring_timer_tap_stop'));
+    });
+  });
+
+  it('writes widget_timer_start when starting a timer from in-app', () => {
+    mockGetSetting.mockReturnValue('');
+    const { getByText } = render(<HomeScreen />);
+
+    act(() => {
+      fireEvent.press(getByText('ring_timer_start'));
+    });
+
+    expect(mockSetSetting).toHaveBeenCalledWith('widget_timer_start', expect.any(String));
+
+    // Clean up
+    act(() => {
+      fireEvent.press(getByText('ring_timer_tap_stop'));
+    });
+  });
+
+  it('clears widget_timer_start when stopping a timer', () => {
+    mockGetSetting.mockReturnValue('');
+    const { getByText } = render(<HomeScreen />);
+
+    act(() => {
+      fireEvent.press(getByText('ring_timer_start'));
+    });
+    mockSetSetting.mockClear();
+
+    act(() => {
+      fireEvent.press(getByText('ring_timer_tap_stop'));
+    });
+
+    expect(mockSetSetting).toHaveBeenCalledWith('widget_timer_start', '');
   });
 });
