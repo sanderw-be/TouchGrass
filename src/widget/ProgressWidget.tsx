@@ -92,7 +92,13 @@ export function ProgressWidget({
         >
           {timerRunning ? (
             /* Running state: start time + stop button + back inside */
-            <>
+            <FlexWidget
+              style={{
+                flexDirection: 'column',
+                justifyContent: 'center',
+                alignItems: 'center',
+              }}
+            >
               <TextWidget
                 text={`Started ${timerStartEpoch && !isNaN(timerStartEpoch) ? formatStartTime(timerStartEpoch) : '--:--'}`}
                 style={{
@@ -131,10 +137,16 @@ export function ProgressWidget({
                   marginTop: 6,
                 }}
               />
-            </>
+            </FlexWidget>
           ) : (
             /* Idle state: play button + start outside session */
-            <>
+            <FlexWidget
+              style={{
+                flexDirection: 'column',
+                justifyContent: 'center',
+                alignItems: 'center',
+              }}
+            >
               <FlexWidget
                 style={{
                   backgroundColor: COLORS.grass,
@@ -171,7 +183,7 @@ export function ProgressWidget({
                   marginTop: 2,
                 }}
               />
-            </>
+            </FlexWidget>
           )}
         </FlexWidget>
       </FlexWidget>
