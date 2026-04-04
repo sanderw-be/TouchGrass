@@ -38,6 +38,9 @@ jobs:
       - name: Run TypeScript type checking
         run: npm run type-check
 
+      - name: Run Prettier format checking 
+        run: nom run format:check
+
       - name: Run tests
         run: npm test -- --passWithNoTests
 
@@ -45,3 +48,6 @@ jobs:
         run: npx semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Format release artifacts
+        run: npm run format
