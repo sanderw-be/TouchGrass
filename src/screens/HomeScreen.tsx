@@ -59,8 +59,10 @@ export default function HomeScreen() {
   const timerStartRef = useRef<number>(0);
   const stopTimerRef = useRef<(() => void) | null>(null);
   const timerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const timerRunningRef = useRef(false);
 
   useEffect(() => {
+    timerRunningRef.current = timerRunning;
     if (timerRunning) {
       timerIntervalRef.current = setInterval(() => {
         setTimerSeconds(Math.floor((Date.now() - timerStartRef.current) / 1000));
@@ -148,22 +150,28 @@ export default function HomeScreen() {
     }
   }, [timerRunning, loadData]);
 
-  // Handle widget timer intent
+  // Keep a ref to handleTimerPress so the widget listener never goes stale.
+  const handleTimerPressRef = useRef(handleTimerPress);
+  useEffect(() => {
+    handleTimerPressRef.current = handleTimerPress;
+  }, [handleTimerPress]);
+
+  // Handle widget timer intent — runs once on mount only.
   useEffect(() => {
     wasOpenedFromWidgetTimer().then((fromWidget) => {
-      if (fromWidget && !timerRunning) {
-        handleTimerPress();
+      if (fromWidget && !timerRunningRef.current) {
+        handleTimerPressRef.current();
       }
     });
 
     const cleanup = addWidgetTimerListener(() => {
-      if (!timerRunning) {
-        handleTimerPress();
+      if (!timerRunningRef.current) {
+        handleTimerPressRef.current();
       }
     });
 
     return cleanup;
-  }, [timerRunning, handleTimerPress]);
+  }, []);
 
   const dailyPercent = Math.min(todayMinutes / dailyTarget, 1);
   const weeklyPercent = Math.min(weekMinutes / weeklyTarget, 1);
