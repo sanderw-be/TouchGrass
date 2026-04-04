@@ -27,27 +27,30 @@ function progressColor(pct: number): ColorProp {
   return COLORS.sky;
 }
 
-function formatMinutes(m: number): string {
-  if (m < 60) return `${Math.round(m)} min`;
-  const h = Math.floor(m / 60);
-  const r = Math.round(m % 60);
-  return r > 0 ? `${h} h ${r} min` : `${h} h`;
+/** Format an epoch timestamp as HH:MM. */
+function formatStartTime(epoch: number): string {
+  const d = new Date(epoch);
+  const hh = d.getHours().toString().padStart(2, '0');
+  const mm = d.getMinutes().toString().padStart(2, '0');
+  return `${hh}:${mm}`;
 }
 
 export interface ProgressWidgetProps {
   current: number;
   target: number;
   timerRunning: boolean;
+  timerStartEpoch?: number;
 }
 
-export function ProgressWidget({ current, target, timerRunning }: ProgressWidgetProps) {
+export function ProgressWidget({
+  current,
+  target,
+  timerRunning,
+  timerStartEpoch,
+}: ProgressWidgetProps) {
   const pct = target > 0 ? Math.min(current / target, 1) : 0;
   const pctDisplay = Math.round((current / Math.max(target, 1)) * 100);
   const ringColor = progressColor(pct);
-  // Use flex weights to simulate a percentage-based progress bar.
-  // Minimum 1 for the filled portion so the bar is always visible when > 0%.
-  const filledFlex = Math.max(Math.round(pct * 100), pct > 0 ? 1 : 0);
-  const emptyFlex = 100 - filledFlex;
 
   return (
     <FlexWidget
@@ -58,104 +61,119 @@ export function ProgressWidget({ current, target, timerRunning }: ProgressWidget
         justifyContent: 'center',
         alignItems: 'center',
         backgroundColor: COLORS.background,
-        borderRadius: 16,
-        padding: 12,
+        padding: 8,
       }}
       clickAction="OPEN_APP"
       accessibilityLabel="TouchGrass progress widget"
     >
-      {/* Title */}
-      <TextWidget
-        text="TouchGrass"
-        style={{
-          fontSize: 14,
-          fontWeight: '700',
-          color: COLORS.grass,
-        }}
-      />
-
-      {/* Progress bar: flex-based fill */}
+      {/* Outer ring: background color represents progress level */}
       <FlexWidget
         style={{
           width: 'match_parent',
-          height: 8,
-          flexDirection: 'row',
-          backgroundColor: COLORS.fog,
-          borderRadius: 4,
-          marginTop: 8,
-          overflow: 'hidden',
-        }}
-      >
-        {filledFlex > 0 && (
-          <FlexWidget
-            style={{
-              flex: filledFlex,
-              height: 'match_parent',
-              backgroundColor: ringColor,
-              borderRadius: 4,
-            }}
-          />
-        )}
-        {emptyFlex > 0 && (
-          <FlexWidget
-            style={{
-              flex: emptyFlex,
-              height: 'match_parent',
-            }}
-          />
-        )}
-      </FlexWidget>
-
-      {/* Stats row */}
-      <FlexWidget
-        style={{
-          width: 'match_parent',
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginTop: 6,
-        }}
-      >
-        <TextWidget
-          text={`${formatMinutes(current)} / ${formatMinutes(target)}`}
-          style={{
-            fontSize: 13,
-            fontWeight: '600',
-            color: COLORS.textPrimary,
-          }}
-        />
-        <TextWidget
-          text={`${pctDisplay}%`}
-          style={{
-            fontSize: 13,
-            fontWeight: '700',
-            color: ringColor,
-          }}
-        />
-      </FlexWidget>
-
-      {/* Timer button */}
-      <FlexWidget
-        style={{
-          backgroundColor: timerRunning ? COLORS.sun : COLORS.grass,
-          borderRadius: 20,
-          paddingHorizontal: 20,
-          paddingVertical: 8,
-          marginTop: 8,
+          height: 'match_parent',
+          borderRadius: 999,
+          backgroundColor: ringColor,
+          padding: 12,
           justifyContent: 'center',
           alignItems: 'center',
         }}
-        clickAction="TOGGLE_TIMER"
-        accessibilityLabel={timerRunning ? 'Stop timer' : 'Start timer'}
       >
-        <TextWidget
-          text={timerRunning ? '⏹  Stop' : '▶  Start'}
+        {/* Inner circle: content area */}
+        <FlexWidget
           style={{
-            fontSize: 14,
-            fontWeight: '700',
-            color: COLORS.textInverse,
+            width: 'match_parent',
+            height: 'match_parent',
+            borderRadius: 999,
+            backgroundColor: COLORS.card,
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center',
           }}
-        />
+        >
+          {timerRunning ? (
+            /* Running state: start time + stop button + back inside */
+            <>
+              <TextWidget
+                text={`Started ${timerStartEpoch && !isNaN(timerStartEpoch) ? formatStartTime(timerStartEpoch) : '--:--'}`}
+                style={{
+                  fontSize: 15,
+                  fontWeight: '700',
+                  color: COLORS.textPrimary,
+                }}
+              />
+              <FlexWidget
+                style={{
+                  backgroundColor: COLORS.sun,
+                  borderRadius: 16,
+                  paddingHorizontal: 16,
+                  paddingVertical: 6,
+                  marginTop: 8,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                }}
+                clickAction="TOGGLE_TIMER"
+                accessibilityLabel="Stop timer"
+              >
+                <TextWidget
+                  text="⏹  Stop"
+                  style={{
+                    fontSize: 13,
+                    fontWeight: '700',
+                    color: COLORS.textInverse,
+                  }}
+                />
+              </FlexWidget>
+              <TextWidget
+                text="back inside"
+                style={{
+                  fontSize: 11,
+                  color: COLORS.textMuted,
+                  marginTop: 6,
+                }}
+              />
+            </>
+          ) : (
+            /* Idle state: play button + start outside session */
+            <>
+              <FlexWidget
+                style={{
+                  backgroundColor: COLORS.grass,
+                  borderRadius: 24,
+                  padding: 10,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                }}
+                clickAction="TOGGLE_TIMER"
+                accessibilityLabel="Start timer"
+              >
+                <TextWidget
+                  text="▶"
+                  style={{
+                    fontSize: 18,
+                    fontWeight: '700',
+                    color: COLORS.textInverse,
+                  }}
+                />
+              </FlexWidget>
+              <TextWidget
+                text="start outside session"
+                style={{
+                  fontSize: 11,
+                  color: COLORS.textSecondary,
+                  marginTop: 8,
+                }}
+              />
+              <TextWidget
+                text={`${pctDisplay}% today`}
+                style={{
+                  fontSize: 11,
+                  color: COLORS.textMuted,
+                  marginTop: 2,
+                }}
+              />
+            </>
+          )}
+        </FlexWidget>
       </FlexWidget>
     </FlexWidget>
   );

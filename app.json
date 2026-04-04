@@ -105,9 +105,9 @@
               "name": "Progress",
               "label": "TouchGrass Progress",
               "description": "Shows your daily outdoor progress and a quick timer",
-              "minWidth": "250dp",
-              "minHeight": "120dp",
-              "targetCellWidth": 3,
+              "minWidth": "110dp",
+              "minHeight": "110dp",
+              "targetCellWidth": 2,
               "targetCellHeight": 2,
               "updatePeriodMillis": 1800000,
               "resizeMode": "horizontal|vertical"
