@@ -366,4 +366,24 @@ describe('HomeScreen inline timer', () => {
     });
     expect(queryByTestId('undo-snackbar')).toBeNull();
   });
+
+  it('shows the timer info hint when the timer is idle', () => {
+    const { getByTestId } = render(<HomeScreen />);
+    expect(getByTestId('ring-timer-info')).toBeTruthy();
+  });
+
+  it('hides the timer info hint when the timer is running', () => {
+    const { getByText, queryByTestId } = render(<HomeScreen />);
+
+    act(() => {
+      fireEvent.press(getByText('ring_timer_start'));
+    });
+
+    expect(queryByTestId('ring-timer-info')).toBeNull();
+
+    // Clean up
+    act(() => {
+      fireEvent.press(getByText('ring_timer_tap_stop'));
+    });
+  });
 });
