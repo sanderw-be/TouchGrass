@@ -19,13 +19,19 @@ function getWidgetData(): {
   timerRunning: boolean;
   timerStartMs?: number;
 } {
-  initDatabase();
-  const current = getTodayMinutes();
-  const target = getCurrentDailyGoal()?.targetMinutes ?? 30;
-  const marker = getSetting(WIDGET_TIMER_KEY, '');
-  const timerRunning = isWidgetTimerRunning(marker);
-  const timerStartMs = timerRunning ? parseInt(marker, 10) : undefined;
-  return { current, target, timerRunning, timerStartMs };
+  try {
+    initDatabase();
+    const current = getTodayMinutes();
+    const target = getCurrentDailyGoal()?.targetMinutes ?? 30;
+    const marker = getSetting(WIDGET_TIMER_KEY, '');
+    const timerRunning = isWidgetTimerRunning(marker);
+    const timerStartMs = timerRunning ? parseInt(marker, 10) : undefined;
+    return { current, target, timerRunning, timerStartMs };
+  } catch (error) {
+    console.error('[getWidgetData] Database error:', error);
+    // Return safe defaults on error
+    return { current: 0, target: 30, timerRunning: false };
+  }
 }
 
 export async function widgetTaskHandler(props: WidgetTaskHandlerProps): Promise<void> {
@@ -51,37 +57,53 @@ export async function widgetTaskHandler(props: WidgetTaskHandlerProps): Promise<
 
     case 'WIDGET_CLICK': {
       if (clickAction === 'TOGGLE_TIMER') {
-        initDatabase();
-        const marker = getSetting(WIDGET_TIMER_KEY, '');
+        try {
+          initDatabase();
+          const marker = getSetting(WIDGET_TIMER_KEY, '');
 
-        if (isWidgetTimerRunning(marker)) {
-          // Stop timer — save session and clear marker
-          const startTime = parseInt(marker, 10);
-          const endTime = Date.now();
-          const durationMinutes = (endTime - startTime) / 60000;
+          if (isWidgetTimerRunning(marker)) {
+            // Stop timer — save session and clear marker
+            const startTime = parseInt(marker, 10);
+            const endTime = Date.now();
+            const durationMinutes = (endTime - startTime) / 60000;
 
-          if (durationMinutes >= 0.05) {
-            logManualSession(durationMinutes, startTime, endTime);
+            if (durationMinutes >= 0.05) {
+              logManualSession(durationMinutes, startTime, endTime);
+            }
+
+            setSetting(WIDGET_TIMER_KEY, '');
+          } else {
+            // Start timer — write timestamp marker
+            setSetting(WIDGET_TIMER_KEY, String(Date.now()));
           }
 
-          setSetting(WIDGET_TIMER_KEY, '');
-        } else {
-          // Start timer — write timestamp marker
-          setSetting(WIDGET_TIMER_KEY, String(Date.now()));
+          // Re-render widget with updated state
+          const data = getWidgetData();
+          renderWidget(
+            <ProgressWidget
+              current={data.current}
+              target={data.target}
+              timerRunning={data.timerRunning}
+              timerStartMs={data.timerStartMs}
+              widgetWidth={widgetInfo.width}
+              widgetHeight={widgetInfo.height}
+            />
+          );
+        } catch (error) {
+          console.error('[WIDGET_CLICK] Database error:', error);
+          // Re-render with safe defaults on error
+          const data = getWidgetData();
+          renderWidget(
+            <ProgressWidget
+              current={data.current}
+              target={data.target}
+              timerRunning={data.timerRunning}
+              timerStartMs={data.timerStartMs}
+              widgetWidth={widgetInfo.width}
+              widgetHeight={widgetInfo.height}
+            />
+          );
         }
-
-        // Re-render widget with updated state
-        const data = getWidgetData();
-        renderWidget(
-          <ProgressWidget
-            current={data.current}
-            target={data.target}
-            timerRunning={data.timerRunning}
-            timerStartMs={data.timerStartMs}
-            widgetWidth={widgetInfo.width}
-            widgetHeight={widgetInfo.height}
-          />
-        );
       }
       break;
     }

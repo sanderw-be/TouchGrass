@@ -35,21 +35,26 @@ export default function HistoryScreen() {
   );
 
   const loadData = (p: Period, date: number) => {
-    if (p === 'week') {
-      const weekStart = startOfWeek(date);
-      const days: { date: number; minutes: number }[] = [];
-      for (let i = 0; i < 7; i++) {
-        const dayStart = weekStart + i * DAY_MS;
-        const sessions = getSessionsForRange(dayStart, dayStart + DAY_MS);
-        // Filter out declined sessions (userConfirmed === 0)
-        const minutes = sessions
-          .filter((s) => s.userConfirmed !== 0)
-          .reduce((sum, s) => sum + s.durationMinutes, 0);
-        days.push({ date: dayStart, minutes });
+    try {
+      if (p === 'week') {
+        const weekStart = startOfWeek(date);
+        const days: { date: number; minutes: number }[] = [];
+        for (let i = 0; i < 7; i++) {
+          const dayStart = weekStart + i * DAY_MS;
+          const sessions = getSessionsForRange(dayStart, dayStart + DAY_MS);
+          // Filter out declined sessions (userConfirmed === 0)
+          const minutes = sessions
+            .filter((s) => s.userConfirmed !== 0)
+            .reduce((sum, s) => sum + s.durationMinutes, 0);
+          days.push({ date: dayStart, minutes });
+        }
+        setDailyData(days);
+      } else {
+        setDailyData(getDailyTotalsForMonth(date));
       }
-      setDailyData(days);
-    } else {
-      setDailyData(getDailyTotalsForMonth(date));
+    } catch (error) {
+      console.error('[HistoryScreen.loadData] Database error:', error);
+      // Keep existing state on error
     }
   };
 
