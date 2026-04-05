@@ -32,6 +32,10 @@ jest.mock('../notifications/notificationManager', () => ({
   cancelRemindersIfGoalReached: jest.fn(() => Promise.resolve()),
 }));
 
+jest.mock('../utils/widgetHelper', () => ({
+  requestWidgetRefresh: jest.fn(() => Promise.resolve()),
+}));
+
 jest.mock('../components/ManualSessionSheet', () => {
   return jest.fn(() => null);
 });
@@ -57,6 +61,7 @@ import {
   OutsideSession,
 } from '../storage/database';
 import { emitSessionsChanged } from '../utils/sessionsChangedEmitter';
+import { requestWidgetRefresh } from '../utils/widgetHelper';
 
 const mockPendingSession: OutsideSession = {
   id: 1,
@@ -215,5 +220,25 @@ describe('EventsScreen', () => {
     expect(queryByTestId('swipe-confirm-action')).toBeNull();
     expect(queryByTestId('swipe-reject-action')).toBeNull();
     expect(queryByTestId('session-swipe-hint')).toBeNull();
+  });
+
+  it('calls requestWidgetRefresh when Review Again is tapped on a confirmed session', () => {
+    (getAllSessionsIncludingDiscarded as jest.Mock).mockReturnValue([mockConfirmedSession]);
+    const { getByText, getByTestId } = render(<EventsScreen />);
+    // Expand the confirmed session row
+    fireEvent.press(getByText('10:00–10:00'));
+    // Tap "Review Again"
+    fireEvent.press(getByTestId('review-again-action'));
+    expect(requestWidgetRefresh).toHaveBeenCalled();
+  });
+
+  it('calls confirmSession(id, null) when Review Again is tapped on a confirmed session', () => {
+    (getAllSessionsIncludingDiscarded as jest.Mock).mockReturnValue([mockConfirmedSession]);
+    const { getByText, getByTestId } = render(<EventsScreen />);
+    // Expand the confirmed session row
+    fireEvent.press(getByText('10:00–10:00'));
+    // Tap "Review Again"
+    fireEvent.press(getByTestId('review-again-action'));
+    expect(confirmSession).toHaveBeenCalledWith(mockConfirmedSession.id, null);
   });
 });
