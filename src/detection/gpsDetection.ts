@@ -204,7 +204,7 @@ export function computeHighDistanceInterval(minRadiusMeters: number): number {
 export function buildLocationOptions(
   profile: 'low' | 'high',
   minRadiusMeters: number
-): Parameters<typeof Location.startLocationUpdatesAsync>[1] {
+): NonNullable<Parameters<typeof Location.startLocationUpdatesAsync>[1]> {
   const foregroundService = {
     notificationTitle: 'TouchGrass',
     notificationBody: t('gps_tracking_notif_body'),
