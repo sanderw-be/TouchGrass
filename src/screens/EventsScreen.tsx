@@ -131,6 +131,7 @@ export default function EventsScreen() {
     emitSessionsChanged();
     setExpandedId(null);
     loadData();
+    requestWidgetRefresh();
   };
 
   const handleUnDiscard = (id: number) => {
@@ -465,6 +466,7 @@ function SessionRow({
               <TouchableOpacity
                 style={[styles.actionBtn, styles.actionConfirm]}
                 onPress={onReReview}
+                testID="review-again-action"
               >
                 <Text style={styles.actionConfirmText}>{t('session_review_again')}</Text>
               </TouchableOpacity>
