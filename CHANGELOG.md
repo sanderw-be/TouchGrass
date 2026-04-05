@@ -1,3 +1,14 @@
+# [1.4.0](https://github.com/sanderw-be/TouchGrass/compare/v1.3.1...v1.4.0) (2026-04-05)
+
+### Bug Fixes
+
+- Android "considered buggy" JobScheduler warning + dynamic location accuracy with burst strategy ([#353](https://github.com/sanderw-be/TouchGrass/issues/353)) ([f402690](https://github.com/sanderw-be/TouchGrass/commit/f402690fd53cc3e538e7bd94d0ed380c36714c0b))
+- widget size regression, stop button color, session confirmation refresh, bidirectional timer sync, and seedling brand mark ([#355](https://github.com/sanderw-be/TouchGrass/issues/355)) ([bdc6e12](https://github.com/sanderw-be/TouchGrass/commit/bdc6e12e6c43d3cd1737bdd3aec652e7dc8615bb))
+
+### Features
+
+- implement progress ring widget ([#351](https://github.com/sanderw-be/TouchGrass/issues/351)) ([33694c6](https://github.com/sanderw-be/TouchGrass/commit/33694c610c36a2f1ab930b132c1024c0314f5459))
+
 ## [1.3.1](https://github.com/sanderw-be/TouchGrass/compare/v1.3.0...v1.3.1) (2026-04-04)
 
 ### Bug Fixes
