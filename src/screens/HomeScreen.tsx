@@ -8,6 +8,8 @@ import {
   RefreshControl,
   StatusBar,
   Image,
+  AppState,
+  AppStateStatus,
 } from 'react-native';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { Ionicons } from '@expo/vector-icons';
@@ -33,10 +35,14 @@ import { useTheme } from '../context/ThemeContext';
 import { formatMinutes, formatTime } from '../utils/helpers';
 import { t, formatLocalDate } from '../i18n';
 import { updateTimeSlotProbability } from '../detection/sessionConfidence';
-import { startManualSession } from '../detection/manualCheckin';
+import { startManualSession, logManualSession } from '../detection/manualCheckin';
 import { onSessionsChanged, emitSessionsChanged } from '../utils/sessionsChangedEmitter';
 import { cancelRemindersIfGoalReached } from '../notifications/notificationManager';
-import { WIDGET_TIMER_KEY, requestWidgetRefresh } from '../utils/widgetHelper';
+import {
+  WIDGET_TIMER_KEY,
+  isWidgetTimerRunning,
+  requestWidgetRefresh,
+} from '../utils/widgetHelper';
 
 export default function HomeScreen() {
   const { colors, shadows, isDark } = useTheme();
@@ -62,6 +68,7 @@ export default function HomeScreen() {
   const stopTimerRef = useRef<(() => void) | null>(null);
   const timerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const timerRunningRef = useRef(false);
+  const appStateRef = useRef<AppStateStatus>(AppState.currentState);
 
   useEffect(() => {
     timerRunningRef.current = timerRunning;
@@ -99,23 +106,68 @@ export default function HomeScreen() {
     }, [loadData])
   );
 
-  // On focus, detect if the widget started a timer while the app was in the
-  // background. If so, adopt it so the in-app ring shows the running state.
-  useFocusEffect(
-    useCallback(() => {
-      if (timerRunningRef.current) return; // already running
-      const marker = getSetting(WIDGET_TIMER_KEY, '');
-      const ts = marker ? parseInt(marker, 10) : 0;
-      if (ts > 0) {
-        // Adopt the widget-started timer
-        const stop = startManualSession();
-        stopTimerRef.current = stop;
-        timerStartRef.current = ts;
-        setTimerSeconds(Math.floor((Date.now() - ts) / 1000));
-        setTimerRunning(true);
+  /**
+   * Sync the in-app timer state with the widget's SQLite marker.
+   *
+   * Called on every screen focus and on every app-foreground event so that:
+   *  - A timer started from the widget is adopted into the app UI.
+   *  - A timer stopped from the widget (while the app had it running) clears
+   *    the in-app UI without saving a duplicate session (the widget already
+   *    saved the session via logManualSession).
+   */
+  const syncWidgetTimer = useCallback(() => {
+    const marker = getSetting(WIDGET_TIMER_KEY, '');
+    const widgetTs = isWidgetTimerRunning(marker) ? parseInt(marker, 10) : 0;
+
+    if (timerRunningRef.current) {
+      // Timer is running in the app — check if the widget stopped it.
+      if (widgetTs === 0) {
+        // Widget cleared the marker: it stopped the timer and already saved the
+        // session. Just reset the in-app UI without calling stopTimerRef (which
+        // would save a duplicate session).
+        if (timerIntervalRef.current) {
+          clearInterval(timerIntervalRef.current);
+          timerIntervalRef.current = null;
+        }
+        stopTimerRef.current = null;
+        setTimerRunning(false);
+        setTimerSeconds(0);
+        loadData();
       }
-    }, [])
-  );
+      return;
+    }
+
+    // Timer is not running in the app — check if the widget started one.
+    if (widgetTs > 0) {
+      const startTs = widgetTs;
+      timerStartRef.current = startTs;
+      // Build a stop function that saves the session with the widget's original
+      // start time (not Date.now() which would give the wrong duration).
+      stopTimerRef.current = () => {
+        const endTime = Date.now();
+        const durationMinutes = (endTime - startTs) / 60000;
+        logManualSession(durationMinutes, startTs, endTime);
+      };
+      setTimerSeconds(Math.floor((Date.now() - startTs) / 1000));
+      setTimerRunning(true);
+    }
+  }, [loadData]);
+
+  // Sync on every screen-focus event (navigation tab switch, back navigation, etc.)
+  useFocusEffect(syncWidgetTimer);
+
+  // Sync when the app comes to the foreground (belt-and-suspenders alongside
+  // useFocusEffect, which may not fire if the screen was already focused when
+  // the app was backgrounded).
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextState: AppStateStatus) => {
+      if (appStateRef.current !== 'active' && nextState === 'active') {
+        syncWidgetTimer();
+      }
+      appStateRef.current = nextState;
+    });
+    return () => subscription.remove();
+  }, [syncWidgetTimer]);
 
   // Refresh whenever background work (e.g. Health Connect sync) inserts new sessions.
   useEffect(() => onSessionsChanged(loadData), [loadData]);

@@ -4,6 +4,7 @@ import {
   buildRingSvg,
   buildPlaySvg,
   buildStopSvg,
+  buildSeedlingSvg,
   computeRingSize,
   formatMinutes,
   formatStartTime,
@@ -216,15 +217,55 @@ describe('buildRingSvg', () => {
     expect(svg).toContain('fill="#FFFFFF"');
   });
 
-  it("does not include rotation (Android widget SVG starts at 12 o'clock)", () => {
+  it("progress arc does not use rotation (Android widget SVG starts at 12 o'clock)", () => {
     const svg = buildRingSvg(0.5, '#4A7C59');
-    expect(svg).not.toContain('rotate');
+    // The progress circle itself must not carry a rotate transform — Android's
+    // SVG renderer starts circle strokes at 12 o'clock without needing rotation.
+    // (The seedling brand mark legitimately uses rotate transforms on its shapes.)
+    const circleMatches = svg.match(/<circle[^/]*/g) ?? [];
+    circleMatches.forEach((circleTag) => {
+      expect(circleTag).not.toContain('rotate');
+    });
   });
 
   it('accepts a custom ring size', () => {
     const svg = buildRingSvg(0.5, '#4A7C59', 200);
     expect(svg).toContain('width="200"');
     expect(svg).toContain('height="200"');
+  });
+
+  it('includes the seedling brand mark inside the ring', () => {
+    const svg = buildRingSvg(0.5, '#4A7C59');
+    // Seedling stem path
+    expect(svg).toContain('M32 60 L32 38');
+    // Seedling ellipse leaves
+    expect(svg).toContain('<ellipse');
+    // Positioned via a group transform at the top of the inner circle
+    expect(svg).toContain('<g transform=');
+  });
+});
+
+describe('buildSeedlingSvg', () => {
+  it('returns a valid SVG with stem and leaf elements', () => {
+    const svg = buildSeedlingSvg(20);
+    expect(svg).toMatch(/^<svg /);
+    expect(svg).toMatch(/<\/svg>$/);
+    // Stem path
+    expect(svg).toContain('M32 60 L32 38');
+    // Two leaf ellipses
+    expect((svg.match(/<ellipse/g) ?? []).length).toBe(2);
+  });
+
+  it('uses the correct grass colours', () => {
+    const svg = buildSeedlingSvg(20);
+    expect(svg).toContain('#4A7C59'); // COLORS.grass (stem + left leaf)
+    expect(svg).toContain('#6BAF7A'); // COLORS.grassLight (right leaf)
+  });
+
+  it('renders at the requested size', () => {
+    const svg = buildSeedlingSvg(24);
+    expect(svg).toContain('width="24"');
+    expect(svg).toContain('height="24"');
   });
 });
 

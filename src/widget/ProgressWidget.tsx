@@ -81,6 +81,22 @@ export function buildStopSvg(size: number, color: string): string {
   ].join('');
 }
 
+/** Inner SVG elements (stem + two leaves) for the seedling brand mark. */
+const SEEDLING_PATHS = [
+  `<path d="M32 60 L32 38" stroke="${COLORS.grass}" stroke-width="5" stroke-linecap="round" fill="none"/>`,
+  `<ellipse cx="21" cy="33" rx="13" ry="7" fill="${COLORS.grass}" transform="rotate(-35 21 33)"/>`,
+  `<ellipse cx="41" cy="29" rx="12" ry="6" fill="${COLORS.grassLight}" transform="rotate(35 41 29)"/>`,
+];
+
+/** Build an SVG seedling icon used as the app brand mark inside the progress ring. */
+export function buildSeedlingSvg(size: number): string {
+  return [
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 64 64">`,
+    ...SEEDLING_PATHS,
+    `</svg>`,
+  ].join('');
+}
+
 /**
  * Build an SVG string for a circular progress ring with a filled centre.
  *
@@ -101,6 +117,12 @@ export function buildRingSvg(
   const offset = circumference * (1 - pct);
   const fillR = r - STROKE_WIDTH / 2;
 
+  // Seedling brand mark: top-centre of the inner circle, below the 12 o'clock mark.
+  const seedlingSize = Math.max(Math.round(ringSize * 0.16), 8);
+  const sx = c - seedlingSize / 2;
+  const sy = c - fillR + 2;
+  const seedlingScale = (seedlingSize / 64).toFixed(4);
+
   return [
     `<svg xmlns="http://www.w3.org/2000/svg" width="${ringSize}" height="${ringSize}" viewBox="0 0 ${ringSize} ${ringSize}">`,
     // Inner filled background
@@ -112,6 +134,10 @@ export function buildRingSvg(
     `<circle cx="${c}" cy="${c}" r="${r}" stroke="${ringColor}" stroke-width="${STROKE_WIDTH}" fill="none"`,
     ` stroke-dasharray="${circumference}" stroke-dashoffset="${offset}"`,
     ` stroke-linecap="round"/>`,
+    // Seedling icon — drawn last so it sits on top of the white background
+    `<g transform="translate(${sx},${sy}) scale(${seedlingScale})">`,
+    ...SEEDLING_PATHS,
+    `</g>`,
     `</svg>`,
   ].join('');
 }
