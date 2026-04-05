@@ -16,15 +16,19 @@ import { upsertKnownLocation, deleteKnownLocation, KnownLocation } from '../stor
 import { spacing, radius } from '../utils/theme';
 import { useTheme } from '../context/ThemeContext';
 import { t } from '../i18n';
+import { isImperialUnits, metersToYards } from '../utils/units';
+import { clampRadiusMeters } from '../detection/gpsDetection';
 
-// Radius step values in metres that the slider snaps to
-const RADIUS_STEPS = [25, 50, 75, 100, 150, 200, 300, 500, 750, 1000];
+// Radius step values in metres that the slider snaps to.
+// Range: 25–250 m, which matches the configurable geofence range.
+export const RADIUS_STEPS_METERS = [25, 50, 75, 100, 125, 150, 175, 200, 225, 250];
 
 function findRadiusIdx(r: number): number {
+  const clamped = clampRadiusMeters(r);
   let best = 0;
-  let bestDiff = Math.abs(RADIUS_STEPS[0] - r);
-  for (let i = 1; i < RADIUS_STEPS.length; i++) {
-    const diff = Math.abs(RADIUS_STEPS[i] - r);
+  let bestDiff = Math.abs(RADIUS_STEPS_METERS[0] - clamped);
+  for (let i = 1; i < RADIUS_STEPS_METERS.length; i++) {
+    const diff = Math.abs(RADIUS_STEPS_METERS[i] - clamped);
     if (diff < bestDiff) {
       best = i;
       bestDiff = diff;
@@ -207,7 +211,7 @@ export default function EditLocationSheet({
         label: label.trim(),
         latitude: coords.latitude,
         longitude: coords.longitude,
-        radiusMeters: RADIUS_STEPS[radiusIdx],
+        radiusMeters: RADIUS_STEPS_METERS[radiusIdx],
         isIndoor,
         status: 'active',
       });
@@ -378,10 +382,18 @@ export default function EditLocationSheet({
           <View style={styles.section}>
             <Text style={styles.sectionLabel}>{t('location_edit_radius')}</Text>
             <View style={styles.radiusValueRow}>
-              <Text style={styles.radiusValue}>{RADIUS_STEPS[radiusIdx]} m</Text>
+              <Text style={styles.radiusValue}>
+                {isImperialUnits()
+                  ? `${Math.round(metersToYards(RADIUS_STEPS_METERS[radiusIdx]))} yd`
+                  : `${RADIUS_STEPS_METERS[radiusIdx]} m`}
+              </Text>
             </View>
             <RadiusSlider idx={radiusIdx} onChange={setRadiusIdx} />
-            <Text style={styles.hint}>{t('location_edit_radius_hint')}</Text>
+            <Text style={styles.hint}>
+              {isImperialUnits()
+                ? t('location_edit_radius_hint_imperial')
+                : t('location_edit_radius_hint')}
+            </Text>
           </View>
 
           {/* Indoor/Outdoor toggle */}
@@ -433,7 +445,7 @@ export default function EditLocationSheet({
 function RadiusSlider({ idx, onChange }: { idx: number; onChange: (i: number) => void }) {
   const { colors } = useTheme();
   const styles = useMemo(() => makeSliderStyles(colors), [colors]);
-  const last = RADIUS_STEPS.length - 1;
+  const last = RADIUS_STEPS_METERS.length - 1;
   const fillPercent = Math.round((idx / last) * 100);
   return (
     <View style={styles.wrapper}>
@@ -443,7 +455,7 @@ function RadiusSlider({ idx, onChange }: { idx: number; onChange: (i: number) =>
       <View style={[styles.trackFill, { width: `${fillPercent}%` as `${number}%` }]} />
       {/* Step dots */}
       <View style={styles.dotsRow}>
-        {RADIUS_STEPS.map((_, i) => (
+        {RADIUS_STEPS_METERS.map((_, i) => (
           <TouchableOpacity
             key={i}
             onPress={() => onChange(i)}

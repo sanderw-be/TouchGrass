@@ -26,6 +26,62 @@ export const MIN_OUTSIDE_DURATION_MS = 5 * 60 * 1000;
 // geofence boundary when they began tracking but clearly departed from that location.
 const DEPARTURE_LOCATION_RADIUS_MULTIPLIER = 2;
 
+/** Minimum configurable geofence radius in metres. */
+export const MIN_RADIUS_METERS = 25;
+/** Maximum configurable geofence radius in metres. */
+export const MAX_RADIUS_METERS = 250;
+
+/**
+ * Clamp an arbitrary radius value into the supported [MIN_RADIUS_METERS, MAX_RADIUS_METERS] range.
+ * Used for migration of existing locations that were saved with an out-of-range radius.
+ */
+export function clampRadiusMeters(r: number): number {
+  return Math.max(MIN_RADIUS_METERS, Math.min(MAX_RADIUS_METERS, r));
+}
+
+// ── Dynamic tracking profiles ─────────────────────────────
+//
+// LOW profile (default): network-only positioning, scaled distanceInterval.
+//   No GPS acquisition jobs → no JobScheduler "considered buggy" warning.
+// HIGH burst profile: Balanced accuracy (network+GPS) for a short window when
+//   the user is near a small-radius geofence boundary and a precise fix matters.
+//   Bounded by BURST_DURATION_MS and cooled by BURST_COOLDOWN_MS to keep
+//   GPS-job frequency low enough that Android doesn't flag us again.
+
+/** Accuracy used during the default LOW tracking profile. */
+export const PROFILE_LOW_ACCURACY = Location.Accuracy.Lowest;
+/** Accuracy used during a HIGH burst. */
+export const PROFILE_HIGH_ACCURACY = Location.Accuracy.Balanced;
+
+/** How long a HIGH burst lasts before reverting to LOW (ms). */
+export const BURST_DURATION_MS = 60_000; // 60 seconds
+/** Minimum gap between two consecutive HIGH bursts (ms). */
+export const BURST_COOLDOWN_MS = 10 * 60_000; // 10 minutes
+
+/**
+ * Radius threshold below which a geofence is considered "small" and therefore
+ * eligible for a burst when the user is near the boundary.
+ */
+const BURST_RADIUS_THRESHOLD_M = 75;
+/**
+ * A burst is triggered when the user is within this fraction of the geofence
+ * radius from the boundary (or at least MIN_BOUNDARY_MARGIN_M, whichever is
+ * larger).
+ */
+const BURST_BOUNDARY_FRACTION = 0.25;
+const MIN_BOUNDARY_MARGIN_M = 20;
+
+// In-memory burst state (also persisted to SQLite so it survives restarts)
+type TrackingProfile = 'low' | 'high';
+let currentProfile: TrackingProfile = 'low';
+let burstUntilTimestamp = 0;
+let lastBurstAtTimestamp = 0;
+
+// Persistence keys for burst state
+const GPS_PROFILE_KEY = 'gps_tracking_profile';
+const GPS_BURST_UNTIL_KEY = 'gps_burst_until';
+const GPS_LAST_BURST_KEY = 'gps_last_burst';
+
 /**
  * Persisted GPS session state, stored in and restored from SQLite.
  */
@@ -63,6 +119,10 @@ export function loadGPSState(): void {
   const outside = getSetting(GPS_LAST_OUTSIDE_KEY, '0') === '1';
   outsideSessionStart = start > 0 ? start : null;
   lastKnownOutside = outside;
+
+  currentProfile = getSetting(GPS_PROFILE_KEY, 'low') as TrackingProfile;
+  burstUntilTimestamp = parseInt(getSetting(GPS_BURST_UNTIL_KEY, '0'), 10);
+  lastBurstAtTimestamp = parseInt(getSetting(GPS_LAST_BURST_KEY, '0'), 10);
 }
 
 /**
@@ -71,6 +131,9 @@ export function loadGPSState(): void {
 function saveGPSState(): void {
   setSetting(GPS_SESSION_START_KEY, String(outsideSessionStart ?? 0));
   setSetting(GPS_LAST_OUTSIDE_KEY, lastKnownOutside ? '1' : '0');
+  setSetting(GPS_PROFILE_KEY, currentProfile);
+  setSetting(GPS_BURST_UNTIL_KEY, String(burstUntilTimestamp));
+  setSetting(GPS_LAST_BURST_KEY, String(lastBurstAtTimestamp));
 }
 
 /**
@@ -87,6 +150,9 @@ export function _resetGPSStateForTesting(): void {
   gpsSessionStartLocationLabel = null;
   gpsSessionLastLat = null;
   gpsSessionLastLon = null;
+  currentProfile = 'low';
+  burstUntilTimestamp = 0;
+  lastBurstAtTimestamp = 0;
 }
 
 /**
@@ -100,27 +166,65 @@ export async function requestLocationPermissions(): Promise<boolean> {
 }
 
 /**
- * Start background location tracking for geofencing.
- * Only starts if permissions are already granted.
+ * Compute the minimum active geofence radius across all active known locations.
+ * Returns a clamped value in [MIN_RADIUS_METERS, MAX_RADIUS_METERS].
+ * Falls back to MAX_RADIUS_METERS when no active locations exist.
  */
-export async function startLocationTracking(): Promise<void> {
-  // Check if we already have permissions
-  const { status: fg } = await Location.getForegroundPermissionsAsync();
-  const { status: bg } = await Location.getBackgroundPermissionsAsync();
+export function computeMinActiveRadius(locations: KnownLocation[]): number {
+  const activeIndoor = locations.filter((l) => l.isIndoor);
+  if (activeIndoor.length === 0) return MAX_RADIUS_METERS;
+  const minR = Math.min(...activeIndoor.map((l) => l.radiusMeters));
+  return Math.max(MIN_RADIUS_METERS, Math.min(MAX_RADIUS_METERS, minR));
+}
 
-  if (fg !== 'granted' || bg !== 'granted') {
-    console.log('TouchGrass: GPS tracking not started - permissions not granted');
-    return;
+/**
+ * Compute the distanceInterval (in metres) for the LOW tracking profile based
+ * on the smallest active geofence radius.
+ *
+ * Heuristic: distanceIntervalLow = clamp(minRadius * 0.5, 25, 125)
+ */
+export function computeLowDistanceInterval(minRadiusMeters: number): number {
+  return Math.max(25, Math.min(125, Math.round(minRadiusMeters * 0.5)));
+}
+
+/**
+ * Compute the distanceInterval (in metres) for the HIGH burst profile based
+ * on the smallest active geofence radius.
+ *
+ * Heuristic: distanceIntervalHigh = clamp(minRadius * 0.2, 10, 50)
+ */
+export function computeHighDistanceInterval(minRadiusMeters: number): number {
+  return Math.max(10, Math.min(50, Math.round(minRadiusMeters * 0.2)));
+}
+
+/**
+ * Build the expo-location options for the given profile and minimum radius.
+ * Exported for unit testing.
+ */
+export function buildLocationOptions(
+  profile: 'low' | 'high',
+  minRadiusMeters: number
+): Parameters<typeof Location.startLocationUpdatesAsync>[1] {
+  const foregroundService = {
+    notificationTitle: 'TouchGrass',
+    notificationBody: t('gps_tracking_notif_body'),
+    notificationColor: '#4A7C59',
+  };
+
+  if (profile === 'high') {
+    return {
+      // Balanced (network+GPS) for a short burst when near a small-radius boundary.
+      // Prefer Balanced over High to reduce GPS-job frequency.
+      accuracy: PROFILE_HIGH_ACCURACY,
+      timeInterval: 15_000, // 15 seconds during burst
+      distanceInterval: computeHighDistanceInterval(minRadiusMeters),
+      showsBackgroundLocationIndicator: false,
+      foregroundService,
+      pausesUpdatesAutomatically: false,
+    };
   }
 
-  const isTracking = await Location.hasStartedLocationUpdatesAsync(LOCATION_TRACK_TASK);
-  if (isTracking) {
-    console.log('TouchGrass: GPS tracking already running');
-    return;
-  }
-
-  console.log('TouchGrass: Starting GPS tracking with background notification');
-  await Location.startLocationUpdatesAsync(LOCATION_TRACK_TASK, {
+  return {
     // Use Lowest accuracy (PRIORITY_LOW_POWER / network-only) instead of Balanced
     // (PRIORITY_BALANCED_POWER_ACCURACY / GPS+network).
     //
@@ -136,18 +240,71 @@ export async function startLocationTracking(): Promise<void> {
     // Network location (Wi-Fi + cell) resolves immediately, so no jobs are
     // rescheduled, and the warning disappears. Accuracy is still sufficient
     // for home/work geofencing (~10-100 m with Wi-Fi, ~100-500 m on cell).
-    accuracy: Location.Accuracy.Lowest,
+    accuracy: PROFILE_LOW_ACCURACY,
     timeInterval: 5 * 60 * 1000, // every 5 minutes
-    distanceInterval: 100, // or every 100 meters
+    distanceInterval: computeLowDistanceInterval(minRadiusMeters),
     showsBackgroundLocationIndicator: false,
-    foregroundService: {
-      notificationTitle: 'TouchGrass',
-      notificationBody: t('gps_tracking_notif_body'),
-      notificationColor: '#4A7C59',
-    },
+    foregroundService,
     pausesUpdatesAutomatically: false,
-  });
+  };
+}
+
+/**
+ * Start background location tracking for geofencing.
+ * Only starts if permissions are already granted.
+ *
+ * @param profile  'low' (default) or 'high' burst — determines accuracy and intervals.
+ * @param minRadiusMeters  Smallest active geofence radius, used to scale distanceInterval.
+ */
+export async function startLocationTracking(
+  profile: 'low' | 'high' = 'low',
+  minRadiusMeters: number = MAX_RADIUS_METERS
+): Promise<void> {
+  // Check if we already have permissions
+  const { status: fg } = await Location.getForegroundPermissionsAsync();
+  const { status: bg } = await Location.getBackgroundPermissionsAsync();
+
+  if (fg !== 'granted' || bg !== 'granted') {
+    console.log('TouchGrass: GPS tracking not started - permissions not granted');
+    return;
+  }
+
+  const isTracking = await Location.hasStartedLocationUpdatesAsync(LOCATION_TRACK_TASK);
+  if (isTracking) {
+    console.log('TouchGrass: GPS tracking already running');
+    return;
+  }
+
+  console.log(
+    `TouchGrass: Starting GPS tracking (profile=${profile}, minRadius=${minRadiusMeters}m)`
+  );
+  currentProfile = profile;
+  await Location.startLocationUpdatesAsync(
+    LOCATION_TRACK_TASK,
+    buildLocationOptions(profile, minRadiusMeters)
+  );
   console.log('TouchGrass: GPS tracking started successfully');
+}
+
+/**
+ * Switch tracking to a different profile without stopping the foreground service.
+ * Stops the current task and immediately restarts with the new options.
+ * Safe to call from the background task callback.
+ */
+export async function switchLocationProfile(
+  profile: 'low' | 'high',
+  minRadiusMeters: number
+): Promise<void> {
+  const isTracking = await Location.hasStartedLocationUpdatesAsync(LOCATION_TRACK_TASK);
+  if (isTracking) {
+    await Location.stopLocationUpdatesAsync(LOCATION_TRACK_TASK);
+  }
+  currentProfile = profile;
+  const opts = buildLocationOptions(profile, minRadiusMeters);
+  await Location.startLocationUpdatesAsync(LOCATION_TRACK_TASK, opts);
+  console.log(
+    `TouchGrass: Switched to ${profile} profile (distanceInterval=${opts.distanceInterval}m)`
+  );
 }
 
 /**
@@ -231,6 +388,60 @@ function buildGpsNotes(
     });
   }
   return t('session_notes_gps_no_location', { dist, distUnit, speed, speedUnit });
+}
+
+/**
+ * Decide whether a HIGH accuracy burst should be triggered for the current
+ * position, given the configured geofences and current time.
+ *
+ * A burst is triggered when ALL of the following are true:
+ *  1. There is at least one "small" active indoor geofence (radius ≤ BURST_RADIUS_THRESHOLD_M).
+ *  2. The user is within `max(MIN_BOUNDARY_MARGIN_M, R * BURST_BOUNDARY_FRACTION)` of the
+ *     boundary of that geofence (i.e. `abs(distance(user, center) - R) <= margin`).
+ *  3. The burst cooldown has passed (now - lastBurstAtTimestamp >= BURST_COOLDOWN_MS).
+ *  4. We are currently in the LOW profile (no burst already active).
+ *
+ * @param lat        Current latitude.
+ * @param lon        Current longitude.
+ * @param locations  Active known locations to check.
+ * @param now        Current epoch timestamp (ms).
+ * @param locationAccuracy  Reported accuracy of the current fix (metres), optional.
+ */
+export function shouldTriggerBurst(
+  lat: number,
+  lon: number,
+  locations: KnownLocation[],
+  now: number,
+  locationAccuracy?: number
+): boolean {
+  if (currentProfile === 'high') return false; // burst already active
+  if (now - lastBurstAtTimestamp < BURST_COOLDOWN_MS) return false;
+
+  for (const loc of locations) {
+    if (!loc.isIndoor) continue;
+    if (loc.radiusMeters > BURST_RADIUS_THRESHOLD_M) continue;
+
+    const d = haversineDistance(lat, lon, loc.latitude, loc.longitude);
+    const boundaryDelta = Math.abs(d - loc.radiusMeters);
+    const margin = Math.max(MIN_BOUNDARY_MARGIN_M, loc.radiusMeters * BURST_BOUNDARY_FRACTION);
+
+    const nearBoundary = boundaryDelta <= margin;
+    // Also trigger when the reported fix accuracy is worse than the radius, meaning
+    // the device can't distinguish inside-from-outside from the fix alone. We cap the
+    // accuracy check at BURST_ACCURACY_CAP_M (150 m) to avoid triggering on low-quality
+    // cell-tower fixes in areas where all geofences are small — a 500 m accuracy reading
+    // with a 50 m geofence is just a bad fix, not a useful signal.
+    const BURST_ACCURACY_CAP_M = 150;
+    const ambiguousAccuracy =
+      locationAccuracy !== undefined &&
+      locationAccuracy >= Math.min(BURST_ACCURACY_CAP_M, loc.radiusMeters);
+    const inAmbiguousZone = d <= loc.radiusMeters + margin && d >= loc.radiusMeters - margin;
+
+    if (nearBoundary || (ambiguousAccuracy && inAmbiguousZone)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 /**
@@ -620,12 +831,50 @@ TaskManager.defineTask(
     }
     if (data?.locations?.length > 0) {
       const loc = data.locations[data.locations.length - 1];
+      const now = loc.timestamp;
       processLocationUpdate(
         loc.coords.latitude,
         loc.coords.longitude,
-        loc.timestamp,
+        now,
         loc.coords.speed ?? undefined
       );
+
+      // ── Dynamic profile management ────────────────────────
+      const activeLocations = getKnownLocations();
+      const minRadius = computeMinActiveRadius(activeLocations);
+
+      // Check whether a running HIGH burst has expired and should revert to LOW.
+      if (currentProfile === 'high' && now >= burstUntilTimestamp) {
+        insertBackgroundLog('gps', 'Burst expired — reverting to LOW profile');
+        burstUntilTimestamp = 0;
+        saveGPSState();
+        try {
+          await switchLocationProfile('low', minRadius);
+        } catch (e) {
+          console.warn('TouchGrass: Failed to switch back to LOW profile', e);
+        }
+      } else if (
+        currentProfile === 'low' &&
+        shouldTriggerBurst(
+          loc.coords.latitude,
+          loc.coords.longitude,
+          activeLocations,
+          now,
+          loc.coords.accuracy ?? undefined
+        )
+      ) {
+        // Trigger a HIGH burst.
+        lastBurstAtTimestamp = now;
+        burstUntilTimestamp = now + BURST_DURATION_MS;
+        insertBackgroundLog('gps', `Burst triggered (minRadius=${minRadius}m)`);
+        saveGPSState();
+        try {
+          await switchLocationProfile('high', minRadius);
+        } catch (e) {
+          console.warn('TouchGrass: Failed to switch to HIGH burst profile', e);
+        }
+      }
+
       // Run dwell-based location suggestion after processing
       await autoDetectLocations();
     }

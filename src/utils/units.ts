@@ -32,6 +32,16 @@ export function isImperialUnits(): boolean {
   return regionCode !== null && IMPERIAL_REGIONS.has(regionCode);
 }
 
+/** Converts metres to yards. */
+export function metersToYards(m: number): number {
+  return m * 1.09361;
+}
+
+/** Converts yards to metres. */
+export function yardsToMeters(yd: number): number {
+  return yd / 1.09361;
+}
+
 /** Converts kilometres to miles. */
 export function kmToMiles(km: number): number {
   return km * 0.621371;
