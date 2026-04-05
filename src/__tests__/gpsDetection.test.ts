@@ -2,6 +2,7 @@ jest.mock('../storage/database');
 jest.mock('../detection/sessionMerger');
 
 import * as TaskManager from 'expo-task-manager';
+import * as Location from 'expo-location';
 import * as Database from '../storage/database';
 import * as SessionMerger from '../detection/sessionMerger';
 import {
@@ -10,6 +11,7 @@ import {
   _resetGPSStateForTesting,
   loadGPSState,
   MIN_OUTSIDE_DURATION_MS,
+  startLocationTracking,
 } from '../detection/gpsDetection';
 
 // Capture the TOUCHGRASS_LOCATION_TRACK callback at file scope, before any
@@ -332,5 +334,68 @@ describe('TOUCHGRASS_LOCATION_TRACK background task', () => {
     // processLocationUpdate should not have run — no setSetting calls for GPS state
     expect(SessionMerger.submitSession).not.toHaveBeenCalled();
     expect(Database.setSetting).not.toHaveBeenCalled();
+  });
+});
+
+describe('startLocationTracking', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    // Default: both permissions granted, not yet tracking
+    (Location.getForegroundPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'granted' });
+    (Location.getBackgroundPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'granted' });
+    (Location.hasStartedLocationUpdatesAsync as jest.Mock).mockResolvedValue(false);
+    (Location.startLocationUpdatesAsync as jest.Mock).mockResolvedValue(undefined);
+  });
+
+  it('uses Accuracy.Lowest (network-only) to avoid GPS-acquisition job failures', async () => {
+    await startLocationTracking();
+
+    expect(Location.startLocationUpdatesAsync).toHaveBeenCalledWith(
+      'TOUCHGRASS_LOCATION_TRACK',
+      expect.objectContaining({
+        accuracy: Location.Accuracy.Lowest,
+      })
+    );
+  });
+
+  it('uses i18n key for the foreground service notification body', async () => {
+    await startLocationTracking();
+
+    expect(Location.startLocationUpdatesAsync).toHaveBeenCalledWith(
+      'TOUCHGRASS_LOCATION_TRACK',
+      expect.objectContaining({
+        foregroundService: expect.objectContaining({
+          notificationBody: 'Tracking your outside time in the background',
+        }),
+      })
+    );
+  });
+
+  it('does not start tracking when foreground permission is denied', async () => {
+    (Location.getForegroundPermissionsAsync as jest.Mock).mockResolvedValue({
+      status: 'denied',
+    });
+
+    await startLocationTracking();
+
+    expect(Location.startLocationUpdatesAsync).not.toHaveBeenCalled();
+  });
+
+  it('does not start tracking when background permission is denied', async () => {
+    (Location.getBackgroundPermissionsAsync as jest.Mock).mockResolvedValue({
+      status: 'denied',
+    });
+
+    await startLocationTracking();
+
+    expect(Location.startLocationUpdatesAsync).not.toHaveBeenCalled();
+  });
+
+  it('does not start tracking again if already running', async () => {
+    (Location.hasStartedLocationUpdatesAsync as jest.Mock).mockResolvedValue(true);
+
+    await startLocationTracking();
+
+    expect(Location.startLocationUpdatesAsync).not.toHaveBeenCalled();
   });
 });

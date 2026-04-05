@@ -446,6 +446,7 @@ export default {
   notif_channel_background_name: 'Background tracking',
   notif_channel_background_desc:
     'Shows while TouchGrass is tracking your outside time. Can be disabled without affecting reminders.',
+  gps_tracking_notif_body: 'Tracking your outside time in the background',
   notif_channel_scheduled_name: 'Scheduled reminders',
   notif_channel_scheduled_desc: 'Your custom scheduled reminders to go outside',
   notif_channel_daily_planner_name: 'Daily planner',

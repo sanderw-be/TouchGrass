@@ -452,6 +452,7 @@ export default {
   notif_channel_background_name: 'Achtergrondtracking',
   notif_channel_background_desc:
     'Zichtbaar terwijl TouchGrass je buitentijd bijhoudt. Kan worden uitgeschakeld zonder invloed op herinneringen.',
+  gps_tracking_notif_body: 'Traceert je buitentijd op de achtergrond',
   notif_channel_scheduled_name: 'Geplande herinneringen',
   notif_channel_scheduled_desc: 'Je aangepaste geplande herinneringen om naar buiten te gaan',
   notif_channel_daily_planner_name: 'Dagelijkse planner',

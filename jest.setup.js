@@ -104,6 +104,7 @@ jest.mock('expo-location', () => ({
   Accuracy: {
     Balanced: 3,
     High: 4,
+    Lowest: 1,
   },
 }));
 

@@ -121,13 +121,28 @@ export async function startLocationTracking(): Promise<void> {
 
   console.log('TouchGrass: Starting GPS tracking with background notification');
   await Location.startLocationUpdatesAsync(LOCATION_TRACK_TASK, {
-    accuracy: Location.Accuracy.Balanced,
+    // Use Lowest accuracy (PRIORITY_LOW_POWER / network-only) instead of Balanced
+    // (PRIORITY_BALANCED_POWER_ACCURACY / GPS+network).
+    //
+    // When the app is on Android's battery-optimization whitelist
+    // (REQUEST_IGNORE_BATTERY_OPTIMIZATIONS), the Fused Location Provider
+    // schedules GPS-acquisition jobs via JobScheduler on behalf of the app.
+    // GPS fixes frequently fail indoors, causing repeated job rescheduling.
+    // Android detects this pattern and logs:
+    //   W/JobScheduler.JobStatus: Exempted app … considered buggy
+    //   From com.android.location.fused
+    //
+    // Switching to network-only positioning eliminates GPS acquisition jobs.
+    // Network location (Wi-Fi + cell) resolves immediately, so no jobs are
+    // rescheduled, and the warning disappears. Accuracy is still sufficient
+    // for home/work geofencing (~10-100 m with Wi-Fi, ~100-500 m on cell).
+    accuracy: Location.Accuracy.Lowest,
     timeInterval: 5 * 60 * 1000, // every 5 minutes
     distanceInterval: 100, // or every 100 meters
     showsBackgroundLocationIndicator: false,
     foregroundService: {
       notificationTitle: 'TouchGrass',
-      notificationBody: 'Tracking outside time in the background',
+      notificationBody: t('gps_tracking_notif_body'),
       notificationColor: '#4A7C59',
     },
     pausesUpdatesAutomatically: false,
