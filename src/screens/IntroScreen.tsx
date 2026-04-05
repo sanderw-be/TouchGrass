@@ -671,6 +671,12 @@ function ReadyStep({
           <Text style={styles.checklistText}>{t('intro_ready_checklist_item_calendar')}</Text>
         </View>
       </View>
+      {Platform.OS === 'android' && (
+        <View style={styles.tipCard}>
+          <Text style={styles.tipTitle}>📌 {t('intro_ready_widget_title')}</Text>
+          <Text style={styles.tipBody}>{t('intro_ready_widget_body')}</Text>
+        </View>
+      )}
     </View>
   );
 }

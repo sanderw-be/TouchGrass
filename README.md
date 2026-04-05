@@ -10,6 +10,7 @@ A React Native mobile app that encourages users to spend more time outdoors by t
 - 🎯 **Customizable Goals** - Set daily and weekly outdoor activity targets
 - 🔔 **Smart Reminders** - Get personalized notifications to encourage outdoor time
 - 📊 **Progress Tracking** - View daily, weekly, and monthly outdoor activity statistics
+- 🏠 **Home Screen Widget** - Quick access to progress and timer from the Android home screen
 - 🔒 **Privacy First** - All data stays on your device, no external servers
 - 🌍 **Multi-language Support** - Available in English and Dutch
 

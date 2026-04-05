@@ -3,6 +3,7 @@
     "name": "TouchGrass",
     "slug": "touchgrass",
     "version": "1.3.1",
+    "scheme": "touchgrass",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -95,7 +96,26 @@
       "expo-background-task",
       "expo-localization",
       "expo-system-ui",
-      "./withAlarmBridgePlugin"
+      "./withAlarmBridgePlugin",
+      [
+        "react-native-android-widget",
+        {
+          "widgets": [
+            {
+              "name": "Progress",
+              "label": "TouchGrass Progress",
+              "description": "Shows your daily outdoor progress and a quick timer",
+              "minWidth": "180dp",
+              "minHeight": "110dp",
+              "targetCellWidth": 3,
+              "targetCellHeight": 2,
+              "previewImage": "./assets/widget-preview.png",
+              "updatePeriodMillis": 1800000,
+              "resizeMode": "horizontal|vertical"
+            }
+          ]
+        }
+      ]
     ],
     "extra": {
       "eas": {

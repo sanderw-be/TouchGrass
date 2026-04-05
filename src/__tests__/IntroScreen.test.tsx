@@ -341,6 +341,11 @@ describe('IntroScreen', () => {
 
       expect(onComplete).toHaveBeenCalled();
     });
+
+    it('hides widget hint on non-Android platforms', async () => {
+      const { queryByText } = await navigateToReadyStep();
+      expect(queryByText('intro_ready_widget_body')).toBeNull();
+    });
   });
 
   describe('Welcome step privacy policy link', () => {

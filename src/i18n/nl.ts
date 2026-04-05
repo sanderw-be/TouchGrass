@@ -27,6 +27,11 @@ export default {
   ring_timer_outside: 'buiten',
   ring_timer_info: 'Tik op de ring om een handmatige timer te starten',
 
+  // Widget
+  widget_start_outside: 'start buiten\nsessie',
+  widget_back_inside: 'terug binnen',
+  widget_started: 'gestart',
+
   // Sessiebronnen
   source_health_connect: 'Activiteit',
   source_gps: 'GPS',
@@ -341,6 +346,9 @@ export default {
   intro_ready_checklist_item_gps: 'Sta achtergrondlocatie toe voor GPS-detectie.',
   intro_ready_checklist_item_notifications: 'Schakel meldingen in voor slimme herinneringen.',
   intro_ready_checklist_item_calendar: 'Koppel agenda voor slim inplannen.',
+  intro_ready_widget_title: 'Startscherm-widget',
+  intro_ready_widget_body:
+    'Voeg de TouchGrass-widget toe aan je startscherm om je voortgang in \xe9\xe9n oogopslag te zien en sessies te starten zonder de app te openen.',
 
   // Meldingstitels (willekeurig gekozen)
   notif_title_1: '🌿 Tijd om buiten te zijn!',
@@ -523,6 +531,9 @@ export default {
   about_manual_title: 'Handmatig loggen',
   about_manual_body:
     'Een sessie gemist? Je kunt buitentijd handmatig loggen via het startscherm. Tik op de ring of gebruik de knop voor handmatig loggen om een eerdere sessie in te voeren of een live timer te starten. Handmatige sessies worden altijd direct goedgekeurd.',
+  about_widget_title: 'Startscherm-widget',
+  about_widget_body:
+    'Voeg de TouchGrass-widget toe aan je startscherm om snel je dagelijkse voortgang te zien. De widget toont een voortgangsring en laat je met \xe9\xe9n tik een buitensessie starten of stoppen \u2014 zonder de app te openen. Houd je startscherm ingedrukt en kies Widgets \u2192 TouchGrass om de widget toe te voegen.',
   about_privacy_title: 'Privacy',
   about_privacy_body:
     'Al je gegevens blijven op je apparaat. TouchGrass stuurt geen persoonlijke informatie naar externe servers. Locatiegegevens worden alleen gebruikt om buitensessies te detecteren en worden niet langer bewaard dan nodig. Health Connect-gegevens worden lokaal gelezen en niet gedeeld.',

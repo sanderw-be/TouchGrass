@@ -25,6 +25,7 @@ const SECTIONS: Section[] = [
     bodyKey: 'about_reminders_body',
   },
   { icon: 'pencil-outline', titleKey: 'about_manual_title', bodyKey: 'about_manual_body' },
+  { icon: 'grid-outline', titleKey: 'about_widget_title', bodyKey: 'about_widget_body' },
   { icon: 'lock-closed-outline', titleKey: 'about_privacy_title', bodyKey: 'about_privacy_body' },
 ];
 
