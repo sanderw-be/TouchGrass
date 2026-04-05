@@ -163,7 +163,8 @@ export default {
   location_edit_label: 'Location name',
   location_edit_label_placeholder: 'e.g. Home, Work, Park',
   location_edit_radius: 'Geofence radius',
-  location_edit_radius_hint: 'Distance from location center (10-1000 meters)',
+  location_edit_radius_hint: 'Distance from location center (25–250 meters)',
+  location_edit_radius_hint_imperial: 'Distance from location center (25–250 yards)',
   location_edit_type: 'Location type',
   location_edit_error_title: 'Invalid input',
   location_edit_error_label: 'Please enter a location name.',
@@ -446,6 +447,7 @@ export default {
   notif_channel_background_name: 'Background tracking',
   notif_channel_background_desc:
     'Shows while TouchGrass is tracking your outside time. Can be disabled without affecting reminders.',
+  gps_tracking_notif_body: 'Tracking your outside time in the background',
   notif_channel_scheduled_name: 'Scheduled reminders',
   notif_channel_scheduled_desc: 'Your custom scheduled reminders to go outside',
   notif_channel_daily_planner_name: 'Daily planner',

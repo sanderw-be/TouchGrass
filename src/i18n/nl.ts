@@ -163,7 +163,8 @@ export default {
   location_edit_label: 'Locatie naam',
   location_edit_label_placeholder: 'bijv. Thuis, Werk, Sportschool',
   location_edit_radius: 'Geofence straal',
-  location_edit_radius_hint: 'Afstand vanaf locatie (10-1000 meter)',
+  location_edit_radius_hint: 'Afstand vanaf locatie (25–250 meter)',
+  location_edit_radius_hint_imperial: 'Afstand vanaf locatie (25–250 yard)',
   location_edit_type: 'Locatietype',
   location_edit_error_title: 'Ongeldige invoer',
   location_edit_error_label: 'Voer een locatienaam in.',
@@ -452,6 +453,7 @@ export default {
   notif_channel_background_name: 'Achtergrondtracking',
   notif_channel_background_desc:
     'Zichtbaar terwijl TouchGrass je buitentijd bijhoudt. Kan worden uitgeschakeld zonder invloed op herinneringen.',
+  gps_tracking_notif_body: 'Traceert je buitentijd op de achtergrond',
   notif_channel_scheduled_name: 'Geplande herinneringen',
   notif_channel_scheduled_desc: 'Je aangepaste geplande herinneringen om naar buiten te gaan',
   notif_channel_daily_planner_name: 'Dagelijkse planner',

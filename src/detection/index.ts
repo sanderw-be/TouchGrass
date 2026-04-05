@@ -6,8 +6,12 @@ import {
   openHealthConnectForManagement,
 } from './healthConnect';
 import { verifyHealthConnectPermissions } from './healthConnectIntent';
-import { startLocationTracking, stopLocationTracking } from './gpsDetection';
-import { getSetting, setSetting } from '../storage/database';
+import {
+  startLocationTracking,
+  stopLocationTracking,
+  computeMinActiveRadius,
+} from './gpsDetection';
+import { getKnownLocations, getSetting, setSetting } from '../storage/database';
 
 // Setting keys for the user's explicit intent (independent of OS permission state)
 const HC_USER_KEY = 'healthconnect_user_enabled';
@@ -56,7 +60,7 @@ export async function initDetection(): Promise<DetectionStatus> {
   // GPS — only run if the user has explicitly enabled it.
   if (status.gps) {
     try {
-      await startLocationTracking();
+      await startLocationTracking('low', computeMinActiveRadius(getKnownLocations()));
       status.gpsPermission = true;
       setSetting('gps_enabled', '1');
     } catch (e) {
@@ -193,7 +197,7 @@ export async function requestGPSPermissions(): Promise<boolean> {
     const granted = bgStatus === 'granted';
 
     if (granted) {
-      await startLocationTracking();
+      await startLocationTracking('low', computeMinActiveRadius(getKnownLocations()));
       setSetting('gps_enabled', '1');
     } else {
       // Background permission denied or not determined
@@ -280,7 +284,7 @@ export async function toggleGPS(enabled: boolean): Promise<{ needsPermissions: b
     setSetting('gps_enabled', granted ? '1' : '0');
 
     if (granted) {
-      await startLocationTracking();
+      await startLocationTracking('low', computeMinActiveRadius(getKnownLocations()));
     }
 
     return { needsPermissions: !granted };
