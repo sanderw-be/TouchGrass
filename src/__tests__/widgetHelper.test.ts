@@ -67,6 +67,32 @@ describe('widgetHelper', () => {
       );
     });
 
+    it('passes widget dimensions from widgetInfo to ProgressWidget', async () => {
+      Object.defineProperty(Platform, 'OS', {
+        value: 'android',
+        writable: true,
+      });
+
+      const { requestWidgetUpdate } = require('react-native-android-widget');
+      const { ProgressWidget } = require('../widget/ProgressWidget');
+
+      await requestWidgetRefresh();
+
+      const [[callArgs]] = requestWidgetUpdate.mock.calls;
+      const widgetInfo = {
+        widgetName: 'Progress',
+        widgetId: 1,
+        width: 320,
+        height: 160,
+        screenInfo: { screenHeightDp: 800, screenWidthDp: 400, density: 2, densityDpi: 320 },
+      };
+      callArgs.renderWidget(widgetInfo);
+
+      expect(ProgressWidget).toHaveBeenCalledWith(
+        expect.objectContaining({ widgetWidth: 320, widgetHeight: 160 })
+      );
+    });
+
     it('handles errors gracefully', async () => {
       Object.defineProperty(Platform, 'OS', {
         value: 'android',

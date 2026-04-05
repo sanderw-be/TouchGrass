@@ -112,6 +112,13 @@ describe('ProgressWidget', () => {
     expect(texts.some((t) => t.includes('widget_back_inside'))).toBe(true);
   });
 
+  it('stop button uses the same grass color as the play button', () => {
+    const element = ProgressWidget(renderProps({ timerRunning: true, timerStartMs: Date.now() }));
+    const svgs = collectSvgs(element);
+    const stopSvg = svgs.find((s) => s.includes('rx="24"'));
+    expect(stopSvg).toContain('fill="#4A7C59"'); // COLORS.grass
+  });
+
   it('shows "--:--" when timer running but no timerStartMs', () => {
     const element = ProgressWidget(renderProps({ timerRunning: true }));
     const texts = collectTexts(element);
@@ -165,6 +172,30 @@ describe('ProgressWidget', () => {
     const element = ProgressWidget(renderProps());
     const svg = findSvgProp(element);
     expect(svg).toContain(`width="${DEFAULT_RING_SIZE}"`);
+  });
+
+  it('includes an ImageWidget seedling brand mark', () => {
+    const element = ProgressWidget(renderProps());
+    // Walk the tree looking for an ImageWidget (identifiable by imageWidth prop)
+    function findImageWidget(el: any): any {
+      if (!el) return null;
+      if (el.props?.imageWidth !== undefined) return el;
+      const children = el.props?.children;
+      if (Array.isArray(children)) {
+        for (const child of children) {
+          const found = findImageWidget(child);
+          if (found) return found;
+        }
+      } else if (children) {
+        return findImageWidget(children);
+      }
+      return null;
+    }
+    const img = findImageWidget(element);
+    expect(img).toBeTruthy();
+    expect(img.props.imageWidth).toBeGreaterThan(0);
+    expect(img.props.imageHeight).toBeGreaterThan(0);
+    expect(img.props.image).toBeTruthy();
   });
 });
 

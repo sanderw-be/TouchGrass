@@ -51,7 +51,15 @@ export async function requestWidgetRefresh(): Promise<void> {
 
     await requestWidgetUpdate({
       widgetName: 'Progress',
-      renderWidget: () => ProgressWidget({ current, target, timerRunning, timerStartMs }),
+      renderWidget: (widgetInfo) =>
+        ProgressWidget({
+          current,
+          target,
+          timerRunning,
+          timerStartMs,
+          widgetWidth: widgetInfo.width,
+          widgetHeight: widgetInfo.height,
+        }),
     });
   } catch (error) {
     console.warn('Widget refresh failed:', error);

@@ -2,7 +2,13 @@
 
 import React from 'react';
 import type { ColorProp } from 'react-native-android-widget';
-import { FlexWidget, OverlapWidget, SvgWidget, TextWidget } from 'react-native-android-widget';
+import {
+  FlexWidget,
+  ImageWidget,
+  OverlapWidget,
+  SvgWidget,
+  TextWidget,
+} from 'react-native-android-widget';
 import { t } from '../i18n';
 
 /** Colors from the app theme (widget cannot use React context). */
@@ -142,6 +148,10 @@ export function ProgressWidget({
   const ringSvg = buildRingSvg(pct, ringColor, ringSize);
 
   const iconSize = Math.round(ringSize * 0.22);
+  // Seedling brand mark: scaled to ~18 % of ring diameter, sits just inside
+  // the top stroke so it appears below the 12 o'clock position.
+  const seedlingSize = Math.max(Math.round(ringSize * 0.18), 12);
+  const seedlingTopPad = Math.round(STROKE_WIDTH + RING_PADDING);
 
   return (
     <FlexWidget
@@ -157,6 +167,23 @@ export function ProgressWidget({
       {/* Ring + centred content */}
       <OverlapWidget style={{ width: ringSize, height: ringSize }}>
         <SvgWidget svg={ringSvg} style={{ width: ringSize, height: ringSize }} />
+
+        {/* Seedling brand mark — top-centre of the inner circle */}
+        <FlexWidget
+          style={{
+            width: ringSize,
+            height: ringSize,
+            justifyContent: 'flex-start',
+            alignItems: 'center',
+            paddingTop: seedlingTopPad,
+          }}
+        >
+          <ImageWidget
+            image={require('../../assets/seedling.png')}
+            imageWidth={seedlingSize}
+            imageHeight={seedlingSize}
+          />
+        </FlexWidget>
 
         {/* Tappable centre area */}
         <FlexWidget
@@ -184,7 +211,7 @@ export function ProgressWidget({
                 }}
               />
               <SvgWidget
-                svg={buildStopSvg(iconSize, COLORS.sun)}
+                svg={buildStopSvg(iconSize, COLORS.grass)}
                 style={{
                   width: iconSize,
                   height: iconSize,

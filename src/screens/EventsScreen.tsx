@@ -30,6 +30,7 @@ import UndoSnackbar from '../components/UndoSnackbar';
 import { updateTimeSlotProbability } from '../detection/sessionConfidence';
 import { onSessionsChanged, emitSessionsChanged } from '../utils/sessionsChangedEmitter';
 import { cancelRemindersIfGoalReached } from '../notifications/notificationManager';
+import { requestWidgetRefresh } from '../utils/widgetHelper';
 
 const FOUR_WEEKS_AGO = () => Date.now() - 28 * 24 * 60 * 60 * 1000;
 
@@ -93,6 +94,7 @@ export default function EventsScreen() {
     loadData();
     if (confirmed) {
       await cancelRemindersIfGoalReached();
+      requestWidgetRefresh();
     } else {
       setUndoSnackbar({ visible: true, sessionId: id });
     }
@@ -155,7 +157,10 @@ export default function EventsScreen() {
       <ManualSessionSheet
         visible={sheetVisible}
         onClose={() => setSheetVisible(false)}
-        onSessionLogged={loadData}
+        onSessionLogged={() => {
+          loadData();
+          requestWidgetRefresh();
+        }}
       />
       <EditSessionSheet
         visible={editSession !== null}
@@ -164,6 +169,7 @@ export default function EventsScreen() {
         onSessionUpdated={() => {
           setExpandedId(null);
           loadData();
+          requestWidgetRefresh();
         }}
       />
 
