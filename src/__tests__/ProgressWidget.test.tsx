@@ -112,6 +112,13 @@ describe('ProgressWidget', () => {
     expect(texts.some((t) => t.includes('widget_back_inside'))).toBe(true);
   });
 
+  it('stop button uses the same grass color as the play button', () => {
+    const element = ProgressWidget(renderProps({ timerRunning: true, timerStartMs: Date.now() }));
+    const svgs = collectSvgs(element);
+    const stopSvg = svgs.find((s) => s.includes('rx="24"'));
+    expect(stopSvg).toContain('fill="#4A7C59"'); // COLORS.grass
+  });
+
   it('shows "--:--" when timer running but no timerStartMs', () => {
     const element = ProgressWidget(renderProps({ timerRunning: true }));
     const texts = collectTexts(element);

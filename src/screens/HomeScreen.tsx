@@ -133,6 +133,7 @@ export default function HomeScreen() {
     emitSessionsChanged();
     if (confirmed) {
       await cancelRemindersIfGoalReached();
+      requestWidgetRefresh();
     } else {
       setUndoSnackbar({ visible: true, sessionId: id });
     }
@@ -210,7 +211,10 @@ export default function HomeScreen() {
         <ManualSessionSheet
           visible={sheetVisible}
           onClose={() => setSheetVisible(false)}
-          onSessionLogged={loadData}
+          onSessionLogged={() => {
+            loadData();
+            requestWidgetRefresh();
+          }}
         />
 
         {/* Header */}

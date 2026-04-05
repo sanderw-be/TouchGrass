@@ -184,7 +184,7 @@ export function ProgressWidget({
                 }}
               />
               <SvgWidget
-                svg={buildStopSvg(iconSize, COLORS.sun)}
+                svg={buildStopSvg(iconSize, COLORS.grass)}
                 style={{
                   width: iconSize,
                   height: iconSize,
