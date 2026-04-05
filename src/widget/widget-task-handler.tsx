@@ -29,7 +29,7 @@ function getWidgetData(): {
 }
 
 export async function widgetTaskHandler(props: WidgetTaskHandlerProps): Promise<void> {
-  const { widgetAction, clickAction, renderWidget } = props;
+  const { widgetAction, clickAction, renderWidget, widgetInfo } = props;
 
   switch (widgetAction) {
     case 'WIDGET_ADDED':
@@ -42,6 +42,8 @@ export async function widgetTaskHandler(props: WidgetTaskHandlerProps): Promise<
           target={data.target}
           timerRunning={data.timerRunning}
           timerStartMs={data.timerStartMs}
+          widgetWidth={widgetInfo.width}
+          widgetHeight={widgetInfo.height}
         />
       );
       break;
@@ -76,6 +78,8 @@ export async function widgetTaskHandler(props: WidgetTaskHandlerProps): Promise<
             target={data.target}
             timerRunning={data.timerRunning}
             timerStartMs={data.timerStartMs}
+            widgetWidth={widgetInfo.width}
+            widgetHeight={widgetInfo.height}
           />
         );
       }

@@ -43,13 +43,41 @@ export function formatStartTime(epochMs: number): string {
   return `${hh}:${mm}`;
 }
 
-/**
- * Size of the SVG ring in dp.
- * A 3×2 widget is roughly 220×146 dp on most devices; the ring fills
- * the height so it dominates the widget visually.
- */
-const RING_SIZE = 130;
+/** Default ring size when no widget dimensions are provided. */
+const DEFAULT_RING_SIZE = 130;
+/** Padding between the ring edge and the widget boundary (dp). */
+const RING_PADDING = 6;
 const STROKE_WIDTH = 10;
+
+/**
+ * Compute the ring diameter from the widget's bounding box.
+ * Uses the smaller of width/height minus padding so the ring is
+ * always the largest square that fits.
+ */
+export function computeRingSize(widgetWidth?: number, widgetHeight?: number): number {
+  if (widgetWidth && widgetHeight) {
+    return Math.max(Math.min(widgetWidth, widgetHeight) - RING_PADDING * 2, 60);
+  }
+  return DEFAULT_RING_SIZE;
+}
+
+/** Build an SVG play icon (Ionicons-style triangle). */
+export function buildPlaySvg(size: number, color: string): string {
+  return [
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 512 512">`,
+    `<path d="M152 64l304 192-304 192V64z" fill="${color}"/>`,
+    `</svg>`,
+  ].join('');
+}
+
+/** Build an SVG stop icon (Ionicons-style rounded square). */
+export function buildStopSvg(size: number, color: string): string {
+  return [
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 512 512">`,
+    `<rect x="96" y="96" width="320" height="320" rx="24" fill="${color}"/>`,
+    `</svg>`,
+  ].join('');
+}
 
 /**
  * Build an SVG string for a circular progress ring with a filled centre.
@@ -60,23 +88,28 @@ const STROKE_WIDTH = 10;
  *   3. Foreground arc using stroke-dasharray / stroke-dashoffset,
  *      rotated -90° so progress starts at 12 o'clock, with round caps.
  */
-export function buildRingSvg(pct: number, ringColor: string): string {
-  const r = (RING_SIZE - STROKE_WIDTH) / 2;
-  const c = RING_SIZE / 2;
+export function buildRingSvg(
+  pct: number,
+  ringColor: string,
+  ringSize: number = DEFAULT_RING_SIZE
+): string {
+  const r = (ringSize - STROKE_WIDTH) / 2;
+  const c = ringSize / 2;
   const circumference = 2 * Math.PI * r;
   const offset = circumference * (1 - pct);
   const fillR = r - STROKE_WIDTH / 2;
 
   return [
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${RING_SIZE}" height="${RING_SIZE}" viewBox="0 0 ${RING_SIZE} ${RING_SIZE}">`,
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${ringSize}" height="${ringSize}" viewBox="0 0 ${ringSize} ${ringSize}">`,
     // Inner filled background
     `<circle cx="${c}" cy="${c}" r="${fillR}" fill="${COLORS.card}"/>`,
     // Track
     `<circle cx="${c}" cy="${c}" r="${r}" stroke="${COLORS.fog}" stroke-width="${STROKE_WIDTH}" fill="none"/>`,
-    // Progress arc
+    // Progress arc (Android widget SVG renders circle strokes from 12 o'clock,
+    // unlike web SVG which starts at 3 o'clock, so no rotation is needed.)
     `<circle cx="${c}" cy="${c}" r="${r}" stroke="${ringColor}" stroke-width="${STROKE_WIDTH}" fill="none"`,
     ` stroke-dasharray="${circumference}" stroke-dashoffset="${offset}"`,
-    ` stroke-linecap="round" transform="rotate(-90 ${c} ${c})"/>`,
+    ` stroke-linecap="round"/>`,
     `</svg>`,
   ].join('');
 }
@@ -87,6 +120,10 @@ export interface ProgressWidgetProps {
   timerRunning: boolean;
   /** Epoch-ms when the timer was started — used to display "started HH:MM". */
   timerStartMs?: number;
+  /** Widget width in dp — used to size the ring to the bounding box. */
+  widgetWidth?: number;
+  /** Widget height in dp — used to size the ring to the bounding box. */
+  widgetHeight?: number;
 }
 
 export function ProgressWidget({
@@ -94,10 +131,15 @@ export function ProgressWidget({
   target,
   timerRunning,
   timerStartMs,
+  widgetWidth,
+  widgetHeight,
 }: ProgressWidgetProps) {
   const pct = target > 0 ? Math.min(current / target, 1) : 0;
   const ringColor = progressColor(pct);
-  const ringSvg = buildRingSvg(pct, ringColor);
+  const ringSize = computeRingSize(widgetWidth, widgetHeight);
+  const ringSvg = buildRingSvg(pct, ringColor, ringSize);
+
+  const iconSize = Math.round(ringSize * 0.22);
 
   return (
     <FlexWidget
@@ -111,14 +153,14 @@ export function ProgressWidget({
       accessibilityLabel="TouchGrass progress widget"
     >
       {/* Ring + centred content */}
-      <OverlapWidget style={{ width: RING_SIZE, height: RING_SIZE }}>
-        <SvgWidget svg={ringSvg} style={{ width: RING_SIZE, height: RING_SIZE }} />
+      <OverlapWidget style={{ width: ringSize, height: ringSize }}>
+        <SvgWidget svg={ringSvg} style={{ width: ringSize, height: ringSize }} />
 
         {/* Tappable centre area */}
         <FlexWidget
           style={{
-            width: RING_SIZE,
-            height: RING_SIZE,
+            width: ringSize,
+            height: ringSize,
             justifyContent: 'center',
             alignItems: 'center',
           }}
@@ -139,11 +181,11 @@ export function ProgressWidget({
                   color: COLORS.textSecondary,
                 }}
               />
-              <TextWidget
-                text="⏹"
+              <SvgWidget
+                svg={buildStopSvg(iconSize, COLORS.sun)}
                 style={{
-                  fontSize: 28,
-                  color: COLORS.sun,
+                  width: iconSize,
+                  height: iconSize,
                   marginTop: 2,
                 }}
               />
@@ -164,11 +206,11 @@ export function ProgressWidget({
                 alignItems: 'center',
               }}
             >
-              <TextWidget
-                text="▶"
+              <SvgWidget
+                svg={buildPlaySvg(iconSize, COLORS.grass)}
                 style={{
-                  fontSize: 28,
-                  color: COLORS.grass,
+                  width: iconSize,
+                  height: iconSize,
                 }}
               />
               <TextWidget
