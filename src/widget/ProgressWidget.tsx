@@ -44,10 +44,12 @@ export function formatStartTime(epochMs: number): string {
 }
 
 /** Default ring size when no widget dimensions are provided. */
-const DEFAULT_RING_SIZE = 130;
+export const DEFAULT_RING_SIZE = 130;
 /** Padding between the ring edge and the widget boundary (dp). */
 const RING_PADDING = 6;
 const STROKE_WIDTH = 10;
+/** Smallest ring we allow even on tiny widgets. */
+export const MIN_RING_SIZE = 60;
 
 /**
  * Compute the ring diameter from the widget's bounding box.
@@ -56,7 +58,7 @@ const STROKE_WIDTH = 10;
  */
 export function computeRingSize(widgetWidth?: number, widgetHeight?: number): number {
   if (widgetWidth && widgetHeight) {
-    return Math.max(Math.min(widgetWidth, widgetHeight) - RING_PADDING * 2, 60);
+    return Math.max(Math.min(widgetWidth, widgetHeight) - RING_PADDING * 2, MIN_RING_SIZE);
   }
   return DEFAULT_RING_SIZE;
 }

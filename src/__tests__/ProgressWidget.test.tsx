@@ -7,6 +7,8 @@ import {
   computeRingSize,
   formatMinutes,
   formatStartTime,
+  DEFAULT_RING_SIZE,
+  MIN_RING_SIZE,
 } from '../widget/ProgressWidget';
 
 jest.mock('../i18n', () => ({
@@ -162,14 +164,14 @@ describe('ProgressWidget', () => {
   it('falls back to default ring size without widget dimensions', () => {
     const element = ProgressWidget(renderProps());
     const svg = findSvgProp(element);
-    expect(svg).toContain('width="130"');
+    expect(svg).toContain(`width="${DEFAULT_RING_SIZE}"`);
   });
 });
 
 describe('computeRingSize', () => {
   it('returns default when no dimensions provided', () => {
-    expect(computeRingSize()).toBe(130);
-    expect(computeRingSize(undefined, undefined)).toBe(130);
+    expect(computeRingSize()).toBe(DEFAULT_RING_SIZE);
+    expect(computeRingSize(undefined, undefined)).toBe(DEFAULT_RING_SIZE);
   });
 
   it('uses the smaller dimension minus padding', () => {
@@ -177,8 +179,8 @@ describe('computeRingSize', () => {
     expect(computeRingSize(200, 300)).toBe(188); // 200 - 12
   });
 
-  it('enforces a minimum size of 60', () => {
-    expect(computeRingSize(30, 30)).toBe(60);
+  it('enforces a minimum size', () => {
+    expect(computeRingSize(30, 30)).toBe(MIN_RING_SIZE);
   });
 });
 
@@ -192,7 +194,7 @@ describe('buildRingSvg', () => {
 
   it('has full circumference offset at 0%', () => {
     const svg = buildRingSvg(0, '#7EB8D4');
-    const r = (130 - 10) / 2; // DEFAULT_RING_SIZE=130, STROKE_WIDTH=10
+    const r = (DEFAULT_RING_SIZE - 10) / 2; // STROKE_WIDTH=10
     const circumference = 2 * Math.PI * r;
     expect(svg).toContain(`stroke-dashoffset="${circumference}"`);
   });
