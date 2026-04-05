@@ -54,6 +54,8 @@ describe('AboutAppScreen', () => {
     expect(getByText('about_reminders_body')).toBeTruthy();
     expect(getByText('about_manual_title')).toBeTruthy();
     expect(getByText('about_manual_body')).toBeTruthy();
+    expect(getByText('about_widget_title')).toBeTruthy();
+    expect(getByText('about_widget_body')).toBeTruthy();
     expect(getByText('about_privacy_title')).toBeTruthy();
     expect(getByText('about_privacy_body')).toBeTruthy();
   });

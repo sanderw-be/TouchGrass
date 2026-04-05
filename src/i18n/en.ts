@@ -341,6 +341,9 @@ export default {
   intro_ready_checklist_item_gps: 'Allow background location for GPS detection.',
   intro_ready_checklist_item_notifications: 'Enable notifications for smart reminders.',
   intro_ready_checklist_item_calendar: 'Connect calendar for smart scheduling.',
+  intro_ready_widget_title: 'Home screen widget',
+  intro_ready_widget_body:
+    'Add the TouchGrass widget to your home screen to see your progress at a glance and start sessions without opening the app.',
 
   // Notification titles (randomly picked)
   notif_title_1: '🌿 Time to touch grass!',
@@ -521,6 +524,9 @@ export default {
   about_manual_title: 'Manual logging',
   about_manual_body:
     'Missed a session? You can log outdoor time manually from the home screen. Tap the ring or use the manual log button to enter a past session or start a live timer. Manual sessions are always approved immediately.',
+  about_widget_title: 'Home screen widget',
+  about_widget_body:
+    'Add the TouchGrass widget to your home screen for a quick glance at your daily progress. The widget shows a progress ring and lets you start or stop an outdoor session with a single tap \u2014 no need to open the app. Long-press your home screen and choose Widgets \u2192 TouchGrass to add it.',
   about_privacy_title: 'Privacy',
   about_privacy_body:
     'All your data stays on your device. TouchGrass does not send any personal information to external servers. Location data is used only to detect outdoor sessions and is never stored beyond what is needed. Health Connect data is read locally and is not shared.',
