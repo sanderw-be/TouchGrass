@@ -1,4 +1,4 @@
-name: Build Pixel 10 Pro APK
+name: CI — Test & Build
 
 on:
   pull_request:
