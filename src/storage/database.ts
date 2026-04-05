@@ -484,38 +484,46 @@ export function setWeeklyGoal(minutes: number): void {
 /**
  * Calculate the current daily streak (consecutive days of reaching daily goal).
  * Returns the number of consecutive days ending today where daily goal was reached.
+ *
+ * Uses a single query to fetch all approved sessions within the look-back window,
+ * then groups them by local calendar day in memory. This avoids opening a new DB
+ * cursor for every day of the streak, which caused "AbstractCursor.close" leaks
+ * on Android when navigating between screens.
  */
 export function getDailyStreak(): number {
   const dailyGoal = getCurrentDailyGoal();
   if (!dailyGoal) return 0;
 
   const targetMinutes = dailyGoal.targetMinutes;
+  const todayStart = startOfDay(Date.now());
+  // Look back at most 365 days to bound the query
+  const cutoffMs = todayStart - 365 * 86400000;
+
+  const rows = db.getAllSync<{ startTime: number; durationMinutes: number }>(
+    `SELECT startTime, durationMinutes
+     FROM outside_sessions
+     WHERE userConfirmed = 1 AND startTime >= ?
+     ORDER BY startTime DESC`,
+    [cutoffMs]
+  );
+
+  // Aggregate minutes per local calendar day
+  const minutesByDay = new Map<number, number>();
+  for (const row of rows) {
+    const dayStart = startOfDay(row.startTime);
+    minutesByDay.set(dayStart, (minutesByDay.get(dayStart) ?? 0) + row.durationMinutes);
+  }
+
+  // Count consecutive days from today going backwards
   let streak = 0;
-  let currentDate = startOfDay(Date.now());
-
-  // Check each day going backwards from today
-  while (true) {
-    const dayEnd = currentDate + 86400000;
-    const row = db.getFirstSync<{ total: number }>(
-      `SELECT COALESCE(SUM(durationMinutes), 0) as total
-       FROM outside_sessions
-       WHERE startTime >= ? AND startTime < ? AND userConfirmed = 1`,
-      [currentDate, dayEnd]
-    );
-
-    const minutes = row?.total ?? 0;
-
-    // If this day met the goal, increment streak and move to previous day
-    if (minutes >= targetMinutes) {
+  let currentDay = todayStart;
+  while (streak < 365) {
+    if ((minutesByDay.get(currentDay) ?? 0) >= targetMinutes) {
       streak++;
-      currentDate -= 86400000; // Move back one day
+      currentDay -= 86400000;
     } else {
-      // Streak is broken
       break;
     }
-
-    // Safety limit to prevent infinite loop (max 365 days)
-    if (streak >= 365) break;
   }
 
   return streak;
@@ -524,38 +532,46 @@ export function getDailyStreak(): number {
 /**
  * Calculate the current weekly streak (consecutive weeks of reaching weekly goal).
  * Returns the number of consecutive weeks ending with the current week where weekly goal was reached.
+ *
+ * Uses a single query to fetch all approved sessions within the look-back window,
+ * then groups them by local calendar week in memory. This avoids opening a new DB
+ * cursor for every week of the streak, which caused "AbstractCursor.close" leaks
+ * on Android when navigating between screens.
  */
 export function getWeeklyStreak(): number {
   const weeklyGoal = getCurrentWeeklyGoal();
   if (!weeklyGoal) return 0;
 
   const targetMinutes = weeklyGoal.targetMinutes;
+  const thisWeekStart = startOfWeek(Date.now());
+  // Look back at most 52 weeks to bound the query
+  const cutoffMs = thisWeekStart - 52 * 7 * 86400000;
+
+  const rows = db.getAllSync<{ startTime: number; durationMinutes: number }>(
+    `SELECT startTime, durationMinutes
+     FROM outside_sessions
+     WHERE userConfirmed = 1 AND startTime >= ?
+     ORDER BY startTime DESC`,
+    [cutoffMs]
+  );
+
+  // Aggregate minutes per local calendar week
+  const minutesByWeek = new Map<number, number>();
+  for (const row of rows) {
+    const weekStart = startOfWeek(row.startTime);
+    minutesByWeek.set(weekStart, (minutesByWeek.get(weekStart) ?? 0) + row.durationMinutes);
+  }
+
+  // Count consecutive weeks from the current week going backwards
   let streak = 0;
-  let currentWeekStart = startOfWeek(Date.now());
-
-  // Check each week going backwards from current week
-  while (true) {
-    const weekEnd = currentWeekStart + 7 * 86400000;
-    const row = db.getFirstSync<{ total: number }>(
-      `SELECT COALESCE(SUM(durationMinutes), 0) as total
-       FROM outside_sessions
-       WHERE startTime >= ? AND startTime < ? AND userConfirmed = 1`,
-      [currentWeekStart, weekEnd]
-    );
-
-    const minutes = row?.total ?? 0;
-
-    // If this week met the goal, increment streak and move to previous week
-    if (minutes >= targetMinutes) {
+  let currentWeek = thisWeekStart;
+  while (streak < 52) {
+    if ((minutesByWeek.get(currentWeek) ?? 0) >= targetMinutes) {
       streak++;
-      currentWeekStart -= 7 * 86400000; // Move back one week
+      currentWeek -= 7 * 86400000;
     } else {
-      // Streak is broken
       break;
     }
-
-    // Safety limit to prevent infinite loop (max 52 weeks)
-    if (streak >= 52) break;
   }
 
   return streak;
