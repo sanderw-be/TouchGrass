@@ -2,9 +2,9 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import {
-  getDailyTotalsForMonth,
-  getSessionsForRange,
-  getCurrentDailyGoal,
+  getDailyTotalsForMonthAsync,
+  getSessionsForRangeAsync,
+  getCurrentDailyGoalAsync,
   startOfDay,
   startOfWeek,
 } from '../storage/database';
@@ -29,20 +29,22 @@ export default function HistoryScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      setDailyTarget(getCurrentDailyGoal()?.targetMinutes ?? 30);
-      loadData(period, viewDate);
+      const load = async () => {
+        setDailyTarget((await getCurrentDailyGoalAsync())?.targetMinutes ?? 30);
+        await loadData(period, viewDate);
+      };
+      load();
     }, [period, viewDate])
   );
 
-  const loadData = (p: Period, date: number) => {
+  const loadData = async (p: Period, date: number) => {
     try {
       if (p === 'week') {
         const weekStart = startOfWeek(date);
         const days: { date: number; minutes: number }[] = [];
         for (let i = 0; i < 7; i++) {
           const dayStart = weekStart + i * DAY_MS;
-          const sessions = getSessionsForRange(dayStart, dayStart + DAY_MS);
-          // Filter out declined sessions (userConfirmed === 0)
+          const sessions = await getSessionsForRangeAsync(dayStart, dayStart + DAY_MS);
           const minutes = sessions
             .filter((s) => s.userConfirmed !== 0)
             .reduce((sum, s) => sum + s.durationMinutes, 0);
@@ -50,11 +52,10 @@ export default function HistoryScreen() {
         }
         setDailyData(days);
       } else {
-        setDailyData(getDailyTotalsForMonth(date));
+        setDailyData(await getDailyTotalsForMonthAsync(date));
       }
     } catch (error) {
       console.error('[HistoryScreen.loadData] Database error:', error);
-      // Keep existing state on error
     }
   };
 
