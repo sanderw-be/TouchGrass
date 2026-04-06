@@ -91,13 +91,18 @@ export default function HomeScreen() {
   }, [timerRunning]);
 
   const loadData = useCallback(() => {
-    setTodayMinutes(getTodayMinutes());
-    setWeekMinutes(getWeekMinutes());
-    setDailyTarget(getCurrentDailyGoal()?.targetMinutes ?? 30);
-    setWeeklyTarget(getCurrentWeeklyGoal()?.targetMinutes ?? 150);
-    setTodaySessions(getSessionsForDay(Date.now()));
-    setDailyStreak(getDailyStreak());
-    setWeeklyStreak(getWeeklyStreak());
+    try {
+      setTodayMinutes(getTodayMinutes());
+      setWeekMinutes(getWeekMinutes());
+      setDailyTarget(getCurrentDailyGoal()?.targetMinutes ?? 30);
+      setWeeklyTarget(getCurrentWeeklyGoal()?.targetMinutes ?? 150);
+      setTodaySessions(getSessionsForDay(Date.now()));
+      setDailyStreak(getDailyStreak());
+      setWeeklyStreak(getWeeklyStreak());
+    } catch (error) {
+      console.error('[HomeScreen.loadData] Database error:', error);
+      // Keep existing state on error - don't reset to defaults
+    }
   }, []);
 
   useFocusEffect(
@@ -116,40 +121,45 @@ export default function HomeScreen() {
    *    saved the session via logManualSession).
    */
   const syncWidgetTimer = useCallback(() => {
-    const marker = getSetting(WIDGET_TIMER_KEY, '');
-    const widgetTs = isWidgetTimerRunning(marker) ? parseInt(marker, 10) : 0;
+    try {
+      const marker = getSetting(WIDGET_TIMER_KEY, '');
+      const widgetTs = isWidgetTimerRunning(marker) ? parseInt(marker, 10) : 0;
 
-    if (timerRunningRef.current) {
-      // Timer is running in the app — check if the widget stopped it.
-      if (widgetTs === 0) {
-        // Widget cleared the marker: it stopped the timer and already saved the
-        // session. Just reset the in-app UI without calling stopTimerRef (which
-        // would save a duplicate session).
-        if (timerIntervalRef.current) {
-          clearInterval(timerIntervalRef.current);
-          timerIntervalRef.current = null;
+      if (timerRunningRef.current) {
+        // Timer is running in the app — check if the widget stopped it.
+        if (widgetTs === 0) {
+          // Widget cleared the marker: it stopped the timer and already saved the
+          // session. Just reset the in-app UI without calling stopTimerRef (which
+          // would save a duplicate session).
+          if (timerIntervalRef.current) {
+            clearInterval(timerIntervalRef.current);
+            timerIntervalRef.current = null;
+          }
+          stopTimerRef.current = null;
+          setTimerRunning(false);
+          setTimerSeconds(0);
+          loadData();
         }
-        stopTimerRef.current = null;
-        setTimerRunning(false);
-        setTimerSeconds(0);
-        loadData();
+        return;
       }
-      return;
-    }
 
-    // Timer is not running in the app — check if the widget started one.
-    if (widgetTs > 0) {
-      const startTs = widgetTs;
-      timerStartRef.current = startTs;
-      // Build a stop function that saves the session with the widget's original
-      // start time (not Date.now() which would give the wrong duration).
-      stopTimerRef.current = () => {
-        const endTime = Date.now();
-        const durationMinutes = (endTime - startTs) / 60000;
-        logManualSession(durationMinutes, startTs, endTime);
-      };
-      setTimerSeconds(Math.floor((Date.now() - startTs) / 1000));
-      setTimerRunning(true);
+      // Timer is not running in the app — check if the widget started one.
+      if (widgetTs > 0) {
+        const startTs = widgetTs;
+        timerStartRef.current = startTs;
+        // Build a stop function that saves the session with the widget's original
+        // start time (not Date.now() which would give the wrong duration).
+        stopTimerRef.current = () => {
+          const endTime = Date.now();
+          const durationMinutes = (endTime - startTs) / 60000;
+          logManualSession(durationMinutes, startTs, endTime);
+        };
+        setTimerSeconds(Math.floor((Date.now() - startTs) / 1000));
+        setTimerRunning(true);
+      }
+    } catch (error) {
+      console.error('[HomeScreen.syncWidgetTimer] Database error:', error);
+      // Fail silently to avoid disrupting timer sync
     }
   }, [loadData]);
 

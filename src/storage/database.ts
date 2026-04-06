@@ -258,19 +258,29 @@ export function insertSession(session: OutsideSession): number {
 }
 
 export function getSessionsForDay(dateMs: number): OutsideSession[] {
-  const start = startOfDay(dateMs);
-  const end = start + 86400000;
-  return db.getAllSync<OutsideSession>(
-    'SELECT * FROM outside_sessions WHERE startTime >= ? AND startTime < ? AND userConfirmed IS NOT 0 AND discarded IS NOT 1 ORDER BY startTime ASC',
-    [start, end]
-  );
+  try {
+    const start = startOfDay(dateMs);
+    const end = start + 86400000;
+    return db.getAllSync<OutsideSession>(
+      'SELECT * FROM outside_sessions WHERE startTime >= ? AND startTime < ? AND userConfirmed IS NOT 0 AND discarded IS NOT 1 ORDER BY startTime ASC',
+      [start, end]
+    );
+  } catch (error) {
+    console.error('[getSessionsForDay] Database error:', error);
+    return [];
+  }
 }
 
 export function getSessionsForRange(fromMs: number, toMs: number): OutsideSession[] {
-  return db.getAllSync<OutsideSession>(
-    'SELECT * FROM outside_sessions WHERE startTime < ? AND endTime > ? ORDER BY startTime ASC',
-    [toMs, fromMs]
-  );
+  try {
+    return db.getAllSync<OutsideSession>(
+      'SELECT * FROM outside_sessions WHERE startTime < ? AND endTime > ? ORDER BY startTime ASC',
+      [toMs, fromMs]
+    );
+  } catch (error) {
+    console.error('[getSessionsForRange] Database error:', error);
+    return [];
+  }
 }
 
 export function deleteSession(id: number): void {
@@ -278,27 +288,37 @@ export function deleteSession(id: number): void {
 }
 
 export function getTodayMinutes(): number {
-  const start = startOfDay(Date.now());
-  const end = start + 86400000;
-  const row = db.getFirstSync<{ total: number }>(
-    `SELECT COALESCE(SUM(durationMinutes), 0) as total
-     FROM outside_sessions
-     WHERE startTime >= ? AND startTime < ? AND userConfirmed = 1`,
-    [start, end]
-  );
-  return row?.total ?? 0;
+  try {
+    const start = startOfDay(Date.now());
+    const end = start + 86400000;
+    const row = db.getFirstSync<{ total: number }>(
+      `SELECT COALESCE(SUM(durationMinutes), 0) as total
+       FROM outside_sessions
+       WHERE startTime >= ? AND startTime < ? AND userConfirmed = 1`,
+      [start, end]
+    );
+    return row?.total ?? 0;
+  } catch (error) {
+    console.error('[getTodayMinutes] Database error:', error);
+    return 0;
+  }
 }
 
 export function getWeekMinutes(): number {
-  const start = startOfWeek(Date.now());
-  const end = Date.now();
-  const row = db.getFirstSync<{ total: number }>(
-    `SELECT COALESCE(SUM(durationMinutes), 0) as total
-     FROM outside_sessions
-     WHERE startTime >= ? AND startTime < ? AND userConfirmed = 1`,
-    [start, end]
-  );
-  return row?.total ?? 0;
+  try {
+    const start = startOfWeek(Date.now());
+    const end = Date.now();
+    const row = db.getFirstSync<{ total: number }>(
+      `SELECT COALESCE(SUM(durationMinutes), 0) as total
+       FROM outside_sessions
+       WHERE startTime >= ? AND startTime < ? AND userConfirmed = 1`,
+      [start, end]
+    );
+    return row?.total ?? 0;
+  } catch (error) {
+    console.error('[getWeekMinutes] Database error:', error);
+    return 0;
+  }
 }
 
 export function getDailyTotalsForMonth(dateMs: number): { date: number; minutes: number }[] {
@@ -376,10 +396,15 @@ export function getAllSessionsIncludingDiscarded(fromMs: number, toMs: number): 
  * Used for the navigation tab badge.
  */
 export function countProposedSessions(): number {
-  const row = db.getFirstSync<{ cnt: number }>(
-    'SELECT COUNT(*) AS cnt FROM outside_sessions WHERE userConfirmed IS NULL AND (discarded IS NULL OR discarded = 0)'
-  );
-  return row?.cnt ?? 0;
+  try {
+    const row = db.getFirstSync<{ cnt: number }>(
+      'SELECT COUNT(*) AS cnt FROM outside_sessions WHERE userConfirmed IS NULL AND (discarded IS NULL OR discarded = 0)'
+    );
+    return row?.cnt ?? 0;
+  } catch (error) {
+    console.error('[countProposedSessions] Database error:', error);
+    return 0;
+  }
 }
 
 /**
@@ -458,11 +483,23 @@ export function pruneShortDiscardedHealthConnectSessions(
 // ── Goals ─────────────────────────────────────────────────
 
 export function getCurrentDailyGoal(): DailyGoal | null {
-  return db.getFirstSync<DailyGoal>('SELECT * FROM daily_goals ORDER BY createdAt DESC LIMIT 1');
+  try {
+    return db.getFirstSync<DailyGoal>('SELECT * FROM daily_goals ORDER BY createdAt DESC LIMIT 1');
+  } catch (error) {
+    console.error('[getCurrentDailyGoal] Database error:', error);
+    return null;
+  }
 }
 
 export function getCurrentWeeklyGoal(): WeeklyGoal | null {
-  return db.getFirstSync<WeeklyGoal>('SELECT * FROM weekly_goals ORDER BY createdAt DESC LIMIT 1');
+  try {
+    return db.getFirstSync<WeeklyGoal>(
+      'SELECT * FROM weekly_goals ORDER BY createdAt DESC LIMIT 1'
+    );
+  } catch (error) {
+    console.error('[getCurrentWeeklyGoal] Database error:', error);
+    return null;
+  }
 }
 
 export function setDailyGoal(minutes: number): void {
@@ -484,81 +521,107 @@ export function setWeeklyGoal(minutes: number): void {
 /**
  * Calculate the current daily streak (consecutive days of reaching daily goal).
  * Returns the number of consecutive days ending today where daily goal was reached.
+ *
+ * Uses a single query to fetch all approved sessions within the look-back window,
+ * then groups them by local calendar day in memory. This avoids opening a new DB
+ * cursor for every day of the streak, which caused "AbstractCursor.close" leaks
+ * on Android when navigating between screens.
  */
 export function getDailyStreak(): number {
-  const dailyGoal = getCurrentDailyGoal();
-  if (!dailyGoal) return 0;
+  try {
+    const dailyGoal = getCurrentDailyGoal();
+    if (!dailyGoal) return 0;
 
-  const targetMinutes = dailyGoal.targetMinutes;
-  let streak = 0;
-  let currentDate = startOfDay(Date.now());
+    const targetMinutes = dailyGoal.targetMinutes;
+    const todayStart = startOfDay(Date.now());
+    // Look back at most 365 days to bound the query
+    const cutoffMs = todayStart - 365 * 86400000;
 
-  // Check each day going backwards from today
-  while (true) {
-    const dayEnd = currentDate + 86400000;
-    const row = db.getFirstSync<{ total: number }>(
-      `SELECT COALESCE(SUM(durationMinutes), 0) as total
+    const rows = db.getAllSync<{ startTime: number; durationMinutes: number }>(
+      `SELECT startTime, durationMinutes
        FROM outside_sessions
-       WHERE startTime >= ? AND startTime < ? AND userConfirmed = 1`,
-      [currentDate, dayEnd]
+       WHERE userConfirmed = 1 AND startTime >= ?
+       ORDER BY startTime DESC`,
+      [cutoffMs]
     );
 
-    const minutes = row?.total ?? 0;
-
-    // If this day met the goal, increment streak and move to previous day
-    if (minutes >= targetMinutes) {
-      streak++;
-      currentDate -= 86400000; // Move back one day
-    } else {
-      // Streak is broken
-      break;
+    // Aggregate minutes per local calendar day
+    const minutesByDay = new Map<number, number>();
+    for (const row of rows) {
+      const dayStart = startOfDay(row.startTime);
+      minutesByDay.set(dayStart, (minutesByDay.get(dayStart) ?? 0) + row.durationMinutes);
     }
 
-    // Safety limit to prevent infinite loop (max 365 days)
-    if (streak >= 365) break;
-  }
+    // Count consecutive days from today going backwards
+    let streak = 0;
+    let currentDay = todayStart;
+    while (streak < 365) {
+      if ((minutesByDay.get(currentDay) ?? 0) >= targetMinutes) {
+        streak++;
+        currentDay -= 86400000;
+      } else {
+        break;
+      }
+    }
 
-  return streak;
+    return streak;
+  } catch (error) {
+    console.error('[getDailyStreak] Database error:', error);
+    return 0;
+  }
 }
 
 /**
  * Calculate the current weekly streak (consecutive weeks of reaching weekly goal).
  * Returns the number of consecutive weeks ending with the current week where weekly goal was reached.
+ *
+ * Uses a single query to fetch all approved sessions within the look-back window,
+ * then groups them by local calendar week in memory. This avoids opening a new DB
+ * cursor for every week of the streak, which caused "AbstractCursor.close" leaks
+ * on Android when navigating between screens.
  */
 export function getWeeklyStreak(): number {
-  const weeklyGoal = getCurrentWeeklyGoal();
-  if (!weeklyGoal) return 0;
+  try {
+    const weeklyGoal = getCurrentWeeklyGoal();
+    if (!weeklyGoal) return 0;
 
-  const targetMinutes = weeklyGoal.targetMinutes;
-  let streak = 0;
-  let currentWeekStart = startOfWeek(Date.now());
+    const targetMinutes = weeklyGoal.targetMinutes;
+    const thisWeekStart = startOfWeek(Date.now());
+    // Look back at most 52 weeks to bound the query
+    const cutoffMs = thisWeekStart - 52 * 7 * 86400000;
 
-  // Check each week going backwards from current week
-  while (true) {
-    const weekEnd = currentWeekStart + 7 * 86400000;
-    const row = db.getFirstSync<{ total: number }>(
-      `SELECT COALESCE(SUM(durationMinutes), 0) as total
+    const rows = db.getAllSync<{ startTime: number; durationMinutes: number }>(
+      `SELECT startTime, durationMinutes
        FROM outside_sessions
-       WHERE startTime >= ? AND startTime < ? AND userConfirmed = 1`,
-      [currentWeekStart, weekEnd]
+       WHERE userConfirmed = 1 AND startTime >= ?
+       ORDER BY startTime DESC`,
+      [cutoffMs]
     );
 
-    const minutes = row?.total ?? 0;
-
-    // If this week met the goal, increment streak and move to previous week
-    if (minutes >= targetMinutes) {
-      streak++;
-      currentWeekStart -= 7 * 86400000; // Move back one week
-    } else {
-      // Streak is broken
-      break;
+    // Aggregate minutes per local calendar week
+    const minutesByWeek = new Map<number, number>();
+    for (const row of rows) {
+      const weekStart = startOfWeek(row.startTime);
+      minutesByWeek.set(weekStart, (minutesByWeek.get(weekStart) ?? 0) + row.durationMinutes);
     }
 
-    // Safety limit to prevent infinite loop (max 52 weeks)
-    if (streak >= 52) break;
-  }
+    // Count consecutive weeks from the current week going backwards
+    let streak = 0;
+    let currentWeek = thisWeekStart;
+    while (streak < 52) {
+      if ((minutesByWeek.get(currentWeek) ?? 0) >= targetMinutes) {
+        streak++;
+        currentWeek -= 7 * 86400000;
+      } else {
+        break;
+      }
+    }
 
-  return streak;
+    return streak;
+  } catch (error) {
+    console.error('[getWeeklyStreak] Database error:', error);
+    return 0;
+  }
 }
 
 // ── Reminder feedback ─────────────────────────────────────
@@ -583,13 +646,23 @@ export function getReminderFeedback(): ReminderFeedback[] {
 // ── Known locations ───────────────────────────────────────
 
 export function getKnownLocations(): KnownLocation[] {
-  return db
-    .getAllSync<KnownLocationRow>('SELECT * FROM known_locations WHERE status = ?', ['active'])
-    .map(mapLocation);
+  try {
+    return db
+      .getAllSync<KnownLocationRow>('SELECT * FROM known_locations WHERE status = ?', ['active'])
+      .map(mapLocation);
+  } catch (error) {
+    console.error('[getKnownLocations] Database error:', error);
+    return [];
+  }
 }
 
 export function getAllKnownLocations(): KnownLocation[] {
-  return db.getAllSync<KnownLocationRow>('SELECT * FROM known_locations').map(mapLocation);
+  try {
+    return db.getAllSync<KnownLocationRow>('SELECT * FROM known_locations').map(mapLocation);
+  } catch (error) {
+    console.error('[getAllKnownLocations] Database error:', error);
+    return [];
+  }
 }
 
 export function getSuggestedLocations(): KnownLocation[] {
@@ -681,10 +754,15 @@ export function deleteKnownLocation(id: number): void {
 // ── Settings ──────────────────────────────────────────────
 
 export function getSetting(key: string, fallback: string): string {
-  const row = db.getFirstSync<{ value: string }>('SELECT value FROM app_settings WHERE key = ?', [
-    key,
-  ]);
-  return row?.value ?? fallback;
+  try {
+    const row = db.getFirstSync<{ value: string }>('SELECT value FROM app_settings WHERE key = ?', [
+      key,
+    ]);
+    return row?.value ?? fallback;
+  } catch (error) {
+    console.error('[getSetting] Database error:', error);
+    return fallback;
+  }
 }
 
 export function setSetting(key: string, value: string): void {

@@ -65,10 +65,15 @@ export default function EventsScreen() {
   }>({ visible: false, sessionId: null });
 
   const loadData = useCallback(() => {
-    autoCloseOldProposedSessions();
-    const from = FOUR_WEEKS_AGO();
-    const to = Date.now();
-    setAllSessions(getAllSessionsIncludingDiscarded(from, to));
+    try {
+      autoCloseOldProposedSessions();
+      const from = FOUR_WEEKS_AGO();
+      const to = Date.now();
+      setAllSessions(getAllSessionsIncludingDiscarded(from, to));
+    } catch (error) {
+      console.error('[EventsScreen.loadData] Database error:', error);
+      // Keep existing state on error
+    }
   }, []);
 
   useFocusEffect(
