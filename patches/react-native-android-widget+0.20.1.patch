@@ -1,0 +1,34 @@
+diff --git a/node_modules/react-native-android-widget/android/src/main/java/com/reactnativeandroidwidget/oss/HeadlessJsTaskWorker.java b/node_modules/react-native-android-widget/android/src/main/java/com/reactnativeandroidwidget/oss/HeadlessJsTaskWorker.java
+index 269a75d..3276550 100644
+--- a/node_modules/react-native-android-widget/android/src/main/java/com/reactnativeandroidwidget/oss/HeadlessJsTaskWorker.java
++++ b/node_modules/react-native-android-widget/android/src/main/java/com/reactnativeandroidwidget/oss/HeadlessJsTaskWorker.java
+@@ -74,16 +74,23 @@ public abstract class HeadlessJsTaskWorker extends ListenableWorker implements H
+         ReactHost reactHost = this.getReactHost();
+         ReactContext reactContext = reactHost.getCurrentReactContext();
+ 
+-        if (reactContext == null) {
++        if (reactContext != null && reactContext.hasActiveReactInstance()) {
++            this.invokeStartTask(reactContext, taskConfig);
++        } else {
+             reactHost.addReactInstanceEventListener(new ReactInstanceEventListener() {
+-                public void onReactContextInitialized(ReactContext reactContext) {
+-                    HeadlessJsTaskWorker.this.invokeStartTask(reactContext, taskConfig);
++                public void onReactContextInitialized(ReactContext newContext) {
++                    HeadlessJsTaskWorker.this.invokeStartTask(newContext, taskConfig);
+                     reactHost.removeReactInstanceEventListener(this);
+                 }
+             });
+-            reactHost.start();
+-        } else {
+-            this.invokeStartTask(reactContext, taskConfig);
++            if (reactContext == null) {
++                // Cold start: React instance has never been created; boot it now.
++                reactHost.start();
++            }
++            // If reactContext != null but hasActiveReactInstance() is false, the
++            // instance is already initialising (e.g. right after an app update).
++            // We registered the listener above; it will fire once the instance is
++            // fully ready so we do NOT call start() again.
+         }
+     }
+ 
