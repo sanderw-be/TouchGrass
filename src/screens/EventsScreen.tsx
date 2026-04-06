@@ -13,11 +13,11 @@ import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import {
-  getAllSessionsIncludingDiscarded,
-  autoCloseOldProposedSessions,
-  confirmSession,
-  deleteSession,
-  unDiscardSession,
+  getAllSessionsIncludingDiscardedAsync,
+  autoCloseOldProposedSessionsAsync,
+  confirmSessionAsync,
+  deleteSessionAsync,
+  unDiscardSessionAsync,
   OutsideSession,
 } from '../storage/database';
 import { spacing, radius } from '../utils/theme';
@@ -64,15 +64,14 @@ export default function EventsScreen() {
     sessionId: number | null;
   }>({ visible: false, sessionId: null });
 
-  const loadData = useCallback(() => {
+  const loadData = useCallback(async () => {
     try {
-      autoCloseOldProposedSessions();
+      await autoCloseOldProposedSessionsAsync();
       const from = FOUR_WEEKS_AGO();
       const to = Date.now();
-      setAllSessions(getAllSessionsIncludingDiscarded(from, to));
+      setAllSessions(await getAllSessionsIncludingDiscardedAsync(from, to));
     } catch (error) {
       console.error('[EventsScreen.loadData] Database error:', error);
-      // Keep existing state on error
     }
   }, []);
 
@@ -85,18 +84,18 @@ export default function EventsScreen() {
   // Refresh whenever background work (e.g. Health Connect sync) inserts new sessions.
   useEffect(() => onSessionsChanged(loadData), [loadData]);
 
-  const onRefresh = () => {
+  const onRefresh = async () => {
     setRefreshing(true);
-    loadData();
+    await loadData();
     setRefreshing(false);
   };
 
   const handleConfirm = async (id: number, startTime: number, confirmed: boolean) => {
-    confirmSession(id, confirmed);
+    await confirmSessionAsync(id, confirmed);
     const d = new Date(startTime);
     updateTimeSlotProbability(d.getHours(), d.getDay(), confirmed);
     emitSessionsChanged();
-    loadData();
+    await loadData();
     if (confirmed) {
       await cancelRemindersIfGoalReached();
       requestWidgetRefresh();
@@ -106,11 +105,11 @@ export default function EventsScreen() {
     setExpandedId(null);
   };
 
-  const handleUndoReject = () => {
+  const handleUndoReject = async () => {
     if (undoSnackbar.sessionId !== null) {
-      confirmSession(undoSnackbar.sessionId, null);
+      await confirmSessionAsync(undoSnackbar.sessionId, null);
       emitSessionsChanged();
-      loadData();
+      await loadData();
     }
     setUndoSnackbar({ visible: false, sessionId: null });
   };
@@ -121,29 +120,29 @@ export default function EventsScreen() {
       {
         text: t('session_delete'),
         style: 'destructive',
-        onPress: () => {
-          deleteSession(id);
+        onPress: async () => {
+          await deleteSessionAsync(id);
           emitSessionsChanged();
           setExpandedId(null);
-          loadData();
+          await loadData();
         },
       },
     ]);
   };
 
-  const handleReReview = (id: number) => {
-    confirmSession(id, null);
+  const handleReReview = async (id: number) => {
+    await confirmSessionAsync(id, null);
     emitSessionsChanged();
     setExpandedId(null);
-    loadData();
+    await loadData();
     requestWidgetRefresh();
   };
 
-  const handleUnDiscard = (id: number) => {
-    unDiscardSession(id);
+  const handleUnDiscard = async (id: number) => {
+    await unDiscardSessionAsync(id);
     emitSessionsChanged();
     setExpandedId(null);
-    loadData();
+    await loadData();
   };
 
   const reviewCount = allSessions.filter(
