@@ -31,6 +31,8 @@ export default {
   widget_start_outside: 'start outside\nsession',
   widget_back_inside: 'back inside',
   widget_started: 'started',
+  widget_loading: 'Loading…',
+  widget_open_app: 'Open app to update',
 
   // Session sources
   source_health_connect: 'Activity',

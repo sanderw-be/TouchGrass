@@ -122,6 +122,66 @@ export function buildRingSvg(
   ].join('');
 }
 
+export interface SkeletonWidgetProps {
+  /** Widget width in dp — used to size the ring to the bounding box. */
+  widgetWidth?: number;
+  /** Widget height in dp — used to size the ring to the bounding box. */
+  widgetHeight?: number;
+}
+
+/**
+ * Lightweight loading placeholder pushed to the widget immediately on cold
+ * boot (before the SQLite database is opened).  Satisfies the Android OS
+ * background execution time-limit so the widget never goes blank after an
+ * app update.
+ */
+export function SkeletonWidget({ widgetWidth, widgetHeight }: SkeletonWidgetProps) {
+  const ringSize = computeRingSize(widgetWidth, widgetHeight);
+  const ringSvg = buildRingSvg(0, COLORS.fog, ringSize);
+
+  return (
+    <FlexWidget
+      style={{
+        height: 'match_parent',
+        width: 'match_parent',
+        justifyContent: 'center',
+        alignItems: 'center',
+      }}
+      clickAction="OPEN_APP"
+      accessibilityLabel="TouchGrass progress widget loading"
+    >
+      <OverlapWidget style={{ width: ringSize, height: ringSize }}>
+        <SvgWidget svg={ringSvg} style={{ width: ringSize, height: ringSize }} />
+        <FlexWidget
+          style={{
+            width: ringSize,
+            height: ringSize,
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+        >
+          <TextWidget
+            text={t('widget_loading')}
+            style={{
+              fontSize: 13,
+              color: COLORS.textSecondary,
+            }}
+          />
+          <TextWidget
+            text={t('widget_open_app')}
+            style={{
+              fontSize: 11,
+              color: COLORS.textMuted,
+              textAlign: 'center',
+              marginTop: 2,
+            }}
+          />
+        </FlexWidget>
+      </OverlapWidget>
+    </FlexWidget>
+  );
+}
+
 export interface ProgressWidgetProps {
   current: number;
   target: number;

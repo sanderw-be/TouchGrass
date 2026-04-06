@@ -9,6 +9,13 @@ import { performBackgroundTick } from './src/background/backgroundTick';
 import { scheduleNextAlarmPulse } from './src/background/alarmTiming';
 import { widgetTaskHandler } from './src/widget/widget-task-handler';
 
+// Register the Android widget task handler as the very first executable
+// statement — before registerRootComponent so the headless JS boot path is
+// as short as possible.  This prevents the widget from going blank after an
+// app update when Android fires APPWIDGET_UPDATE with a tight background
+// execution time-limit.
+registerWidgetTaskHandler(widgetTaskHandler);
+
 // ---------------------------------------------------------------------------
 // Pulsar headless task
 //
@@ -35,7 +42,3 @@ AppRegistry.registerHeadlessTask(PULSE_TASK_NAME, () => async () => {
 // It also ensures that whether you load the app in Expo Go or in a native build,
 // the environment is set up appropriately
 registerRootComponent(App);
-
-// Register the Android widget task handler so the widget can render and
-// respond to click actions (timer start/stop) in a headless JS context.
-registerWidgetTaskHandler(widgetTaskHandler);
