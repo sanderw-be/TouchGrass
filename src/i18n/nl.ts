@@ -31,6 +31,8 @@ export default {
   widget_start_outside: 'start buiten\nsessie',
   widget_back_inside: 'terug binnen',
   widget_started: 'gestart',
+  widget_loading: 'Laden…',
+  widget_open_app: 'Open app om te vernieuwen',
 
   // Sessiebronnen
   source_health_connect: 'Activiteit',

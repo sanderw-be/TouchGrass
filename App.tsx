@@ -38,6 +38,7 @@ import { ReminderFeedbackProvider } from './src/context/ReminderFeedbackContext'
 import ReminderFeedbackModal from './src/components/ReminderFeedbackModal';
 import ErrorBoundary from './src/components/ErrorBoundary';
 import { refreshBatteryOptimizationSetting } from './src/utils/batteryOptimization';
+import { requestWidgetRefresh } from './src/utils/widgetHelper';
 
 enableScreens();
 
@@ -82,6 +83,11 @@ function AppContent() {
             // the next tick fires ~15 min after the user last used the app.
             scheduleNextAlarmPulse().catch((e) =>
               console.warn('TouchGrass: foreground alarm re-arm error:', e)
+            );
+            // Safety net: refresh the widget whenever the user opens the app so
+            // it always shows up-to-date data (covers the post-update blank case).
+            requestWidgetRefresh().catch((e) =>
+              console.warn('TouchGrass: foreground widget refresh error:', e)
             );
           });
           // Calendar events are only created by scheduleDayReminders() at planned
@@ -181,6 +187,14 @@ function AppContent() {
           await scheduleNextAlarmPulse();
         } catch (e) {
           console.warn('TouchGrass: Alarm chain init error:', e);
+        }
+
+        // Push an initial widget update so the widget shows current data
+        // immediately after the app is opened (safety net for post-update blank).
+        try {
+          await requestWidgetRefresh();
+        } catch (e) {
+          console.warn('TouchGrass: Initial widget refresh error:', e);
         }
       })();
     });

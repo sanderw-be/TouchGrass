@@ -1,7 +1,7 @@
 import React from 'react';
 import type { WidgetTaskHandlerProps } from 'react-native-android-widget';
 
-import { ProgressWidget } from './ProgressWidget';
+import { ProgressWidget, SkeletonWidget } from './ProgressWidget';
 import {
   getTodayMinutesAsync,
   getCurrentDailyGoalAsync,
@@ -35,6 +35,19 @@ async function getWidgetDataAsync(): Promise<{
 
 export async function widgetTaskHandler(props: WidgetTaskHandlerProps): Promise<void> {
   const { widgetAction, clickAction, renderWidget, widgetInfo } = props;
+
+  // For rendering actions: push a skeleton immediately before any async work so
+  // Android's strict background execution time-limit is satisfied even when the
+  // SQLite cold-boot takes too long after an app update.
+  if (
+    widgetAction === 'WIDGET_ADDED' ||
+    widgetAction === 'WIDGET_UPDATE' ||
+    widgetAction === 'WIDGET_RESIZED'
+  ) {
+    renderWidget(
+      <SkeletonWidget widgetWidth={widgetInfo.width} widgetHeight={widgetInfo.height} />
+    );
+  }
 
   try {
     initDatabase();

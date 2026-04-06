@@ -35,22 +35,23 @@ describe('widgetTaskHandler', () => {
     jest.clearAllMocks();
   });
 
-  it('renders the widget on WIDGET_ADDED', async () => {
+  it('renders the skeleton then the real widget on WIDGET_ADDED', async () => {
     const props = mockProps({ widgetAction: 'WIDGET_ADDED' });
     await widgetTaskHandler(props);
-    expect(props.renderWidget).toHaveBeenCalledTimes(1);
+    // First call: skeleton (before DB); second call: real data (after DB)
+    expect(props.renderWidget).toHaveBeenCalledTimes(2);
   });
 
-  it('renders the widget on WIDGET_UPDATE', async () => {
+  it('renders the skeleton then the real widget on WIDGET_UPDATE', async () => {
     const props = mockProps({ widgetAction: 'WIDGET_UPDATE' });
     await widgetTaskHandler(props);
-    expect(props.renderWidget).toHaveBeenCalledTimes(1);
+    expect(props.renderWidget).toHaveBeenCalledTimes(2);
   });
 
-  it('renders the widget on WIDGET_RESIZED', async () => {
+  it('renders the skeleton then the real widget on WIDGET_RESIZED', async () => {
     const props = mockProps({ widgetAction: 'WIDGET_RESIZED' });
     await widgetTaskHandler(props);
-    expect(props.renderWidget).toHaveBeenCalledTimes(1);
+    expect(props.renderWidget).toHaveBeenCalledTimes(2);
   });
 
   it('does not render on WIDGET_DELETED', async () => {
@@ -59,10 +60,28 @@ describe('widgetTaskHandler', () => {
     expect(props.renderWidget).not.toHaveBeenCalled();
   });
 
-  it('calls initDatabase once at the top before processing', async () => {
+  it('calls initDatabase once before processing widget data', async () => {
     const props = mockProps({ widgetAction: 'WIDGET_UPDATE' });
     await widgetTaskHandler(props);
     expect(database.initDatabase).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders the skeleton before initDatabase is called', async () => {
+    let skeletonRenderedBeforeDb = false;
+    let dbCalled = false;
+
+    (database.initDatabase as jest.Mock).mockImplementation(() => {
+      dbCalled = true;
+    });
+
+    const renderWidget = jest.fn(() => {
+      if (!dbCalled) skeletonRenderedBeforeDb = true;
+    });
+
+    const props = mockProps({ widgetAction: 'WIDGET_UPDATE', renderWidget });
+    await widgetTaskHandler(props);
+
+    expect(skeletonRenderedBeforeDb).toBe(true);
   });
 
   it('starts timer on TOGGLE_TIMER click when not running', async () => {
