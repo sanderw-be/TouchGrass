@@ -81,7 +81,9 @@ export default function IntroScreen({ onComplete }: Props) {
 
   // Load battery optimization setting on mount
   useEffect(() => {
-    getSettingAsync(BATTERY_OPTIMIZATION_SETTING_KEY, '0').then((v) => setBatteryVisited(v === '1'));
+    getSettingAsync(BATTERY_OPTIMIZATION_SETTING_KEY, '0').then((v) =>
+      setBatteryVisited(v === '1')
+    );
   }, []);
 
   // Load saved calendar settings on mount

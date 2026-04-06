@@ -195,9 +195,7 @@ describe('GoalsScreen battery optimization', () => {
     const originalOS = Platform.OS;
     try {
       (Platform as any).OS = 'android';
-      mockGetSettingAsync.mockImplementation((key: string, def: string) =>
-        Promise.resolve(def)
-      );
+      mockGetSettingAsync.mockImplementation((key: string, def: string) => Promise.resolve(def));
       mockRefreshBatteryOptimizationSetting.mockResolvedValue(false);
       const { findByText, getByTestId, queryByTestId } = render(<GoalsScreen />);
 
@@ -752,7 +750,10 @@ describe('GoalsScreen smart reminders notification permission', () => {
     });
 
     await expect(findByTestId('permission-explainer-sheet')).resolves.toBeTruthy();
-    expect(mockSetSettingAsync).not.toHaveBeenCalledWith('smart_reminders_count', expect.anything());
+    expect(mockSetSettingAsync).not.toHaveBeenCalledWith(
+      'smart_reminders_count',
+      expect.anything()
+    );
   });
 
   it('cycles count normally when notification permission is granted', async () => {

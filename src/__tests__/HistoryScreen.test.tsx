@@ -75,16 +75,13 @@ const realStartOfWeek = (ms: number) => {
   return monday.getTime();
 };
 
-const mockGetSessionsForRangeAsync = jest.fn(
-  (_from: number, _to: number) =>
-    Promise.resolve([] as import('../storage/database').OutsideSession[])
+const mockGetSessionsForRangeAsync = jest.fn((_from: number, _to: number) =>
+  Promise.resolve([] as import('../storage/database').OutsideSession[])
 );
-const mockGetDailyTotalsForMonthAsync = jest.fn(
-  (_date: number) => Promise.resolve([] as { date: number; minutes: number }[])
+const mockGetDailyTotalsForMonthAsync = jest.fn((_date: number) =>
+  Promise.resolve([] as { date: number; minutes: number }[])
 );
-const mockGetCurrentDailyGoalAsync = jest.fn(() =>
-  Promise.resolve({ targetMinutes: 30 })
-);
+const mockGetCurrentDailyGoalAsync = jest.fn(() => Promise.resolve({ targetMinutes: 30 }));
 
 jest.mock('../storage/database', () => ({
   startOfDay: (ms: number) => realStartOfDay(ms),

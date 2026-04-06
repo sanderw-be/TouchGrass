@@ -77,7 +77,10 @@ export default function ReminderFeedbackModal() {
     };
 
     const handleFewerReminders = async () => {
-      const catchupCount = parseInt(await getSettingAsync('smart_catchup_reminders_count', '2'), 10);
+      const catchupCount = parseInt(
+        await getSettingAsync('smart_catchup_reminders_count', '2'),
+        10
+      );
       if (catchupCount > 0) {
         await setSettingAsync('smart_catchup_reminders_count', String(catchupCount - 1));
         setFewerConfirmationMessage(t('notif_fewer_reminders_confirm_generic'));

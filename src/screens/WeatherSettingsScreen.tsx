@@ -44,7 +44,9 @@ export default function WeatherSettingsScreen() {
   }, []);
 
   const loadSettings = useCallback(async () => {
-    setTempPreference((await getSettingAsync('temp_preference', 'moderate')) as 'cold' | 'moderate' | 'hot');
+    setTempPreference(
+      (await getSettingAsync('temp_preference', 'moderate')) as 'cold' | 'moderate' | 'hot'
+    );
     setAvoidRain((await getSettingAsync('weather_avoid_rain', '1')) === '1');
     setAvoidHeat((await getSettingAsync('weather_avoid_heat', '1')) === '1');
     setConsiderUV((await getSettingAsync('weather_consider_uv', '1')) === '1');

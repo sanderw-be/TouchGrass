@@ -101,7 +101,18 @@ export default function GoalsScreen() {
   const pendingSmartRemindersEnableRef = useRef(false);
 
   const loadGoalSettings = useCallback(async () => {
-    const [dailyGoal, weeklyGoal, smartCount, catchupCount, weatherEn, calEn, calBuf, calDur, selCal, battOpt] = await Promise.all([
+    const [
+      dailyGoal,
+      weeklyGoal,
+      smartCount,
+      catchupCount,
+      weatherEn,
+      calEn,
+      calBuf,
+      calDur,
+      selCal,
+      battOpt,
+    ] = await Promise.all([
       getCurrentDailyGoalAsync(),
       getCurrentWeeklyGoalAsync(),
       getSettingAsync('smart_reminders_count', '2'),

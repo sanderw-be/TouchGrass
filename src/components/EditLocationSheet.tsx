@@ -12,7 +12,11 @@ import {
 } from 'react-native';
 import * as Location from 'expo-location';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { upsertKnownLocationAsync, deleteKnownLocationAsync, KnownLocation } from '../storage/database';
+import {
+  upsertKnownLocationAsync,
+  deleteKnownLocationAsync,
+  KnownLocation,
+} from '../storage/database';
 import { spacing, radius } from '../utils/theme';
 import { useTheme } from '../context/ThemeContext';
 import { t } from '../i18n';

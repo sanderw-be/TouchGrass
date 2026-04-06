@@ -39,7 +39,9 @@ jest.mock('../calendar/calendarService', () => ({
 }));
 
 // Mock database
-const mockGetSettingAsync = jest.fn<Promise<string>, [string, string]>((key: string, fallback: string) => Promise.resolve(fallback));
+const mockGetSettingAsync = jest.fn<Promise<string>, [string, string]>(
+  (key: string, fallback: string) => Promise.resolve(fallback)
+);
 const mockSetSettingAsync = jest.fn<Promise<void>, [string, string]>(() => Promise.resolve());
 jest.mock('../storage/database', () => ({
   getSettingAsync: (key: string, fallback: string) => mockGetSettingAsync(key, fallback),
@@ -49,7 +51,9 @@ jest.mock('../storage/database', () => ({
 describe('IntroScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockGetSettingAsync.mockImplementation((key: string, fallback: string) => Promise.resolve(fallback));
+    mockGetSettingAsync.mockImplementation((key: string, fallback: string) =>
+      Promise.resolve(fallback)
+    );
     mockHasCalendarPermissions.mockResolvedValue(false);
     mockRequestCalendarPermissions.mockResolvedValue(false);
     mockToggleHealthConnect.mockResolvedValue({ needsPermissions: false });
@@ -190,7 +194,10 @@ describe('IntroScreen', () => {
         fireEvent.press(bufferRow);
       });
 
-      expect(mockSetSettingAsync).toHaveBeenCalledWith('calendar_buffer_minutes', expect.any(String));
+      expect(mockSetSettingAsync).toHaveBeenCalledWith(
+        'calendar_buffer_minutes',
+        expect.any(String)
+      );
     });
 
     it('cycles the calendar duration when tapped', async () => {
@@ -201,7 +208,10 @@ describe('IntroScreen', () => {
         fireEvent.press(durationRow);
       });
 
-      expect(mockSetSettingAsync).toHaveBeenCalledWith('calendar_default_duration', expect.any(String));
+      expect(mockSetSettingAsync).toHaveBeenCalledWith(
+        'calendar_default_duration',
+        expect.any(String)
+      );
     });
   });
 

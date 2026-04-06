@@ -662,10 +662,10 @@ describe('Async database functions', () => {
     mockDb.runAsync.mockResolvedValueOnce({ changes: 1, lastInsertRowId: 0 });
     const { setSettingAsync } = require('../storage/database');
     await setSettingAsync('key', 'value');
-    expect(mockDb.runAsync).toHaveBeenCalledWith(
-      expect.stringContaining('INSERT OR REPLACE'),
-      ['key', 'value']
-    );
+    expect(mockDb.runAsync).toHaveBeenCalledWith(expect.stringContaining('INSERT OR REPLACE'), [
+      'key',
+      'value',
+    ]);
   });
 
   it('getBackgroundLogsAsync uses getAllAsync', async () => {
