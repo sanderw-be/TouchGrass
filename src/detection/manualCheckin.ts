@@ -1,4 +1,5 @@
 import { submitSession, buildSession } from './sessionMerger';
+import { insertSessionAsync } from '../storage/database';
 import { t } from '../i18n';
 
 const CONFIDENCE_MANUAL = 1.0; // user always knows best
@@ -24,6 +25,27 @@ export function logManualSession(
   session.userConfirmed = 1;
 
   submitSession(session);
+}
+
+/**
+ * Async version of logManualSession for use in Headless JS contexts (e.g. widget).
+ * Awaits the database insert so the JS thread can process GC before the task exits.
+ * Manual sessions bypass the merge pipeline and are inserted directly.
+ */
+export async function logManualSessionAsync(
+  durationMinutes: number,
+  startTime?: number,
+  endTime?: number
+): Promise<void> {
+  const start = startTime ?? Date.now() - durationMinutes * 60 * 1000;
+  const end = endTime ?? start + durationMinutes * 60 * 1000;
+
+  const session = buildSession(start, end, 'manual', CONFIDENCE_MANUAL, t('session_notes_manual'));
+
+  // Manual sessions are auto-confirmed — the user knows what they logged
+  session.userConfirmed = 1;
+
+  await insertSessionAsync(session);
 }
 
 /**

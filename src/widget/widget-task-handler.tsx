@@ -3,32 +3,31 @@ import type { WidgetTaskHandlerProps } from 'react-native-android-widget';
 
 import { ProgressWidget } from './ProgressWidget';
 import {
-  getTodayMinutes,
-  getCurrentDailyGoal,
-  getSetting,
-  setSetting,
+  getTodayMinutesAsync,
+  getCurrentDailyGoalAsync,
+  getSettingAsync,
+  setSettingAsync,
   initDatabase,
 } from '../storage/database';
-import { logManualSession } from '../detection/manualCheckin';
+import { logManualSessionAsync } from '../detection/manualCheckin';
 import { WIDGET_TIMER_KEY, isWidgetTimerRunning } from '../utils/widgetHelper';
 
-/** Read current progress data from SQLite. */
-function getWidgetData(): {
+/** Read current progress data from SQLite (async). */
+async function getWidgetDataAsync(): Promise<{
   current: number;
   target: number;
   timerRunning: boolean;
   timerStartMs?: number;
-} {
+}> {
   try {
-    initDatabase();
-    const current = getTodayMinutes();
-    const target = getCurrentDailyGoal()?.targetMinutes ?? 30;
-    const marker = getSetting(WIDGET_TIMER_KEY, '');
+    const current = await getTodayMinutesAsync();
+    const target = (await getCurrentDailyGoalAsync())?.targetMinutes ?? 30;
+    const marker = await getSettingAsync(WIDGET_TIMER_KEY, '');
     const timerRunning = isWidgetTimerRunning(marker);
     const timerStartMs = timerRunning ? parseInt(marker, 10) : undefined;
     return { current, target, timerRunning, timerStartMs };
   } catch (error) {
-    console.error('[getWidgetData] Database error:', error);
+    console.error('[getWidgetDataAsync] Database error:', error);
     // Return safe defaults on error
     return { current: 0, target: 30, timerRunning: false };
   }
@@ -37,11 +36,17 @@ function getWidgetData(): {
 export async function widgetTaskHandler(props: WidgetTaskHandlerProps): Promise<void> {
   const { widgetAction, clickAction, renderWidget, widgetInfo } = props;
 
+  try {
+    initDatabase();
+  } catch (error) {
+    console.error('[widgetTaskHandler] initDatabase failed:', error);
+  }
+
   switch (widgetAction) {
     case 'WIDGET_ADDED':
     case 'WIDGET_UPDATE':
     case 'WIDGET_RESIZED': {
-      const data = getWidgetData();
+      const data = await getWidgetDataAsync();
       renderWidget(
         <ProgressWidget
           current={data.current}
@@ -58,8 +63,7 @@ export async function widgetTaskHandler(props: WidgetTaskHandlerProps): Promise<
     case 'WIDGET_CLICK': {
       if (clickAction === 'TOGGLE_TIMER') {
         try {
-          initDatabase();
-          const marker = getSetting(WIDGET_TIMER_KEY, '');
+          const marker = await getSettingAsync(WIDGET_TIMER_KEY, '');
 
           if (isWidgetTimerRunning(marker)) {
             // Stop timer — save session and clear marker
@@ -68,17 +72,17 @@ export async function widgetTaskHandler(props: WidgetTaskHandlerProps): Promise<
             const durationMinutes = (endTime - startTime) / 60000;
 
             if (durationMinutes >= 0.05) {
-              logManualSession(durationMinutes, startTime, endTime);
+              await logManualSessionAsync(durationMinutes, startTime, endTime);
             }
 
-            setSetting(WIDGET_TIMER_KEY, '');
+            await setSettingAsync(WIDGET_TIMER_KEY, '');
           } else {
             // Start timer — write timestamp marker
-            setSetting(WIDGET_TIMER_KEY, String(Date.now()));
+            await setSettingAsync(WIDGET_TIMER_KEY, String(Date.now()));
           }
 
           // Re-render widget with updated state
-          const data = getWidgetData();
+          const data = await getWidgetDataAsync();
           renderWidget(
             <ProgressWidget
               current={data.current}
@@ -92,7 +96,7 @@ export async function widgetTaskHandler(props: WidgetTaskHandlerProps): Promise<
         } catch (error) {
           console.error('[WIDGET_CLICK] Database error:', error);
           // Re-render with safe defaults on error
-          const data = getWidgetData();
+          const data = await getWidgetDataAsync();
           renderWidget(
             <ProgressWidget
               current={data.current}

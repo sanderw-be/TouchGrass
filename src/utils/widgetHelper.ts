@@ -14,9 +14,9 @@ import { Platform } from 'react-native';
 import { requestWidgetUpdate } from 'react-native-android-widget';
 import { ProgressWidget } from '../widget/ProgressWidget';
 import {
-  getTodayMinutes,
-  getCurrentDailyGoal,
-  getSetting,
+  getTodayMinutesAsync,
+  getCurrentDailyGoalAsync,
+  getSettingAsync,
   initDatabase,
 } from '../storage/database';
 
@@ -43,9 +43,9 @@ export async function requestWidgetRefresh(): Promise<void> {
 
   try {
     initDatabase();
-    const current = getTodayMinutes();
-    const target = getCurrentDailyGoal()?.targetMinutes ?? 30;
-    const marker = getSetting(WIDGET_TIMER_KEY, '');
+    const current = await getTodayMinutesAsync();
+    const target = (await getCurrentDailyGoalAsync())?.targetMinutes ?? 30;
+    const marker = await getSettingAsync(WIDGET_TIMER_KEY, '');
     const timerRunning = isWidgetTimerRunning(marker);
     const timerStartMs = timerRunning ? parseInt(marker, 10) : undefined;
 
