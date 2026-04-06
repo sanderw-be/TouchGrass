@@ -6,6 +6,18 @@ const db = SQLite.openDatabaseSync('touchgrass.db');
 /** 7 days in milliseconds — used as the default auto-close age for unreviewed sessions. */
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
+/**
+ * Target schema version. Increment this whenever a new ALTER TABLE migration is added.
+ * Version history:
+ *   1 – known_locations.status column
+ *   2 – outside_sessions.discarded column
+ *   3 – outside_sessions.steps column
+ *   4 – reminder_feedback.scheduledMinute column
+ *   5 – outside_sessions.distanceMeters column
+ *   6 – outside_sessions.averageSpeedKmh column
+ */
+const DB_VERSION = 6;
+
 export interface OutsideSession {
   id?: number;
   startTime: number; // unix timestamp ms
@@ -62,6 +74,17 @@ export interface ScheduledNotification {
 }
 
 export function initDatabase(): void {
+  // Read the current schema version and check whether the DB already exists
+  // *before* running CREATE TABLE so we can distinguish a fresh install (tables
+  // about to be created with the full schema) from an existing install that
+  // needs incremental ALTER TABLE migrations.
+  const currentVersion =
+    db.getFirstSync<{ user_version: number }>('PRAGMA user_version')?.user_version ?? 0;
+  const tableAlreadyExists =
+    (db.getFirstSync<{ count: number }>(
+      "SELECT COUNT(*) as count FROM sqlite_master WHERE type='table' AND name='outside_sessions'"
+    )?.count ?? 0) > 0;
+
   db.execSync(`
     CREATE TABLE IF NOT EXISTS outside_sessions (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -72,6 +95,7 @@ export function initDatabase(): void {
       confidence REAL NOT NULL DEFAULT 0.8,
       userConfirmed INTEGER,
       notes TEXT,
+      discarded INTEGER NOT NULL DEFAULT 0,
       steps INTEGER,
       distanceMeters REAL,
       averageSpeedKmh REAL
@@ -94,6 +118,7 @@ export function initDatabase(): void {
       timestamp INTEGER NOT NULL,
       action TEXT NOT NULL,
       scheduledHour INTEGER NOT NULL,
+      scheduledMinute INTEGER NOT NULL DEFAULT 0,
       dayOfWeek INTEGER NOT NULL
     );
 
@@ -171,7 +196,7 @@ export function initDatabase(): void {
     "INSERT OR IGNORE INTO app_settings (key, value) VALUES ('smart_reminders_count', '2'), ('weather_enabled', '1')"
   );
 
-  // Clean up any corrupted scheduled notifications (one-time migration)
+  // Clean up any corrupted scheduled notifications (one-time maintenance task)
   try {
     const deletedCount = cleanupInvalidScheduledNotifications();
     if (deletedCount > 0) {
@@ -183,54 +208,36 @@ export function initDatabase(): void {
     console.error('Error cleaning up scheduled notifications:', error);
   }
 
-  // Add status column to known_locations if it doesn't exist (migration)
-  try {
-    db.execSync(`ALTER TABLE known_locations ADD COLUMN status TEXT NOT NULL DEFAULT 'active'`);
-    console.log('Database migration: Added status column to known_locations');
-  } catch {
-    // Column already exists — safe to ignore
-  }
-
-  // Add discarded column to outside_sessions if it doesn't exist (migration)
-  try {
-    db.execSync(`ALTER TABLE outside_sessions ADD COLUMN discarded INTEGER NOT NULL DEFAULT 0`);
-    console.log('Database migration: Added discarded column to outside_sessions');
-  } catch {
-    // Column already exists — safe to ignore
-  }
-
-  // Add steps column to outside_sessions if it doesn't exist (migration)
-  try {
-    db.execSync(`ALTER TABLE outside_sessions ADD COLUMN steps INTEGER`);
-    console.log('Database migration: Added steps column to outside_sessions');
-  } catch {
-    // Column already exists — safe to ignore
-  }
-
-  // Add scheduledMinute column to reminder_feedback if it doesn't exist (migration)
-  try {
-    db.execSync(
-      `ALTER TABLE reminder_feedback ADD COLUMN scheduledMinute INTEGER NOT NULL DEFAULT 0`
-    );
-    console.log('Database migration: Added scheduledMinute column to reminder_feedback');
-  } catch {
-    // Column already exists — safe to ignore
-  }
-
-  // Add distanceMeters column to outside_sessions if it doesn't exist (migration)
-  try {
-    db.execSync(`ALTER TABLE outside_sessions ADD COLUMN distanceMeters REAL`);
-    console.log('Database migration: Added distanceMeters column to outside_sessions');
-  } catch {
-    // Column already exists — safe to ignore
-  }
-
-  // Add averageSpeedKmh column to outside_sessions if it doesn't exist (migration)
-  try {
-    db.execSync(`ALTER TABLE outside_sessions ADD COLUMN averageSpeedKmh REAL`);
-    console.log('Database migration: Added averageSpeedKmh column to outside_sessions');
-  } catch {
-    // Column already exists — safe to ignore
+  if (!tableAlreadyExists) {
+    // Brand-new install: tables were just created with the full schema, so no
+    // ALTER TABLE statements are needed.  Just stamp the current version so
+    // future boots skip the migration block entirely.
+    db.execSync(`PRAGMA user_version = ${DB_VERSION}`);
+  } else if (currentVersion < DB_VERSION) {
+    // Existing install with an older schema: apply only the migrations that
+    // have not been applied yet, then advance the stored version.
+    if (currentVersion < 1) {
+      db.execSync(`ALTER TABLE known_locations ADD COLUMN status TEXT NOT NULL DEFAULT 'active'`);
+    }
+    if (currentVersion < 2) {
+      db.execSync(`ALTER TABLE outside_sessions ADD COLUMN discarded INTEGER NOT NULL DEFAULT 0`);
+    }
+    if (currentVersion < 3) {
+      db.execSync(`ALTER TABLE outside_sessions ADD COLUMN steps INTEGER`);
+    }
+    if (currentVersion < 4) {
+      db.execSync(
+        `ALTER TABLE reminder_feedback ADD COLUMN scheduledMinute INTEGER NOT NULL DEFAULT 0`
+      );
+    }
+    if (currentVersion < 5) {
+      db.execSync(`ALTER TABLE outside_sessions ADD COLUMN distanceMeters REAL`);
+    }
+    if (currentVersion < 6) {
+      db.execSync(`ALTER TABLE outside_sessions ADD COLUMN averageSpeedKmh REAL`);
+    }
+    db.execSync(`PRAGMA user_version = ${DB_VERSION}`);
+    console.log(`Database migrated from version ${currentVersion} to ${DB_VERSION}`);
   }
 }
 

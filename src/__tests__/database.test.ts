@@ -10,6 +10,153 @@ describe('Database', () => {
       // Verify it doesn't throw - actual DB operations are mocked
       expect(typeof initDatabase).toBe('function');
     });
+
+    it('sets PRAGMA user_version to DB_VERSION on a fresh install', () => {
+      const SQLite = require('expo-sqlite');
+      const mockDb = SQLite.openDatabaseSync.mock.results[0].value;
+
+      // Simulate: user_version=0, table does not exist yet (fresh install)
+      mockDb.getFirstSync
+        .mockReturnValueOnce({ user_version: 0 }) // PRAGMA user_version
+        .mockReturnValueOnce({ count: 0 }); // sqlite_master check
+
+      mockDb.execSync.mockClear();
+
+      const { initDatabase } = require('../storage/database');
+      initDatabase();
+
+      // Should stamp the current version — no ALTER TABLE calls
+      const pragmaSetCall = mockDb.execSync.mock.calls.find((call: string[]) =>
+        call[0].includes('PRAGMA user_version =')
+      );
+      expect(pragmaSetCall).toBeDefined();
+
+      const alterTableCalls = mockDb.execSync.mock.calls.filter((call: string[]) =>
+        call[0].includes('ALTER TABLE')
+      );
+      expect(alterTableCalls).toHaveLength(0);
+    });
+
+    it('runs all migrations and updates PRAGMA user_version when existing DB has version 0', () => {
+      const SQLite = require('expo-sqlite');
+      const mockDb = SQLite.openDatabaseSync.mock.results[0].value;
+
+      // Simulate: user_version=0, table already exists (old install)
+      mockDb.getFirstSync
+        .mockReturnValueOnce({ user_version: 0 }) // PRAGMA user_version
+        .mockReturnValueOnce({ count: 1 }); // sqlite_master check
+
+      mockDb.execSync.mockClear();
+
+      const { initDatabase } = require('../storage/database');
+      initDatabase();
+
+      // Only look at ALTER TABLE statements
+      const alterTableCalls: string[] = mockDb.execSync.mock.calls
+        .map((call: string[]) => call[0] as string)
+        .filter((s: string) => s.trimStart().startsWith('ALTER TABLE'));
+
+      // All 6 ALTER TABLE statements should have been executed
+      expect(
+        alterTableCalls.some((s) => s.includes('known_locations') && s.includes('status'))
+      ).toBe(true);
+      expect(
+        alterTableCalls.some((s) => s.includes('outside_sessions') && s.includes('discarded'))
+      ).toBe(true);
+      expect(
+        alterTableCalls.some((s) => s.includes('outside_sessions') && s.includes('steps'))
+      ).toBe(true);
+      expect(
+        alterTableCalls.some(
+          (s) => s.includes('reminder_feedback') && s.includes('scheduledMinute')
+        )
+      ).toBe(true);
+      expect(
+        alterTableCalls.some((s) => s.includes('outside_sessions') && s.includes('distanceMeters'))
+      ).toBe(true);
+      expect(
+        alterTableCalls.some((s) => s.includes('outside_sessions') && s.includes('averageSpeedKmh'))
+      ).toBe(true);
+
+      // PRAGMA user_version should be updated
+      const execCalls: string[] = mockDb.execSync.mock.calls.map(
+        (call: string[]) => call[0] as string
+      );
+      expect(execCalls.some((s) => s.includes('PRAGMA user_version ='))).toBe(true);
+    });
+
+    it('skips migrations entirely when DB is already at the current version', () => {
+      const SQLite = require('expo-sqlite');
+      const mockDb = SQLite.openDatabaseSync.mock.results[0].value;
+
+      // Simulate: user_version already at target (DB_VERSION=6), table exists
+      mockDb.getFirstSync
+        .mockReturnValueOnce({ user_version: 6 }) // PRAGMA user_version
+        .mockReturnValueOnce({ count: 1 }); // sqlite_master check
+
+      mockDb.execSync.mockClear();
+
+      const { initDatabase } = require('../storage/database');
+      initDatabase();
+
+      const execCalls: string[] = mockDb.execSync.mock.calls.map(
+        (call: string[]) => call[0] as string
+      );
+
+      // No ALTER TABLE or PRAGMA user_version = set calls
+      expect(execCalls.some((s) => s.includes('ALTER TABLE'))).toBe(false);
+      expect(execCalls.some((s) => s.includes('PRAGMA user_version ='))).toBe(false);
+    });
+
+    it('runs only missing migrations for a partially migrated DB', () => {
+      const SQLite = require('expo-sqlite');
+      const mockDb = SQLite.openDatabaseSync.mock.results[0].value;
+
+      // Simulate: user_version=4, table already exists — only versions 5 and 6 need to run
+      mockDb.getFirstSync
+        .mockReturnValueOnce({ user_version: 4 }) // PRAGMA user_version
+        .mockReturnValueOnce({ count: 1 }); // sqlite_master check
+
+      mockDb.execSync.mockClear();
+
+      const { initDatabase } = require('../storage/database');
+      initDatabase();
+
+      // Only look at ALTER TABLE statements
+      const alterTableCalls: string[] = mockDb.execSync.mock.calls
+        .map((call: string[]) => call[0] as string)
+        .filter((s: string) => s.trimStart().startsWith('ALTER TABLE'));
+
+      // Migrations for versions ≤4 must NOT run
+      expect(
+        alterTableCalls.some((s) => s.includes('known_locations') && s.includes('status'))
+      ).toBe(false);
+      expect(
+        alterTableCalls.some((s) => s.includes('outside_sessions') && s.includes('discarded'))
+      ).toBe(false);
+      expect(
+        alterTableCalls.some((s) => s.includes('outside_sessions') && s.includes('steps'))
+      ).toBe(false);
+      expect(
+        alterTableCalls.some(
+          (s) => s.includes('reminder_feedback') && s.includes('scheduledMinute')
+        )
+      ).toBe(false);
+
+      // Migrations for versions 5 and 6 MUST run
+      expect(
+        alterTableCalls.some((s) => s.includes('outside_sessions') && s.includes('distanceMeters'))
+      ).toBe(true);
+      expect(
+        alterTableCalls.some((s) => s.includes('outside_sessions') && s.includes('averageSpeedKmh'))
+      ).toBe(true);
+
+      // PRAGMA user_version should be updated
+      const execCalls: string[] = mockDb.execSync.mock.calls.map(
+        (call: string[]) => call[0] as string
+      );
+      expect(execCalls.some((s) => s.includes('PRAGMA user_version ='))).toBe(true);
+    });
   });
 
   describe('Settings', () => {
