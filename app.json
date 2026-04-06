@@ -66,7 +66,8 @@
             "buildArchs": ["arm64-v8a"],
             "enableProguardInReleaseBuilds": true,
             "enableShrinkResourcesInReleaseBuilds": true,
-            "extraProguardRules": "-keep class expo.modules.adapters.react.apploader.RNHeadlessAppLoader { *; }\n-keep interface expo.modules.apploader.HeadlessAppLoader { *; }\n-keep class expo.modules.apploader.AppLoaderProvider { *; }\n-keep class expo.modules.calendar.** { *; }",
+            "newArchEnabled": false,
+            "extraProguardRules": "-keep class expo.modules.adapters.react.apploader.RNHeadlessAppLoader { *; }\n-keep interface expo.modules.apploader.HeadlessAppLoader { *; }\n-keep class expo.modules.apploader.AppLoaderProvider { *; }\n-keep class expo.modules.calendar.** { *; }\n-keep class com.reactnativeandroidwidget.** { *; }",
             "manifestQueries": {
               "intents": [
                 {
