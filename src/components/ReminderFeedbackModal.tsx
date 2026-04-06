@@ -5,7 +5,7 @@ import { useTheme } from '../context/ThemeContext';
 import { spacing, radius } from '../utils/theme';
 import { t } from '../i18n';
 import { uses24HourClock, normalizeAmPm } from '../utils/helpers';
-import { insertReminderFeedback, getSetting, setSetting } from '../storage/database';
+import { insertReminderFeedbackAsync, getSettingAsync, setSettingAsync } from '../storage/database';
 
 export default function ReminderFeedbackModal() {
   const { visible, data, dismiss } = useReminderFeedback();
@@ -65,8 +65,8 @@ export default function ReminderFeedbackModal() {
       );
     }
 
-    const handleBadTime = () => {
-      insertReminderFeedback({
+    const handleBadTime = async () => {
+      await insertReminderFeedbackAsync({
         timestamp: Date.now(),
         action: 'bad_time',
         scheduledHour: data.hour,
@@ -76,15 +76,15 @@ export default function ReminderFeedbackModal() {
       dismiss();
     };
 
-    const handleFewerReminders = () => {
-      const catchupCount = parseInt(getSetting('smart_catchup_reminders_count', '2'), 10);
+    const handleFewerReminders = async () => {
+      const catchupCount = parseInt(await getSettingAsync('smart_catchup_reminders_count', '2'), 10);
       if (catchupCount > 0) {
-        setSetting('smart_catchup_reminders_count', String(catchupCount - 1));
+        await setSettingAsync('smart_catchup_reminders_count', String(catchupCount - 1));
         setFewerConfirmationMessage(t('notif_fewer_reminders_confirm_generic'));
       } else {
-        const currentCount = parseInt(getSetting('smart_reminders_count', '2'), 10);
+        const currentCount = parseInt(await getSettingAsync('smart_reminders_count', '2'), 10);
         const newCount = Math.max(1, currentCount - 1);
-        setSetting('smart_reminders_count', String(newCount));
+        await setSettingAsync('smart_reminders_count', String(newCount));
         setFewerConfirmationMessage(
           t('notif_fewer_reminders_confirm', { newCount, oldCount: currentCount })
         );

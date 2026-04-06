@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import * as Location from 'expo-location';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { upsertKnownLocation, deleteKnownLocation, KnownLocation } from '../storage/database';
+import { upsertKnownLocationAsync, deleteKnownLocationAsync, KnownLocation } from '../storage/database';
 import { spacing, radius } from '../utils/theme';
 import { useTheme } from '../context/ThemeContext';
 import { t } from '../i18n';
@@ -198,7 +198,7 @@ export default function EditLocationSheet({
     setAddressSuggestions([]);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!label.trim()) {
       Alert.alert(t('location_edit_error_title'), t('location_edit_error_label'));
       return;
@@ -206,7 +206,7 @@ export default function EditLocationSheet({
     if (!coords) return;
 
     try {
-      upsertKnownLocation({
+      await upsertKnownLocationAsync({
         id: location?.id,
         label: label.trim(),
         latitude: coords.latitude,
@@ -230,10 +230,10 @@ export default function EditLocationSheet({
       {
         text: t('location_delete_btn'),
         style: 'destructive',
-        onPress: () => {
+        onPress: async () => {
           if (!location?.id) return;
           try {
-            deleteKnownLocation(location.id);
+            await deleteKnownLocationAsync(location.id);
             onSave();
             onClose();
           } catch (error) {

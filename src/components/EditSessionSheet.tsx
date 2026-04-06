@@ -12,7 +12,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
-import { updateSessionTimes, OutsideSession } from '../storage/database';
+import { updateSessionTimesAsync, OutsideSession } from '../storage/database';
 import { spacing, radius } from '../utils/theme';
 import { useTheme } from '../context/ThemeContext';
 import { formatMinutes, uses24HourClock } from '../utils/helpers';
@@ -67,7 +67,7 @@ export default function EditSessionSheet({ visible, session, onClose, onSessionU
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const durationMs = endTime.getTime() - startTime.getTime();
     const durationMinutes = durationMs / 60000;
 
@@ -76,7 +76,7 @@ export default function EditSessionSheet({ visible, session, onClose, onSessionU
       return;
     }
 
-    updateSessionTimes(session!.id!, startTime.getTime(), endTime.getTime());
+    await updateSessionTimesAsync(session!.id!, startTime.getTime(), endTime.getTime());
     onSessionUpdated();
     onClose();
   };
