@@ -1,8 +1,8 @@
 import {
   OutsideSession,
-  insertSession,
-  getSessionsForRange,
-  deleteSession,
+  insertSessionAsync,
+  getSessionsForRangeAsync,
+  deleteSessionAsync,
 } from '../storage/database';
 import { computeSessionScore, DISCARD_CONFIDENCE_THRESHOLD } from './sessionConfidence';
 import { t } from '../i18n';
@@ -31,16 +31,16 @@ const METERS_PER_KM = 1_000;
  *   - A denied (userConfirmed === 0) status from an existing unconfirmed session is
  *     preserved in the merged result so a re-detection does not override a "no".
  */
-export function submitSession(candidate: OutsideSession): void {
+export async function submitSession(candidate: OutsideSession): Promise<void> {
   // Manual sessions bypass merging — insert directly as a separate entry.
   if (candidate.source === 'manual') {
-    insertSession(candidate);
+    await insertSessionAsync(candidate);
     return;
   }
 
   const windowStart = candidate.startTime - MERGE_GAP_MS;
   const windowEnd = candidate.endTime + MERGE_GAP_MS;
-  const existing = getSessionsForRange(windowStart, windowEnd);
+  const existing = await getSessionsForRangeAsync(windowStart, windowEnd);
 
   // For non-manual candidates: confirmed sessions (userConfirmed === 1) must never
   // be touched by automated detection regardless of their source (gps, health_connect, …).
@@ -140,11 +140,11 @@ export function submitSession(candidate: OutsideSession): void {
   const deniedSession = unconfirmedSessions.find((s) => s.userConfirmed === 0);
 
   // Delete all existing unconfirmed sessions in the overlap window.
-  unconfirmedSessions.forEach((session) => {
+  for (const session of unconfirmedSessions) {
     if (session.id) {
-      deleteSession(session.id);
+      await deleteSessionAsync(session.id);
     }
-  });
+  }
 
   // Subtract confirmed session time from the merged range so that confirmed user
   // data is never overwritten.  Each remaining gap becomes an unconfirmed segment.
@@ -204,7 +204,7 @@ export function submitSession(candidate: OutsideSession): void {
         `TouchGrass: Session discarded (score ${score.toFixed(2)} < threshold ${DISCARD_CONFIDENCE_THRESHOLD}): ${new Date(segStart).toISOString()} – ${new Date(segEnd).toISOString()} source=${candidate.source}`
       );
     }
-    insertSession({
+    await insertSessionAsync({
       ...segSession,
       confidence: score, // store computed score so the UI reflects actual confidence
       discarded: shouldDiscard ? 1 : 0,

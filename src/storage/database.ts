@@ -596,6 +596,24 @@ export function pruneShortDiscardedHealthConnectSessions(
   return result.changes;
 }
 
+export async function pruneShortDiscardedHealthConnectSessionsAsync(
+  beforeMs: number,
+  minStepsPerMinute: number
+): Promise<number> {
+  const result = await db.runAsync(
+    `DELETE FROM outside_sessions
+     WHERE source = 'health_connect'
+       AND userConfirmed IS NULL
+       AND endTime < ?
+       AND (
+         (discarded = 1 AND durationMinutes < 5)
+         OR (steps IS NOT NULL AND durationMinutes > 0 AND CAST(steps AS REAL) / durationMinutes < ?)
+       )`,
+    [beforeMs, minStepsPerMinute]
+  );
+  return result.changes;
+}
+
 // ── Goals ─────────────────────────────────────────────────
 
 export function getCurrentDailyGoal(): DailyGoal | null {
@@ -880,6 +898,12 @@ export function getReminderFeedback(): ReminderFeedback[] {
   );
 }
 
+export async function getReminderFeedbackAsync(): Promise<ReminderFeedback[]> {
+  return await db.getAllAsync<ReminderFeedback>(
+    'SELECT * FROM reminder_feedback ORDER BY timestamp DESC LIMIT 200'
+  );
+}
+
 // ── Known locations ───────────────────────────────────────
 
 export function getKnownLocations(): KnownLocation[] {
@@ -1148,12 +1172,66 @@ export function saveWeatherConditions(conditions: WeatherCondition[]): void {
   }
 }
 
+export async function saveWeatherConditionsAsync(
+  conditions: WeatherCondition[]
+): Promise<void> {
+  await db.withTransactionAsync(async () => {
+    for (const condition of conditions) {
+      await db.runAsync(
+        `INSERT INTO weather_conditions 
+         (timestamp, forecastHour, forecastDate, temperature, precipitationProbability, 
+          cloudCover, uvIndex, windSpeed, weatherCode, isDay)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          condition.timestamp,
+          condition.forecastHour,
+          condition.forecastDate,
+          condition.temperature,
+          condition.precipitationProbability,
+          condition.cloudCover,
+          condition.uvIndex,
+          condition.windSpeed,
+          condition.weatherCode,
+          condition.isDay ? 1 : 0,
+        ]
+      );
+    }
+  });
+}
+
 export function getWeatherConditionsForHour(
   forecastDate: number,
   startHour: number,
   endHour: number
 ): WeatherCondition[] {
   const rows = db.getAllSync<WeatherConditionRow>(
+    `SELECT * FROM weather_conditions 
+     WHERE forecastDate = ? AND forecastHour >= ? AND forecastHour < ?
+     ORDER BY forecastHour ASC`,
+    [forecastDate, startHour, endHour]
+  );
+
+  return rows.map((row) => ({
+    id: row.id,
+    timestamp: row.timestamp,
+    forecastHour: row.forecastHour,
+    forecastDate: row.forecastDate,
+    temperature: row.temperature,
+    precipitationProbability: row.precipitationProbability,
+    cloudCover: row.cloudCover,
+    uvIndex: row.uvIndex,
+    windSpeed: row.windSpeed,
+    weatherCode: row.weatherCode,
+    isDay: row.isDay === 1,
+  }));
+}
+
+export async function getWeatherConditionsForHourAsync(
+  forecastDate: number,
+  startHour: number,
+  endHour: number
+): Promise<WeatherCondition[]> {
+  const rows = await db.getAllAsync<WeatherConditionRow>(
     `SELECT * FROM weather_conditions 
      WHERE forecastDate = ? AND forecastHour >= ? AND forecastHour < ?
      ORDER BY forecastHour ASC`,
@@ -1183,14 +1261,31 @@ export function saveWeatherCache(cache: WeatherCache): void {
   );
 }
 
+export async function saveWeatherCacheAsync(cache: WeatherCache): Promise<void> {
+  await db.runAsync(
+    `INSERT OR REPLACE INTO weather_cache (id, fetchedAt, latitude, longitude, expiresAt)
+     VALUES (1, ?, ?, ?, ?)`,
+    [cache.fetchedAt, cache.latitude, cache.longitude, cache.expiresAt]
+  );
+}
+
 export function getWeatherCache(): WeatherCache | null {
   return db.getFirstSync<WeatherCache>('SELECT * FROM weather_cache WHERE id = 1');
+}
+
+export async function getWeatherCacheAsync(): Promise<WeatherCache | null> {
+  return await db.getFirstAsync<WeatherCache>('SELECT * FROM weather_cache WHERE id = 1');
 }
 
 export function clearExpiredWeatherData(now: number): void {
   // Delete weather conditions older than 24 hours
   const cutoff = now - 24 * 60 * 60 * 1000;
   db.runSync('DELETE FROM weather_conditions WHERE timestamp < ?', [cutoff]);
+}
+
+export async function clearExpiredWeatherDataAsync(now: number): Promise<void> {
+  const cutoff = now - 24 * 60 * 60 * 1000;
+  await db.runAsync('DELETE FROM weather_conditions WHERE timestamp < ?', [cutoff]);
 }
 
 // ── Scheduled Notifications ───────────────────────────────
@@ -1312,6 +1407,22 @@ export function cleanupInvalidScheduledNotifications(): number {
   return deletedCount;
 }
 
+export async function cleanupInvalidScheduledNotificationsAsync(): Promise<number> {
+  const result = await db.runAsync(
+    `DELETE FROM scheduled_notifications 
+     WHERE daysOfWeek = '' 
+        OR daysOfWeek IS NULL 
+        OR length(trim(daysOfWeek)) = 0`
+  );
+
+  const deletedCount = result.changes;
+  if (deletedCount > 0) {
+    console.log(`Cleaned up ${deletedCount} corrupted scheduled notification(s)`);
+  }
+
+  return deletedCount;
+}
+
 // ── Background task logs ──────────────────────────────────
 
 export type BackgroundLogCategory = 'gps' | 'health_connect' | 'reminder';
@@ -1340,6 +1451,32 @@ export function insertBackgroundLog(category: BackgroundLogCategory, message: st
     ]);
     // Prune oldest beyond limit
     db.runSync(
+      `DELETE FROM background_task_logs
+       WHERE category = ?
+         AND id NOT IN (
+           SELECT id FROM background_task_logs
+           WHERE category = ?
+           ORDER BY timestamp DESC
+           LIMIT ?
+         )`,
+      [category, category, MAX_LOGS_PER_CATEGORY]
+    );
+  } catch {
+    // Log writing is best-effort — never crash the background task
+  }
+}
+
+export async function insertBackgroundLogAsync(
+  category: BackgroundLogCategory,
+  message: string
+): Promise<void> {
+  try {
+    const now = Date.now();
+    await db.runAsync(
+      'INSERT INTO background_task_logs (timestamp, category, message) VALUES (?, ?, ?)',
+      [now, category, message]
+    );
+    await db.runAsync(
       `DELETE FROM background_task_logs
        WHERE category = ?
          AND id NOT IN (
