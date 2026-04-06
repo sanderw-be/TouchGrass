@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
 
 jest.mock('../i18n', () => ({
   t: (key: string) => key,
@@ -34,7 +34,7 @@ jest.mock('react-native-safe-area-context', () => ({
 
 const mockGetBackgroundLogs = jest.fn();
 jest.mock('../storage/database', () => ({
-  getBackgroundLogs: (...args: unknown[]) => mockGetBackgroundLogs(...args),
+  getBackgroundLogsAsync: (...args: unknown[]) => mockGetBackgroundLogs(...args),
 }));
 
 jest.mock('@react-navigation/native', () => {
@@ -101,10 +101,10 @@ describe('ActivityLogScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockGetBackgroundLogs.mockImplementation((category: string) => {
-      if (category === 'health_connect') return mockLogs.health_connect;
-      if (category === 'gps') return mockLogs.gps;
-      if (category === 'reminder') return mockLogs.reminder;
-      return EMPTY_LOGS;
+      if (category === 'health_connect') return Promise.resolve(mockLogs.health_connect);
+      if (category === 'gps') return Promise.resolve(mockLogs.gps);
+      if (category === 'reminder') return Promise.resolve(mockLogs.reminder);
+      return Promise.resolve(EMPTY_LOGS);
     });
   });
 
@@ -187,7 +187,7 @@ describe('ActivityLogScreen', () => {
   });
 
   it('shows empty text when there are no logs', async () => {
-    mockGetBackgroundLogs.mockReturnValue(EMPTY_LOGS);
+    mockGetBackgroundLogs.mockReturnValue(Promise.resolve(EMPTY_LOGS));
     const { getByText, getAllByText } = render(<ActivityLogScreen />);
     await waitFor(() => expect(getByText('activity_log_section_hc')).toBeTruthy());
 
@@ -252,10 +252,13 @@ describe('ActivityLogScreen', () => {
     const scrollView = UNSAFE_getByType(require('react-native').ScrollView);
     const { onRefresh } = scrollView.props.refreshControl.props;
     expect(typeof onRefresh).toBe('function');
-    onRefresh();
 
-    // Advance timers past the minimum refresh duration
-    jest.runAllTimers();
+    // onRefresh is now async, wrap in act
+    await act(async () => {
+      onRefresh();
+      // Advance timers past the minimum refresh duration
+      jest.runAllTimers();
+    });
 
     // After the timer fires, logs should be reloaded
     await waitFor(() => expect(mockGetBackgroundLogs).toHaveBeenCalledTimes(3));

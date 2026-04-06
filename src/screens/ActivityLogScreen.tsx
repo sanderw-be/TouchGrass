@@ -2,7 +2,11 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { getBackgroundLogs, BackgroundTaskLog, BackgroundLogCategory } from '../storage/database';
+import {
+  getBackgroundLogsAsync,
+  BackgroundTaskLog,
+  BackgroundLogCategory,
+} from '../storage/database';
 import { spacing, radius } from '../utils/theme';
 import { useTheme } from '../context/ThemeContext';
 import { t } from '../i18n';
@@ -56,10 +60,15 @@ export default function ActivityLogScreen() {
   // For reminders: exactly one day expanded at a time (null = all closed)
   const [openReminderDay, setOpenReminderDay] = useState<string | null>(null);
 
-  const loadLogs = useCallback(() => {
-    setHcLogs(getBackgroundLogs('health_connect'));
-    setGpsLogs(getBackgroundLogs('gps'));
-    setReminderLogs(getBackgroundLogs('reminder'));
+  const loadLogs = useCallback(async () => {
+    const [hc, gps, reminder] = await Promise.all([
+      getBackgroundLogsAsync('health_connect'),
+      getBackgroundLogsAsync('gps'),
+      getBackgroundLogsAsync('reminder'),
+    ]);
+    setHcLogs(hc);
+    setGpsLogs(gps);
+    setReminderLogs(reminder);
   }, []);
 
   useFocusEffect(
@@ -68,15 +77,11 @@ export default function ActivityLogScreen() {
     }, [loadLogs])
   );
 
-  const onRefresh = useCallback(() => {
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    // Run the load and a minimum-duration timer in parallel.
-    // The spinner stays visible until both complete, ensuring the user can see it.
     const minDelay = new Promise<void>((resolve) => setTimeout(resolve, MIN_REFRESH_MS));
-    Promise.all([minDelay]).then(() => {
-      loadLogs();
-      setRefreshing(false);
-    });
+    await Promise.all([loadLogs(), minDelay]);
+    setRefreshing(false);
   }, [loadLogs]);
 
   const toggleSection = (key: SectionKey) => {

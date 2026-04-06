@@ -6,10 +6,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Location from 'expo-location';
 import {
   KnownLocation,
-  getAllKnownLocations,
-  denyKnownLocation,
-  getSetting,
-  setSetting,
+  getAllKnownLocationsAsync,
+  denyKnownLocationAsync,
+  getSettingAsync,
+  setSettingAsync,
 } from '../storage/database';
 import { getDetectionStatus } from '../detection/index';
 import { spacing, radius } from '../utils/theme';
@@ -33,11 +33,11 @@ export default function KnownLocationsScreen() {
     { latitude: number; longitude: number } | undefined
   >();
 
-  const loadData = useCallback(() => {
-    setSuggestionsEnabled(getSetting('location_suggestions_enabled', '1') === '1');
+  const loadData = useCallback(async () => {
+    setSuggestionsEnabled((await getSettingAsync('location_suggestions_enabled', '1')) === '1');
     const status = getDetectionStatus();
     setGpsActive(status.gps);
-    const all = getAllKnownLocations();
+    const all = await getAllKnownLocationsAsync();
     setSuggested(all.filter((l) => l.status === 'suggested'));
     setActive(all.filter((l) => l.status === 'active'));
   }, []);
@@ -91,8 +91,8 @@ export default function KnownLocationsScreen() {
     closeSheet();
   }, [loadData, closeSheet]);
 
-  const toggleSuggestions = (value: boolean) => {
-    setSetting('location_suggestions_enabled', value ? '1' : '0');
+  const toggleSuggestions = async (value: boolean) => {
+    await setSettingAsync('location_suggestions_enabled', value ? '1' : '0');
     setSuggestionsEnabled(value);
   };
 
@@ -103,8 +103,8 @@ export default function KnownLocationsScreen() {
       {
         text: t('settings_location_deny_confirm'),
         style: 'destructive',
-        onPress: () => {
-          denyKnownLocation(loc.id!);
+        onPress: async () => {
+          await denyKnownLocationAsync(loc.id!);
           loadData();
         },
       },
