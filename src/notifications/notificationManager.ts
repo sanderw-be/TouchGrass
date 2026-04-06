@@ -97,6 +97,17 @@ async function saveQueue(queue: ReminderQueueEntry[]): Promise<void> {
 // flag before the first `await` is fully atomic.
 let catchUpSchedulingInProgress = false;
 
+// In-memory guard for scheduleDayReminders: set synchronously (before the
+// first `await`) so that a concurrent caller in the same JS runtime sees the
+// date immediately and returns early.
+let dayPlanLastDate = '';
+
+/** Reset in-memory guards — only for testing. */
+export function _resetSchedulingGuards(): void {
+  catchUpSchedulingInProgress = false;
+  dayPlanLastDate = '';
+}
+
 /** Format a slot-minutes value as HH:MM for log output. */
 function formatSlotMinutes(slotMinutes: number): string {
   const h = Math.floor(slotMinutes / 60);
@@ -304,7 +315,7 @@ export async function setupNotifications(): Promise<void> {
  */
 export async function scheduleNextReminder(): Promise<void> {
   const todayMinutes = await getTodayMinutesAsync();
-  const dailyTarget = await getCurrentDailyGoalAsync()?.targetMinutes ?? 30;
+  const dailyTarget = (await getCurrentDailyGoalAsync())?.targetMinutes ?? 30;
   const remindersCount = parseInt(await getSettingAsync('smart_reminders_count', '2'), 10);
 
   if (remindersCount === 0) return;
@@ -331,7 +342,7 @@ export async function scheduleNextReminder(): Promise<void> {
   }
 
   const lastReminderMs = parseInt(await getSettingAsync('last_reminder_ms', '0'), 10);
-  const isCurrentlyOutside = await getSettingAsync('currently_outside', '0') === '1';
+  const isCurrentlyOutside = (await getSettingAsync('currently_outside', '0')) === '1';
 
   // Skip if there's a scheduled notification nearby
   if (await hasScheduledNotificationNearby(60)) {
@@ -439,7 +450,7 @@ export async function processReminderQueue(): Promise<void> {
   }
 
   const todayMinutes = await getTodayMinutesAsync();
-  const dailyTarget = await getCurrentDailyGoalAsync()?.targetMinutes ?? 30;
+  const dailyTarget = (await getCurrentDailyGoalAsync())?.targetMinutes ?? 30;
 
   // --- Goal reached: cancel all pending triggers and clear the queue ---
   if (todayMinutes >= dailyTarget) {
@@ -590,7 +601,7 @@ export async function updateUpcomingReminderContent(): Promise<void> {
   if (queue.length === 0) return;
 
   const todayMinutes = await getTodayMinutesAsync();
-  const dailyTarget = await getCurrentDailyGoalAsync()?.targetMinutes ?? 30;
+  const dailyTarget = (await getCurrentDailyGoalAsync())?.targetMinutes ?? 30;
 
   // Get all currently scheduled notifications
   const allScheduled = await Notifications.getAllScheduledNotificationsAsync();
@@ -700,6 +711,31 @@ export async function updateUpcomingReminderContent(): Promise<void> {
  */
 export async function scheduleDayReminders(): Promise<void> {
   const todayStr = new Date().toDateString();
+
+  // In-memory guard: check synchronously (no await) so concurrent callers in
+  // the same JS runtime see today's date immediately and exit early.
+  if (dayPlanLastDate === todayStr) {
+    const queue = await getQueue();
+    if (queue.length > 0) {
+      const summary = queue
+        .map((e) => `${formatSlotMinutes(e.slotMinutes)}[${e.status}]`)
+        .join(', ');
+      console.log(
+        `TouchGrass: [DayPlan] Already planned today — queue (${queue.length}): ${summary}`
+      );
+      await insertBackgroundLogAsync(
+        'reminder',
+        `Daily plan: already planned (${queue.length}) — ${summary}`
+      );
+    } else {
+      console.log('TouchGrass: [DayPlan] Already planned today — queue: empty');
+      await insertBackgroundLogAsync('reminder', 'Daily plan: already planned — queue empty');
+    }
+    return;
+  }
+  // Set in-memory guard synchronously before any await.
+  dayPlanLastDate = todayStr;
+
   const lastPlannedDate = await getSettingAsync('reminders_last_planned_date', '');
   if (lastPlannedDate === todayStr) {
     const queue = await getQueue();
@@ -710,7 +746,10 @@ export async function scheduleDayReminders(): Promise<void> {
       console.log(
         `TouchGrass: [DayPlan] Already planned today — queue (${queue.length}): ${summary}`
       );
-      await insertBackgroundLogAsync('reminder', `Daily plan: already planned (${queue.length}) — ${summary}`);
+      await insertBackgroundLogAsync(
+        'reminder',
+        `Daily plan: already planned (${queue.length}) — ${summary}`
+      );
     } else {
       console.log('TouchGrass: [DayPlan] Already planned today — queue: empty');
       await insertBackgroundLogAsync('reminder', 'Daily plan: already planned — queue empty');
@@ -718,12 +757,8 @@ export async function scheduleDayReminders(): Promise<void> {
     return;
   }
 
-  // Mark planning as started BEFORE the first await so that concurrent callers
-  // (e.g. foreground init and background task both waking at 3 AM) immediately
-  // see today's date and return early rather than racing through the rest of
-  // this function and scheduling duplicate notifications and calendar events.
-  // JavaScript is single-threaded, so this assignment is visible to the next
-  // synchronous caller that runs while this function is suspended at an await.
+  // Persist the planned date to SQLite so the guard also works across
+  // process restarts (the in-memory guard handles same-runtime races).
   await setSettingAsync('reminders_last_planned_date', todayStr);
 
   const remindersCount = parseInt(await getSettingAsync('smart_reminders_count', '2'), 10);
@@ -752,7 +787,7 @@ export async function scheduleDayReminders(): Promise<void> {
   await cancelAutomaticReminders();
 
   const todayMinutes = await getTodayMinutesAsync();
-  const dailyTarget = await getCurrentDailyGoalAsync()?.targetMinutes ?? 30;
+  const dailyTarget = (await getCurrentDailyGoalAsync())?.targetMinutes ?? 30;
 
   // Don't schedule reminders if daily goal is already reached
   if (todayMinutes >= dailyTarget) {
@@ -1016,7 +1051,7 @@ export async function maybeScheduleCatchUpReminder(): Promise<void> {
 
     // % of daily target already reached
     const todayMinutes = await getTodayMinutesAsync();
-    const dailyTarget = await getCurrentDailyGoalAsync()?.targetMinutes ?? 30;
+    const dailyTarget = (await getCurrentDailyGoalAsync())?.targetMinutes ?? 30;
     const targetPercent = Math.min(todayMinutes / dailyTarget, 1);
 
     // If the daily goal is already met, cancel any remaining smart reminders and stop.
@@ -1055,7 +1090,12 @@ export async function maybeScheduleCatchUpReminder(): Promise<void> {
     if (weatherPrefs.enabled) {
       await fetchWeatherForecast({ allowPermissionPrompt: false });
     }
-    const scores = await scoreReminderHours(todayMinutes, dailyTarget, now.getHours(), now.getMinutes());
+    const scores = await scoreReminderHours(
+      todayMinutes,
+      dailyTarget,
+      now.getHours(),
+      now.getMinutes()
+    );
 
     // Exclude slots that are already in the queue (any status) to prevent
     // scheduling two catch-up reminders for the same time from different ticks.
@@ -1106,7 +1146,10 @@ export async function maybeScheduleCatchUpReminder(): Promise<void> {
     // Cross-runtime concurrency guard: re-read the counter immediately before
     // scheduling to catch a parallel JS context (separate headless runtime) that
     // may have already incremented it since our initial read above.
-    const freshAdditionalCount = parseInt(await getSettingAsync('additional_reminders_today', '0'), 10);
+    const freshAdditionalCount = parseInt(
+      await getSettingAsync('additional_reminders_today', '0'),
+      10
+    );
     if (freshAdditionalCount >= catchupLimit) {
       await insertBackgroundLogAsync(
         'reminder',
@@ -1203,7 +1246,7 @@ async function cancelFailsafeReminders(): Promise<void> {
 async function scheduleFailsafeReminders(slots: { hour: number; minute: 0 | 30 }[]): Promise<void> {
   if (slots.length === 0) return;
 
-  const dailyTarget = await getCurrentDailyGoalAsync()?.targetMinutes ?? 30;
+  const dailyTarget = (await getCurrentDailyGoalAsync())?.targetMinutes ?? 30;
 
   for (let daysAhead = 1; daysAhead <= FAILSAFE_DAYS_AHEAD; daysAhead++) {
     const futureDate = new Date();
@@ -1217,7 +1260,13 @@ async function scheduleFailsafeReminders(slots: { hour: number; minute: 0 | 30 }
 
       // Use 0 progress since we don't know tomorrow's outdoor minutes.
       // These are failsafe reminders (treat as planned smart reminders)
-      const { title, body } = await buildReminderMessage(0, dailyTarget, slot.hour, undefined, false);
+      const { title, body } = await buildReminderMessage(
+        0,
+        dailyTarget,
+        slot.hour,
+        undefined,
+        false
+      );
 
       await Notifications.scheduleNotificationAsync({
         identifier: `${FAILSAFE_REMINDER_PREFIX}${dateKey}_${i}`,
@@ -1280,7 +1329,7 @@ export async function cancelRemindersIfGoalReached(): Promise<void> {
   if (remindersCount === 0) return;
 
   const todayMinutes = await getTodayMinutesAsync();
-  const dailyTarget = await getCurrentDailyGoalAsync()?.targetMinutes ?? 30;
+  const dailyTarget = (await getCurrentDailyGoalAsync())?.targetMinutes ?? 30;
   if (todayMinutes < dailyTarget) return;
 
   console.log(
@@ -1371,7 +1420,7 @@ async function handleNotificationResponse(
     const snoozeHour = snoozeDate.getHours();
     const { title, body } = await buildReminderMessage(
       await getTodayMinutesAsync(),
-      await getCurrentDailyGoalAsync()?.targetMinutes ?? 30,
+      (await getCurrentDailyGoalAsync())?.targetMinutes ?? 30,
       snoozeHour,
       undefined,
       false
@@ -1419,7 +1468,8 @@ async function buildReminderMessage(
   // Add streak encouragement based on settings:
   // - If catch-up reminders enabled: only on catch-up reminders
   // - If catch-up reminders disabled: on planned smart reminders
-  const catchupEnabled = parseInt(await getSettingAsync('smart_catchup_reminders_count', '2'), 10) > 0;
+  const catchupEnabled =
+    parseInt(await getSettingAsync('smart_catchup_reminders_count', '2'), 10) > 0;
   const shouldShowStreak = catchupEnabled ? isCatchupReminder === true : isCatchupReminder !== true;
 
   if (shouldShowStreak) {

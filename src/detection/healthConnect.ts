@@ -256,7 +256,10 @@ function exerciseTypeName(type: number): string {
  * a known indoor location — meaning the user was definitely not outside.
  * Returns false when there are no GPS samples for the period (cannot conclude).
  */
-async function wasDefinitelyAtKnownIndoorLocation(startMs: number, endMs: number): Promise<boolean> {
+async function wasDefinitelyAtKnownIndoorLocation(
+  startMs: number,
+  endMs: number
+): Promise<boolean> {
   try {
     const parsed: unknown = JSON.parse(await getSettingAsync('location_clusters', '[]'));
     const allSamples: { lat: number; lon: number; timestamp: number }[] = Array.isArray(parsed)

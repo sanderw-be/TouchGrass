@@ -551,7 +551,10 @@ export async function processLocationUpdate(
     console.log(
       `TouchGrass: GPS update - still outside, current session length: ${Math.round(duration / 60000)} min`
     );
-    await insertBackgroundLogAsync('gps', `Still outside — ${Math.round(duration / 60000)} min so far`);
+    await insertBackgroundLogAsync(
+      'gps',
+      `Still outside — ${Math.round(duration / 60000)} min so far`
+    );
     if (duration >= MIN_OUTSIDE_DURATION_MS) {
       const avgSpeed = gpsSessionSpeedCount > 0 ? gpsSessionSpeedSum / gpsSessionSpeedCount : 0;
       const notes = buildGpsNotes(
@@ -726,7 +729,11 @@ const MAX_DWELL_GAP_MS = 2 * 60 * 60 * 1000; // 2 hours
  */
 export const CLUSTER_DETECTION_RADIUS_M = 100;
 
-async function recordLocationForClustering(lat: number, lon: number, timestamp: number): Promise<void> {
+async function recordLocationForClustering(
+  lat: number,
+  lon: number,
+  timestamp: number
+): Promise<void> {
   try {
     const raw = await getSettingAsync('location_clusters', '[]');
     const clusters: LocationSample[] = JSON.parse(raw);

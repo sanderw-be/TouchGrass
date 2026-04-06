@@ -1,4 +1,8 @@
-import { getReminderFeedbackAsync, getSessionsForRangeAsync, startOfWeek } from '../storage/database';
+import {
+  getReminderFeedbackAsync,
+  getSessionsForRangeAsync,
+  startOfWeek,
+} from '../storage/database';
 import { getWeatherForHour } from '../weather/weatherService';
 import {
   scoreWeatherCondition,

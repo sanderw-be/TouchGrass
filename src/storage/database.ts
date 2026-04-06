@@ -1172,9 +1172,7 @@ export function saveWeatherConditions(conditions: WeatherCondition[]): void {
   }
 }
 
-export async function saveWeatherConditionsAsync(
-  conditions: WeatherCondition[]
-): Promise<void> {
+export async function saveWeatherConditionsAsync(conditions: WeatherCondition[]): Promise<void> {
   await db.withTransactionAsync(async () => {
     for (const condition of conditions) {
       await db.runAsync(

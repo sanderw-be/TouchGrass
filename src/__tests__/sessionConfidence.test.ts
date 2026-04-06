@@ -176,7 +176,9 @@ describe('computeSessionScore', () => {
       endTime: BASE_TIME + 30 * 60 * 1000,
       confidence: 0.8,
     });
-    await expect(computeSessionScore(session)).resolves.toBeGreaterThanOrEqual(DISCARD_CONFIDENCE_THRESHOLD);
+    await expect(computeSessionScore(session)).resolves.toBeGreaterThanOrEqual(
+      DISCARD_CONFIDENCE_THRESHOLD
+    );
   });
 
   it('a 15-minute health_connect session passes above the discard threshold', async () => {
@@ -187,7 +189,9 @@ describe('computeSessionScore', () => {
       confidence: 0.7,
     });
     // 0.7 * 0.70 * (0.5 + 0.5) = 0.49 → above threshold
-    await expect(computeSessionScore(session)).resolves.toBeGreaterThanOrEqual(DISCARD_CONFIDENCE_THRESHOLD);
+    await expect(computeSessionScore(session)).resolves.toBeGreaterThanOrEqual(
+      DISCARD_CONFIDENCE_THRESHOLD
+    );
   });
 
   it('a high-confidence time slot boosts the score', async () => {

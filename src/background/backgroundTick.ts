@@ -82,7 +82,10 @@ export async function performBackgroundTick(): Promise<void> {
         console.error('TouchGrass: [BackgroundTick] Reminder operations failed', reminderError);
       }
     } else {
-      await insertBackgroundLogAsync('reminder', 'Reminders disabled — skipping background tick work');
+      await insertBackgroundLogAsync(
+        'reminder',
+        'Reminders disabled — skipping background tick work'
+      );
     }
 
     await insertBackgroundLogAsync('reminder', 'Background tick done');

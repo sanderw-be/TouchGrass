@@ -104,11 +104,13 @@ describe('autoDetectLocations', () => {
     (Notifications.scheduleNotificationAsync as jest.Mock).mockResolvedValue(undefined);
 
     // Default: suggestions enabled, no existing locations, empty clusters
-    (Database.getSettingAsync as jest.Mock).mockImplementation(async (key: string, fallback: string) => {
-      if (key === 'location_suggestions_enabled') return '1';
-      if (key === 'location_clusters') return '[]';
-      return fallback;
-    });
+    (Database.getSettingAsync as jest.Mock).mockImplementation(
+      async (key: string, fallback: string) => {
+        if (key === 'location_suggestions_enabled') return '1';
+        if (key === 'location_clusters') return '[]';
+        return fallback;
+      }
+    );
     (Database.getKnownLocationsAsync as jest.Mock).mockResolvedValue([]);
     (Database.getAllKnownLocationsAsync as jest.Mock).mockResolvedValue([]);
     (Database.upsertKnownLocationAsync as jest.Mock).mockImplementation(async () => undefined);
@@ -121,10 +123,12 @@ describe('autoDetectLocations', () => {
   });
 
   it('returns early when location suggestions are disabled', async () => {
-    (Database.getSettingAsync as jest.Mock).mockImplementation(async (key: string, fallback: string) => {
-      if (key === 'location_suggestions_enabled') return '0';
-      return fallback;
-    });
+    (Database.getSettingAsync as jest.Mock).mockImplementation(
+      async (key: string, fallback: string) => {
+        if (key === 'location_suggestions_enabled') return '0';
+        return fallback;
+      }
+    );
     await autoDetectLocations();
     expect(Database.upsertKnownLocationAsync).not.toHaveBeenCalled();
   });
@@ -135,11 +139,13 @@ describe('autoDetectLocations', () => {
       lon: 4.3,
       timestamp: BASE_TIME + i * FIVE_MIN,
     }));
-    (Database.getSettingAsync as jest.Mock).mockImplementation(async (key: string, fallback: string) => {
-      if (key === 'location_suggestions_enabled') return '1';
-      if (key === 'location_clusters') return JSON.stringify(fewSamples);
-      return fallback;
-    });
+    (Database.getSettingAsync as jest.Mock).mockImplementation(
+      async (key: string, fallback: string) => {
+        if (key === 'location_suggestions_enabled') return '1';
+        if (key === 'location_clusters') return JSON.stringify(fewSamples);
+        return fallback;
+      }
+    );
     await autoDetectLocations();
     expect(Database.upsertKnownLocationAsync).not.toHaveBeenCalled();
   });
@@ -151,11 +157,13 @@ describe('autoDetectLocations', () => {
       lon: 4.3,
       timestamp: BASE_TIME + i * FIVE_MIN,
     }));
-    (Database.getSettingAsync as jest.Mock).mockImplementation(async (key: string, fallback: string) => {
-      if (key === 'location_suggestions_enabled') return '1';
-      if (key === 'location_clusters') return JSON.stringify(samples);
-      return fallback;
-    });
+    (Database.getSettingAsync as jest.Mock).mockImplementation(
+      async (key: string, fallback: string) => {
+        if (key === 'location_suggestions_enabled') return '1';
+        if (key === 'location_clusters') return JSON.stringify(samples);
+        return fallback;
+      }
+    );
 
     await autoDetectLocations();
 
@@ -195,11 +203,13 @@ describe('autoDetectLocations', () => {
       lon: 4.32,
       timestamp: BASE_TIME + i * FIVE_MIN,
     }));
-    (Database.getSettingAsync as jest.Mock).mockImplementation(async (key: string, fallback: string) => {
-      if (key === 'location_suggestions_enabled') return '1';
-      if (key === 'location_clusters') return JSON.stringify(samples);
-      return fallback;
-    });
+    (Database.getSettingAsync as jest.Mock).mockImplementation(
+      async (key: string, fallback: string) => {
+        if (key === 'location_suggestions_enabled') return '1';
+        if (key === 'location_clusters') return JSON.stringify(samples);
+        return fallback;
+      }
+    );
 
     await autoDetectLocations();
 
@@ -238,11 +248,13 @@ describe('autoDetectLocations', () => {
       lon: 4.32,
       timestamp: BASE_TIME + i * FIVE_MIN,
     }));
-    (Database.getSettingAsync as jest.Mock).mockImplementation(async (key: string, fallback: string) => {
-      if (key === 'location_suggestions_enabled') return '1';
-      if (key === 'location_clusters') return JSON.stringify(samples);
-      return fallback;
-    });
+    (Database.getSettingAsync as jest.Mock).mockImplementation(
+      async (key: string, fallback: string) => {
+        if (key === 'location_suggestions_enabled') return '1';
+        if (key === 'location_clusters') return JSON.stringify(samples);
+        return fallback;
+      }
+    );
 
     await autoDetectLocations();
 
@@ -271,11 +283,13 @@ describe('autoDetectLocations', () => {
       lon: 4.3,
       timestamp: BASE_TIME + i * FIVE_MIN,
     }));
-    (Database.getSettingAsync as jest.Mock).mockImplementation(async (key: string, fallback: string) => {
-      if (key === 'location_suggestions_enabled') return '1';
-      if (key === 'location_clusters') return JSON.stringify(samples);
-      return fallback;
-    });
+    (Database.getSettingAsync as jest.Mock).mockImplementation(
+      async (key: string, fallback: string) => {
+        if (key === 'location_suggestions_enabled') return '1';
+        if (key === 'location_clusters') return JSON.stringify(samples);
+        return fallback;
+      }
+    );
 
     await autoDetectLocations();
 
@@ -288,11 +302,13 @@ describe('autoDetectLocations', () => {
       lon: 4.3,
       timestamp: BASE_TIME + i * FIVE_MIN,
     }));
-    (Database.getSettingAsync as jest.Mock).mockImplementation(async (key: string, fallback: string) => {
-      if (key === 'location_suggestions_enabled') return '1';
-      if (key === 'location_clusters') return JSON.stringify(samples);
-      return fallback;
-    });
+    (Database.getSettingAsync as jest.Mock).mockImplementation(
+      async (key: string, fallback: string) => {
+        if (key === 'location_suggestions_enabled') return '1';
+        if (key === 'location_clusters') return JSON.stringify(samples);
+        return fallback;
+      }
+    );
 
     await autoDetectLocations();
 
@@ -311,11 +327,13 @@ describe('autoDetectLocations', () => {
       lon: 4.3,
       timestamp: BASE_TIME + i * FIVE_MIN,
     }));
-    (Database.getSettingAsync as jest.Mock).mockImplementation(async (key: string, fallback: string) => {
-      if (key === 'location_suggestions_enabled') return '1';
-      if (key === 'location_clusters') return JSON.stringify(samples);
-      return fallback;
-    });
+    (Database.getSettingAsync as jest.Mock).mockImplementation(
+      async (key: string, fallback: string) => {
+        if (key === 'location_suggestions_enabled') return '1';
+        if (key === 'location_clusters') return JSON.stringify(samples);
+        return fallback;
+      }
+    );
 
     await autoDetectLocations();
 

@@ -100,10 +100,12 @@ describe('processLocationUpdate', () => {
     // Default: no known locations → always "outside"
     (Database.getKnownLocationsAsync as jest.Mock).mockResolvedValue([]);
     // Default: no persisted GPS state, return '[]' for location_clusters
-    (Database.getSettingAsync as jest.Mock).mockImplementation(async (key: string, fallback: string) => {
-      if (key === 'location_clusters') return '[]';
-      return fallback;
-    });
+    (Database.getSettingAsync as jest.Mock).mockImplementation(
+      async (key: string, fallback: string) => {
+        if (key === 'location_clusters') return '[]';
+        return fallback;
+      }
+    );
     (Database.setSettingAsync as jest.Mock).mockImplementation(async () => undefined);
     (SessionMerger.submitSession as jest.Mock).mockImplementation(async () => undefined);
     (SessionMerger.buildSession as jest.Mock).mockImplementation(
@@ -149,10 +151,12 @@ describe('processLocationUpdate', () => {
 
     jest.clearAllMocks();
     (Database.getKnownLocationsAsync as jest.Mock).mockResolvedValue([]);
-    (Database.getSettingAsync as jest.Mock).mockImplementation(async (key: string, fallback: string) => {
-      if (key === 'location_clusters') return '[]';
-      return fallback;
-    });
+    (Database.getSettingAsync as jest.Mock).mockImplementation(
+      async (key: string, fallback: string) => {
+        if (key === 'location_clusters') return '[]';
+        return fallback;
+      }
+    );
     (SessionMerger.buildSession as jest.Mock).mockImplementation(
       (startTime: number, endTime: number, source: string, confidence: number, notes?: string) => ({
         startTime,
@@ -280,12 +284,14 @@ describe('processLocationUpdate', () => {
   it('restores persisted session start on first call after restart', async () => {
     const savedStart = NOW - MIN_OUTSIDE_DURATION_MS;
     // Simulate persisted state: user was already outside before restart
-    (Database.getSettingAsync as jest.Mock).mockImplementation(async (key: string, fallback: string) => {
-      if (key === 'gps_session_start') return String(savedStart);
-      if (key === 'gps_last_outside') return '1';
-      if (key === 'location_clusters') return '[]';
-      return fallback;
-    });
+    (Database.getSettingAsync as jest.Mock).mockImplementation(
+      async (key: string, fallback: string) => {
+        if (key === 'gps_session_start') return String(savedStart);
+        if (key === 'gps_last_outside') return '1';
+        if (key === 'location_clusters') return '[]';
+        return fallback;
+      }
+    );
 
     // Simulate task start: load persisted state from SQLite before processing
     await loadGPSState();
@@ -303,7 +309,9 @@ describe('TOUCHGRASS_LOCATION_TRACK background task', () => {
     expect(_locationTrackCallback).toBeDefined();
 
     jest.clearAllMocks();
-    (Database.getSettingAsync as jest.Mock).mockImplementation(async (_k: string, fb: string) => fb);
+    (Database.getSettingAsync as jest.Mock).mockImplementation(
+      async (_k: string, fb: string) => fb
+    );
 
     await _locationTrackCallback!({ data: { locations: [] }, error: null });
 
@@ -315,7 +323,9 @@ describe('TOUCHGRASS_LOCATION_TRACK background task', () => {
 
     jest.clearAllMocks();
     _resetGPSStateForTesting();
-    (Database.getSettingAsync as jest.Mock).mockImplementation(async (_k: string, fb: string) => fb);
+    (Database.getSettingAsync as jest.Mock).mockImplementation(
+      async (_k: string, fb: string) => fb
+    );
 
     await _locationTrackCallback!({ data: { locations: [] }, error: null });
 
@@ -329,10 +339,12 @@ describe('TOUCHGRASS_LOCATION_TRACK background task', () => {
 
     jest.clearAllMocks();
     _resetGPSStateForTesting();
-    (Database.getSettingAsync as jest.Mock).mockImplementation(async (key: string, fallback: string) => {
-      if (key === 'gps_user_enabled') return '0';
-      return fallback;
-    });
+    (Database.getSettingAsync as jest.Mock).mockImplementation(
+      async (key: string, fallback: string) => {
+        if (key === 'gps_user_enabled') return '0';
+        return fallback;
+      }
+    );
     (Database.getKnownLocationsAsync as jest.Mock).mockResolvedValue([]);
 
     await _locationTrackCallback!({
