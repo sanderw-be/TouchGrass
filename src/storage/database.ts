@@ -999,6 +999,17 @@ export function insertReminderFeedback(feedback: ReminderFeedback): void {
   );
 }
 
+export async function insertReminderFeedbackAsync(feedback: ReminderFeedback): Promise<void> {
+  const d = new Date(feedback.timestamp);
+  const minute = d.getMinutes();
+  const slotMinute = minute >= 30 ? 30 : 0;
+  await db.runAsync(
+    `INSERT INTO reminder_feedback (timestamp, action, scheduledHour, scheduledMinute, dayOfWeek)
+     VALUES (?, ?, ?, ?, ?)`,
+    [feedback.timestamp, feedback.action, d.getHours(), slotMinute, d.getDay()]
+  );
+}
+
 export function getReminderFeedback(): ReminderFeedback[] {
   return db.getAllSync<ReminderFeedback>(
     'SELECT * FROM reminder_feedback ORDER BY timestamp DESC LIMIT 200'

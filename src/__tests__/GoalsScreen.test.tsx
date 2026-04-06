@@ -11,8 +11,8 @@ jest.mock('../i18n', () => ({
 }));
 
 // Mock database
-const mockGetSettingAsync = jest.fn((key: string, def: string) => Promise.resolve(def));
-const mockSetSettingAsync = jest.fn(() => Promise.resolve());
+const mockGetSettingAsync = jest.fn<Promise<string>, [string, string]>((key: string, def: string) => Promise.resolve(def));
+const mockSetSettingAsync = jest.fn<Promise<void>, [string, string]>(() => Promise.resolve());
 jest.mock('../storage/database', () => ({
   getSettingAsync: (key: string, def: string) => mockGetSettingAsync(key, def),
   setSettingAsync: (key: string, value: string) => mockSetSettingAsync(key, value),
