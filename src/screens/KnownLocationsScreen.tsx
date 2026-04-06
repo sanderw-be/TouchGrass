@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useLayoutEffect, useMemo } from 'react';
+import React, { useState, useCallback, useLayoutEffect, useMemo, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Alert } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -33,8 +33,11 @@ export default function KnownLocationsScreen() {
   const [newLocationCoords, setNewLocationCoords] = useState<
     { latitude: number; longitude: number } | undefined
   >();
+  const isFetchingRef = useRef(false);
 
   const loadData = useCallback(async () => {
+    if (isFetchingRef.current) return;
+    isFetchingRef.current = true;
     try {
       setSuggestionsEnabled((await getSettingAsync('location_suggestions_enabled', '1')) === '1');
       const status = getDetectionStatus();
@@ -45,6 +48,7 @@ export default function KnownLocationsScreen() {
     } catch (error) {
       console.error('[KnownLocationsScreen.loadData] Error:', error);
     } finally {
+      isFetchingRef.current = false;
       setIsLoading(false);
     }
   }, []);

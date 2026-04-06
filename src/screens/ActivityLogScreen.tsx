@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -60,8 +60,11 @@ export default function ActivityLogScreen() {
 
   // For reminders: exactly one day expanded at a time (null = all closed)
   const [openReminderDay, setOpenReminderDay] = useState<string | null>(null);
+  const isFetchingRef = useRef(false);
 
   const loadLogs = useCallback(async () => {
+    if (isFetchingRef.current) return;
+    isFetchingRef.current = true;
     try {
       const [hc, gps, reminder] = await Promise.all([
         getBackgroundLogsAsync('health_connect'),
@@ -74,6 +77,7 @@ export default function ActivityLogScreen() {
     } catch (error) {
       console.error('[ActivityLogScreen.loadLogs] Error:', error);
     } finally {
+      isFetchingRef.current = false;
       setIsLoading(false);
     }
   }, []);

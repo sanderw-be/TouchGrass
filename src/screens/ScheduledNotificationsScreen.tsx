@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -42,14 +42,18 @@ export default function ScheduledNotificationsScreen() {
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
   const [label, setLabel] = useState('');
   const [showTimePicker, setShowTimePicker] = useState(false);
+  const isFetchingRef = useRef(false);
 
   const loadSchedules = async () => {
+    if (isFetchingRef.current) return;
+    isFetchingRef.current = true;
     try {
       const loaded = await getScheduledNotificationsAsync();
       setSchedules(loaded);
     } catch (error) {
       console.error('[ScheduledNotificationsScreen.loadSchedules] Error:', error);
     } finally {
+      isFetchingRef.current = false;
       setIsLoading(false);
     }
   };

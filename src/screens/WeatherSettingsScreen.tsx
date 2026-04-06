@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -35,6 +35,7 @@ export default function WeatherSettingsScreen() {
   const [currentWeather, setCurrentWeather] = useState<string | null>(null);
   const isMountedRef = React.useRef(true);
   const successTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isFetchingRef = useRef(false);
 
   React.useEffect(() => {
     return () => {
@@ -44,6 +45,8 @@ export default function WeatherSettingsScreen() {
   }, []);
 
   const loadSettings = useCallback(async () => {
+    if (isFetchingRef.current) return;
+    isFetchingRef.current = true;
     try {
       setTempPreference(
         (await getSettingAsync('temp_preference', 'moderate')) as 'cold' | 'moderate' | 'hot'
@@ -87,6 +90,8 @@ export default function WeatherSettingsScreen() {
       }
     } catch (error) {
       console.error('[WeatherSettingsScreen.loadSettings] Error:', error);
+    } finally {
+      isFetchingRef.current = false;
     }
   }, []);
 

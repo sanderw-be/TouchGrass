@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -67,14 +67,19 @@ export default function SettingsScreen() {
   const [permissionSheet, setPermissionSheet] = useState<PermissionSheetConfig | null>(null);
 
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
+  const isFetchingRef = useRef(false);
 
   const loadStatus = useCallback(async () => {
+    if (isFetchingRef.current) return;
+    isFetchingRef.current = true;
     try {
       setDetectionStatus(getDetectionStatus());
       setKnownLocations(await getKnownLocationsAsync());
       setSuggestedCount((await getSuggestedLocationsAsync()).length);
     } catch (error) {
       console.error('[SettingsScreen.loadStatus] Error:', error);
+    } finally {
+      isFetchingRef.current = false;
     }
   }, []);
 
