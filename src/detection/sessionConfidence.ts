@@ -1,4 +1,4 @@
-import { OutsideSession, getSetting, setSetting } from '../storage/database';
+import { OutsideSession, getSettingAsync, setSettingAsync } from '../storage/database';
 
 /**
  * Combined confidence score below this threshold causes a session to be stored
@@ -19,9 +19,9 @@ export const DEFAULT_TIME_SLOT_PROBABILITY = 0.5;
  */
 const LEARNING_RATE = 0.1;
 
-function loadTimeSlotProbabilities(): Record<string, number> {
+async function loadTimeSlotProbabilities(): Promise<Record<string, number>> {
   try {
-    return JSON.parse(getSetting(TIME_SLOT_PROBS_KEY, '{}'));
+    return JSON.parse(await getSettingAsync(TIME_SLOT_PROBS_KEY, '{}'));
   } catch {
     return {};
   }
@@ -37,8 +37,8 @@ function slotKey(hour: number, dayOfWeek: number): string {
  * Starts at DEFAULT_TIME_SLOT_PROBABILITY (0.5) and converges toward 1 or 0
  * as the user confirms or denies sessions at that time slot.
  */
-export function getTimeSlotProbability(hour: number, dayOfWeek: number): number {
-  const probs = loadTimeSlotProbabilities();
+export async function getTimeSlotProbability(hour: number, dayOfWeek: number): Promise<number> {
+  const probs = await loadTimeSlotProbabilities();
   return probs[slotKey(hour, dayOfWeek)] ?? DEFAULT_TIME_SLOT_PROBABILITY;
 }
 
@@ -51,18 +51,18 @@ export function getTimeSlotProbability(hour: number, dayOfWeek: number): number 
  * where `target` is 1.0 on confirm and 0.0 on deny.
  * Values are clamped to [0.1, 0.9] so the prior never becomes absolute.
  */
-export function updateTimeSlotProbability(
+export async function updateTimeSlotProbability(
   hour: number,
   dayOfWeek: number,
   confirmed: boolean
-): void {
-  const probs = loadTimeSlotProbabilities();
+): Promise<void> {
+  const probs = await loadTimeSlotProbabilities();
   const key = slotKey(hour, dayOfWeek);
   const current = probs[key] ?? DEFAULT_TIME_SLOT_PROBABILITY;
   const target = confirmed ? 1.0 : 0.0;
   const updated = current + LEARNING_RATE * (target - current);
   probs[key] = Math.max(0.1, Math.min(0.9, updated));
-  setSetting(TIME_SLOT_PROBS_KEY, JSON.stringify(probs));
+  await setSettingAsync(TIME_SLOT_PROBS_KEY, JSON.stringify(probs));
 }
 
 // ── Duration scoring ──────────────────────────────────────
@@ -102,14 +102,14 @@ export function scoreDuration(durationMs: number): number {
  *
  * The result is clamped to [0, 1].
  */
-export function computeSessionScore(session: OutsideSession): number {
+export async function computeSessionScore(session: OutsideSession): Promise<number> {
   const durationMs = session.endTime - session.startTime;
   const d = new Date(session.startTime);
   const hour = d.getHours();
   const dayOfWeek = d.getDay(); // 0 = Sunday
 
   const durationFactor = scoreDuration(durationMs);
-  const timeSlotProb = getTimeSlotProbability(hour, dayOfWeek);
+  const timeSlotProb = await getTimeSlotProbability(hour, dayOfWeek);
 
   const raw = session.confidence * durationFactor * (0.5 + timeSlotProb);
   return Math.min(1, Math.max(0, raw));

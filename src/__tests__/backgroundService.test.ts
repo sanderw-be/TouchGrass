@@ -18,9 +18,9 @@ jest.mock('../weather/weatherService', () => ({
 }));
 
 jest.mock('../storage/database', () => ({
-  getSetting: jest.fn(),
+  getSettingAsync: jest.fn(),
   initDatabase: jest.fn(),
-  insertBackgroundLog: jest.fn(),
+  insertBackgroundLogAsync: jest.fn(),
 }));
 
 jest.mock('../background/alarmTiming', () => ({
@@ -120,7 +120,7 @@ describe('unifiedBackgroundTask', () => {
     });
 
     it('calls initDatabase on every tick to ensure DB is initialised in the background runtime', async () => {
-      (Database.getSetting as jest.Mock).mockReturnValue('0');
+      (Database.getSettingAsync as jest.Mock).mockResolvedValue('0');
 
       await taskCallback();
 
@@ -128,7 +128,7 @@ describe('unifiedBackgroundTask', () => {
     });
 
     it('runs all four reminder operations when reminders are enabled', async () => {
-      (Database.getSetting as jest.Mock).mockImplementation((key: string) => {
+      (Database.getSettingAsync as jest.Mock).mockImplementation(async (key: string) => {
         if (key === 'smart_reminders_count') return '2';
         if (key === 'weather_enabled') return '0';
         return '';
@@ -149,7 +149,7 @@ describe('unifiedBackgroundTask', () => {
     });
 
     it('skips reminder operations when reminders are disabled (count = 0)', async () => {
-      (Database.getSetting as jest.Mock).mockImplementation((key: string) => {
+      (Database.getSettingAsync as jest.Mock).mockImplementation(async (key: string) => {
         if (key === 'smart_reminders_count') return '0';
         if (key === 'weather_enabled') return '0';
         return '';
@@ -165,7 +165,7 @@ describe('unifiedBackgroundTask', () => {
     });
 
     it('fetches weather when weather is enabled', async () => {
-      (Database.getSetting as jest.Mock).mockImplementation((key: string) => {
+      (Database.getSettingAsync as jest.Mock).mockImplementation(async (key: string) => {
         if (key === 'smart_reminders_count') return '0';
         if (key === 'weather_enabled') return '1';
         return '';
@@ -181,7 +181,7 @@ describe('unifiedBackgroundTask', () => {
     });
 
     it('skips weather fetch when weather is disabled', async () => {
-      (Database.getSetting as jest.Mock).mockImplementation((key: string) => {
+      (Database.getSettingAsync as jest.Mock).mockImplementation(async (key: string) => {
         if (key === 'smart_reminders_count') return '0';
         if (key === 'weather_enabled') return '0';
         return '';
@@ -194,7 +194,7 @@ describe('unifiedBackgroundTask', () => {
 
     it('fetches weather before reminder operations (weather warms cache for reminder scoring)', async () => {
       const callOrder: string[] = [];
-      (Database.getSetting as jest.Mock).mockImplementation((key: string) => {
+      (Database.getSettingAsync as jest.Mock).mockImplementation(async (key: string) => {
         if (key === 'smart_reminders_count') return '2';
         if (key === 'weather_enabled') return '1';
         return '';
@@ -216,7 +216,7 @@ describe('unifiedBackgroundTask', () => {
     });
 
     it('continues to run reminder operations even if weather fetch throws', async () => {
-      (Database.getSetting as jest.Mock).mockImplementation((key: string) => {
+      (Database.getSettingAsync as jest.Mock).mockImplementation(async (key: string) => {
         if (key === 'smart_reminders_count') return '2';
         if (key === 'weather_enabled') return '1';
         return '';
@@ -235,7 +235,7 @@ describe('unifiedBackgroundTask', () => {
     });
 
     it('returns Success even if weather fetch throws', async () => {
-      (Database.getSetting as jest.Mock).mockImplementation((key: string) => {
+      (Database.getSettingAsync as jest.Mock).mockImplementation(async (key: string) => {
         if (key === 'smart_reminders_count') return '0';
         if (key === 'weather_enabled') return '1';
         return '';
@@ -250,7 +250,7 @@ describe('unifiedBackgroundTask', () => {
     });
 
     it('returns Failed on a fatal unhandled error', async () => {
-      (Database.getSetting as jest.Mock).mockImplementation(() => {
+      (Database.getSettingAsync as jest.Mock).mockImplementation(async () => {
         throw new Error('DB exploded');
       });
 
@@ -260,7 +260,7 @@ describe('unifiedBackgroundTask', () => {
     });
 
     it('re-arms the Pulsar alarm chain on every successful tick', async () => {
-      (Database.getSetting as jest.Mock).mockReturnValue('0');
+      (Database.getSettingAsync as jest.Mock).mockResolvedValue('0');
 
       await taskCallback();
 
@@ -268,7 +268,7 @@ describe('unifiedBackgroundTask', () => {
     });
 
     it('does not re-arm the alarm chain when a fatal error occurs', async () => {
-      (Database.getSetting as jest.Mock).mockImplementation(() => {
+      (Database.getSettingAsync as jest.Mock).mockImplementation(async () => {
         throw new Error('DB exploded');
       });
 

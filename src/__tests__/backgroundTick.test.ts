@@ -16,9 +16,9 @@ jest.mock('../weather/weatherService', () => ({
 }));
 
 jest.mock('../storage/database', () => ({
-  getSetting: jest.fn(),
+  getSettingAsync: jest.fn(),
   initDatabase: jest.fn(),
-  insertBackgroundLog: jest.fn(),
+  insertBackgroundLogAsync: jest.fn(),
 }));
 
 import * as NotificationManager from '../notifications/notificationManager';
@@ -32,7 +32,7 @@ describe('performBackgroundTick', () => {
   });
 
   it('calls initDatabase on every tick', async () => {
-    (Database.getSetting as jest.Mock).mockReturnValue('0');
+    (Database.getSettingAsync as jest.Mock).mockResolvedValue('0');
 
     await performBackgroundTick();
 
@@ -40,7 +40,7 @@ describe('performBackgroundTick', () => {
   });
 
   it('runs all four reminder operations when reminders are enabled', async () => {
-    (Database.getSetting as jest.Mock).mockImplementation((key: string) => {
+    (Database.getSettingAsync as jest.Mock).mockImplementation(async (key: string) => {
       if (key === 'smart_reminders_count') return '3';
       if (key === 'weather_enabled') return '0';
       return '';
@@ -60,7 +60,7 @@ describe('performBackgroundTick', () => {
   });
 
   it('skips reminder operations when reminders are disabled (count = 0)', async () => {
-    (Database.getSetting as jest.Mock).mockImplementation((key: string) => {
+    (Database.getSettingAsync as jest.Mock).mockImplementation(async (key: string) => {
       if (key === 'smart_reminders_count') return '0';
       if (key === 'weather_enabled') return '0';
       return '';
@@ -76,7 +76,7 @@ describe('performBackgroundTick', () => {
   });
 
   it('fetches weather when weather is enabled', async () => {
-    (Database.getSetting as jest.Mock).mockImplementation((key: string) => {
+    (Database.getSettingAsync as jest.Mock).mockImplementation(async (key: string) => {
       if (key === 'smart_reminders_count') return '0';
       if (key === 'weather_enabled') return '1';
       return '';
@@ -91,7 +91,7 @@ describe('performBackgroundTick', () => {
   });
 
   it('skips weather fetch when weather is disabled', async () => {
-    (Database.getSetting as jest.Mock).mockImplementation((key: string) => {
+    (Database.getSettingAsync as jest.Mock).mockImplementation(async (key: string) => {
       if (key === 'smart_reminders_count') return '0';
       if (key === 'weather_enabled') return '0';
       return '';
@@ -104,7 +104,7 @@ describe('performBackgroundTick', () => {
 
   it('fetches weather before reminder operations (cache warm-up)', async () => {
     const callOrder: string[] = [];
-    (Database.getSetting as jest.Mock).mockImplementation((key: string) => {
+    (Database.getSettingAsync as jest.Mock).mockImplementation(async (key: string) => {
       if (key === 'smart_reminders_count') return '2';
       if (key === 'weather_enabled') return '1';
       return '';
@@ -125,7 +125,7 @@ describe('performBackgroundTick', () => {
   });
 
   it('logs start/end and skip reasons when weather and reminders are disabled', async () => {
-    (Database.getSetting as jest.Mock).mockImplementation((key: string) => {
+    (Database.getSettingAsync as jest.Mock).mockImplementation(async (key: string) => {
       if (key === 'smart_reminders_count') return '0';
       if (key === 'weather_enabled') return '0';
       return '';
@@ -133,7 +133,7 @@ describe('performBackgroundTick', () => {
 
     await performBackgroundTick();
 
-    const messages = (Database.insertBackgroundLog as jest.Mock).mock.calls.map(
+    const messages = (Database.insertBackgroundLogAsync as jest.Mock).mock.calls.map(
       ([, msg]: [string, string]) => msg
     );
     expect(messages).toEqual([
@@ -145,7 +145,7 @@ describe('performBackgroundTick', () => {
   });
 
   it('continues reminder operations even if weather fetch throws', async () => {
-    (Database.getSetting as jest.Mock).mockImplementation((key: string) => {
+    (Database.getSettingAsync as jest.Mock).mockImplementation(async (key: string) => {
       if (key === 'smart_reminders_count') return '2';
       if (key === 'weather_enabled') return '1';
       return '';
@@ -163,7 +163,7 @@ describe('performBackgroundTick', () => {
   });
 
   it('logs weather failure without stopping the tick', async () => {
-    (Database.getSetting as jest.Mock).mockImplementation((key: string) => {
+    (Database.getSettingAsync as jest.Mock).mockImplementation(async (key: string) => {
       if (key === 'smart_reminders_count') return '0';
       if (key === 'weather_enabled') return '1';
       return '';
@@ -174,7 +174,7 @@ describe('performBackgroundTick', () => {
 
     await expect(performBackgroundTick()).resolves.not.toThrow();
 
-    const messages = (Database.insertBackgroundLog as jest.Mock).mock.calls.map(
+    const messages = (Database.insertBackgroundLogAsync as jest.Mock).mock.calls.map(
       ([, msg]: [string, string]) => msg
     );
     expect(messages).toContain('Weather refresh failed');
@@ -182,7 +182,7 @@ describe('performBackgroundTick', () => {
   });
 
   it('continues when reminder operations throw', async () => {
-    (Database.getSetting as jest.Mock).mockImplementation((key: string) => {
+    (Database.getSettingAsync as jest.Mock).mockImplementation(async (key: string) => {
       if (key === 'smart_reminders_count') return '2';
       if (key === 'weather_enabled') return '0';
       return '';
@@ -195,7 +195,7 @@ describe('performBackgroundTick', () => {
   });
 
   it('throws when a fatal error occurs (e.g. DB unavailable)', async () => {
-    (Database.getSetting as jest.Mock).mockImplementation(() => {
+    (Database.getSettingAsync as jest.Mock).mockImplementation(async () => {
       throw new Error('DB exploded');
     });
 
@@ -204,7 +204,7 @@ describe('performBackgroundTick', () => {
 
   describe('concurrency guard', () => {
     it('skips the second concurrent tick and logs a warning', async () => {
-      (Database.getSetting as jest.Mock).mockImplementation((key: string) => {
+      (Database.getSettingAsync as jest.Mock).mockImplementation(async (key: string) => {
         if (key === 'smart_reminders_count') return '0';
         // Enable weather so the first tick hits `await fetchWeatherForecast` and
         // yields control before completing — this is the yield point that makes
@@ -225,14 +225,14 @@ describe('performBackgroundTick', () => {
       // initDatabase should only have been called once (from the first tick).
       expect(Database.initDatabase).toHaveBeenCalledTimes(1);
       // The skip log must appear exactly once.
-      const skipCalls = (Database.insertBackgroundLog as jest.Mock).mock.calls.filter(
+      const skipCalls = (Database.insertBackgroundLogAsync as jest.Mock).mock.calls.filter(
         ([, msg]: [string, string]) => msg === 'Background tick skipped — already running'
       );
       expect(skipCalls).toHaveLength(1);
     });
 
     it('allows a new tick after the previous one completes', async () => {
-      (Database.getSetting as jest.Mock).mockImplementation((key: string) => {
+      (Database.getSettingAsync as jest.Mock).mockImplementation(async (key: string) => {
         if (key === 'smart_reminders_count') return '0';
         if (key === 'weather_enabled') return '0';
         return '';
@@ -247,7 +247,7 @@ describe('performBackgroundTick', () => {
 
     it('releases the guard even when the tick throws', async () => {
       let callCount = 0;
-      (Database.getSetting as jest.Mock).mockImplementation(() => {
+      (Database.getSettingAsync as jest.Mock).mockImplementation(async () => {
         callCount++;
         if (callCount === 1) throw new Error('DB exploded');
         return '0';

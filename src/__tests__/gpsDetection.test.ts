@@ -98,14 +98,16 @@ describe('processLocationUpdate', () => {
     _resetGPSStateForTesting();
 
     // Default: no known locations → always "outside"
-    (Database.getKnownLocations as jest.Mock).mockReturnValue([]);
+    (Database.getKnownLocationsAsync as jest.Mock).mockResolvedValue([]);
     // Default: no persisted GPS state, return '[]' for location_clusters
-    (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-      if (key === 'location_clusters') return '[]';
-      return fallback;
-    });
-    (Database.setSetting as jest.Mock).mockImplementation(() => undefined);
-    (SessionMerger.submitSession as jest.Mock).mockImplementation(() => undefined);
+    (Database.getSettingAsync as jest.Mock).mockImplementation(
+      async (key: string, fallback: string) => {
+        if (key === 'location_clusters') return '[]';
+        return fallback;
+      }
+    );
+    (Database.setSettingAsync as jest.Mock).mockImplementation(async () => undefined);
+    (SessionMerger.submitSession as jest.Mock).mockImplementation(async () => undefined);
     (SessionMerger.buildSession as jest.Mock).mockImplementation(
       (startTime: number, endTime: number, source: string, confidence: number, notes?: string) => ({
         startTime,
@@ -119,22 +121,22 @@ describe('processLocationUpdate', () => {
     );
   });
 
-  it('does not submit a session on the very first location update', () => {
-    processLocationUpdate(51.5, 4.3, NOW);
+  it('does not submit a session on the very first location update', async () => {
+    await processLocationUpdate(51.5, 4.3, NOW);
     expect(SessionMerger.submitSession).not.toHaveBeenCalled();
   });
 
-  it('does not submit a session when duration is below minimum threshold', () => {
-    processLocationUpdate(51.5, 4.3, NOW);
+  it('does not submit a session when duration is below minimum threshold', async () => {
+    await processLocationUpdate(51.5, 4.3, NOW);
     // Only 2 minutes later — below MIN_OUTSIDE_DURATION_MS
-    processLocationUpdate(51.5001, 4.3001, NOW + 2 * 60 * 1000);
+    await processLocationUpdate(51.5001, 4.3001, NOW + 2 * 60 * 1000);
     expect(SessionMerger.submitSession).not.toHaveBeenCalled();
   });
 
-  it('flushes a periodic session once MIN_OUTSIDE_DURATION_MS has elapsed (no indoor locations)', () => {
-    processLocationUpdate(51.5, 4.3, NOW);
+  it('flushes a periodic session once MIN_OUTSIDE_DURATION_MS has elapsed (no indoor locations)', async () => {
+    await processLocationUpdate(51.5, 4.3, NOW);
     // MIN_OUTSIDE_DURATION_MS later → should flush
-    processLocationUpdate(51.5001, 4.3001, NOW + MIN_OUTSIDE_DURATION_MS);
+    await processLocationUpdate(51.5001, 4.3001, NOW + MIN_OUTSIDE_DURATION_MS);
     expect(SessionMerger.submitSession).toHaveBeenCalledTimes(1);
     const call = (SessionMerger.buildSession as jest.Mock).mock.calls[0];
     expect(call[0]).toBe(NOW); // startTime
@@ -142,17 +144,19 @@ describe('processLocationUpdate', () => {
     expect(call[2]).toBe('gps');
   });
 
-  it('resets the session start after a periodic flush', () => {
-    processLocationUpdate(51.5, 4.3, NOW);
+  it('resets the session start after a periodic flush', async () => {
+    await processLocationUpdate(51.5, 4.3, NOW);
     const T1 = NOW + MIN_OUTSIDE_DURATION_MS;
-    processLocationUpdate(51.5001, 4.3001, T1); // first flush
+    await processLocationUpdate(51.5001, 4.3001, T1); // first flush
 
     jest.clearAllMocks();
-    (Database.getKnownLocations as jest.Mock).mockReturnValue([]);
-    (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-      if (key === 'location_clusters') return '[]';
-      return fallback;
-    });
+    (Database.getKnownLocationsAsync as jest.Mock).mockResolvedValue([]);
+    (Database.getSettingAsync as jest.Mock).mockImplementation(
+      async (key: string, fallback: string) => {
+        if (key === 'location_clusters') return '[]';
+        return fallback;
+      }
+    );
     (SessionMerger.buildSession as jest.Mock).mockImplementation(
       (startTime: number, endTime: number, source: string, confidence: number, notes?: string) => ({
         startTime,
@@ -167,13 +171,13 @@ describe('processLocationUpdate', () => {
 
     // After reset, a further MIN_OUTSIDE_DURATION_MS elapsed → second flush
     const T2 = T1 + MIN_OUTSIDE_DURATION_MS;
-    processLocationUpdate(51.5002, 4.3002, T2);
+    await processLocationUpdate(51.5002, 4.3002, T2);
     expect(SessionMerger.submitSession).toHaveBeenCalledTimes(1);
     const call = (SessionMerger.buildSession as jest.Mock).mock.calls[0];
     expect(call[0]).toBe(T1); // new startTime is from after the previous flush
   });
 
-  it('submits a session on indoor transition when known indoor location exists', () => {
+  it('submits a session on indoor transition when known indoor location exists', async () => {
     const homeLocation = {
       id: 1,
       label: 'Home',
@@ -185,12 +189,12 @@ describe('processLocationUpdate', () => {
     };
 
     // First update: user is outside (far from home — ~1 km away)
-    (Database.getKnownLocations as jest.Mock).mockReturnValue([homeLocation]);
-    processLocationUpdate(51.51, 4.31, NOW); // ~1km from home → outside, no start label
+    (Database.getKnownLocationsAsync as jest.Mock).mockResolvedValue([homeLocation]);
+    await processLocationUpdate(51.51, 4.31, NOW); // ~1km from home → outside, no start label
 
     // After MIN_OUTSIDE_DURATION_MS, user is back at home (indoor)
-    (Database.getKnownLocations as jest.Mock).mockReturnValue([homeLocation]);
-    processLocationUpdate(51.5, 4.3, NOW + MIN_OUTSIDE_DURATION_MS);
+    (Database.getKnownLocationsAsync as jest.Mock).mockResolvedValue([homeLocation]);
+    await processLocationUpdate(51.5, 4.3, NOW + MIN_OUTSIDE_DURATION_MS);
 
     expect(SessionMerger.submitSession).toHaveBeenCalledTimes(1);
     const call = (SessionMerger.buildSession as jest.Mock).mock.calls[0];
@@ -201,7 +205,7 @@ describe('processLocationUpdate', () => {
     expect(notes).toMatch(/Home/);
   });
 
-  it('GPS notes include "left … and returned" when returning to same location', () => {
+  it('GPS notes include "left … and returned" when returning to same location', async () => {
     const homeLocation = {
       id: 1,
       label: 'Home',
@@ -213,12 +217,12 @@ describe('processLocationUpdate', () => {
     };
 
     // Start near Home (just left it)
-    (Database.getKnownLocations as jest.Mock).mockReturnValue([homeLocation]);
-    processLocationUpdate(51.501, 4.301, NOW); // just left Home — nearby within 2×radius
+    (Database.getKnownLocationsAsync as jest.Mock).mockResolvedValue([homeLocation]);
+    await processLocationUpdate(51.501, 4.301, NOW); // just left Home — nearby within 2×radius
 
     // Return to Home after minimum duration
-    (Database.getKnownLocations as jest.Mock).mockReturnValue([homeLocation]);
-    processLocationUpdate(51.5, 4.3, NOW + MIN_OUTSIDE_DURATION_MS);
+    (Database.getKnownLocationsAsync as jest.Mock).mockResolvedValue([homeLocation]);
+    await processLocationUpdate(51.5, 4.3, NOW + MIN_OUTSIDE_DURATION_MS);
 
     expect(SessionMerger.buildSession).toHaveBeenCalledTimes(1);
     const call = (SessionMerger.buildSession as jest.Mock).mock.calls[0];
@@ -227,10 +231,10 @@ describe('processLocationUpdate', () => {
     expect(notes).toMatch(/\d+\.?\d*\s*(?:km|mi)/);
   });
 
-  it('GPS periodic notes include distance and speed info', () => {
+  it('GPS periodic notes include distance and speed info', async () => {
     // Speed provided: 1.39 m/s ≈ 5 km/h
-    processLocationUpdate(51.5, 4.3, NOW, 1.39);
-    processLocationUpdate(51.5001, 4.3001, NOW + MIN_OUTSIDE_DURATION_MS, 1.39);
+    await processLocationUpdate(51.5, 4.3, NOW, 1.39);
+    await processLocationUpdate(51.5001, 4.3001, NOW + MIN_OUTSIDE_DURATION_MS, 1.39);
 
     expect(SessionMerger.buildSession).toHaveBeenCalledTimes(1);
     const call = (SessionMerger.buildSession as jest.Mock).mock.calls[0];
@@ -239,10 +243,10 @@ describe('processLocationUpdate', () => {
     expect(notes).toMatch(/(?:km|mi) at.*(?:km\/h|mph)/i);
   });
 
-  it('GPS notes omit location when no known locations exist', () => {
+  it('GPS notes omit location when no known locations exist', async () => {
     // No known locations → always outside, no departure/arrival label
-    processLocationUpdate(51.5, 4.3, NOW);
-    processLocationUpdate(51.5001, 4.3001, NOW + MIN_OUTSIDE_DURATION_MS);
+    await processLocationUpdate(51.5, 4.3, NOW);
+    await processLocationUpdate(51.5001, 4.3001, NOW + MIN_OUTSIDE_DURATION_MS);
 
     const call = (SessionMerger.buildSession as jest.Mock).mock.calls[0];
     const notes: string = call[4];
@@ -251,7 +255,7 @@ describe('processLocationUpdate', () => {
     expect(notes).not.toMatch(/Home|Work/);
   });
 
-  it('does not submit a session when coming inside after less than minimum duration', () => {
+  it('does not submit a session when coming inside after less than minimum duration', async () => {
     const homeLocation = {
       id: 1,
       label: 'Home',
@@ -262,36 +266,38 @@ describe('processLocationUpdate', () => {
       status: 'active' as const,
     };
 
-    (Database.getKnownLocations as jest.Mock).mockReturnValue([homeLocation]);
-    processLocationUpdate(51.51, 4.31, NOW); // outside
+    (Database.getKnownLocationsAsync as jest.Mock).mockResolvedValue([homeLocation]);
+    await processLocationUpdate(51.51, 4.31, NOW); // outside
 
     // Only 2 minutes later — below minimum
-    (Database.getKnownLocations as jest.Mock).mockReturnValue([homeLocation]);
-    processLocationUpdate(51.5, 4.3, NOW + 2 * 60 * 1000); // back inside
+    (Database.getKnownLocationsAsync as jest.Mock).mockResolvedValue([homeLocation]);
+    await processLocationUpdate(51.5, 4.3, NOW + 2 * 60 * 1000); // back inside
 
     expect(SessionMerger.submitSession).not.toHaveBeenCalled();
   });
 
-  it('persists GPS state by calling setSetting after each update', () => {
-    processLocationUpdate(51.5, 4.3, NOW);
-    expect(Database.setSetting).toHaveBeenCalled();
+  it('persists GPS state by calling setSettingAsync after each update', async () => {
+    await processLocationUpdate(51.5, 4.3, NOW);
+    expect(Database.setSettingAsync).toHaveBeenCalled();
   });
 
-  it('restores persisted session start on first call after restart', () => {
+  it('restores persisted session start on first call after restart', async () => {
     const savedStart = NOW - MIN_OUTSIDE_DURATION_MS;
     // Simulate persisted state: user was already outside before restart
-    (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-      if (key === 'gps_session_start') return String(savedStart);
-      if (key === 'gps_last_outside') return '1';
-      if (key === 'location_clusters') return '[]';
-      return fallback;
-    });
+    (Database.getSettingAsync as jest.Mock).mockImplementation(
+      async (key: string, fallback: string) => {
+        if (key === 'gps_session_start') return String(savedStart);
+        if (key === 'gps_last_outside') return '1';
+        if (key === 'location_clusters') return '[]';
+        return fallback;
+      }
+    );
 
     // Simulate task start: load persisted state from SQLite before processing
-    loadGPSState();
+    await loadGPSState();
 
     // First update after restart — duration already >= MIN → should flush immediately
-    processLocationUpdate(51.5001, 4.3001, NOW);
+    await processLocationUpdate(51.5001, 4.3001, NOW);
     expect(SessionMerger.submitSession).toHaveBeenCalledTimes(1);
     const call = (SessionMerger.buildSession as jest.Mock).mock.calls[0];
     expect(call[0]).toBe(savedStart); // restored start time used
@@ -303,7 +309,9 @@ describe('TOUCHGRASS_LOCATION_TRACK background task', () => {
     expect(_locationTrackCallback).toBeDefined();
 
     jest.clearAllMocks();
-    (Database.getSetting as jest.Mock).mockImplementation((_k: string, fb: string) => fb);
+    (Database.getSettingAsync as jest.Mock).mockImplementation(
+      async (_k: string, fb: string) => fb
+    );
 
     await _locationTrackCallback!({ data: { locations: [] }, error: null });
 
@@ -315,13 +323,15 @@ describe('TOUCHGRASS_LOCATION_TRACK background task', () => {
 
     jest.clearAllMocks();
     _resetGPSStateForTesting();
-    (Database.getSetting as jest.Mock).mockImplementation((_k: string, fb: string) => fb);
+    (Database.getSettingAsync as jest.Mock).mockImplementation(
+      async (_k: string, fb: string) => fb
+    );
 
     await _locationTrackCallback!({ data: { locations: [] }, error: null });
 
     // loadGPSState reads GPS_SESSION_START_KEY and GPS_LAST_OUTSIDE_KEY from SQLite
-    expect(Database.getSetting).toHaveBeenCalledWith('gps_session_start', expect.any(String));
-    expect(Database.getSetting).toHaveBeenCalledWith('gps_last_outside', expect.any(String));
+    expect(Database.getSettingAsync).toHaveBeenCalledWith('gps_session_start', expect.any(String));
+    expect(Database.getSettingAsync).toHaveBeenCalledWith('gps_last_outside', expect.any(String));
   });
 
   it('skips processing when GPS is disabled by the user', async () => {
@@ -329,11 +339,13 @@ describe('TOUCHGRASS_LOCATION_TRACK background task', () => {
 
     jest.clearAllMocks();
     _resetGPSStateForTesting();
-    (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-      if (key === 'gps_user_enabled') return '0';
-      return fallback;
-    });
-    (Database.getKnownLocations as jest.Mock).mockReturnValue([]);
+    (Database.getSettingAsync as jest.Mock).mockImplementation(
+      async (key: string, fallback: string) => {
+        if (key === 'gps_user_enabled') return '0';
+        return fallback;
+      }
+    );
+    (Database.getKnownLocationsAsync as jest.Mock).mockResolvedValue([]);
 
     await _locationTrackCallback!({
       data: {
@@ -344,9 +356,9 @@ describe('TOUCHGRASS_LOCATION_TRACK background task', () => {
       error: null,
     });
 
-    // processLocationUpdate should not have run — no setSetting calls for GPS state
+    // processLocationUpdate should not have run — no setSettingAsync calls for GPS state
     expect(SessionMerger.submitSession).not.toHaveBeenCalled();
-    expect(Database.setSetting).not.toHaveBeenCalled();
+    expect(Database.setSettingAsync).not.toHaveBeenCalled();
   });
 });
 
@@ -664,7 +676,7 @@ describe('shouldTriggerBurst', () => {
     expect(shouldTriggerBurst(lat, 4.3, [smallHomeLocation], NOW)).toBe(true);
   });
 
-  it('returns false when cooldown has not passed', () => {
+  it('returns false when cooldown has not passed', async () => {
     // Simulate a recent burst: lastBurstAtTimestamp was set (via loadGPSState mock)
     // We can't directly set lastBurstAtTimestamp, but we can verify it via persistence.
     // Instead, call once to consume the burst, then check cooldown logic:
@@ -674,30 +686,30 @@ describe('shouldTriggerBurst', () => {
     expect(shouldTriggerBurst(lat, 4.3, [smallHomeLocation], NOW)).toBe(true);
 
     // Simulate the burst state being set (as the background task would do)
-    // by reloading with a mocked getSetting that returns the recent burst time
-    (Database.getSetting as jest.Mock).mockImplementation((key: string, fb: string) => {
+    // by reloading with a mocked getSettingAsync that returns the recent burst time
+    (Database.getSettingAsync as jest.Mock).mockImplementation(async (key: string, fb: string) => {
       if (key === 'gps_last_burst') return String(NOW);
       if (key === 'gps_burst_until') return String(NOW + BURST_DURATION_MS);
       if (key === 'gps_tracking_profile') return 'low'; // profile returned to low
       if (key === 'location_clusters') return '[]';
       return fb;
     });
-    loadGPSState();
+    await loadGPSState();
 
     // Now within cooldown window → should return false
     expect(shouldTriggerBurst(lat, 4.3, [smallHomeLocation], NOW + 1000)).toBe(false);
   });
 
-  it('returns true again after cooldown has passed', () => {
+  it('returns true again after cooldown has passed', async () => {
     const lat = 51.5005;
-    (Database.getSetting as jest.Mock).mockImplementation((key: string, fb: string) => {
+    (Database.getSettingAsync as jest.Mock).mockImplementation(async (key: string, fb: string) => {
       if (key === 'gps_last_burst') return String(NOW - BURST_COOLDOWN_MS - 1);
       if (key === 'gps_burst_until') return '0';
       if (key === 'gps_tracking_profile') return 'low';
       if (key === 'location_clusters') return '[]';
       return fb;
     });
-    loadGPSState();
+    await loadGPSState();
 
     expect(shouldTriggerBurst(lat, 4.3, [smallHomeLocation], NOW)).toBe(true);
   });

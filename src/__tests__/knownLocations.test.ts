@@ -104,29 +104,33 @@ describe('autoDetectLocations', () => {
     (Notifications.scheduleNotificationAsync as jest.Mock).mockResolvedValue(undefined);
 
     // Default: suggestions enabled, no existing locations, empty clusters
-    (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-      if (key === 'location_suggestions_enabled') return '1';
-      if (key === 'location_clusters') return '[]';
-      return fallback;
-    });
-    (Database.getKnownLocations as jest.Mock).mockReturnValue([]);
-    (Database.getAllKnownLocations as jest.Mock).mockReturnValue([]);
-    (Database.upsertKnownLocation as jest.Mock).mockImplementation(() => undefined);
+    (Database.getSettingAsync as jest.Mock).mockImplementation(
+      async (key: string, fallback: string) => {
+        if (key === 'location_suggestions_enabled') return '1';
+        if (key === 'location_clusters') return '[]';
+        return fallback;
+      }
+    );
+    (Database.getKnownLocationsAsync as jest.Mock).mockResolvedValue([]);
+    (Database.getAllKnownLocationsAsync as jest.Mock).mockResolvedValue([]);
+    (Database.upsertKnownLocationAsync as jest.Mock).mockImplementation(async () => undefined);
   });
 
   it('returns early when GPS permission is not granted', async () => {
     (Location.getForegroundPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'denied' });
     await autoDetectLocations();
-    expect(Database.upsertKnownLocation).not.toHaveBeenCalled();
+    expect(Database.upsertKnownLocationAsync).not.toHaveBeenCalled();
   });
 
   it('returns early when location suggestions are disabled', async () => {
-    (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-      if (key === 'location_suggestions_enabled') return '0';
-      return fallback;
-    });
+    (Database.getSettingAsync as jest.Mock).mockImplementation(
+      async (key: string, fallback: string) => {
+        if (key === 'location_suggestions_enabled') return '0';
+        return fallback;
+      }
+    );
     await autoDetectLocations();
-    expect(Database.upsertKnownLocation).not.toHaveBeenCalled();
+    expect(Database.upsertKnownLocationAsync).not.toHaveBeenCalled();
   });
 
   it('returns early when fewer than 10 samples are available', async () => {
@@ -135,13 +139,15 @@ describe('autoDetectLocations', () => {
       lon: 4.3,
       timestamp: BASE_TIME + i * FIVE_MIN,
     }));
-    (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-      if (key === 'location_suggestions_enabled') return '1';
-      if (key === 'location_clusters') return JSON.stringify(fewSamples);
-      return fallback;
-    });
+    (Database.getSettingAsync as jest.Mock).mockImplementation(
+      async (key: string, fallback: string) => {
+        if (key === 'location_suggestions_enabled') return '1';
+        if (key === 'location_clusters') return JSON.stringify(fewSamples);
+        return fallback;
+      }
+    );
     await autoDetectLocations();
-    expect(Database.upsertKnownLocation).not.toHaveBeenCalled();
+    expect(Database.upsertKnownLocationAsync).not.toHaveBeenCalled();
   });
 
   it('suggests a location after 2h+ dwell with no known locations', async () => {
@@ -151,22 +157,24 @@ describe('autoDetectLocations', () => {
       lon: 4.3,
       timestamp: BASE_TIME + i * FIVE_MIN,
     }));
-    (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-      if (key === 'location_suggestions_enabled') return '1';
-      if (key === 'location_clusters') return JSON.stringify(samples);
-      return fallback;
-    });
+    (Database.getSettingAsync as jest.Mock).mockImplementation(
+      async (key: string, fallback: string) => {
+        if (key === 'location_suggestions_enabled') return '1';
+        if (key === 'location_clusters') return JSON.stringify(samples);
+        return fallback;
+      }
+    );
 
     await autoDetectLocations();
 
-    expect(Database.upsertKnownLocation).toHaveBeenCalledWith(
+    expect(Database.upsertKnownLocationAsync).toHaveBeenCalledWith(
       expect.objectContaining({ status: 'suggested', label: '' })
     );
   });
 
   it('uses 3h threshold when known locations already exist', async () => {
     // Mock: 1 known active location exists
-    (Database.getKnownLocations as jest.Mock).mockReturnValue([
+    (Database.getKnownLocationsAsync as jest.Mock).mockResolvedValue([
       {
         id: 1,
         label: 'Home',
@@ -177,7 +185,7 @@ describe('autoDetectLocations', () => {
         status: 'active',
       },
     ]);
-    (Database.getAllKnownLocations as jest.Mock).mockReturnValue([
+    (Database.getAllKnownLocationsAsync as jest.Mock).mockResolvedValue([
       {
         id: 1,
         label: 'Home',
@@ -195,21 +203,23 @@ describe('autoDetectLocations', () => {
       lon: 4.32,
       timestamp: BASE_TIME + i * FIVE_MIN,
     }));
-    (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-      if (key === 'location_suggestions_enabled') return '1';
-      if (key === 'location_clusters') return JSON.stringify(samples);
-      return fallback;
-    });
+    (Database.getSettingAsync as jest.Mock).mockImplementation(
+      async (key: string, fallback: string) => {
+        if (key === 'location_suggestions_enabled') return '1';
+        if (key === 'location_clusters') return JSON.stringify(samples);
+        return fallback;
+      }
+    );
 
     await autoDetectLocations();
 
     // 2h dwell < 3h threshold → should NOT suggest
-    expect(Database.upsertKnownLocation).not.toHaveBeenCalled();
+    expect(Database.upsertKnownLocationAsync).not.toHaveBeenCalled();
   });
 
   it('suggests a location after 3h+ dwell when known locations already exist', async () => {
     // Mock: 1 known active location exists
-    (Database.getKnownLocations as jest.Mock).mockReturnValue([
+    (Database.getKnownLocationsAsync as jest.Mock).mockResolvedValue([
       {
         id: 1,
         label: 'Home',
@@ -220,7 +230,7 @@ describe('autoDetectLocations', () => {
         status: 'active',
       },
     ]);
-    (Database.getAllKnownLocations as jest.Mock).mockReturnValue([
+    (Database.getAllKnownLocationsAsync as jest.Mock).mockResolvedValue([
       {
         id: 1,
         label: 'Home',
@@ -238,23 +248,25 @@ describe('autoDetectLocations', () => {
       lon: 4.32,
       timestamp: BASE_TIME + i * FIVE_MIN,
     }));
-    (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-      if (key === 'location_suggestions_enabled') return '1';
-      if (key === 'location_clusters') return JSON.stringify(samples);
-      return fallback;
-    });
+    (Database.getSettingAsync as jest.Mock).mockImplementation(
+      async (key: string, fallback: string) => {
+        if (key === 'location_suggestions_enabled') return '1';
+        if (key === 'location_clusters') return JSON.stringify(samples);
+        return fallback;
+      }
+    );
 
     await autoDetectLocations();
 
     // 3h dwell >= 3h threshold → should suggest
-    expect(Database.upsertKnownLocation).toHaveBeenCalledWith(
+    expect(Database.upsertKnownLocationAsync).toHaveBeenCalledWith(
       expect.objectContaining({ status: 'suggested', label: '' })
     );
   });
 
   it('does not re-suggest a place already tracked in known locations', async () => {
     // Known active location at same place as dwell
-    (Database.getAllKnownLocations as jest.Mock).mockReturnValue([
+    (Database.getAllKnownLocationsAsync as jest.Mock).mockResolvedValue([
       {
         id: 1,
         label: 'Home',
@@ -271,15 +283,17 @@ describe('autoDetectLocations', () => {
       lon: 4.3,
       timestamp: BASE_TIME + i * FIVE_MIN,
     }));
-    (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-      if (key === 'location_suggestions_enabled') return '1';
-      if (key === 'location_clusters') return JSON.stringify(samples);
-      return fallback;
-    });
+    (Database.getSettingAsync as jest.Mock).mockImplementation(
+      async (key: string, fallback: string) => {
+        if (key === 'location_suggestions_enabled') return '1';
+        if (key === 'location_clusters') return JSON.stringify(samples);
+        return fallback;
+      }
+    );
 
     await autoDetectLocations();
 
-    expect(Database.upsertKnownLocation).not.toHaveBeenCalled();
+    expect(Database.upsertKnownLocationAsync).not.toHaveBeenCalled();
   });
 
   it('sends a notification when a location is suggested', async () => {
@@ -288,11 +302,13 @@ describe('autoDetectLocations', () => {
       lon: 4.3,
       timestamp: BASE_TIME + i * FIVE_MIN,
     }));
-    (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-      if (key === 'location_suggestions_enabled') return '1';
-      if (key === 'location_clusters') return JSON.stringify(samples);
-      return fallback;
-    });
+    (Database.getSettingAsync as jest.Mock).mockImplementation(
+      async (key: string, fallback: string) => {
+        if (key === 'location_suggestions_enabled') return '1';
+        if (key === 'location_clusters') return JSON.stringify(samples);
+        return fallback;
+      }
+    );
 
     await autoDetectLocations();
 
@@ -311,16 +327,18 @@ describe('autoDetectLocations', () => {
       lon: 4.3,
       timestamp: BASE_TIME + i * FIVE_MIN,
     }));
-    (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-      if (key === 'location_suggestions_enabled') return '1';
-      if (key === 'location_clusters') return JSON.stringify(samples);
-      return fallback;
-    });
+    (Database.getSettingAsync as jest.Mock).mockImplementation(
+      async (key: string, fallback: string) => {
+        if (key === 'location_suggestions_enabled') return '1';
+        if (key === 'location_clusters') return JSON.stringify(samples);
+        return fallback;
+      }
+    );
 
     await autoDetectLocations();
 
     // Location should still be suggested but notification skipped
-    expect(Database.upsertKnownLocation).toHaveBeenCalled();
+    expect(Database.upsertKnownLocationAsync).toHaveBeenCalled();
     expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
   });
 });
@@ -329,7 +347,7 @@ describe('autoDetectLocations', () => {
 
 describe('database known location functions', () => {
   it('exports getAllKnownLocations', () => {
-    expect(typeof Database.getAllKnownLocations).toBe('function');
+    expect(typeof Database.getAllKnownLocationsAsync).toBe('function');
   });
 
   it('exports getSuggestedLocationsAsync', () => {

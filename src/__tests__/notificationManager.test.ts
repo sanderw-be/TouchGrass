@@ -32,24 +32,26 @@ import {
   setupNotificationInfrastructure,
   updateUpcomingReminderContent,
   FAILSAFE_REMINDER_PREFIX,
+  _resetSchedulingGuards,
 } from '../notifications/notificationManager';
 import type { ReminderQueueEntry } from '../notifications/notificationManager';
 
 describe('notificationManager', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    _resetSchedulingGuards();
 
     // Default mock implementations
-    (Database.getTodayMinutes as jest.Mock).mockReturnValue(0);
-    (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
-    (Database.getSetting as jest.Mock).mockImplementation(
-      (key: string, fallback: string) => fallback
+    (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(0);
+    (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
+    (Database.getSettingAsync as jest.Mock).mockImplementation(
+      async (key: string, fallback: string) => fallback
     );
-    (Database.setSetting as jest.Mock).mockReturnValue(undefined);
-    (ScheduledNotifications.hasScheduledNotificationNearby as jest.Mock).mockReturnValue(false);
-    (ScheduledNotifications.isSlotNearScheduledNotification as jest.Mock).mockReturnValue(false);
-    (WeatherService.isWeatherDataAvailable as jest.Mock).mockReturnValue(false);
-    (WeatherAlgorithm.getWeatherPreferences as jest.Mock).mockReturnValue({ enabled: false });
+    (Database.setSettingAsync as jest.Mock).mockResolvedValue(undefined);
+    (ScheduledNotifications.hasScheduledNotificationNearby as jest.Mock).mockResolvedValue(false);
+    (ScheduledNotifications.isSlotNearScheduledNotification as jest.Mock).mockResolvedValue(false);
+    (WeatherService.isWeatherDataAvailable as jest.Mock).mockResolvedValue(false);
+    (WeatherAlgorithm.getWeatherPreferences as jest.Mock).mockResolvedValue({ enabled: false });
     (WeatherAlgorithm.getWeatherEmoji as jest.Mock).mockReturnValue('🌡️');
     (WeatherAlgorithm.getWeatherDescription as jest.Mock).mockReturnValue('weather_unknown');
     (WeatherService.fetchWeatherForecast as jest.Mock).mockResolvedValue({
@@ -156,14 +158,16 @@ describe('notificationManager', () => {
 
   describe('scheduleNextReminder', () => {
     it('does not send a reminder and cancels existing automatic reminders when daily goal is reached', async () => {
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(30);
-      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        if (key === 'smart_reminders_count') return '2';
-        if (key === 'currently_outside') return '0';
-        return fallback;
-      });
-      (ReminderAlgorithm.shouldRemindNow as jest.Mock).mockReturnValue({
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(30);
+      (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          if (key === 'smart_reminders_count') return '2';
+          if (key === 'currently_outside') return '0';
+          return fallback;
+        }
+      );
+      (ReminderAlgorithm.shouldRemindNow as jest.Mock).mockResolvedValue({
         should: false,
         reason: 'daily goal reached',
       });
@@ -186,13 +190,15 @@ describe('notificationManager', () => {
     });
 
     it('does not cancel reminders for other non-goal-reached reasons', async () => {
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(0);
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        if (key === 'smart_reminders_count') return '2';
-        if (key === 'currently_outside') return '1';
-        return fallback;
-      });
-      (ReminderAlgorithm.shouldRemindNow as jest.Mock).mockReturnValue({
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(0);
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          if (key === 'smart_reminders_count') return '2';
+          if (key === 'currently_outside') return '1';
+          return fallback;
+        }
+      );
+      (ReminderAlgorithm.shouldRemindNow as jest.Mock).mockResolvedValue({
         should: false,
         reason: 'currently outside',
       });
@@ -204,14 +210,16 @@ describe('notificationManager', () => {
     });
 
     it('sends a reminder when goal is not reached and conditions are met', async () => {
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(10);
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        if (key === 'smart_reminders_count') return '2';
-        if (key === 'currently_outside') return '0';
-        if (key === 'last_reminder_ms') return '0';
-        return fallback;
-      });
-      (ReminderAlgorithm.shouldRemindNow as jest.Mock).mockReturnValue({
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(10);
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          if (key === 'smart_reminders_count') return '2';
+          if (key === 'currently_outside') return '0';
+          if (key === 'last_reminder_ms') return '0';
+          return fallback;
+        }
+      );
+      (ReminderAlgorithm.shouldRemindNow as jest.Mock).mockResolvedValue({
         should: true,
         reason: 'score 0.65: baseline',
       });
@@ -231,10 +239,12 @@ describe('notificationManager', () => {
     });
 
     it('does nothing when reminders are disabled (count = 0)', async () => {
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        if (key === 'smart_reminders_count') return '0';
-        return fallback;
-      });
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          if (key === 'smart_reminders_count') return '0';
+          return fallback;
+        }
+      );
 
       await scheduleNextReminder();
 
@@ -243,14 +253,16 @@ describe('notificationManager', () => {
     });
 
     it('cancels remaining smart reminders when goal is reached even if a scheduled notification is nearby', async () => {
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(30);
-      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        if (key === 'smart_reminders_count') return '2';
-        return fallback;
-      });
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(30);
+      (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          if (key === 'smart_reminders_count') return '2';
+          return fallback;
+        }
+      );
       // Simulates the path that previously bypassed the goal-reached cancel
-      (ScheduledNotifications.hasScheduledNotificationNearby as jest.Mock).mockReturnValue(true);
+      (ScheduledNotifications.hasScheduledNotificationNearby as jest.Mock).mockResolvedValue(true);
       (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([
         { identifier: 'auto_reminder_1' },
         { identifier: 'scheduled_1_2' },
@@ -269,12 +281,14 @@ describe('notificationManager', () => {
     });
 
     it('cancels remaining smart reminders when goal is reached even if a calendar event is upcoming', async () => {
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(30);
-      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        if (key === 'smart_reminders_count') return '2';
-        return fallback;
-      });
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(30);
+      (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          if (key === 'smart_reminders_count') return '2';
+          return fallback;
+        }
+      );
       (CalendarService.hasUpcomingEvent as jest.Mock).mockResolvedValue(true);
       (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([
         { identifier: 'auto_morning_reminder' },
@@ -290,13 +304,15 @@ describe('notificationManager', () => {
 
     it('skips entirely when day reminders are already planned for today', async () => {
       const today = new Date().toDateString();
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(10);
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        if (key === 'smart_reminders_count') return '2';
-        if (key === 'reminders_last_planned_date') return today;
-        return fallback;
-      });
-      (ReminderAlgorithm.shouldRemindNow as jest.Mock).mockReturnValue({
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(10);
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          if (key === 'smart_reminders_count') return '2';
+          if (key === 'reminders_last_planned_date') return today;
+          return fallback;
+        }
+      );
+      (ReminderAlgorithm.shouldRemindNow as jest.Mock).mockResolvedValue({
         should: true,
         reason: 'score 0.65: baseline',
       });
@@ -313,29 +329,36 @@ describe('notificationManager', () => {
   describe('scheduleDayReminders', () => {
     it('does nothing when reminders are already planned for today', async () => {
       const today = new Date().toDateString();
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        if (key === 'reminders_last_planned_date') return today;
-        if (key === 'smart_reminders_count') return '2';
-        return fallback;
-      });
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          if (key === 'reminders_last_planned_date') return today;
+          if (key === 'smart_reminders_count') return '2';
+          return fallback;
+        }
+      );
 
       await scheduleDayReminders();
 
       expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
-      expect(Database.setSetting).not.toHaveBeenCalledWith('reminders_last_planned_date', today);
-      expect(Database.insertBackgroundLog).toHaveBeenCalledWith(
+      expect(Database.setSettingAsync).not.toHaveBeenCalledWith(
+        'reminders_last_planned_date',
+        today
+      );
+      expect(Database.insertBackgroundLogAsync).toHaveBeenCalledWith(
         'reminder',
         'Daily plan: already planned — queue empty'
       );
     });
 
     it('does not schedule any reminders and cancels existing ones when daily goal is already reached', async () => {
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(30);
-      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        if (key === 'smart_reminders_count') return '2';
-        return fallback;
-      });
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(30);
+      (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          if (key === 'smart_reminders_count') return '2';
+          return fallback;
+        }
+      );
       (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([
         { identifier: 'auto_morning_reminder' },
         { identifier: 'scheduled_1_3' },
@@ -356,12 +379,14 @@ describe('notificationManager', () => {
     });
 
     it('does not schedule when goal minutes exceeded', async () => {
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(45);
-      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        if (key === 'smart_reminders_count') return '2';
-        return fallback;
-      });
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(45);
+      (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          if (key === 'smart_reminders_count') return '2';
+          return fallback;
+        }
+      );
 
       await scheduleDayReminders();
 
@@ -369,32 +394,36 @@ describe('notificationManager', () => {
     });
 
     it('does nothing when reminders are disabled (count = 0)', async () => {
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(0);
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        if (key === 'smart_reminders_count') return '0';
-        return fallback;
-      });
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(0);
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          if (key === 'smart_reminders_count') return '0';
+          return fallback;
+        }
+      );
 
       await scheduleDayReminders();
 
       expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
       expect(Notifications.cancelScheduledNotificationAsync).not.toHaveBeenCalled();
-      expect(Database.insertBackgroundLog).toHaveBeenCalledWith(
+      expect(Database.insertBackgroundLogAsync).toHaveBeenCalledWith(
         'reminder',
         'Daily plan: reminders disabled (count=0)'
       );
     });
 
     it('schedules reminders using half-hour slots when goal is not yet reached', async () => {
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(10);
-      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        if (key === 'smart_reminders_count') return '2';
-        return fallback;
-      });
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(10);
+      (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          if (key === 'smart_reminders_count') return '2';
+          return fallback;
+        }
+      );
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(9);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
-      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockReturnValue([
+      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockResolvedValue([
         { hour: 12, minute: 0, score: 0.8, reason: 'lunch' },
         { hour: 17, minute: 30, score: 0.7, reason: 'after-work' },
         { hour: 8, minute: 0, score: 0.3, reason: 'past' },
@@ -412,15 +441,17 @@ describe('notificationManager', () => {
     });
 
     it('respects the dynamic count from smart_reminders_count (count=1)', async () => {
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(10);
-      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        if (key === 'smart_reminders_count') return '1';
-        return fallback;
-      });
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(10);
+      (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          if (key === 'smart_reminders_count') return '1';
+          return fallback;
+        }
+      );
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(9);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
-      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockReturnValue([
+      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockResolvedValue([
         { hour: 12, minute: 0, score: 0.8, reason: 'lunch' },
         { hour: 17, minute: 30, score: 0.7, reason: 'after-work' },
       ]);
@@ -436,15 +467,17 @@ describe('notificationManager', () => {
     });
 
     it('respects the dynamic count from smart_reminders_count (count=3)', async () => {
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(10);
-      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        if (key === 'smart_reminders_count') return '3';
-        return fallback;
-      });
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(10);
+      (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          if (key === 'smart_reminders_count') return '3';
+          return fallback;
+        }
+      );
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(9);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
-      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockReturnValue([
+      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockResolvedValue([
         { hour: 12, minute: 0, score: 0.8, reason: 'lunch' },
         { hour: 17, minute: 30, score: 0.7, reason: 'after-work' },
         { hour: 19, minute: 0, score: 0.65, reason: 'after-work' },
@@ -463,19 +496,23 @@ describe('notificationManager', () => {
 
     it('sets the trigger with correct hour AND minute for half-hour slots (TIME_INTERVAL)', async () => {
       const settingsStore: Record<string, string> = {};
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(10);
-      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        if (key in settingsStore) return settingsStore[key];
-        if (key === 'smart_reminders_count') return '1';
-        return fallback;
-      });
-      (Database.setSetting as jest.Mock).mockImplementation((key: string, value: string) => {
-        settingsStore[key] = value;
-      });
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(10);
+      (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          if (key in settingsStore) return settingsStore[key];
+          if (key === 'smart_reminders_count') return '1';
+          return fallback;
+        }
+      );
+      (Database.setSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, value: string) => {
+          settingsStore[key] = value;
+        }
+      );
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(9);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
-      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockReturnValue([
+      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockResolvedValue([
         { hour: 14, minute: 30, score: 0.75, reason: 'afternoon' },
       ]);
 
@@ -500,15 +537,17 @@ describe('notificationManager', () => {
     });
 
     it('skips slots near scheduled notifications (uses isSlotNearScheduledNotification)', async () => {
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(10);
-      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        if (key === 'smart_reminders_count') return '2';
-        return fallback;
-      });
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(10);
+      (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          if (key === 'smart_reminders_count') return '2';
+          return fallback;
+        }
+      );
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(9);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
-      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockReturnValue([
+      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockResolvedValue([
         { hour: 12, minute: 0, score: 0.8, reason: 'lunch' },
         { hour: 17, minute: 30, score: 0.7, reason: 'after-work' },
         { hour: 19, minute: 0, score: 0.65, reason: 'after-work' },
@@ -530,15 +569,17 @@ describe('notificationManager', () => {
     });
 
     it('creates a calendar event for each scheduled reminder slot', async () => {
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(10);
-      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        if (key === 'smart_reminders_count') return '2';
-        return fallback;
-      });
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(10);
+      (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          if (key === 'smart_reminders_count') return '2';
+          return fallback;
+        }
+      );
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(9);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
-      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockReturnValue([
+      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockResolvedValue([
         { hour: 12, minute: 0, score: 0.8, reason: 'lunch' },
         { hour: 17, minute: 30, score: 0.7, reason: 'after-work' },
         { hour: 8, minute: 0, score: 0.3, reason: 'past' },
@@ -556,21 +597,23 @@ describe('notificationManager', () => {
     });
 
     it('saves reminders_last_planned_date after successful planning', async () => {
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(10);
-      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        if (key === 'smart_reminders_count') return '2';
-        return fallback;
-      });
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(10);
+      (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          if (key === 'smart_reminders_count') return '2';
+          return fallback;
+        }
+      );
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(9);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
-      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockReturnValue([
+      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockResolvedValue([
         { hour: 12, minute: 0, score: 0.8, reason: 'lunch' },
       ]);
 
       await scheduleDayReminders();
 
-      expect(Database.setSetting).toHaveBeenCalledWith(
+      expect(Database.setSettingAsync).toHaveBeenCalledWith(
         'reminders_last_planned_date',
         new Date().toDateString()
       );
@@ -579,53 +622,59 @@ describe('notificationManager', () => {
     });
 
     it('saves reminders_last_planned_date when reminders are disabled', async () => {
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        if (key === 'smart_reminders_count') return '0';
-        return fallback;
-      });
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          if (key === 'smart_reminders_count') return '0';
+          return fallback;
+        }
+      );
 
       await scheduleDayReminders();
 
-      expect(Database.setSetting).toHaveBeenCalledWith(
+      expect(Database.setSettingAsync).toHaveBeenCalledWith(
         'reminders_last_planned_date',
         new Date().toDateString()
       );
     });
 
     it('saves reminders_last_planned_date when daily goal is already reached', async () => {
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(30);
-      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        if (key === 'smart_reminders_count') return '2';
-        return fallback;
-      });
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(30);
+      (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          if (key === 'smart_reminders_count') return '2';
+          return fallback;
+        }
+      );
       (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([]);
 
       await scheduleDayReminders();
 
-      expect(Database.setSetting).toHaveBeenCalledWith(
+      expect(Database.setSettingAsync).toHaveBeenCalledWith(
         'reminders_last_planned_date',
         new Date().toDateString()
       );
     });
 
     it('stores planned slots in reminders_planned_slots setting', async () => {
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(10);
-      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        if (key === 'smart_reminders_count') return '2';
-        return fallback;
-      });
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(10);
+      (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          if (key === 'smart_reminders_count') return '2';
+          return fallback;
+        }
+      );
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(9);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
-      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockReturnValue([
+      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockResolvedValue([
         { hour: 12, minute: 0, score: 0.8, reason: 'lunch' },
         { hour: 17, minute: 30, score: 0.7, reason: 'after-work' },
       ]);
 
       await scheduleDayReminders();
 
-      const slotsCall = (Database.setSetting as jest.Mock).mock.calls.find(
+      const slotsCall = (Database.setSettingAsync as jest.Mock).mock.calls.find(
         (call: string[]) => call[0] === 'reminders_planned_slots'
       );
       expect(slotsCall).toBeDefined();
@@ -639,21 +688,23 @@ describe('notificationManager', () => {
     });
 
     it('resets additional_reminders_today to 0 when planning a new day', async () => {
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(10);
-      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        if (key === 'smart_reminders_count') return '1';
-        return fallback;
-      });
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(10);
+      (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          if (key === 'smart_reminders_count') return '1';
+          return fallback;
+        }
+      );
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(9);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
-      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockReturnValue([
+      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockResolvedValue([
         { hour: 12, minute: 0, score: 0.8, reason: 'lunch' },
       ]);
 
       await scheduleDayReminders();
 
-      expect(Database.setSetting).toHaveBeenCalledWith('additional_reminders_today', '0');
+      expect(Database.setSettingAsync).toHaveBeenCalledWith('additional_reminders_today', '0');
 
       jest.restoreAllMocks();
     });
@@ -664,20 +715,24 @@ describe('notificationManager', () => {
       // The fix sets reminders_last_planned_date synchronously (before the first
       // await) so the second concurrent call sees the date and exits early.
       const settingsStore: Record<string, string> = {};
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        if (key in settingsStore) return settingsStore[key];
-        if (key === 'smart_reminders_count') return '1';
-        return fallback;
-      });
-      (Database.setSetting as jest.Mock).mockImplementation((key: string, value: string) => {
-        settingsStore[key] = value;
-      });
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          if (key in settingsStore) return settingsStore[key];
+          if (key === 'smart_reminders_count') return '1';
+          return fallback;
+        }
+      );
+      (Database.setSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, value: string) => {
+          settingsStore[key] = value;
+        }
+      );
 
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(10);
-      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(10);
+      (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(9);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
-      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockReturnValue([
+      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockResolvedValue([
         { hour: 12, minute: 0, score: 0.8, reason: 'lunch' },
       ]);
 
@@ -698,10 +753,12 @@ describe('notificationManager', () => {
 
   describe('maybeScheduleCatchUpReminder', () => {
     it('does nothing when reminders are disabled (count = 0)', async () => {
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        if (key === 'smart_reminders_count') return '0';
-        return fallback;
-      });
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          if (key === 'smart_reminders_count') return '0';
+          return fallback;
+        }
+      );
 
       await maybeScheduleCatchUpReminder();
 
@@ -709,15 +766,17 @@ describe('notificationManager', () => {
     });
 
     it('logs when no day plan exists yet', async () => {
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        if (key === 'smart_reminders_count') return '2';
-        if (key === 'reminders_last_planned_date') return '';
-        return fallback;
-      });
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          if (key === 'smart_reminders_count') return '2';
+          if (key === 'reminders_last_planned_date') return '';
+          return fallback;
+        }
+      );
 
       await maybeScheduleCatchUpReminder();
 
-      expect(Database.insertBackgroundLog).toHaveBeenCalledWith(
+      expect(Database.insertBackgroundLogAsync).toHaveBeenCalledWith(
         'reminder',
         'Catch-up skipped — no day plan yet'
       );
@@ -725,18 +784,20 @@ describe('notificationManager', () => {
 
     it('does nothing when no planned slots exist', async () => {
       const todayStr = new Date().toDateString();
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        if (key === 'smart_reminders_count') return '2';
-        if (key === 'reminders_last_planned_date') return todayStr;
-        if (key === 'additional_reminders_today') return '0';
-        if (key === 'reminders_planned_slots') return '[]';
-        return fallback;
-      });
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          if (key === 'smart_reminders_count') return '2';
+          if (key === 'reminders_last_planned_date') return todayStr;
+          if (key === 'additional_reminders_today') return '0';
+          if (key === 'reminders_planned_slots') return '[]';
+          return fallback;
+        }
+      );
 
       await maybeScheduleCatchUpReminder();
 
       expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
-      expect(Database.insertBackgroundLog).toHaveBeenCalledWith(
+      expect(Database.insertBackgroundLogAsync).toHaveBeenCalledWith(
         'reminder',
         'Catch-up skipped — no planned slots'
       );
@@ -744,19 +805,21 @@ describe('notificationManager', () => {
 
     it('cancels remaining smart reminders and stops when daily goal is met', async () => {
       const todayStr = new Date().toDateString();
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(30);
-      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        if (key === 'smart_reminders_count') return '2';
-        if (key === 'reminders_last_planned_date') return todayStr;
-        if (key === 'additional_reminders_today') return '0';
-        if (key === 'reminders_planned_slots')
-          return JSON.stringify([
-            { hour: 9, minute: 0 },
-            { hour: 11, minute: 0 },
-          ]);
-        return fallback;
-      });
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(30);
+      (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          if (key === 'smart_reminders_count') return '2';
+          if (key === 'reminders_last_planned_date') return todayStr;
+          if (key === 'additional_reminders_today') return '0';
+          if (key === 'reminders_planned_slots')
+            return JSON.stringify([
+              { hour: 9, minute: 0 },
+              { hour: 11, minute: 0 },
+            ]);
+          return fallback;
+        }
+      );
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(12);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
       (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([
@@ -782,19 +845,21 @@ describe('notificationManager', () => {
 
     it('does nothing when target is already met', async () => {
       const todayStr = new Date().toDateString();
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(30);
-      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        if (key === 'smart_reminders_count') return '2';
-        if (key === 'reminders_last_planned_date') return todayStr;
-        if (key === 'additional_reminders_today') return '0';
-        if (key === 'reminders_planned_slots')
-          return JSON.stringify([
-            { hour: 9, minute: 0 },
-            { hour: 11, minute: 0 },
-          ]);
-        return fallback;
-      });
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(30);
+      (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          if (key === 'smart_reminders_count') return '2';
+          if (key === 'reminders_last_planned_date') return todayStr;
+          if (key === 'additional_reminders_today') return '0';
+          if (key === 'reminders_planned_slots')
+            return JSON.stringify([
+              { hour: 9, minute: 0 },
+              { hour: 11, minute: 0 },
+            ]);
+          return fallback;
+        }
+      );
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(12);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
 
@@ -807,52 +872,56 @@ describe('notificationManager', () => {
 
     it('schedules a catch-up reminder when behind on goal', async () => {
       const todayStr = new Date().toDateString();
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(0);
-      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        if (key === 'smart_reminders_count') return '2';
-        if (key === 'reminders_last_planned_date') return todayStr;
-        if (key === 'additional_reminders_today') return '0';
-        // Both planned slots have passed (9:00 and 11:00, current time 12:00)
-        if (key === 'reminders_planned_slots')
-          return JSON.stringify([
-            { hour: 9, minute: 0 },
-            { hour: 11, minute: 0 },
-          ]);
-        return fallback;
-      });
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(0);
+      (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          if (key === 'smart_reminders_count') return '2';
+          if (key === 'reminders_last_planned_date') return todayStr;
+          if (key === 'additional_reminders_today') return '0';
+          // Both planned slots have passed (9:00 and 11:00, current time 12:00)
+          if (key === 'reminders_planned_slots')
+            return JSON.stringify([
+              { hour: 9, minute: 0 },
+              { hour: 11, minute: 0 },
+            ]);
+          return fallback;
+        }
+      );
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(12);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
-      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockReturnValue([
+      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockResolvedValue([
         { hour: 14, minute: 30, score: 0.7, reason: 'afternoon' },
       ]);
 
       await maybeScheduleCatchUpReminder();
 
       expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledTimes(1);
-      expect(Database.setSetting).toHaveBeenCalledWith('additional_reminders_today', '1');
+      expect(Database.setSettingAsync).toHaveBeenCalledWith('additional_reminders_today', '1');
 
       jest.restoreAllMocks();
     });
 
     it('does not create a calendar event for catch-up reminders', async () => {
       const todayStr = new Date().toDateString();
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(0);
-      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        if (key === 'smart_reminders_count') return '2';
-        if (key === 'reminders_last_planned_date') return todayStr;
-        if (key === 'additional_reminders_today') return '0';
-        if (key === 'reminders_planned_slots')
-          return JSON.stringify([
-            { hour: 9, minute: 0 },
-            { hour: 11, minute: 0 },
-          ]);
-        return fallback;
-      });
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(0);
+      (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          if (key === 'smart_reminders_count') return '2';
+          if (key === 'reminders_last_planned_date') return todayStr;
+          if (key === 'additional_reminders_today') return '0';
+          if (key === 'reminders_planned_slots')
+            return JSON.stringify([
+              { hour: 9, minute: 0 },
+              { hour: 11, minute: 0 },
+            ]);
+          return fallback;
+        }
+      );
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(12);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
-      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockReturnValue([
+      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockResolvedValue([
         { hour: 14, minute: 30, score: 0.7, reason: 'afternoon' },
       ]);
 
@@ -865,20 +934,22 @@ describe('notificationManager', () => {
 
     it('caps at smart_catchup_reminders_count additional reminders per day (default 2)', async () => {
       const todayStr = new Date().toDateString();
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(0);
-      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        if (key === 'smart_reminders_count') return '2';
-        if (key === 'smart_catchup_reminders_count') return '2'; // default limit
-        if (key === 'reminders_last_planned_date') return todayStr;
-        if (key === 'additional_reminders_today') return '2'; // already at max
-        if (key === 'reminders_planned_slots')
-          return JSON.stringify([
-            { hour: 9, minute: 0 },
-            { hour: 11, minute: 0 },
-          ]);
-        return fallback;
-      });
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(0);
+      (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          if (key === 'smart_reminders_count') return '2';
+          if (key === 'smart_catchup_reminders_count') return '2'; // default limit
+          if (key === 'reminders_last_planned_date') return todayStr;
+          if (key === 'additional_reminders_today') return '2'; // already at max
+          if (key === 'reminders_planned_slots')
+            return JSON.stringify([
+              { hour: 9, minute: 0 },
+              { hour: 11, minute: 0 },
+            ]);
+          return fallback;
+        }
+      );
 
       await maybeScheduleCatchUpReminder();
 
@@ -887,20 +958,22 @@ describe('notificationManager', () => {
 
     it('sends no catch-up reminders when smart_catchup_reminders_count is 0', async () => {
       const todayStr = new Date().toDateString();
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(0);
-      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        if (key === 'smart_reminders_count') return '2';
-        if (key === 'smart_catchup_reminders_count') return '0'; // user reduced to 0
-        if (key === 'reminders_last_planned_date') return todayStr;
-        if (key === 'additional_reminders_today') return '0';
-        if (key === 'reminders_planned_slots')
-          return JSON.stringify([
-            { hour: 9, minute: 0 },
-            { hour: 11, minute: 0 },
-          ]);
-        return fallback;
-      });
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(0);
+      (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          if (key === 'smart_reminders_count') return '2';
+          if (key === 'smart_catchup_reminders_count') return '0'; // user reduced to 0
+          if (key === 'reminders_last_planned_date') return todayStr;
+          if (key === 'additional_reminders_today') return '0';
+          if (key === 'reminders_planned_slots')
+            return JSON.stringify([
+              { hour: 9, minute: 0 },
+              { hour: 11, minute: 0 },
+            ]);
+          return fallback;
+        }
+      );
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(12);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
 
@@ -913,20 +986,22 @@ describe('notificationManager', () => {
 
     it('caps at 1 additional reminder when smart_catchup_reminders_count is 1', async () => {
       const todayStr = new Date().toDateString();
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(0);
-      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        if (key === 'smart_reminders_count') return '2';
-        if (key === 'smart_catchup_reminders_count') return '1'; // user reduced to 1
-        if (key === 'reminders_last_planned_date') return todayStr;
-        if (key === 'additional_reminders_today') return '1'; // already at the new max
-        if (key === 'reminders_planned_slots')
-          return JSON.stringify([
-            { hour: 9, minute: 0 },
-            { hour: 11, minute: 0 },
-          ]);
-        return fallback;
-      });
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(0);
+      (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          if (key === 'smart_reminders_count') return '2';
+          if (key === 'smart_catchup_reminders_count') return '1'; // user reduced to 1
+          if (key === 'reminders_last_planned_date') return todayStr;
+          if (key === 'additional_reminders_today') return '1'; // already at the new max
+          if (key === 'reminders_planned_slots')
+            return JSON.stringify([
+              { hour: 9, minute: 0 },
+              { hour: 11, minute: 0 },
+            ]);
+          return fallback;
+        }
+      );
 
       await maybeScheduleCatchUpReminder();
 
@@ -935,22 +1010,24 @@ describe('notificationManager', () => {
 
     it('respects isSlotNearScheduledNotification when selecting catch-up slot', async () => {
       const todayStr = new Date().toDateString();
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(0);
-      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        if (key === 'smart_reminders_count') return '2';
-        if (key === 'reminders_last_planned_date') return todayStr;
-        if (key === 'additional_reminders_today') return '0';
-        if (key === 'reminders_planned_slots')
-          return JSON.stringify([
-            { hour: 9, minute: 0 },
-            { hour: 11, minute: 0 },
-          ]);
-        return fallback;
-      });
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(0);
+      (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          if (key === 'smart_reminders_count') return '2';
+          if (key === 'reminders_last_planned_date') return todayStr;
+          if (key === 'additional_reminders_today') return '0';
+          if (key === 'reminders_planned_slots')
+            return JSON.stringify([
+              { hour: 9, minute: 0 },
+              { hour: 11, minute: 0 },
+            ]);
+          return fallback;
+        }
+      );
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(12);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
-      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockReturnValue([
+      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockResolvedValue([
         { hour: 14, minute: 0, score: 0.7, reason: 'afternoon' }, // near scheduled notif
         { hour: 16, minute: 0, score: 0.65, reason: 'afternoon' }, // clear
       ]);
@@ -964,7 +1041,7 @@ describe('notificationManager', () => {
 
       // Should skip 14:00 and use 16:00 — verified via the stored slot setting
       expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledTimes(1);
-      expect(Database.setSetting).toHaveBeenCalledWith(
+      expect(Database.setSettingAsync).toHaveBeenCalledWith(
         'catchup_reminder_slot_minutes',
         String(16 * 60)
       );
@@ -972,16 +1049,18 @@ describe('notificationManager', () => {
 
     it('does not schedule a catch-up within 60 minutes of the last planned reminder', async () => {
       const todayStr = new Date().toDateString();
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(0);
-      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        if (key === 'smart_reminders_count') return '2';
-        if (key === 'reminders_last_planned_date') return todayStr;
-        if (key === 'additional_reminders_today') return '0';
-        // Planned slot at 11:00; current time is 11:30 (30 min after)
-        if (key === 'reminders_planned_slots') return JSON.stringify([{ hour: 11, minute: 0 }]);
-        return fallback;
-      });
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(0);
+      (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          if (key === 'smart_reminders_count') return '2';
+          if (key === 'reminders_last_planned_date') return todayStr;
+          if (key === 'additional_reminders_today') return '0';
+          // Planned slot at 11:00; current time is 11:30 (30 min after)
+          if (key === 'reminders_planned_slots') return JSON.stringify([{ hour: 11, minute: 0 }]);
+          return fallback;
+        }
+      );
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(11);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(30);
 
@@ -994,19 +1073,21 @@ describe('notificationManager', () => {
 
     it('schedules a catch-up after 60 minutes have passed since the last planned reminder', async () => {
       const todayStr = new Date().toDateString();
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(0);
-      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        if (key === 'smart_reminders_count') return '2';
-        if (key === 'reminders_last_planned_date') return todayStr;
-        if (key === 'additional_reminders_today') return '0';
-        // Planned slot at 11:00; current time is 12:01 (61 min after)
-        if (key === 'reminders_planned_slots') return JSON.stringify([{ hour: 11, minute: 0 }]);
-        return fallback;
-      });
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(0);
+      (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          if (key === 'smart_reminders_count') return '2';
+          if (key === 'reminders_last_planned_date') return todayStr;
+          if (key === 'additional_reminders_today') return '0';
+          // Planned slot at 11:00; current time is 12:01 (61 min after)
+          if (key === 'reminders_planned_slots') return JSON.stringify([{ hour: 11, minute: 0 }]);
+          return fallback;
+        }
+      );
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(12);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(1);
-      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockReturnValue([
+      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockResolvedValue([
         { hour: 14, minute: 0, score: 0.8, reason: 'afternoon' },
       ]);
 
@@ -1019,25 +1100,27 @@ describe('notificationManager', () => {
 
     it('schedules the earliest of the top-n best-scored slots to spread reminders across the day', async () => {
       const todayStr = new Date().toDateString();
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(0);
-      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        if (key === 'smart_reminders_count') return '2';
-        if (key === 'smart_catchup_reminders_count') return '3'; // 3 remaining
-        if (key === 'reminders_last_planned_date') return todayStr;
-        if (key === 'additional_reminders_today') return '0'; // 3 remaining
-        if (key === 'reminders_planned_slots')
-          return JSON.stringify([
-            { hour: 9, minute: 0 },
-            { hour: 11, minute: 0 },
-          ]);
-        return fallback;
-      });
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(0);
+      (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          if (key === 'smart_reminders_count') return '2';
+          if (key === 'smart_catchup_reminders_count') return '3'; // 3 remaining
+          if (key === 'reminders_last_planned_date') return todayStr;
+          if (key === 'additional_reminders_today') return '0'; // 3 remaining
+          if (key === 'reminders_planned_slots')
+            return JSON.stringify([
+              { hour: 9, minute: 0 },
+              { hour: 11, minute: 0 },
+            ]);
+          return fallback;
+        }
+      );
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(12);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
       // Candidates sorted best-first: 17:00 (0.9), 14:00 (0.8), 15:00 (0.7), 20:00 (0.6)
       // Top-3 = [17:00, 14:00, 15:00]; earliest = 14:00
-      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockReturnValue([
+      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockResolvedValue([
         { hour: 17, minute: 0, score: 0.9, reason: 'evening' },
         { hour: 14, minute: 0, score: 0.8, reason: 'afternoon' },
         { hour: 15, minute: 0, score: 0.7, reason: 'afternoon' },
@@ -1050,7 +1133,7 @@ describe('notificationManager', () => {
 
       expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledTimes(1);
       // Should pick 14:00 (earliest of top-3) not 17:00 (highest score)
-      expect(Database.setSetting).toHaveBeenCalledWith(
+      expect(Database.setSettingAsync).toHaveBeenCalledWith(
         'catchup_reminder_slot_minutes',
         String(14 * 60)
       );
@@ -1058,27 +1141,29 @@ describe('notificationManager', () => {
 
     it('clears planned slots and catch-up slot settings when daily goal is reached (maybeScheduleCatchUpReminder)', async () => {
       const todayStr = new Date().toDateString();
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(30);
-      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        if (key === 'smart_reminders_count') return '2';
-        if (key === 'reminders_last_planned_date') return todayStr;
-        if (key === 'additional_reminders_today') return '0';
-        if (key === 'reminders_planned_slots')
-          return JSON.stringify([
-            { hour: 9, minute: 0 },
-            { hour: 11, minute: 0 },
-          ]);
-        return fallback;
-      });
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(30);
+      (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          if (key === 'smart_reminders_count') return '2';
+          if (key === 'reminders_last_planned_date') return todayStr;
+          if (key === 'additional_reminders_today') return '0';
+          if (key === 'reminders_planned_slots')
+            return JSON.stringify([
+              { hour: 9, minute: 0 },
+              { hour: 11, minute: 0 },
+            ]);
+          return fallback;
+        }
+      );
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(12);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
       (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([]);
 
       await maybeScheduleCatchUpReminder();
 
-      expect(Database.setSetting).toHaveBeenCalledWith('reminders_planned_slots', '[]');
-      expect(Database.setSetting).toHaveBeenCalledWith('catchup_reminder_slot_minutes', '');
+      expect(Database.setSettingAsync).toHaveBeenCalledWith('reminders_planned_slots', '[]');
+      expect(Database.setSettingAsync).toHaveBeenCalledWith('catchup_reminder_slot_minutes', '');
 
       jest.restoreAllMocks();
     });
@@ -1093,28 +1178,32 @@ describe('notificationManager', () => {
           { id: 'catchup_2026-03-30_14:30_123', slotMinutes: 14 * 60 + 30, status: 'date_planned' },
         ]),
       };
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        if (key in settingsStore) return settingsStore[key];
-        if (key === 'smart_reminders_count') return '2';
-        if (key === 'reminders_last_planned_date') return todayStr;
-        if (key === 'additional_reminders_today') return '1';
-        if (key === 'smart_catchup_reminders_count') return '2';
-        if (key === 'reminders_planned_slots')
-          return JSON.stringify([
-            { hour: 9, minute: 0 },
-            { hour: 11, minute: 0 },
-          ]);
-        return fallback;
-      });
-      (Database.setSetting as jest.Mock).mockImplementation((key: string, value: string) => {
-        settingsStore[key] = value;
-      });
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(0);
-      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          if (key in settingsStore) return settingsStore[key];
+          if (key === 'smart_reminders_count') return '2';
+          if (key === 'reminders_last_planned_date') return todayStr;
+          if (key === 'additional_reminders_today') return '1';
+          if (key === 'smart_catchup_reminders_count') return '2';
+          if (key === 'reminders_planned_slots')
+            return JSON.stringify([
+              { hour: 9, minute: 0 },
+              { hour: 11, minute: 0 },
+            ]);
+          return fallback;
+        }
+      );
+      (Database.setSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, value: string) => {
+          settingsStore[key] = value;
+        }
+      );
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(0);
+      (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(12);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(30);
       // The algorithm would pick 14:30 again (same slot as already queued)
-      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockReturnValue([
+      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockResolvedValue([
         { hour: 14, minute: 30, score: 0.8, reason: 'afternoon' },
       ]);
 
@@ -1134,28 +1223,32 @@ describe('notificationManager', () => {
           { id: 'catchup_2026-03-30_14:30_123', slotMinutes: 14 * 60 + 30, status: 'date_planned' },
         ]),
       };
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        if (key in settingsStore) return settingsStore[key];
-        if (key === 'smart_reminders_count') return '2';
-        if (key === 'reminders_last_planned_date') return todayStr;
-        if (key === 'additional_reminders_today') return '1';
-        if (key === 'smart_catchup_reminders_count') return '2';
-        if (key === 'reminders_planned_slots')
-          return JSON.stringify([
-            { hour: 9, minute: 0 },
-            { hour: 11, minute: 0 },
-          ]);
-        return fallback;
-      });
-      (Database.setSetting as jest.Mock).mockImplementation((key: string, value: string) => {
-        settingsStore[key] = value;
-      });
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(0);
-      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          if (key in settingsStore) return settingsStore[key];
+          if (key === 'smart_reminders_count') return '2';
+          if (key === 'reminders_last_planned_date') return todayStr;
+          if (key === 'additional_reminders_today') return '1';
+          if (key === 'smart_catchup_reminders_count') return '2';
+          if (key === 'reminders_planned_slots')
+            return JSON.stringify([
+              { hour: 9, minute: 0 },
+              { hour: 11, minute: 0 },
+            ]);
+          return fallback;
+        }
+      );
+      (Database.setSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, value: string) => {
+          settingsStore[key] = value;
+        }
+      );
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(0);
+      (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(12);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(30);
       // Algorithm returns 14:30 (queued) and 16:00 (free)
-      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockReturnValue([
+      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockResolvedValue([
         { hour: 14, minute: 30, score: 0.9, reason: 'afternoon' }, // already queued — skipped
         { hour: 16, minute: 0, score: 0.7, reason: 'afternoon' }, // free — should be picked
       ]);
@@ -1166,7 +1259,7 @@ describe('notificationManager', () => {
 
       // 16:00 should have been scheduled
       expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledTimes(1);
-      expect(Database.setSetting).toHaveBeenCalledWith(
+      expect(Database.setSettingAsync).toHaveBeenCalledWith(
         'catchup_reminder_slot_minutes',
         String(16 * 60)
       );
@@ -1182,21 +1275,25 @@ describe('notificationManager', () => {
           { id: 'smart_2026-03-30_14:00', slotMinutes: 840, status: 'consumed' },
         ]),
       };
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        if (key in settingsStore) return settingsStore[key];
-        if (key === 'smart_reminders_count') return '2';
-        if (key === 'reminders_last_planned_date') return todayStr;
-        if (key === 'additional_reminders_today') return '0';
-        // plannedSlots also reports the 14:00 slot as passed — both sources
-        // (consumed queue entry and plannedSlots) agree on the 60-min wait
-        if (key === 'reminders_planned_slots') return JSON.stringify([{ hour: 14, minute: 0 }]);
-        return fallback;
-      });
-      (Database.setSetting as jest.Mock).mockImplementation((key: string, value: string) => {
-        settingsStore[key] = value;
-      });
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(0);
-      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          if (key in settingsStore) return settingsStore[key];
+          if (key === 'smart_reminders_count') return '2';
+          if (key === 'reminders_last_planned_date') return todayStr;
+          if (key === 'additional_reminders_today') return '0';
+          // plannedSlots also reports the 14:00 slot as passed — both sources
+          // (consumed queue entry and plannedSlots) agree on the 60-min wait
+          if (key === 'reminders_planned_slots') return JSON.stringify([{ hour: 14, minute: 0 }]);
+          return fallback;
+        }
+      );
+      (Database.setSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, value: string) => {
+          settingsStore[key] = value;
+        }
+      );
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(0);
+      (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(14);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(30);
 
@@ -1213,23 +1310,27 @@ describe('notificationManager', () => {
     /** Helper: set up a typical "should schedule" scenario. */
     function setupScheduleScenario(settingsStore: Record<string, string>) {
       const todayStr = new Date().toDateString();
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        if (key in settingsStore) return settingsStore[key];
-        if (key === 'smart_reminders_count') return '2';
-        if (key === 'reminders_last_planned_date') return todayStr;
-        if (key === 'additional_reminders_today') return '0';
-        if (key === 'smart_catchup_reminders_count') return '2';
-        if (key === 'reminders_planned_slots') return JSON.stringify([{ hour: 9, minute: 0 }]);
-        return fallback;
-      });
-      (Database.setSetting as jest.Mock).mockImplementation((key: string, value: string) => {
-        settingsStore[key] = value;
-      });
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(0);
-      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          if (key in settingsStore) return settingsStore[key];
+          if (key === 'smart_reminders_count') return '2';
+          if (key === 'reminders_last_planned_date') return todayStr;
+          if (key === 'additional_reminders_today') return '0';
+          if (key === 'smart_catchup_reminders_count') return '2';
+          if (key === 'reminders_planned_slots') return JSON.stringify([{ hour: 9, minute: 0 }]);
+          return fallback;
+        }
+      );
+      (Database.setSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, value: string) => {
+          settingsStore[key] = value;
+        }
+      );
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(0);
+      (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(10);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(30);
-      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockReturnValue([
+      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockResolvedValue([
         { hour: 14, minute: 30, score: 0.8, reason: 'afternoon' },
       ]);
     }
@@ -1251,7 +1352,7 @@ describe('notificationManager', () => {
 
       // Only one notification should have been scheduled.
       expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledTimes(1);
-      expect(Database.insertBackgroundLog).toHaveBeenCalledWith(
+      expect(Database.insertBackgroundLogAsync).toHaveBeenCalledWith(
         'reminder',
         'Catch-up skipped — concurrent call in progress'
       );
@@ -1263,16 +1364,18 @@ describe('notificationManager', () => {
 
       await maybeScheduleCatchUpReminder();
       // Reset mocks to simulate a fresh tick with the limit not yet reached.
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        if (key === 'smart_reminders_count') return '2';
-        if (key === 'reminders_last_planned_date') return new Date().toDateString();
-        if (key === 'additional_reminders_today') return '1';
-        if (key === 'smart_catchup_reminders_count') return '2';
-        if (key === 'reminders_planned_slots') return JSON.stringify([{ hour: 9, minute: 0 }]);
-        if (key === 'smart_reminder_queue') return '[]';
-        return fallback;
-      });
-      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockReturnValue([
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          if (key === 'smart_reminders_count') return '2';
+          if (key === 'reminders_last_planned_date') return new Date().toDateString();
+          if (key === 'additional_reminders_today') return '1';
+          if (key === 'smart_catchup_reminders_count') return '2';
+          if (key === 'reminders_planned_slots') return JSON.stringify([{ hour: 9, minute: 0 }]);
+          if (key === 'smart_reminder_queue') return '[]';
+          return fallback;
+        }
+      );
+      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockResolvedValue([
         { hour: 16, minute: 0, score: 0.8, reason: 'afternoon' },
       ]);
       await maybeScheduleCatchUpReminder();
@@ -1289,25 +1392,27 @@ describe('notificationManager', () => {
       // Simulate: first read of additional_reminders_today returns 0 (initial check passes),
       // but by the time we re-read it just before scheduling, another runtime has
       // already incremented it to the limit (1 == catchupLimit).
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        if (key === 'smart_reminders_count') return '2';
-        if (key === 'reminders_last_planned_date') return todayStr;
-        if (key === 'smart_catchup_reminders_count') return '1'; // limit is 1
-        if (key === 'additional_reminders_today') {
-          getSetting_callCount++;
-          // First read (initial limit check) → 0 (below limit, so we proceed).
-          // Second read (pre-schedule cross-runtime check) → 1 (at limit, bail out).
-          return getSetting_callCount === 1 ? '0' : '1';
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          if (key === 'smart_reminders_count') return '2';
+          if (key === 'reminders_last_planned_date') return todayStr;
+          if (key === 'smart_catchup_reminders_count') return '1'; // limit is 1
+          if (key === 'additional_reminders_today') {
+            getSetting_callCount++;
+            // First read (initial limit check) → 0 (below limit, so we proceed).
+            // Second read (pre-schedule cross-runtime check) → 1 (at limit, bail out).
+            return getSetting_callCount === 1 ? '0' : '1';
+          }
+          if (key === 'reminders_planned_slots') return JSON.stringify([{ hour: 9, minute: 0 }]);
+          if (key === 'smart_reminder_queue') return '[]';
+          return fallback;
         }
-        if (key === 'reminders_planned_slots') return JSON.stringify([{ hour: 9, minute: 0 }]);
-        if (key === 'smart_reminder_queue') return '[]';
-        return fallback;
-      });
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(0);
-      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
+      );
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(0);
+      (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(10);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(30);
-      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockReturnValue([
+      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockResolvedValue([
         { hour: 14, minute: 30, score: 0.8, reason: 'afternoon' },
       ]);
 
@@ -1317,7 +1422,7 @@ describe('notificationManager', () => {
 
       // The pre-schedule guard should have caught the cross-runtime race.
       expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
-      expect(Database.insertBackgroundLog).toHaveBeenCalledWith(
+      expect(Database.insertBackgroundLogAsync).toHaveBeenCalledWith(
         'reminder',
         expect.stringContaining('concurrent cross-runtime call already scheduled')
       );
@@ -1333,14 +1438,18 @@ describe('notificationManager', () => {
         ]),
         smart_reminders_count: '2',
       };
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        return key in settingsStore ? settingsStore[key] : fallback;
-      });
-      (Database.setSetting as jest.Mock).mockImplementation((key: string, value: string) => {
-        settingsStore[key] = value;
-      });
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(30);
-      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          return key in settingsStore ? settingsStore[key] : fallback;
+        }
+      );
+      (Database.setSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, value: string) => {
+          settingsStore[key] = value;
+        }
+      );
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(30);
+      (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
       (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([
         { identifier: 'smart_2026-03-30_14:00' },
         { identifier: 'scheduled_daily_walk' },
@@ -1361,17 +1470,19 @@ describe('notificationManager', () => {
       );
       // Queue cleared and settings reset
       expect(JSON.parse(settingsStore['smart_reminder_queue'])).toHaveLength(0);
-      expect(Database.setSetting).toHaveBeenCalledWith('reminders_planned_slots', '[]');
-      expect(Database.setSetting).toHaveBeenCalledWith('catchup_reminder_slot_minutes', '');
+      expect(Database.setSettingAsync).toHaveBeenCalledWith('reminders_planned_slots', '[]');
+      expect(Database.setSettingAsync).toHaveBeenCalledWith('catchup_reminder_slot_minutes', '');
     });
 
     it('does nothing when goal is not yet reached', async () => {
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        if (key === 'smart_reminders_count') return '2';
-        return fallback;
-      });
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(10);
-      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          if (key === 'smart_reminders_count') return '2';
+          return fallback;
+        }
+      );
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(10);
+      (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
 
       await cancelRemindersIfGoalReached();
 
@@ -1380,12 +1491,14 @@ describe('notificationManager', () => {
     });
 
     it('does nothing when reminders are disabled (count = 0)', async () => {
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        if (key === 'smart_reminders_count') return '0';
-        return fallback;
-      });
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(30);
-      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          if (key === 'smart_reminders_count') return '0';
+          return fallback;
+        }
+      );
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(30);
+      (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
 
       await cancelRemindersIfGoalReached();
 
@@ -1400,14 +1513,18 @@ describe('notificationManager', () => {
         ]),
         smart_reminders_count: '2',
       };
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        return key in settingsStore ? settingsStore[key] : fallback;
-      });
-      (Database.setSetting as jest.Mock).mockImplementation((key: string, value: string) => {
-        settingsStore[key] = value;
-      });
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(30);
-      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          return key in settingsStore ? settingsStore[key] : fallback;
+        }
+      );
+      (Database.setSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, value: string) => {
+          settingsStore[key] = value;
+        }
+      );
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(30);
+      (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
       (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([
         { identifier: 'smart_2026-03-30_14:00' },
       ]);
@@ -1427,31 +1544,35 @@ describe('notificationManager', () => {
 
   describe('scheduleNextReminder — goal-reached clears slot settings', () => {
     it('clears planned slots and catch-up slot settings when daily goal is reached', async () => {
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(30);
-      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        if (key === 'smart_reminders_count') return '2';
-        return fallback;
-      });
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(30);
+      (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          if (key === 'smart_reminders_count') return '2';
+          return fallback;
+        }
+      );
       (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([]);
 
       await scheduleNextReminder();
 
-      expect(Database.setSetting).toHaveBeenCalledWith('reminders_planned_slots', '[]');
-      expect(Database.setSetting).toHaveBeenCalledWith('catchup_reminder_slot_minutes', '');
+      expect(Database.setSettingAsync).toHaveBeenCalledWith('reminders_planned_slots', '[]');
+      expect(Database.setSettingAsync).toHaveBeenCalledWith('catchup_reminder_slot_minutes', '');
     });
   });
 
   describe('calendar integration in scheduleNextReminder', () => {
     it('does not create a calendar event when a reminder is sent (delegated to scheduleDayReminders)', async () => {
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(10);
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        if (key === 'smart_reminders_count') return '2';
-        if (key === 'currently_outside') return '0';
-        if (key === 'last_reminder_ms') return '0';
-        return fallback;
-      });
-      (ReminderAlgorithm.shouldRemindNow as jest.Mock).mockReturnValue({
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(10);
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          if (key === 'smart_reminders_count') return '2';
+          if (key === 'currently_outside') return '0';
+          if (key === 'last_reminder_ms') return '0';
+          return fallback;
+        }
+      );
+      (ReminderAlgorithm.shouldRemindNow as jest.Mock).mockResolvedValue({
         should: true,
         reason: 'score 0.65: baseline',
       });
@@ -1465,10 +1586,12 @@ describe('notificationManager', () => {
     });
 
     it('does not create a calendar event when no reminder is sent', async () => {
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        if (key === 'smart_reminders_count') return '0';
-        return fallback;
-      });
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          if (key === 'smart_reminders_count') return '0';
+          return fallback;
+        }
+      );
 
       await scheduleNextReminder();
 
@@ -1536,7 +1659,7 @@ describe('notificationManager', () => {
         notification: { request: { identifier: 'notif-abc' } },
         actionIdentifier: 'less_often',
       });
-      expect(Database.insertReminderFeedback).not.toHaveBeenCalled();
+      expect(Database.insertReminderFeedbackAsync).not.toHaveBeenCalled();
     });
 
     it('inserts reminder feedback immediately for went_outside action', async () => {
@@ -1544,7 +1667,7 @@ describe('notificationManager', () => {
         notification: { request: { identifier: 'notif-abc' } },
         actionIdentifier: 'went_outside',
       });
-      expect(Database.insertReminderFeedback).toHaveBeenCalledWith(
+      expect(Database.insertReminderFeedbackAsync).toHaveBeenCalledWith(
         expect.objectContaining({ action: 'went_outside' })
       );
     });
@@ -1554,7 +1677,7 @@ describe('notificationManager', () => {
         notification: { request: { identifier: 'notif-abc' } },
         actionIdentifier: 'snoozed',
       });
-      expect(Database.insertReminderFeedback).toHaveBeenCalledWith(
+      expect(Database.insertReminderFeedbackAsync).toHaveBeenCalledWith(
         expect.objectContaining({ action: 'snoozed' })
       );
     });
@@ -1630,20 +1753,22 @@ describe('notificationManager', () => {
 
   describe('weather integration', () => {
     it('scheduleDayReminders fetches fresh weather before scoring when weather is enabled', async () => {
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(10);
-      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        if (key === 'smart_reminders_count') return '1';
-        return fallback;
-      });
-      (WeatherAlgorithm.getWeatherPreferences as jest.Mock).mockReturnValue({ enabled: true });
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(10);
+      (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          if (key === 'smart_reminders_count') return '1';
+          return fallback;
+        }
+      );
+      (WeatherAlgorithm.getWeatherPreferences as jest.Mock).mockResolvedValue({ enabled: true });
       (WeatherService.fetchWeatherForecast as jest.Mock).mockResolvedValue({
         success: true,
         conditions: [],
       });
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(9);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
-      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockReturnValue([
+      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockResolvedValue([
         { hour: 12, minute: 0, score: 0.8, reason: 'lunch' },
       ]);
 
@@ -1657,16 +1782,18 @@ describe('notificationManager', () => {
     });
 
     it('scheduleDayReminders does not fetch weather when weather is disabled', async () => {
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(10);
-      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        if (key === 'smart_reminders_count') return '1';
-        return fallback;
-      });
-      (WeatherAlgorithm.getWeatherPreferences as jest.Mock).mockReturnValue({ enabled: false });
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(10);
+      (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          if (key === 'smart_reminders_count') return '1';
+          return fallback;
+        }
+      );
+      (WeatherAlgorithm.getWeatherPreferences as jest.Mock).mockResolvedValue({ enabled: false });
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(9);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
-      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockReturnValue([
+      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockResolvedValue([
         { hour: 12, minute: 0, score: 0.8, reason: 'lunch' },
       ]);
 
@@ -1679,27 +1806,29 @@ describe('notificationManager', () => {
 
     it('maybeScheduleCatchUpReminder fetches fresh weather before scoring when weather is enabled', async () => {
       const todayStr = new Date().toDateString();
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(0);
-      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        if (key === 'smart_reminders_count') return '2';
-        if (key === 'reminders_last_planned_date') return todayStr;
-        if (key === 'additional_reminders_today') return '0';
-        if (key === 'reminders_planned_slots')
-          return JSON.stringify([
-            { hour: 9, minute: 0 },
-            { hour: 11, minute: 0 },
-          ]);
-        return fallback;
-      });
-      (WeatherAlgorithm.getWeatherPreferences as jest.Mock).mockReturnValue({ enabled: true });
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(0);
+      (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          if (key === 'smart_reminders_count') return '2';
+          if (key === 'reminders_last_planned_date') return todayStr;
+          if (key === 'additional_reminders_today') return '0';
+          if (key === 'reminders_planned_slots')
+            return JSON.stringify([
+              { hour: 9, minute: 0 },
+              { hour: 11, minute: 0 },
+            ]);
+          return fallback;
+        }
+      );
+      (WeatherAlgorithm.getWeatherPreferences as jest.Mock).mockResolvedValue({ enabled: true });
       (WeatherService.fetchWeatherForecast as jest.Mock).mockResolvedValue({
         success: true,
         conditions: [],
       });
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(12);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
-      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockReturnValue([
+      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockResolvedValue([
         { hour: 14, minute: 30, score: 0.7, reason: 'afternoon' },
       ]);
 
@@ -1714,23 +1843,25 @@ describe('notificationManager', () => {
 
     it('maybeScheduleCatchUpReminder does not fetch weather when weather is disabled', async () => {
       const todayStr = new Date().toDateString();
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(0);
-      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        if (key === 'smart_reminders_count') return '2';
-        if (key === 'reminders_last_planned_date') return todayStr;
-        if (key === 'additional_reminders_today') return '0';
-        if (key === 'reminders_planned_slots')
-          return JSON.stringify([
-            { hour: 9, minute: 0 },
-            { hour: 11, minute: 0 },
-          ]);
-        return fallback;
-      });
-      (WeatherAlgorithm.getWeatherPreferences as jest.Mock).mockReturnValue({ enabled: false });
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(0);
+      (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          if (key === 'smart_reminders_count') return '2';
+          if (key === 'reminders_last_planned_date') return todayStr;
+          if (key === 'additional_reminders_today') return '0';
+          if (key === 'reminders_planned_slots')
+            return JSON.stringify([
+              { hour: 9, minute: 0 },
+              { hour: 11, minute: 0 },
+            ]);
+          return fallback;
+        }
+      );
+      (WeatherAlgorithm.getWeatherPreferences as jest.Mock).mockResolvedValue({ enabled: false });
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(12);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
-      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockReturnValue([
+      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockResolvedValue([
         { hour: 14, minute: 30, score: 0.7, reason: 'afternoon' },
       ]);
 
@@ -1742,15 +1873,17 @@ describe('notificationManager', () => {
     });
 
     it('includes weather description and temperature in notification body when weather is enabled and available', async () => {
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(0);
-      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        if (key === 'smart_reminders_count') return '1';
-        return fallback;
-      });
-      (WeatherService.isWeatherDataAvailable as jest.Mock).mockReturnValue(true);
-      (WeatherAlgorithm.getWeatherPreferences as jest.Mock).mockReturnValue({ enabled: true });
-      (WeatherService.getWeatherForHour as jest.Mock).mockReturnValue({
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(0);
+      (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          if (key === 'smart_reminders_count') return '1';
+          return fallback;
+        }
+      );
+      (WeatherService.isWeatherDataAvailable as jest.Mock).mockResolvedValue(true);
+      (WeatherAlgorithm.getWeatherPreferences as jest.Mock).mockResolvedValue({ enabled: true });
+      (WeatherService.getWeatherForHour as jest.Mock).mockResolvedValue({
         temperature: 18,
         weatherCode: 0,
         precipitationProbability: 5,
@@ -1770,7 +1903,7 @@ describe('notificationManager', () => {
       });
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(9);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
-      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockReturnValue([
+      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockResolvedValue([
         { hour: 12, minute: 0, score: 0.8, reason: 'lunch' },
       ]);
 
@@ -1785,17 +1918,19 @@ describe('notificationManager', () => {
     });
 
     it('does not append weather to notification body when weather is disabled', async () => {
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(0);
-      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        if (key === 'smart_reminders_count') return '1';
-        return fallback;
-      });
-      (WeatherService.isWeatherDataAvailable as jest.Mock).mockReturnValue(false);
-      (WeatherAlgorithm.getWeatherPreferences as jest.Mock).mockReturnValue({ enabled: false });
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(0);
+      (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          if (key === 'smart_reminders_count') return '1';
+          return fallback;
+        }
+      );
+      (WeatherService.isWeatherDataAvailable as jest.Mock).mockResolvedValue(false);
+      (WeatherAlgorithm.getWeatherPreferences as jest.Mock).mockResolvedValue({ enabled: false });
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(9);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
-      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockReturnValue([
+      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockResolvedValue([
         { hour: 12, minute: 0, score: 0.8, reason: 'lunch' },
       ]);
 
@@ -1808,15 +1943,17 @@ describe('notificationManager', () => {
     });
 
     it('appends top contributor description to notification body when contributors are provided', async () => {
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(0);
-      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        if (key === 'smart_reminders_count') return '1';
-        return fallback;
-      });
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(0);
+      (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          if (key === 'smart_reminders_count') return '1';
+          return fallback;
+        }
+      );
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(9);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
-      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockReturnValue([
+      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockResolvedValue([
         {
           hour: 12,
           minute: 0,
@@ -1836,15 +1973,17 @@ describe('notificationManager', () => {
     });
 
     it('appends top 2 contributor descriptions joined with "and" when 2 contributors are provided', async () => {
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(0);
-      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        if (key === 'smart_reminders_count') return '1';
-        return fallback;
-      });
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(0);
+      (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          if (key === 'smart_reminders_count') return '1';
+          return fallback;
+        }
+      );
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(9);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
-      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockReturnValue([
+      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockResolvedValue([
         {
           hour: 18,
           minute: 0,
@@ -1869,15 +2008,17 @@ describe('notificationManager', () => {
     });
 
     it('uses weather fallback when no contributors are provided', async () => {
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(0);
-      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        if (key === 'smart_reminders_count') return '1';
-        return fallback;
-      });
-      (WeatherService.isWeatherDataAvailable as jest.Mock).mockReturnValue(true);
-      (WeatherAlgorithm.getWeatherPreferences as jest.Mock).mockReturnValue({ enabled: true });
-      (WeatherService.getWeatherForHour as jest.Mock).mockReturnValue({
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(0);
+      (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          if (key === 'smart_reminders_count') return '1';
+          return fallback;
+        }
+      );
+      (WeatherService.isWeatherDataAvailable as jest.Mock).mockResolvedValue(true);
+      (WeatherAlgorithm.getWeatherPreferences as jest.Mock).mockResolvedValue({ enabled: true });
+      (WeatherService.getWeatherForHour as jest.Mock).mockResolvedValue({
         temperature: 22,
         weatherCode: 0,
         precipitationProbability: 0,
@@ -1894,7 +2035,7 @@ describe('notificationManager', () => {
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(9);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
       // No contributors field in mock → falls back to weather context block
-      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockReturnValue([
+      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockResolvedValue([
         { hour: 17, minute: 0, score: 0.8, reason: 'after-work' },
       ]);
 
@@ -1956,18 +2097,20 @@ describe('notificationManager', () => {
       // Notification must be dismissed
       expect(Notifications.dismissNotificationAsync).toHaveBeenCalledWith('daily_planner_4');
       // Reminder feedback must NOT be inserted
-      expect(Database.insertReminderFeedback).not.toHaveBeenCalled();
+      expect(Database.insertReminderFeedbackAsync).not.toHaveBeenCalled();
     });
   });
 
   describe('cancelAutomaticReminders — preserves daily planner and failsafe', () => {
     it('does not cancel daily_planner_ or failsafe_reminder_ notifications when cancelling automatic reminders', async () => {
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(30);
-      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        if (key === 'smart_reminders_count') return '2';
-        return fallback;
-      });
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(30);
+      (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          if (key === 'smart_reminders_count') return '2';
+          return fallback;
+        }
+      );
       (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([
         { identifier: 'auto_reminder_1' },
         { identifier: 'scheduled_1_2' },
@@ -2002,13 +2145,15 @@ describe('notificationManager', () => {
       jest.useFakeTimers();
       jest.setSystemTime(new Date('2026-03-14T08:00:00'));
 
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        if (key === 'smart_reminders_count') return '2';
-        return fallback; // lastPlannedDate returns '' → not today
-      });
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(0);
-      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
-      (WeatherAlgorithm.getWeatherPreferences as jest.Mock).mockReturnValue({ enabled: false });
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          if (key === 'smart_reminders_count') return '2';
+          return fallback; // lastPlannedDate returns '' → not today
+        }
+      );
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(0);
+      (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
+      (WeatherAlgorithm.getWeatherPreferences as jest.Mock).mockResolvedValue({ enabled: false });
       (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([]);
     });
 
@@ -2092,10 +2237,12 @@ describe('notificationManager', () => {
     });
 
     it('calls deleteFutureTouchGrassEvents even when reminders are disabled', async () => {
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        if (key === 'smart_reminders_count') return '0';
-        return fallback;
-      });
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          if (key === 'smart_reminders_count') return '0';
+          return fallback;
+        }
+      );
 
       await scheduleDayReminders();
 
@@ -2120,10 +2267,12 @@ describe('notificationManager', () => {
     });
 
     it('does not schedule failsafe reminders when reminders are disabled', async () => {
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        if (key === 'smart_reminders_count') return '0';
-        return fallback;
-      });
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          if (key === 'smart_reminders_count') return '0';
+          return fallback;
+        }
+      );
 
       await scheduleDayReminders();
 
@@ -2138,19 +2287,23 @@ describe('notificationManager', () => {
   describe('scheduleDayReminders — queue integration', () => {
     it('clears and rebuilds the queue with date_planned entries using smart_ identifier format', async () => {
       const settingsStore: Record<string, string> = {};
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        if (key in settingsStore) return settingsStore[key];
-        if (key === 'smart_reminders_count') return '2';
-        return fallback;
-      });
-      (Database.setSetting as jest.Mock).mockImplementation((key: string, value: string) => {
-        settingsStore[key] = value;
-      });
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(10);
-      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          if (key in settingsStore) return settingsStore[key];
+          if (key === 'smart_reminders_count') return '2';
+          return fallback;
+        }
+      );
+      (Database.setSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, value: string) => {
+          settingsStore[key] = value;
+        }
+      );
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(10);
+      (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(9);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
-      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockReturnValue([
+      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockResolvedValue([
         { hour: 14, minute: 0, score: 0.8, reason: 'afternoon' },
         { hour: 17, minute: 30, score: 0.7, reason: 'after-work' },
       ]);
@@ -2171,15 +2324,17 @@ describe('notificationManager', () => {
     });
 
     it('uses the queue entry id as the Expo notification identifier', async () => {
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(10);
-      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        if (key === 'smart_reminders_count') return '1';
-        return fallback;
-      });
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(10);
+      (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          if (key === 'smart_reminders_count') return '1';
+          return fallback;
+        }
+      );
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(9);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
-      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockReturnValue([
+      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockResolvedValue([
         { hour: 14, minute: 0, score: 0.8, reason: 'afternoon' },
       ]);
 
@@ -2196,16 +2351,18 @@ describe('notificationManager', () => {
     });
 
     it('saves an empty queue first then the new entries (clear-then-build)', async () => {
-      const setSpy = jest.spyOn(Database, 'setSetting');
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(10);
-      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        if (key === 'smart_reminders_count') return '1';
-        return fallback;
-      });
+      const setSpy = jest.spyOn(Database, 'setSettingAsync');
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(10);
+      (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          if (key === 'smart_reminders_count') return '1';
+          return fallback;
+        }
+      );
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(9);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
-      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockReturnValue([
+      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockResolvedValue([
         { hour: 14, minute: 0, score: 0.8, reason: 'afternoon' },
       ]);
 
@@ -2230,26 +2387,30 @@ describe('notificationManager', () => {
         ]),
       };
       const todayStr = new Date().toDateString();
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        if (key in settingsStore) return settingsStore[key];
-        if (key === 'smart_reminders_count') return '2';
-        if (key === 'reminders_last_planned_date') return todayStr;
-        if (key === 'additional_reminders_today') return '0';
-        if (key === 'reminders_planned_slots')
-          return JSON.stringify([
-            { hour: 9, minute: 0 },
-            { hour: 11, minute: 0 },
-          ]);
-        return fallback;
-      });
-      (Database.setSetting as jest.Mock).mockImplementation((key: string, value: string) => {
-        settingsStore[key] = value;
-      });
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(0);
-      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          if (key in settingsStore) return settingsStore[key];
+          if (key === 'smart_reminders_count') return '2';
+          if (key === 'reminders_last_planned_date') return todayStr;
+          if (key === 'additional_reminders_today') return '0';
+          if (key === 'reminders_planned_slots')
+            return JSON.stringify([
+              { hour: 9, minute: 0 },
+              { hour: 11, minute: 0 },
+            ]);
+          return fallback;
+        }
+      );
+      (Database.setSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, value: string) => {
+          settingsStore[key] = value;
+        }
+      );
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(0);
+      (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(12);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
-      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockReturnValue([
+      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockResolvedValue([
         { hour: 14, minute: 30, score: 0.7, reason: 'afternoon' },
       ]);
 
@@ -2267,22 +2428,24 @@ describe('notificationManager', () => {
 
     it('uses the catchup id as the Expo notification identifier', async () => {
       const todayStr = new Date().toDateString();
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(0);
-      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        if (key === 'smart_reminders_count') return '2';
-        if (key === 'reminders_last_planned_date') return todayStr;
-        if (key === 'additional_reminders_today') return '0';
-        if (key === 'reminders_planned_slots')
-          return JSON.stringify([
-            { hour: 9, minute: 0 },
-            { hour: 11, minute: 0 },
-          ]);
-        return fallback;
-      });
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(0);
+      (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          if (key === 'smart_reminders_count') return '2';
+          if (key === 'reminders_last_planned_date') return todayStr;
+          if (key === 'additional_reminders_today') return '0';
+          if (key === 'reminders_planned_slots')
+            return JSON.stringify([
+              { hour: 9, minute: 0 },
+              { hour: 11, minute: 0 },
+            ]);
+          return fallback;
+        }
+      );
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(12);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
-      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockReturnValue([
+      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockResolvedValue([
         { hour: 14, minute: 30, score: 0.7, reason: 'afternoon' },
       ]);
 
@@ -2307,20 +2470,26 @@ describe('notificationManager', () => {
         smart_reminders_count: '2',
         ...extra,
       };
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        return key in store ? store[key] : fallback;
-      });
-      (Database.setSetting as jest.Mock).mockImplementation((key: string, value: string) => {
-        store[key] = value;
-      });
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          return key in store ? store[key] : fallback;
+        }
+      );
+      (Database.setSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, value: string) => {
+          store[key] = value;
+        }
+      );
       return store;
     }
 
     it('does nothing when reminders are disabled (count = 0)', async () => {
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        if (key === 'smart_reminders_count') return '0';
-        return fallback;
-      });
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          if (key === 'smart_reminders_count') return '0';
+          return fallback;
+        }
+      );
 
       await processReminderQueue();
 
@@ -2329,19 +2498,21 @@ describe('notificationManager', () => {
     });
 
     it('does nothing when queue is empty', async () => {
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        if (key === 'smart_reminders_count') return '2';
-        if (key === 'smart_reminder_queue') return '[]';
-        return fallback;
-      });
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(0);
-      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          if (key === 'smart_reminders_count') return '2';
+          if (key === 'smart_reminder_queue') return '[]';
+          return fallback;
+        }
+      );
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(0);
+      (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
 
       await processReminderQueue();
 
       expect(Notifications.cancelScheduledNotificationAsync).not.toHaveBeenCalled();
       expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
-      expect(Database.insertBackgroundLog).toHaveBeenCalledWith(
+      expect(Database.insertBackgroundLogAsync).toHaveBeenCalledWith(
         'reminder',
         'Queue processed — empty'
       );
@@ -2353,8 +2524,8 @@ describe('notificationManager', () => {
         { id: 'smart_2026-03-30_17:30', slotMinutes: 1050, status: 'consumed' },
       ];
       const store = mockSettingsWithQueue(queue);
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(30);
-      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(30);
+      (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(10);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
 
@@ -2381,8 +2552,8 @@ describe('notificationManager', () => {
         { id: 'smart_2026-03-30_14:00', slotMinutes: 840, status: 'date_planned' },
       ];
       const store = mockSettingsWithQueue(queue);
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(0);
-      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(0);
+      (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(13);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(50);
 
@@ -2403,8 +2574,8 @@ describe('notificationManager', () => {
         { id: 'smart_2026-03-30_14:00', slotMinutes: 840, status: 'date_planned' },
       ];
       const store = mockSettingsWithQueue(queue);
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(0);
-      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(0);
+      (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(13);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(30);
 
@@ -2423,8 +2594,8 @@ describe('notificationManager', () => {
         { id: 'smart_2026-03-30_14:00', slotMinutes: 840, status: 'tick_planned' },
       ];
       const store = mockSettingsWithQueue(queue);
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(0);
-      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(0);
+      (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(14);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(10);
 
@@ -2441,7 +2612,7 @@ describe('notificationManager', () => {
       expect(updatedQueue[0].status).toBe('consumed');
 
       // Firing a tick_planned reminder must write an activity log entry
-      expect(Database.insertBackgroundLog).toHaveBeenCalledWith(
+      expect(Database.insertBackgroundLogAsync).toHaveBeenCalledWith(
         'reminder',
         'Reminder fired at 14:00'
       );
@@ -2455,8 +2626,8 @@ describe('notificationManager', () => {
         { id: 'smart_2026-03-30_14:00', slotMinutes: 840, status: 'tick_planned' },
       ];
       const store = mockSettingsWithQueue(queue);
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(0);
-      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(0);
+      (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(14);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(30);
 
@@ -2475,8 +2646,8 @@ describe('notificationManager', () => {
         { id: 'smart_2026-03-30_14:00', slotMinutes: 840, status: 'date_planned' },
       ];
       const store = mockSettingsWithQueue(queue);
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(0);
-      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(0);
+      (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(14);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(30);
 
@@ -2499,8 +2670,8 @@ describe('notificationManager', () => {
         { id: 'smart_2026-03-30_14:00', slotMinutes: 840, status: 'consumed' },
       ];
       const store = mockSettingsWithQueue(queue);
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(0);
-      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(0);
+      (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(15);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(5);
 
@@ -2520,8 +2691,8 @@ describe('notificationManager', () => {
         { id: 'smart_2026-03-30_14:00', slotMinutes: 840, status: 'consumed' },
       ];
       const store = mockSettingsWithQueue(queue);
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(0);
-      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(0);
+      (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(14);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(30);
 
@@ -2541,8 +2712,8 @@ describe('notificationManager', () => {
         { id: 'smart_2026-03-30_17:00', slotMinutes: 1020, status: 'date_planned' },
       ];
       const store = mockSettingsWithQueue(queue);
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(0);
-      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(0);
+      (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(10);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
 
@@ -2562,8 +2733,8 @@ describe('notificationManager', () => {
         { id: 'smart_2026-03-30_14:00', slotMinutes: 840, status: 'tick_planned' },
       ];
       const store = mockSettingsWithQueue(queue);
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(0);
-      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(0);
+      (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(14);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
 
@@ -2576,7 +2747,7 @@ describe('notificationManager', () => {
       expect(updatedQueue[0].status).toBe('consumed');
 
       // Firing a tick_planned reminder must write an activity log entry
-      expect(Database.insertBackgroundLog).toHaveBeenCalledWith(
+      expect(Database.insertBackgroundLogAsync).toHaveBeenCalledWith(
         'reminder',
         'Reminder fired at 14:00'
       );
@@ -2590,8 +2761,8 @@ describe('notificationManager', () => {
         { id: 'smart_2026-03-30_14:00', slotMinutes: 840, status: 'date_planned' },
       ];
       const store = mockSettingsWithQueue(queue);
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(0);
-      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(0);
+      (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(14);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
 
@@ -2614,20 +2785,24 @@ describe('notificationManager', () => {
         smart_reminder_queue: JSON.stringify(queue),
         smart_reminders_count: '2',
       };
-      (Database.getSetting as jest.Mock).mockImplementation(
-        (key: string, fallback: string) => store[key] ?? fallback
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => store[key] ?? fallback
       );
-      (Database.setSetting as jest.Mock).mockImplementation((key: string, value: string) => {
-        store[key] = value;
-      });
+      (Database.setSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, value: string) => {
+          store[key] = value;
+        }
+      );
       return store;
     };
 
     it('does nothing when reminders are disabled', async () => {
-      (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-        if (key === 'smart_reminders_count') return '0';
-        return fallback;
-      });
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          if (key === 'smart_reminders_count') return '0';
+          return fallback;
+        }
+      );
 
       await updateUpcomingReminderContent();
 
@@ -2654,7 +2829,7 @@ describe('notificationManager', () => {
       mockSettingsWithQueue(queue);
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(10);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(5);
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(5);
 
       await updateUpcomingReminderContent();
 
@@ -2672,7 +2847,7 @@ describe('notificationManager', () => {
       mockSettingsWithQueue(queue);
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(15);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(5);
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(5);
 
       await updateUpcomingReminderContent();
 
@@ -2690,7 +2865,7 @@ describe('notificationManager', () => {
       mockSettingsWithQueue(queue);
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(14);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(5);
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(5);
 
       await updateUpcomingReminderContent();
 
@@ -2708,8 +2883,8 @@ describe('notificationManager', () => {
       mockSettingsWithQueue(queue);
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(14);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(15); // User has now spent 15 minutes outside
-      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(15); // User has now spent 15 minutes outside
+      (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
 
       // Mock scheduled notification with old content (when user had 0 minutes)
       (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([
@@ -2742,7 +2917,7 @@ describe('notificationManager', () => {
           }),
         })
       );
-      expect(Database.insertBackgroundLog).toHaveBeenCalledWith(
+      expect(Database.insertBackgroundLogAsync).toHaveBeenCalledWith(
         'reminder',
         'Updated content for 1 reminder(s) within 30 min window'
       );
@@ -2758,8 +2933,8 @@ describe('notificationManager', () => {
       mockSettingsWithQueue(queue);
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(14);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(0);
-      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(0);
+      (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
 
       // Mock scheduled notification with current content (matches what would be generated)
       const expectedBody = 'notif_body_none'; // When todayMinutes = 0
@@ -2788,7 +2963,7 @@ describe('notificationManager', () => {
       mockSettingsWithQueue(queue);
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(14);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(5);
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(5);
 
       // Notification not in scheduled list (already fired or cancelled)
       (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([]);
@@ -2810,8 +2985,8 @@ describe('notificationManager', () => {
       mockSettingsWithQueue(queue);
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(14);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(10);
-      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(10);
+      (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
 
       // Both notifications have old content
       (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([
@@ -2844,8 +3019,8 @@ describe('notificationManager', () => {
       mockSettingsWithQueue(queue);
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(14);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
-      (Database.getTodayMinutes as jest.Mock).mockReturnValue(5);
-      (Database.getCurrentDailyGoal as jest.Mock).mockReturnValue({ targetMinutes: 30 });
+      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(5);
+      (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
 
       (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([
         {

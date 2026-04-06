@@ -15,7 +15,7 @@ import {
   updateUpcomingReminderContent,
 } from '../notifications/notificationManager';
 import { fetchWeatherForecast } from '../weather/weatherService';
-import { getSetting, initDatabase, insertBackgroundLog } from '../storage/database';
+import { getSettingAsync, initDatabase, insertBackgroundLogAsync } from '../storage/database';
 
 // ---------------------------------------------------------------------------
 // Concurrency guard
@@ -37,7 +37,7 @@ export async function performBackgroundTick(): Promise<void> {
   // Same-runtime concurrency guard: atomic check+set before the first await.
   if (tickInProgress) {
     console.log('TouchGrass: [BackgroundTick] Already running — skipping concurrent tick');
-    insertBackgroundLog('reminder', 'Background tick skipped — already running');
+    await insertBackgroundLogAsync('reminder', 'Background tick skipped — already running');
     return;
   }
   tickInProgress = true;
@@ -46,27 +46,27 @@ export async function performBackgroundTick(): Promise<void> {
     // no guarantee that App.tsx has run first.
     initDatabase();
 
-    insertBackgroundLog('reminder', 'Background tick start');
+    await insertBackgroundLogAsync('reminder', 'Background tick start');
 
     // --- Weather refresh (runs first to warm the 30-min cache) ---
     // scheduleDayReminders and maybeScheduleCatchUpReminder both call
     // fetchWeatherForecast internally; by fetching once up-front they get an
     // instant cache-hit instead of each making their own network round-trip.
-    const weatherEnabled = getSetting('weather_enabled', '1') === '1';
+    const weatherEnabled = (await getSettingAsync('weather_enabled', '1')) === '1';
     if (weatherEnabled) {
       try {
         await fetchWeatherForecast({ allowPermissionPrompt: false });
-        insertBackgroundLog('reminder', 'Weather refresh succeeded');
+        await insertBackgroundLogAsync('reminder', 'Weather refresh succeeded');
       } catch (weatherError) {
         console.error('TouchGrass: [BackgroundTick] Weather fetch failed', weatherError);
-        insertBackgroundLog('reminder', 'Weather refresh failed');
+        await insertBackgroundLogAsync('reminder', 'Weather refresh failed');
       }
     } else {
-      insertBackgroundLog('reminder', 'Weather disabled — skipping refresh');
+      await insertBackgroundLogAsync('reminder', 'Weather disabled — skipping refresh');
     }
 
     // --- Reminder planning ---
-    const remindersCountRaw = getSetting('smart_reminders_count', '0');
+    const remindersCountRaw = await getSettingAsync('smart_reminders_count', '0');
     const remindersEnabled = parseInt(remindersCountRaw, 10) > 0;
     console.log(
       `TouchGrass: [BackgroundTick] smart_reminders_count=${remindersCountRaw} → reminders ${remindersEnabled ? 'enabled' : 'disabled'}`
@@ -82,10 +82,13 @@ export async function performBackgroundTick(): Promise<void> {
         console.error('TouchGrass: [BackgroundTick] Reminder operations failed', reminderError);
       }
     } else {
-      insertBackgroundLog('reminder', 'Reminders disabled — skipping background tick work');
+      await insertBackgroundLogAsync(
+        'reminder',
+        'Reminders disabled — skipping background tick work'
+      );
     }
 
-    insertBackgroundLog('reminder', 'Background tick done');
+    await insertBackgroundLogAsync('reminder', 'Background tick done');
   } finally {
     tickInProgress = false;
   }

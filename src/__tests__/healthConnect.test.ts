@@ -23,13 +23,13 @@ describe('syncHealthConnect', () => {
 
     (HealthConnect.getSdkStatus as jest.Mock).mockResolvedValue(3); // SDK_AVAILABLE
     (HealthConnect.initialize as jest.Mock).mockResolvedValue(undefined);
-    (Database.getSetting as jest.Mock).mockImplementation((key: string) => {
+    (Database.getSettingAsync as jest.Mock).mockImplementation(async (key: string) => {
       if (key === 'healthconnect_user_enabled') return '1';
       return '0';
     });
-    (Database.setSetting as jest.Mock).mockImplementation(() => undefined);
-    (Database.pruneShortDiscardedHealthConnectSessions as jest.Mock).mockReturnValue(0);
-    (Database.getKnownLocations as jest.Mock).mockReturnValue([]);
+    (Database.setSettingAsync as jest.Mock).mockImplementation(async () => undefined);
+    (Database.pruneShortDiscardedHealthConnectSessionsAsync as jest.Mock).mockResolvedValue(0);
+    (Database.getKnownLocationsAsync as jest.Mock).mockResolvedValue([]);
     (SessionMerger.buildSession as jest.Mock).mockImplementation(
       (startTime, endTime, source, confidence, notes, steps) => ({
         startTime,
@@ -42,7 +42,7 @@ describe('syncHealthConnect', () => {
         steps,
       })
     );
-    (SessionMerger.submitSession as jest.Mock).mockImplementation(() => undefined);
+    (SessionMerger.submitSession as jest.Mock).mockImplementation(async () => undefined);
   });
 
   it('returns false when Health Connect is not available', async () => {
@@ -53,7 +53,7 @@ describe('syncHealthConnect', () => {
   });
 
   it('returns false and does not sync when HC is disabled by the user', async () => {
-    (Database.getSetting as jest.Mock).mockImplementation((key: string) => {
+    (Database.getSettingAsync as jest.Mock).mockImplementation(async (key: string) => {
       if (key === 'healthconnect_user_enabled') return '0';
       return '0';
     });
@@ -65,7 +65,7 @@ describe('syncHealthConnect', () => {
 
   it('returns false without syncing when within 10-minute cooldown', async () => {
     const recentSync = String(Date.now() - 5 * 60 * 1000); // 5 min ago — within cooldown
-    (Database.getSetting as jest.Mock).mockImplementation((key: string) => {
+    (Database.getSettingAsync as jest.Mock).mockImplementation(async (key: string) => {
       if (key === 'healthconnect_user_enabled') return '1';
       if (key === 'healthconnect_last_sync') return recentSync;
       return '0';
@@ -77,7 +77,7 @@ describe('syncHealthConnect', () => {
 
   it('proceeds with sync when 10-minute cooldown has elapsed', async () => {
     const oldSync = String(Date.now() - 11 * 60 * 1000); // 11 min ago — past cooldown
-    (Database.getSetting as jest.Mock).mockImplementation((key: string) => {
+    (Database.getSettingAsync as jest.Mock).mockImplementation(async (key: string) => {
       if (key === 'healthconnect_user_enabled') return '1';
       if (key === 'healthconnect_last_sync') return oldSync;
       return '0';
@@ -274,7 +274,7 @@ describe('syncHealthConnect', () => {
 
     expect(result).toBe(false);
     // healthconnect_enabled should NOT have been set to '0' for a transient error
-    const disableCalls = (Database.setSetting as jest.Mock).mock.calls.filter(
+    const disableCalls = (Database.setSettingAsync as jest.Mock).mock.calls.filter(
       ([key, value]: [string, string]) => key === 'healthconnect_enabled' && value === '0'
     );
     expect(disableCalls).toHaveLength(0);
@@ -288,7 +288,7 @@ describe('syncHealthConnect', () => {
     const result = await syncHealthConnect();
 
     expect(result).toBe(false);
-    expect(Database.setSetting).toHaveBeenCalledWith('healthconnect_enabled', '0');
+    expect(Database.setSettingAsync).toHaveBeenCalledWith('healthconnect_enabled', '0');
   });
 
   it('disables Health Connect when a SecurityException without READ_ in message occurs', async () => {
@@ -301,7 +301,7 @@ describe('syncHealthConnect', () => {
     const result = await syncHealthConnect();
 
     expect(result).toBe(false);
-    expect(Database.setSetting).toHaveBeenCalledWith('healthconnect_enabled', '0');
+    expect(Database.setSettingAsync).toHaveBeenCalledWith('healthconnect_enabled', '0');
   });
 
   it('updates healthconnect_last_sync on success', async () => {
@@ -309,7 +309,7 @@ describe('syncHealthConnect', () => {
 
     await syncHealthConnect();
 
-    const lastSyncCall = (Database.setSetting as jest.Mock).mock.calls.find(
+    const lastSyncCall = (Database.setSettingAsync as jest.Mock).mock.calls.find(
       ([key]: [string]) => key === 'healthconnect_last_sync'
     );
     expect(lastSyncCall).toBeDefined();
@@ -322,9 +322,9 @@ describe('syncHealthConnect', () => {
     await syncHealthConnect();
     const after = Date.now();
 
-    expect(Database.pruneShortDiscardedHealthConnectSessions).toHaveBeenCalledTimes(1);
+    expect(Database.pruneShortDiscardedHealthConnectSessionsAsync).toHaveBeenCalledTimes(1);
     const [beforeMs, minStepsPerMinute] = (
-      Database.pruneShortDiscardedHealthConnectSessions as jest.Mock
+      Database.pruneShortDiscardedHealthConnectSessionsAsync as jest.Mock
     ).mock.calls[0];
     // cutoff must be now - MIN_DURATION_MS (5 min), within the test execution window
     expect(beforeMs).toBeGreaterThanOrEqual(before - 5 * 60 * 1000);
@@ -356,7 +356,7 @@ describe('syncHealthConnect', () => {
 
     await syncHealthConnect();
 
-    const logCall = (Database.insertBackgroundLog as jest.Mock).mock.calls.find(
+    const logCall = (Database.insertBackgroundLogAsync as jest.Mock).mock.calls.find(
       ([cat]: [string]) => cat === 'health_connect'
     );
     expect(logCall).toBeDefined();
@@ -365,7 +365,7 @@ describe('syncHealthConnect', () => {
     expect(message).toMatch(/2 step record/);
     expect(message).toMatch(/1 exercise record/);
     // Both from a single insertBackgroundLog call (not two separate calls)
-    const logCalls = (Database.insertBackgroundLog as jest.Mock).mock.calls.filter(
+    const logCalls = (Database.insertBackgroundLogAsync as jest.Mock).mock.calls.filter(
       ([cat]: [string]) => cat === 'health_connect'
     );
     expect(logCalls).toHaveLength(1);
@@ -376,7 +376,7 @@ describe('syncHealthConnect', () => {
 
     await syncHealthConnect();
 
-    expect(Database.pruneShortDiscardedHealthConnectSessions).not.toHaveBeenCalled();
+    expect(Database.pruneShortDiscardedHealthConnectSessionsAsync).not.toHaveBeenCalled();
   });
 
   it('skips steps records when GPS shows user was at a known indoor location throughout', async () => {
@@ -400,11 +400,11 @@ describe('syncHealthConnect', () => {
       { lat: indoorLat, lon: indoorLon, timestamp: NOW - 15 * 60 * 1000 },
       { lat: indoorLat, lon: indoorLon, timestamp: NOW - 5 * 60 * 1000 },
     ];
-    (Database.getSetting as jest.Mock).mockImplementation((key: string) => {
+    (Database.getSettingAsync as jest.Mock).mockImplementation(async (key: string) => {
       if (key === 'location_clusters') return JSON.stringify(gpsSamples);
       return '0';
     });
-    (Database.getKnownLocations as jest.Mock).mockReturnValue([
+    (Database.getKnownLocationsAsync as jest.Mock).mockResolvedValue([
       {
         id: 1,
         label: 'home',
@@ -435,12 +435,12 @@ describe('syncHealthConnect', () => {
 
     // GPS sample is far from the known indoor location
     const gpsSamples = [{ lat: 52.0, lon: 5.0, timestamp: NOW - 15 * 60 * 1000 }];
-    (Database.getSetting as jest.Mock).mockImplementation((key: string) => {
+    (Database.getSettingAsync as jest.Mock).mockImplementation(async (key: string) => {
       if (key === 'healthconnect_user_enabled') return '1';
       if (key === 'location_clusters') return JSON.stringify(gpsSamples);
       return '0';
     });
-    (Database.getKnownLocations as jest.Mock).mockReturnValue([
+    (Database.getKnownLocationsAsync as jest.Mock).mockResolvedValue([
       {
         id: 1,
         label: 'home',
@@ -475,12 +475,12 @@ describe('syncHealthConnect', () => {
       { lat: indoorLat, lon: indoorLon, timestamp: NOW - 25 * 60 * 1000 },
       { lat: indoorLat, lon: indoorLon, timestamp: NOW - 10 * 60 * 1000 },
     ];
-    (Database.getSetting as jest.Mock).mockImplementation((key: string) => {
+    (Database.getSettingAsync as jest.Mock).mockImplementation(async (key: string) => {
       if (key === 'healthconnect_user_enabled') return '1';
       if (key === 'location_clusters') return JSON.stringify(gpsSamples);
       return '0';
     });
-    (Database.getKnownLocations as jest.Mock).mockReturnValue([
+    (Database.getKnownLocationsAsync as jest.Mock).mockResolvedValue([
       {
         id: 1,
         label: 'home',
@@ -502,8 +502,8 @@ describe('requestHealthPermissions', () => {
     jest.clearAllMocks();
     (HealthConnect.getSdkStatus as jest.Mock).mockResolvedValue(3); // SDK_AVAILABLE
     (HealthConnect.initialize as jest.Mock).mockResolvedValue(undefined);
-    (Database.setSetting as jest.Mock).mockImplementation(() => undefined);
-    (Database.getSetting as jest.Mock).mockReturnValue('0');
+    (Database.setSettingAsync as jest.Mock).mockImplementation(async () => undefined);
+    (Database.getSettingAsync as jest.Mock).mockResolvedValue('0');
     (HealthConnectIntent.verifyHealthConnectPermissions as jest.Mock).mockResolvedValue(false);
     (HealthConnectIntent.openHealthConnectPermissionsViaIntent as jest.Mock).mockResolvedValue(
       true

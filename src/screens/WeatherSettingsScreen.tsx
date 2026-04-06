@@ -56,14 +56,14 @@ export default function WeatherSettingsScreen() {
       setConsiderUV((await getSettingAsync('weather_consider_uv', '1')) === '1');
 
       // Auto-refresh weather data if unavailable or stale
-      if (!isWeatherDataAvailable()) {
+      if (!(await isWeatherDataAvailable())) {
         // Fetch weather in background without showing loading state
         fetchWeatherForecast()
-          .then((result) => {
+          .then(async (result) => {
             if (!isMountedRef.current) return;
             if (result.success) {
               const hour = new Date().getHours();
-              const weather = getWeatherForHour(hour);
+              const weather = await getWeatherForHour(hour);
               if (weather) {
                 const description = getWeatherDescription(weather);
                 const emoji = getWeatherEmoji(weather);
@@ -79,7 +79,7 @@ export default function WeatherSettingsScreen() {
       } else {
         // Load current weather if available
         const hour = new Date().getHours();
-        const weather = getWeatherForHour(hour);
+        const weather = await getWeatherForHour(hour);
         if (weather) {
           const description = getWeatherDescription(weather);
           const emoji = getWeatherEmoji(weather);
@@ -143,7 +143,7 @@ export default function WeatherSettingsScreen() {
       const result = await fetchWeatherForecast();
       if (result.success) {
         const hour = new Date().getHours();
-        const weather = getWeatherForHour(hour);
+        const weather = await getWeatherForHour(hour);
         if (weather) {
           const description = getWeatherDescription(weather);
           const emoji = getWeatherEmoji(weather);

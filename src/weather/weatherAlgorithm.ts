@@ -4,7 +4,7 @@
  */
 
 import { WeatherCondition, WEATHER_CODES, WeatherPreferences } from './types';
-import { getSetting } from '../storage/database';
+import { getSettingAsync } from '../storage/database';
 import { t } from '../i18n';
 
 /**
@@ -13,9 +13,9 @@ import { t } from '../i18n';
  */
 export function scoreWeatherCondition(
   condition: WeatherCondition,
-  preferences?: WeatherPreferences
+  preferences: WeatherPreferences
 ): number {
-  const prefs = preferences || getWeatherPreferences();
+  const prefs = preferences;
 
   if (!prefs.enabled) {
     return 0; // Weather scoring disabled
@@ -156,13 +156,16 @@ export function scoreWeatherCondition(
 /**
  * Get weather preferences from app settings
  */
-export function getWeatherPreferences(): WeatherPreferences {
+export async function getWeatherPreferences(): Promise<WeatherPreferences> {
   return {
-    enabled: getSetting('weather_enabled', '1') === '1',
-    temperaturePreference: getSetting('temp_preference', 'moderate') as 'cold' | 'moderate' | 'hot',
-    avoidRain: getSetting('weather_avoid_rain', '1') === '1',
-    avoidHeat: getSetting('weather_avoid_heat', '1') === '1',
-    considerUV: getSetting('weather_consider_uv', '1') === '1',
+    enabled: (await getSettingAsync('weather_enabled', '1')) === '1',
+    temperaturePreference: (await getSettingAsync('temp_preference', 'moderate')) as
+      | 'cold'
+      | 'moderate'
+      | 'hot',
+    avoidRain: (await getSettingAsync('weather_avoid_rain', '1')) === '1',
+    avoidHeat: (await getSettingAsync('weather_avoid_heat', '1')) === '1',
+    considerUV: (await getSettingAsync('weather_consider_uv', '1')) === '1',
   };
 }
 

@@ -26,12 +26,14 @@ const mockToggleGPS = jest.fn<Promise<{ needsPermissions: boolean }>, [boolean]>
   Promise.resolve({ needsPermissions: false })
 );
 jest.mock('../detection/index', () => ({
-  getDetectionStatus: jest.fn(() => ({
-    healthConnect: false,
-    healthConnectPermission: false,
-    gps: false,
-    gpsPermission: false,
-  })),
+  getDetectionStatus: jest.fn(() =>
+    Promise.resolve({
+      healthConnect: false,
+      healthConnectPermission: false,
+      gps: false,
+      gpsPermission: false,
+    })
+  ),
   toggleHealthConnect: (enabled: boolean) => mockToggleHealthConnect(enabled),
   toggleGPS: (enabled: boolean) => mockToggleGPS(enabled),
   recheckHealthConnect: jest.fn(() => Promise.resolve()),
@@ -119,7 +121,7 @@ describe('SettingsScreen detection toggles', () => {
   });
 
   it('calls toggleHealthConnect(true) when HC switch is turned on', async () => {
-    (DetectionModule.getDetectionStatus as jest.Mock).mockReturnValue({
+    (DetectionModule.getDetectionStatus as jest.Mock).mockResolvedValue({
       healthConnect: false,
       healthConnectPermission: false,
       gps: false,
@@ -138,7 +140,7 @@ describe('SettingsScreen detection toggles', () => {
   });
 
   it('calls toggleGPS(true) when GPS switch is turned on', async () => {
-    (DetectionModule.getDetectionStatus as jest.Mock).mockReturnValue({
+    (DetectionModule.getDetectionStatus as jest.Mock).mockResolvedValue({
       healthConnect: false,
       healthConnectPermission: false,
       gps: false,
@@ -157,7 +159,7 @@ describe('SettingsScreen detection toggles', () => {
   });
 
   it('calls toggleHealthConnect(false) when HC switch is turned off', async () => {
-    (DetectionModule.getDetectionStatus as jest.Mock).mockReturnValue({
+    (DetectionModule.getDetectionStatus as jest.Mock).mockResolvedValue({
       healthConnect: true,
       healthConnectPermission: true,
       gps: false,
@@ -176,7 +178,7 @@ describe('SettingsScreen detection toggles', () => {
   });
 
   it('shows permission-missing label when HC is enabled but permissions are missing', async () => {
-    (DetectionModule.getDetectionStatus as jest.Mock).mockReturnValue({
+    (DetectionModule.getDetectionStatus as jest.Mock).mockResolvedValue({
       healthConnect: true,
       healthConnectPermission: false,
       gps: false,
@@ -188,7 +190,7 @@ describe('SettingsScreen detection toggles', () => {
   });
 
   it('shows permission-missing label when GPS is enabled but permissions are missing', async () => {
-    (DetectionModule.getDetectionStatus as jest.Mock).mockReturnValue({
+    (DetectionModule.getDetectionStatus as jest.Mock).mockResolvedValue({
       healthConnect: false,
       healthConnectPermission: false,
       gps: true,
@@ -200,7 +202,7 @@ describe('SettingsScreen detection toggles', () => {
   });
 
   it('does not show permission-missing label when HC toggle is off', async () => {
-    (DetectionModule.getDetectionStatus as jest.Mock).mockReturnValue({
+    (DetectionModule.getDetectionStatus as jest.Mock).mockResolvedValue({
       healthConnect: false,
       healthConnectPermission: false,
       gps: false,

@@ -211,7 +211,7 @@ export default function HomeScreen() {
     try {
       await confirmSessionAsync(id, confirmed);
       const d = new Date(startTime);
-      updateTimeSlotProbability(d.getHours(), d.getDay(), confirmed);
+      await updateTimeSlotProbability(d.getHours(), d.getDay(), confirmed);
       emitSessionsChanged();
       if (confirmed) {
         await cancelRemindersIfGoalReached();

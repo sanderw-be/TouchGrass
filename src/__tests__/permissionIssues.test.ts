@@ -1,11 +1,13 @@
 // Mock detection
 jest.mock('../detection', () => ({
-  getDetectionStatus: jest.fn(() => ({
-    gps: false,
-    gpsPermission: true,
-    healthConnect: false,
-    healthConnectPermission: true,
-  })),
+  getDetectionStatus: jest.fn(() =>
+    Promise.resolve({
+      gps: false,
+      gpsPermission: true,
+      healthConnect: false,
+      healthConnectPermission: true,
+    })
+  ),
   checkWeatherLocationPermissions: jest.fn(() => Promise.resolve(true)),
   checkGPSPermissions: jest.fn(() => Promise.resolve(true)),
   recheckHealthConnect: jest.fn(() => Promise.resolve(true)),
@@ -32,7 +34,7 @@ describe('countPermissionIssues', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockGetSetting.mockImplementation((key: string, def: string) => def);
-    (detection.getDetectionStatus as jest.Mock).mockReturnValue({
+    (detection.getDetectionStatus as jest.Mock).mockResolvedValue({
       gps: false,
       gpsPermission: true,
       healthConnect: false,
@@ -60,7 +62,7 @@ describe('countPermissionIssues', () => {
   });
 
   it('counts GPS permission issue as settings issue', async () => {
-    (detection.getDetectionStatus as jest.Mock).mockReturnValue({
+    (detection.getDetectionStatus as jest.Mock).mockResolvedValue({
       gps: true,
       gpsPermission: false,
       healthConnect: false,
@@ -79,7 +81,7 @@ describe('countPermissionIssues', () => {
   it('clears GPS settings badge when permission is re-granted even if SQLite cache is stale', async () => {
     // Simulate the bug scenario: GPS enabled, cached gpsPermission=false (stale),
     // but OS permission has since been granted (e.g. via Weather fix-flow).
-    (detection.getDetectionStatus as jest.Mock).mockReturnValue({
+    (detection.getDetectionStatus as jest.Mock).mockResolvedValue({
       gps: true,
       gpsPermission: false, // stale cache value
       healthConnect: false,
@@ -97,7 +99,7 @@ describe('countPermissionIssues', () => {
   });
 
   it('clears HC settings badge when permission is re-granted even if SQLite cache is stale', async () => {
-    (detection.getDetectionStatus as jest.Mock).mockReturnValue({
+    (detection.getDetectionStatus as jest.Mock).mockResolvedValue({
       gps: false,
       gpsPermission: false,
       healthConnect: true,

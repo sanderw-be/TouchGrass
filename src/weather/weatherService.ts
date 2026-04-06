@@ -7,11 +7,11 @@
 import * as Location from 'expo-location';
 import { WeatherCondition } from './types';
 import {
-  saveWeatherConditions,
-  getWeatherConditionsForHour,
-  getWeatherCache,
-  saveWeatherCache,
-  clearExpiredWeatherData,
+  saveWeatherConditionsAsync,
+  getWeatherConditionsForHourAsync,
+  getWeatherCacheAsync,
+  saveWeatherCacheAsync,
+  clearExpiredWeatherDataAsync,
 } from '../storage/database';
 
 const OPEN_METEO_API = 'https://api.open-meteo.com/v1/forecast';
@@ -54,13 +54,13 @@ export async function fetchWeatherForecast(
     const { allowPermissionPrompt = true } = options;
 
     // Check cache first
-    const cache = getWeatherCache();
+    const cache = await getWeatherCacheAsync();
     const now = Date.now();
 
     if (cache && cache.expiresAt > now) {
       // Cache is still valid, return cached data
       const todayStart = getStartOfDay(now);
-      const conditions = getWeatherConditionsForHour(todayStart, 0, 24);
+      const conditions = await getWeatherConditionsForHourAsync(todayStart, 0, 24);
 
       if (conditions.length > 0) {
         console.log('Weather forecast source: cache-fresh');
@@ -157,13 +157,13 @@ export async function fetchWeatherForecast(
 
     if (conditions.length > 0) {
       // Clear old weather data first
-      clearExpiredWeatherData(now);
+      await clearExpiredWeatherDataAsync(now);
 
       // Save new conditions
-      saveWeatherConditions(conditions);
+      await saveWeatherConditionsAsync(conditions);
 
       // Update cache metadata
-      saveWeatherCache({
+      await saveWeatherCacheAsync({
         fetchedAt: now,
         latitude,
         longitude,
@@ -186,10 +186,10 @@ export async function fetchWeatherForecast(
  * Get weather condition for a specific hour
  * Returns cached data if available, otherwise returns null
  */
-export function getWeatherForHour(hour: number): WeatherCondition | null {
+export async function getWeatherForHour(hour: number): Promise<WeatherCondition | null> {
   const now = Date.now();
   const todayStart = getStartOfDay(now);
-  const conditions = getWeatherConditionsForHour(todayStart, hour, hour + 1);
+  const conditions = await getWeatherConditionsForHourAsync(todayStart, hour, hour + 1);
 
   return conditions.length > 0 ? conditions[0] : null;
 }
@@ -197,8 +197,8 @@ export function getWeatherForHour(hour: number): WeatherCondition | null {
 /**
  * Check if weather data is available and fresh
  */
-export function isWeatherDataAvailable(): boolean {
-  const cache = getWeatherCache();
+export async function isWeatherDataAvailable(): Promise<boolean> {
+  const cache = await getWeatherCacheAsync();
   const now = Date.now();
 
   if (!cache || cache.expiresAt <= now) {
@@ -207,7 +207,7 @@ export function isWeatherDataAvailable(): boolean {
 
   // Check if we have any conditions for today
   const todayStart = getStartOfDay(now);
-  const conditions = getWeatherConditionsForHour(todayStart, 0, 24);
+  const conditions = await getWeatherConditionsForHourAsync(todayStart, 0, 24);
 
   return conditions.length > 0;
 }

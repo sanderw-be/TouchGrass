@@ -73,7 +73,7 @@ export default function SettingsScreen() {
     if (isFetchingRef.current) return;
     isFetchingRef.current = true;
     try {
-      setDetectionStatus(getDetectionStatus());
+      setDetectionStatus(await getDetectionStatus());
       setKnownLocations(await getKnownLocationsAsync());
       setSuggestedCount((await getSuggestedLocationsAsync()).length);
     } catch (error) {
@@ -89,7 +89,7 @@ export default function SettingsScreen() {
   const checkAndUpdatePermissions = useCallback(async () => {
     await Promise.all([recheckHealthConnect(), checkGPSPermissions()]);
 
-    setDetectionStatus(getDetectionStatus());
+    setDetectionStatus(await getDetectionStatus());
   }, []);
 
   useFocusEffect(
@@ -150,7 +150,7 @@ export default function SettingsScreen() {
     setTogglingHC(true);
     try {
       const result = await toggleHealthConnect(value);
-      setDetectionStatus(getDetectionStatus());
+      setDetectionStatus(await getDetectionStatus());
 
       if (value && result.needsPermissions) {
         showHCPermissionSheet();
@@ -168,7 +168,7 @@ export default function SettingsScreen() {
     setTogglingGPS(true);
     try {
       const result = await toggleGPS(value);
-      setDetectionStatus(getDetectionStatus());
+      setDetectionStatus(await getDetectionStatus());
 
       if (value && result.needsPermissions) {
         showGPSPermissionSheet();

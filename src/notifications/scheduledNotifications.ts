@@ -1,5 +1,5 @@
 import * as Notifications from 'expo-notifications';
-import { getScheduledNotifications } from '../storage/database';
+import { getScheduledNotificationsAsync } from '../storage/database';
 import { t } from '../i18n';
 
 // Prefix for scheduled notification identifiers
@@ -24,7 +24,7 @@ export async function scheduleAllScheduledNotifications(): Promise<void> {
       return; // Don't throw, just return
     }
 
-    const schedules = getScheduledNotifications();
+    const schedules = await getScheduledNotificationsAsync();
     const enabled = schedules.filter((s) => s.enabled === 1);
 
     console.log(`TouchGrass: Scheduling ${enabled.length} enabled notification schedule(s)`);
@@ -116,16 +116,16 @@ export async function cancelAllScheduledNotifications(): Promise<void> {
  * @param windowMinutes - How many minutes before/after to consider "nearby"
  * @returns true if the slot is near a scheduled notification for today
  */
-export function isSlotNearScheduledNotification(
+export async function isSlotNearScheduledNotification(
   slotHour: number,
   slotMinute: number,
   windowMinutes: number
-): boolean {
+): Promise<boolean> {
   const today = new Date();
   const todayDayOfWeek = today.getDay(); // 0=Sunday, 6=Saturday
   const slotMinutesOfDay = slotHour * 60 + slotMinute;
 
-  const schedules = getScheduledNotifications();
+  const schedules = await getScheduledNotificationsAsync();
   const enabled = schedules.filter((s) => s.enabled === 1);
 
   for (const schedule of enabled) {
@@ -150,12 +150,12 @@ export function isSlotNearScheduledNotification(
  * @param windowMinutes - How many minutes before/after to check (e.g., 60 for 1 hour window)
  * @returns true if a scheduled notification is nearby
  */
-export function hasScheduledNotificationNearby(windowMinutes: number): boolean {
+export async function hasScheduledNotificationNearby(windowMinutes: number): Promise<boolean> {
   const now = new Date();
   const currentDay = now.getDay(); // 0=Sunday, 6=Saturday
   const currentMinutes = now.getHours() * 60 + now.getMinutes();
 
-  const schedules = getScheduledNotifications();
+  const schedules = await getScheduledNotificationsAsync();
   const enabled = schedules.filter((s) => s.enabled === 1);
 
   for (const schedule of enabled) {
