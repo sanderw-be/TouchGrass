@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import {
@@ -27,6 +27,7 @@ export default function HistoryScreen() {
   const [dailyTarget, setDailyTarget] = useState(30);
   const [viewDate, setViewDate] = useState(Date.now());
   const [isLoading, setIsLoading] = useState(true);
+  const isFetchingRef = useRef(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -39,6 +40,8 @@ export default function HistoryScreen() {
   );
 
   const loadData = async (p: Period, date: number) => {
+    if (isFetchingRef.current) return;
+    isFetchingRef.current = true;
     try {
       if (p === 'week') {
         const weekStart = startOfWeek(date);
@@ -58,6 +61,7 @@ export default function HistoryScreen() {
     } catch (error) {
       console.error('[HistoryScreen.loadData] Database error:', error);
     } finally {
+      isFetchingRef.current = false;
       setIsLoading(false);
     }
   };

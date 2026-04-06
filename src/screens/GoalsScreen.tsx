@@ -99,8 +99,11 @@ export default function GoalsScreen() {
   const pendingWeatherEnableRef = useRef(false);
   const pendingCalendarEnableRef = useRef(false);
   const pendingSmartRemindersEnableRef = useRef(false);
+  const isFetchingRef = useRef(false);
 
   const loadGoalSettings = useCallback(async () => {
+    if (isFetchingRef.current) return;
+    isFetchingRef.current = true;
     try {
       const [
         dailyGoal,
@@ -137,6 +140,8 @@ export default function GoalsScreen() {
       setBatteryOptimizationGranted(battOpt === '1');
     } catch (error) {
       console.error('[GoalsScreen.loadGoalSettings] Error:', error);
+    } finally {
+      isFetchingRef.current = false;
     }
   }, []);
 

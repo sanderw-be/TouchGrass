@@ -64,8 +64,11 @@ export default function EventsScreen() {
     visible: boolean;
     sessionId: number | null;
   }>({ visible: false, sessionId: null });
+  const isFetchingRef = useRef(false);
 
   const loadData = useCallback(async () => {
+    if (isFetchingRef.current) return;
+    isFetchingRef.current = true;
     try {
       await autoCloseOldProposedSessionsAsync();
       const from = FOUR_WEEKS_AGO();
@@ -74,6 +77,7 @@ export default function EventsScreen() {
     } catch (error) {
       console.error('[EventsScreen.loadData] Database error:', error);
     } finally {
+      isFetchingRef.current = false;
       setIsLoading(false);
     }
   }, []);
