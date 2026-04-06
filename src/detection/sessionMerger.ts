@@ -1,10 +1,15 @@
 import {
   OutsideSession,
   insertSessionAsync,
+  insertSessionsBatchAsync,
   getSessionsForRangeAsync,
-  deleteSessionAsync,
+  deleteSessionsByIdsAsync,
 } from '../storage/database';
-import { computeSessionScore, DISCARD_CONFIDENCE_THRESHOLD } from './sessionConfidence';
+import {
+  computeSessionScoreFromProbs,
+  loadTimeSlotProbabilities,
+  DISCARD_CONFIDENCE_THRESHOLD,
+} from './sessionConfidence';
 import { t } from '../i18n';
 import { isImperialUnits, kmhToMph } from '../utils/units';
 
@@ -139,12 +144,9 @@ export async function submitSession(candidate: OutsideSession): Promise<void> {
   // so that a re-detection never silently un-denies a session.
   const deniedSession = unconfirmedSessions.find((s) => s.userConfirmed === 0);
 
-  // Delete all existing unconfirmed sessions in the overlap window.
-  for (const session of unconfirmedSessions) {
-    if (session.id) {
-      await deleteSessionAsync(session.id);
-    }
-  }
+  // Delete all existing unconfirmed sessions in the overlap window (batched).
+  const idsToDelete = unconfirmedSessions.filter((s) => s.id != null).map((s) => s.id as number);
+  await deleteSessionsByIdsAsync(idsToDelete);
 
   // Subtract confirmed session time from the merged range so that confirmed user
   // data is never overwritten.  Each remaining gap becomes an unconfirmed segment.
@@ -180,6 +182,11 @@ export async function submitSession(candidate: OutsideSession): Promise<void> {
     });
   }
 
+  // Pre-load time-slot probabilities once for all segments (hoisted read).
+  const timeSlotProbs = await loadTimeSlotProbabilities();
+
+  // Build all segment sessions in memory with scores computed synchronously.
+  const sessionsToInsert: OutsideSession[] = [];
   for (const [segStart, segEnd] of segments) {
     const segSession: OutsideSession = {
       ...candidate,
@@ -194,7 +201,7 @@ export async function submitSession(candidate: OutsideSession): Promise<void> {
       distanceMeters: mergedDistance,
       averageSpeedKmh: mergedSpeed,
     };
-    const score = await computeSessionScore(segSession);
+    const score = computeSessionScoreFromProbs(segSession, timeSlotProbs);
     // Only discard sessions that have no user feedback yet (userConfirmed === null).
     // Sessions the user explicitly denied (userConfirmed === 0) keep discarded=0 so
     // their rejection is preserved and visible in the Standard tab.
@@ -204,12 +211,15 @@ export async function submitSession(candidate: OutsideSession): Promise<void> {
         `TouchGrass: Session discarded (score ${score.toFixed(2)} < threshold ${DISCARD_CONFIDENCE_THRESHOLD}): ${new Date(segStart).toISOString()} – ${new Date(segEnd).toISOString()} source=${candidate.source}`
       );
     }
-    await insertSessionAsync({
+    sessionsToInsert.push({
       ...segSession,
       confidence: score, // store computed score so the UI reflects actual confidence
       discarded: shouldDiscard ? 1 : 0,
     });
   }
+
+  // Batch-insert all segments in a single transaction.
+  await insertSessionsBatchAsync(sessionsToInsert);
 }
 
 /**

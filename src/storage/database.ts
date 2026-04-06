@@ -366,6 +366,52 @@ export async function deleteSessionAsync(id: number): Promise<void> {
   await db.runAsync('DELETE FROM outside_sessions WHERE id = ?', [id]);
 }
 
+/**
+ * Delete multiple sessions by ID in a single transaction.
+ * Much more efficient than calling deleteSessionAsync() in a loop.
+ */
+export async function deleteSessionsByIdsAsync(ids: number[]): Promise<void> {
+  if (ids.length === 0) return;
+  await db.withTransactionAsync(async () => {
+    for (const id of ids) {
+      await db.runAsync('DELETE FROM outside_sessions WHERE id = ?', [id]);
+    }
+  });
+}
+
+/**
+ * Insert multiple sessions in a single transaction.
+ * Much more efficient than calling insertSessionAsync() in a loop.
+ * Returns the list of inserted row IDs.
+ */
+export async function insertSessionsBatchAsync(sessions: OutsideSession[]): Promise<number[]> {
+  if (sessions.length === 0) return [];
+  const ids: number[] = [];
+  await db.withTransactionAsync(async () => {
+    for (const session of sessions) {
+      const result = await db.runAsync(
+        `INSERT INTO outside_sessions (startTime, endTime, durationMinutes, source, confidence, userConfirmed, notes, steps, distanceMeters, averageSpeedKmh, discarded)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          session.startTime,
+          session.endTime,
+          session.durationMinutes,
+          session.source,
+          session.confidence,
+          session.userConfirmed === null ? null : session.userConfirmed ? 1 : 0,
+          session.notes ?? null,
+          session.steps ?? null,
+          session.distanceMeters ?? null,
+          session.averageSpeedKmh ?? null,
+          session.discarded ?? 0,
+        ]
+      );
+      ids.push(result.lastInsertRowId);
+    }
+  });
+  return ids;
+}
+
 export function getTodayMinutes(): number {
   try {
     const start = startOfDay(Date.now());
