@@ -2,14 +2,14 @@ import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager';
 import * as Notifications from 'expo-notifications';
 import {
-  getKnownLocations,
-  getAllKnownLocations,
-  upsertKnownLocation,
-  getSetting,
-  setSetting,
+  getKnownLocationsAsync,
+  getAllKnownLocationsAsync,
+  upsertKnownLocationAsync,
+  getSettingAsync,
+  setSettingAsync,
   KnownLocation,
   initDatabase,
-  insertBackgroundLog,
+  insertBackgroundLogAsync,
 } from '../storage/database';
 import { submitSession, buildSession } from './sessionMerger';
 import { t } from '../i18n';
@@ -114,26 +114,26 @@ const GPS_LAST_OUTSIDE_KEY = 'gps_last_outside';
  * Must be called at the start of every background task invocation to ensure
  * in-memory state reflects the latest values written to SQLite.
  */
-export function loadGPSState(): void {
-  const start = parseInt(getSetting(GPS_SESSION_START_KEY, '0'), 10);
-  const outside = getSetting(GPS_LAST_OUTSIDE_KEY, '0') === '1';
+export async function loadGPSState(): Promise<void> {
+  const start = parseInt(await getSettingAsync(GPS_SESSION_START_KEY, '0'), 10);
+  const outside = (await getSettingAsync(GPS_LAST_OUTSIDE_KEY, '0')) === '1';
   outsideSessionStart = start > 0 ? start : null;
   lastKnownOutside = outside;
 
-  currentProfile = getSetting(GPS_PROFILE_KEY, 'low') as TrackingProfile;
-  burstUntilTimestamp = parseInt(getSetting(GPS_BURST_UNTIL_KEY, '0'), 10);
-  lastBurstAtTimestamp = parseInt(getSetting(GPS_LAST_BURST_KEY, '0'), 10);
+  currentProfile = (await getSettingAsync(GPS_PROFILE_KEY, 'low')) as TrackingProfile;
+  burstUntilTimestamp = parseInt(await getSettingAsync(GPS_BURST_UNTIL_KEY, '0'), 10);
+  lastBurstAtTimestamp = parseInt(await getSettingAsync(GPS_LAST_BURST_KEY, '0'), 10);
 }
 
 /**
  * Persist GPS session state so it survives app restarts.
  */
-function saveGPSState(): void {
-  setSetting(GPS_SESSION_START_KEY, String(outsideSessionStart ?? 0));
-  setSetting(GPS_LAST_OUTSIDE_KEY, lastKnownOutside ? '1' : '0');
-  setSetting(GPS_PROFILE_KEY, currentProfile);
-  setSetting(GPS_BURST_UNTIL_KEY, String(burstUntilTimestamp));
-  setSetting(GPS_LAST_BURST_KEY, String(lastBurstAtTimestamp));
+async function saveGPSState(): Promise<void> {
+  await setSettingAsync(GPS_SESSION_START_KEY, String(outsideSessionStart ?? 0));
+  await setSettingAsync(GPS_LAST_OUTSIDE_KEY, lastKnownOutside ? '1' : '0');
+  await setSettingAsync(GPS_PROFILE_KEY, currentProfile);
+  await setSettingAsync(GPS_BURST_UNTIL_KEY, String(burstUntilTimestamp));
+  await setSettingAsync(GPS_LAST_BURST_KEY, String(lastBurstAtTimestamp));
 }
 
 /**
@@ -448,13 +448,13 @@ export function shouldTriggerBurst(
  * Process a new location update.
  * Called by the background task.
  */
-export function processLocationUpdate(
+export async function processLocationUpdate(
   lat: number,
   lon: number,
   timestamp: number,
   speedMs?: number
-): void {
-  const knownLocations = getKnownLocations();
+): Promise<void> {
+  const knownLocations = await getKnownLocationsAsync();
   const isIndoor = isAtKnownIndoorLocation(lat, lon, knownLocations);
   const isOutside = !isIndoor;
 
@@ -489,7 +489,7 @@ export function processLocationUpdate(
     gpsSessionSpeedSum = 0;
     gpsSessionSpeedCount = 0;
     console.log('TouchGrass: GPS update - now outside, session started');
-    insertBackgroundLog(
+    await insertBackgroundLogAsync(
       'gps',
       gpsSessionStartLocationLabel
         ? `Left ${gpsSessionStartLocationLabel} — outside`
@@ -525,14 +525,14 @@ export function processLocationUpdate(
         gpsSessionDistanceMeters > 0 ? gpsSessionDistanceMeters : undefined,
         gpsSessionSpeedCount > 0 ? gpsSessionSpeedSum / gpsSessionSpeedCount : undefined
       );
-      submitSession(session);
+      await submitSession(session);
       emitSessionsChanged();
-      insertBackgroundLog(
+      await insertBackgroundLogAsync(
         'gps',
         `Back inside at ${locationLabel} — recorded ${Math.round(duration / 60000)} min session`
       );
     } else {
-      insertBackgroundLog(
+      await insertBackgroundLogAsync(
         'gps',
         `Back inside at ${locationLabel} — too short (${Math.round(duration / 60000)} min), not recorded`
       );
@@ -551,7 +551,7 @@ export function processLocationUpdate(
     console.log(
       `TouchGrass: GPS update - still outside, current session length: ${Math.round(duration / 60000)} min`
     );
-    insertBackgroundLog('gps', `Still outside — ${Math.round(duration / 60000)} min so far`);
+    await insertBackgroundLogAsync('gps', `Still outside — ${Math.round(duration / 60000)} min so far`);
     if (duration >= MIN_OUTSIDE_DURATION_MS) {
       const avgSpeed = gpsSessionSpeedCount > 0 ? gpsSessionSpeedSum / gpsSessionSpeedCount : 0;
       const notes = buildGpsNotes(
@@ -570,7 +570,7 @@ export function processLocationUpdate(
         gpsSessionDistanceMeters > 0 ? gpsSessionDistanceMeters : undefined,
         gpsSessionSpeedCount > 0 ? gpsSessionSpeedSum / gpsSessionSpeedCount : undefined
       );
-      submitSession(session);
+      await submitSession(session);
       emitSessionsChanged();
       outsideSessionStart = timestamp; // start next segment from now
       gpsSessionDistanceMeters = 0;
@@ -579,7 +579,7 @@ export function processLocationUpdate(
     }
   }
 
-  saveGPSState();
+  await saveGPSState();
 
   // Log "inside at known location" only when the matched location changes from the last
   // logged one. This prevents flooding the log on every GPS update during indoor periods.
@@ -590,7 +590,7 @@ export function processLocationUpdate(
     );
     const label = matchedLocation?.label ?? null;
     if (label !== null && label !== lastLoggedIndoorLocation) {
-      insertBackgroundLog('gps', `Inside at ${label}`);
+      await insertBackgroundLogAsync('gps', `Inside at ${label}`);
       lastLoggedIndoorLocation = label;
     }
   } else if (isOutside) {
@@ -598,7 +598,7 @@ export function processLocationUpdate(
   }
 
   // Update location clusters for auto-detect
-  recordLocationForClustering(lat, lon, timestamp);
+  await recordLocationForClustering(lat, lon, timestamp);
 }
 
 /**
@@ -614,10 +614,10 @@ export async function autoDetectLocations(): Promise<void> {
   if (fg !== 'granted') return;
 
   // Guard: only run when suggestions are enabled
-  if (getSetting('location_suggestions_enabled', '1') !== '1') return;
+  if ((await getSettingAsync('location_suggestions_enabled', '1')) !== '1') return;
 
   try {
-    const rawClusters = getSetting('location_clusters', '[]');
+    const rawClusters = await getSettingAsync('location_clusters', '[]');
     const samples: LocationSample[] = JSON.parse(rawClusters);
 
     if (samples.length < 10) return; // not enough data yet
@@ -625,13 +625,13 @@ export async function autoDetectLocations(): Promise<void> {
     const dwellClusters = computeDwellClusters(samples);
 
     // Threshold depends on whether active known locations already exist
-    const existingActive = getKnownLocations();
+    const existingActive = await getKnownLocationsAsync();
     const thresholdMs =
       existingActive.length === 0
         ? 2 * 60 * 60 * 1000 // 2 hours when no known locations
         : 3 * 60 * 60 * 1000; // 3 hours when known locations exist
 
-    const allLocations = getAllKnownLocations();
+    const allLocations = await getAllKnownLocationsAsync();
 
     for (const cluster of dwellClusters) {
       if (cluster.totalDwellMs < thresholdMs) continue;
@@ -647,10 +647,10 @@ export async function autoDetectLocations(): Promise<void> {
       // Insert as a suggested location with an empty label (displayed as default at render time)
       // Use the user's chosen default suggestion radius (falls back to CLUSTER_DETECTION_RADIUS_M)
       const suggestionRadius = parseInt(
-        getSetting('location_suggestion_radius', String(CLUSTER_DETECTION_RADIUS_M)),
+        await getSettingAsync('location_suggestion_radius', String(CLUSTER_DETECTION_RADIUS_M)),
         10
       );
-      upsertKnownLocation({
+      await upsertKnownLocationAsync({
         label: '',
         latitude: cluster.lat,
         longitude: cluster.lon,
@@ -726,14 +726,14 @@ const MAX_DWELL_GAP_MS = 2 * 60 * 60 * 1000; // 2 hours
  */
 export const CLUSTER_DETECTION_RADIUS_M = 100;
 
-function recordLocationForClustering(lat: number, lon: number, timestamp: number): void {
+async function recordLocationForClustering(lat: number, lon: number, timestamp: number): Promise<void> {
   try {
-    const raw = getSetting('location_clusters', '[]');
+    const raw = await getSettingAsync('location_clusters', '[]');
     const clusters: LocationSample[] = JSON.parse(raw);
     clusters.push({ lat, lon, timestamp });
     // Keep only the most recent samples
     const trimmed = clusters.slice(-MAX_CLUSTER_SAMPLES);
-    setSetting('location_clusters', JSON.stringify(trimmed));
+    await setSettingAsync('location_clusters', JSON.stringify(trimmed));
   } catch (e) {
     console.warn('Clustering error:', e);
   }
@@ -822,17 +822,17 @@ TaskManager.defineTask(
     initDatabase();
     // Always read persisted GPS state from SQLite at every task invocation so
     // that in-memory state never lags behind what was last written to the DB.
-    loadGPSState();
+    await loadGPSState();
     // Respect the user's toggle: if GPS was disabled while the OS task was
     // still alive, skip processing and do not submit any session.
-    if (getSetting('gps_user_enabled', '0') !== '1') {
+    if ((await getSettingAsync('gps_user_enabled', '0')) !== '1') {
       console.log('TouchGrass: GPS task fired but GPS is disabled by user — skipping');
       return;
     }
     if (data?.locations?.length > 0) {
       const loc = data.locations[data.locations.length - 1];
       const now = loc.timestamp;
-      processLocationUpdate(
+      await processLocationUpdate(
         loc.coords.latitude,
         loc.coords.longitude,
         now,
@@ -840,14 +840,14 @@ TaskManager.defineTask(
       );
 
       // ── Dynamic profile management ────────────────────────
-      const activeLocations = getKnownLocations();
+      const activeLocations = await getKnownLocationsAsync();
       const minRadius = computeMinActiveRadius(activeLocations);
 
       // Check whether a running HIGH burst has expired and should revert to LOW.
       if (currentProfile === 'high' && now >= burstUntilTimestamp) {
-        insertBackgroundLog('gps', 'Burst expired — reverting to LOW profile');
+        await insertBackgroundLogAsync('gps', 'Burst expired — reverting to LOW profile');
         burstUntilTimestamp = 0;
-        saveGPSState();
+        await saveGPSState();
         try {
           await switchLocationProfile('low', minRadius);
         } catch (e) {
@@ -866,8 +866,8 @@ TaskManager.defineTask(
         // Trigger a HIGH burst.
         lastBurstAtTimestamp = now;
         burstUntilTimestamp = now + BURST_DURATION_MS;
-        insertBackgroundLog('gps', `Burst triggered (minRadius=${minRadius}m)`);
-        saveGPSState();
+        await insertBackgroundLogAsync('gps', `Burst triggered (minRadius=${minRadius}m)`);
+        await saveGPSState();
         try {
           await switchLocationProfile('high', minRadius);
         } catch (e) {
