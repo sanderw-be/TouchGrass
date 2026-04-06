@@ -68,14 +68,14 @@ const mockGetSetting = jest.fn<Promise<string>, [string, string]>(() => Promise.
 const mockSetSetting = jest.fn<Promise<void>, [string, string]>(() => Promise.resolve());
 
 jest.mock('../storage/database', () => ({
-  getTodayMinutesAsync: (...args: any[]) => mockGetTodayMinutes(...args),
-  getWeekMinutesAsync: (...args: any[]) => mockGetWeekMinutes(...args),
-  getCurrentDailyGoalAsync: (...args: any[]) => mockGetCurrentDailyGoal(...args),
-  getCurrentWeeklyGoalAsync: (...args: any[]) => mockGetCurrentWeeklyGoal(...args),
+  getTodayMinutesAsync: () => mockGetTodayMinutes(),
+  getWeekMinutesAsync: () => mockGetWeekMinutes(),
+  getCurrentDailyGoalAsync: () => mockGetCurrentDailyGoal(),
+  getCurrentWeeklyGoalAsync: () => mockGetCurrentWeeklyGoal(),
   getSessionsForDayAsync: (dateMs: number) => mockGetSessionsForDay(dateMs),
   confirmSessionAsync: jest.fn(() => Promise.resolve()),
-  getDailyStreakAsync: (...args: any[]) => mockGetDailyStreak(...args),
-  getWeeklyStreakAsync: (...args: any[]) => mockGetWeeklyStreak(...args),
+  getDailyStreakAsync: () => mockGetDailyStreak(),
+  getWeeklyStreakAsync: () => mockGetWeeklyStreak(),
   getSettingAsync: (key: string, fallback: string) => mockGetSetting(key, fallback),
   setSettingAsync: (key: string, value: string) => mockSetSetting(key, value),
 }));
