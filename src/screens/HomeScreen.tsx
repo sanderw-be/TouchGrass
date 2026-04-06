@@ -18,16 +18,16 @@ import ManualSessionSheet from '../components/ManualSessionSheet';
 import ProgressRing from '../components/ProgressRing';
 import UndoSnackbar from '../components/UndoSnackbar';
 import {
-  getTodayMinutes,
-  getWeekMinutes,
-  getCurrentDailyGoal,
-  getCurrentWeeklyGoal,
-  getSessionsForDay,
-  confirmSession,
-  getDailyStreak,
-  getWeeklyStreak,
-  getSetting,
-  setSetting,
+  getTodayMinutesAsync,
+  getWeekMinutesAsync,
+  getCurrentDailyGoalAsync,
+  getCurrentWeeklyGoalAsync,
+  getSessionsForDayAsync,
+  confirmSessionAsync,
+  getDailyStreakAsync,
+  getWeeklyStreakAsync,
+  getSettingAsync,
+  setSettingAsync,
   OutsideSession,
 } from '../storage/database';
 import { spacing, radius } from '../utils/theme';
@@ -90,18 +90,27 @@ export default function HomeScreen() {
     };
   }, [timerRunning]);
 
-  const loadData = useCallback(() => {
+  const loadData = useCallback(async () => {
     try {
-      setTodayMinutes(getTodayMinutes());
-      setWeekMinutes(getWeekMinutes());
-      setDailyTarget(getCurrentDailyGoal()?.targetMinutes ?? 30);
-      setWeeklyTarget(getCurrentWeeklyGoal()?.targetMinutes ?? 150);
-      setTodaySessions(getSessionsForDay(Date.now()));
-      setDailyStreak(getDailyStreak());
-      setWeeklyStreak(getWeeklyStreak());
+      const [todayMin, weekMin, dailyGoal, weeklyGoal, sessions, dStreak, wStreak] =
+        await Promise.all([
+          getTodayMinutesAsync(),
+          getWeekMinutesAsync(),
+          getCurrentDailyGoalAsync(),
+          getCurrentWeeklyGoalAsync(),
+          getSessionsForDayAsync(Date.now()),
+          getDailyStreakAsync(),
+          getWeeklyStreakAsync(),
+        ]);
+      setTodayMinutes(todayMin);
+      setWeekMinutes(weekMin);
+      setDailyTarget(dailyGoal?.targetMinutes ?? 30);
+      setWeeklyTarget(weeklyGoal?.targetMinutes ?? 150);
+      setTodaySessions(sessions);
+      setDailyStreak(dStreak);
+      setWeeklyStreak(wStreak);
     } catch (error) {
       console.error('[HomeScreen.loadData] Database error:', error);
-      // Keep existing state on error - don't reset to defaults
     }
   }, []);
 
@@ -120,9 +129,9 @@ export default function HomeScreen() {
    *    the in-app UI without saving a duplicate session (the widget already
    *    saved the session via logManualSession).
    */
-  const syncWidgetTimer = useCallback(() => {
+  const syncWidgetTimer = useCallback(async () => {
     try {
-      const marker = getSetting(WIDGET_TIMER_KEY, '');
+      const marker = await getSettingAsync(WIDGET_TIMER_KEY, '');
       const widgetTs = isWidgetTimerRunning(marker) ? parseInt(marker, 10) : 0;
 
       if (timerRunningRef.current) {
@@ -164,7 +173,11 @@ export default function HomeScreen() {
   }, [loadData]);
 
   // Sync on every screen-focus event (navigation tab switch, back navigation, etc.)
-  useFocusEffect(syncWidgetTimer);
+  useFocusEffect(
+    useCallback(() => {
+      syncWidgetTimer();
+    }, [syncWidgetTimer])
+  );
 
   // Sync when the app comes to the foreground (belt-and-suspenders alongside
   // useFocusEffect, which may not fire if the screen was already focused when
@@ -182,14 +195,14 @@ export default function HomeScreen() {
   // Refresh whenever background work (e.g. Health Connect sync) inserts new sessions.
   useEffect(() => onSessionsChanged(loadData), [loadData]);
 
-  const onRefresh = () => {
+  const onRefresh = async () => {
     setRefreshing(true);
-    loadData();
+    await loadData();
     setRefreshing(false);
   };
 
   const handleConfirm = async (id: number, startTime: number, confirmed: boolean) => {
-    confirmSession(id, confirmed);
+    await confirmSessionAsync(id, confirmed);
     const d = new Date(startTime);
     updateTimeSlotProbability(d.getHours(), d.getDay(), confirmed);
     emitSessionsChanged();
@@ -202,16 +215,16 @@ export default function HomeScreen() {
     loadData();
   };
 
-  const handleUndoReject = () => {
+  const handleUndoReject = async () => {
     if (undoSnackbar.sessionId !== null) {
-      confirmSession(undoSnackbar.sessionId, null);
+      await confirmSessionAsync(undoSnackbar.sessionId, null);
       emitSessionsChanged();
       loadData();
     }
     setUndoSnackbar({ visible: false, sessionId: null });
   };
 
-  const handleTimerPress = () => {
+  const handleTimerPress = async () => {
     if (timerRunning) {
       // Stop timer — auto-save and refresh
       if (timerIntervalRef.current) {
@@ -221,7 +234,7 @@ export default function HomeScreen() {
       if (stopTimerRef.current) stopTimerRef.current();
       stopTimerRef.current = null;
       // Clear widget marker so the widget shows the play icon again
-      setSetting(WIDGET_TIMER_KEY, '');
+      await setSettingAsync(WIDGET_TIMER_KEY, '');
       setTimerRunning(false);
       setTimerSeconds(0);
       loadData();
@@ -232,7 +245,7 @@ export default function HomeScreen() {
       stopTimerRef.current = stop;
       timerStartRef.current = Date.now();
       // Write marker so the widget can show the stop icon
-      setSetting(WIDGET_TIMER_KEY, String(Date.now()));
+      await setSettingAsync(WIDGET_TIMER_KEY, String(Date.now()));
       setTimerSeconds(0);
       setTimerRunning(true);
       requestWidgetRefresh();
