@@ -11,9 +11,9 @@ jest.mock('react-native-android-widget', () => ({
 
 jest.mock('../storage/database', () => ({
   initDatabase: jest.fn(),
-  getTodayMinutes: jest.fn(() => 15),
-  getCurrentDailyGoal: jest.fn(() => ({ targetMinutes: 60 })),
-  getSetting: jest.fn(() => ''),
+  getTodayMinutesAsync: jest.fn(() => Promise.resolve(15)),
+  getCurrentDailyGoalAsync: jest.fn(() => Promise.resolve({ targetMinutes: 60 })),
+  getSettingAsync: jest.fn(() => Promise.resolve('')),
 }));
 
 jest.mock('../widget/ProgressWidget', () => ({

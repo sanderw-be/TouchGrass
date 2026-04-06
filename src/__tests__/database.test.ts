@@ -284,57 +284,6 @@ describe('Date helpers', () => {
   });
 
   describe('Session query functions', () => {
-    const mockSessions = [
-      // Normal, confirmed
-      {
-        id: 1,
-        discarded: 0,
-        userConfirmed: 1,
-        startTime: 1000,
-        endTime: 2000,
-        durationMinutes: 16,
-        source: 'gps',
-        confidence: 0.9,
-        notes: null,
-      },
-      // Normal, rejected
-      {
-        id: 2,
-        discarded: 0,
-        userConfirmed: 0,
-        startTime: 3000,
-        endTime: 4000,
-        durationMinutes: 16,
-        source: 'gps',
-        confidence: 0.8,
-        notes: null,
-      },
-      // Normal, pending (proposed)
-      {
-        id: 3,
-        discarded: 0,
-        userConfirmed: null,
-        startTime: 5000,
-        endTime: 6000,
-        durationMinutes: 16,
-        source: 'gps',
-        confidence: 0.7,
-        notes: null,
-      },
-      // Discarded
-      {
-        id: 4,
-        discarded: 1,
-        userConfirmed: null,
-        startTime: 7000,
-        endTime: 8000,
-        durationMinutes: 16,
-        source: 'gps',
-        confidence: 0.2,
-        notes: null,
-      },
-    ];
-
     let mockDb: {
       getAllSync: jest.Mock;
       runSync: jest.Mock;
@@ -358,7 +307,6 @@ describe('Date helpers', () => {
         expect.any(Array)
       );
     });
-
   });
 });
 
