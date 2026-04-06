@@ -1,5 +1,5 @@
 import React from 'react';
-import { render } from '@testing-library/react-native';
+import { render, act, waitFor } from '@testing-library/react-native';
 
 // Mock database BEFORE importing the component
 const mockGetScheduledNotificationsAsync = jest.fn(() => Promise.resolve([]));
@@ -11,12 +11,15 @@ jest.mock('../storage/database', () => ({
   toggleScheduledNotificationAsync: jest.fn(() => Promise.resolve()),
 }));
 
-// Mock navigation - do not call the callback to avoid infinite loops
+// Mock navigation - invoke the focus callback so loadSchedules runs
 jest.mock('@react-navigation/native', () => {
+  const React = require('react');
   const actual = jest.requireActual('@react-navigation/native');
   return {
     ...actual,
-    useFocusEffect: jest.fn(),
+    useFocusEffect: (cb: () => void) => {
+      React.useEffect(cb, []);
+    },
   };
 });
 
@@ -34,18 +37,23 @@ describe('ScheduledNotificationsScreen', () => {
     mockGetScheduledNotificationsAsync.mockResolvedValue([]);
   });
 
-  it('renders add button', () => {
+  it('renders add button', async () => {
     const { getByText } = render(<ScheduledNotificationsScreen />);
+    await act(async () => {});
     expect(getByText(/Add reminder/i)).toBeTruthy();
   });
 
-  it('renders empty state when no schedules exist', () => {
+  it('renders empty state when no schedules exist', async () => {
     const { getByText } = render(<ScheduledNotificationsScreen />);
-    expect(getByText(/No scheduled reminders yet/i)).toBeTruthy();
+    await act(async () => {});
+    await waitFor(() => {
+      expect(getByText(/No scheduled reminders yet/i)).toBeTruthy();
+    });
   });
 
-  it('can be rendered without errors', () => {
+  it('can be rendered without errors', async () => {
     const component = render(<ScheduledNotificationsScreen />);
+    await act(async () => {});
     expect(component).toBeTruthy();
   });
 });

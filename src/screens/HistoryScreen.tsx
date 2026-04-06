@@ -26,6 +26,7 @@ export default function HistoryScreen() {
   const [dailyData, setDailyData] = useState<{ date: number; minutes: number }[]>([]);
   const [dailyTarget, setDailyTarget] = useState(30);
   const [viewDate, setViewDate] = useState(Date.now());
+  const [isLoading, setIsLoading] = useState(true);
 
   useFocusEffect(
     useCallback(() => {
@@ -56,6 +57,8 @@ export default function HistoryScreen() {
       }
     } catch (error) {
       console.error('[HistoryScreen.loadData] Database error:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -123,7 +126,13 @@ export default function HistoryScreen() {
 
       {/* Bar chart */}
       <View style={styles.chartCard}>
-        <BarChart data={dailyData} target={dailyTarget} maxValue={maxMinutes} period={period} />
+        <BarChart
+          data={dailyData}
+          target={dailyTarget}
+          maxValue={maxMinutes}
+          period={period}
+          isLoading={isLoading}
+        />
       </View>
     </ScrollView>
   );
@@ -145,11 +154,13 @@ export function BarChart({
   target,
   maxValue,
   period,
+  isLoading = false,
 }: {
   data: { date: number; minutes: number }[];
   target: number;
   maxValue: number;
   period: Period;
+  isLoading?: boolean;
 }) {
   const { colors, shadows } = useTheme();
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
@@ -183,7 +194,7 @@ export function BarChart({
             <View style={[styles.targetLine, { top: targetY }]} />
 
             {/* Bars / empty state */}
-            {isEmpty ? (
+            {!isLoading && isEmpty ? (
               <View style={styles.chartEmptyState}>
                 <Text style={{ color: colors.textMuted, fontSize: 14 }}>
                   {t('history_no_data')}

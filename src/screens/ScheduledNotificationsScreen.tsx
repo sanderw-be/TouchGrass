@@ -33,6 +33,7 @@ export default function ScheduledNotificationsScreen() {
   const { colors, shadows } = useTheme();
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const [schedules, setSchedules] = useState<ScheduledNotification[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [editingSchedule, setEditingSchedule] = useState<ScheduledNotification | null>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
 
@@ -43,8 +44,14 @@ export default function ScheduledNotificationsScreen() {
   const [showTimePicker, setShowTimePicker] = useState(false);
 
   const loadSchedules = async () => {
-    const loaded = await getScheduledNotificationsAsync();
-    setSchedules(loaded);
+    try {
+      const loaded = await getScheduledNotificationsAsync();
+      setSchedules(loaded);
+    } catch (error) {
+      console.error('[ScheduledNotificationsScreen.loadSchedules] Error:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   useFocusEffect(
@@ -82,12 +89,13 @@ export default function ScheduledNotificationsScreen() {
         text: t('scheduled_delete_confirm'),
         style: 'destructive',
         onPress: async () => {
-          // Delete from database
-          await deleteScheduledNotificationAsync(schedule.id!);
-
-          // Update state immediately
-          const updated = await getScheduledNotificationsAsync();
-          setSchedules(updated);
+          try {
+            await deleteScheduledNotificationAsync(schedule.id!);
+            const updated = await getScheduledNotificationsAsync();
+            setSchedules(updated);
+          } catch (error) {
+            console.error('[ScheduledNotificationsScreen.handleDelete] Error:', error);
+          }
 
           // Schedule notifications in background (with await to catch errors)
           try {
@@ -103,12 +111,13 @@ export default function ScheduledNotificationsScreen() {
   const handleToggle = async (schedule: ScheduledNotification, value: boolean) => {
     if (!schedule.id) return;
 
-    // Update database
-    await toggleScheduledNotificationAsync(schedule.id, value);
-
-    // Update state immediately
-    const updated = await getScheduledNotificationsAsync();
-    setSchedules(updated);
+    try {
+      await toggleScheduledNotificationAsync(schedule.id, value);
+      const updated = await getScheduledNotificationsAsync();
+      setSchedules(updated);
+    } catch (error) {
+      console.error('[ScheduledNotificationsScreen.handleToggle] Error:', error);
+    }
 
     // Schedule notifications in background (with await to catch errors)
     try {
@@ -135,17 +144,21 @@ export default function ScheduledNotificationsScreen() {
       label: label.trim(),
     };
 
-    // Update database
-    if (editingSchedule?.id) {
-      notification.id = editingSchedule.id;
-      await updateScheduledNotificationAsync(notification);
-    } else {
-      await insertScheduledNotificationAsync(notification);
-    }
+    try {
+      // Update database
+      if (editingSchedule?.id) {
+        notification.id = editingSchedule.id;
+        await updateScheduledNotificationAsync(notification);
+      } else {
+        await insertScheduledNotificationAsync(notification);
+      }
 
-    // Reload the list from database
-    const updated = await getScheduledNotificationsAsync();
-    setSchedules(updated);
+      // Reload the list from database
+      const updated = await getScheduledNotificationsAsync();
+      setSchedules(updated);
+    } catch (error) {
+      console.error('[ScheduledNotificationsScreen.handleSave] Error:', error);
+    }
 
     // Close modal after state update
     setIsModalVisible(false);
@@ -205,7 +218,7 @@ export default function ScheduledNotificationsScreen() {
   return (
     <View style={styles.container}>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
-        {schedules.length === 0 ? (
+        {!isLoading && schedules.length === 0 ? (
           <View style={styles.emptyState}>
             <Text style={styles.emptyText}>{t('scheduled_empty')}</Text>
             <Text style={styles.emptyHint}>{t('scheduled_empty_hint')}</Text>

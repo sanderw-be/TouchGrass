@@ -44,45 +44,49 @@ export default function WeatherSettingsScreen() {
   }, []);
 
   const loadSettings = useCallback(async () => {
-    setTempPreference(
-      (await getSettingAsync('temp_preference', 'moderate')) as 'cold' | 'moderate' | 'hot'
-    );
-    setAvoidRain((await getSettingAsync('weather_avoid_rain', '1')) === '1');
-    setAvoidHeat((await getSettingAsync('weather_avoid_heat', '1')) === '1');
-    setConsiderUV((await getSettingAsync('weather_consider_uv', '1')) === '1');
+    try {
+      setTempPreference(
+        (await getSettingAsync('temp_preference', 'moderate')) as 'cold' | 'moderate' | 'hot'
+      );
+      setAvoidRain((await getSettingAsync('weather_avoid_rain', '1')) === '1');
+      setAvoidHeat((await getSettingAsync('weather_avoid_heat', '1')) === '1');
+      setConsiderUV((await getSettingAsync('weather_consider_uv', '1')) === '1');
 
-    // Auto-refresh weather data if unavailable or stale
-    if (!isWeatherDataAvailable()) {
-      // Fetch weather in background without showing loading state
-      fetchWeatherForecast()
-        .then((result) => {
-          if (!isMountedRef.current) return;
-          if (result.success) {
-            const hour = new Date().getHours();
-            const weather = getWeatherForHour(hour);
-            if (weather) {
-              const description = getWeatherDescription(weather);
-              const emoji = getWeatherEmoji(weather);
-              setCurrentWeather(
-                `${emoji} ${description}, ${formatTemperature(weather.temperature)}`
-              );
+      // Auto-refresh weather data if unavailable or stale
+      if (!isWeatherDataAvailable()) {
+        // Fetch weather in background without showing loading state
+        fetchWeatherForecast()
+          .then((result) => {
+            if (!isMountedRef.current) return;
+            if (result.success) {
+              const hour = new Date().getHours();
+              const weather = getWeatherForHour(hour);
+              if (weather) {
+                const description = getWeatherDescription(weather);
+                const emoji = getWeatherEmoji(weather);
+                setCurrentWeather(
+                  `${emoji} ${description}, ${formatTemperature(weather.temperature)}`
+                );
+              }
             }
-          }
-        })
-        .catch((error) => {
-          console.error('Auto-refresh weather error:', error);
-        });
-    } else {
-      // Load current weather if available
-      const hour = new Date().getHours();
-      const weather = getWeatherForHour(hour);
-      if (weather) {
-        const description = getWeatherDescription(weather);
-        const emoji = getWeatherEmoji(weather);
-        setCurrentWeather(`${emoji} ${description}, ${formatTemperature(weather.temperature)}`);
+          })
+          .catch((error) => {
+            console.error('Auto-refresh weather error:', error);
+          });
       } else {
-        setCurrentWeather(null);
+        // Load current weather if available
+        const hour = new Date().getHours();
+        const weather = getWeatherForHour(hour);
+        if (weather) {
+          const description = getWeatherDescription(weather);
+          const emoji = getWeatherEmoji(weather);
+          setCurrentWeather(`${emoji} ${description}, ${formatTemperature(weather.temperature)}`);
+        } else {
+          setCurrentWeather(null);
+        }
       }
+    } catch (error) {
+      console.error('[WeatherSettingsScreen.loadSettings] Error:', error);
     }
   }, []);
 
@@ -93,23 +97,39 @@ export default function WeatherSettingsScreen() {
   );
 
   const changeTempPreference = async (pref: 'cold' | 'moderate' | 'hot') => {
-    await setSettingAsync('temp_preference', pref);
-    setTempPreference(pref);
+    try {
+      await setSettingAsync('temp_preference', pref);
+      setTempPreference(pref);
+    } catch (error) {
+      console.error('[WeatherSettingsScreen.changeTempPreference] Error:', error);
+    }
   };
 
   const toggleAvoidRain = async (value: boolean) => {
-    await setSettingAsync('weather_avoid_rain', value ? '1' : '0');
-    setAvoidRain(value);
+    try {
+      await setSettingAsync('weather_avoid_rain', value ? '1' : '0');
+      setAvoidRain(value);
+    } catch (error) {
+      console.error('[WeatherSettingsScreen.toggleAvoidRain] Error:', error);
+    }
   };
 
   const toggleAvoidHeat = async (value: boolean) => {
-    await setSettingAsync('weather_avoid_heat', value ? '1' : '0');
-    setAvoidHeat(value);
+    try {
+      await setSettingAsync('weather_avoid_heat', value ? '1' : '0');
+      setAvoidHeat(value);
+    } catch (error) {
+      console.error('[WeatherSettingsScreen.toggleAvoidHeat] Error:', error);
+    }
   };
 
   const toggleConsiderUV = async (value: boolean) => {
-    await setSettingAsync('weather_consider_uv', value ? '1' : '0');
-    setConsiderUV(value);
+    try {
+      await setSettingAsync('weather_consider_uv', value ? '1' : '0');
+      setConsiderUV(value);
+    } catch (error) {
+      console.error('[WeatherSettingsScreen.toggleConsiderUV] Error:', error);
+    }
   };
 
   const handleRefreshWeather = async () => {

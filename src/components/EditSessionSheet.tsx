@@ -76,9 +76,13 @@ export default function EditSessionSheet({ visible, session, onClose, onSessionU
       return;
     }
 
-    await updateSessionTimesAsync(session!.id!, startTime.getTime(), endTime.getTime());
-    onSessionUpdated();
-    onClose();
+    try {
+      await updateSessionTimesAsync(session!.id!, startTime.getTime(), endTime.getTime());
+      onSessionUpdated();
+      onClose();
+    } catch (error) {
+      console.error('[EditSessionSheet.handleSave] Error:', error);
+    }
   };
 
   const calculatedDuration = Math.round((endTime.getTime() - startTime.getTime()) / 60000);

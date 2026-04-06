@@ -2,6 +2,7 @@ import * as SQLite from 'expo-sqlite';
 import { WeatherCondition, WeatherCache } from '../weather/types';
 
 const db = SQLite.openDatabaseSync('touchgrass.db');
+db.execSync('PRAGMA journal_mode = WAL;');
 
 /** 7 days in milliseconds — used as the default auto-close age for unreviewed sessions. */
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;

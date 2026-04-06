@@ -101,39 +101,43 @@ export default function GoalsScreen() {
   const pendingSmartRemindersEnableRef = useRef(false);
 
   const loadGoalSettings = useCallback(async () => {
-    const [
-      dailyGoal,
-      weeklyGoal,
-      smartCount,
-      catchupCount,
-      weatherEn,
-      calEn,
-      calBuf,
-      calDur,
-      selCal,
-      battOpt,
-    ] = await Promise.all([
-      getCurrentDailyGoalAsync(),
-      getCurrentWeeklyGoalAsync(),
-      getSettingAsync('smart_reminders_count', '2'),
-      getSettingAsync('smart_catchup_reminders_count', '2'),
-      getSettingAsync('weather_enabled', '1'),
-      getSettingAsync('calendar_integration_enabled', '0'),
-      getSettingAsync('calendar_buffer_minutes', '30'),
-      getSettingAsync('calendar_default_duration', '0'),
-      getSelectedCalendarId(),
-      getSettingAsync(BATTERY_OPTIMIZATION_SETTING_KEY, '0'),
-    ]);
-    setDailyTargetState(dailyGoal?.targetMinutes ?? 30);
-    setWeeklyTargetState(weeklyGoal?.targetMinutes ?? 150);
-    setSmartRemindersCount(parseInt(smartCount, 10));
-    setCatchupRemindersCount(parseInt(catchupCount, 10));
-    setWeatherEnabled(weatherEn === '1');
-    setCalendarEnabled(calEn === '1');
-    setCalendarBuffer(parseInt(calBuf, 10));
-    setCalendarDuration(parseInt(calDur, 10));
-    setCalendarSelectedIdState(selCal);
-    setBatteryOptimizationGranted(battOpt === '1');
+    try {
+      const [
+        dailyGoal,
+        weeklyGoal,
+        smartCount,
+        catchupCount,
+        weatherEn,
+        calEn,
+        calBuf,
+        calDur,
+        selCal,
+        battOpt,
+      ] = await Promise.all([
+        getCurrentDailyGoalAsync(),
+        getCurrentWeeklyGoalAsync(),
+        getSettingAsync('smart_reminders_count', '2'),
+        getSettingAsync('smart_catchup_reminders_count', '2'),
+        getSettingAsync('weather_enabled', '1'),
+        getSettingAsync('calendar_integration_enabled', '0'),
+        getSettingAsync('calendar_buffer_minutes', '30'),
+        getSettingAsync('calendar_default_duration', '0'),
+        getSelectedCalendarId(),
+        getSettingAsync(BATTERY_OPTIMIZATION_SETTING_KEY, '0'),
+      ]);
+      setDailyTargetState(dailyGoal?.targetMinutes ?? 30);
+      setWeeklyTargetState(weeklyGoal?.targetMinutes ?? 150);
+      setSmartRemindersCount(parseInt(smartCount, 10));
+      setCatchupRemindersCount(parseInt(catchupCount, 10));
+      setWeatherEnabled(weatherEn === '1');
+      setCalendarEnabled(calEn === '1');
+      setCalendarBuffer(parseInt(calBuf, 10));
+      setCalendarDuration(parseInt(calDur, 10));
+      setCalendarSelectedIdState(selCal);
+      setBatteryOptimizationGranted(battOpt === '1');
+    } catch (error) {
+      console.error('[GoalsScreen.loadGoalSettings] Error:', error);
+    }
   }, []);
 
   const refreshBatteryOptimizationStatus = useCallback(async () => {
@@ -213,9 +217,13 @@ export default function GoalsScreen() {
       Alert.alert(t('goals_invalid_title'), t('goals_invalid_daily'));
       return;
     }
-    await setDailyGoalAsync(minutes);
-    setDailyTargetState(minutes);
-    setEditingDaily(false);
+    try {
+      await setDailyGoalAsync(minutes);
+      setDailyTargetState(minutes);
+      setEditingDaily(false);
+    } catch (error) {
+      console.error('[GoalsScreen.saveDaily] Error:', error);
+    }
   };
 
   const saveWeekly = async (minutes: number) => {
@@ -223,9 +231,13 @@ export default function GoalsScreen() {
       Alert.alert(t('goals_invalid_title'), t('goals_invalid_weekly'));
       return;
     }
-    await setWeeklyGoalAsync(minutes);
-    setWeeklyTargetState(minutes);
-    setEditingWeekly(false);
+    try {
+      await setWeeklyGoalAsync(minutes);
+      setWeeklyTargetState(minutes);
+      setEditingWeekly(false);
+    } catch (error) {
+      console.error('[GoalsScreen.saveWeekly] Error:', error);
+    }
   };
 
   const cycleSmartRemindersCount = async () => {
@@ -237,15 +249,23 @@ export default function GoalsScreen() {
       showNotificationPermissionSheet();
       return;
     }
-    await setSettingAsync('smart_reminders_count', String(next));
-    setSmartRemindersCount(next);
+    try {
+      await setSettingAsync('smart_reminders_count', String(next));
+      setSmartRemindersCount(next);
+    } catch (error) {
+      console.error('[GoalsScreen.cycleSmartRemindersCount] Error:', error);
+    }
   };
 
   const cycleCatchupRemindersCount = async () => {
     const idx = CATCHUP_REMINDERS_OPTIONS.indexOf(catchupRemindersCount as CatchupRemindersOption);
     const next = CATCHUP_REMINDERS_OPTIONS[(idx + 1) % CATCHUP_REMINDERS_OPTIONS.length];
-    await setSettingAsync('smart_catchup_reminders_count', String(next));
-    setCatchupRemindersCount(next);
+    try {
+      await setSettingAsync('smart_catchup_reminders_count', String(next));
+      setCatchupRemindersCount(next);
+    } catch (error) {
+      console.error('[GoalsScreen.cycleCatchupRemindersCount] Error:', error);
+    }
   };
 
   const handleOpenAppSettings = async () => {
@@ -309,8 +329,12 @@ export default function GoalsScreen() {
       showWeatherPermissionSheet();
       return;
     }
-    await setSettingAsync('weather_enabled', value ? '1' : '0');
-    setWeatherEnabled(value);
+    try {
+      await setSettingAsync('weather_enabled', value ? '1' : '0');
+      setWeatherEnabled(value);
+    } catch (error) {
+      console.error('[GoalsScreen.toggleWeatherEnabled] Error:', error);
+    }
   };
 
   const CALENDAR_BUFFER_OPTIONS = [10, 20, 30, 45, 60];
@@ -324,22 +348,34 @@ export default function GoalsScreen() {
       showCalendarPermissionSheet();
       return;
     }
-    await setSettingAsync('calendar_integration_enabled', value ? '1' : '0');
-    setCalendarEnabled(value);
+    try {
+      await setSettingAsync('calendar_integration_enabled', value ? '1' : '0');
+      setCalendarEnabled(value);
+    } catch (error) {
+      console.error('[GoalsScreen.toggleCalendarIntegration] Error:', error);
+    }
   };
 
   const cycleCalendarBuffer = async () => {
     const idx = CALENDAR_BUFFER_OPTIONS.indexOf(calendarBuffer);
     const next = CALENDAR_BUFFER_OPTIONS[(idx + 1) % CALENDAR_BUFFER_OPTIONS.length];
-    await setSettingAsync('calendar_buffer_minutes', String(next));
-    setCalendarBuffer(next);
+    try {
+      await setSettingAsync('calendar_buffer_minutes', String(next));
+      setCalendarBuffer(next);
+    } catch (error) {
+      console.error('[GoalsScreen.cycleCalendarBuffer] Error:', error);
+    }
   };
 
   const cycleCalendarDuration = async () => {
     const idx = CALENDAR_DURATION_OPTIONS.indexOf(calendarDuration);
     const next = CALENDAR_DURATION_OPTIONS[(idx + 1) % CALENDAR_DURATION_OPTIONS.length];
-    await setSettingAsync('calendar_default_duration', String(next));
-    setCalendarDuration(next);
+    try {
+      await setSettingAsync('calendar_default_duration', String(next));
+      setCalendarDuration(next);
+    } catch (error) {
+      console.error('[GoalsScreen.cycleCalendarDuration] Error:', error);
+    }
   };
 
   const handleSelectCalendar = async () => {

@@ -29,17 +29,24 @@ export default function KnownLocationsScreen() {
   const [active, setActive] = useState<KnownLocation[]>([]);
   const [editingLocation, setEditingLocation] = useState<KnownLocation | null>(null);
   const [isCreatingLocation, setIsCreatingLocation] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [newLocationCoords, setNewLocationCoords] = useState<
     { latitude: number; longitude: number } | undefined
   >();
 
   const loadData = useCallback(async () => {
-    setSuggestionsEnabled((await getSettingAsync('location_suggestions_enabled', '1')) === '1');
-    const status = getDetectionStatus();
-    setGpsActive(status.gps);
-    const all = await getAllKnownLocationsAsync();
-    setSuggested(all.filter((l) => l.status === 'suggested'));
-    setActive(all.filter((l) => l.status === 'active'));
+    try {
+      setSuggestionsEnabled((await getSettingAsync('location_suggestions_enabled', '1')) === '1');
+      const status = getDetectionStatus();
+      setGpsActive(status.gps);
+      const all = await getAllKnownLocationsAsync();
+      setSuggested(all.filter((l) => l.status === 'suggested'));
+      setActive(all.filter((l) => l.status === 'active'));
+    } catch (error) {
+      console.error('[KnownLocationsScreen.loadData] Error:', error);
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
   useFocusEffect(
@@ -92,8 +99,12 @@ export default function KnownLocationsScreen() {
   }, [loadData, closeSheet]);
 
   const toggleSuggestions = async (value: boolean) => {
-    await setSettingAsync('location_suggestions_enabled', value ? '1' : '0');
-    setSuggestionsEnabled(value);
+    try {
+      await setSettingAsync('location_suggestions_enabled', value ? '1' : '0');
+      setSuggestionsEnabled(value);
+    } catch (error) {
+      console.error('[KnownLocationsScreen.toggleSuggestions] Error:', error);
+    }
   };
 
   const handleDeny = (loc: KnownLocation) => {
@@ -104,8 +115,12 @@ export default function KnownLocationsScreen() {
         text: t('settings_location_deny_confirm'),
         style: 'destructive',
         onPress: async () => {
-          await denyKnownLocationAsync(loc.id!);
-          loadData();
+          try {
+            await denyKnownLocationAsync(loc.id!);
+            loadData();
+          } catch (error) {
+            console.error('[KnownLocationsScreen.handleDeny] Error:', error);
+          }
         },
       },
     ]);
@@ -154,7 +169,7 @@ export default function KnownLocationsScreen() {
         {/* Suggested locations */}
         <Text style={styles.sectionHeader}>{t('settings_locations_section_suggested')}</Text>
         <View style={styles.card}>
-          {suggested.length === 0 ? (
+          {!isLoading && suggested.length === 0 ? (
             <View style={styles.emptyBox}>
               <Text style={styles.emptyTitle}>{t('settings_location_no_suggestions')}</Text>
               <Text style={styles.emptyHint}>{t('settings_location_no_suggestions_hint')}</Text>
@@ -205,7 +220,7 @@ export default function KnownLocationsScreen() {
         {/* Active locations */}
         <Text style={styles.sectionHeader}>{t('settings_locations_section_active')}</Text>
         <View style={styles.card}>
-          {active.length === 0 ? (
+          {!isLoading && active.length === 0 ? (
             <View style={styles.emptyBox}>
               <Text style={styles.emptyTitle}>{t('settings_location_no_active')}</Text>
               <Text style={styles.emptyHint}>{t('settings_location_no_active_hint')}</Text>

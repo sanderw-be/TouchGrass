@@ -66,33 +66,41 @@ export default function ReminderFeedbackModal() {
     }
 
     const handleBadTime = async () => {
-      await insertReminderFeedbackAsync({
-        timestamp: Date.now(),
-        action: 'bad_time',
-        scheduledHour: data.hour,
-        scheduledMinute: data.minute >= 30 ? 30 : 0,
-        dayOfWeek: new Date().getDay(),
-      });
+      try {
+        await insertReminderFeedbackAsync({
+          timestamp: Date.now(),
+          action: 'bad_time',
+          scheduledHour: data.hour,
+          scheduledMinute: data.minute >= 30 ? 30 : 0,
+          dayOfWeek: new Date().getDay(),
+        });
+      } catch (error) {
+        console.error('[ReminderFeedbackModal.handleBadTime] Error:', error);
+      }
       dismiss();
     };
 
     const handleFewerReminders = async () => {
-      const catchupCount = parseInt(
-        await getSettingAsync('smart_catchup_reminders_count', '2'),
-        10
-      );
-      if (catchupCount > 0) {
-        await setSettingAsync('smart_catchup_reminders_count', String(catchupCount - 1));
-        setFewerConfirmationMessage(t('notif_fewer_reminders_confirm_generic'));
-      } else {
-        const currentCount = parseInt(await getSettingAsync('smart_reminders_count', '2'), 10);
-        const newCount = Math.max(1, currentCount - 1);
-        await setSettingAsync('smart_reminders_count', String(newCount));
-        setFewerConfirmationMessage(
-          t('notif_fewer_reminders_confirm', { newCount, oldCount: currentCount })
+      try {
+        const catchupCount = parseInt(
+          await getSettingAsync('smart_catchup_reminders_count', '2'),
+          10
         );
+        if (catchupCount > 0) {
+          await setSettingAsync('smart_catchup_reminders_count', String(catchupCount - 1));
+          setFewerConfirmationMessage(t('notif_fewer_reminders_confirm_generic'));
+        } else {
+          const currentCount = parseInt(await getSettingAsync('smart_reminders_count', '2'), 10);
+          const newCount = Math.max(1, currentCount - 1);
+          await setSettingAsync('smart_reminders_count', String(newCount));
+          setFewerConfirmationMessage(
+            t('notif_fewer_reminders_confirm', { newCount, oldCount: currentCount })
+          );
+        }
+        setShowFewerConfirmation(true);
+      } catch (error) {
+        console.error('[ReminderFeedbackModal.handleFewerReminders] Error:', error);
       }
-      setShowFewerConfirmation(true);
     };
 
     return (

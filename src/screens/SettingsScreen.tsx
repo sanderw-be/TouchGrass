@@ -69,9 +69,13 @@ export default function SettingsScreen() {
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
 
   const loadStatus = useCallback(async () => {
-    setDetectionStatus(getDetectionStatus());
-    setKnownLocations(await getKnownLocationsAsync());
-    setSuggestedCount((await getSuggestedLocationsAsync()).length);
+    try {
+      setDetectionStatus(getDetectionStatus());
+      setKnownLocations(await getKnownLocationsAsync());
+      setSuggestedCount((await getSuggestedLocationsAsync()).length);
+    } catch (error) {
+      console.error('[SettingsScreen.loadStatus] Error:', error);
+    }
   }, []);
 
   // Re-check permission status silently (no popups) when the screen regains focus

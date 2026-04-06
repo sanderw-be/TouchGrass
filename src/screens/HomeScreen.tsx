@@ -202,53 +202,65 @@ export default function HomeScreen() {
   };
 
   const handleConfirm = async (id: number, startTime: number, confirmed: boolean) => {
-    await confirmSessionAsync(id, confirmed);
-    const d = new Date(startTime);
-    updateTimeSlotProbability(d.getHours(), d.getDay(), confirmed);
-    emitSessionsChanged();
-    if (confirmed) {
-      await cancelRemindersIfGoalReached();
-      requestWidgetRefresh();
-    } else {
-      setUndoSnackbar({ visible: true, sessionId: id });
+    try {
+      await confirmSessionAsync(id, confirmed);
+      const d = new Date(startTime);
+      updateTimeSlotProbability(d.getHours(), d.getDay(), confirmed);
+      emitSessionsChanged();
+      if (confirmed) {
+        await cancelRemindersIfGoalReached();
+        requestWidgetRefresh();
+      } else {
+        setUndoSnackbar({ visible: true, sessionId: id });
+      }
+      loadData();
+    } catch (error) {
+      console.error('[HomeScreen.handleConfirm] Error:', error);
     }
-    loadData();
   };
 
   const handleUndoReject = async () => {
-    if (undoSnackbar.sessionId !== null) {
-      await confirmSessionAsync(undoSnackbar.sessionId, null);
-      emitSessionsChanged();
-      loadData();
+    try {
+      if (undoSnackbar.sessionId !== null) {
+        await confirmSessionAsync(undoSnackbar.sessionId, null);
+        emitSessionsChanged();
+        loadData();
+      }
+    } catch (error) {
+      console.error('[HomeScreen.handleUndoReject] Error:', error);
     }
     setUndoSnackbar({ visible: false, sessionId: null });
   };
 
   const handleTimerPress = async () => {
-    if (timerRunning) {
-      // Stop timer — auto-save and refresh
-      if (timerIntervalRef.current) {
-        clearInterval(timerIntervalRef.current);
-        timerIntervalRef.current = null;
+    try {
+      if (timerRunning) {
+        // Stop timer — auto-save and refresh
+        if (timerIntervalRef.current) {
+          clearInterval(timerIntervalRef.current);
+          timerIntervalRef.current = null;
+        }
+        if (stopTimerRef.current) stopTimerRef.current();
+        stopTimerRef.current = null;
+        // Clear widget marker so the widget shows the play icon again
+        await setSettingAsync(WIDGET_TIMER_KEY, '');
+        setTimerRunning(false);
+        setTimerSeconds(0);
+        loadData();
+        requestWidgetRefresh();
+      } else {
+        // Start timer
+        const stop = startManualSession();
+        stopTimerRef.current = stop;
+        timerStartRef.current = Date.now();
+        // Write marker so the widget can show the stop icon
+        await setSettingAsync(WIDGET_TIMER_KEY, String(Date.now()));
+        setTimerSeconds(0);
+        setTimerRunning(true);
+        requestWidgetRefresh();
       }
-      if (stopTimerRef.current) stopTimerRef.current();
-      stopTimerRef.current = null;
-      // Clear widget marker so the widget shows the play icon again
-      await setSettingAsync(WIDGET_TIMER_KEY, '');
-      setTimerRunning(false);
-      setTimerSeconds(0);
-      loadData();
-      requestWidgetRefresh();
-    } else {
-      // Start timer
-      const stop = startManualSession();
-      stopTimerRef.current = stop;
-      timerStartRef.current = Date.now();
-      // Write marker so the widget can show the stop icon
-      await setSettingAsync(WIDGET_TIMER_KEY, String(Date.now()));
-      setTimerSeconds(0);
-      setTimerRunning(true);
-      requestWidgetRefresh();
+    } catch (error) {
+      console.error('[HomeScreen.handleTimerPress] Error:', error);
     }
   };
 
