@@ -216,25 +216,56 @@ export function initDatabase(): void {
   } else if (currentVersion < DB_VERSION) {
     // Existing install with an older schema: apply only the migrations that
     // have not been applied yet, then advance the stored version.
+    //
+    // Each ALTER TABLE is wrapped in a try/catch as a one-time safety net for
+    // users upgrading from the old exception-driven migration code: they may
+    // already have some columns added by the previous code even though
+    // PRAGMA user_version was never set (i.e. currentVersion=0).  After this
+    // block runs successfully, PRAGMA user_version is stamped and these
+    // try/catch blocks are never reached again.
     if (currentVersion < 1) {
-      db.execSync(`ALTER TABLE known_locations ADD COLUMN status TEXT NOT NULL DEFAULT 'active'`);
+      try {
+        db.execSync(`ALTER TABLE known_locations ADD COLUMN status TEXT NOT NULL DEFAULT 'active'`);
+      } catch {
+        // Column already exists from previous migration run — safe to ignore
+      }
     }
     if (currentVersion < 2) {
-      db.execSync(`ALTER TABLE outside_sessions ADD COLUMN discarded INTEGER NOT NULL DEFAULT 0`);
+      try {
+        db.execSync(`ALTER TABLE outside_sessions ADD COLUMN discarded INTEGER NOT NULL DEFAULT 0`);
+      } catch {
+        // Column already exists from previous migration run — safe to ignore
+      }
     }
     if (currentVersion < 3) {
-      db.execSync(`ALTER TABLE outside_sessions ADD COLUMN steps INTEGER`);
+      try {
+        db.execSync(`ALTER TABLE outside_sessions ADD COLUMN steps INTEGER`);
+      } catch {
+        // Column already exists from previous migration run — safe to ignore
+      }
     }
     if (currentVersion < 4) {
-      db.execSync(
-        `ALTER TABLE reminder_feedback ADD COLUMN scheduledMinute INTEGER NOT NULL DEFAULT 0`
-      );
+      try {
+        db.execSync(
+          `ALTER TABLE reminder_feedback ADD COLUMN scheduledMinute INTEGER NOT NULL DEFAULT 0`
+        );
+      } catch {
+        // Column already exists from previous migration run — safe to ignore
+      }
     }
     if (currentVersion < 5) {
-      db.execSync(`ALTER TABLE outside_sessions ADD COLUMN distanceMeters REAL`);
+      try {
+        db.execSync(`ALTER TABLE outside_sessions ADD COLUMN distanceMeters REAL`);
+      } catch {
+        // Column already exists from previous migration run — safe to ignore
+      }
     }
     if (currentVersion < 6) {
-      db.execSync(`ALTER TABLE outside_sessions ADD COLUMN averageSpeedKmh REAL`);
+      try {
+        db.execSync(`ALTER TABLE outside_sessions ADD COLUMN averageSpeedKmh REAL`);
+      } catch {
+        // Column already exists from previous migration run — safe to ignore
+      }
     }
     db.execSync(`PRAGMA user_version = ${DB_VERSION}`);
     console.log(`Database migrated from version ${currentVersion} to ${DB_VERSION}`);

@@ -157,6 +157,32 @@ describe('Database', () => {
       );
       expect(execCalls.some((s) => s.includes('PRAGMA user_version ='))).toBe(true);
     });
+
+    it('does not crash when columns already exist (upgrade from old try/catch migration code)', () => {
+      const SQLite = require('expo-sqlite');
+      const mockDb = SQLite.openDatabaseSync.mock.results[0].value;
+
+      // Simulate: user_version=0 (never set), table already exists, but columns already
+      // exist because the old try/catch migration code ran previously.
+      mockDb.getFirstSync
+        .mockReturnValueOnce({ user_version: 0 }) // PRAGMA user_version
+        .mockReturnValueOnce({ count: 1 }); // sqlite_master check
+
+      // Make every ALTER TABLE throw "duplicate column name"
+      mockDb.execSync.mockImplementation((sql: string) => {
+        if (sql.trimStart().startsWith('ALTER TABLE')) {
+          throw new Error('ERR_INTERNAL_SQLITE_ERROR: duplicate column name');
+        }
+      });
+
+      const { initDatabase } = require('../storage/database');
+      // Must not throw even though every ALTER TABLE fails
+      expect(() => initDatabase()).not.toThrow();
+
+      // Restore default mock behaviour for subsequent tests
+      mockDb.execSync.mockReset();
+      mockDb.execSync.mockReturnValue(undefined);
+    });
   });
 
   describe('Settings', () => {
