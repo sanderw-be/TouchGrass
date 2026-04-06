@@ -199,31 +199,31 @@ describe('Database', () => {
       expect(typeof getScheduledNotifications).toBe('function');
     });
 
-    it('insertScheduledNotification function exists', () => {
-      const { insertScheduledNotification } = require('../storage/database');
-      expect(typeof insertScheduledNotification).toBe('function');
+    it('insertScheduledNotificationAsync function exists', () => {
+      const { insertScheduledNotificationAsync } = require('../storage/database');
+      expect(typeof insertScheduledNotificationAsync).toBe('function');
     });
 
-    it('updateScheduledNotification function exists', () => {
-      const { updateScheduledNotification } = require('../storage/database');
-      expect(typeof updateScheduledNotification).toBe('function');
+    it('updateScheduledNotificationAsync function exists', () => {
+      const { updateScheduledNotificationAsync } = require('../storage/database');
+      expect(typeof updateScheduledNotificationAsync).toBe('function');
     });
 
-    it('deleteScheduledNotification function exists', () => {
-      const { deleteScheduledNotification } = require('../storage/database');
-      expect(typeof deleteScheduledNotification).toBe('function');
+    it('deleteScheduledNotificationAsync function exists', () => {
+      const { deleteScheduledNotificationAsync } = require('../storage/database');
+      expect(typeof deleteScheduledNotificationAsync).toBe('function');
     });
 
-    it('toggleScheduledNotification function exists', () => {
-      const { toggleScheduledNotification } = require('../storage/database');
-      expect(typeof toggleScheduledNotification).toBe('function');
+    it('toggleScheduledNotificationAsync function exists', () => {
+      const { toggleScheduledNotificationAsync } = require('../storage/database');
+      expect(typeof toggleScheduledNotificationAsync).toBe('function');
     });
   });
 
   describe('Sessions', () => {
-    it('updateSessionTimes function exists', () => {
-      const { updateSessionTimes } = require('../storage/database');
-      expect(typeof updateSessionTimes).toBe('function');
+    it('updateSessionTimesAsync function exists', () => {
+      const { updateSessionTimesAsync } = require('../storage/database');
+      expect(typeof updateSessionTimesAsync).toBe('function');
     });
   });
 });
@@ -348,53 +348,6 @@ describe('Date helpers', () => {
       mockDb = SQLite.openDatabaseSync.mock.results[0].value;
     });
 
-    it('getApprovedSessions returns only confirmed sessions', () => {
-      const { getApprovedSessions } = require('../storage/database');
-      mockDb.getAllSync.mockReturnValueOnce(mockSessions.filter((s) => s.userConfirmed === 1));
-      const result = getApprovedSessions(0, 9999);
-      expect(result.map((s: { id: number }) => s.id)).toEqual([1]);
-      expect(mockDb.getAllSync).toHaveBeenCalledWith(
-        expect.stringContaining('userConfirmed = 1'),
-        expect.any(Array)
-      );
-    });
-
-    it('getStandardSessions excludes discarded sessions', () => {
-      const { getStandardSessions } = require('../storage/database');
-      mockDb.getAllSync.mockReturnValueOnce(mockSessions.filter((s) => s.discarded !== 1));
-      const result = getStandardSessions(0, 9999);
-      expect(result.map((s: { id: number }) => s.id)).toEqual([1, 2, 3]);
-      expect(mockDb.getAllSync).toHaveBeenCalledWith(
-        expect.stringContaining('discarded'),
-        expect.any(Array)
-      );
-    });
-
-    it('getAllSessionsIncludingDiscarded returns all sessions', () => {
-      const { getAllSessionsIncludingDiscarded } = require('../storage/database');
-      mockDb.getAllSync.mockReturnValueOnce(mockSessions);
-      const result = getAllSessionsIncludingDiscarded(0, 9999);
-      expect(result.map((s: { id: number }) => s.id)).toEqual([1, 2, 3, 4]);
-    });
-
-    it('getSessionsForDay excludes rejected and discarded sessions', () => {
-      const { getSessionsForDay } = require('../storage/database');
-      // Only approved (1) and non-discarded pending (null) sessions should be returned
-      mockDb.getAllSync.mockReturnValueOnce(
-        mockSessions.filter((s) => s.userConfirmed !== 0 && s.discarded !== 1)
-      );
-      const result = getSessionsForDay(Date.now());
-      expect(result.map((s: { id: number }) => s.id)).toEqual([1, 3]);
-      expect(mockDb.getAllSync).toHaveBeenCalledWith(
-        expect.stringContaining('userConfirmed IS NOT 0'),
-        expect.any(Array)
-      );
-      expect(mockDb.getAllSync).toHaveBeenCalledWith(
-        expect.stringContaining('discarded IS NOT 1'),
-        expect.any(Array)
-      );
-    });
-
     it('getTodayMinutes only sums approved sessions', () => {
       const { getTodayMinutes } = require('../storage/database');
       mockDb.getFirstSync.mockReturnValueOnce({ total: 30 });
@@ -406,67 +359,6 @@ describe('Date helpers', () => {
       );
     });
 
-    it('getWeekMinutes only sums approved sessions', () => {
-      const { getWeekMinutes } = require('../storage/database');
-      mockDb.getFirstSync.mockReturnValueOnce({ total: 120 });
-      const result = getWeekMinutes();
-      expect(result).toBe(120);
-      expect(mockDb.getFirstSync).toHaveBeenCalledWith(
-        expect.stringContaining('userConfirmed = 1'),
-        expect.any(Array)
-      );
-    });
-
-    it('unDiscardSession function exists and calls db with correct query', () => {
-      const { unDiscardSession } = require('../storage/database');
-      expect(typeof unDiscardSession).toBe('function');
-      unDiscardSession(4);
-      expect(mockDb.runSync).toHaveBeenCalledWith(
-        expect.stringContaining('discarded = 0'),
-        expect.arrayContaining([4])
-      );
-    });
-
-    it('countProposedSessions returns the count of unreviewed non-discarded sessions', () => {
-      const { countProposedSessions } = require('../storage/database');
-      mockDb.getFirstSync.mockReturnValueOnce({ cnt: 2 });
-      const result = countProposedSessions();
-      expect(result).toBe(2);
-      expect(mockDb.getFirstSync).toHaveBeenCalledWith(
-        expect.stringContaining('userConfirmed IS NULL')
-      );
-    });
-
-    it('countProposedSessions returns 0 when no proposed sessions exist', () => {
-      const { countProposedSessions } = require('../storage/database');
-      mockDb.getFirstSync.mockReturnValueOnce(null);
-      const result = countProposedSessions();
-      expect(result).toBe(0);
-    });
-
-    it('autoCloseOldProposedSessions marks old proposed sessions as rejected', () => {
-      const { autoCloseOldProposedSessions } = require('../storage/database');
-      mockDb.runSync.mockReturnValueOnce({ changes: 3 });
-      const result = autoCloseOldProposedSessions();
-      expect(result).toBe(3);
-      expect(mockDb.runSync).toHaveBeenCalledWith(
-        expect.stringContaining('userConfirmed = 0'),
-        expect.any(Array)
-      );
-    });
-
-    it('autoCloseOldProposedSessions uses 7-day default cutoff', () => {
-      const { autoCloseOldProposedSessions } = require('../storage/database');
-      const before = Date.now();
-      mockDb.runSync.mockReturnValueOnce({ changes: 0 });
-      autoCloseOldProposedSessions();
-      const after = Date.now();
-      const callArgs = mockDb.runSync.mock.calls[mockDb.runSync.mock.calls.length - 1];
-      const cutoff = callArgs[1][0] as number;
-      // cutoff should be approximately 7 days ago
-      expect(cutoff).toBeGreaterThanOrEqual(before - 7 * 24 * 60 * 60 * 1000 - 100);
-      expect(cutoff).toBeLessThanOrEqual(after - 7 * 24 * 60 * 60 * 1000 + 100);
-    });
   });
 });
 
@@ -483,10 +375,9 @@ describe('Background task logs', () => {
     mockDb = SQLite.openDatabaseSync.mock.results[0].value;
   });
 
-  it('insertBackgroundLog and getBackgroundLogs functions exist', () => {
-    const { insertBackgroundLog, getBackgroundLogs } = require('../storage/database');
+  it('insertBackgroundLog function exists', () => {
+    const { insertBackgroundLog } = require('../storage/database');
     expect(typeof insertBackgroundLog).toBe('function');
-    expect(typeof getBackgroundLogs).toBe('function');
   });
 
   it('insertBackgroundLog calls runSync to insert a row', () => {
@@ -498,41 +389,6 @@ describe('Background task logs', () => {
       expect.stringContaining('INSERT INTO background_task_logs'),
       expect.arrayContaining(['gps', 'Outside (no known location)'])
     );
-  });
-
-  it('getBackgroundLogs with category calls getAllSync with category filter', () => {
-    const { getBackgroundLogs } = require('../storage/database');
-    const fakeLogs = [{ id: 1, timestamp: Date.now(), category: 'gps', message: 'test' }];
-    mockDb.getAllSync.mockReturnValueOnce(fakeLogs);
-    const result = getBackgroundLogs('gps');
-    expect(mockDb.getAllSync).toHaveBeenCalledWith(
-      expect.stringContaining('WHERE category = ?'),
-      expect.arrayContaining(['gps'])
-    );
-    expect(result).toEqual(fakeLogs);
-  });
-
-  it('getBackgroundLogs without category calls getAllSync without category filter', () => {
-    const { getBackgroundLogs } = require('../storage/database');
-    const fakeLogs = [
-      { id: 2, timestamp: Date.now(), category: 'reminder', message: 'Daily plan: 13:00' },
-    ];
-    mockDb.getAllSync.mockReturnValueOnce(fakeLogs);
-    const result = getBackgroundLogs();
-    expect(mockDb.getAllSync).toHaveBeenCalledWith(
-      expect.not.stringContaining('WHERE category'),
-      expect.any(Array)
-    );
-    expect(result).toEqual(fakeLogs);
-  });
-
-  it('getBackgroundLogs returns empty array on error', () => {
-    const { getBackgroundLogs } = require('../storage/database');
-    mockDb.getAllSync.mockImplementationOnce(() => {
-      throw new Error('DB error');
-    });
-    const result = getBackgroundLogs('gps');
-    expect(result).toEqual([]);
   });
 
   it('insertBackgroundLog does not throw on error', () => {

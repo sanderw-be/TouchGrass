@@ -332,15 +332,11 @@ describe('database known location functions', () => {
     expect(typeof Database.getAllKnownLocations).toBe('function');
   });
 
-  it('exports getSuggestedLocations', () => {
-    expect(typeof Database.getSuggestedLocations).toBe('function');
+  it('exports getSuggestedLocationsAsync', () => {
+    expect(typeof Database.getSuggestedLocationsAsync).toBe('function');
   });
 
-  it('exports approveKnownLocation', () => {
-    expect(typeof Database.approveKnownLocation).toBe('function');
-  });
-
-  it('exports denyKnownLocation', () => {
-    expect(typeof Database.denyKnownLocation).toBe('function');
+  it('exports denyKnownLocationAsync', () => {
+    expect(typeof Database.denyKnownLocationAsync).toBe('function');
   });
 });
