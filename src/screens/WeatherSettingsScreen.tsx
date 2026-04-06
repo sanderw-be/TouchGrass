@@ -48,12 +48,16 @@ export default function WeatherSettingsScreen() {
     if (isFetchingRef.current) return;
     isFetchingRef.current = true;
     try {
-      setTempPreference(
-        (await getSettingAsync('temp_preference', 'moderate')) as 'cold' | 'moderate' | 'hot'
-      );
-      setAvoidRain((await getSettingAsync('weather_avoid_rain', '1')) === '1');
-      setAvoidHeat((await getSettingAsync('weather_avoid_heat', '1')) === '1');
-      setConsiderUV((await getSettingAsync('weather_consider_uv', '1')) === '1');
+      const [tempPref, rainPref, heatPref, uvPref] = await Promise.all([
+        getSettingAsync('temp_preference', 'moderate'),
+        getSettingAsync('weather_avoid_rain', '1'),
+        getSettingAsync('weather_avoid_heat', '1'),
+        getSettingAsync('weather_consider_uv', '1'),
+      ]);
+      setTempPreference(tempPref as 'cold' | 'moderate' | 'hot');
+      setAvoidRain(rainPref === '1');
+      setAvoidHeat(heatPref === '1');
+      setConsiderUV(uvPref === '1');
 
       // Auto-refresh weather data if unavailable or stale
       if (!(await isWeatherDataAvailable())) {

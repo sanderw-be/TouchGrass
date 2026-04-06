@@ -157,15 +157,19 @@ export function scoreWeatherCondition(
  * Get weather preferences from app settings
  */
 export async function getWeatherPreferences(): Promise<WeatherPreferences> {
+  const [enabled, tempPref, avoidRain, avoidHeat, considerUV] = await Promise.all([
+    getSettingAsync('weather_enabled', '1'),
+    getSettingAsync('temp_preference', 'moderate'),
+    getSettingAsync('weather_avoid_rain', '1'),
+    getSettingAsync('weather_avoid_heat', '1'),
+    getSettingAsync('weather_consider_uv', '1'),
+  ]);
   return {
-    enabled: (await getSettingAsync('weather_enabled', '1')) === '1',
-    temperaturePreference: (await getSettingAsync('temp_preference', 'moderate')) as
-      | 'cold'
-      | 'moderate'
-      | 'hot',
-    avoidRain: (await getSettingAsync('weather_avoid_rain', '1')) === '1',
-    avoidHeat: (await getSettingAsync('weather_avoid_heat', '1')) === '1',
-    considerUV: (await getSettingAsync('weather_consider_uv', '1')) === '1',
+    enabled: enabled === '1',
+    temperaturePreference: tempPref as 'cold' | 'moderate' | 'hot',
+    avoidRain: avoidRain === '1',
+    avoidHeat: avoidHeat === '1',
+    considerUV: considerUV === '1',
   };
 }
 

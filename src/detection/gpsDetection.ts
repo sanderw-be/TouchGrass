@@ -115,25 +115,32 @@ const GPS_LAST_OUTSIDE_KEY = 'gps_last_outside';
  * in-memory state reflects the latest values written to SQLite.
  */
 export async function loadGPSState(): Promise<void> {
-  const start = parseInt(await getSettingAsync(GPS_SESSION_START_KEY, '0'), 10);
-  const outside = (await getSettingAsync(GPS_LAST_OUTSIDE_KEY, '0')) === '1';
+  const [startRaw, outsideRaw, profileRaw, burstUntilRaw, lastBurstRaw] = await Promise.all([
+    getSettingAsync(GPS_SESSION_START_KEY, '0'),
+    getSettingAsync(GPS_LAST_OUTSIDE_KEY, '0'),
+    getSettingAsync(GPS_PROFILE_KEY, 'low'),
+    getSettingAsync(GPS_BURST_UNTIL_KEY, '0'),
+    getSettingAsync(GPS_LAST_BURST_KEY, '0'),
+  ]);
+  const start = parseInt(startRaw, 10);
   outsideSessionStart = start > 0 ? start : null;
-  lastKnownOutside = outside;
-
-  currentProfile = (await getSettingAsync(GPS_PROFILE_KEY, 'low')) as TrackingProfile;
-  burstUntilTimestamp = parseInt(await getSettingAsync(GPS_BURST_UNTIL_KEY, '0'), 10);
-  lastBurstAtTimestamp = parseInt(await getSettingAsync(GPS_LAST_BURST_KEY, '0'), 10);
+  lastKnownOutside = outsideRaw === '1';
+  currentProfile = profileRaw as TrackingProfile;
+  burstUntilTimestamp = parseInt(burstUntilRaw, 10);
+  lastBurstAtTimestamp = parseInt(lastBurstRaw, 10);
 }
 
 /**
  * Persist GPS session state so it survives app restarts.
  */
 async function saveGPSState(): Promise<void> {
-  await setSettingAsync(GPS_SESSION_START_KEY, String(outsideSessionStart ?? 0));
-  await setSettingAsync(GPS_LAST_OUTSIDE_KEY, lastKnownOutside ? '1' : '0');
-  await setSettingAsync(GPS_PROFILE_KEY, currentProfile);
-  await setSettingAsync(GPS_BURST_UNTIL_KEY, String(burstUntilTimestamp));
-  await setSettingAsync(GPS_LAST_BURST_KEY, String(lastBurstAtTimestamp));
+  await Promise.all([
+    setSettingAsync(GPS_SESSION_START_KEY, String(outsideSessionStart ?? 0)),
+    setSettingAsync(GPS_LAST_OUTSIDE_KEY, lastKnownOutside ? '1' : '0'),
+    setSettingAsync(GPS_PROFILE_KEY, currentProfile),
+    setSettingAsync(GPS_BURST_UNTIL_KEY, String(burstUntilTimestamp)),
+    setSettingAsync(GPS_LAST_BURST_KEY, String(lastBurstAtTimestamp)),
+  ]);
 }
 
 /**
@@ -636,6 +643,12 @@ export async function autoDetectLocations(): Promise<void> {
 
     const allLocations = await getAllKnownLocationsAsync();
 
+    // Hoist setting read out of the loop — value doesn't change during a single run.
+    const suggestionRadius = parseInt(
+      await getSettingAsync('location_suggestion_radius', String(CLUSTER_DETECTION_RADIUS_M)),
+      10
+    );
+
     for (const cluster of dwellClusters) {
       if (cluster.totalDwellMs < thresholdMs) continue;
 
@@ -649,10 +662,6 @@ export async function autoDetectLocations(): Promise<void> {
 
       // Insert as a suggested location with an empty label (displayed as default at render time)
       // Use the user's chosen default suggestion radius (falls back to CLUSTER_DETECTION_RADIUS_M)
-      const suggestionRadius = parseInt(
-        await getSettingAsync('location_suggestion_radius', String(CLUSTER_DETECTION_RADIUS_M)),
-        10
-      );
       await upsertKnownLocationAsync({
         label: '',
         latitude: cluster.lat,

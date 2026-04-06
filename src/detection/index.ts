@@ -29,17 +29,26 @@ const UNSET_MARKER = '__unset__';
  */
 export async function initDetection(): Promise<DetectionStatus> {
   // One-time migration: copy old enabled flags to the new user-toggle keys.
-  if ((await getSettingAsync(HC_USER_KEY, UNSET_MARKER)) === UNSET_MARKER) {
+  // Fetch both migration-check keys in parallel.
+  const [hcUserRaw, gpsUserRaw] = await Promise.all([
+    getSettingAsync(HC_USER_KEY, UNSET_MARKER),
+    getSettingAsync(GPS_USER_KEY, UNSET_MARKER),
+  ]);
+  if (hcUserRaw === UNSET_MARKER) {
     await setSettingAsync(HC_USER_KEY, await getSettingAsync('healthconnect_enabled', '0'));
   }
-  if ((await getSettingAsync(GPS_USER_KEY, UNSET_MARKER)) === UNSET_MARKER) {
+  if (gpsUserRaw === UNSET_MARKER) {
     await setSettingAsync(GPS_USER_KEY, await getSettingAsync('gps_enabled', '0'));
   }
 
+  const [hcEnabled, gpsEnabled] = await Promise.all([
+    getSettingAsync(HC_USER_KEY, '0'),
+    getSettingAsync(GPS_USER_KEY, '0'),
+  ]);
   const status: DetectionStatus = {
-    healthConnect: (await getSettingAsync(HC_USER_KEY, '0')) === '1',
+    healthConnect: hcEnabled === '1',
     healthConnectPermission: false,
-    gps: (await getSettingAsync(GPS_USER_KEY, '0')) === '1',
+    gps: gpsEnabled === '1',
     gpsPermission: false,
   };
 
@@ -149,11 +158,17 @@ export async function openHealthConnectSettings(): Promise<boolean> {
 }
 
 export async function getDetectionStatus(): Promise<DetectionStatus> {
+  const [hcUser, hcPerm, gpsUser, gpsPerm] = await Promise.all([
+    getSettingAsync(HC_USER_KEY, '0'),
+    getSettingAsync('healthconnect_enabled', '0'),
+    getSettingAsync(GPS_USER_KEY, '0'),
+    getSettingAsync('gps_enabled', '0'),
+  ]);
   return {
-    healthConnect: (await getSettingAsync(HC_USER_KEY, '0')) === '1',
-    healthConnectPermission: (await getSettingAsync('healthconnect_enabled', '0')) === '1',
-    gps: (await getSettingAsync(GPS_USER_KEY, '0')) === '1',
-    gpsPermission: (await getSettingAsync('gps_enabled', '0')) === '1',
+    healthConnect: hcUser === '1',
+    healthConnectPermission: hcPerm === '1',
+    gps: gpsUser === '1',
+    gpsPermission: gpsPerm === '1',
   };
 }
 
