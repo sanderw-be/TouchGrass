@@ -46,8 +46,8 @@ describe('notificationManager', () => {
       (key: string, fallback: string) => fallback
     );
     (Database.setSetting as jest.Mock).mockReturnValue(undefined);
-    (ScheduledNotifications.hasScheduledNotificationNearby as jest.Mock).mockReturnValue(false);
-    (ScheduledNotifications.isSlotNearScheduledNotification as jest.Mock).mockReturnValue(false);
+    (ScheduledNotifications.hasScheduledNotificationNearby as jest.Mock).mockResolvedValue(false);
+    (ScheduledNotifications.isSlotNearScheduledNotification as jest.Mock).mockResolvedValue(false);
     (WeatherService.isWeatherDataAvailable as jest.Mock).mockReturnValue(false);
     (WeatherAlgorithm.getWeatherPreferences as jest.Mock).mockReturnValue({ enabled: false });
     (WeatherAlgorithm.getWeatherEmoji as jest.Mock).mockReturnValue('🌡️');
@@ -250,7 +250,7 @@ describe('notificationManager', () => {
         return fallback;
       });
       // Simulates the path that previously bypassed the goal-reached cancel
-      (ScheduledNotifications.hasScheduledNotificationNearby as jest.Mock).mockReturnValue(true);
+      (ScheduledNotifications.hasScheduledNotificationNearby as jest.Mock).mockResolvedValue(true);
       (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([
         { identifier: 'auto_reminder_1' },
         { identifier: 'scheduled_1_2' },

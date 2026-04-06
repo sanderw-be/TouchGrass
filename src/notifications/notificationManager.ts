@@ -334,7 +334,7 @@ export async function scheduleNextReminder(): Promise<void> {
   const isCurrentlyOutside = getSetting('currently_outside', '0') === '1';
 
   // Skip if there's a scheduled notification nearby
-  if (hasScheduledNotificationNearby(60)) {
+  if (await hasScheduledNotificationNearby(60)) {
     console.log('TouchGrass: Skipping automatic reminder - scheduled notification nearby');
     return;
   }
@@ -806,7 +806,7 @@ export async function scheduleDayReminders(): Promise<void> {
       if (seenSlots.has(slotKey)) continue;
 
       // Skip slots near user-defined scheduled notifications for today
-      if (isSlotNearScheduledNotification(slot.hour, slot.minute, 30)) {
+      if (await isSlotNearScheduledNotification(slot.hour, slot.minute, 30)) {
         console.log(
           `TouchGrass: Skipping reminder at ${slot.hour}:${slot.minute.toString().padStart(2, '0')} - scheduled notification nearby`
         );
@@ -1061,15 +1061,18 @@ export async function maybeScheduleCatchUpReminder(): Promise<void> {
     // scheduling two catch-up reminders for the same time from different ticks.
     const queuedSlotMinutes = new Set(queue.map((e) => e.slotMinutes));
 
-    const candidateSlots = scores.filter((s) => {
+    const candidateSlots: typeof scores = [];
+    for (const s of scores) {
       const slotMin = s.hour * 60 + s.minute;
-      return (
+      if (
         slotMin > currentMinutesOfDay &&
         s.score >= 0.3 &&
-        !isSlotNearScheduledNotification(s.hour, s.minute, 30) &&
+        !(await isSlotNearScheduledNotification(s.hour, s.minute, 30)) &&
         !queuedSlotMinutes.has(slotMin)
-      );
-    });
+      ) {
+        candidateSlots.push(s);
+      }
+    }
 
     if (candidateSlots.length === 0) {
       console.log('TouchGrass: [CatchUp] No suitable future slots found — skipping');

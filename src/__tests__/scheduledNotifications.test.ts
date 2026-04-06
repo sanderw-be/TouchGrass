@@ -25,7 +25,7 @@ describe('scheduledNotifications', () => {
         { id: 2, hour: 18, minute: 30, daysOfWeek: [0, 6], enabled: 0, label: 'Weekend reminder' },
       ];
 
-      (Database.getScheduledNotifications as jest.Mock).mockReturnValue(mockSchedules);
+      (Database.getScheduledNotificationsAsync as jest.Mock).mockResolvedValue(mockSchedules);
       (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([]);
 
       await scheduleAllScheduledNotifications();
@@ -39,7 +39,7 @@ describe('scheduledNotifications', () => {
         { id: 1, hour: 10, minute: 0, daysOfWeek: [1, 2], enabled: 0, label: 'Disabled' },
       ];
 
-      (Database.getScheduledNotifications as jest.Mock).mockReturnValue(mockSchedules);
+      (Database.getScheduledNotificationsAsync as jest.Mock).mockResolvedValue(mockSchedules);
       (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([]);
 
       await scheduleAllScheduledNotifications();
@@ -52,7 +52,7 @@ describe('scheduledNotifications', () => {
         { id: 1, hour: 10, minute: 0, daysOfWeek: [1], enabled: 1, label: 'Test' },
       ];
 
-      (Database.getScheduledNotifications as jest.Mock).mockReturnValue(mockSchedules);
+      (Database.getScheduledNotificationsAsync as jest.Mock).mockResolvedValue(mockSchedules);
       (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([
         { identifier: 'scheduled_1_1' },
       ]);
@@ -67,7 +67,7 @@ describe('scheduledNotifications', () => {
         { id: 1, hour: 14, minute: 30, daysOfWeek: [2], enabled: 1, label: 'Afternoon reminder' },
       ];
 
-      (Database.getScheduledNotifications as jest.Mock).mockReturnValue(mockSchedules);
+      (Database.getScheduledNotificationsAsync as jest.Mock).mockResolvedValue(mockSchedules);
       (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([]);
 
       await scheduleAllScheduledNotifications();
@@ -96,7 +96,7 @@ describe('scheduledNotifications', () => {
         { id: 1, hour: 9, minute: 0, daysOfWeek: [0, 1, 6], enabled: 1, label: 'Test' },
       ];
 
-      (Database.getScheduledNotifications as jest.Mock).mockReturnValue(mockSchedules);
+      (Database.getScheduledNotificationsAsync as jest.Mock).mockResolvedValue(mockSchedules);
       (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([]);
 
       await scheduleAllScheduledNotifications();
@@ -122,7 +122,7 @@ describe('scheduledNotifications', () => {
         { id: 1, hour: 14, minute: 30, daysOfWeek: [2], enabled: 1, label: 'Exact time test' },
       ];
 
-      (Database.getScheduledNotifications as jest.Mock).mockReturnValue(mockSchedules);
+      (Database.getScheduledNotificationsAsync as jest.Mock).mockResolvedValue(mockSchedules);
       (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([]);
 
       await scheduleAllScheduledNotifications();
@@ -144,7 +144,7 @@ describe('scheduledNotifications', () => {
         { id: 1, hour: 10, minute: 0, daysOfWeek: [1, 2], enabled: 1, label: 'Test' },
       ];
 
-      (Database.getScheduledNotifications as jest.Mock).mockReturnValue(mockSchedules);
+      (Database.getScheduledNotificationsAsync as jest.Mock).mockResolvedValue(mockSchedules);
       (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([]);
       (Notifications.scheduleNotificationAsync as jest.Mock)
         .mockRejectedValueOnce(new Error('Permission denied'))
@@ -203,47 +203,47 @@ describe('scheduledNotifications', () => {
       jest.restoreAllMocks();
     });
 
-    it('returns true when a schedule is within the window', () => {
+    it('returns true when a schedule is within the window', async () => {
       const mockSchedules = [
         { id: 1, hour: 11, minute: 0, daysOfWeek: [3], enabled: 1, label: 'Nearby' },
       ];
 
-      (Database.getScheduledNotifications as jest.Mock).mockReturnValue(mockSchedules);
+      (Database.getScheduledNotificationsAsync as jest.Mock).mockResolvedValue(mockSchedules);
 
-      const result = hasScheduledNotificationNearby(60);
+      const result = await hasScheduledNotificationNearby(60);
       expect(result).toBe(true);
     });
 
-    it('returns false when no schedules are nearby', () => {
+    it('returns false when no schedules are nearby', async () => {
       const mockSchedules = [
         { id: 1, hour: 14, minute: 0, daysOfWeek: [3], enabled: 1, label: 'Far away' },
       ];
 
-      (Database.getScheduledNotifications as jest.Mock).mockReturnValue(mockSchedules);
+      (Database.getScheduledNotificationsAsync as jest.Mock).mockResolvedValue(mockSchedules);
 
-      const result = hasScheduledNotificationNearby(60);
+      const result = await hasScheduledNotificationNearby(60);
       expect(result).toBe(false);
     });
 
-    it('returns false when schedule is for a different day', () => {
+    it('returns false when schedule is for a different day', async () => {
       const mockSchedules = [
         { id: 1, hour: 10, minute: 30, daysOfWeek: [1, 2, 4], enabled: 1, label: 'Wrong day' },
       ];
 
-      (Database.getScheduledNotifications as jest.Mock).mockReturnValue(mockSchedules);
+      (Database.getScheduledNotificationsAsync as jest.Mock).mockResolvedValue(mockSchedules);
 
-      const result = hasScheduledNotificationNearby(60);
+      const result = await hasScheduledNotificationNearby(60);
       expect(result).toBe(false);
     });
 
-    it('ignores disabled schedules', () => {
+    it('ignores disabled schedules', async () => {
       const mockSchedules = [
         { id: 1, hour: 10, minute: 30, daysOfWeek: [3], enabled: 0, label: 'Disabled' },
       ];
 
-      (Database.getScheduledNotifications as jest.Mock).mockReturnValue(mockSchedules);
+      (Database.getScheduledNotificationsAsync as jest.Mock).mockResolvedValue(mockSchedules);
 
-      const result = hasScheduledNotificationNearby(60);
+      const result = await hasScheduledNotificationNearby(60);
       expect(result).toBe(false);
     });
   });
@@ -258,68 +258,68 @@ describe('scheduledNotifications', () => {
       jest.restoreAllMocks();
     });
 
-    it('returns true when a slot is within the window of a scheduled notification for today', () => {
+    it('returns true when a slot is within the window of a scheduled notification for today', async () => {
       const mockSchedules = [
         { id: 1, hour: 12, minute: 0, daysOfWeek: [3], enabled: 1, label: 'Lunch' },
       ];
-      (Database.getScheduledNotifications as jest.Mock).mockReturnValue(mockSchedules);
+      (Database.getScheduledNotificationsAsync as jest.Mock).mockResolvedValue(mockSchedules);
 
       // Slot at 12:00 with 30-minute window should match a notification at 12:00
-      expect(isSlotNearScheduledNotification(12, 0, 30)).toBe(true);
+      expect(await isSlotNearScheduledNotification(12, 0, 30)).toBe(true);
     });
 
-    it('returns true when a slot is within 30 minutes of a scheduled notification', () => {
+    it('returns true when a slot is within 30 minutes of a scheduled notification', async () => {
       const mockSchedules = [
         { id: 1, hour: 12, minute: 0, daysOfWeek: [3], enabled: 1, label: 'Lunch' },
       ];
-      (Database.getScheduledNotifications as jest.Mock).mockReturnValue(mockSchedules);
+      (Database.getScheduledNotificationsAsync as jest.Mock).mockResolvedValue(mockSchedules);
 
       // 11:30 is 30 minutes before 12:00 — within window
-      expect(isSlotNearScheduledNotification(11, 30, 30)).toBe(true);
+      expect(await isSlotNearScheduledNotification(11, 30, 30)).toBe(true);
     });
 
-    it('returns false when a slot is outside the window', () => {
+    it('returns false when a slot is outside the window', async () => {
       const mockSchedules = [
         { id: 1, hour: 12, minute: 0, daysOfWeek: [3], enabled: 1, label: 'Lunch' },
       ];
-      (Database.getScheduledNotifications as jest.Mock).mockReturnValue(mockSchedules);
+      (Database.getScheduledNotificationsAsync as jest.Mock).mockResolvedValue(mockSchedules);
 
       // 10:00 is 120 minutes before 12:00 — outside 30-minute window
-      expect(isSlotNearScheduledNotification(10, 0, 30)).toBe(false);
+      expect(await isSlotNearScheduledNotification(10, 0, 30)).toBe(false);
     });
 
-    it('returns false when the schedule is for a different day of week', () => {
+    it('returns false when the schedule is for a different day of week', async () => {
       const mockSchedules = [
         { id: 1, hour: 12, minute: 0, daysOfWeek: [1, 2, 4], enabled: 1, label: 'Not today' },
       ];
-      (Database.getScheduledNotifications as jest.Mock).mockReturnValue(mockSchedules);
+      (Database.getScheduledNotificationsAsync as jest.Mock).mockResolvedValue(mockSchedules);
 
-      expect(isSlotNearScheduledNotification(12, 0, 30)).toBe(false);
+      expect(await isSlotNearScheduledNotification(12, 0, 30)).toBe(false);
     });
 
-    it('ignores disabled scheduled notifications', () => {
+    it('ignores disabled scheduled notifications', async () => {
       const mockSchedules = [
         { id: 1, hour: 12, minute: 0, daysOfWeek: [3], enabled: 0, label: 'Disabled' },
       ];
-      (Database.getScheduledNotifications as jest.Mock).mockReturnValue(mockSchedules);
+      (Database.getScheduledNotificationsAsync as jest.Mock).mockResolvedValue(mockSchedules);
 
-      expect(isSlotNearScheduledNotification(12, 0, 30)).toBe(false);
+      expect(await isSlotNearScheduledNotification(12, 0, 30)).toBe(false);
     });
 
-    it('returns true for a half-hour slot (12:30) near a 13:00 notification within 30-min window', () => {
+    it('returns true for a half-hour slot (12:30) near a 13:00 notification within 30-min window', async () => {
       const mockSchedules = [
         { id: 1, hour: 13, minute: 0, daysOfWeek: [3], enabled: 1, label: 'Afternoon' },
       ];
-      (Database.getScheduledNotifications as jest.Mock).mockReturnValue(mockSchedules);
+      (Database.getScheduledNotificationsAsync as jest.Mock).mockResolvedValue(mockSchedules);
 
       // 12:30 is exactly 30 minutes before 13:00 — on the edge of a 30-min window
-      expect(isSlotNearScheduledNotification(12, 30, 30)).toBe(true);
+      expect(await isSlotNearScheduledNotification(12, 30, 30)).toBe(true);
     });
 
-    it('returns false when no scheduled notifications exist', () => {
-      (Database.getScheduledNotifications as jest.Mock).mockReturnValue([]);
+    it('returns false when no scheduled notifications exist', async () => {
+      (Database.getScheduledNotificationsAsync as jest.Mock).mockResolvedValue([]);
 
-      expect(isSlotNearScheduledNotification(12, 0, 30)).toBe(false);
+      expect(await isSlotNearScheduledNotification(12, 0, 30)).toBe(false);
     });
   });
 });
