@@ -57,12 +57,14 @@ jest.mock('../storage/database', () => ({
 }));
 
 jest.mock('../detection/index', () => ({
-  getDetectionStatus: jest.fn(() => ({
-    healthConnect: false,
-    healthConnectPermission: false,
-    gps: false,
-    gpsPermission: false,
-  })),
+  getDetectionStatus: jest.fn(() =>
+    Promise.resolve({
+      healthConnect: false,
+      healthConnectPermission: false,
+      gps: false,
+      gpsPermission: false,
+    })
+  ),
   toggleHealthConnect: jest.fn(() => Promise.resolve({ needsPermissions: false })),
   toggleGPS: jest.fn(() => Promise.resolve({ needsPermissions: false })),
   recheckHealthConnect: jest.fn(() => Promise.resolve()),

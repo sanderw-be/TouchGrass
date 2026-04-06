@@ -18,7 +18,7 @@ import { hasCalendarPermissions } from '../calendar/calendarService';
  * Used by AppNavigator to drive the red badge on the Goals and Settings tab icons.
  */
 export async function countPermissionIssues(): Promise<{ goals: number; settings: number }> {
-  const detection = getDetectionStatus();
+  const detection = await getDetectionStatus();
 
   // Perform live OS permission checks so that badge counts reflect the real
   // permission state even when permissions are changed outside the Settings

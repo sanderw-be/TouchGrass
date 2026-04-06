@@ -40,7 +40,7 @@ export default function KnownLocationsScreen() {
     isFetchingRef.current = true;
     try {
       setSuggestionsEnabled((await getSettingAsync('location_suggestions_enabled', '1')) === '1');
-      const status = getDetectionStatus();
+      const status = await getDetectionStatus();
       setGpsActive(status.gps);
       const all = await getAllKnownLocationsAsync();
       setSuggested(all.filter((l) => l.status === 'suggested'));

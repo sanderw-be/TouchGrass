@@ -11,7 +11,7 @@ import {
   stopLocationTracking,
   computeMinActiveRadius,
 } from './gpsDetection';
-import { getKnownLocations, getSetting, setSetting } from '../storage/database';
+import { getKnownLocationsAsync, getSettingAsync, setSettingAsync } from '../storage/database';
 
 // Setting keys for the user's explicit intent (independent of OS permission state)
 const HC_USER_KEY = 'healthconnect_user_enabled';
@@ -29,17 +29,17 @@ const UNSET_MARKER = '__unset__';
  */
 export async function initDetection(): Promise<DetectionStatus> {
   // One-time migration: copy old enabled flags to the new user-toggle keys.
-  if (getSetting(HC_USER_KEY, UNSET_MARKER) === UNSET_MARKER) {
-    setSetting(HC_USER_KEY, getSetting('healthconnect_enabled', '0'));
+  if ((await getSettingAsync(HC_USER_KEY, UNSET_MARKER)) === UNSET_MARKER) {
+    await setSettingAsync(HC_USER_KEY, await getSettingAsync('healthconnect_enabled', '0'));
   }
-  if (getSetting(GPS_USER_KEY, UNSET_MARKER) === UNSET_MARKER) {
-    setSetting(GPS_USER_KEY, getSetting('gps_enabled', '0'));
+  if ((await getSettingAsync(GPS_USER_KEY, UNSET_MARKER)) === UNSET_MARKER) {
+    await setSettingAsync(GPS_USER_KEY, await getSettingAsync('gps_enabled', '0'));
   }
 
   const status: DetectionStatus = {
-    healthConnect: getSetting(HC_USER_KEY, '0') === '1',
+    healthConnect: (await getSettingAsync(HC_USER_KEY, '0')) === '1',
     healthConnectPermission: false,
-    gps: getSetting(GPS_USER_KEY, '0') === '1',
+    gps: (await getSettingAsync(GPS_USER_KEY, '0')) === '1',
     gpsPermission: false,
   };
 
@@ -49,7 +49,7 @@ export async function initDetection(): Promise<DetectionStatus> {
     // Fast permission check — does not read health data.
     const hasPermissions = await verifyHealthConnectPermissions();
     status.healthConnectPermission = hasPermissions;
-    setSetting('healthconnect_enabled', hasPermissions ? '1' : '0');
+    await setSettingAsync('healthconnect_enabled', hasPermissions ? '1' : '0');
 
     // Kick off a sync in the background so app startup is not blocked.
     if (hasPermissions) {
@@ -60,12 +60,12 @@ export async function initDetection(): Promise<DetectionStatus> {
   // GPS — only run if the user has explicitly enabled it.
   if (status.gps) {
     try {
-      await startLocationTracking('low', computeMinActiveRadius(getKnownLocations()));
+      await startLocationTracking('low', computeMinActiveRadius(await getKnownLocationsAsync()));
       status.gpsPermission = true;
-      setSetting('gps_enabled', '1');
+      await setSettingAsync('gps_enabled', '1');
     } catch (e) {
       console.warn('GPS init error:', e);
-      setSetting('gps_enabled', '0');
+      await setSettingAsync('gps_enabled', '0');
     }
   }
 
@@ -86,8 +86,8 @@ export async function requestHealthConnect(): Promise<boolean> {
     }
     const granted = await requestHealthPermissions();
     if (granted) {
-      setSetting(HC_USER_KEY, '1');
-      setSetting('healthconnect_enabled', '1');
+      await setSettingAsync(HC_USER_KEY, '1');
+      await setSettingAsync('healthconnect_enabled', '1');
     }
     return granted;
   } catch (e) {
@@ -105,7 +105,7 @@ export async function requestHealthConnect(): Promise<boolean> {
 export async function recheckHealthConnect(): Promise<boolean> {
   try {
     // Skip the check entirely when the user has not enabled the toggle.
-    if (getSetting(HC_USER_KEY, '0') !== '1') {
+    if ((await getSettingAsync(HC_USER_KEY, '0')) !== '1') {
       return false;
     }
 
@@ -115,7 +115,7 @@ export async function recheckHealthConnect(): Promise<boolean> {
     // Fast permission check — does not read health data.
     const hasPermissions = await verifyHealthConnectPermissions();
     // Update permission status but leave the user-toggle unchanged.
-    setSetting('healthconnect_enabled', hasPermissions ? '1' : '0');
+    await setSettingAsync('healthconnect_enabled', hasPermissions ? '1' : '0');
 
     // Kick off a sync in the background; do not block the foreground resume.
     if (hasPermissions) {
@@ -124,7 +124,7 @@ export async function recheckHealthConnect(): Promise<boolean> {
 
     return hasPermissions;
   } catch {
-    setSetting('healthconnect_enabled', '0');
+    await setSettingAsync('healthconnect_enabled', '0');
     return false;
   }
 }
@@ -148,12 +148,12 @@ export async function openHealthConnectSettings(): Promise<boolean> {
   }
 }
 
-export function getDetectionStatus(): DetectionStatus {
+export async function getDetectionStatus(): Promise<DetectionStatus> {
   return {
-    healthConnect: getSetting(HC_USER_KEY, '0') === '1',
-    healthConnectPermission: getSetting('healthconnect_enabled', '0') === '1',
-    gps: getSetting(GPS_USER_KEY, '0') === '1',
-    gpsPermission: getSetting('gps_enabled', '0') === '1',
+    healthConnect: (await getSettingAsync(HC_USER_KEY, '0')) === '1',
+    healthConnectPermission: (await getSettingAsync('healthconnect_enabled', '0')) === '1',
+    gps: (await getSettingAsync(GPS_USER_KEY, '0')) === '1',
+    gpsPermission: (await getSettingAsync('gps_enabled', '0')) === '1',
   };
 }
 
@@ -169,12 +169,12 @@ export async function checkGPSPermissions(): Promise<boolean> {
     const granted = fgStatus === 'granted' && bgStatus === 'granted';
 
     // Update the permission status but leave the user-toggle unchanged.
-    setSetting('gps_enabled', granted ? '1' : '0');
+    await setSettingAsync('gps_enabled', granted ? '1' : '0');
 
     return granted;
   } catch (e) {
     console.warn('GPS permission check error:', e);
-    setSetting('gps_enabled', '0');
+    await setSettingAsync('gps_enabled', '0');
     return false;
   }
 }
@@ -187,7 +187,7 @@ export async function requestGPSPermissions(): Promise<boolean> {
     // Request foreground permission
     const { status: fgStatus } = await Location.requestForegroundPermissionsAsync();
     if (fgStatus !== 'granted') {
-      setSetting('gps_enabled', '0');
+      await setSettingAsync('gps_enabled', '0');
       // If user explicitly denied, return false immediately
       return false;
     }
@@ -197,18 +197,18 @@ export async function requestGPSPermissions(): Promise<boolean> {
     const granted = bgStatus === 'granted';
 
     if (granted) {
-      await startLocationTracking('low', computeMinActiveRadius(getKnownLocations()));
-      setSetting('gps_enabled', '1');
+      await startLocationTracking('low', computeMinActiveRadius(await getKnownLocationsAsync()));
+      await setSettingAsync('gps_enabled', '1');
     } else {
       // Background permission denied or not determined
       // Update setting to reflect this
-      setSetting('gps_enabled', '0');
+      await setSettingAsync('gps_enabled', '0');
     }
 
     return granted;
   } catch (e) {
     console.warn('GPS permission request error:', e);
-    setSetting('gps_enabled', '0');
+    await setSettingAsync('gps_enabled', '0');
     return false;
   }
 }
@@ -225,25 +225,25 @@ export async function toggleHealthConnect(
   enabled: boolean
 ): Promise<{ needsPermissions: boolean }> {
   if (!enabled) {
-    setSetting(HC_USER_KEY, '0');
-    setSetting('healthconnect_enabled', '0');
+    await setSettingAsync(HC_USER_KEY, '0');
+    await setSettingAsync('healthconnect_enabled', '0');
     return { needsPermissions: false };
   }
 
   // Record the user's intent immediately so background rechecks can run.
-  setSetting(HC_USER_KEY, '1');
+  await setSettingAsync(HC_USER_KEY, '1');
 
   try {
     const available = await isHealthConnectAvailable();
     if (!available) {
       // HC not installed on this device — flag stays on so the user can see
       // the error state, but there is nothing to open.
-      setSetting('healthconnect_enabled', '0');
+      await setSettingAsync('healthconnect_enabled', '0');
       return { needsPermissions: false };
     }
 
     const hasPermissions = await verifyHealthConnectPermissions();
-    setSetting('healthconnect_enabled', hasPermissions ? '1' : '0');
+    await setSettingAsync('healthconnect_enabled', hasPermissions ? '1' : '0');
 
     // Kick off a sync in the background; do not block the toggle response.
     if (hasPermissions) {
@@ -253,7 +253,7 @@ export async function toggleHealthConnect(
     return { needsPermissions: !hasPermissions };
   } catch (e) {
     console.warn('Health Connect toggle error:', e);
-    setSetting('healthconnect_enabled', '0');
+    await setSettingAsync('healthconnect_enabled', '0');
     return { needsPermissions: true };
   }
 }
@@ -267,30 +267,30 @@ export async function toggleHealthConnect(
  */
 export async function toggleGPS(enabled: boolean): Promise<{ needsPermissions: boolean }> {
   if (!enabled) {
-    setSetting(GPS_USER_KEY, '0');
-    setSetting('gps_enabled', '0');
+    await setSettingAsync(GPS_USER_KEY, '0');
+    await setSettingAsync('gps_enabled', '0');
     await stopLocationTracking();
     return { needsPermissions: false };
   }
 
   // Record the user's intent immediately.
-  setSetting(GPS_USER_KEY, '1');
+  await setSettingAsync(GPS_USER_KEY, '1');
 
   try {
     const { status: fgStatus } = await Location.getForegroundPermissionsAsync();
     const { status: bgStatus } = await Location.getBackgroundPermissionsAsync();
     const granted = fgStatus === 'granted' && bgStatus === 'granted';
 
-    setSetting('gps_enabled', granted ? '1' : '0');
+    await setSettingAsync('gps_enabled', granted ? '1' : '0');
 
     if (granted) {
-      await startLocationTracking('low', computeMinActiveRadius(getKnownLocations()));
+      await startLocationTracking('low', computeMinActiveRadius(await getKnownLocationsAsync()));
     }
 
     return { needsPermissions: !granted };
   } catch (e) {
     console.warn('GPS toggle error:', e);
-    setSetting('gps_enabled', '0');
+    await setSettingAsync('gps_enabled', '0');
     return { needsPermissions: true };
   }
 }

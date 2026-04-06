@@ -24,10 +24,10 @@ import * as Detection from '../detection/index';
 describe('initDetection', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    (Database.getSetting as jest.Mock).mockImplementation(
-      (_key: string, fallback: string) => fallback
+    (Database.getSettingAsync as jest.Mock).mockImplementation((_key: string, fallback: string) =>
+      Promise.resolve(fallback)
     );
-    (Database.setSetting as jest.Mock).mockImplementation(() => {});
+    (Database.setSettingAsync as jest.Mock).mockImplementation(() => Promise.resolve());
   });
 
   it('returns a DetectionStatus with defaults when no settings are stored', async () => {
@@ -53,10 +53,10 @@ describe('initDetection', () => {
     (HealthConnect.isHealthConnectAvailable as jest.Mock).mockResolvedValue(true);
     (HealthConnectIntent.verifyHealthConnectPermissions as jest.Mock).mockResolvedValue(true);
     // Simulate HC user toggle being on
-    (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-      if (key === 'healthconnect_user_enabled') return '1';
-      if (key === 'healthconnect_enabled') return '1';
-      return fallback;
+    (Database.getSettingAsync as jest.Mock).mockImplementation((key: string, fallback: string) => {
+      if (key === 'healthconnect_user_enabled') return Promise.resolve('1');
+      if (key === 'healthconnect_enabled') return Promise.resolve('1');
+      return Promise.resolve(fallback);
     });
 
     const status = await Detection.initDetection();
@@ -79,10 +79,10 @@ describe('initDetection', () => {
           }, 100)
         )
     );
-    (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-      if (key === 'healthconnect_user_enabled') return '1';
-      if (key === 'healthconnect_enabled') return '1';
-      return fallback;
+    (Database.getSettingAsync as jest.Mock).mockImplementation((key: string, fallback: string) => {
+      if (key === 'healthconnect_user_enabled') return Promise.resolve('1');
+      if (key === 'healthconnect_enabled') return Promise.resolve('1');
+      return Promise.resolve(fallback);
     });
 
     await Detection.initDetection();
@@ -99,14 +99,14 @@ describe('initDetection', () => {
   it('sets healthconnect_enabled to 0 when permissions are not granted', async () => {
     (HealthConnect.isHealthConnectAvailable as jest.Mock).mockResolvedValue(true);
     (HealthConnectIntent.verifyHealthConnectPermissions as jest.Mock).mockResolvedValue(false);
-    (Database.getSetting as jest.Mock).mockImplementation((key: string, fallback: string) => {
-      if (key === 'healthconnect_user_enabled') return '1';
-      return fallback;
+    (Database.getSettingAsync as jest.Mock).mockImplementation((key: string, fallback: string) => {
+      if (key === 'healthconnect_user_enabled') return Promise.resolve('1');
+      return Promise.resolve(fallback);
     });
 
     const status = await Detection.initDetection();
 
-    expect(Database.setSetting).toHaveBeenCalledWith('healthconnect_enabled', '0');
+    expect(Database.setSettingAsync).toHaveBeenCalledWith('healthconnect_enabled', '0');
     expect(status.healthConnectPermission).toBe(false);
     expect(HealthConnect.syncHealthConnect).not.toHaveBeenCalled();
   });
@@ -115,10 +115,10 @@ describe('initDetection', () => {
 describe('toggleGPS', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    (Database.getSetting as jest.Mock).mockImplementation(
-      (_key: string, fallback: string) => fallback
+    (Database.getSettingAsync as jest.Mock).mockImplementation((_key: string, fallback: string) =>
+      Promise.resolve(fallback)
     );
-    (Database.setSetting as jest.Mock).mockImplementation(() => {});
+    (Database.setSettingAsync as jest.Mock).mockImplementation(() => Promise.resolve());
   });
 
   it('calls stopLocationTracking when GPS is disabled', async () => {
@@ -128,7 +128,7 @@ describe('toggleGPS', () => {
 
   it('sets gps_user_enabled and gps_enabled to 0 when GPS is disabled', async () => {
     await Detection.toggleGPS(false);
-    expect(Database.setSetting).toHaveBeenCalledWith('gps_user_enabled', '0');
-    expect(Database.setSetting).toHaveBeenCalledWith('gps_enabled', '0');
+    expect(Database.setSettingAsync).toHaveBeenCalledWith('gps_user_enabled', '0');
+    expect(Database.setSettingAsync).toHaveBeenCalledWith('gps_enabled', '0');
   });
 });
