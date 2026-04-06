@@ -1,14 +1,14 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import {
-  getTodayMinutes,
-  getCurrentDailyGoal,
-  getSetting,
-  setSetting,
-  insertReminderFeedback,
-  getDailyStreak,
-  getWeeklyStreak,
-  insertBackgroundLog,
+  getTodayMinutesAsync,
+  getCurrentDailyGoalAsync,
+  getSettingAsync,
+  setSettingAsync,
+  insertReminderFeedbackAsync,
+  getDailyStreakAsync,
+  getWeeklyStreakAsync,
+  insertBackgroundLogAsync,
 } from '../storage/database';
 import { shouldRemindNow, scoreReminderHours, ScoreContributor } from './reminderAlgorithm';
 import {
@@ -74,9 +74,9 @@ export interface ReminderQueueEntry {
 }
 
 /** Read and parse the reminder queue from settings. Returns [] on parse error. */
-function getQueue(): ReminderQueueEntry[] {
+async function getQueue(): Promise<ReminderQueueEntry[]> {
   try {
-    const raw = getSetting('smart_reminder_queue', '[]');
+    const raw = await getSettingAsync('smart_reminder_queue', '[]');
     return JSON.parse(raw) as ReminderQueueEntry[];
   } catch {
     return [];
@@ -84,8 +84,8 @@ function getQueue(): ReminderQueueEntry[] {
 }
 
 /** Serialize and persist the reminder queue to settings. */
-function saveQueue(queue: ReminderQueueEntry[]): void {
-  setSetting('smart_reminder_queue', JSON.stringify(queue));
+async function await saveQueue(queue: ReminderQueueEntry[]): Promise<void> {
+  await setSettingAsync('smart_reminder_queue', JSON.stringify(queue));
 }
 
 // ---------------------------------------------------------------------------
@@ -110,8 +110,8 @@ function formatQueueEntry(entry: ReminderQueueEntry): string {
 }
 
 /** Log the current reminder queue state for diagnostic purposes. */
-export function logReminderQueueSnapshot(): void {
-  const queue = getQueue();
+export async function logReminderQueueSnapshot(): Promise<void> {
+  const queue = await getQueue();
   if (queue.length === 0) {
     console.log('TouchGrass: [Queue] Snapshot: empty');
     return;
@@ -303,9 +303,9 @@ export async function setupNotifications(): Promise<void> {
  * Cancels any existing scheduled reminders first.
  */
 export async function scheduleNextReminder(): Promise<void> {
-  const todayMinutes = getTodayMinutes();
-  const dailyTarget = getCurrentDailyGoal()?.targetMinutes ?? 30;
-  const remindersCount = parseInt(getSetting('smart_reminders_count', '2'), 10);
+  const todayMinutes = await getTodayMinutesAsync();
+  const dailyTarget = await getCurrentDailyGoalAsync()?.targetMinutes ?? 30;
+  const remindersCount = parseInt(await getSettingAsync('smart_reminders_count', '2'), 10);
 
   if (remindersCount === 0) return;
 
@@ -315,8 +315,8 @@ export async function scheduleNextReminder(): Promise<void> {
   if (todayMinutes >= dailyTarget) {
     console.log('TouchGrass: daily goal reached — cancelling remaining smart reminders');
     await cancelAutomaticReminders();
-    setSetting('reminders_planned_slots', '[]');
-    setSetting('catchup_reminder_slot_minutes', '');
+    await setSettingAsync('reminders_planned_slots', '[]');
+    await setSettingAsync('catchup_reminder_slot_minutes', '');
     return;
   }
 
@@ -325,13 +325,13 @@ export async function scheduleNextReminder(): Promise<void> {
   // planned notifications (it calls cancelAutomaticReminders which would wipe
   // them out).
   const todayStr = new Date().toDateString();
-  const lastPlannedDate = getSetting('reminders_last_planned_date', '');
+  const lastPlannedDate = await getSettingAsync('reminders_last_planned_date', '');
   if (lastPlannedDate === todayStr) {
     return;
   }
 
-  const lastReminderMs = parseInt(getSetting('last_reminder_ms', '0'), 10);
-  const isCurrentlyOutside = getSetting('currently_outside', '0') === '1';
+  const lastReminderMs = parseInt(await getSettingAsync('last_reminder_ms', '0'), 10);
+  const isCurrentlyOutside = await getSettingAsync('currently_outside', '0') === '1';
 
   // Skip if there's a scheduled notification nearby
   if (await hasScheduledNotificationNearby(60)) {
@@ -340,7 +340,7 @@ export async function scheduleNextReminder(): Promise<void> {
   }
 
   // Skip if there is an imminent calendar event (smart reminders only)
-  const calendarBuffer = parseInt(getSetting('calendar_buffer_minutes', '30'), 10);
+  const calendarBuffer = parseInt(await getSettingAsync('calendar_buffer_minutes', '30'), 10);
   if (await hasUpcomingEvent(calendarBuffer)) {
     console.log('TouchGrass: Skipping smart reminder - upcoming calendar event');
     return;
@@ -362,7 +362,7 @@ export async function scheduleNextReminder(): Promise<void> {
   await cancelAutomaticReminders();
 
   // Build message based on progress (this is a planned smart reminder)
-  const { title, body } = buildReminderMessage(
+  const { title, body } = await buildReminderMessage(
     todayMinutes,
     dailyTarget,
     undefined,
@@ -388,7 +388,7 @@ export async function scheduleNextReminder(): Promise<void> {
   // half-hour slots. scheduleNextReminder() is a fallback that fires at
   // arbitrary background-task wake times, so it must not create calendar events.
 
-  setSetting('last_reminder_ms', String(Date.now()));
+  await setSettingAsync('last_reminder_ms', String(Date.now()));
   console.log('TouchGrass: reminder sent, reason:', reason);
 }
 
@@ -413,7 +413,7 @@ export async function scheduleNextReminder(): Promise<void> {
  * tick_planned entries in the queue are still handled (look-back, step 3).
  */
 export async function processReminderQueue(): Promise<void> {
-  const remindersCount = parseInt(getSetting('smart_reminders_count', '0'), 10);
+  const remindersCount = parseInt(await getSettingAsync('smart_reminders_count', '0'), 10);
   if (remindersCount === 0) return;
 
   const now = new Date();
@@ -421,7 +421,7 @@ export async function processReminderQueue(): Promise<void> {
   const WINDOW = 15; // minutes — used for legacy tick_planned look-back
   const CONSUMED_TTL = 60; // minutes to retain a consumed entry for catch-up guard
 
-  let queue = getQueue();
+  let queue = await getQueue();
   let consumedMarkedCount = 0;
   let consumedExpiredCount = 0;
   let tickFiredCount = 0;
@@ -434,19 +434,19 @@ export async function processReminderQueue(): Promise<void> {
   }
 
   if (queue.length === 0) {
-    insertBackgroundLog('reminder', 'Queue processed — empty');
+    await insertBackgroundLogAsync('reminder', 'Queue processed — empty');
     return;
   }
 
-  const todayMinutes = getTodayMinutes();
-  const dailyTarget = getCurrentDailyGoal()?.targetMinutes ?? 30;
+  const todayMinutes = await getTodayMinutesAsync();
+  const dailyTarget = await getCurrentDailyGoalAsync()?.targetMinutes ?? 30;
 
   // --- Goal reached: cancel all pending triggers and clear the queue ---
   if (todayMinutes >= dailyTarget) {
     console.log(
       `TouchGrass: [Queue] Daily goal reached (${todayMinutes}/${dailyTarget} min) — cancelling ${queue.length} queued reminder(s)`
     );
-    insertBackgroundLog(
+    await insertBackgroundLogAsync(
       'reminder',
       `Goal reached (${todayMinutes}/${dailyTarget} min) — cancelled ${queue.length} reminder(s)`
     );
@@ -459,9 +459,9 @@ export async function processReminderQueue(): Promise<void> {
         `TouchGrass: [Queue] Deleted: ${entry.id} at ${formatSlotMinutes(entry.slotMinutes)} [${entry.status}] (goal reached)`
       );
     }
-    saveQueue([]);
-    setSetting('reminders_planned_slots', '[]');
-    setSetting('catchup_reminder_slot_minutes', '');
+    await saveQueue([]);
+    await setSettingAsync('reminders_planned_slots', '[]');
+    await setSettingAsync('catchup_reminder_slot_minutes', '');
     return;
   }
 
@@ -490,7 +490,7 @@ export async function processReminderQueue(): Promise<void> {
         console.log(
           `TouchGrass: [Queue] Consumed: ${entry.id} at ${formatSlotMinutes(entry.slotMinutes)} — slot passed, marked consumed`
         );
-        insertBackgroundLog(
+        await insertBackgroundLogAsync(
           'reminder',
           `Reminder fired at ${formatSlotMinutes(entry.slotMinutes)}`
         );
@@ -508,7 +508,7 @@ export async function processReminderQueue(): Promise<void> {
       const minutesSince = nowMinutes - entry.slotMinutes;
       if (minutesSince >= 0 && minutesSince <= WINDOW) {
         // Fire immediately (this is a planned smart reminder)
-        const { title, body } = buildReminderMessage(
+        const { title, body } = await buildReminderMessage(
           todayMinutes,
           dailyTarget,
           Math.floor(entry.slotMinutes / 60),
@@ -528,11 +528,11 @@ export async function processReminderQueue(): Promise<void> {
             channelId: CHANNEL_ID,
           },
         });
-        setSetting('last_reminder_ms', String(Date.now()));
+        await setSettingAsync('last_reminder_ms', String(Date.now()));
         console.log(
           `TouchGrass: [Queue] Consumed: ${entry.id} at ${formatSlotMinutes(entry.slotMinutes)} — fired via JS (${minutesSince} min since slot)`
         );
-        insertBackgroundLog(
+        await insertBackgroundLogAsync(
           'reminder',
           `Reminder fired at ${formatSlotMinutes(entry.slotMinutes)}`
         );
@@ -556,7 +556,7 @@ export async function processReminderQueue(): Promise<void> {
     updatedQueue.push(entry);
   }
 
-  saveQueue(updatedQueue);
+  await saveQueue(updatedQueue);
 
   // Log the resulting queue state after processing
   {
@@ -567,7 +567,7 @@ export async function processReminderQueue(): Promise<void> {
     console.log(`TouchGrass: [Queue] After processing (${updatedQueue.length}): ${remaining}`);
   }
 
-  insertBackgroundLog(
+  await insertBackgroundLogAsync(
     'reminder',
     `Queue processed — remaining ${updatedQueue.length} (consumed:${consumedMarkedCount}, fired:${tickFiredCount}, dropped:${consumedExpiredCount + tickDroppedCount})`
   );
@@ -579,18 +579,18 @@ export async function processReminderQueue(): Promise<void> {
  * Called from the unified background task on each ~15-minute tick.
  */
 export async function updateUpcomingReminderContent(): Promise<void> {
-  const remindersCount = parseInt(getSetting('smart_reminders_count', '0'), 10);
+  const remindersCount = parseInt(await getSettingAsync('smart_reminders_count', '0'), 10);
   if (remindersCount === 0) return;
 
   const UPDATE_WINDOW_MINUTES = 30;
   const now = new Date();
   const nowMinutes = now.getHours() * 60 + now.getMinutes();
 
-  const queue = getQueue();
+  const queue = await getQueue();
   if (queue.length === 0) return;
 
-  const todayMinutes = getTodayMinutes();
-  const dailyTarget = getCurrentDailyGoal()?.targetMinutes ?? 30;
+  const todayMinutes = await getTodayMinutesAsync();
+  const dailyTarget = await getCurrentDailyGoalAsync()?.targetMinutes ?? 30;
 
   // Get all currently scheduled notifications
   const allScheduled = await Notifications.getAllScheduledNotificationsAsync();
@@ -632,7 +632,7 @@ export async function updateUpcomingReminderContent(): Promise<void> {
     const slotHour = Math.floor(entry.slotMinutes / 60);
 
     // Regenerate the message content with current data
-    const { title, body } = buildReminderMessage(
+    const { title, body } = await buildReminderMessage(
       todayMinutes,
       dailyTarget,
       slotHour,
@@ -685,7 +685,7 @@ export async function updateUpcomingReminderContent(): Promise<void> {
     console.log(
       `TouchGrass: [UpdateContent] Updated ${updatedCount} notification(s) with fresh data`
     );
-    insertBackgroundLog(
+    await insertBackgroundLogAsync(
       'reminder',
       `Updated content for ${updatedCount} reminder(s) within 30 min window`
     );
@@ -700,9 +700,9 @@ export async function updateUpcomingReminderContent(): Promise<void> {
  */
 export async function scheduleDayReminders(): Promise<void> {
   const todayStr = new Date().toDateString();
-  const lastPlannedDate = getSetting('reminders_last_planned_date', '');
+  const lastPlannedDate = await getSettingAsync('reminders_last_planned_date', '');
   if (lastPlannedDate === todayStr) {
-    const queue = getQueue();
+    const queue = await getQueue();
     if (queue.length > 0) {
       const summary = queue
         .map((e) => `${formatSlotMinutes(e.slotMinutes)}[${e.status}]`)
@@ -710,10 +710,10 @@ export async function scheduleDayReminders(): Promise<void> {
       console.log(
         `TouchGrass: [DayPlan] Already planned today — queue (${queue.length}): ${summary}`
       );
-      insertBackgroundLog('reminder', `Daily plan: already planned (${queue.length}) — ${summary}`);
+      await insertBackgroundLogAsync('reminder', `Daily plan: already planned (${queue.length}) — ${summary}`);
     } else {
       console.log('TouchGrass: [DayPlan] Already planned today — queue: empty');
-      insertBackgroundLog('reminder', 'Daily plan: already planned — queue empty');
+      await insertBackgroundLogAsync('reminder', 'Daily plan: already planned — queue empty');
     }
     return;
   }
@@ -724,9 +724,9 @@ export async function scheduleDayReminders(): Promise<void> {
   // this function and scheduling duplicate notifications and calendar events.
   // JavaScript is single-threaded, so this assignment is visible to the next
   // synchronous caller that runs while this function is suspended at an await.
-  setSetting('reminders_last_planned_date', todayStr);
+  await setSettingAsync('reminders_last_planned_date', todayStr);
 
-  const remindersCount = parseInt(getSetting('smart_reminders_count', '2'), 10);
+  const remindersCount = parseInt(await getSettingAsync('smart_reminders_count', '2'), 10);
 
   // Always cancel stale failsafe reminders at the start of a new planning
   // cycle, regardless of whether reminders are enabled.  This clears out
@@ -742,27 +742,27 @@ export async function scheduleDayReminders(): Promise<void> {
 
   if (remindersCount === 0) {
     console.log('TouchGrass: [DayPlan] Reminders disabled (count=0) — skipping day planning');
-    setSetting('reminders_planned_slots', '[]');
-    setSetting('additional_reminders_today', '0');
-    setSetting('catchup_reminder_slot_minutes', '');
-    insertBackgroundLog('reminder', 'Daily plan: reminders disabled (count=0)');
+    await setSettingAsync('reminders_planned_slots', '[]');
+    await setSettingAsync('additional_reminders_today', '0');
+    await setSettingAsync('catchup_reminder_slot_minutes', '');
+    await insertBackgroundLogAsync('reminder', 'Daily plan: reminders disabled (count=0)');
     return;
   }
 
   await cancelAutomaticReminders();
 
-  const todayMinutes = getTodayMinutes();
-  const dailyTarget = getCurrentDailyGoal()?.targetMinutes ?? 30;
+  const todayMinutes = await getTodayMinutesAsync();
+  const dailyTarget = await getCurrentDailyGoalAsync()?.targetMinutes ?? 30;
 
   // Don't schedule reminders if daily goal is already reached
   if (todayMinutes >= dailyTarget) {
     console.log(
       `TouchGrass: [DayPlan] Daily goal already reached (${todayMinutes}/${dailyTarget} min) — skipping reminder planning`
     );
-    setSetting('reminders_planned_slots', '[]');
-    setSetting('additional_reminders_today', '0');
-    setSetting('catchup_reminder_slot_minutes', '');
-    insertBackgroundLog(
+    await setSettingAsync('reminders_planned_slots', '[]');
+    await setSettingAsync('additional_reminders_today', '0');
+    await setSettingAsync('catchup_reminder_slot_minutes', '');
+    await insertBackgroundLogAsync(
       'reminder',
       `Daily plan: goal reached (${todayMinutes}/${dailyTarget} min) — skipping`
     );
@@ -775,7 +775,7 @@ export async function scheduleDayReminders(): Promise<void> {
 
   // Ensure weather data is current before scoring so that rain/sun forecasts
   // properly influence which slots are chosen.
-  const weatherPrefs = getWeatherPreferences();
+  const weatherPrefs = await getWeatherPreferences();
   if (weatherPrefs.enabled) {
     await fetchWeatherForecast({ allowPermissionPrompt: false });
   }
@@ -829,7 +829,7 @@ export async function scheduleDayReminders(): Promise<void> {
 
   const scheduledSlots: { hour: number; minute: number }[] = [];
   // Clear queue before rebuilding for the new day
-  saveQueue([]);
+  await saveQueue([]);
   const newQueueEntries: ReminderQueueEntry[] = [];
 
   for (const slot of topSlots) {
@@ -837,7 +837,7 @@ export async function scheduleDayReminders(): Promise<void> {
     triggerDate.setHours(slot.hour, slot.minute, 0, 0);
 
     // These are planned smart reminders
-    const { title, body } = buildReminderMessage(
+    const { title, body } = await buildReminderMessage(
       todayMinutes,
       dailyTarget,
       slot.hour,
@@ -886,22 +886,22 @@ export async function scheduleDayReminders(): Promise<void> {
   }
 
   // Store the planned slots so catch-up logic can reference them
-  setSetting('reminders_planned_slots', JSON.stringify(scheduledSlots));
-  setSetting('additional_reminders_today', '0');
-  setSetting('catchup_reminder_slot_minutes', '');
+  await setSettingAsync('reminders_planned_slots', JSON.stringify(scheduledSlots));
+  await setSettingAsync('additional_reminders_today', '0');
+  await setSettingAsync('catchup_reminder_slot_minutes', '');
 
   // Persist the queue for this day's planned slots
-  saveQueue(newQueueEntries);
+  await saveQueue(newQueueEntries);
 
   if (newQueueEntries.length > 0) {
     const summary = newQueueEntries.map((e) => formatSlotMinutes(e.slotMinutes)).join(', ');
     console.log(
       `TouchGrass: [DayPlan] Planned ${newQueueEntries.length} reminder(s) for today: ${summary}`
     );
-    insertBackgroundLog('reminder', `Daily plan: ${summary}`);
+    await insertBackgroundLogAsync('reminder', `Daily plan: ${summary}`);
   } else {
     console.log('TouchGrass: [DayPlan] No suitable reminder slots found for today');
-    insertBackgroundLog('reminder', 'Daily plan: no suitable slots found');
+    await insertBackgroundLogAsync('reminder', 'Daily plan: no suitable slots found');
   }
 
   // Pre-schedule the same time slots for the next FAILSAFE_DAYS_AHEAD days so
@@ -924,28 +924,28 @@ export async function maybeScheduleCatchUpReminder(): Promise<void> {
   // Handles the case where a Pulsar tick and a WorkManager tick both call this
   // function and their async paths interleave inside the same JS runtime.
   if (catchUpSchedulingInProgress) {
-    insertBackgroundLog('reminder', 'Catch-up skipped — concurrent call in progress');
+    await insertBackgroundLogAsync('reminder', 'Catch-up skipped — concurrent call in progress');
     return;
   }
   catchUpSchedulingInProgress = true;
   try {
-    const remindersCount = parseInt(getSetting('smart_reminders_count', '2'), 10);
+    const remindersCount = parseInt(await getSettingAsync('smart_reminders_count', '2'), 10);
     if (remindersCount === 0) return;
 
     const todayStr = new Date().toDateString();
-    const lastPlannedDate = getSetting('reminders_last_planned_date', '');
+    const lastPlannedDate = await getSettingAsync('reminders_last_planned_date', '');
     if (lastPlannedDate !== todayStr) {
-      insertBackgroundLog('reminder', 'Catch-up skipped — no day plan yet');
+      await insertBackgroundLogAsync('reminder', 'Catch-up skipped — no day plan yet');
       return;
     }
 
-    const additionalCount = parseInt(getSetting('additional_reminders_today', '0'), 10);
-    const catchupLimit = parseInt(getSetting('smart_catchup_reminders_count', '2'), 10);
+    const additionalCount = parseInt(await getSettingAsync('additional_reminders_today', '0'), 10);
+    const catchupLimit = parseInt(await getSettingAsync('smart_catchup_reminders_count', '2'), 10);
     if (additionalCount >= catchupLimit) {
       console.log(
         `TouchGrass: [CatchUp] Limit reached (${additionalCount}/${catchupLimit}) — skipping`
       );
-      insertBackgroundLog(
+      await insertBackgroundLogAsync(
         'reminder',
         `Catch-up skipped — limit reached (${additionalCount}/${catchupLimit})`
       );
@@ -955,13 +955,13 @@ export async function maybeScheduleCatchUpReminder(): Promise<void> {
     // Load the planned slots for today
     let plannedSlots: { hour: number; minute: number }[] = [];
     try {
-      plannedSlots = JSON.parse(getSetting('reminders_planned_slots', '[]'));
+      plannedSlots = JSON.parse(await getSettingAsync('reminders_planned_slots', '[]'));
     } catch {
       return;
     }
     if (plannedSlots.length === 0) {
       console.log('TouchGrass: [CatchUp] No planned slots for today — skipping');
-      insertBackgroundLog('reminder', 'Catch-up skipped — no planned slots');
+      await insertBackgroundLogAsync('reminder', 'Catch-up skipped — no planned slots');
       return;
     }
 
@@ -973,13 +973,13 @@ export async function maybeScheduleCatchUpReminder(): Promise<void> {
       (s) => s.hour * 60 + s.minute <= currentMinutesOfDay
     ).length;
     if (passedCount === 0) {
-      insertBackgroundLog('reminder', 'Catch-up skipped — no reminders have fired yet');
+      await insertBackgroundLogAsync('reminder', 'Catch-up skipped — no reminders have fired yet');
       return;
     }
 
     // Read the queue early — used for both the 60-minute wait guard and
     // duplicate-slot prevention below.
-    const queue = getQueue();
+    const queue = await getQueue();
 
     // Don't schedule a catch-up within 60 minutes of the last consumed planned
     // reminder — give the user time to go outside before sending a follow-up.
@@ -1003,7 +1003,7 @@ export async function maybeScheduleCatchUpReminder(): Promise<void> {
 
     if (lastReminderMin >= 0 && currentMinutesOfDay - lastReminderMin < 60) {
       console.log('TouchGrass: [CatchUp] Postponed — waiting 60 min after last planned reminder');
-      insertBackgroundLog(
+      await insertBackgroundLogAsync(
         'reminder',
         `Catch-up postponed — last reminder ${currentMinutesOfDay - lastReminderMin} min ago`
       );
@@ -1015,8 +1015,8 @@ export async function maybeScheduleCatchUpReminder(): Promise<void> {
     const passedPercent = passedCount / remindersCount;
 
     // % of daily target already reached
-    const todayMinutes = getTodayMinutes();
-    const dailyTarget = getCurrentDailyGoal()?.targetMinutes ?? 30;
+    const todayMinutes = await getTodayMinutesAsync();
+    const dailyTarget = await getCurrentDailyGoalAsync()?.targetMinutes ?? 30;
     const targetPercent = Math.min(todayMinutes / dailyTarget, 1);
 
     // If the daily goal is already met, cancel any remaining smart reminders and stop.
@@ -1025,9 +1025,9 @@ export async function maybeScheduleCatchUpReminder(): Promise<void> {
         `TouchGrass: [CatchUp] Daily goal reached (${todayMinutes}/${dailyTarget} min) — cancelling remaining smart reminders`
       );
       await cancelAutomaticReminders();
-      setSetting('reminders_planned_slots', '[]');
-      setSetting('catchup_reminder_slot_minutes', '');
-      insertBackgroundLog(
+      await setSettingAsync('reminders_planned_slots', '[]');
+      await setSettingAsync('catchup_reminder_slot_minutes', '');
+      await insertBackgroundLogAsync(
         'reminder',
         `Catch-up skipped — goal reached (${todayMinutes}/${dailyTarget} min)`
       );
@@ -1039,7 +1039,7 @@ export async function maybeScheduleCatchUpReminder(): Promise<void> {
       console.log(
         `TouchGrass: [CatchUp] On track — ${Math.round(targetPercent * 100)}% of goal reached vs ${Math.round(passedPercent * 100)}% of reminders passed — skipping`
       );
-      insertBackgroundLog(
+      await insertBackgroundLogAsync(
         'reminder',
         `Catch-up skipped — on track (${Math.round(targetPercent * 100)}% goal vs ${Math.round(
           passedPercent * 100
@@ -1051,7 +1051,7 @@ export async function maybeScheduleCatchUpReminder(): Promise<void> {
     // Find the best remaining future slot
     // Ensure weather data is current before scoring so catch-up picks the best
     // remaining slot accounting for current conditions.
-    const weatherPrefs = getWeatherPreferences();
+    const weatherPrefs = await getWeatherPreferences();
     if (weatherPrefs.enabled) {
       await fetchWeatherForecast({ allowPermissionPrompt: false });
     }
@@ -1076,7 +1076,7 @@ export async function maybeScheduleCatchUpReminder(): Promise<void> {
 
     if (candidateSlots.length === 0) {
       console.log('TouchGrass: [CatchUp] No suitable future slots found — skipping');
-      insertBackgroundLog('reminder', 'Catch-up skipped — no suitable future slots');
+      await insertBackgroundLogAsync('reminder', 'Catch-up skipped — no suitable future slots');
       return;
     }
 
@@ -1092,7 +1092,7 @@ export async function maybeScheduleCatchUpReminder(): Promise<void> {
     triggerDate.setHours(best.hour, best.minute, 0, 0);
 
     // This is a catch-up reminder
-    const { title, body } = buildReminderMessage(
+    const { title, body } = await buildReminderMessage(
       todayMinutes,
       dailyTarget,
       best.hour,
@@ -1106,9 +1106,9 @@ export async function maybeScheduleCatchUpReminder(): Promise<void> {
     // Cross-runtime concurrency guard: re-read the counter immediately before
     // scheduling to catch a parallel JS context (separate headless runtime) that
     // may have already incremented it since our initial read above.
-    const freshAdditionalCount = parseInt(getSetting('additional_reminders_today', '0'), 10);
+    const freshAdditionalCount = parseInt(await getSettingAsync('additional_reminders_today', '0'), 10);
     if (freshAdditionalCount >= catchupLimit) {
-      insertBackgroundLog(
+      await insertBackgroundLogAsync(
         'reminder',
         `Catch-up skipped — concurrent cross-runtime call already scheduled (${freshAdditionalCount}/${catchupLimit})`
       );
@@ -1138,16 +1138,16 @@ export async function maybeScheduleCatchUpReminder(): Promise<void> {
       slotMinutes: best.hour * 60 + best.minute,
       status: 'date_planned',
     });
-    saveQueue(queue);
+    await saveQueue(queue);
 
     // Additional reminders never create calendar events
-    setSetting('additional_reminders_today', String(additionalCount + 1));
-    setSetting('catchup_reminder_slot_minutes', String(best.hour * 60 + best.minute));
+    await setSettingAsync('additional_reminders_today', String(additionalCount + 1));
+    await setSettingAsync('catchup_reminder_slot_minutes', String(best.hour * 60 + best.minute));
     console.log(
       `TouchGrass: [CatchUp] Scheduled: ${id} at ${formatSlotMinutes(best.hour * 60 + best.minute)} ` +
         `(${additionalCount + 1}/${catchupLimit}; progress: ${todayMinutes}/${dailyTarget} min)`
     );
-    insertBackgroundLog(
+    await insertBackgroundLogAsync(
       'reminder',
       `Catch-up planned at ${formatSlotMinutes(best.hour * 60 + best.minute)} (${todayMinutes}/${dailyTarget} min reached)`
     );
@@ -1203,7 +1203,7 @@ async function cancelFailsafeReminders(): Promise<void> {
 async function scheduleFailsafeReminders(slots: { hour: number; minute: 0 | 30 }[]): Promise<void> {
   if (slots.length === 0) return;
 
-  const dailyTarget = getCurrentDailyGoal()?.targetMinutes ?? 30;
+  const dailyTarget = await getCurrentDailyGoalAsync()?.targetMinutes ?? 30;
 
   for (let daysAhead = 1; daysAhead <= FAILSAFE_DAYS_AHEAD; daysAhead++) {
     const futureDate = new Date();
@@ -1217,7 +1217,7 @@ async function scheduleFailsafeReminders(slots: { hour: number; minute: 0 | 30 }
 
       // Use 0 progress since we don't know tomorrow's outdoor minutes.
       // These are failsafe reminders (treat as planned smart reminders)
-      const { title, body } = buildReminderMessage(0, dailyTarget, slot.hour, undefined, false);
+      const { title, body } = await buildReminderMessage(0, dailyTarget, slot.hour, undefined, false);
 
       await Notifications.scheduleNotificationAsync({
         identifier: `${FAILSAFE_REMINDER_PREFIX}${dateKey}_${i}`,
@@ -1276,11 +1276,11 @@ async function cancelAutomaticReminders(): Promise<void> {
  * (e.g. session approval or a goal change that makes the current progress sufficient).
  */
 export async function cancelRemindersIfGoalReached(): Promise<void> {
-  const remindersCount = parseInt(getSetting('smart_reminders_count', '0'), 10);
+  const remindersCount = parseInt(await getSettingAsync('smart_reminders_count', '0'), 10);
   if (remindersCount === 0) return;
 
-  const todayMinutes = getTodayMinutes();
-  const dailyTarget = getCurrentDailyGoal()?.targetMinutes ?? 30;
+  const todayMinutes = await getTodayMinutesAsync();
+  const dailyTarget = await getCurrentDailyGoalAsync()?.targetMinutes ?? 30;
   if (todayMinutes < dailyTarget) return;
 
   console.log(
@@ -1291,15 +1291,15 @@ export async function cancelRemindersIfGoalReached(): Promise<void> {
   await cancelAutomaticReminders();
 
   // Cancel any pending (non-consumed) queue entries and clear the queue
-  const queue = getQueue();
+  const queue = await getQueue();
   for (const entry of queue) {
     if (entry.status !== 'consumed') {
       await Notifications.cancelScheduledNotificationAsync(entry.id).catch(() => {});
     }
   }
-  saveQueue([]);
-  setSetting('reminders_planned_slots', '[]');
-  setSetting('catchup_reminder_slot_minutes', '');
+  await saveQueue([]);
+  await setSettingAsync('reminders_planned_slots', '[]');
+  await setSettingAsync('catchup_reminder_slot_minutes', '');
 }
 
 /**
@@ -1339,7 +1339,7 @@ async function handleNotificationResponse(
   // the user choose between "bad time" (inserts bad_time feedback) or
   // "fewer reminders" (adjusts settings). Dismissing the modal records nothing.
   if (action !== 'less_often') {
-    insertReminderFeedback({
+    await insertReminderFeedbackAsync({
       timestamp: now,
       action,
       scheduledHour: d.getHours(),
@@ -1369,9 +1369,9 @@ async function handleNotificationResponse(
     // Reschedule for SNOOZE_DURATION_MINUTES later (treat as planned smart reminder)
     const snoozeDate = new Date(now + SNOOZE_DURATION_MINUTES * 60 * 1000);
     const snoozeHour = snoozeDate.getHours();
-    const { title, body } = buildReminderMessage(
-      getTodayMinutes(),
-      getCurrentDailyGoal()?.targetMinutes ?? 30,
+    const { title, body } = await buildReminderMessage(
+      await getTodayMinutesAsync(),
+      await getCurrentDailyGoalAsync()?.targetMinutes ?? 30,
       snoozeHour,
       undefined,
       false
@@ -1392,13 +1392,13 @@ async function handleNotificationResponse(
  * Optionally includes weather context if available.
  * Adds streak encouragement based on streak state and reminder type.
  */
-function buildReminderMessage(
+async function await buildReminderMessage(
   todayMinutes: number,
   dailyTarget: number,
   hour?: number,
   contributors?: ScoreContributor[],
   isCatchupReminder?: boolean
-): { title: string; body: string } {
+): Promise<{ title: string; body: string }> {
   const remaining = Math.max(0, Math.round(dailyTarget - todayMinutes));
   const percent = todayMinutes / dailyTarget;
 
@@ -1419,12 +1419,12 @@ function buildReminderMessage(
   // Add streak encouragement based on settings:
   // - If catch-up reminders enabled: only on catch-up reminders
   // - If catch-up reminders disabled: on planned smart reminders
-  const catchupEnabled = parseInt(getSetting('smart_catchup_reminders_count', '2'), 10) > 0;
+  const catchupEnabled = parseInt(await getSettingAsync('smart_catchup_reminders_count', '2'), 10) > 0;
   const shouldShowStreak = catchupEnabled ? isCatchupReminder === true : isCatchupReminder !== true;
 
   if (shouldShowStreak) {
-    const dailyStreak = getDailyStreak();
-    const weeklyStreak = getWeeklyStreak();
+    const dailyStreak = await getDailyStreakAsync();
+    const weeklyStreak = await getWeeklyStreakAsync();
 
     // Show streak encouragement if user has an active streak
     if (dailyStreak > 0 || weeklyStreak > 0) {
@@ -1453,11 +1453,11 @@ function buildReminderMessage(
     }
   } else {
     // Fallback: add weather context if available and enabled (used when no contributors provided)
-    if (isWeatherDataAvailable()) {
-      const weatherPrefs = getWeatherPreferences();
+    if (await isWeatherDataAvailable()) {
+      const weatherPrefs = await getWeatherPreferences();
       if (weatherPrefs.enabled) {
         const currentHour = hour ?? new Date().getHours();
-        const weather = getWeatherForHour(currentHour);
+        const weather = await getWeatherForHour(currentHour);
 
         if (weather) {
           const emoji = getWeatherEmoji(weather);
