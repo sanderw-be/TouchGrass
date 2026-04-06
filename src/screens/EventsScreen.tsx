@@ -101,7 +101,7 @@ export default function EventsScreen() {
     try {
       await confirmSessionAsync(id, confirmed);
       const d = new Date(startTime);
-      updateTimeSlotProbability(d.getHours(), d.getDay(), confirmed);
+      await updateTimeSlotProbability(d.getHours(), d.getDay(), confirmed);
       emitSessionsChanged();
       await loadData();
       if (confirmed) {

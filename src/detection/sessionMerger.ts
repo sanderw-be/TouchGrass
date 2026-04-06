@@ -194,7 +194,7 @@ export async function submitSession(candidate: OutsideSession): Promise<void> {
       distanceMeters: mergedDistance,
       averageSpeedKmh: mergedSpeed,
     };
-    const score = computeSessionScore(segSession);
+    const score = await computeSessionScore(segSession);
     // Only discard sessions that have no user feedback yet (userConfirmed === null).
     // Sessions the user explicitly denied (userConfirmed === 0) keep discarded=0 so
     // their rejection is preserved and visible in the Standard tab.
