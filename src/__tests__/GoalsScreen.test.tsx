@@ -11,15 +11,15 @@ jest.mock('../i18n', () => ({
 }));
 
 // Mock database
-const mockGetSetting = jest.fn((key: string, def: string) => def);
-const mockSetSetting = jest.fn();
+const mockGetSettingAsync = jest.fn((key: string, def: string) => Promise.resolve(def));
+const mockSetSettingAsync = jest.fn(() => Promise.resolve());
 jest.mock('../storage/database', () => ({
-  getSetting: (key: string, def: string) => mockGetSetting(key, def),
-  setSetting: (key: string, value: string) => mockSetSetting(key, value),
-  getCurrentDailyGoal: jest.fn(() => ({ targetMinutes: 30 })),
-  getCurrentWeeklyGoal: jest.fn(() => ({ targetMinutes: 150 })),
-  setDailyGoal: jest.fn(),
-  setWeeklyGoal: jest.fn(),
+  getSettingAsync: (key: string, def: string) => mockGetSettingAsync(key, def),
+  setSettingAsync: (key: string, value: string) => mockSetSettingAsync(key, value),
+  getCurrentDailyGoalAsync: jest.fn(() => Promise.resolve({ targetMinutes: 30 })),
+  getCurrentWeeklyGoalAsync: jest.fn(() => Promise.resolve({ targetMinutes: 150 })),
+  setDailyGoalAsync: jest.fn(() => Promise.resolve()),
+  setWeeklyGoalAsync: jest.fn(() => Promise.resolve()),
   getSelectedCalendarId: jest.fn(() => ''),
 }));
 
@@ -95,7 +95,7 @@ describe('GoalsScreen', () => {
     (Platform as any).OS = originalPlatformOS;
     mockOpenBatteryOptimizationSettings.mockResolvedValue(true);
     mockRefreshBatteryOptimizationSetting.mockResolvedValue(false);
-    mockGetSetting.mockImplementation((key: string, def: string) => def);
+    mockGetSettingAsync.mockImplementation((key: string, def: string) => Promise.resolve(def));
     mockCheckWeatherLocation.mockResolvedValue(false);
     mockRequestWeatherLocation.mockResolvedValue(false);
   });
@@ -135,7 +135,7 @@ describe('GoalsScreen battery optimization', () => {
     (Platform as any).OS = originalPlatformOS;
     mockOpenBatteryOptimizationSettings.mockResolvedValue(true);
     mockRefreshBatteryOptimizationSetting.mockResolvedValue(false);
-    mockGetSetting.mockImplementation((key: string, def: string) => def);
+    mockGetSettingAsync.mockImplementation((key: string, def: string) => Promise.resolve(def));
   });
 
   it('shows the explainer sheet and opens settings on Android', async () => {
@@ -166,8 +166,8 @@ describe('GoalsScreen battery optimization', () => {
     const originalOS = Platform.OS;
     try {
       (Platform as any).OS = 'android';
-      mockGetSetting.mockImplementation((key: string, def: string) =>
-        key === BATTERY_OPTIMIZATION_SETTING_KEY ? '1' : def
+      mockGetSettingAsync.mockImplementation((key: string, def: string) =>
+        Promise.resolve(key === BATTERY_OPTIMIZATION_SETTING_KEY ? '1' : def)
       );
       mockRefreshBatteryOptimizationSetting.mockResolvedValue(true);
       const { findByText, getByTestId } = render(<GoalsScreen />);
@@ -195,8 +195,8 @@ describe('GoalsScreen battery optimization', () => {
     const originalOS = Platform.OS;
     try {
       (Platform as any).OS = 'android';
-      mockGetSetting.mockImplementation((key: string, def: string) =>
-        key === BATTERY_OPTIMIZATION_SETTING_KEY ? '1' : def
+      mockGetSettingAsync.mockImplementation((key: string, def: string) =>
+        Promise.resolve(def)
       );
       mockRefreshBatteryOptimizationSetting.mockResolvedValue(false);
       const { findByText, getByTestId, queryByTestId } = render(<GoalsScreen />);
@@ -221,16 +221,16 @@ describe('GoalsScreen calendar duration', () => {
     (Platform as any).OS = originalPlatformOS;
     mockOpenBatteryOptimizationSettings.mockResolvedValue(true);
     mockRefreshBatteryOptimizationSetting.mockResolvedValue(false);
-    mockGetSetting.mockImplementation((key: string, def: string) => def);
+    mockGetSettingAsync.mockImplementation((key: string, def: string) => Promise.resolve(def));
     // Calendar settings sub-rows only show when permission is granted
     (CalendarService.hasCalendarPermissions as jest.Mock).mockResolvedValue(true);
   });
 
   it('shows "Off" label when calendar is enabled and duration is 0', async () => {
-    mockGetSetting.mockImplementation((key: string, def: string) => {
-      if (key === 'calendar_integration_enabled') return '1';
-      if (key === 'calendar_default_duration') return '0';
-      return def;
+    mockGetSettingAsync.mockImplementation((key: string, def: string) => {
+      if (key === 'calendar_integration_enabled') return Promise.resolve('1');
+      if (key === 'calendar_default_duration') return Promise.resolve('0');
+      return Promise.resolve(def);
     });
 
     const { findByText } = render(<GoalsScreen />);
@@ -239,10 +239,10 @@ describe('GoalsScreen calendar duration', () => {
   });
 
   it('shows minutes label when calendar is enabled and duration is non-zero', async () => {
-    mockGetSetting.mockImplementation((key: string, def: string) => {
-      if (key === 'calendar_integration_enabled') return '1';
-      if (key === 'calendar_default_duration') return '15';
-      return def;
+    mockGetSettingAsync.mockImplementation((key: string, def: string) => {
+      if (key === 'calendar_integration_enabled') return Promise.resolve('1');
+      if (key === 'calendar_default_duration') return Promise.resolve('15');
+      return Promise.resolve(def);
     });
 
     const { findByText } = render(<GoalsScreen />);
@@ -251,9 +251,9 @@ describe('GoalsScreen calendar duration', () => {
   });
 
   it('defaults to "Off" when no duration setting is stored', async () => {
-    mockGetSetting.mockImplementation((key: string, def: string) => {
-      if (key === 'calendar_integration_enabled') return '1';
-      return def;
+    mockGetSettingAsync.mockImplementation((key: string, def: string) => {
+      if (key === 'calendar_integration_enabled') return Promise.resolve('1');
+      return Promise.resolve(def);
     });
 
     const { findByText } = render(<GoalsScreen />);
@@ -262,10 +262,10 @@ describe('GoalsScreen calendar duration', () => {
   });
 
   it('cycles from "Off" (0) to the first non-zero option (5 min) when tapped', async () => {
-    mockGetSetting.mockImplementation((key: string, def: string) => {
-      if (key === 'calendar_integration_enabled') return '1';
-      if (key === 'calendar_default_duration') return '0';
-      return def;
+    mockGetSettingAsync.mockImplementation((key: string, def: string) => {
+      if (key === 'calendar_integration_enabled') return Promise.resolve('1');
+      if (key === 'calendar_default_duration') return Promise.resolve('0');
+      return Promise.resolve(def);
     });
 
     const { findByText } = render(<GoalsScreen />);
@@ -280,14 +280,14 @@ describe('GoalsScreen calendar duration', () => {
     await waitFor(() =>
       expect(findByText('settings_calendar_duration_minutes')).resolves.toBeTruthy()
     );
-    expect(mockSetSetting).toHaveBeenCalledWith('calendar_default_duration', '5');
+    expect(mockSetSettingAsync).toHaveBeenCalledWith('calendar_default_duration', '5');
   });
 
   it('cycles back to "Off" from the last duration option (30 min)', async () => {
-    mockGetSetting.mockImplementation((key: string, def: string) => {
-      if (key === 'calendar_integration_enabled') return '1';
-      if (key === 'calendar_default_duration') return '30';
-      return def;
+    mockGetSettingAsync.mockImplementation((key: string, def: string) => {
+      if (key === 'calendar_integration_enabled') return Promise.resolve('1');
+      if (key === 'calendar_default_duration') return Promise.resolve('30');
+      return Promise.resolve(def);
     });
 
     const { findByText } = render(<GoalsScreen />);
@@ -300,13 +300,13 @@ describe('GoalsScreen calendar duration', () => {
     });
 
     await waitFor(() => expect(findByText('settings_calendar_duration_off')).resolves.toBeTruthy());
-    expect(mockSetSetting).toHaveBeenCalledWith('calendar_default_duration', '0');
+    expect(mockSetSettingAsync).toHaveBeenCalledWith('calendar_default_duration', '0');
   });
 
   it('does not open calendar picker when only TouchGrass local calendar exists', async () => {
-    mockGetSetting.mockImplementation((key: string, def: string) => {
-      if (key === 'calendar_integration_enabled') return '1';
-      return def;
+    mockGetSettingAsync.mockImplementation((key: string, def: string) => {
+      if (key === 'calendar_integration_enabled') return Promise.resolve('1');
+      return Promise.resolve(def);
     });
     (CalendarService.hasCalendarPermissions as jest.Mock).mockResolvedValue(true);
     (CalendarService.getWritableCalendars as jest.Mock).mockResolvedValue([
@@ -340,7 +340,7 @@ describe('GoalsScreen catch-up reminders setting', () => {
     jest.clearAllMocks();
     (Platform as any).OS = originalPlatformOS;
     mockOpenBatteryOptimizationSettings.mockResolvedValue(true);
-    mockGetSetting.mockImplementation((key: string, def: string) => def);
+    mockGetSettingAsync.mockImplementation((key: string, def: string) => Promise.resolve(def));
   });
 
   it('renders the catch-up reminders setting row', async () => {
@@ -349,45 +349,45 @@ describe('GoalsScreen catch-up reminders setting', () => {
   });
 
   it('shows "Medium" label when smart_catchup_reminders_count is 2 (default)', async () => {
-    mockGetSetting.mockImplementation((key: string, def: string) => {
-      if (key === 'smart_catchup_reminders_count') return '2';
-      return def;
+    mockGetSettingAsync.mockImplementation((key: string, def: string) => {
+      if (key === 'smart_catchup_reminders_count') return Promise.resolve('2');
+      return Promise.resolve(def);
     });
     const { findByText } = render(<GoalsScreen />);
     await expect(findByText('settings_catchup_medium')).resolves.toBeTruthy();
   });
 
   it('shows "Off" when smart_catchup_reminders_count is 0', async () => {
-    mockGetSetting.mockImplementation((key: string, def: string) => {
-      if (key === 'smart_catchup_reminders_count') return '0';
-      return def;
+    mockGetSettingAsync.mockImplementation((key: string, def: string) => {
+      if (key === 'smart_catchup_reminders_count') return Promise.resolve('0');
+      return Promise.resolve(def);
     });
     const { findByText } = render(<GoalsScreen />);
     await expect(findByText('settings_catchup_off')).resolves.toBeTruthy();
   });
 
   it('shows "Mellow" when smart_catchup_reminders_count is 1', async () => {
-    mockGetSetting.mockImplementation((key: string, def: string) => {
-      if (key === 'smart_catchup_reminders_count') return '1';
-      return def;
+    mockGetSettingAsync.mockImplementation((key: string, def: string) => {
+      if (key === 'smart_catchup_reminders_count') return Promise.resolve('1');
+      return Promise.resolve(def);
     });
     const { findByText } = render(<GoalsScreen />);
     await expect(findByText('settings_catchup_mellow')).resolves.toBeTruthy();
   });
 
   it('shows "Aggressive" when smart_catchup_reminders_count is 3', async () => {
-    mockGetSetting.mockImplementation((key: string, def: string) => {
-      if (key === 'smart_catchup_reminders_count') return '3';
-      return def;
+    mockGetSettingAsync.mockImplementation((key: string, def: string) => {
+      if (key === 'smart_catchup_reminders_count') return Promise.resolve('3');
+      return Promise.resolve(def);
     });
     const { findByText } = render(<GoalsScreen />);
     await expect(findByText('settings_catchup_aggressive')).resolves.toBeTruthy();
   });
 
   it('cycles from Off (0) → Mellow (1) when tapped', async () => {
-    mockGetSetting.mockImplementation((key: string, def: string) => {
-      if (key === 'smart_catchup_reminders_count') return '0';
-      return def;
+    mockGetSettingAsync.mockImplementation((key: string, def: string) => {
+      if (key === 'smart_catchup_reminders_count') return Promise.resolve('0');
+      return Promise.resolve(def);
     });
 
     const { findByText } = render(<GoalsScreen />);
@@ -397,13 +397,13 @@ describe('GoalsScreen catch-up reminders setting', () => {
       fireEvent.press(labelRow);
     });
 
-    expect(mockSetSetting).toHaveBeenCalledWith('smart_catchup_reminders_count', '1');
+    expect(mockSetSettingAsync).toHaveBeenCalledWith('smart_catchup_reminders_count', '1');
   });
 
   it('cycles from Aggressive (3) back to Off (0)', async () => {
-    mockGetSetting.mockImplementation((key: string, def: string) => {
-      if (key === 'smart_catchup_reminders_count') return '3';
-      return def;
+    mockGetSettingAsync.mockImplementation((key: string, def: string) => {
+      if (key === 'smart_catchup_reminders_count') return Promise.resolve('3');
+      return Promise.resolve(def);
     });
 
     const { findByText } = render(<GoalsScreen />);
@@ -413,7 +413,7 @@ describe('GoalsScreen catch-up reminders setting', () => {
       fireEvent.press(labelRow);
     });
 
-    expect(mockSetSetting).toHaveBeenCalledWith('smart_catchup_reminders_count', '0');
+    expect(mockSetSettingAsync).toHaveBeenCalledWith('smart_catchup_reminders_count', '0');
   });
 });
 
@@ -423,7 +423,7 @@ describe('GoalsScreen weather location permission', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockOpenBatteryOptimizationSettings.mockResolvedValue(true);
-    mockGetSetting.mockImplementation((key: string, def: string) => def);
+    mockGetSettingAsync.mockImplementation((key: string, def: string) => Promise.resolve(def));
     mockCheckWeatherLocation.mockResolvedValue(false);
     mockRequestWeatherLocation.mockResolvedValue(false);
     (Platform as any).OS = originalPlatformOS;
@@ -441,9 +441,9 @@ describe('GoalsScreen weather location permission', () => {
   });
 
   it('shows location permission missing hint when weather is enabled but permission not granted', async () => {
-    mockGetSetting.mockImplementation((key: string, def: string) => {
-      if (key === 'weather_enabled') return '1';
-      return def;
+    mockGetSettingAsync.mockImplementation((key: string, def: string) => {
+      if (key === 'weather_enabled') return Promise.resolve('1');
+      return Promise.resolve(def);
     });
     mockCheckWeatherLocation.mockResolvedValue(false);
 
@@ -452,9 +452,9 @@ describe('GoalsScreen weather location permission', () => {
   });
 
   it('shows weather settings link when weather is enabled and location is granted', async () => {
-    mockGetSetting.mockImplementation((key: string, def: string) => {
-      if (key === 'weather_enabled') return '1';
-      return def;
+    mockGetSettingAsync.mockImplementation((key: string, def: string) => {
+      if (key === 'weather_enabled') return Promise.resolve('1');
+      return Promise.resolve(def);
     });
     mockCheckWeatherLocation.mockResolvedValue(true);
 
@@ -464,9 +464,9 @@ describe('GoalsScreen weather location permission', () => {
   });
 
   it('does not show the permission hint when weather is disabled', async () => {
-    mockGetSetting.mockImplementation((key: string, def: string) => {
-      if (key === 'weather_enabled') return '0';
-      return def;
+    mockGetSettingAsync.mockImplementation((key: string, def: string) => {
+      if (key === 'weather_enabled') return Promise.resolve('0');
+      return Promise.resolve(def);
     });
     mockCheckWeatherLocation.mockResolvedValue(false);
 
@@ -475,9 +475,9 @@ describe('GoalsScreen weather location permission', () => {
   });
 
   it('shows permission sheet when weather toggle is turned on without location permission', async () => {
-    mockGetSetting.mockImplementation((key: string, def: string) => {
-      if (key === 'weather_enabled') return '0';
-      return def;
+    mockGetSettingAsync.mockImplementation((key: string, def: string) => {
+      if (key === 'weather_enabled') return Promise.resolve('0');
+      return Promise.resolve(def);
     });
     mockCheckWeatherLocation.mockResolvedValue(false);
 
@@ -494,13 +494,13 @@ describe('GoalsScreen weather location permission', () => {
     // Modal sheet should appear; permission request is not called inline
     await expect(findByTestId('permission-explainer-sheet')).resolves.toBeTruthy();
     expect(mockRequestWeatherLocation).not.toHaveBeenCalled();
-    expect(mockSetSetting).not.toHaveBeenCalledWith('weather_enabled', '1');
+    expect(mockSetSettingAsync).not.toHaveBeenCalledWith('weather_enabled', '1');
   });
 
   it('does not show Alert when permission is missing while enabling weather', async () => {
-    mockGetSetting.mockImplementation((key: string, def: string) => {
-      if (key === 'weather_enabled') return '0';
-      return def;
+    mockGetSettingAsync.mockImplementation((key: string, def: string) => {
+      if (key === 'weather_enabled') return Promise.resolve('0');
+      return Promise.resolve(def);
     });
     mockCheckWeatherLocation.mockResolvedValue(false);
 
@@ -514,7 +514,7 @@ describe('GoalsScreen weather location permission', () => {
 
     await waitFor(() => {
       expect(alertSpy).not.toHaveBeenCalled();
-      expect(mockSetSetting).not.toHaveBeenCalledWith('weather_enabled', '1');
+      expect(mockSetSettingAsync).not.toHaveBeenCalledWith('weather_enabled', '1');
     });
   });
 });
@@ -523,14 +523,14 @@ describe('GoalsScreen calendar permission missing state', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (Platform as any).OS = originalPlatformOS;
-    mockGetSetting.mockImplementation((key: string, def: string) => def);
+    mockGetSettingAsync.mockImplementation((key: string, def: string) => Promise.resolve(def));
     mockCheckWeatherLocation.mockResolvedValue(false);
   });
 
   it('shows calendar permission missing red text when calendar is on but permission revoked', async () => {
-    mockGetSetting.mockImplementation((key: string, def: string) => {
-      if (key === 'calendar_integration_enabled') return '1';
-      return def;
+    mockGetSettingAsync.mockImplementation((key: string, def: string) => {
+      if (key === 'calendar_integration_enabled') return Promise.resolve('1');
+      return Promise.resolve(def);
     });
     (CalendarService.hasCalendarPermissions as jest.Mock).mockResolvedValue(false);
 
@@ -539,9 +539,9 @@ describe('GoalsScreen calendar permission missing state', () => {
   });
 
   it('does not show calendar permission missing text when permission is granted', async () => {
-    mockGetSetting.mockImplementation((key: string, def: string) => {
-      if (key === 'calendar_integration_enabled') return '1';
-      return def;
+    mockGetSettingAsync.mockImplementation((key: string, def: string) => {
+      if (key === 'calendar_integration_enabled') return Promise.resolve('1');
+      return Promise.resolve(def);
     });
     (CalendarService.hasCalendarPermissions as jest.Mock).mockResolvedValue(true);
     (CalendarService.getWritableCalendars as jest.Mock).mockResolvedValue([]);
@@ -551,9 +551,9 @@ describe('GoalsScreen calendar permission missing state', () => {
   });
 
   it('shows permission sheet when calendar toggle is turned on without permission', async () => {
-    mockGetSetting.mockImplementation((key: string, def: string) => {
-      if (key === 'calendar_integration_enabled') return '0';
-      return def;
+    mockGetSettingAsync.mockImplementation((key: string, def: string) => {
+      if (key === 'calendar_integration_enabled') return Promise.resolve('0');
+      return Promise.resolve(def);
     });
     (CalendarService.hasCalendarPermissions as jest.Mock).mockResolvedValue(false);
 
@@ -568,13 +568,13 @@ describe('GoalsScreen calendar permission missing state', () => {
     });
 
     await expect(findByTestId('permission-explainer-sheet')).resolves.toBeTruthy();
-    expect(mockSetSetting).not.toHaveBeenCalledWith('calendar_integration_enabled', '1');
+    expect(mockSetSettingAsync).not.toHaveBeenCalledWith('calendar_integration_enabled', '1');
   });
 
   it('shows data scope info in calendar permission sheet', async () => {
-    mockGetSetting.mockImplementation((key: string, def: string) => {
-      if (key === 'calendar_integration_enabled') return '0';
-      return def;
+    mockGetSettingAsync.mockImplementation((key: string, def: string) => {
+      if (key === 'calendar_integration_enabled') return Promise.resolve('0');
+      return Promise.resolve(def);
     });
     (CalendarService.hasCalendarPermissions as jest.Mock).mockResolvedValue(false);
 
@@ -605,15 +605,15 @@ describe('GoalsScreen auto-enable on permission grant', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (Platform as any).OS = originalPlatformOS;
-    mockGetSetting.mockImplementation((key: string, def: string) => def);
+    mockGetSettingAsync.mockImplementation((key: string, def: string) => Promise.resolve(def));
     mockCheckWeatherLocation.mockResolvedValue(false);
     (CalendarService.hasCalendarPermissions as jest.Mock).mockResolvedValue(false);
   });
 
   it('auto-enables weather when permission is granted after the user opened the sheet', async () => {
-    mockGetSetting.mockImplementation((key: string, def: string) => {
-      if (key === 'weather_enabled') return '0';
-      return def;
+    mockGetSettingAsync.mockImplementation((key: string, def: string) => {
+      if (key === 'weather_enabled') return Promise.resolve('0');
+      return Promise.resolve(def);
     });
     mockCheckWeatherLocation.mockResolvedValue(false);
 
@@ -636,14 +636,14 @@ describe('GoalsScreen auto-enable on permission grant', () => {
     }
 
     await waitFor(() => {
-      expect(mockSetSetting).toHaveBeenCalledWith('weather_enabled', '1');
+      expect(mockSetSettingAsync).toHaveBeenCalledWith('weather_enabled', '1');
     });
   });
 
   it('auto-enables calendar when permission is granted after the user opened the sheet', async () => {
-    mockGetSetting.mockImplementation((key: string, def: string) => {
-      if (key === 'calendar_integration_enabled') return '0';
-      return def;
+    mockGetSettingAsync.mockImplementation((key: string, def: string) => {
+      if (key === 'calendar_integration_enabled') return Promise.resolve('0');
+      return Promise.resolve(def);
     });
     (CalendarService.hasCalendarPermissions as jest.Mock).mockResolvedValue(false);
 
@@ -668,7 +668,7 @@ describe('GoalsScreen auto-enable on permission grant', () => {
     }
 
     await waitFor(() => {
-      expect(mockSetSetting).toHaveBeenCalledWith('calendar_integration_enabled', '1');
+      expect(mockSetSettingAsync).toHaveBeenCalledWith('calendar_integration_enabled', '1');
     });
   });
 });
@@ -681,7 +681,7 @@ describe('GoalsScreen smart reminders notification permission', () => {
     (Platform as any).OS = originalPlatformOS;
     mockOpenBatteryOptimizationSettings.mockResolvedValue(true);
     mockRefreshBatteryOptimizationSetting.mockResolvedValue(false);
-    mockGetSetting.mockImplementation((key: string, def: string) => def);
+    mockGetSettingAsync.mockImplementation((key: string, def: string) => Promise.resolve(def));
     mockCheckWeatherLocation.mockResolvedValue(false);
     (CalendarService.hasCalendarPermissions as jest.Mock).mockResolvedValue(false);
     // Access the globally mocked expo-notifications
@@ -690,9 +690,9 @@ describe('GoalsScreen smart reminders notification permission', () => {
   });
 
   it('shows notification permission missing text when smart reminders are on and permission is denied', async () => {
-    mockGetSetting.mockImplementation((key: string, def: string) => {
-      if (key === 'smart_reminders_count') return '2';
-      return def;
+    mockGetSettingAsync.mockImplementation((key: string, def: string) => {
+      if (key === 'smart_reminders_count') return Promise.resolve('2');
+      return Promise.resolve(def);
     });
     mockGetPermissions.mockResolvedValue({ status: 'denied' });
 
@@ -701,9 +701,9 @@ describe('GoalsScreen smart reminders notification permission', () => {
   });
 
   it('does not show notification permission missing text when smart reminders are off', async () => {
-    mockGetSetting.mockImplementation((key: string, def: string) => {
-      if (key === 'smart_reminders_count') return '0';
-      return def;
+    mockGetSettingAsync.mockImplementation((key: string, def: string) => {
+      if (key === 'smart_reminders_count') return Promise.resolve('0');
+      return Promise.resolve(def);
     });
     mockGetPermissions.mockResolvedValue({ status: 'denied' });
 
@@ -712,9 +712,9 @@ describe('GoalsScreen smart reminders notification permission', () => {
   });
 
   it('does not show notification permission missing text when permission is granted', async () => {
-    mockGetSetting.mockImplementation((key: string, def: string) => {
-      if (key === 'smart_reminders_count') return '2';
-      return def;
+    mockGetSettingAsync.mockImplementation((key: string, def: string) => {
+      if (key === 'smart_reminders_count') return Promise.resolve('2');
+      return Promise.resolve(def);
     });
     mockGetPermissions.mockResolvedValue({ status: 'granted' });
 
@@ -723,9 +723,9 @@ describe('GoalsScreen smart reminders notification permission', () => {
   });
 
   it('shows permission sheet when smart reminders row is tapped with count > 0 and permission denied', async () => {
-    mockGetSetting.mockImplementation((key: string, def: string) => {
-      if (key === 'smart_reminders_count') return '2';
-      return def;
+    mockGetSettingAsync.mockImplementation((key: string, def: string) => {
+      if (key === 'smart_reminders_count') return Promise.resolve('2');
+      return Promise.resolve(def);
     });
     mockGetPermissions.mockResolvedValue({ status: 'denied' });
 
@@ -739,9 +739,9 @@ describe('GoalsScreen smart reminders notification permission', () => {
   });
 
   it('shows permission sheet when smart reminders are tapped from off without notification permission', async () => {
-    mockGetSetting.mockImplementation((key: string, def: string) => {
-      if (key === 'smart_reminders_count') return '0';
-      return def;
+    mockGetSettingAsync.mockImplementation((key: string, def: string) => {
+      if (key === 'smart_reminders_count') return Promise.resolve('0');
+      return Promise.resolve(def);
     });
     mockGetPermissions.mockResolvedValue({ status: 'denied' });
 
@@ -752,13 +752,13 @@ describe('GoalsScreen smart reminders notification permission', () => {
     });
 
     await expect(findByTestId('permission-explainer-sheet')).resolves.toBeTruthy();
-    expect(mockSetSetting).not.toHaveBeenCalledWith('smart_reminders_count', expect.anything());
+    expect(mockSetSettingAsync).not.toHaveBeenCalledWith('smart_reminders_count', expect.anything());
   });
 
   it('cycles count normally when notification permission is granted', async () => {
-    mockGetSetting.mockImplementation((key: string, def: string) => {
-      if (key === 'smart_reminders_count') return '0';
-      return def;
+    mockGetSettingAsync.mockImplementation((key: string, def: string) => {
+      if (key === 'smart_reminders_count') return Promise.resolve('0');
+      return Promise.resolve(def);
     });
     mockGetPermissions.mockResolvedValue({ status: 'granted' });
 
@@ -769,14 +769,14 @@ describe('GoalsScreen smart reminders notification permission', () => {
     });
 
     await waitFor(() => {
-      expect(mockSetSetting).toHaveBeenCalledWith('smart_reminders_count', '1');
+      expect(mockSetSettingAsync).toHaveBeenCalledWith('smart_reminders_count', '1');
     });
   });
 
   it('auto-enables smart reminders when notification permission is granted after sheet was shown', async () => {
-    mockGetSetting.mockImplementation((key: string, def: string) => {
-      if (key === 'smart_reminders_count') return '0';
-      return def;
+    mockGetSettingAsync.mockImplementation((key: string, def: string) => {
+      if (key === 'smart_reminders_count') return Promise.resolve('0');
+      return Promise.resolve(def);
     });
     mockGetPermissions.mockResolvedValue({ status: 'denied' });
 
@@ -798,7 +798,7 @@ describe('GoalsScreen smart reminders notification permission', () => {
     }
 
     await waitFor(() => {
-      expect(mockSetSetting).toHaveBeenCalledWith('smart_reminders_count', '1');
+      expect(mockSetSettingAsync).toHaveBeenCalledWith('smart_reminders_count', '1');
     });
   });
 });
