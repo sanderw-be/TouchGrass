@@ -39,17 +39,17 @@ jest.mock('../calendar/calendarService', () => ({
 }));
 
 // Mock database
-const mockGetSetting = jest.fn((key: string, fallback: string) => fallback);
-const mockSetSetting = jest.fn();
+const mockGetSettingAsync = jest.fn<Promise<string>, [string, string]>((key: string, fallback: string) => Promise.resolve(fallback));
+const mockSetSettingAsync = jest.fn<Promise<void>, [string, string]>(() => Promise.resolve());
 jest.mock('../storage/database', () => ({
-  getSetting: (key: string, fallback: string) => mockGetSetting(key, fallback),
-  setSetting: (key: string, value: string) => mockSetSetting(key, value),
+  getSettingAsync: (key: string, fallback: string) => mockGetSettingAsync(key, fallback),
+  setSettingAsync: (key: string, value: string) => mockSetSettingAsync(key, value),
 }));
 
 describe('IntroScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockGetSetting.mockImplementation((key: string, fallback: string) => fallback);
+    mockGetSettingAsync.mockImplementation((key: string, fallback: string) => Promise.resolve(fallback));
     mockHasCalendarPermissions.mockResolvedValue(false);
     mockRequestCalendarPermissions.mockResolvedValue(false);
     mockToggleHealthConnect.mockResolvedValue({ needsPermissions: false });
@@ -155,7 +155,7 @@ describe('IntroScreen', () => {
 
       expect(mockRequestCalendarPermissions).toHaveBeenCalled();
       await waitFor(() => {
-        expect(mockSetSetting).toHaveBeenCalledWith('calendar_integration_enabled', '1');
+        expect(mockSetSettingAsync).toHaveBeenCalledWith('calendar_integration_enabled', '1');
       });
     });
 
@@ -170,15 +170,15 @@ describe('IntroScreen', () => {
 
     it('auto-enables calendar integration if permission is already granted', async () => {
       mockHasCalendarPermissions.mockResolvedValue(true);
-      mockGetSetting.mockImplementation((key: string, fallback: string) => {
-        if (key === 'calendar_integration_enabled') return '0';
-        return fallback;
+      mockGetSettingAsync.mockImplementation((key: string, fallback: string) => {
+        if (key === 'calendar_integration_enabled') return Promise.resolve('0');
+        return Promise.resolve(fallback);
       });
 
       await navigateToCalendarStep();
 
       await waitFor(() => {
-        expect(mockSetSetting).toHaveBeenCalledWith('calendar_integration_enabled', '1');
+        expect(mockSetSettingAsync).toHaveBeenCalledWith('calendar_integration_enabled', '1');
       });
     });
 
@@ -190,7 +190,7 @@ describe('IntroScreen', () => {
         fireEvent.press(bufferRow);
       });
 
-      expect(mockSetSetting).toHaveBeenCalledWith('calendar_buffer_minutes', expect.any(String));
+      expect(mockSetSettingAsync).toHaveBeenCalledWith('calendar_buffer_minutes', expect.any(String));
     });
 
     it('cycles the calendar duration when tapped', async () => {
@@ -201,7 +201,7 @@ describe('IntroScreen', () => {
         fireEvent.press(durationRow);
       });
 
-      expect(mockSetSetting).toHaveBeenCalledWith('calendar_default_duration', expect.any(String));
+      expect(mockSetSettingAsync).toHaveBeenCalledWith('calendar_default_duration', expect.any(String));
     });
   });
 

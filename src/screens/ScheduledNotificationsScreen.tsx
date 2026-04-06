@@ -14,11 +14,11 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import {
-  getScheduledNotifications,
-  insertScheduledNotification,
-  updateScheduledNotification,
-  deleteScheduledNotification,
-  toggleScheduledNotification,
+  getScheduledNotificationsAsync,
+  insertScheduledNotificationAsync,
+  updateScheduledNotificationAsync,
+  deleteScheduledNotificationAsync,
+  toggleScheduledNotificationAsync,
   ScheduledNotification,
 } from '../storage/database';
 import { scheduleAllScheduledNotifications } from '../notifications/scheduledNotifications';
@@ -42,8 +42,8 @@ export default function ScheduledNotificationsScreen() {
   const [label, setLabel] = useState('');
   const [showTimePicker, setShowTimePicker] = useState(false);
 
-  const loadSchedules = () => {
-    const loaded = getScheduledNotifications();
+  const loadSchedules = async () => {
+    const loaded = await getScheduledNotificationsAsync();
     setSchedules(loaded);
   };
 
@@ -83,10 +83,10 @@ export default function ScheduledNotificationsScreen() {
         style: 'destructive',
         onPress: async () => {
           // Delete from database
-          deleteScheduledNotification(schedule.id!);
+          await deleteScheduledNotificationAsync(schedule.id!);
 
           // Update state immediately
-          const updated = getScheduledNotifications();
+          const updated = await getScheduledNotificationsAsync();
           setSchedules(updated);
 
           // Schedule notifications in background (with await to catch errors)
@@ -104,10 +104,10 @@ export default function ScheduledNotificationsScreen() {
     if (!schedule.id) return;
 
     // Update database
-    toggleScheduledNotification(schedule.id, value);
+    await toggleScheduledNotificationAsync(schedule.id, value);
 
     // Update state immediately
-    const updated = getScheduledNotifications();
+    const updated = await getScheduledNotificationsAsync();
     setSchedules(updated);
 
     // Schedule notifications in background (with await to catch errors)
@@ -138,13 +138,13 @@ export default function ScheduledNotificationsScreen() {
     // Update database
     if (editingSchedule?.id) {
       notification.id = editingSchedule.id;
-      updateScheduledNotification(notification);
+      await updateScheduledNotificationAsync(notification);
     } else {
-      insertScheduledNotification(notification);
+      await insertScheduledNotificationAsync(notification);
     }
 
     // Reload the list from database
-    const updated = getScheduledNotifications();
+    const updated = await getScheduledNotificationsAsync();
     setSchedules(updated);
 
     // Close modal after state update

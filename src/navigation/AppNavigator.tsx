@@ -12,7 +12,7 @@ import EventsScreen from '../screens/EventsScreen';
 import GoalsScreen from '../screens/GoalsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import { fetchWeatherForecast, isWeatherDataAvailable } from '../weather/weatherService';
-import { getSetting, countProposedSessions } from '../storage/database';
+import { getSettingAsync, countProposedSessionsAsync } from '../storage/database';
 import { countPermissionIssues } from '../utils/permissionIssues';
 import { spacing } from '../utils/theme';
 import { useTheme } from '../context/ThemeContext';
@@ -257,9 +257,9 @@ export default function AppNavigator({
   const [settingsBadge, setSettingsBadge] = useState<number | undefined>(undefined);
   const [eventsBadge, setEventsBadge] = useState<number | undefined>(undefined);
 
-  const refreshEventsBadge = useCallback(() => {
+  const refreshEventsBadge = useCallback(async () => {
     try {
-      const count = countProposedSessions();
+      const count = await countProposedSessionsAsync();
       setEventsBadge(count > 0 ? count : undefined);
     } catch {
       // Badge refresh is best-effort; never crash the navigator
@@ -290,7 +290,7 @@ export default function AppNavigator({
     const subscription = AppState.addEventListener('change', async (nextAppState) => {
       // When app comes to foreground, refresh weather if stale and recheck permission badges
       if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
-        const weatherEnabled = getSetting('weather_enabled', '1') === '1';
+        const weatherEnabled = (await getSettingAsync('weather_enabled', '1')) === '1';
         if (weatherEnabled && !isWeatherDataAvailable()) {
           try {
             await fetchWeatherForecast();

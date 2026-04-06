@@ -10,7 +10,7 @@ import {
   Alert,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { getSetting, setSetting } from '../storage/database';
+import { getSettingAsync, setSettingAsync } from '../storage/database';
 import { spacing, radius } from '../utils/theme';
 import { useTheme } from '../context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
@@ -44,10 +44,10 @@ export default function WeatherSettingsScreen() {
   }, []);
 
   const loadSettings = useCallback(async () => {
-    setTempPreference(getSetting('temp_preference', 'moderate') as 'cold' | 'moderate' | 'hot');
-    setAvoidRain(getSetting('weather_avoid_rain', '1') === '1');
-    setAvoidHeat(getSetting('weather_avoid_heat', '1') === '1');
-    setConsiderUV(getSetting('weather_consider_uv', '1') === '1');
+    setTempPreference((await getSettingAsync('temp_preference', 'moderate')) as 'cold' | 'moderate' | 'hot');
+    setAvoidRain((await getSettingAsync('weather_avoid_rain', '1')) === '1');
+    setAvoidHeat((await getSettingAsync('weather_avoid_heat', '1')) === '1');
+    setConsiderUV((await getSettingAsync('weather_consider_uv', '1')) === '1');
 
     // Auto-refresh weather data if unavailable or stale
     if (!isWeatherDataAvailable()) {
@@ -90,23 +90,23 @@ export default function WeatherSettingsScreen() {
     }, [loadSettings])
   );
 
-  const changeTempPreference = (pref: 'cold' | 'moderate' | 'hot') => {
-    setSetting('temp_preference', pref);
+  const changeTempPreference = async (pref: 'cold' | 'moderate' | 'hot') => {
+    await setSettingAsync('temp_preference', pref);
     setTempPreference(pref);
   };
 
-  const toggleAvoidRain = (value: boolean) => {
-    setSetting('weather_avoid_rain', value ? '1' : '0');
+  const toggleAvoidRain = async (value: boolean) => {
+    await setSettingAsync('weather_avoid_rain', value ? '1' : '0');
     setAvoidRain(value);
   };
 
-  const toggleAvoidHeat = (value: boolean) => {
-    setSetting('weather_avoid_heat', value ? '1' : '0');
+  const toggleAvoidHeat = async (value: boolean) => {
+    await setSettingAsync('weather_avoid_heat', value ? '1' : '0');
     setAvoidHeat(value);
   };
 
-  const toggleConsiderUV = (value: boolean) => {
-    setSetting('weather_consider_uv', value ? '1' : '0');
+  const toggleConsiderUV = async (value: boolean) => {
+    await setSettingAsync('weather_consider_uv', value ? '1' : '0');
     setConsiderUV(value);
   };
 
