@@ -155,7 +155,7 @@ describe('HistoryScreen weekly average', () => {
 
     // All 7 days have 14 minutes each → total=98, avg=14
     // Returns all sessions for the full week range in a single call
-    mockGetSessionsForRangeAsync.mockImplementation((from: number) => {
+    mockGetSessionsForRangeAsync.mockImplementation((from: number, _to: number) => {
       // Only return data for the past week range
       if (from >= PAST_MONDAY && from < MONDAY) {
         const sessions = [];
@@ -166,7 +166,7 @@ describe('HistoryScreen weekly average', () => {
             endTime: dayStart + 14 * 60000,
             durationMinutes: 14,
             userConfirmed: 1,
-            source: 'gps',
+            source: 'gps' as const,
             confidence: 0.9,
             discarded: 0,
           });

@@ -11,6 +11,7 @@ import {
   pruneShortDiscardedHealthConnectSessionsAsync,
   getKnownLocationsAsync,
   insertBackgroundLogAsync,
+  KnownLocation,
 } from '../storage/database';
 import { submitSession, buildSession } from './sessionMerger';
 import {
@@ -262,7 +263,7 @@ function wasDefinitelyAtKnownIndoorLocationSync(
   startMs: number,
   endMs: number,
   allSamples: { lat: number; lon: number; timestamp: number }[],
-  knownLocations: import('../storage/database').KnownLocation[]
+  knownLocations: KnownLocation[]
 ): boolean {
   const sessionSamples = allSamples.filter((s) => s.timestamp >= startMs && s.timestamp <= endMs);
   if (sessionSamples.length === 0) return false;
