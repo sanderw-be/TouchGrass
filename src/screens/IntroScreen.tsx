@@ -34,7 +34,7 @@ import {
 
 import { requestNotificationPermissions } from '../notifications/notificationManager';
 import { requestCalendarPermissions, hasCalendarPermissions } from '../calendar/calendarService';
-import { getSetting, setSetting } from '../storage/database';
+import { getSettingAsync, setSettingAsync } from '../storage/database';
 import EditLocationSheet from '../components/EditLocationSheet';
 
 interface Props {
@@ -57,9 +57,7 @@ export default function IntroScreen({ onComplete }: Props) {
   const [healthConnectGranted, setHealthConnectGranted] = useState(false);
   const [locationGranted, setLocationGranted] = useState(false);
   const [notificationsGranted, setNotificationsGranted] = useState(false);
-  const [batteryVisited, setBatteryVisited] = useState(
-    () => getSetting(BATTERY_OPTIMIZATION_SETTING_KEY, '0') === '1'
-  );
+  const [batteryVisited, setBatteryVisited] = useState(false);
   const [calendarGranted, setCalendarGranted] = useState(false);
   const [calendarBuffer, setCalendarBuffer] = useState(30);
   const [calendarDuration, setCalendarDuration] = useState(0);
@@ -81,15 +79,24 @@ export default function IntroScreen({ onComplete }: Props) {
   const currentIndex = steps.indexOf(currentStep);
   const progress = ((currentIndex + 1) / steps.length) * 100;
 
+  // Load battery optimization setting on mount
+  useEffect(() => {
+    getSettingAsync(BATTERY_OPTIMIZATION_SETTING_KEY, '0').then((v) =>
+      setBatteryVisited(v === '1')
+    );
+  }, []);
+
   // Load saved calendar settings on mount
   useEffect(() => {
-    const rawBuffer = getSetting('calendar_buffer_minutes', '30');
-    const parsedBuffer = parseInt(rawBuffer, 10);
-    setCalendarBuffer(Number.isNaN(parsedBuffer) ? 30 : parsedBuffer);
+    (async () => {
+      const rawBuffer = await getSettingAsync('calendar_buffer_minutes', '30');
+      const parsedBuffer = parseInt(rawBuffer, 10);
+      setCalendarBuffer(Number.isNaN(parsedBuffer) ? 30 : parsedBuffer);
 
-    const rawDuration = getSetting('calendar_default_duration', '0');
-    const parsedDuration = parseInt(rawDuration, 10);
-    setCalendarDuration(Number.isNaN(parsedDuration) ? 0 : parsedDuration);
+      const rawDuration = await getSettingAsync('calendar_default_duration', '0');
+      const parsedDuration = parseInt(rawDuration, 10);
+      setCalendarDuration(Number.isNaN(parsedDuration) ? 0 : parsedDuration);
+    })();
   }, []);
 
   // Re-check permissions when app comes back to foreground
@@ -111,8 +118,8 @@ export default function IntroScreen({ onComplete }: Props) {
     } else if (currentStep === 'calendar') {
       const calGranted = await hasCalendarPermissions();
       setCalendarGranted(calGranted);
-      if (calGranted && getSetting('calendar_integration_enabled', '0') !== '1') {
-        setSetting('calendar_integration_enabled', '1');
+      if (calGranted && (await getSettingAsync('calendar_integration_enabled', '0')) !== '1') {
+        await setSettingAsync('calendar_integration_enabled', '1');
       }
     } else if (currentStep === 'ready') {
       // Refresh all permissions in parallel so the summary stays accurate.
@@ -265,7 +272,7 @@ export default function IntroScreen({ onComplete }: Props) {
       const granted = await requestCalendarPermissions();
       setCalendarGranted(granted);
       if (granted) {
-        setSetting('calendar_integration_enabled', '1');
+        await setSettingAsync('calendar_integration_enabled', '1');
       }
     } catch (error) {
       console.error('Error requesting calendar:', error);
@@ -274,17 +281,17 @@ export default function IntroScreen({ onComplete }: Props) {
     }
   };
 
-  const handleCycleCalendarBuffer = () => {
+  const handleCycleCalendarBuffer = async () => {
     const idx = CALENDAR_BUFFER_OPTIONS.indexOf(calendarBuffer);
     const next = CALENDAR_BUFFER_OPTIONS[(idx + 1) % CALENDAR_BUFFER_OPTIONS.length];
-    setSetting('calendar_buffer_minutes', String(next));
+    await setSettingAsync('calendar_buffer_minutes', String(next));
     setCalendarBuffer(next);
   };
 
-  const handleCycleCalendarDuration = () => {
+  const handleCycleCalendarDuration = async () => {
     const idx = CALENDAR_DURATION_OPTIONS.indexOf(calendarDuration);
     const next = CALENDAR_DURATION_OPTIONS[(idx + 1) % CALENDAR_DURATION_OPTIONS.length];
-    setSetting('calendar_default_duration', String(next));
+    await setSettingAsync('calendar_default_duration', String(next));
     setCalendarDuration(next);
   };
 
@@ -336,7 +343,7 @@ export default function IntroScreen({ onComplete }: Props) {
               visited={batteryVisited}
               onOpen={() => {
                 setBatteryVisited(true);
-                setSetting(BATTERY_OPTIMIZATION_SETTING_KEY, '1');
+                setSettingAsync(BATTERY_OPTIMIZATION_SETTING_KEY, '1');
               }}
             />
           )}

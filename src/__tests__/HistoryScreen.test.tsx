@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render } from '@testing-library/react-native';
+import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import HistoryScreen, { BarChart } from '../screens/HistoryScreen';
 
 // ── Shared mocks for HistoryScreen component tests ──────────────────────────
@@ -75,20 +75,20 @@ const realStartOfWeek = (ms: number) => {
   return monday.getTime();
 };
 
-const mockGetSessionsForRange = jest.fn(
-  (_from: number, _to: number) => [] as import('../storage/database').OutsideSession[]
+const mockGetSessionsForRangeAsync = jest.fn((_from: number, _to: number) =>
+  Promise.resolve([] as import('../storage/database').OutsideSession[])
 );
-const mockGetDailyTotalsForMonth = jest.fn(
-  (_date: number) => [] as { date: number; minutes: number }[]
+const mockGetDailyTotalsForMonthAsync = jest.fn((_date: number) =>
+  Promise.resolve([] as { date: number; minutes: number }[])
 );
-const mockGetCurrentDailyGoal = jest.fn(() => ({ targetMinutes: 30 }));
+const mockGetCurrentDailyGoalAsync = jest.fn(() => Promise.resolve({ targetMinutes: 30 }));
 
 jest.mock('../storage/database', () => ({
   startOfDay: (ms: number) => realStartOfDay(ms),
   startOfWeek: (ms: number) => realStartOfWeek(ms),
-  getSessionsForRange: (from: number, to: number) => mockGetSessionsForRange(from, to),
-  getDailyTotalsForMonth: (date: number) => mockGetDailyTotalsForMonth(date),
-  getCurrentDailyGoal: () => mockGetCurrentDailyGoal(),
+  getSessionsForRangeAsync: (from: number, to: number) => mockGetSessionsForRangeAsync(from, to),
+  getDailyTotalsForMonthAsync: (date: number) => mockGetDailyTotalsForMonthAsync(date),
+  getCurrentDailyGoalAsync: () => mockGetCurrentDailyGoalAsync(),
 }));
 
 // ── Weekly average divisor ───────────────────────────────────────────────────
@@ -103,15 +103,15 @@ describe('HistoryScreen weekly average', () => {
     jest.clearAllMocks();
   });
 
-  it('divides by days elapsed (3) when today is Wednesday of the current week', () => {
+  it('divides by days elapsed (3) when today is Wednesday of the current week', async () => {
     jest.spyOn(Date, 'now').mockReturnValue(WEDNESDAY);
 
     // Mon=60, Tue=30, Wed=90, Thu–Sun=0 → total=180, avg=180/3=60
-    mockGetSessionsForRange.mockImplementation((from: number) => {
+    mockGetSessionsForRangeAsync.mockImplementation((from: number) => {
       const minutes =
         from === MONDAY ? 60 : from === MONDAY + 86400000 ? 30 : from === WEDNESDAY ? 90 : 0;
-      if (minutes === 0) return [];
-      return [
+      if (minutes === 0) return Promise.resolve([]);
+      return Promise.resolve([
         {
           startTime: from,
           endTime: from + minutes * 60000,
@@ -121,24 +121,26 @@ describe('HistoryScreen weekly average', () => {
           confidence: 0.9,
           discarded: 0,
         },
-      ];
+      ]);
     });
 
     const { getByText } = render(<HistoryScreen />);
-    expect(getByText('60m')).toBeTruthy(); // avg = 180 / 3
-    expect(getByText('180m')).toBeTruthy(); // total
+    await waitFor(() => {
+      expect(getByText('60m')).toBeTruthy(); // avg = 180 / 3
+      expect(getByText('180m')).toBeTruthy(); // total
+    });
   });
 
-  it('divides by 7 when viewing a completed past week', () => {
+  it('divides by 7 when viewing a completed past week', async () => {
     jest.spyOn(Date, 'now').mockReturnValue(WEDNESDAY);
 
     // The past week starts on Monday 2024-01-01
     const PAST_MONDAY = MONDAY - 7 * 86400000;
 
     // All 7 days have 14 minutes each → total=98, avg=14
-    mockGetSessionsForRange.mockImplementation((from: number) => {
+    mockGetSessionsForRangeAsync.mockImplementation((from: number) => {
       if (from >= PAST_MONDAY && from < MONDAY) {
-        return [
+        return Promise.resolve([
           {
             startTime: from,
             endTime: from + 14 * 60000,
@@ -148,18 +150,27 @@ describe('HistoryScreen weekly average', () => {
             confidence: 0.9,
             discarded: 0,
           },
-        ];
+        ]);
       }
-      return [];
+      return Promise.resolve([]);
     });
 
     const { getByText } = render(<HistoryScreen />);
 
-    // Navigate to the previous week
-    fireEvent.press(getByText('‹'));
+    // Wait for initial async render
+    await waitFor(() => {
+      expect(getByText('‹')).toBeTruthy();
+    });
 
-    expect(getByText('98m')).toBeTruthy(); // total
-    expect(getByText('14m')).toBeTruthy(); // avg = 98 / 7
+    // Navigate to the previous week
+    await act(async () => {
+      fireEvent.press(getByText('‹'));
+    });
+
+    await waitFor(() => {
+      expect(getByText('98m')).toBeTruthy(); // total
+      expect(getByText('14m')).toBeTruthy(); // avg = 98 / 7
+    });
   });
 });
 

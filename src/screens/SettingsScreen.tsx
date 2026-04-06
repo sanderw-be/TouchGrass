@@ -18,10 +18,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Constants from 'expo-constants';
 import {
-  getKnownLocations,
-  getSuggestedLocations,
+  getKnownLocationsAsync,
+  getSuggestedLocationsAsync,
   KnownLocation,
-  clearAllData,
+  clearAllDataAsync,
 } from '../storage/database';
 import {
   getDetectionStatus,
@@ -68,10 +68,14 @@ export default function SettingsScreen() {
 
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
 
-  const loadStatus = useCallback(() => {
-    setDetectionStatus(getDetectionStatus());
-    setKnownLocations(getKnownLocations());
-    setSuggestedCount(getSuggestedLocations().length);
+  const loadStatus = useCallback(async () => {
+    try {
+      setDetectionStatus(getDetectionStatus());
+      setKnownLocations(await getKnownLocationsAsync());
+      setSuggestedCount((await getSuggestedLocationsAsync()).length);
+    } catch (error) {
+      console.error('[SettingsScreen.loadStatus] Error:', error);
+    }
   }, []);
 
   // Re-check permission status silently (no popups) when the screen regains focus
@@ -182,9 +186,9 @@ export default function SettingsScreen() {
       {
         text: t('settings_clear_delete'),
         style: 'destructive',
-        onPress: () => {
+        onPress: async () => {
           try {
-            clearAllData();
+            await clearAllDataAsync();
             showIntro();
             Alert.alert(
               t('settings_clear_data_success_title'),

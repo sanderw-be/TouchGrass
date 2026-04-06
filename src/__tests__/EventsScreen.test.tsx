@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, fireEvent } from '@testing-library/react-native';
+import { render, fireEvent, act } from '@testing-library/react-native';
 
 jest.mock('../i18n', () => ({
   t: (key: string) => key,
@@ -8,11 +8,11 @@ jest.mock('../i18n', () => ({
 }));
 
 jest.mock('../storage/database', () => ({
-  getAllSessionsIncludingDiscarded: jest.fn(() => []),
-  autoCloseOldProposedSessions: jest.fn(() => 0),
-  confirmSession: jest.fn(),
-  deleteSession: jest.fn(),
-  unDiscardSession: jest.fn(),
+  getAllSessionsIncludingDiscardedAsync: jest.fn(() => Promise.resolve([])),
+  autoCloseOldProposedSessionsAsync: jest.fn(() => Promise.resolve(0)),
+  confirmSessionAsync: jest.fn(() => Promise.resolve()),
+  deleteSessionAsync: jest.fn(() => Promise.resolve()),
+  unDiscardSessionAsync: jest.fn(() => Promise.resolve()),
 }));
 
 jest.mock('../utils/sessionsChangedEmitter', () => ({
@@ -55,9 +55,9 @@ jest.mock('@react-navigation/native', () => {
 
 import EventsScreen from '../screens/EventsScreen';
 import {
-  getAllSessionsIncludingDiscarded,
-  autoCloseOldProposedSessions,
-  confirmSession,
+  getAllSessionsIncludingDiscardedAsync,
+  autoCloseOldProposedSessionsAsync,
+  confirmSessionAsync,
   OutsideSession,
 } from '../storage/database';
 import { emitSessionsChanged } from '../utils/sessionsChangedEmitter';
@@ -89,132 +89,171 @@ const mockRejectedSession: OutsideSession = {
 describe('EventsScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    (getAllSessionsIncludingDiscarded as jest.Mock).mockReturnValue([mockPendingSession]);
+    (getAllSessionsIncludingDiscardedAsync as jest.Mock).mockResolvedValue([mockPendingSession]);
   });
 
-  it('renders without crashing with all three toggles', () => {
+  it('renders without crashing with all three toggles', async () => {
     const { getByTestId } = render(<EventsScreen />);
+    await act(async () => {});
     expect(getByTestId('toggle-confirmed')).toBeTruthy();
     expect(getByTestId('toggle-review')).toBeTruthy();
     expect(getByTestId('toggle-rejected')).toBeTruthy();
   });
 
-  it('calls autoCloseOldProposedSessions on load', () => {
+  it('calls autoCloseOldProposedSessionsAsync on load', async () => {
     render(<EventsScreen />);
-    expect(autoCloseOldProposedSessions).toHaveBeenCalled();
+    await act(async () => {});
+    expect(autoCloseOldProposedSessionsAsync).toHaveBeenCalled();
   });
 
-  it('shows pending sessions by default (includeReview = true)', () => {
+  it('shows pending sessions by default (includeReview = true)', async () => {
     const { getByText } = render(<EventsScreen />);
+    await act(async () => {});
     // The pending session is visible because includeReview is enabled by default
     expect(getByText('10:00–10:00')).toBeTruthy();
   });
 
-  it('shows confirmed sessions by default (includeConfirmed = true)', () => {
-    (getAllSessionsIncludingDiscarded as jest.Mock).mockReturnValue([mockConfirmedSession]);
+  it('shows confirmed sessions by default (includeConfirmed = true)', async () => {
+    (getAllSessionsIncludingDiscardedAsync as jest.Mock).mockResolvedValue([mockConfirmedSession]);
     const { getByText } = render(<EventsScreen />);
+    await act(async () => {});
     expect(getByText('10:00–10:00')).toBeTruthy();
   });
 
-  it('hides confirmed sessions when Confirmed toggle is turned off', () => {
-    (getAllSessionsIncludingDiscarded as jest.Mock).mockReturnValue([mockConfirmedSession]);
+  it('hides confirmed sessions when Confirmed toggle is turned off', async () => {
+    (getAllSessionsIncludingDiscardedAsync as jest.Mock).mockResolvedValue([mockConfirmedSession]);
     const { getByTestId, queryByText } = render(<EventsScreen />);
+    await act(async () => {});
     fireEvent.press(getByTestId('toggle-confirmed'));
     expect(queryByText('10:00–10:00')).toBeNull();
   });
 
-  it('shows swipe confirm action for pending sessions', () => {
+  it('shows swipe confirm action for pending sessions', async () => {
     const { getByTestId } = render(<EventsScreen />);
+    await act(async () => {});
     expect(getByTestId('swipe-confirm-action')).toBeTruthy();
     expect(getByTestId('swipe-reject-action')).toBeTruthy();
   });
 
-  it('shows a swipe hint for pending sessions', () => {
+  it('shows a swipe hint for pending sessions', async () => {
     const { getByTestId } = render(<EventsScreen />);
+    await act(async () => {});
     expect(getByTestId('session-swipe-hint')).toBeTruthy();
   });
 
-  it('calls confirmSession(true) when swipe confirm action is tapped', () => {
+  it('calls confirmSessionAsync(true) when swipe confirm action is tapped', async () => {
     const { getByTestId } = render(<EventsScreen />);
-    fireEvent.press(getByTestId('swipe-confirm-action'));
-    expect(confirmSession).toHaveBeenCalledWith(1, true);
+    await act(async () => {});
+    await act(async () => {
+      fireEvent.press(getByTestId('swipe-confirm-action'));
+    });
+    expect(confirmSessionAsync).toHaveBeenCalledWith(1, true);
   });
 
-  it('calls confirmSession(false) when swipe reject action is tapped', () => {
+  it('calls confirmSessionAsync(false) when swipe reject action is tapped', async () => {
     const { getByTestId } = render(<EventsScreen />);
-    fireEvent.press(getByTestId('swipe-reject-action'));
-    expect(confirmSession).toHaveBeenCalledWith(1, false);
+    await act(async () => {});
+    await act(async () => {
+      fireEvent.press(getByTestId('swipe-reject-action'));
+    });
+    expect(confirmSessionAsync).toHaveBeenCalledWith(1, false);
   });
 
-  it('emits session change after swipe confirm so the nav badge updates', () => {
+  it('emits session change after swipe confirm so the nav badge updates', async () => {
     const { getByTestId } = render(<EventsScreen />);
-    fireEvent.press(getByTestId('swipe-confirm-action'));
+    await act(async () => {});
+    await act(async () => {
+      fireEvent.press(getByTestId('swipe-confirm-action'));
+    });
     expect(emitSessionsChanged).toHaveBeenCalled();
   });
 
-  it('emits session change after swipe reject so the nav badge updates', () => {
+  it('emits session change after swipe reject so the nav badge updates', async () => {
     const { getByTestId } = render(<EventsScreen />);
-    fireEvent.press(getByTestId('swipe-reject-action'));
+    await act(async () => {});
+    await act(async () => {
+      fireEvent.press(getByTestId('swipe-reject-action'));
+    });
     expect(emitSessionsChanged).toHaveBeenCalled();
   });
 
-  it('shows undo snackbar after swipe reject action', () => {
+  it('shows undo snackbar after swipe reject action', async () => {
     const { getByTestId, queryByTestId } = render(<EventsScreen />);
+    await act(async () => {});
     expect(queryByTestId('undo-snackbar')).toBeNull();
-    fireEvent.press(getByTestId('swipe-reject-action'));
+    await act(async () => {
+      fireEvent.press(getByTestId('swipe-reject-action'));
+    });
     expect(getByTestId('undo-snackbar')).toBeTruthy();
   });
 
-  it('calls confirmSession(id, null) when undo button is pressed after reject', () => {
+  it('calls confirmSessionAsync(id, null) when undo button is pressed after reject', async () => {
     const { getByTestId } = render(<EventsScreen />);
-    fireEvent.press(getByTestId('swipe-reject-action'));
-    fireEvent.press(getByTestId('undo-snackbar-button'));
-    expect(confirmSession).toHaveBeenCalledWith(1, null);
+    await act(async () => {});
+    await act(async () => {
+      fireEvent.press(getByTestId('swipe-reject-action'));
+    });
+    await act(async () => {
+      fireEvent.press(getByTestId('undo-snackbar-button'));
+    });
+    expect(confirmSessionAsync).toHaveBeenCalledWith(1, null);
   });
 
-  it('hides undo snackbar after undo button is pressed', () => {
+  it('hides undo snackbar after undo button is pressed', async () => {
     const { getByTestId, queryByTestId } = render(<EventsScreen />);
-    fireEvent.press(getByTestId('swipe-reject-action'));
-    fireEvent.press(getByTestId('undo-snackbar-button'));
+    await act(async () => {});
+    await act(async () => {
+      fireEvent.press(getByTestId('swipe-reject-action'));
+    });
+    await act(async () => {
+      fireEvent.press(getByTestId('undo-snackbar-button'));
+    });
     expect(queryByTestId('undo-snackbar')).toBeNull();
   });
 
-  it('does not show undo snackbar after swipe confirm action', () => {
+  it('does not show undo snackbar after swipe confirm action', async () => {
     const { getByTestId, queryByTestId } = render(<EventsScreen />);
-    fireEvent.press(getByTestId('swipe-confirm-action'));
+    await act(async () => {});
+    await act(async () => {
+      fireEvent.press(getByTestId('swipe-confirm-action'));
+    });
     expect(queryByTestId('undo-snackbar')).toBeNull();
   });
 
-  it('does not show swipe actions for confirmed sessions', () => {
-    (getAllSessionsIncludingDiscarded as jest.Mock).mockReturnValue([mockConfirmedSession]);
+  it('does not show swipe actions for confirmed sessions', async () => {
+    (getAllSessionsIncludingDiscardedAsync as jest.Mock).mockResolvedValue([mockConfirmedSession]);
     const { queryByTestId } = render(<EventsScreen />);
+    await act(async () => {});
     expect(queryByTestId('swipe-confirm-action')).toBeNull();
     expect(queryByTestId('swipe-reject-action')).toBeNull();
     expect(queryByTestId('session-swipe-hint')).toBeNull();
   });
 
-  it('hides rejected sessions by default (includeRejected = false)', () => {
-    (getAllSessionsIncludingDiscarded as jest.Mock).mockReturnValue([mockRejectedSession]);
+  it('hides rejected sessions by default (includeRejected = false)', async () => {
+    (getAllSessionsIncludingDiscardedAsync as jest.Mock).mockResolvedValue([mockRejectedSession]);
     const { queryByText } = render(<EventsScreen />);
+    await act(async () => {});
     // Rejected sessions are hidden by default; only approved/in-review are shown
     expect(queryByText('10:00–10:00')).toBeNull();
   });
 
-  it('shows rejected sessions after toggling includeRejected on', () => {
-    (getAllSessionsIncludingDiscarded as jest.Mock).mockReturnValue([
+  it('shows rejected sessions after toggling includeRejected on', async () => {
+    (getAllSessionsIncludingDiscardedAsync as jest.Mock).mockResolvedValue([
       mockConfirmedSession,
       mockRejectedSession,
     ]);
     const { getByTestId, getAllByText } = render(<EventsScreen />);
+    await act(async () => {});
     // Toggle "Rejected" on
     fireEvent.press(getByTestId('toggle-rejected'));
     // Both sessions should now be visible (they share the same time mock)
     expect(getAllByText('10:00–10:00').length).toBeGreaterThanOrEqual(2);
   });
 
-  it('does not show swipe actions for rejected sessions', () => {
-    (getAllSessionsIncludingDiscarded as jest.Mock).mockReturnValue([mockRejectedSession]);
+  it('does not show swipe actions for rejected sessions', async () => {
+    (getAllSessionsIncludingDiscardedAsync as jest.Mock).mockResolvedValue([mockRejectedSession]);
     const { queryByTestId, getByTestId } = render(<EventsScreen />);
+    await act(async () => {});
     // Toggle rejected on to make the session visible
     fireEvent.press(getByTestId('toggle-rejected'));
     expect(queryByTestId('swipe-confirm-action')).toBeNull();
@@ -222,23 +261,29 @@ describe('EventsScreen', () => {
     expect(queryByTestId('session-swipe-hint')).toBeNull();
   });
 
-  it('calls requestWidgetRefresh when Review Again is tapped on a confirmed session', () => {
-    (getAllSessionsIncludingDiscarded as jest.Mock).mockReturnValue([mockConfirmedSession]);
+  it('calls requestWidgetRefresh when Review Again is tapped on a confirmed session', async () => {
+    (getAllSessionsIncludingDiscardedAsync as jest.Mock).mockResolvedValue([mockConfirmedSession]);
     const { getByText, getByTestId } = render(<EventsScreen />);
+    await act(async () => {});
     // Expand the confirmed session row
     fireEvent.press(getByText('10:00–10:00'));
     // Tap "Review Again"
-    fireEvent.press(getByTestId('review-again-action'));
+    await act(async () => {
+      fireEvent.press(getByTestId('review-again-action'));
+    });
     expect(requestWidgetRefresh).toHaveBeenCalled();
   });
 
-  it('calls confirmSession(id, null) when Review Again is tapped on a confirmed session', () => {
-    (getAllSessionsIncludingDiscarded as jest.Mock).mockReturnValue([mockConfirmedSession]);
+  it('calls confirmSessionAsync(id, null) when Review Again is tapped on a confirmed session', async () => {
+    (getAllSessionsIncludingDiscardedAsync as jest.Mock).mockResolvedValue([mockConfirmedSession]);
     const { getByText, getByTestId } = render(<EventsScreen />);
+    await act(async () => {});
     // Expand the confirmed session row
     fireEvent.press(getByText('10:00–10:00'));
     // Tap "Review Again"
-    fireEvent.press(getByTestId('review-again-action'));
-    expect(confirmSession).toHaveBeenCalledWith(mockConfirmedSession.id, null);
+    await act(async () => {
+      fireEvent.press(getByTestId('review-again-action'));
+    });
+    expect(confirmSessionAsync).toHaveBeenCalledWith(mockConfirmedSession.id, null);
   });
 });

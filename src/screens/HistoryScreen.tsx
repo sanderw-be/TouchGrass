@@ -2,9 +2,9 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import {
-  getDailyTotalsForMonth,
-  getSessionsForRange,
-  getCurrentDailyGoal,
+  getDailyTotalsForMonthAsync,
+  getSessionsForRangeAsync,
+  getCurrentDailyGoalAsync,
   startOfDay,
   startOfWeek,
 } from '../storage/database';
@@ -26,23 +26,26 @@ export default function HistoryScreen() {
   const [dailyData, setDailyData] = useState<{ date: number; minutes: number }[]>([]);
   const [dailyTarget, setDailyTarget] = useState(30);
   const [viewDate, setViewDate] = useState(Date.now());
+  const [isLoading, setIsLoading] = useState(true);
 
   useFocusEffect(
     useCallback(() => {
-      setDailyTarget(getCurrentDailyGoal()?.targetMinutes ?? 30);
-      loadData(period, viewDate);
+      const load = async () => {
+        setDailyTarget((await getCurrentDailyGoalAsync())?.targetMinutes ?? 30);
+        await loadData(period, viewDate);
+      };
+      load();
     }, [period, viewDate])
   );
 
-  const loadData = (p: Period, date: number) => {
+  const loadData = async (p: Period, date: number) => {
     try {
       if (p === 'week') {
         const weekStart = startOfWeek(date);
         const days: { date: number; minutes: number }[] = [];
         for (let i = 0; i < 7; i++) {
           const dayStart = weekStart + i * DAY_MS;
-          const sessions = getSessionsForRange(dayStart, dayStart + DAY_MS);
-          // Filter out declined sessions (userConfirmed === 0)
+          const sessions = await getSessionsForRangeAsync(dayStart, dayStart + DAY_MS);
           const minutes = sessions
             .filter((s) => s.userConfirmed !== 0)
             .reduce((sum, s) => sum + s.durationMinutes, 0);
@@ -50,11 +53,12 @@ export default function HistoryScreen() {
         }
         setDailyData(days);
       } else {
-        setDailyData(getDailyTotalsForMonth(date));
+        setDailyData(await getDailyTotalsForMonthAsync(date));
       }
     } catch (error) {
       console.error('[HistoryScreen.loadData] Database error:', error);
-      // Keep existing state on error
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -122,7 +126,13 @@ export default function HistoryScreen() {
 
       {/* Bar chart */}
       <View style={styles.chartCard}>
-        <BarChart data={dailyData} target={dailyTarget} maxValue={maxMinutes} period={period} />
+        <BarChart
+          data={dailyData}
+          target={dailyTarget}
+          maxValue={maxMinutes}
+          period={period}
+          isLoading={isLoading}
+        />
       </View>
     </ScrollView>
   );
@@ -144,11 +154,13 @@ export function BarChart({
   target,
   maxValue,
   period,
+  isLoading = false,
 }: {
   data: { date: number; minutes: number }[];
   target: number;
   maxValue: number;
   period: Period;
+  isLoading?: boolean;
 }) {
   const { colors, shadows } = useTheme();
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
@@ -182,7 +194,7 @@ export function BarChart({
             <View style={[styles.targetLine, { top: targetY }]} />
 
             {/* Bars / empty state */}
-            {isEmpty ? (
+            {!isLoading && isEmpty ? (
               <View style={styles.chartEmptyState}>
                 <Text style={{ color: colors.textMuted, fontSize: 14 }}>
                   {t('history_no_data')}

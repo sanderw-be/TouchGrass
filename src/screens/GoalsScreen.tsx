@@ -17,12 +17,12 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import {
-  getCurrentDailyGoal,
-  getCurrentWeeklyGoal,
-  setDailyGoal,
-  setWeeklyGoal,
-  getSetting,
-  setSetting,
+  getCurrentDailyGoalAsync,
+  getCurrentWeeklyGoalAsync,
+  setDailyGoalAsync,
+  setWeeklyGoalAsync,
+  getSettingAsync,
+  setSettingAsync,
 } from '../storage/database';
 import {
   hasCalendarPermissions,
@@ -100,17 +100,44 @@ export default function GoalsScreen() {
   const pendingCalendarEnableRef = useRef(false);
   const pendingSmartRemindersEnableRef = useRef(false);
 
-  const loadGoalSettings = useCallback(() => {
-    setDailyTargetState(getCurrentDailyGoal()?.targetMinutes ?? 30);
-    setWeeklyTargetState(getCurrentWeeklyGoal()?.targetMinutes ?? 150);
-    setSmartRemindersCount(parseInt(getSetting('smart_reminders_count', '2'), 10));
-    setCatchupRemindersCount(parseInt(getSetting('smart_catchup_reminders_count', '2'), 10));
-    setWeatherEnabled(getSetting('weather_enabled', '1') === '1');
-    setCalendarEnabled(getSetting('calendar_integration_enabled', '0') === '1');
-    setCalendarBuffer(parseInt(getSetting('calendar_buffer_minutes', '30'), 10));
-    setCalendarDuration(parseInt(getSetting('calendar_default_duration', '0'), 10));
-    setCalendarSelectedIdState(getSelectedCalendarId());
-    setBatteryOptimizationGranted(getSetting(BATTERY_OPTIMIZATION_SETTING_KEY, '0') === '1');
+  const loadGoalSettings = useCallback(async () => {
+    try {
+      const [
+        dailyGoal,
+        weeklyGoal,
+        smartCount,
+        catchupCount,
+        weatherEn,
+        calEn,
+        calBuf,
+        calDur,
+        selCal,
+        battOpt,
+      ] = await Promise.all([
+        getCurrentDailyGoalAsync(),
+        getCurrentWeeklyGoalAsync(),
+        getSettingAsync('smart_reminders_count', '2'),
+        getSettingAsync('smart_catchup_reminders_count', '2'),
+        getSettingAsync('weather_enabled', '1'),
+        getSettingAsync('calendar_integration_enabled', '0'),
+        getSettingAsync('calendar_buffer_minutes', '30'),
+        getSettingAsync('calendar_default_duration', '0'),
+        getSelectedCalendarId(),
+        getSettingAsync(BATTERY_OPTIMIZATION_SETTING_KEY, '0'),
+      ]);
+      setDailyTargetState(dailyGoal?.targetMinutes ?? 30);
+      setWeeklyTargetState(weeklyGoal?.targetMinutes ?? 150);
+      setSmartRemindersCount(parseInt(smartCount, 10));
+      setCatchupRemindersCount(parseInt(catchupCount, 10));
+      setWeatherEnabled(weatherEn === '1');
+      setCalendarEnabled(calEn === '1');
+      setCalendarBuffer(parseInt(calBuf, 10));
+      setCalendarDuration(parseInt(calDur, 10));
+      setCalendarSelectedIdState(selCal);
+      setBatteryOptimizationGranted(battOpt === '1');
+    } catch (error) {
+      console.error('[GoalsScreen.loadGoalSettings] Error:', error);
+    }
   }, []);
 
   const refreshBatteryOptimizationStatus = useCallback(async () => {
@@ -126,7 +153,7 @@ export default function GoalsScreen() {
     // Auto-enable weather if the user was blocked by missing permissions and just granted them
     if (granted && pendingWeatherEnableRef.current) {
       pendingWeatherEnableRef.current = false;
-      setSetting('weather_enabled', '1');
+      await setSettingAsync('weather_enabled', '1');
       setWeatherEnabled(true);
     }
   }, []);
@@ -140,7 +167,7 @@ export default function GoalsScreen() {
       // Auto-enable calendar if the user was blocked by missing permissions and just granted them
       if (pendingCalendarEnableRef.current) {
         pendingCalendarEnableRef.current = false;
-        setSetting('calendar_integration_enabled', '1');
+        await setSettingAsync('calendar_integration_enabled', '1');
         setCalendarEnabled(true);
       }
     }
@@ -153,7 +180,7 @@ export default function GoalsScreen() {
     // Auto-enable smart reminders if the user was blocked by missing permissions and just granted them
     if (granted && pendingSmartRemindersEnableRef.current) {
       pendingSmartRemindersEnableRef.current = false;
-      setSetting('smart_reminders_count', '1');
+      await setSettingAsync('smart_reminders_count', '1');
       setSmartRemindersCount(1);
     }
   }, []);
@@ -185,27 +212,35 @@ export default function GoalsScreen() {
     ])
   );
 
-  const saveDaily = (minutes: number) => {
+  const saveDaily = async (minutes: number) => {
     if (isNaN(minutes) || minutes < 1 || minutes > 720) {
       Alert.alert(t('goals_invalid_title'), t('goals_invalid_daily'));
       return;
     }
-    setDailyGoal(minutes);
-    setDailyTargetState(minutes);
-    setEditingDaily(false);
+    try {
+      await setDailyGoalAsync(minutes);
+      setDailyTargetState(minutes);
+      setEditingDaily(false);
+    } catch (error) {
+      console.error('[GoalsScreen.saveDaily] Error:', error);
+    }
   };
 
-  const saveWeekly = (minutes: number) => {
+  const saveWeekly = async (minutes: number) => {
     if (isNaN(minutes) || minutes < 1 || minutes > 5040) {
       Alert.alert(t('goals_invalid_title'), t('goals_invalid_weekly'));
       return;
     }
-    setWeeklyGoal(minutes);
-    setWeeklyTargetState(minutes);
-    setEditingWeekly(false);
+    try {
+      await setWeeklyGoalAsync(minutes);
+      setWeeklyTargetState(minutes);
+      setEditingWeekly(false);
+    } catch (error) {
+      console.error('[GoalsScreen.saveWeekly] Error:', error);
+    }
   };
 
-  const cycleSmartRemindersCount = () => {
+  const cycleSmartRemindersCount = async () => {
     const idx = SMART_REMINDERS_OPTIONS.indexOf(smartRemindersCount);
     const next = SMART_REMINDERS_OPTIONS[(idx + 1) % SMART_REMINDERS_OPTIONS.length];
     // When enabling smart reminders (0 → positive value), check notification permission first
@@ -214,15 +249,23 @@ export default function GoalsScreen() {
       showNotificationPermissionSheet();
       return;
     }
-    setSetting('smart_reminders_count', String(next));
-    setSmartRemindersCount(next);
+    try {
+      await setSettingAsync('smart_reminders_count', String(next));
+      setSmartRemindersCount(next);
+    } catch (error) {
+      console.error('[GoalsScreen.cycleSmartRemindersCount] Error:', error);
+    }
   };
 
-  const cycleCatchupRemindersCount = () => {
+  const cycleCatchupRemindersCount = async () => {
     const idx = CATCHUP_REMINDERS_OPTIONS.indexOf(catchupRemindersCount as CatchupRemindersOption);
     const next = CATCHUP_REMINDERS_OPTIONS[(idx + 1) % CATCHUP_REMINDERS_OPTIONS.length];
-    setSetting('smart_catchup_reminders_count', String(next));
-    setCatchupRemindersCount(next);
+    try {
+      await setSettingAsync('smart_catchup_reminders_count', String(next));
+      setCatchupRemindersCount(next);
+    } catch (error) {
+      console.error('[GoalsScreen.cycleCatchupRemindersCount] Error:', error);
+    }
   };
 
   const handleOpenAppSettings = async () => {
@@ -272,13 +315,13 @@ export default function GoalsScreen() {
         const opened = await openBatteryOptimizationSettings();
         if (opened) {
           setBatteryOptimizationGranted(true);
-          setSetting(BATTERY_OPTIMIZATION_SETTING_KEY, '1');
+          await setSettingAsync(BATTERY_OPTIMIZATION_SETTING_KEY, '1');
         }
       },
     });
   }, []);
 
-  const toggleWeatherEnabled = (value: boolean) => {
+  const toggleWeatherEnabled = async (value: boolean) => {
     if (!value) {
       // User explicitly disabled weather – clear any pending enable
       pendingWeatherEnableRef.current = false;
@@ -286,14 +329,18 @@ export default function GoalsScreen() {
       showWeatherPermissionSheet();
       return;
     }
-    setSetting('weather_enabled', value ? '1' : '0');
-    setWeatherEnabled(value);
+    try {
+      await setSettingAsync('weather_enabled', value ? '1' : '0');
+      setWeatherEnabled(value);
+    } catch (error) {
+      console.error('[GoalsScreen.toggleWeatherEnabled] Error:', error);
+    }
   };
 
   const CALENDAR_BUFFER_OPTIONS = [10, 20, 30, 45, 60];
   const CALENDAR_DURATION_OPTIONS = [0, 5, 10, 15, 20, 30];
 
-  const toggleCalendarIntegration = (value: boolean) => {
+  const toggleCalendarIntegration = async (value: boolean) => {
     if (!value) {
       // User explicitly disabled calendar – clear any pending enable
       pendingCalendarEnableRef.current = false;
@@ -301,22 +348,34 @@ export default function GoalsScreen() {
       showCalendarPermissionSheet();
       return;
     }
-    setSetting('calendar_integration_enabled', value ? '1' : '0');
-    setCalendarEnabled(value);
+    try {
+      await setSettingAsync('calendar_integration_enabled', value ? '1' : '0');
+      setCalendarEnabled(value);
+    } catch (error) {
+      console.error('[GoalsScreen.toggleCalendarIntegration] Error:', error);
+    }
   };
 
-  const cycleCalendarBuffer = () => {
+  const cycleCalendarBuffer = async () => {
     const idx = CALENDAR_BUFFER_OPTIONS.indexOf(calendarBuffer);
     const next = CALENDAR_BUFFER_OPTIONS[(idx + 1) % CALENDAR_BUFFER_OPTIONS.length];
-    setSetting('calendar_buffer_minutes', String(next));
-    setCalendarBuffer(next);
+    try {
+      await setSettingAsync('calendar_buffer_minutes', String(next));
+      setCalendarBuffer(next);
+    } catch (error) {
+      console.error('[GoalsScreen.cycleCalendarBuffer] Error:', error);
+    }
   };
 
-  const cycleCalendarDuration = () => {
+  const cycleCalendarDuration = async () => {
     const idx = CALENDAR_DURATION_OPTIONS.indexOf(calendarDuration);
     const next = CALENDAR_DURATION_OPTIONS[(idx + 1) % CALENDAR_DURATION_OPTIONS.length];
-    setSetting('calendar_default_duration', String(next));
-    setCalendarDuration(next);
+    try {
+      await setSettingAsync('calendar_default_duration', String(next));
+      setCalendarDuration(next);
+    } catch (error) {
+      console.error('[GoalsScreen.cycleCalendarDuration] Error:', error);
+    }
   };
 
   const handleSelectCalendar = async () => {

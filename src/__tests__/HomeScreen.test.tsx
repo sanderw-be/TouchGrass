@@ -14,26 +14,32 @@ jest.mock('../utils/helpers', () => ({
   formatTimer: (secs: number) => `00:${String(secs).padStart(2, '0')}`,
 }));
 
-const mockGetTodayMinutes = jest.fn(() => 20);
-const mockGetWeekMinutes = jest.fn(() => 100);
-const mockGetCurrentDailyGoal = jest.fn(() => ({ targetMinutes: 60 }));
-const mockGetCurrentWeeklyGoal = jest.fn(() => ({ targetMinutes: 300 }));
-const mockGetSessionsForDay = jest.fn<OutsideSession[], [number]>(() => []);
-const mockConfirmSession = jest.fn();
-const mockGetDailyStreak = jest.fn(() => 0);
-const mockGetWeeklyStreak = jest.fn(() => 0);
+const mockGetTodayMinutes = jest.fn(() => Promise.resolve(20));
+const mockGetWeekMinutes = jest.fn(() => Promise.resolve(100));
+const mockGetCurrentDailyGoal = jest.fn(() => Promise.resolve({ targetMinutes: 60 }));
+const mockGetCurrentWeeklyGoal = jest.fn(() => Promise.resolve({ targetMinutes: 300 }));
+const mockGetSessionsForDay = jest.fn<Promise<OutsideSession[]>, [number]>(() =>
+  Promise.resolve([])
+);
+const mockConfirmSession = jest.fn<Promise<void>, [number, boolean | null]>(() =>
+  Promise.resolve()
+);
+const mockGetDailyStreak = jest.fn(() => Promise.resolve(0));
+const mockGetWeeklyStreak = jest.fn(() => Promise.resolve(0));
+const mockGetSetting = jest.fn<Promise<string>, [string, string]>(() => Promise.resolve(''));
+const mockSetSetting = jest.fn<Promise<void>, [string, string]>(() => Promise.resolve());
 
 jest.mock('../storage/database', () => ({
-  getTodayMinutes: () => mockGetTodayMinutes(),
-  getWeekMinutes: () => mockGetWeekMinutes(),
-  getCurrentDailyGoal: () => mockGetCurrentDailyGoal(),
-  getCurrentWeeklyGoal: () => mockGetCurrentWeeklyGoal(),
-  getSessionsForDay: (dateMs: number) => mockGetSessionsForDay(dateMs),
-  confirmSession: (...args: any[]) => mockConfirmSession(...args),
-  getDailyStreak: () => mockGetDailyStreak(),
-  getWeeklyStreak: () => mockGetWeeklyStreak(),
-  getSetting: jest.fn(() => ''),
-  setSetting: jest.fn(),
+  getTodayMinutesAsync: () => mockGetTodayMinutes(),
+  getWeekMinutesAsync: () => mockGetWeekMinutes(),
+  getCurrentDailyGoalAsync: () => mockGetCurrentDailyGoal(),
+  getCurrentWeeklyGoalAsync: () => mockGetCurrentWeeklyGoal(),
+  getSessionsForDayAsync: (dateMs: number) => mockGetSessionsForDay(dateMs),
+  confirmSessionAsync: (id: number, confirmed: boolean | null) => mockConfirmSession(id, confirmed),
+  getDailyStreakAsync: () => mockGetDailyStreak(),
+  getWeeklyStreakAsync: () => mockGetWeeklyStreak(),
+  getSettingAsync: (key: string, fallback: string) => mockGetSetting(key, fallback),
+  setSettingAsync: (key: string, value: string) => mockSetSetting(key, value),
 }));
 
 const mockStopFn = jest.fn();
@@ -144,15 +150,17 @@ describe('HomeScreen inline timer', () => {
     jest.clearAllMocks();
   });
 
-  it('renders the progress ring with start hint when timer is idle', () => {
+  it('renders the progress ring with start hint when timer is idle', async () => {
     const { getByText } = render(<HomeScreen />);
+    await act(async () => {});
     expect(getByText('ring_timer_start')).toBeTruthy();
   });
 
-  it('starts the timer when the ring centre is pressed', () => {
+  it('starts the timer when the ring centre is pressed', async () => {
     const { getByText, getByTestId, queryByTestId } = render(<HomeScreen />);
+    await act(async () => {});
 
-    act(() => {
+    await act(async () => {
       fireEvent.press(getByText('ring_timer_start'));
     });
 
@@ -164,39 +172,41 @@ describe('HomeScreen inline timer', () => {
     expect(queryByTestId('icon-play')).toBeNull();
 
     // Clean up: stop the timer so the interval does not outlive this test
-    act(() => {
+    await act(async () => {
       fireEvent.press(getByText('ring_timer_tap_stop'));
     });
   });
 
-  it('stops and saves the session when the running timer is pressed', () => {
+  it('stops and saves the session when the running timer is pressed', async () => {
     const { getByText, getByTestId } = render(<HomeScreen />);
+    await act(async () => {});
 
     // Start the timer
-    act(() => {
+    await act(async () => {
       fireEvent.press(getByText('ring_timer_start'));
     });
     expect(mockStartManualSession).toHaveBeenCalledTimes(1);
 
     // Stop the timer via the hint text (whole ring is tappable)
-    act(() => {
+    await act(async () => {
       fireEvent.press(getByText('ring_timer_tap_stop'));
     });
 
     expect(mockStopFn).toHaveBeenCalledTimes(1);
-    // Data should be refreshed (getTodayMinutes is called on loadData)
+    // Data should be refreshed (getTodayMinutesAsync is called on loadData)
     expect(mockGetTodayMinutes).toHaveBeenCalled();
     // Ring should be back to idle state showing the play icon
     expect(getByTestId('icon-play')).toBeTruthy();
     expect(getByText('ring_timer_start')).toBeTruthy();
   });
 
-  it('shows the running state indicators immediately when timer starts', () => {
+  it('shows the running state indicators immediately when timer starts', async () => {
     // The OUTSIDE badge renders as soon as timerRunning=true — no need to advance
     // fake timers, which would interfere with React's scheduler and cause cleanup hangs.
     const { getByText, getByTestId, queryByTestId } = render(<HomeScreen />);
+    await act(async () => {});
 
-    act(() => {
+    await act(async () => {
       fireEvent.press(getByText('ring_timer_start'));
     });
 
@@ -206,62 +216,71 @@ describe('HomeScreen inline timer', () => {
     expect(queryByTestId('icon-play')).toBeNull();
 
     // Clean up: stop the timer so the interval does not outlive this test
-    act(() => {
+    await act(async () => {
       fireEvent.press(getByText('ring_timer_tap_stop'));
     });
   });
 
-  it('shows a swipe hint for pending session cards', () => {
-    mockGetSessionsForDay.mockReturnValueOnce([
-      {
-        id: 1,
-        startTime: Date.now(),
-        endTime: Date.now() + 30 * 60 * 1000,
-        durationMinutes: 30,
-        confidence: 1,
-        userConfirmed: null,
-        discarded: 0,
-        source: 'gps',
-      },
-    ]);
+  it('shows a swipe hint for pending session cards', async () => {
+    mockGetSessionsForDay.mockReturnValueOnce(
+      Promise.resolve([
+        {
+          id: 1,
+          startTime: Date.now(),
+          endTime: Date.now() + 30 * 60 * 1000,
+          durationMinutes: 30,
+          confidence: 1,
+          userConfirmed: null,
+          discarded: 0,
+          source: 'gps',
+        },
+      ])
+    );
 
     const { getByTestId } = render(<HomeScreen />);
+    await act(async () => {});
     expect(getByTestId('home-swipe-hint')).toBeTruthy();
   });
 
-  it('hides the swipe hint for confirmed sessions', () => {
-    mockGetSessionsForDay.mockReturnValueOnce([
-      {
-        id: 2,
-        startTime: Date.now(),
-        endTime: Date.now() + 20 * 60 * 1000,
-        durationMinutes: 20,
-        confidence: 1,
-        userConfirmed: 1,
-        discarded: 0,
-        source: 'gps',
-      },
-    ]);
+  it('hides the swipe hint for confirmed sessions', async () => {
+    mockGetSessionsForDay.mockReturnValueOnce(
+      Promise.resolve([
+        {
+          id: 2,
+          startTime: Date.now(),
+          endTime: Date.now() + 20 * 60 * 1000,
+          durationMinutes: 20,
+          confidence: 1,
+          userConfirmed: 1,
+          discarded: 0,
+          source: 'gps',
+        },
+      ])
+    );
 
     const { queryByTestId } = render(<HomeScreen />);
+    await act(async () => {});
     expect(queryByTestId('home-swipe-hint')).toBeNull();
   });
 
   it('emits session change after swipe confirm so the nav badge updates', async () => {
-    mockGetSessionsForDay.mockReturnValueOnce([
-      {
-        id: 1,
-        startTime: Date.now(),
-        endTime: Date.now() + 30 * 60 * 1000,
-        durationMinutes: 30,
-        confidence: 1,
-        userConfirmed: null,
-        discarded: 0,
-        source: 'gps',
-      },
-    ]);
+    mockGetSessionsForDay.mockReturnValueOnce(
+      Promise.resolve([
+        {
+          id: 1,
+          startTime: Date.now(),
+          endTime: Date.now() + 30 * 60 * 1000,
+          durationMinutes: 30,
+          confidence: 1,
+          userConfirmed: null,
+          discarded: 0,
+          source: 'gps',
+        },
+      ])
+    );
 
     const { getByTestId } = render(<HomeScreen />);
+    await act(async () => {});
     await act(async () => {
       fireEvent.press(getByTestId('home-swipe-confirm-action'));
     });
@@ -269,20 +288,23 @@ describe('HomeScreen inline timer', () => {
   });
 
   it('emits session change after swipe reject so the nav badge updates', async () => {
-    mockGetSessionsForDay.mockReturnValueOnce([
-      {
-        id: 1,
-        startTime: Date.now(),
-        endTime: Date.now() + 30 * 60 * 1000,
-        durationMinutes: 30,
-        confidence: 1,
-        userConfirmed: null,
-        discarded: 0,
-        source: 'gps',
-      },
-    ]);
+    mockGetSessionsForDay.mockReturnValueOnce(
+      Promise.resolve([
+        {
+          id: 1,
+          startTime: Date.now(),
+          endTime: Date.now() + 30 * 60 * 1000,
+          durationMinutes: 30,
+          confidence: 1,
+          userConfirmed: null,
+          discarded: 0,
+          source: 'gps',
+        },
+      ])
+    );
 
     const { getByTestId } = render(<HomeScreen />);
+    await act(async () => {});
     await act(async () => {
       fireEvent.press(getByTestId('home-swipe-reject-action'));
     });
@@ -290,20 +312,23 @@ describe('HomeScreen inline timer', () => {
   });
 
   it('shows undo snackbar after swipe reject action', async () => {
-    mockGetSessionsForDay.mockReturnValueOnce([
-      {
-        id: 1,
-        startTime: Date.now(),
-        endTime: Date.now() + 30 * 60 * 1000,
-        durationMinutes: 30,
-        confidence: 1,
-        userConfirmed: null,
-        discarded: 0,
-        source: 'gps',
-      },
-    ]);
+    mockGetSessionsForDay.mockReturnValueOnce(
+      Promise.resolve([
+        {
+          id: 1,
+          startTime: Date.now(),
+          endTime: Date.now() + 30 * 60 * 1000,
+          durationMinutes: 30,
+          confidence: 1,
+          userConfirmed: null,
+          discarded: 0,
+          source: 'gps',
+        },
+      ])
+    );
 
     const { getByTestId, queryByTestId } = render(<HomeScreen />);
+    await act(async () => {});
     expect(queryByTestId('undo-snackbar')).toBeNull();
     await act(async () => {
       fireEvent.press(getByTestId('home-swipe-reject-action'));
@@ -311,21 +336,24 @@ describe('HomeScreen inline timer', () => {
     expect(getByTestId('undo-snackbar')).toBeTruthy();
   });
 
-  it('calls confirmSession(id, null) when undo button is pressed after reject', async () => {
-    mockGetSessionsForDay.mockReturnValueOnce([
-      {
-        id: 1,
-        startTime: Date.now(),
-        endTime: Date.now() + 30 * 60 * 1000,
-        durationMinutes: 30,
-        confidence: 1,
-        userConfirmed: null,
-        discarded: 0,
-        source: 'gps',
-      },
-    ]);
+  it('calls confirmSessionAsync(id, null) when undo button is pressed after reject', async () => {
+    mockGetSessionsForDay.mockReturnValueOnce(
+      Promise.resolve([
+        {
+          id: 1,
+          startTime: Date.now(),
+          endTime: Date.now() + 30 * 60 * 1000,
+          durationMinutes: 30,
+          confidence: 1,
+          userConfirmed: null,
+          discarded: 0,
+          source: 'gps',
+        },
+      ])
+    );
 
     const { getByTestId } = render(<HomeScreen />);
+    await act(async () => {});
     await act(async () => {
       fireEvent.press(getByTestId('home-swipe-reject-action'));
     });
@@ -336,20 +364,23 @@ describe('HomeScreen inline timer', () => {
   });
 
   it('hides undo snackbar after undo button is pressed', async () => {
-    mockGetSessionsForDay.mockReturnValueOnce([
-      {
-        id: 1,
-        startTime: Date.now(),
-        endTime: Date.now() + 30 * 60 * 1000,
-        durationMinutes: 30,
-        confidence: 1,
-        userConfirmed: null,
-        discarded: 0,
-        source: 'gps',
-      },
-    ]);
+    mockGetSessionsForDay.mockReturnValueOnce(
+      Promise.resolve([
+        {
+          id: 1,
+          startTime: Date.now(),
+          endTime: Date.now() + 30 * 60 * 1000,
+          durationMinutes: 30,
+          confidence: 1,
+          userConfirmed: null,
+          discarded: 0,
+          source: 'gps',
+        },
+      ])
+    );
 
     const { getByTestId, queryByTestId } = render(<HomeScreen />);
+    await act(async () => {});
     await act(async () => {
       fireEvent.press(getByTestId('home-swipe-reject-action'));
     });
@@ -359,107 +390,114 @@ describe('HomeScreen inline timer', () => {
     expect(queryByTestId('undo-snackbar')).toBeNull();
   });
 
-  it('shows the empty state illustration and tagline when there are no sessions', () => {
-    mockGetSessionsForDay.mockReturnValueOnce([]);
+  it('shows the empty state illustration and tagline when there are no sessions', async () => {
+    mockGetSessionsForDay.mockReturnValueOnce(Promise.resolve([]));
     const { getByTestId, getByText } = render(<HomeScreen />);
+    await act(async () => {});
     expect(getByTestId('home-empty-state')).toBeTruthy();
     expect(getByTestId('home-empty-icon')).toBeTruthy();
     expect(getByText('no_sessions_title')).toBeTruthy();
     expect(getByText('no_sessions_sub')).toBeTruthy();
   });
 
-  it('hides the empty state when there are sessions', () => {
-    mockGetSessionsForDay.mockReturnValueOnce([
-      {
-        id: 1,
-        startTime: Date.now(),
-        endTime: Date.now() + 30 * 60 * 1000,
-        durationMinutes: 30,
-        confidence: 1,
-        userConfirmed: 1,
-        discarded: 0,
-        source: 'gps',
-      },
-    ]);
+  it('hides the empty state when there are sessions', async () => {
+    mockGetSessionsForDay.mockReturnValueOnce(
+      Promise.resolve([
+        {
+          id: 1,
+          startTime: Date.now(),
+          endTime: Date.now() + 30 * 60 * 1000,
+          durationMinutes: 30,
+          confidence: 1,
+          userConfirmed: 1,
+          discarded: 0,
+          source: 'gps',
+        },
+      ])
+    );
     const { queryByTestId } = render(<HomeScreen />);
+    await act(async () => {});
     expect(queryByTestId('home-empty-state')).toBeNull();
   });
 
   it('does not show undo snackbar after swipe confirm action', async () => {
-    mockGetSessionsForDay.mockReturnValueOnce([
-      {
-        id: 1,
-        startTime: Date.now(),
-        endTime: Date.now() + 30 * 60 * 1000,
-        durationMinutes: 30,
-        confidence: 1,
-        userConfirmed: null,
-        discarded: 0,
-        source: 'gps',
-      },
-    ]);
+    mockGetSessionsForDay.mockReturnValueOnce(
+      Promise.resolve([
+        {
+          id: 1,
+          startTime: Date.now(),
+          endTime: Date.now() + 30 * 60 * 1000,
+          durationMinutes: 30,
+          confidence: 1,
+          userConfirmed: null,
+          discarded: 0,
+          source: 'gps',
+        },
+      ])
+    );
 
     const { getByTestId, queryByTestId } = render(<HomeScreen />);
+    await act(async () => {});
     await act(async () => {
       fireEvent.press(getByTestId('home-swipe-confirm-action'));
     });
     expect(queryByTestId('undo-snackbar')).toBeNull();
   });
 
-  it('shows the timer info hint when the timer is idle', () => {
+  it('shows the timer info hint when the timer is idle', async () => {
     const { getByTestId } = render(<HomeScreen />);
+    await act(async () => {});
     expect(getByTestId('ring-timer-info')).toBeTruthy();
   });
 
-  it('hides the timer info hint when the timer is running', () => {
+  it('hides the timer info hint when the timer is running', async () => {
     const { getByText, queryByTestId } = render(<HomeScreen />);
+    await act(async () => {});
 
-    act(() => {
+    await act(async () => {
       fireEvent.press(getByText('ring_timer_start'));
     });
 
     expect(queryByTestId('ring-timer-info')).toBeNull();
 
     // Clean up
-    act(() => {
+    await act(async () => {
       fireEvent.press(getByText('ring_timer_tap_stop'));
     });
   });
 });
 
 describe('HomeScreen widget timer sync', () => {
-  const { getSetting } = require('../storage/database') as {
-    getSetting: jest.Mock;
-  };
-
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it('adopts a widget-started timer on screen focus', () => {
+  it('adopts a widget-started timer on screen focus', async () => {
     const widgetStartTs = Date.now() - 60_000; // started 1 min ago
-    getSetting.mockReturnValue(String(widgetStartTs));
+    mockGetSetting.mockReturnValue(Promise.resolve(String(widgetStartTs)));
 
     const { getByText } = render(<HomeScreen />);
+    await act(async () => {});
 
     // The ring should show the running state because syncWidgetTimer adopted it
     expect(getByText('ring_timer_outside')).toBeTruthy();
     expect(getByText('ring_timer_tap_stop')).toBeTruthy();
 
     // Clean up: stop via UI so the interval is cleared
-    act(() => {
+    await act(async () => {
       fireEvent.press(getByText('ring_timer_tap_stop'));
     });
   });
 
-  it('uses the widget start time when the app stops an adopted timer', () => {
+  it('uses the widget start time when the app stops an adopted timer', async () => {
     const widgetStartTs = Date.now() - 60_000;
-    getSetting.mockReturnValue(String(widgetStartTs));
+    mockGetSetting.mockReturnValue(Promise.resolve(String(widgetStartTs)));
 
     const { getByText } = render(<HomeScreen />);
+    await act(async () => {});
 
     // Stop the adopted timer from the app
-    act(() => {
+    await act(async () => {
       fireEvent.press(getByText('ring_timer_tap_stop'));
     });
 
@@ -473,19 +511,21 @@ describe('HomeScreen widget timer sync', () => {
     expect(mockStartManualSession).not.toHaveBeenCalled();
   });
 
-  it('clears the in-app timer when the widget stops it (WIDGET_TIMER_KEY cleared)', () => {
+  it('clears the in-app timer when the widget stops it (WIDGET_TIMER_KEY cleared)', async () => {
     // Render with no widget timer initially
-    getSetting.mockReturnValue('');
+    mockGetSetting.mockReturnValue(Promise.resolve(''));
+
     const { getByText, queryByTestId } = render(<HomeScreen />);
+    await act(async () => {});
 
     // Start the timer from the app
-    act(() => {
+    await act(async () => {
       fireEvent.press(getByText('ring_timer_start'));
     });
     expect(getByText('ring_timer_outside')).toBeTruthy();
 
     // Simulate widget stopping the timer: WIDGET_TIMER_KEY is now empty
-    getSetting.mockReturnValue('');
+    mockGetSetting.mockReturnValue(Promise.resolve(''));
 
     // Re-focus the screen (simulated by the useFocusEffect firing again via
     // the test mock which calls cb() once on mount; we trigger sync via
@@ -493,7 +533,7 @@ describe('HomeScreen widget timer sync', () => {
     // Since useFocusEffect only fires once on mount in tests, we directly
     // test that when timerRunning + widgetTs===0 the timer is cleared.
     // Trigger another focus by unmounting and remounting
-    act(() => {
+    await act(async () => {
       fireEvent.press(getByText('ring_timer_tap_stop'));
     });
 

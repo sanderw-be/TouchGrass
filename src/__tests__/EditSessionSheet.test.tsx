@@ -9,7 +9,7 @@ jest.mock('../i18n', () => ({
 }));
 
 jest.mock('../storage/database', () => ({
-  updateSessionTimes: jest.fn(),
+  updateSessionTimesAsync: jest.fn().mockResolvedValue(undefined),
 }));
 
 jest.mock('../utils/helpers', () => ({
@@ -63,15 +63,15 @@ describe('EditSessionSheet', () => {
     expect(getByText('session_edit_save')).toBeTruthy();
   });
 
-  it('calls updateSessionTimes and onSessionUpdated when save is pressed', () => {
-    const { updateSessionTimes } = require('../storage/database');
+  it('calls updateSessionTimesAsync and onSessionUpdated when save is pressed', async () => {
+    const { updateSessionTimesAsync } = require('../storage/database');
     const onSessionUpdated = jest.fn();
     const onClose = jest.fn();
     const { getByText } = render(
       <EditSessionSheet {...defaultProps} onSessionUpdated={onSessionUpdated} onClose={onClose} />
     );
-    fireEvent.press(getByText('session_edit_save'));
-    expect(updateSessionTimes).toHaveBeenCalledWith(
+    await fireEvent.press(getByText('session_edit_save'));
+    expect(updateSessionTimesAsync).toHaveBeenCalledWith(
       mockSession.id,
       expect.any(Number),
       expect.any(Number)
@@ -82,7 +82,7 @@ describe('EditSessionSheet', () => {
 
   it('shows an alert and does not save when duration is zero', () => {
     const alertSpy = jest.spyOn(Alert, 'alert');
-    const { updateSessionTimes } = require('../storage/database');
+    const { updateSessionTimesAsync } = require('../storage/database');
     const onSessionUpdated = jest.fn();
 
     const zeroSession: OutsideSession = {
@@ -101,13 +101,13 @@ describe('EditSessionSheet', () => {
     );
     fireEvent.press(getByText('session_edit_save'));
     expect(alertSpy).toHaveBeenCalledWith('manual_invalid_title', 'manual_invalid_body');
-    expect(updateSessionTimes).not.toHaveBeenCalled();
+    expect(updateSessionTimesAsync).not.toHaveBeenCalled();
     expect(onSessionUpdated).not.toHaveBeenCalled();
   });
 
   it('shows an alert and does not save when duration exceeds 12 hours', () => {
     const alertSpy = jest.spyOn(Alert, 'alert');
-    const { updateSessionTimes } = require('../storage/database');
+    const { updateSessionTimesAsync } = require('../storage/database');
     const onSessionUpdated = jest.fn();
 
     const longSession: OutsideSession = {
@@ -126,7 +126,7 @@ describe('EditSessionSheet', () => {
     );
     fireEvent.press(getByText('session_edit_save'));
     expect(alertSpy).toHaveBeenCalledWith('manual_invalid_title', 'manual_invalid_body');
-    expect(updateSessionTimes).not.toHaveBeenCalled();
+    expect(updateSessionTimesAsync).not.toHaveBeenCalled();
     expect(onSessionUpdated).not.toHaveBeenCalled();
   });
 
