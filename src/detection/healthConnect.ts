@@ -6,11 +6,11 @@ import {
   getSdkStatus,
 } from 'react-native-health-connect';
 import {
-  getSetting,
-  setSetting,
-  pruneShortDiscardedHealthConnectSessions,
-  getKnownLocations,
-  insertBackgroundLog,
+  getSettingAsync,
+  setSettingAsync,
+  pruneShortDiscardedHealthConnectSessionsAsync,
+  getKnownLocationsAsync,
+  insertBackgroundLogAsync,
 } from '../storage/database';
 import { submitSession, buildSession } from './sessionMerger';
 import {
@@ -87,7 +87,7 @@ export async function requestHealthPermissions(): Promise<boolean> {
     // First, check if permissions are already granted
     const alreadyGranted = await verifyHealthConnectPermissions();
     if (alreadyGranted) {
-      setSetting(PERMISSION_WARNING_KEY, '0');
+      await setSettingAsync(PERMISSION_WARNING_KEY, '0');
       return true;
     }
 
@@ -103,7 +103,7 @@ export async function requestHealthPermissions(): Promise<boolean> {
 
       // Check if permissions were granted via the dialog
       if (granted && Array.isArray(granted) && granted.length > 0) {
-        setSetting(PERMISSION_WARNING_KEY, '0');
+        await setSettingAsync(PERMISSION_WARNING_KEY, '0');
         return true;
       }
 
@@ -112,7 +112,7 @@ export async function requestHealthPermissions(): Promise<boolean> {
       // falling back to the Intent flow.
       const nowGranted = await verifyHealthConnectPermissions();
       if (nowGranted) {
-        setSetting(PERMISSION_WARNING_KEY, '0');
+        await setSettingAsync(PERMISSION_WARNING_KEY, '0');
         return true;
       }
     } catch (permError) {
@@ -132,7 +132,7 @@ export async function requestHealthPermissions(): Promise<boolean> {
     return true;
   } catch (e) {
     if (isPermissionError(e)) {
-      logPermissionWarningOnce();
+      await logPermissionWarningOnce();
       return false;
     }
     console.warn('Health Connect permission error:', e);
@@ -256,16 +256,16 @@ function exerciseTypeName(type: number): string {
  * a known indoor location — meaning the user was definitely not outside.
  * Returns false when there are no GPS samples for the period (cannot conclude).
  */
-function wasDefinitelyAtKnownIndoorLocation(startMs: number, endMs: number): boolean {
+async function wasDefinitelyAtKnownIndoorLocation(startMs: number, endMs: number): Promise<boolean> {
   try {
-    const parsed: unknown = JSON.parse(getSetting('location_clusters', '[]'));
+    const parsed: unknown = JSON.parse(await getSettingAsync('location_clusters', '[]'));
     const allSamples: { lat: number; lon: number; timestamp: number }[] = Array.isArray(parsed)
       ? parsed
       : [];
     const sessionSamples = allSamples.filter((s) => s.timestamp >= startMs && s.timestamp <= endMs);
     if (sessionSamples.length === 0) return false;
 
-    const knownLocations = getKnownLocations();
+    const knownLocations = await getKnownLocationsAsync();
     if (knownLocations.length === 0) return false;
 
     return sessionSamples.every((sample) =>
@@ -297,12 +297,12 @@ export async function syncHealthConnect(): Promise<boolean> {
     return false;
   }
   // Respect the user's toggle: do not sync if the user has disabled Health Connect.
-  if (getSetting('healthconnect_user_enabled', '0') !== '1') {
+  if ((await getSettingAsync('healthconnect_user_enabled', '0')) !== '1') {
     return false;
   }
   // Enforce a 10-minute cooldown to prevent excessive syncing (e.g. every time
   // the Settings screen is opened via recheckHealthConnect).
-  const lastSync = parseInt(getSetting('healthconnect_last_sync', '0'), 10);
+  const lastSync = parseInt(await getSettingAsync('healthconnect_last_sync', '0'), 10);
   const now = Date.now();
   if (lastSync > 0 && now - lastSync < HC_SYNC_COOLDOWN_MS) {
     return false;
@@ -348,7 +348,7 @@ export async function syncHealthConnect(): Promise<boolean> {
       const confidence = isExplicitlyOutdoor ? 0.8 : CONFIDENCE_ACTIVITY;
 
       // Skip if GPS data shows the user was at a known indoor location throughout
-      if (wasDefinitelyAtKnownIndoorLocation(start, end)) {
+      if (await wasDefinitelyAtKnownIndoorLocation(start, end)) {
         continue;
       }
 
@@ -360,7 +360,7 @@ export async function syncHealthConnect(): Promise<boolean> {
         buildHCExerciseNotes(exerciseTypeName(record.exerciseType), duration)
       );
 
-      submitSession(session);
+      await submitSession(session);
       exerciseSessionsRecorded++;
     }
 
@@ -393,7 +393,7 @@ export async function syncHealthConnect(): Promise<boolean> {
         const sessionStart = end - effectiveDurationMs;
 
         // Skip if GPS data shows the user was at a known indoor location throughout
-        if (wasDefinitelyAtKnownIndoorLocation(sessionStart, end)) {
+        if (await wasDefinitelyAtKnownIndoorLocation(sessionStart, end)) {
           continue;
         }
 
@@ -420,7 +420,7 @@ export async function syncHealthConnect(): Promise<boolean> {
           stepSpeedKmh > 0 ? stepSpeedKmh : undefined
         );
 
-        submitSession(session);
+        await submitSession(session);
         stepSessionsRecorded++;
       }
     } catch (stepsError) {
@@ -432,7 +432,7 @@ export async function syncHealthConnect(): Promise<boolean> {
 
     // Single merged log entry for both exercise and step records
     const totalSessionsRecorded = exerciseSessionsRecorded + stepSessionsRecorded;
-    insertBackgroundLog(
+    await insertBackgroundLogAsync(
       'health_connect',
       `Read: ${stepRecordCount} step record(s), ${exerciseResult.records.length} exercise record(s)` +
         (totalSessionsRecorded > 0 ? ` — recorded ${totalSessionsRecorded} session(s)` : '')
@@ -444,17 +444,17 @@ export async function syncHealthConnect(): Promise<boolean> {
     //   - it was discarded and is still under 5 minutes in duration, OR
     //   - its aggregated step rate is below the minimum walking speed (2.5 km/h).
     const pruneBeforeMs = syncTime - MIN_DURATION_MS;
-    pruneShortDiscardedHealthConnectSessions(pruneBeforeMs, STEPS_PER_MIN_AT_2_5KMH);
+    await pruneShortDiscardedHealthConnectSessionsAsync(pruneBeforeMs, STEPS_PER_MIN_AT_2_5KMH);
 
     // Update last sync timestamp
-    setSetting('healthconnect_last_sync', String(syncTime));
+    await setSettingAsync('healthconnect_last_sync', String(syncTime));
     // Notify UI screens so they can refresh without requiring navigation.
     emitSessionsChanged();
     return true;
   } catch (e) {
     if (isPermissionError(e)) {
-      logPermissionWarningOnce();
-      setSetting('healthconnect_enabled', '0');
+      await logPermissionWarningOnce();
+      await setSettingAsync('healthconnect_enabled', '0');
       return false;
     }
     // Transient errors (network, API unavailable, etc.) should not permanently
@@ -474,11 +474,11 @@ function isPermissionError(error: unknown): boolean {
   );
 }
 
-function logPermissionWarningOnce(): void {
-  const alreadyLogged = getSetting(PERMISSION_WARNING_KEY, '0') === '1';
+async function logPermissionWarningOnce(): Promise<void> {
+  const alreadyLogged = (await getSettingAsync(PERMISSION_WARNING_KEY, '0')) === '1';
   if (alreadyLogged) return;
   console.warn('Health Connect permissions missing. Reconnect in Settings.');
-  setSetting(PERMISSION_WARNING_KEY, '1');
+  await setSettingAsync(PERMISSION_WARNING_KEY, '1');
 }
 
 /**
