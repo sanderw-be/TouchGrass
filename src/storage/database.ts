@@ -295,6 +295,27 @@ export function insertSession(session: OutsideSession): number {
   return result.lastInsertRowId;
 }
 
+export async function insertSessionAsync(session: OutsideSession): Promise<number> {
+  const result = await db.runAsync(
+    `INSERT INTO outside_sessions (startTime, endTime, durationMinutes, source, confidence, userConfirmed, notes, steps, distanceMeters, averageSpeedKmh, discarded)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      session.startTime,
+      session.endTime,
+      session.durationMinutes,
+      session.source,
+      session.confidence,
+      session.userConfirmed === null ? null : session.userConfirmed ? 1 : 0,
+      session.notes ?? null,
+      session.steps ?? null,
+      session.distanceMeters ?? null,
+      session.averageSpeedKmh ?? null,
+      session.discarded ?? 0,
+    ]
+  );
+  return result.lastInsertRowId;
+}
+
 export function getSessionsForDay(dateMs: number): OutsideSession[] {
   try {
     const start = startOfDay(dateMs);
@@ -305,6 +326,20 @@ export function getSessionsForDay(dateMs: number): OutsideSession[] {
     );
   } catch (error) {
     console.error('[getSessionsForDay] Database error:', error);
+    return [];
+  }
+}
+
+export async function getSessionsForDayAsync(dateMs: number): Promise<OutsideSession[]> {
+  try {
+    const start = startOfDay(dateMs);
+    const end = start + 86400000;
+    return await db.getAllAsync<OutsideSession>(
+      'SELECT * FROM outside_sessions WHERE startTime >= ? AND startTime < ? AND userConfirmed IS NOT 0 AND discarded IS NOT 1 ORDER BY startTime ASC',
+      [start, end]
+    );
+  } catch (error) {
+    console.error('[getSessionsForDayAsync] Database error:', error);
     return [];
   }
 }
@@ -321,8 +356,27 @@ export function getSessionsForRange(fromMs: number, toMs: number): OutsideSessio
   }
 }
 
+export async function getSessionsForRangeAsync(
+  fromMs: number,
+  toMs: number
+): Promise<OutsideSession[]> {
+  try {
+    return await db.getAllAsync<OutsideSession>(
+      'SELECT * FROM outside_sessions WHERE startTime < ? AND endTime > ? ORDER BY startTime ASC',
+      [toMs, fromMs]
+    );
+  } catch (error) {
+    console.error('[getSessionsForRangeAsync] Database error:', error);
+    return [];
+  }
+}
+
 export function deleteSession(id: number): void {
   db.runSync('DELETE FROM outside_sessions WHERE id = ?', [id]);
+}
+
+export async function deleteSessionAsync(id: number): Promise<void> {
+  await db.runAsync('DELETE FROM outside_sessions WHERE id = ?', [id]);
 }
 
 export function getTodayMinutes(): number {
@@ -338,6 +392,23 @@ export function getTodayMinutes(): number {
     return row?.total ?? 0;
   } catch (error) {
     console.error('[getTodayMinutes] Database error:', error);
+    return 0;
+  }
+}
+
+export async function getTodayMinutesAsync(): Promise<number> {
+  try {
+    const start = startOfDay(Date.now());
+    const end = start + 86400000;
+    const row = await db.getFirstAsync<{ total: number }>(
+      `SELECT COALESCE(SUM(durationMinutes), 0) as total
+       FROM outside_sessions
+       WHERE startTime >= ? AND startTime < ? AND userConfirmed = 1`,
+      [start, end]
+    );
+    return row?.total ?? 0;
+  } catch (error) {
+    console.error('[getTodayMinutesAsync] Database error:', error);
     return 0;
   }
 }
@@ -359,10 +430,44 @@ export function getWeekMinutes(): number {
   }
 }
 
+export async function getWeekMinutesAsync(): Promise<number> {
+  try {
+    const start = startOfWeek(Date.now());
+    const end = Date.now();
+    const row = await db.getFirstAsync<{ total: number }>(
+      `SELECT COALESCE(SUM(durationMinutes), 0) as total
+       FROM outside_sessions
+       WHERE startTime >= ? AND startTime < ? AND userConfirmed = 1`,
+      [start, end]
+    );
+    return row?.total ?? 0;
+  } catch (error) {
+    console.error('[getWeekMinutesAsync] Database error:', error);
+    return 0;
+  }
+}
+
 export function getDailyTotalsForMonth(dateMs: number): { date: number; minutes: number }[] {
   const start = startOfMonth(dateMs);
   const end = startOfNextMonth(dateMs);
   const rows = db.getAllSync<{ day: number; minutes: number }>(
+    `SELECT (startTime / 86400000) * 86400000 as day,
+            COALESCE(SUM(durationMinutes), 0) as minutes
+     FROM outside_sessions
+     WHERE startTime >= ? AND startTime < ? AND userConfirmed IS NOT 0
+     GROUP BY day
+     ORDER BY day ASC`,
+    [start, end]
+  );
+  return rows.map((r) => ({ date: r.day, minutes: r.minutes }));
+}
+
+export async function getDailyTotalsForMonthAsync(
+  dateMs: number
+): Promise<{ date: number; minutes: number }[]> {
+  const start = startOfMonth(dateMs);
+  const end = startOfNextMonth(dateMs);
+  const rows = await db.getAllAsync<{ day: number; minutes: number }>(
     `SELECT (startTime / 86400000) * 86400000 as day,
             COALESCE(SUM(durationMinutes), 0) as minutes
      FROM outside_sessions
@@ -381,8 +486,21 @@ export function confirmSession(id: number, confirmed: boolean | null): void {
   ]);
 }
 
+export async function confirmSessionAsync(id: number, confirmed: boolean | null): Promise<void> {
+  await db.runAsync('UPDATE outside_sessions SET userConfirmed = ? WHERE id = ?', [
+    confirmed === null ? null : confirmed ? 1 : 0,
+    id,
+  ]);
+}
+
 export function getUnreviewedSessions(): OutsideSession[] {
   return db.getAllSync<OutsideSession>(
+    'SELECT * FROM outside_sessions WHERE userConfirmed IS NULL ORDER BY startTime DESC LIMIT 20'
+  );
+}
+
+export async function getUnreviewedSessionsAsync(): Promise<OutsideSession[]> {
+  return await db.getAllAsync<OutsideSession>(
     'SELECT * FROM outside_sessions WHERE userConfirmed IS NULL ORDER BY startTime DESC LIMIT 20'
   );
 }
@@ -401,11 +519,35 @@ export function getApprovedSessions(fromMs: number, toMs: number): OutsideSessio
   );
 }
 
+export async function getApprovedSessionsAsync(
+  fromMs: number,
+  toMs: number
+): Promise<OutsideSession[]> {
+  return await db.getAllAsync<OutsideSession>(
+    `SELECT * FROM outside_sessions
+     WHERE startTime < ? AND endTime > ? AND userConfirmed = 1
+     ORDER BY startTime DESC`,
+    [toMs, fromMs]
+  );
+}
+
 /**
  * Returns all non-discarded sessions (approved + proposed + disapproved).
  */
 export function getStandardSessions(fromMs: number, toMs: number): OutsideSession[] {
   return db.getAllSync<OutsideSession>(
+    `SELECT * FROM outside_sessions
+     WHERE startTime < ? AND endTime > ? AND (discarded IS NULL OR discarded = 0)
+     ORDER BY startTime DESC`,
+    [toMs, fromMs]
+  );
+}
+
+export async function getStandardSessionsAsync(
+  fromMs: number,
+  toMs: number
+): Promise<OutsideSession[]> {
+  return await db.getAllAsync<OutsideSession>(
     `SELECT * FROM outside_sessions
      WHERE startTime < ? AND endTime > ? AND (discarded IS NULL OR discarded = 0)
      ORDER BY startTime DESC`,
@@ -429,6 +571,18 @@ export function getAllSessionsIncludingDiscarded(fromMs: number, toMs: number): 
   );
 }
 
+export async function getAllSessionsIncludingDiscardedAsync(
+  fromMs: number,
+  toMs: number
+): Promise<OutsideSession[]> {
+  return await db.getAllAsync<OutsideSession>(
+    `SELECT * FROM outside_sessions
+     WHERE startTime < ? AND endTime > ?
+     ORDER BY startTime DESC`,
+    [toMs, fromMs]
+  );
+}
+
 /**
  * Returns the count of proposed (unreviewed) sessions that have not been discarded.
  * Used for the navigation tab badge.
@@ -441,6 +595,18 @@ export function countProposedSessions(): number {
     return row?.cnt ?? 0;
   } catch (error) {
     console.error('[countProposedSessions] Database error:', error);
+    return 0;
+  }
+}
+
+export async function countProposedSessionsAsync(): Promise<number> {
+  try {
+    const row = await db.getFirstAsync<{ cnt: number }>(
+      'SELECT COUNT(*) AS cnt FROM outside_sessions WHERE userConfirmed IS NULL AND (discarded IS NULL OR discarded = 0)'
+    );
+    return row?.cnt ?? 0;
+  } catch (error) {
+    console.error('[countProposedSessionsAsync] Database error:', error);
     return 0;
   }
 }
@@ -461,12 +627,32 @@ export function autoCloseOldProposedSessions(maxAgeMs: number = SEVEN_DAYS_MS): 
   return result.changes;
 }
 
+export async function autoCloseOldProposedSessionsAsync(
+  maxAgeMs: number = SEVEN_DAYS_MS
+): Promise<number> {
+  const cutoff = Date.now() - maxAgeMs;
+  const result = await db.runAsync(
+    `UPDATE outside_sessions
+     SET userConfirmed = 0
+     WHERE userConfirmed IS NULL AND (discarded IS NULL OR discarded = 0) AND endTime < ?`,
+    [cutoff]
+  );
+  return result.changes;
+}
+
 /**
  * Clears the discarded flag so the user can manually review the session.
  * Sets discarded = 0 and userConfirmed = null so it surfaces in the Standard tab for review.
  */
 export function unDiscardSession(id: number): void {
   db.runSync('UPDATE outside_sessions SET discarded = 0, userConfirmed = NULL WHERE id = ?', [id]);
+}
+
+export async function unDiscardSessionAsync(id: number): Promise<void> {
+  await db.runAsync(
+    'UPDATE outside_sessions SET discarded = 0, userConfirmed = NULL WHERE id = ?',
+    [id]
+  );
 }
 
 /**
@@ -477,6 +663,20 @@ export function unDiscardSession(id: number): void {
 export function updateSessionTimes(id: number, startTime: number, endTime: number): void {
   const durationMinutes = (endTime - startTime) / 60000;
   db.runSync(
+    `UPDATE outside_sessions
+     SET startTime = ?, endTime = ?, durationMinutes = ?, userConfirmed = 1, discarded = 0
+     WHERE id = ?`,
+    [startTime, endTime, durationMinutes, id]
+  );
+}
+
+export async function updateSessionTimesAsync(
+  id: number,
+  startTime: number,
+  endTime: number
+): Promise<void> {
+  const durationMinutes = (endTime - startTime) / 60000;
+  await db.runAsync(
     `UPDATE outside_sessions
      SET startTime = ?, endTime = ?, durationMinutes = ?, userConfirmed = 1, discarded = 0
      WHERE id = ?`,
@@ -529,6 +729,17 @@ export function getCurrentDailyGoal(): DailyGoal | null {
   }
 }
 
+export async function getCurrentDailyGoalAsync(): Promise<DailyGoal | null> {
+  try {
+    return await db.getFirstAsync<DailyGoal>(
+      'SELECT * FROM daily_goals ORDER BY createdAt DESC LIMIT 1'
+    );
+  } catch (error) {
+    console.error('[getCurrentDailyGoalAsync] Database error:', error);
+    return null;
+  }
+}
+
 export function getCurrentWeeklyGoal(): WeeklyGoal | null {
   try {
     return db.getFirstSync<WeeklyGoal>(
@@ -540,6 +751,17 @@ export function getCurrentWeeklyGoal(): WeeklyGoal | null {
   }
 }
 
+export async function getCurrentWeeklyGoalAsync(): Promise<WeeklyGoal | null> {
+  try {
+    return await db.getFirstAsync<WeeklyGoal>(
+      'SELECT * FROM weekly_goals ORDER BY createdAt DESC LIMIT 1'
+    );
+  } catch (error) {
+    console.error('[getCurrentWeeklyGoalAsync] Database error:', error);
+    return null;
+  }
+}
+
 export function setDailyGoal(minutes: number): void {
   db.runSync('INSERT INTO daily_goals (targetMinutes, createdAt) VALUES (?, ?)', [
     minutes,
@@ -547,8 +769,22 @@ export function setDailyGoal(minutes: number): void {
   ]);
 }
 
+export async function setDailyGoalAsync(minutes: number): Promise<void> {
+  await db.runAsync('INSERT INTO daily_goals (targetMinutes, createdAt) VALUES (?, ?)', [
+    minutes,
+    Date.now(),
+  ]);
+}
+
 export function setWeeklyGoal(minutes: number): void {
   db.runSync('INSERT INTO weekly_goals (targetMinutes, createdAt) VALUES (?, ?)', [
+    minutes,
+    Date.now(),
+  ]);
+}
+
+export async function setWeeklyGoalAsync(minutes: number): Promise<void> {
+  await db.runAsync('INSERT INTO weekly_goals (targetMinutes, createdAt) VALUES (?, ?)', [
     minutes,
     Date.now(),
   ]);
@@ -609,6 +845,50 @@ export function getDailyStreak(): number {
   }
 }
 
+export async function getDailyStreakAsync(): Promise<number> {
+  try {
+    const dailyGoal = await getCurrentDailyGoalAsync();
+    if (!dailyGoal) return 0;
+
+    const targetMinutes = dailyGoal.targetMinutes;
+    const todayStart = startOfDay(Date.now());
+    // Look back at most 365 days to bound the query
+    const cutoffMs = todayStart - 365 * 86400000;
+
+    const rows = await db.getAllAsync<{ startTime: number; durationMinutes: number }>(
+      `SELECT startTime, durationMinutes
+       FROM outside_sessions
+       WHERE userConfirmed = 1 AND startTime >= ?
+       ORDER BY startTime DESC`,
+      [cutoffMs]
+    );
+
+    // Aggregate minutes per local calendar day
+    const minutesByDay = new Map<number, number>();
+    for (const row of rows) {
+      const dayStart = startOfDay(row.startTime);
+      minutesByDay.set(dayStart, (minutesByDay.get(dayStart) ?? 0) + row.durationMinutes);
+    }
+
+    // Count consecutive days from today going backwards
+    let streak = 0;
+    let currentDay = todayStart;
+    while (streak < 365) {
+      if ((minutesByDay.get(currentDay) ?? 0) >= targetMinutes) {
+        streak++;
+        currentDay -= 86400000;
+      } else {
+        break;
+      }
+    }
+
+    return streak;
+  } catch (error) {
+    console.error('[getDailyStreakAsync] Database error:', error);
+    return 0;
+  }
+}
+
 /**
  * Calculate the current weekly streak (consecutive weeks of reaching weekly goal).
  * Returns the number of consecutive weeks ending with the current week where weekly goal was reached.
@@ -662,6 +942,50 @@ export function getWeeklyStreak(): number {
   }
 }
 
+export async function getWeeklyStreakAsync(): Promise<number> {
+  try {
+    const weeklyGoal = await getCurrentWeeklyGoalAsync();
+    if (!weeklyGoal) return 0;
+
+    const targetMinutes = weeklyGoal.targetMinutes;
+    const thisWeekStart = startOfWeek(Date.now());
+    // Look back at most 52 weeks to bound the query
+    const cutoffMs = thisWeekStart - 52 * 7 * 86400000;
+
+    const rows = await db.getAllAsync<{ startTime: number; durationMinutes: number }>(
+      `SELECT startTime, durationMinutes
+       FROM outside_sessions
+       WHERE userConfirmed = 1 AND startTime >= ?
+       ORDER BY startTime DESC`,
+      [cutoffMs]
+    );
+
+    // Aggregate minutes per local calendar week
+    const minutesByWeek = new Map<number, number>();
+    for (const row of rows) {
+      const weekStart = startOfWeek(row.startTime);
+      minutesByWeek.set(weekStart, (minutesByWeek.get(weekStart) ?? 0) + row.durationMinutes);
+    }
+
+    // Count consecutive weeks from the current week going backwards
+    let streak = 0;
+    let currentWeek = thisWeekStart;
+    while (streak < 52) {
+      if ((minutesByWeek.get(currentWeek) ?? 0) >= targetMinutes) {
+        streak++;
+        currentWeek -= 7 * 86400000;
+      } else {
+        break;
+      }
+    }
+
+    return streak;
+  } catch (error) {
+    console.error('[getWeeklyStreakAsync] Database error:', error);
+    return 0;
+  }
+}
+
 // ── Reminder feedback ─────────────────────────────────────
 
 export function insertReminderFeedback(feedback: ReminderFeedback): void {
@@ -694,6 +1018,19 @@ export function getKnownLocations(): KnownLocation[] {
   }
 }
 
+export async function getKnownLocationsAsync(): Promise<KnownLocation[]> {
+  try {
+    const rows = await db.getAllAsync<KnownLocationRow>(
+      'SELECT * FROM known_locations WHERE status = ?',
+      ['active']
+    );
+    return rows.map(mapLocation);
+  } catch (error) {
+    console.error('[getKnownLocationsAsync] Database error:', error);
+    return [];
+  }
+}
+
 export function getAllKnownLocations(): KnownLocation[] {
   try {
     return db.getAllSync<KnownLocationRow>('SELECT * FROM known_locations').map(mapLocation);
@@ -703,10 +1040,28 @@ export function getAllKnownLocations(): KnownLocation[] {
   }
 }
 
+export async function getAllKnownLocationsAsync(): Promise<KnownLocation[]> {
+  try {
+    const rows = await db.getAllAsync<KnownLocationRow>('SELECT * FROM known_locations');
+    return rows.map(mapLocation);
+  } catch (error) {
+    console.error('[getAllKnownLocationsAsync] Database error:', error);
+    return [];
+  }
+}
+
 export function getSuggestedLocations(): KnownLocation[] {
   return db
     .getAllSync<KnownLocationRow>('SELECT * FROM known_locations WHERE status = ?', ['suggested'])
     .map(mapLocation);
+}
+
+export async function getSuggestedLocationsAsync(): Promise<KnownLocation[]> {
+  const rows = await db.getAllAsync<KnownLocationRow>(
+    'SELECT * FROM known_locations WHERE status = ?',
+    ['suggested']
+  );
+  return rows.map(mapLocation);
 }
 
 interface KnownLocationRow {
@@ -777,6 +1132,29 @@ export function upsertKnownLocation(loc: KnownLocation): void {
   }
 }
 
+export async function upsertKnownLocationAsync(loc: KnownLocation): Promise<void> {
+  const status = loc.status ?? 'active';
+  if (loc.id) {
+    await db.runAsync(
+      `UPDATE known_locations SET label=?, latitude=?, longitude=?, radiusMeters=?, isIndoor=?, status=? WHERE id=?`,
+      [
+        loc.label,
+        loc.latitude,
+        loc.longitude,
+        loc.radiusMeters,
+        loc.isIndoor ? 1 : 0,
+        status,
+        loc.id,
+      ]
+    );
+  } else {
+    await db.runAsync(
+      `INSERT INTO known_locations (label, latitude, longitude, radiusMeters, isIndoor, status) VALUES (?,?,?,?,?,?)`,
+      [loc.label, loc.latitude, loc.longitude, loc.radiusMeters, loc.isIndoor ? 1 : 0, status]
+    );
+  }
+}
+
 export function approveKnownLocation(id: number, label: string): void {
   db.runSync(`UPDATE known_locations SET status='active', label=? WHERE id=?`, [label, id]);
 }
@@ -785,8 +1163,16 @@ export function denyKnownLocation(id: number): void {
   db.runSync('DELETE FROM known_locations WHERE id = ?', [id]);
 }
 
+export async function denyKnownLocationAsync(id: number): Promise<void> {
+  await db.runAsync('DELETE FROM known_locations WHERE id = ?', [id]);
+}
+
 export function deleteKnownLocation(id: number): void {
   db.runSync('DELETE FROM known_locations WHERE id = ?', [id]);
+}
+
+export async function deleteKnownLocationAsync(id: number): Promise<void> {
+  await db.runAsync('DELETE FROM known_locations WHERE id = ?', [id]);
 }
 
 // ── Settings ──────────────────────────────────────────────
@@ -803,8 +1189,25 @@ export function getSetting(key: string, fallback: string): string {
   }
 }
 
+export async function getSettingAsync(key: string, fallback: string): Promise<string> {
+  try {
+    const row = await db.getFirstAsync<{ value: string }>(
+      'SELECT value FROM app_settings WHERE key = ?',
+      [key]
+    );
+    return row?.value ?? fallback;
+  } catch (error) {
+    console.error('[getSettingAsync] Database error:', error);
+    return fallback;
+  }
+}
+
 export function setSetting(key: string, value: string): void {
   db.runSync('INSERT OR REPLACE INTO app_settings (key, value) VALUES (?, ?)', [key, value]);
+}
+
+export async function setSettingAsync(key: string, value: string): Promise<void> {
+  await db.runAsync('INSERT OR REPLACE INTO app_settings (key, value) VALUES (?, ?)', [key, value]);
 }
 
 // ── Clear all data ────────────────────────────────────────
@@ -832,6 +1235,36 @@ export function clearAllData(): void {
 
   // Clear non-essential settings (keep language only; hasCompletedIntro is reset so tutorial shows again)
   db.runSync('DELETE FROM app_settings WHERE key NOT IN (?)', ['language']);
+
+  console.log('[Database] All data cleared successfully');
+}
+
+export async function clearAllDataAsync(): Promise<void> {
+  console.log('[Database] Clearing all data...');
+
+  // Delete all sessions
+  await db.runAsync('DELETE FROM outside_sessions');
+
+  // Delete reminder feedback
+  await db.runAsync('DELETE FROM reminder_feedback');
+
+  // Delete background task logs
+  await db.runAsync('DELETE FROM background_task_logs');
+
+  // Reset goals to defaults
+  await db.runAsync('DELETE FROM daily_goals');
+  await db.runAsync('DELETE FROM weekly_goals');
+  await db.runAsync('INSERT INTO daily_goals (targetMinutes, createdAt) VALUES (?, ?)', [
+    30,
+    Date.now(),
+  ]);
+  await db.runAsync('INSERT INTO weekly_goals (targetMinutes, createdAt) VALUES (?, ?)', [
+    150,
+    Date.now(),
+  ]);
+
+  // Clear non-essential settings (keep language only; hasCompletedIntro is reset so tutorial shows again)
+  await db.runAsync('DELETE FROM app_settings WHERE key NOT IN (?)', ['language']);
 
   console.log('[Database] All data cleared successfully');
 }
@@ -951,6 +1384,25 @@ export function getScheduledNotifications(): ScheduledNotification[] {
   }));
 }
 
+export async function getScheduledNotificationsAsync(): Promise<ScheduledNotification[]> {
+  const rows = await db.getAllAsync<ScheduledNotificationRow>(
+    'SELECT * FROM scheduled_notifications ORDER BY hour, minute'
+  );
+  return rows.map((row) => ({
+    id: row.id,
+    hour: row.hour,
+    minute: row.minute,
+    daysOfWeek: row.daysOfWeek
+      ? row.daysOfWeek
+          .split(',')
+          .map((d: string) => parseInt(d.trim(), 10))
+          .filter((d: number) => !isNaN(d) && d >= 0 && d <= 6) // Filter out invalid values
+      : [], // Handle empty/null daysOfWeek
+    enabled: row.enabled,
+    label: row.label,
+  }));
+}
+
 export function insertScheduledNotification(
   notification: Omit<ScheduledNotification, 'id'>
 ): number {
@@ -960,6 +1412,27 @@ export function insertScheduledNotification(
   }
 
   const result = db.runSync(
+    'INSERT INTO scheduled_notifications (hour, minute, daysOfWeek, enabled, label) VALUES (?, ?, ?, ?, ?)',
+    [
+      notification.hour,
+      notification.minute,
+      notification.daysOfWeek.join(','),
+      notification.enabled,
+      notification.label,
+    ]
+  );
+  return result.lastInsertRowId;
+}
+
+export async function insertScheduledNotificationAsync(
+  notification: Omit<ScheduledNotification, 'id'>
+): Promise<number> {
+  // Validate daysOfWeek is not empty
+  if (!notification.daysOfWeek || notification.daysOfWeek.length === 0) {
+    throw new Error('Cannot insert scheduled notification without any days selected');
+  }
+
+  const result = await db.runAsync(
     'INSERT INTO scheduled_notifications (hour, minute, daysOfWeek, enabled, label) VALUES (?, ?, ?, ?, ?)',
     [
       notification.hour,
@@ -993,12 +1466,49 @@ export function updateScheduledNotification(notification: ScheduledNotification)
   );
 }
 
+export async function updateScheduledNotificationAsync(
+  notification: ScheduledNotification
+): Promise<void> {
+  if (!notification.id) throw new Error('Cannot update notification without id');
+
+  // Validate daysOfWeek is not empty
+  if (!notification.daysOfWeek || notification.daysOfWeek.length === 0) {
+    throw new Error('Cannot update scheduled notification without any days selected');
+  }
+
+  await db.runAsync(
+    'UPDATE scheduled_notifications SET hour=?, minute=?, daysOfWeek=?, enabled=?, label=? WHERE id=?',
+    [
+      notification.hour,
+      notification.minute,
+      notification.daysOfWeek.join(','),
+      notification.enabled,
+      notification.label,
+      notification.id,
+    ]
+  );
+}
+
 export function deleteScheduledNotification(id: number): void {
   db.runSync('DELETE FROM scheduled_notifications WHERE id = ?', [id]);
 }
 
+export async function deleteScheduledNotificationAsync(id: number): Promise<void> {
+  await db.runAsync('DELETE FROM scheduled_notifications WHERE id = ?', [id]);
+}
+
 export function toggleScheduledNotification(id: number, enabled: boolean): void {
   db.runSync('UPDATE scheduled_notifications SET enabled = ? WHERE id = ?', [enabled ? 1 : 0, id]);
+}
+
+export async function toggleScheduledNotificationAsync(
+  id: number,
+  enabled: boolean
+): Promise<void> {
+  await db.runAsync('UPDATE scheduled_notifications SET enabled = ? WHERE id = ?', [
+    enabled ? 1 : 0,
+    id,
+  ]);
 }
 
 /**
@@ -1081,6 +1591,26 @@ export function getBackgroundLogs(
       );
     }
     return db.getAllSync<BackgroundTaskLog>(
+      'SELECT id, timestamp, category, message FROM background_task_logs ORDER BY timestamp DESC LIMIT ?',
+      [limit]
+    );
+  } catch {
+    return [];
+  }
+}
+
+export async function getBackgroundLogsAsync(
+  category?: BackgroundLogCategory,
+  limit = 200
+): Promise<BackgroundTaskLog[]> {
+  try {
+    if (category) {
+      return await db.getAllAsync<BackgroundTaskLog>(
+        'SELECT id, timestamp, category, message FROM background_task_logs WHERE category = ? ORDER BY timestamp DESC LIMIT ?',
+        [category, limit]
+      );
+    }
+    return await db.getAllAsync<BackgroundTaskLog>(
       'SELECT id, timestamp, category, message FROM background_task_logs ORDER BY timestamp DESC LIMIT ?',
       [limit]
     );
