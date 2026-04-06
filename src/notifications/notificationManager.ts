@@ -346,7 +346,7 @@ export async function scheduleNextReminder(): Promise<void> {
     return;
   }
 
-  const { should, reason, contributors } = shouldRemindNow(
+  const { should, reason, contributors } = await shouldRemindNow(
     todayMinutes,
     dailyTarget,
     lastReminderMs,
@@ -788,7 +788,7 @@ export async function scheduleDayReminders(): Promise<void> {
   // plannedSlots so that the proximity penalty is applied to subsequent candidates,
   // discouraging reminders that are too close together.
   while (topSlots.length < remindersCount) {
-    const scores = scoreReminderHours(
+    const scores = await scoreReminderHours(
       todayMinutes,
       dailyTarget,
       currentHour,
@@ -1055,7 +1055,7 @@ export async function maybeScheduleCatchUpReminder(): Promise<void> {
     if (weatherPrefs.enabled) {
       await fetchWeatherForecast({ allowPermissionPrompt: false });
     }
-    const scores = scoreReminderHours(todayMinutes, dailyTarget, now.getHours(), now.getMinutes());
+    const scores = await scoreReminderHours(todayMinutes, dailyTarget, now.getHours(), now.getMinutes());
 
     // Exclude slots that are already in the queue (any status) to prevent
     // scheduling two catch-up reminders for the same time from different ticks.

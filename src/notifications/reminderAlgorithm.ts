@@ -1,4 +1,4 @@
-import { getReminderFeedback, getSessionsForRange, startOfWeek } from '../storage/database';
+import { getReminderFeedbackAsync, getSessionsForRangeAsync, startOfWeek } from '../storage/database';
 import { getWeatherForHour } from '../weather/weatherService';
 import {
   scoreWeatherCondition,
@@ -44,14 +44,14 @@ export interface HourScore {
  * @param currentMinute - Current minute of day (default 0); combined with currentHour to skip past slots
  * @param plannedSlots - Already-selected reminder slots for today; nearby slots are penalised
  */
-export function scoreReminderHours(
+export async function scoreReminderHours(
   todayMinutes: number,
   dailyTargetMinutes: number,
   currentHour: number,
   currentMinute: number = 0,
   plannedSlots: { hour: number; minute: 0 | 30 }[] = []
-): HourScore[] {
-  const feedback = getReminderFeedback();
+): Promise<HourScore[]> {
+  const feedback = await getReminderFeedbackAsync();
   const scores: HourScore[] = [];
   const currentSlotMinutes = currentHour * 60 + currentMinute;
 
@@ -59,6 +59,9 @@ export function scoreReminderHours(
   const progressRatio = Math.min(todayMinutes / dailyTargetMinutes, 1);
   const dayProgressRatio = currentHour / 21; // normalize to end of reasonable day (9pm)
   const urgency = Math.max(0, dayProgressRatio - progressRatio); // 0 = no urgency, 1 = very urgent
+
+  // Fetch weather preferences once outside the loop for efficiency
+  const weatherPrefs = await getWeatherPreferences();
 
   for (
     let slotMinutes = SLOT_START_MINUTES;
@@ -80,7 +83,7 @@ export function scoreReminderHours(
 
     // ── Historical pattern boost ──────────────────────────
     // Did you go outside around this hour in the past?
-    const outsideAtHour = countOutsideSessionsAtHour(hour);
+    const outsideAtHour = await countOutsideSessionsAtHourAsync(hour);
     if (outsideAtHour > 0) {
       const patternBoost = Math.min(outsideAtHour * 0.1, 0.3);
       score += patternBoost;
@@ -182,9 +185,8 @@ export function scoreReminderHours(
 
     // ── Weather score ─────────────────────────────────────
     // Add weather-based scoring if weather data is available
-    const weatherPrefs = getWeatherPreferences();
     if (weatherPrefs.enabled) {
-      const weather = getWeatherForHour(hour);
+      const weather = await getWeatherForHour(hour);
       if (weather) {
         const weatherScore = scoreWeatherCondition(weather, weatherPrefs);
         if (weatherScore !== 0) {
@@ -253,12 +255,12 @@ export function scoreReminderHours(
  * Decide whether to send a reminder right now.
  * Returns true if a reminder should be sent.
  */
-export function shouldRemindNow(
+export async function shouldRemindNow(
   todayMinutes: number,
   dailyTargetMinutes: number,
   lastReminderMs: number,
   isCurrentlyOutside: boolean
-): { should: boolean; reason: string; contributors: ScoreContributor[] } {
+): Promise<{ should: boolean; reason: string; contributors: ScoreContributor[] }> {
   const now = Date.now();
   const d = new Date(now);
   const hour = d.getHours();
@@ -283,7 +285,7 @@ export function shouldRemindNow(
   }
 
   // Score slots starting from the current slot
-  const scores = scoreReminderHours(todayMinutes, dailyTargetMinutes, hour, minute);
+  const scores = await scoreReminderHours(todayMinutes, dailyTargetMinutes, hour, minute);
   // The current half-hour slot (either :00 or :30)
   const currentSlotMinute = (minute >= 30 ? 30 : 0) as 0 | 30;
   const currentHourScore = scores.find((s) => s.hour === hour && s.minute === currentSlotMinute);
@@ -305,10 +307,10 @@ export function shouldRemindNow(
 
 // ── Helpers ───────────────────────────────────────────────
 
-function countOutsideSessionsAtHour(hour: number): number {
+async function countOutsideSessionsAtHourAsync(hour: number): Promise<number> {
   // Look back 4 weeks
   const from = startOfWeek(Date.now()) - 4 * 7 * 24 * 60 * 60 * 1000;
-  const sessions = getSessionsForRange(from, Date.now());
+  const sessions = await getSessionsForRangeAsync(from, Date.now());
 
   return sessions.filter((s) => {
     const sessionHour = new Date(s.startTime).getHours();
