@@ -84,7 +84,7 @@ async function getQueue(): Promise<ReminderQueueEntry[]> {
 }
 
 /** Serialize and persist the reminder queue to settings. */
-async function await saveQueue(queue: ReminderQueueEntry[]): Promise<void> {
+async function saveQueue(queue: ReminderQueueEntry[]): Promise<void> {
   await setSettingAsync('smart_reminder_queue', JSON.stringify(queue));
 }
 
@@ -1392,7 +1392,7 @@ async function handleNotificationResponse(
  * Optionally includes weather context if available.
  * Adds streak encouragement based on streak state and reminder type.
  */
-async function await buildReminderMessage(
+async function buildReminderMessage(
   todayMinutes: number,
   dailyTarget: number,
   hour?: number,
