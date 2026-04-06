@@ -90,7 +90,11 @@ export default function HomeScreen() {
     };
   }, [timerRunning]);
 
+  const isFetchingRef = useRef(false);
+
   const loadData = useCallback(async () => {
+    if (isFetchingRef.current) return;
+    isFetchingRef.current = true;
     try {
       const [todayMin, weekMin, dailyGoal, weeklyGoal, sessions, dStreak, wStreak] =
         await Promise.all([
@@ -111,6 +115,8 @@ export default function HomeScreen() {
       setWeeklyStreak(wStreak);
     } catch (error) {
       console.error('[HomeScreen.loadData] Database error:', error);
+    } finally {
+      isFetchingRef.current = false;
     }
   }, []);
 
