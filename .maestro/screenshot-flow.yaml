@@ -3,8 +3,7 @@ appId: com.jollyheron.touchgrass
 - launchApp
 - extendedWaitUntil:
     visible: 'TouchGrass'
-    timeout: 60000 # Wait up to 10 seconds (adjust as needed)
-- extendedWaitUntilVisible: 'TouchGrass'
+    timeout: 60000 # Wait up to 60 seconds (adjust as needed)
 - takeScreenshot: 01_Home_Screen
 #- tapOn: "Settings" # 👈 Replace with text visible on a button in your app
 #- takeScreenshot: 02_Settings_Screen
