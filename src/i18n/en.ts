@@ -646,4 +646,16 @@ export default {
   exercise_water_polo: 'water polo',
   exercise_wheelchair: 'wheelchair',
   exercise_unknown: 'exercise type {{type}}',
+
+  // Diagnostic sheet
+  diagnostic_title: 'App Diagnostics',
+  diagnostic_environment: 'Environment',
+  diagnostic_native_version: 'Native Version',
+  diagnostic_launch_type: 'Launch Type',
+  diagnostic_update_id: 'Update ID',
+  diagnostic_launch_embedded: 'Embedded',
+  diagnostic_launch_ota: 'OTA Update',
+  diagnostic_unknown: 'unknown',
+  diagnostic_none: 'none',
+  diagnostic_share: 'Share Diagnostics',
 };

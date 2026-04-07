@@ -654,4 +654,16 @@ export default {
   exercise_water_polo: 'waterpolo',
   exercise_wheelchair: 'rolstoel',
   exercise_unknown: 'activiteitstype {{type}}',
+
+  // Diagnostic sheet
+  diagnostic_title: 'App Diagnose',
+  diagnostic_environment: 'Omgeving',
+  diagnostic_native_version: 'Versie',
+  diagnostic_launch_type: 'Starttype',
+  diagnostic_update_id: 'Update ID',
+  diagnostic_launch_embedded: 'Ingebouwd',
+  diagnostic_launch_ota: 'OTA-update',
+  diagnostic_unknown: 'onbekend',
+  diagnostic_none: 'geen',
+  diagnostic_share: 'Diagnostiek delen',
 };

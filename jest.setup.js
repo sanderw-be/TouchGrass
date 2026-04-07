@@ -224,3 +224,21 @@ jest.mock('@expo-google-fonts/nunito/800ExtraBold', () => ({
 }));
 
 // Add any additional setup here if needed
+
+// Mock expo-updates
+jest.mock('expo-updates', () => ({
+  channel: 'preview',
+  isEmbeddedLaunch: false,
+  updateId: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+  isEnabled: true,
+  runtimeVersion: '1.0.0',
+  isEmergencyLaunch: false,
+}));
+
+// Mock expo-application
+jest.mock('expo-application', () => ({
+  nativeApplicationVersion: '1.2.0',
+  nativeBuildVersion: '45',
+  applicationName: 'TouchGrass',
+  applicationId: 'be.sanderw.touchgrass',
+}));
