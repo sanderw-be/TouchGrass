@@ -50,7 +50,10 @@ describe('submitSession', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (Database.insertSessionAsync as jest.Mock).mockResolvedValue(1);
-    (Database.deleteSessionAsync as jest.Mock).mockResolvedValue(undefined);
+    (Database.insertSessionsBatchAsync as jest.Mock).mockResolvedValue([1]);
+    (Database.deleteSessionsByIdsAsync as jest.Mock).mockResolvedValue(undefined);
+    // loadTimeSlotProbabilities reads from getSettingAsync — return neutral probs
+    (Database.getSettingAsync as jest.Mock).mockResolvedValue('{}');
   });
 
   it('inserts a new session when there are no overlapping sessions', async () => {
@@ -59,8 +62,14 @@ describe('submitSession', () => {
     const candidate = makeSession();
     await submitSession(candidate);
 
-    expect(Database.insertSessionAsync).toHaveBeenCalledWith(candidate);
-    expect(Database.deleteSessionAsync).not.toHaveBeenCalled();
+    expect(Database.insertSessionsBatchAsync).toHaveBeenCalledWith([
+      expect.objectContaining({
+        startTime: candidate.startTime,
+        endTime: candidate.endTime,
+        durationMinutes: candidate.durationMinutes,
+      }),
+    ]);
+    expect(Database.deleteSessionsByIdsAsync).toHaveBeenCalledWith([]);
   });
 
   it('merges two overlapping sessions into one spanning the full range', async () => {
@@ -79,15 +88,14 @@ describe('submitSession', () => {
     });
     await submitSession(candidate);
 
-    expect(Database.deleteSessionAsync).toHaveBeenCalledWith(1);
-    expect(Database.insertSessionAsync).toHaveBeenCalledWith(
+    expect(Database.deleteSessionsByIdsAsync).toHaveBeenCalledWith([1]);
+    expect(Database.insertSessionsBatchAsync).toHaveBeenCalledWith([
       expect.objectContaining({
         startTime: BASE_TIME, // min of both
         endTime: BASE_TIME + 40 * 60 * 1000, // max of both
         durationMinutes: 40,
-        confidence: 0.8,
-      })
-    );
+      }),
+    ]);
   });
 
   it('merges consecutive periodic GPS sessions into one growing session', async () => {
@@ -106,7 +114,7 @@ describe('submitSession', () => {
     await submitSession(makeSession({ startTime: T5, endTime: T10 }));
 
     // The merged session should span T0 → T10
-    const mergedCall = (Database.insertSessionAsync as jest.Mock).mock.calls[1][0];
+    const mergedCall = (Database.insertSessionsBatchAsync as jest.Mock).mock.calls[1][0][0];
     expect(mergedCall.startTime).toBe(T0);
     expect(mergedCall.endTime).toBe(T10);
     expect(mergedCall.durationMinutes).toBe(10);
@@ -118,8 +126,10 @@ describe('submitSession', () => {
 
     await submitSession(makeSession({ confidence: 0.95 }));
 
-    const inserted = (Database.insertSessionAsync as jest.Mock).mock.calls[0][0];
-    expect(inserted.confidence).toBe(0.95);
+    const inserted = (Database.insertSessionsBatchAsync as jest.Mock).mock.calls[0][0][0];
+    // The merged raw confidence is max(0.7, 0.95) = 0.95; after scoring a 30-min session
+    // with neutral time-slot probs the score remains 0.95.
+    expect(inserted.confidence).toBeCloseTo(0.95, 1);
   });
 
   it('aggregates step counts from Health Connect sessions when merging', async () => {
@@ -140,7 +150,7 @@ describe('submitSession', () => {
     });
     await submitSession(gpsCandidate);
 
-    const inserted = (Database.insertSessionAsync as jest.Mock).mock.calls[0][0];
+    const inserted = (Database.insertSessionsBatchAsync as jest.Mock).mock.calls[0][0][0];
     expect(inserted.steps).toBe(996);
   });
 
@@ -159,7 +169,7 @@ describe('submitSession', () => {
     const candidate = makeSession({ source: 'health_connect', steps: 200, userConfirmed: null });
     await submitSession(candidate);
 
-    const inserted = (Database.insertSessionAsync as jest.Mock).mock.calls[0][0];
+    const inserted = (Database.insertSessionsBatchAsync as jest.Mock).mock.calls[0][0][0];
     expect(inserted.steps).toBe(1000);
   });
 
@@ -191,7 +201,7 @@ describe('submitSession', () => {
     });
     await submitSession(candidate);
 
-    const inserted = (Database.insertSessionAsync as jest.Mock).mock.calls[0][0];
+    const inserted = (Database.insertSessionsBatchAsync as jest.Mock).mock.calls[0][0][0];
     expect(inserted.steps).toBe(1000);
     // Notes must be a SINGLE sentence with the aggregated total, not a concatenation
     expect(inserted.notes).toMatch(/^Health Connect,\s*1,000 steps at \d+\.\d+ (?:km\/h|mph)\.$/);
@@ -215,7 +225,7 @@ describe('submitSession', () => {
     });
     await submitSession(gpsCandidate);
 
-    const inserted = (Database.insertSessionAsync as jest.Mock).mock.calls[0][0];
+    const inserted = (Database.insertSessionsBatchAsync as jest.Mock).mock.calls[0][0][0];
     // GPS note should appear first, followed by the aggregated HC note
     expect(inserted.notes).toMatch(/GPS detection/);
     expect(inserted.notes).toMatch(/Health Connect,.*steps at.*(?:km\/h|mph)/);
@@ -238,7 +248,7 @@ describe('submitSession', () => {
     });
     await submitSession(candidate);
 
-    const inserted = (Database.insertSessionAsync as jest.Mock).mock.calls[0][0];
+    const inserted = (Database.insertSessionsBatchAsync as jest.Mock).mock.calls[0][0][0];
     expect(inserted.notes).toBe('GPS detection, 1.0 km at 4.0 km/h.');
   });
 
@@ -249,7 +259,7 @@ describe('submitSession', () => {
     const candidate = makeSession({ notes: undefined, userConfirmed: null });
     await submitSession(candidate);
 
-    const inserted = (Database.insertSessionAsync as jest.Mock).mock.calls[0][0];
+    const inserted = (Database.insertSessionsBatchAsync as jest.Mock).mock.calls[0][0][0];
     expect(inserted.notes).toBeUndefined();
   });
 
@@ -262,9 +272,9 @@ describe('submitSession', () => {
     await submitSession(makeSession({ userConfirmed: null }));
 
     // The confirmed session must not be deleted
-    expect(Database.deleteSessionAsync).not.toHaveBeenCalledWith(1);
+    expect(Database.deleteSessionsByIdsAsync).toHaveBeenCalledWith([]);
     // No new segment to propose — the confirmed session already covers the range
-    expect(Database.insertSessionAsync).not.toHaveBeenCalled();
+    expect(Database.insertSessionsBatchAsync).toHaveBeenCalledWith([]);
   });
 
   it('preserves userConfirmed=0 (denied) from existing session when merging non-manual sessions', async () => {
@@ -273,7 +283,7 @@ describe('submitSession', () => {
 
     await submitSession(makeSession({ userConfirmed: null })); // GPS candidate
 
-    const inserted = (Database.insertSessionAsync as jest.Mock).mock.calls[0][0];
+    const inserted = (Database.insertSessionsBatchAsync as jest.Mock).mock.calls[0][0][0];
     expect(inserted.userConfirmed).toBe(0);
   });
 
@@ -287,7 +297,7 @@ describe('submitSession', () => {
     await submitSession(candidate);
 
     // Should not touch the existing session
-    expect(Database.deleteSessionAsync).not.toHaveBeenCalled();
+    expect(Database.deleteSessionsByIdsAsync).not.toHaveBeenCalled();
     // Should insert the manual session as-is
     expect(Database.insertSessionAsync).toHaveBeenCalledWith(candidate);
     // getSessionsForRangeAsync should not even be called for manual sessions
@@ -301,7 +311,7 @@ describe('submitSession', () => {
     const candidate = makeSession({ source: 'manual', userConfirmed: 1 });
     await submitSession(candidate);
 
-    expect(Database.deleteSessionAsync).not.toHaveBeenCalled();
+    expect(Database.deleteSessionsByIdsAsync).not.toHaveBeenCalled();
     expect(Database.insertSessionAsync).toHaveBeenCalledWith(candidate);
   });
 
@@ -320,9 +330,8 @@ describe('submitSession', () => {
     });
     await submitSession(candidate);
 
-    expect(Database.deleteSessionAsync).toHaveBeenCalledWith(1);
-    expect(Database.deleteSessionAsync).toHaveBeenCalledWith(2);
-    const inserted = (Database.insertSessionAsync as jest.Mock).mock.calls[0][0];
+    expect(Database.deleteSessionsByIdsAsync).toHaveBeenCalledWith(expect.arrayContaining([1, 2]));
+    const inserted = (Database.insertSessionsBatchAsync as jest.Mock).mock.calls[0][0][0];
     expect(inserted.startTime).toBe(BASE_TIME);
     expect(inserted.endTime).toBe(BASE_TIME + 30 * 60 * 1000);
   });
@@ -346,7 +355,9 @@ describe('submitSession', () => {
     });
     await submitSession(candidate);
 
-    expect(Database.deleteSessionAsync).not.toHaveBeenCalledWith(10);
+    // The manual/confirmed session's id must not appear in the delete list
+    const deletedIds = (Database.deleteSessionsByIdsAsync as jest.Mock).mock.calls[0][0];
+    expect(deletedIds).not.toContain(10);
   });
 
   it('splits a GPS session around a contained manual session into two segments', async () => {
@@ -365,10 +376,10 @@ describe('submitSession', () => {
     });
     await submitSession(candidate);
 
-    // Two GPS segments: before and after the manual session
-    expect(Database.insertSessionAsync).toHaveBeenCalledTimes(2);
-    const calls = (Database.insertSessionAsync as jest.Mock).mock.calls.map((c) => c[0]);
-    expect(calls).toEqual(
+    // Two GPS segments: before and after the manual session (in one batch call)
+    const batchedSessions = (Database.insertSessionsBatchAsync as jest.Mock).mock.calls[0][0];
+    expect(batchedSessions).toHaveLength(2);
+    expect(batchedSessions).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           startTime: BASE_TIME,
@@ -401,11 +412,11 @@ describe('submitSession', () => {
     });
     await submitSession(candidate);
 
-    expect(Database.insertSessionAsync).toHaveBeenCalledTimes(1);
-    const inserted = (Database.insertSessionAsync as jest.Mock).mock.calls[0][0];
-    expect(inserted.startTime).toBe(BASE_TIME);
-    expect(inserted.endTime).toBe(BASE_TIME + 10 * 60 * 1000);
-    expect(inserted.durationMinutes).toBe(10);
+    const batchedSessions = (Database.insertSessionsBatchAsync as jest.Mock).mock.calls[0][0];
+    expect(batchedSessions).toHaveLength(1);
+    expect(batchedSessions[0].startTime).toBe(BASE_TIME);
+    expect(batchedSessions[0].endTime).toBe(BASE_TIME + 10 * 60 * 1000);
+    expect(batchedSessions[0].durationMinutes).toBe(10);
   });
 
   it('trims a GPS session that overlaps the end of a manual session', async () => {
@@ -425,11 +436,11 @@ describe('submitSession', () => {
     });
     await submitSession(candidate);
 
-    expect(Database.insertSessionAsync).toHaveBeenCalledTimes(1);
-    const inserted = (Database.insertSessionAsync as jest.Mock).mock.calls[0][0];
-    expect(inserted.startTime).toBe(BASE_TIME + 20 * 60 * 1000);
-    expect(inserted.endTime).toBe(BASE_TIME + 30 * 60 * 1000);
-    expect(inserted.durationMinutes).toBe(10);
+    const batchedSessions = (Database.insertSessionsBatchAsync as jest.Mock).mock.calls[0][0];
+    expect(batchedSessions).toHaveLength(1);
+    expect(batchedSessions[0].startTime).toBe(BASE_TIME + 20 * 60 * 1000);
+    expect(batchedSessions[0].endTime).toBe(BASE_TIME + 30 * 60 * 1000);
+    expect(batchedSessions[0].durationMinutes).toBe(10);
   });
 
   it('does not insert a GPS session entirely covered by a manual session', async () => {
@@ -449,7 +460,7 @@ describe('submitSession', () => {
     });
     await submitSession(candidate);
 
-    expect(Database.insertSessionAsync).not.toHaveBeenCalled();
+    expect(Database.insertSessionsBatchAsync).toHaveBeenCalledWith([]);
   });
 
   it('does not touch a manual session adjacent to (but not overlapping) a GPS session', async () => {
@@ -470,12 +481,13 @@ describe('submitSession', () => {
     });
     await submitSession(candidate);
 
-    expect(Database.deleteSessionAsync).not.toHaveBeenCalledWith(10);
+    const deletedIds = (Database.deleteSessionsByIdsAsync as jest.Mock).mock.calls[0][0];
+    expect(deletedIds).not.toContain(10);
     // GPS session should be inserted as-is (manual is outside its range)
-    expect(Database.insertSessionAsync).toHaveBeenCalledTimes(1);
-    const inserted = (Database.insertSessionAsync as jest.Mock).mock.calls[0][0];
-    expect(inserted.startTime).toBe(BASE_TIME);
-    expect(inserted.endTime).toBe(BASE_TIME + 15 * 60 * 1000);
+    const batchedSessions = (Database.insertSessionsBatchAsync as jest.Mock).mock.calls[0][0];
+    expect(batchedSessions).toHaveLength(1);
+    expect(batchedSessions[0].startTime).toBe(BASE_TIME);
+    expect(batchedSessions[0].endTime).toBe(BASE_TIME + 15 * 60 * 1000);
   });
 
   it('GPS session pending approval (userConfirmed null) after being split around a manual', async () => {
@@ -491,8 +503,8 @@ describe('submitSession', () => {
     const candidate = makeSession({ startTime: BASE_TIME, endTime: BASE_TIME + 30 * 60 * 1000 });
     await submitSession(candidate);
 
-    const calls = (Database.insertSessionAsync as jest.Mock).mock.calls.map((c) => c[0]);
-    calls.forEach((s) => expect(s.userConfirmed).toBeNull());
+    const batchedSessions = (Database.insertSessionsBatchAsync as jest.Mock).mock.calls[0][0];
+    batchedSessions.forEach((s: OutsideSession) => expect(s.userConfirmed).toBeNull());
   });
 
   // ── Confirmed-session protection (any source) ─────────────
@@ -503,8 +515,8 @@ describe('submitSession', () => {
 
     await submitSession(makeSession({ source: 'health_connect', userConfirmed: null }));
 
-    expect(Database.deleteSessionAsync).not.toHaveBeenCalledWith(1);
-    expect(Database.insertSessionAsync).not.toHaveBeenCalled();
+    expect(Database.deleteSessionsByIdsAsync).toHaveBeenCalledWith([]);
+    expect(Database.insertSessionsBatchAsync).toHaveBeenCalledWith([]);
   });
 
   it('splits an unconfirmed health_connect session around a confirmed GPS session', async () => {
@@ -526,10 +538,11 @@ describe('submitSession', () => {
     });
     await submitSession(candidate);
 
-    expect(Database.deleteSessionAsync).not.toHaveBeenCalledWith(5);
-    expect(Database.insertSessionAsync).toHaveBeenCalledTimes(2);
-    const calls = (Database.insertSessionAsync as jest.Mock).mock.calls.map((c) => c[0]);
-    expect(calls).toEqual(
+    const deletedIds = (Database.deleteSessionsByIdsAsync as jest.Mock).mock.calls[0][0];
+    expect(deletedIds).not.toContain(5);
+    const batchedSessions = (Database.insertSessionsBatchAsync as jest.Mock).mock.calls[0][0];
+    expect(batchedSessions).toHaveLength(2);
+    expect(batchedSessions).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ startTime: BASE_TIME, endTime: BASE_TIME + 10 * 60 * 1000 }),
         expect.objectContaining({
@@ -558,7 +571,7 @@ describe('submitSession', () => {
     });
     await submitSession(candidate);
 
-    expect(Database.insertSessionAsync).not.toHaveBeenCalled();
+    expect(Database.insertSessionsBatchAsync).toHaveBeenCalledWith([]);
   });
 
   it('health_connect segments produced after splitting around a confirmed session are unconfirmed', async () => {
@@ -579,8 +592,8 @@ describe('submitSession', () => {
     });
     await submitSession(candidate);
 
-    const calls = (Database.insertSessionAsync as jest.Mock).mock.calls.map((c) => c[0]);
-    calls.forEach((s) => expect(s.userConfirmed).toBeNull());
+    const batchedSessions = (Database.insertSessionsBatchAsync as jest.Mock).mock.calls[0][0];
+    batchedSessions.forEach((s: OutsideSession) => expect(s.userConfirmed).toBeNull());
   });
 
   // ── Confidence-based discard ──────────────────────────────
@@ -595,7 +608,7 @@ describe('submitSession', () => {
     });
     await submitSession(candidate);
 
-    const inserted = (Database.insertSessionAsync as jest.Mock).mock.calls[0][0];
+    const inserted = (Database.insertSessionsBatchAsync as jest.Mock).mock.calls[0][0][0];
     expect(inserted.discarded).toBe(1);
   });
 
@@ -609,7 +622,7 @@ describe('submitSession', () => {
     });
     await submitSession(candidate);
 
-    const inserted = (Database.insertSessionAsync as jest.Mock).mock.calls[0][0];
+    const inserted = (Database.insertSessionsBatchAsync as jest.Mock).mock.calls[0][0][0];
     expect(inserted.discarded).toBe(1);
   });
 
@@ -623,7 +636,7 @@ describe('submitSession', () => {
     });
     await submitSession(candidate);
 
-    const inserted = (Database.insertSessionAsync as jest.Mock).mock.calls[0][0];
+    const inserted = (Database.insertSessionsBatchAsync as jest.Mock).mock.calls[0][0][0];
     expect(inserted.discarded).toBe(0);
   });
 
@@ -641,7 +654,7 @@ describe('submitSession', () => {
     });
     await submitSession(candidate);
 
-    const inserted = (Database.insertSessionAsync as jest.Mock).mock.calls[0][0];
+    const inserted = (Database.insertSessionsBatchAsync as jest.Mock).mock.calls[0][0][0];
     expect(inserted.userConfirmed).toBe(0); // preserved denial
     expect(inserted.discarded).toBe(0); // NOT discarded
   });
@@ -657,7 +670,7 @@ describe('submitSession', () => {
     });
     await submitSession(candidate);
 
-    const inserted = (Database.insertSessionAsync as jest.Mock).mock.calls[0][0];
+    const inserted = (Database.insertSessionsBatchAsync as jest.Mock).mock.calls[0][0][0];
     expect(inserted.confidence).toBeLessThan(0.8); // lower than raw GPS confidence
   });
 

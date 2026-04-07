@@ -107,15 +107,31 @@ describe('HistoryScreen weekly average', () => {
     jest.spyOn(Date, 'now').mockReturnValue(WEDNESDAY);
 
     // Mon=60, Tue=30, Wed=90, Thu–Sun=0 → total=180, avg=180/3=60
-    mockGetSessionsForRangeAsync.mockImplementation((from: number) => {
-      const minutes =
-        from === MONDAY ? 60 : from === MONDAY + 86400000 ? 30 : from === WEDNESDAY ? 90 : 0;
-      if (minutes === 0) return Promise.resolve([]);
+    // Now returns all sessions for the full week range in a single call
+    mockGetSessionsForRangeAsync.mockImplementation(() => {
       return Promise.resolve([
         {
-          startTime: from,
-          endTime: from + minutes * 60000,
-          durationMinutes: minutes,
+          startTime: MONDAY,
+          endTime: MONDAY + 60 * 60000,
+          durationMinutes: 60,
+          userConfirmed: 1,
+          source: 'gps',
+          confidence: 0.9,
+          discarded: 0,
+        },
+        {
+          startTime: MONDAY + 86400000,
+          endTime: MONDAY + 86400000 + 30 * 60000,
+          durationMinutes: 30,
+          userConfirmed: 1,
+          source: 'gps',
+          confidence: 0.9,
+          discarded: 0,
+        },
+        {
+          startTime: WEDNESDAY,
+          endTime: WEDNESDAY + 90 * 60000,
+          durationMinutes: 90,
           userConfirmed: 1,
           source: 'gps',
           confidence: 0.9,
@@ -138,19 +154,24 @@ describe('HistoryScreen weekly average', () => {
     const PAST_MONDAY = MONDAY - 7 * 86400000;
 
     // All 7 days have 14 minutes each → total=98, avg=14
-    mockGetSessionsForRangeAsync.mockImplementation((from: number) => {
+    // Returns all sessions for the full week range in a single call
+    mockGetSessionsForRangeAsync.mockImplementation((from: number, _to: number) => {
+      // Only return data for the past week range
       if (from >= PAST_MONDAY && from < MONDAY) {
-        return Promise.resolve([
-          {
-            startTime: from,
-            endTime: from + 14 * 60000,
+        const sessions = [];
+        for (let i = 0; i < 7; i++) {
+          const dayStart = PAST_MONDAY + i * 86400000;
+          sessions.push({
+            startTime: dayStart,
+            endTime: dayStart + 14 * 60000,
             durationMinutes: 14,
             userConfirmed: 1,
-            source: 'gps',
+            source: 'gps' as const,
             confidence: 0.9,
             discarded: 0,
-          },
-        ]);
+          });
+        }
+        return Promise.resolve(sessions);
       }
       return Promise.resolve([]);
     });

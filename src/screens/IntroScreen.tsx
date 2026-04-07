@@ -89,11 +89,13 @@ export default function IntroScreen({ onComplete }: Props) {
   // Load saved calendar settings on mount
   useEffect(() => {
     (async () => {
-      const rawBuffer = await getSettingAsync('calendar_buffer_minutes', '30');
+      const [rawBuffer, rawDuration] = await Promise.all([
+        getSettingAsync('calendar_buffer_minutes', '30'),
+        getSettingAsync('calendar_default_duration', '0'),
+      ]);
       const parsedBuffer = parseInt(rawBuffer, 10);
       setCalendarBuffer(Number.isNaN(parsedBuffer) ? 30 : parsedBuffer);
 
-      const rawDuration = await getSettingAsync('calendar_default_duration', '0');
       const parsedDuration = parseInt(rawDuration, 10);
       setCalendarDuration(Number.isNaN(parsedDuration) ? 0 : parsedDuration);
     })();

@@ -11,6 +11,7 @@ import {
   pruneShortDiscardedHealthConnectSessionsAsync,
   getKnownLocationsAsync,
   insertBackgroundLogAsync,
+  KnownLocation,
 } from '../storage/database';
 import { submitSession, buildSession } from './sessionMerger';
 import {
@@ -255,34 +256,27 @@ function exerciseTypeName(type: number): string {
  * Returns true if every GPS cluster sample within [startMs, endMs] falls inside
  * a known indoor location — meaning the user was definitely not outside.
  * Returns false when there are no GPS samples for the period (cannot conclude).
+ *
+ * Accepts pre-loaded data to avoid repeated DB reads when called in a loop.
  */
-async function wasDefinitelyAtKnownIndoorLocation(
+function wasDefinitelyAtKnownIndoorLocationSync(
   startMs: number,
-  endMs: number
-): Promise<boolean> {
-  try {
-    const parsed: unknown = JSON.parse(await getSettingAsync('location_clusters', '[]'));
-    const allSamples: { lat: number; lon: number; timestamp: number }[] = Array.isArray(parsed)
-      ? parsed
-      : [];
-    const sessionSamples = allSamples.filter((s) => s.timestamp >= startMs && s.timestamp <= endMs);
-    if (sessionSamples.length === 0) return false;
+  endMs: number,
+  allSamples: { lat: number; lon: number; timestamp: number }[],
+  knownLocations: KnownLocation[]
+): boolean {
+  const sessionSamples = allSamples.filter((s) => s.timestamp >= startMs && s.timestamp <= endMs);
+  if (sessionSamples.length === 0) return false;
+  if (knownLocations.length === 0) return false;
 
-    const knownLocations = await getKnownLocationsAsync();
-    if (knownLocations.length === 0) return false;
-
-    return sessionSamples.every((sample) =>
-      knownLocations.some(
-        (loc) =>
-          loc.isIndoor &&
-          haversineDistanceMeters(sample.lat, sample.lon, loc.latitude, loc.longitude) <=
-            loc.radiusMeters
-      )
-    );
-  } catch (e) {
-    console.warn('wasDefinitelyAtKnownIndoorLocation error:', e);
-    return false;
-  }
+  return sessionSamples.every((sample) =>
+    knownLocations.some(
+      (loc) =>
+        loc.isIndoor &&
+        haversineDistanceMeters(sample.lat, sample.lon, loc.latitude, loc.longitude) <=
+          loc.radiusMeters
+    )
+  );
 }
 
 /** Prevents two concurrent syncs from processing the same HC records. */
@@ -327,6 +321,18 @@ export async function syncHealthConnect(): Promise<boolean> {
     const startTimeISO = new Date(startTime).toISOString();
     const endTimeISO = new Date(syncTime).toISOString();
 
+    // ── Hoist static reads ──────────────────────────────────
+    // Location clusters and known locations do not change during a sync cycle.
+    // Load them once up-front instead of per-record to avoid N+1 DB queries.
+    let locationSamples: { lat: number; lon: number; timestamp: number }[] = [];
+    try {
+      const parsed: unknown = JSON.parse(await getSettingAsync('location_clusters', '[]'));
+      locationSamples = Array.isArray(parsed) ? parsed : [];
+    } catch {
+      // Malformed JSON — proceed with empty samples (no indoor filtering).
+    }
+    const knownLocations = await getKnownLocationsAsync();
+
     // Read exercise sessions
     const exerciseResult = await readRecords('ExerciseSession', {
       timeRangeFilter: {
@@ -351,7 +357,7 @@ export async function syncHealthConnect(): Promise<boolean> {
       const confidence = isExplicitlyOutdoor ? 0.8 : CONFIDENCE_ACTIVITY;
 
       // Skip if GPS data shows the user was at a known indoor location throughout
-      if (await wasDefinitelyAtKnownIndoorLocation(start, end)) {
+      if (wasDefinitelyAtKnownIndoorLocationSync(start, end, locationSamples, knownLocations)) {
         continue;
       }
 
@@ -396,7 +402,9 @@ export async function syncHealthConnect(): Promise<boolean> {
         const sessionStart = end - effectiveDurationMs;
 
         // Skip if GPS data shows the user was at a known indoor location throughout
-        if (await wasDefinitelyAtKnownIndoorLocation(sessionStart, end)) {
+        if (
+          wasDefinitelyAtKnownIndoorLocationSync(sessionStart, end, locationSamples, knownLocations)
+        ) {
           continue;
         }
 

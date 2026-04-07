@@ -45,12 +45,15 @@ export default function HistoryScreen() {
     try {
       if (p === 'week') {
         const weekStart = startOfWeek(date);
+        const weekEnd = weekStart + 7 * DAY_MS;
+        // Single range query for the entire week, then aggregate per day in memory
+        const sessions = await getSessionsForRangeAsync(weekStart, weekEnd);
         const days: { date: number; minutes: number }[] = [];
         for (let i = 0; i < 7; i++) {
           const dayStart = weekStart + i * DAY_MS;
-          const sessions = await getSessionsForRangeAsync(dayStart, dayStart + DAY_MS);
+          const dayEnd = dayStart + DAY_MS;
           const minutes = sessions
-            .filter((s) => s.userConfirmed !== 0)
+            .filter((s) => s.userConfirmed !== 0 && s.startTime >= dayStart && s.startTime < dayEnd)
             .reduce((sum, s) => sum + s.durationMinutes, 0);
           days.push({ date: dayStart, minutes });
         }

@@ -94,7 +94,7 @@ describe('HistoryScreen fetch guard', () => {
       await delay(500);
     });
     expect(mockGetCurrentDailyGoal).toHaveBeenCalledTimes(1);
-    // In week mode (default), getSessionsForRangeAsync is called 7 times (one per day)
-    expect(mockGetSessionsForRange).toHaveBeenCalledTimes(7);
+    // In week mode (default), getSessionsForRangeAsync is called once for the full 7-day range
+    expect(mockGetSessionsForRange).toHaveBeenCalledTimes(1);
   });
 });

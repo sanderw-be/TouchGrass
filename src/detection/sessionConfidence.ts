@@ -103,14 +103,32 @@ export function scoreDuration(durationMs: number): number {
  * The result is clamped to [0, 1].
  */
 export async function computeSessionScore(session: OutsideSession): Promise<number> {
+  const probs = await loadTimeSlotProbabilities();
+  return computeSessionScoreFromProbs(session, probs);
+}
+
+/**
+ * Pure in-memory variant of computeSessionScore that uses pre-loaded
+ * time-slot probabilities. Use this inside loops to avoid repeated DB reads.
+ */
+export function computeSessionScoreFromProbs(
+  session: OutsideSession,
+  probs: Record<string, number>
+): number {
   const durationMs = session.endTime - session.startTime;
   const d = new Date(session.startTime);
   const hour = d.getHours();
   const dayOfWeek = d.getDay(); // 0 = Sunday
 
   const durationFactor = scoreDuration(durationMs);
-  const timeSlotProb = await getTimeSlotProbability(hour, dayOfWeek);
+  const timeSlotProb = probs[slotKey(hour, dayOfWeek)] ?? DEFAULT_TIME_SLOT_PROBABILITY;
 
   const raw = session.confidence * durationFactor * (0.5 + timeSlotProb);
   return Math.min(1, Math.max(0, raw));
 }
+
+/**
+ * Load all time-slot probabilities from the database. Use this to pre-load
+ * once before a loop that needs to score multiple sessions.
+ */
+export { loadTimeSlotProbabilities };
