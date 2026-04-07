@@ -62,13 +62,14 @@ export default function DiagnosticSheet({ visible, onClose }: Props) {
 
         {/* Diagnostic rows */}
         <View style={styles.body}>
-          <DiagnosticRow label={t('diagnostic_environment')} value={channel} />
+          <DiagnosticRow label={t('diagnostic_environment')} value={channel} styles={styles} />
           <DiagnosticRow
             label={t('diagnostic_native_version')}
             value={`${nativeVersion} (${nativeBuildVersion})`}
+            styles={styles}
           />
-          <DiagnosticRow label={t('diagnostic_launch_type')} value={launchType} />
-          <DiagnosticRow label={t('diagnostic_update_id')} value={updateId} mono />
+          <DiagnosticRow label={t('diagnostic_launch_type')} value={launchType} styles={styles} />
+          <DiagnosticRow label={t('diagnostic_update_id')} value={updateId} mono styles={styles} />
         </View>
 
         {/* Share / copy diagnostics */}
@@ -84,10 +85,17 @@ export default function DiagnosticSheet({ visible, onClose }: Props) {
   );
 }
 
-function DiagnosticRow({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
-  const { colors, shadows } = useTheme();
-  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
-
+function DiagnosticRow({
+  label,
+  value,
+  mono,
+  styles,
+}: {
+  label: string;
+  value: string;
+  mono?: boolean;
+  styles: ReturnType<typeof makeStyles>;
+}) {
   return (
     <View style={styles.row}>
       <Text style={styles.rowLabel}>{label}</Text>
