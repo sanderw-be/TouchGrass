@@ -2,11 +2,10 @@ name: Automagical Screenshots 🦄
 
 on:
   workflow_dispatch:
-  push:
 
 jobs:
   shoot-and-deliver:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -38,6 +37,15 @@ jobs:
           LATEST_BUILD_URL=$(npx eas-cli build:list --platform android --profile preview --status finished --limit 1 --json | jq -r '.[0].artifacts.buildUrl')
           echo "Downloading from: $LATEST_BUILD_URL"
           curl -L -o app.apk "$LATEST_BUILD_URL"
+
+      # 👇 Fix #2: Unlock hardware acceleration so the emulator boots in 3 minutes instead of 15
+      - name: Enable KVM group perms
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+        # ... (the rest of your emulator setup)
 
       - name: Run Emulator and Maestro
         uses: ReactiveCircus/android-emulator-runner@v2
