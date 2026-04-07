@@ -1,6 +1,6 @@
 export default {
   // Begroetingen
-  greeting_morning: 'Goedemoggel 🌱',
+  greeting_morning: 'Goedemorgen 🌱',
   greeting_afternoon: 'Goedemiddag ☀️',
   greeting_evening: 'Goedenavond 🌙',
 
