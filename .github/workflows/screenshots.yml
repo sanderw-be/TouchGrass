@@ -1,0 +1,60 @@
+name: Automagical Screenshots 🦄
+
+on:
+  workflow_dispatch:
+  push:
+
+jobs:
+  shoot-and-deliver:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node & Expo
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Authenticate with EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          packager: npm
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Publish EAS Update
+        run: eas update --branch preview --message "Automagical screenshot run" --non-interactive
+
+      - name: Install Maestro
+        run: curl -Ls "https://get.maestro.mobile.dev" | bash
+        
+      - name: Fetch Latest APK from Expo
+        run: |
+          # Automatically asks Expo for the URL of your most recent successful Android preview build
+          LATEST_BUILD_URL=$(npx eas-cli build:list --platform android --profile preview --status finished --limit 1 --json | jq -r '.[0].artifacts.buildUrl')
+          echo "Downloading from: $LATEST_BUILD_URL"
+          curl -L -o app.apk "$LATEST_BUILD_URL"
+
+      - name: Run Emulator and Maestro
+        uses: ReactiveCircus/android-emulator-runner@v2
+        with:
+          api-level: 31
+          target: playstore
+          arch: x86_64
+          profile: pixel_6
+          script: |
+            export PATH="$PATH:$HOME/.maestro/bin"
+            adb install app.apk
+            maestro test .maestro/screenshot-flow.yaml --format junit --output output/
+
+      - name: Send Screenshots to Discord
+        run: |
+          for file in output/*.png; do
+            curl -F "file1=@$file" \
+                 -F "payload_json={\"content\": \"📸 Fresh screenshot delivered!\"}" \
+                 ${{ secrets.DISCORD_WEBHOOK_URL }}
+          done
