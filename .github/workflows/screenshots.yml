@@ -2,6 +2,7 @@ name: Automagical Screenshots 🦄
 
 on:
   workflow_dispatch:
+  push:
 
 jobs:
   shoot-and-deliver:
