@@ -255,3 +255,37 @@ describe('SettingsScreen About section navigation', () => {
     expect(mockNavigate).toHaveBeenCalledWith('AboutApp');
   });
 });
+
+describe('SettingsScreen version badge opens DiagnosticSheet', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('renders the version badge', async () => {
+    const { getByTestId } = render(<SettingsScreen />);
+    await waitFor(() => expect(getByTestId('version-badge')).toBeTruthy());
+  });
+
+  it('opens the diagnostic sheet when version badge is pressed', async () => {
+    const { getByTestId, queryByTestId } = render(<SettingsScreen />);
+    await waitFor(() => expect(getByTestId('version-badge')).toBeTruthy());
+
+    expect(queryByTestId('diagnostic-sheet')).toBeNull();
+
+    fireEvent.press(getByTestId('version-badge'));
+
+    await waitFor(() => expect(getByTestId('diagnostic-sheet')).toBeTruthy());
+  });
+
+  it('closes the diagnostic sheet when the close button is pressed', async () => {
+    const { getByTestId, queryByTestId } = render(<SettingsScreen />);
+    await waitFor(() => expect(getByTestId('version-badge')).toBeTruthy());
+
+    fireEvent.press(getByTestId('version-badge'));
+    await waitFor(() => expect(getByTestId('diagnostic-sheet')).toBeTruthy());
+
+    fireEvent.press(getByTestId('diagnostic-close-btn'));
+
+    await waitFor(() => expect(queryByTestId('diagnostic-sheet')).toBeNull());
+  });
+});

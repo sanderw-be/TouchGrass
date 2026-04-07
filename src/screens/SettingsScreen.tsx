@@ -34,6 +34,7 @@ import {
 import PermissionExplainerSheet, {
   PermissionSheetConfig,
 } from '../components/PermissionExplainerSheet';
+import DiagnosticSheet from '../components/DiagnosticSheet';
 
 import { spacing, radius } from '../utils/theme';
 import { useTheme, ThemePreference } from '../context/ThemeContext';
@@ -65,6 +66,7 @@ export default function SettingsScreen() {
   const [togglingHC, setTogglingHC] = useState(false);
   const [togglingGPS, setTogglingGPS] = useState(false);
   const [permissionSheet, setPermissionSheet] = useState<PermissionSheetConfig | null>(null);
+  const [showDiagnosticSheet, setShowDiagnosticSheet] = useState(false);
 
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const isFetchingRef = useRef(false);
@@ -348,7 +350,12 @@ export default function SettingsScreen() {
               right={
                 <View style={styles.rowRightInline}>
                   {Constants.expoConfig?.version ? (
-                    <Text style={styles.rowSublabel}>{`v${Constants.expoConfig.version}`}</Text>
+                    <TouchableOpacity
+                      onPress={() => setShowDiagnosticSheet(true)}
+                      testID="version-badge"
+                    >
+                      <Text style={styles.versionBadge}>{`v${Constants.expoConfig.version}`}</Text>
+                    </TouchableOpacity>
                   ) : null}
                   <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
                 </View>
@@ -424,6 +431,10 @@ export default function SettingsScreen() {
           onClose={() => setPermissionSheet(null)}
         />
       )}
+      <DiagnosticSheet
+        visible={showDiagnosticSheet}
+        onClose={() => setShowDiagnosticSheet(false)}
+      />
     </>
   );
 }
@@ -578,6 +589,16 @@ function makeStyles(
     rowHint: { fontSize: 12, color: colors.grass, marginTop: 2 },
     rowRight: { marginLeft: spacing.sm },
     rowRightInline: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+
+    versionBadge: {
+      fontSize: 12,
+      color: colors.grass,
+      fontWeight: '600',
+      backgroundColor: colors.grassPale,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 3,
+      borderRadius: radius.full,
+    },
 
     divider: { height: 1, backgroundColor: colors.fog, marginLeft: spacing.md + 28 + spacing.md },
 
