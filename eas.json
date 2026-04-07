@@ -19,6 +19,9 @@
         "buildType": "apk"
       }
     },
+    "preview-emulator": {
+      "extends": "preview"
+    },
     "production": {
       "android": {
         "buildType": "app-bundle"

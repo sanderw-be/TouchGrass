@@ -39,7 +39,7 @@ jobs:
 
       - name: Install Maestro
         run: curl -Ls "https://get.maestro.mobile.dev" | bash
-        
+
       - name: Fetch Latest APK from Expo
         run: |
           # Automatically asks Expo for the URL of your most recent successful Android preview build
@@ -72,7 +72,7 @@ jobs:
         run: |
           # This prevents Bash from crashing if it doesn't find any files
           shopt -s nullglob
-          
+
           # Look for PNGs in the root folder AND the .maestro folder just to be safe!
           for file in *.png .maestro/*.png; do
             echo "Uploading $file..."
@@ -80,4 +80,3 @@ jobs:
                  -F "payload_json={\"content\": \"📸 Fresh screenshot delivered!\"}" \
                  ${{ secrets.DISCORD_WEBHOOK_URL }}
           done
-

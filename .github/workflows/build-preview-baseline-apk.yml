@@ -26,4 +26,4 @@ jobs:
 
       - name: Execute EAS Cloud Build
         # The --non-interactive flag is crucial here so the CI doesn't hang waiting for user input
-        run: eas build --platform android --profile preview --non-interactive
+        run: eas build --platform android --profile preview-emulator --non-interactive
