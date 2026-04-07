@@ -60,7 +60,7 @@ jobs:
         with:
           api-level: 31
           target: playstore
-          arch: x86_64
+          arch: arm_v8a
           profile: pixel_6
           script: |
             export PATH="$PATH:$HOME/.maestro/bin"
