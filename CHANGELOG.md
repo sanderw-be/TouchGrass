@@ -1,3 +1,21 @@
+# [1.5.0](https://github.com/sanderw-be/TouchGrass/compare/v1.4.0...v1.5.0) (2026-04-07)
+
+### Bug Fixes
+
+- add comprehensive error handling to prevent cursor close errors and remove loops for streak calculations ([dc97e50](https://github.com/sanderw-be/TouchGrass/commit/dc97e50bdc9ea766c3f61e6a33aecfcd127e842b)), closes [#359](https://github.com/sanderw-be/TouchGrass/issues/359)
+- Android widget goes blank after app update ([#372](https://github.com/sanderw-be/TouchGrass/issues/372)) ([bc31351](https://github.com/sanderw-be/TouchGrass/commit/bc31351555061fd65c9f61ef43b9d35841628c47))
+- database migration storm using PRAGMA user_version ([#362](https://github.com/sanderw-be/TouchGrass/issues/362)) ([50fc0d5](https://github.com/sanderw-be/TouchGrass/commit/50fc0d5e981a4c7859d7f5d91d00911461da7d12))
+- Prevent trigger storms with isFetchingRef lock across all data-fetching screens ([#366](https://github.com/sanderw-be/TouchGrass/issues/366)) ([7fb838f](https://github.com/sanderw-be/TouchGrass/commit/7fb838f5d5766a97112137cda67bd5c5c257546f))
+- trigger widget refresh on confirmed session retraction ([#357](https://github.com/sanderw-be/TouchGrass/issues/357)) ([36939ec](https://github.com/sanderw-be/TouchGrass/commit/36939ecc8030fe45ddcc460cff96e9c4f2d217f1))
+- widget crash at app update: patch HeadlessJsTaskWorker to handle warm-start after app update ([#375](https://github.com/sanderw-be/TouchGrass/issues/375)) ([d05fe91](https://github.com/sanderw-be/TouchGrass/commit/d05fe91b454935ecfaea00edbd74020400032f3f))
+
+### Features
+
+- **db:** Migrate background tasks to async SQLite API ([#373](https://github.com/sanderw-be/TouchGrass/issues/373)) ([978b7f3](https://github.com/sanderw-be/TouchGrass/commit/978b7f3e2b2cc185b0ca951f9160107dce9e8cdf))
+- **dev:** Implement EAS Update and CI Maestro Screenshot workflow ([#379](https://github.com/sanderw-be/TouchGrass/issues/379)) ([ad02183](https://github.com/sanderw-be/TouchGrass/commit/ad021837ecfdd630372694c182356fc806a847e4))
+- Diagnostic Build Info Bottom Sheet in Settings ([#380](https://github.com/sanderw-be/TouchGrass/issues/380)) ([29f8f78](https://github.com/sanderw-be/TouchGrass/commit/29f8f788d17857ad8744181d759687d673815162))
+- UI database calls to async API, preserve sync for widget ([#365](https://github.com/sanderw-be/TouchGrass/issues/365)) ([c69f231](https://github.com/sanderw-be/TouchGrass/commit/c69f2318e2ad6d03402beea4d5612fb6304a20e0))
+
 # [1.4.0](https://github.com/sanderw-be/TouchGrass/compare/v1.3.1...v1.4.0) (2026-04-05)
 
 ### Bug Fixes

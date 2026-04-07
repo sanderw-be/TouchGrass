@@ -2,7 +2,7 @@
   "expo": {
     "name": "TouchGrass",
     "slug": "touchgrass",
-    "version": "1.4.0",
+    "version": "1.5.0",
     "scheme": "touchgrass",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -18,7 +18,7 @@
         "backgroundColor": "#4A7C59"
       },
       "package": "com.jollyheron.touchgrass",
-      "versionCode": 8,
+      "versionCode": 9,
       "permissions": [
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_FINE_LOCATION",
