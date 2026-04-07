@@ -27,6 +27,9 @@ jobs:
           packager: npm       # 👈 2. Add this line to bypass the yarn crash
           token: ${{ secrets.EXPO_TOKEN }}
 
+      - name: Install Project Dependencies
+        run: npm ci
+
       - name: Install Updates Library
         run: npx expo install expo-updates
 
