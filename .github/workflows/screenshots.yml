@@ -69,8 +69,14 @@ jobs:
 
       - name: Send Screenshots to Discord
         run: |
-          for file in output/*.png; do
+          # This prevents Bash from crashing if it doesn't find any files
+          shopt -s nullglob
+          
+          # Look for PNGs in the root folder AND the .maestro folder just to be safe!
+          for file in *.png .maestro/*.png; do
+            echo "Uploading $file..."
             curl -F "file1=@$file" \
                  -F "payload_json={\"content\": \"📸 Fresh screenshot delivered!\"}" \
                  ${{ secrets.DISCORD_WEBHOOK_URL }}
           done
+
