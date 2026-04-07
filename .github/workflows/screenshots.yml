@@ -27,7 +27,8 @@ jobs:
         run: npm ci
 
       - name: Publish EAS Update
-        run: eas update --branch preview --message "Automagical screenshot run" --non-interactive
+        run: eas update --branch preview --platform android --message "Automagical screenshot run" --non-interactive
+
 
       - name: Install Maestro
         run: curl -Ls "https://get.maestro.mobile.dev" | bash
@@ -39,7 +40,6 @@ jobs:
           echo "Downloading from: $LATEST_BUILD_URL"
           curl -L -o app.apk "$LATEST_BUILD_URL"
 
-      # 👇 Fix #2: Unlock hardware acceleration so the emulator boots in 3 minutes instead of 15
       - name: Enable KVM group perms
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
@@ -58,7 +58,7 @@ jobs:
           script: |
             export PATH="$PATH:$HOME/.maestro/bin"
             adb install app.apk
-            maestro test .maestro/screenshot-flow.yaml --format junit --output output/
+            $HOME/.maestro/bin/maestro test .maestro/screenshot-flow.yaml --format junit --output output/
 
       - name: Send Screenshots to Discord
         run: |
