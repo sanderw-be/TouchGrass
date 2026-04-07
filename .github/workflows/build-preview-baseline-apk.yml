@@ -1,0 +1,30 @@
+name: 🏗️ Build Baseline APK
+
+on:
+  workflow_dispatch:
+  push:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup Expo
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          packager: npm
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Execute EAS Cloud Build
+        # The --non-interactive flag is crucial here so the CI doesn't hang waiting for user input
+        run: eas build --platform android --profile preview --non-interactive
