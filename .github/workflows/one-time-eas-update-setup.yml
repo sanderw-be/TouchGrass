@@ -15,15 +15,16 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup Node & Expo
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'  # 👈 1. Bump this from 18 to 20
           
       - name: Authenticate with EAS
         uses: expo/expo-github-action@v8
         with:
           eas-version: latest
+          packager: npm       # 👈 2. Add this line to bypass the yarn crash
           token: ${{ secrets.EXPO_TOKEN }}
 
       - name: Install Updates Library
