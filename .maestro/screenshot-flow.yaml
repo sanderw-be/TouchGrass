@@ -1,0 +1,28 @@
+appId: com.jollyheron.touchgrass
+---
+- launchApp:
+    clearState: true
+- assertVisible: Next
+- takeScreenshot: 01_Tutorial_Welcome
+- tapOn: Next
+- takeScreenshot: 02_Tutorial_HealthConnect
+- tapOn: Next
+- takeScreenshot: 03_Tutorial_Location
+- tapOn: Next
+- takeScreenshot: 04_Tutorial_Reminders
+- tapOn: Next
+- takeScreenshot: 05_Tutorial_BackgroundActivity
+- tapOn: Next
+- takeScreenshot: 06_Tutorial_Calendar
+- tapOn: Next
+- takeScreenshot: 07_Tutorial_Finish
+- tapOn: Get Started
+- takeScreenshot: 08_HomeScreen
+- tapOn: Events
+- takeScreenshot: 09_SessionsScreen
+- tapOn: History
+- takeScreenshot: 10_HistoryScreen
+- tapOn: Goals
+- takeScreenshot: 11_GoalsScreen
+- tapOn: Settings
+- takeScreenshot: 12_SettingsScreen
