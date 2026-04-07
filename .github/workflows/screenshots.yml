@@ -68,6 +68,7 @@ jobs:
             $HOME/.maestro/bin/maestro test .maestro/screenshot-flow.yaml --format junit --output output/
 
       - name: Send Screenshots to Discord
+        if: always()
         run: |
           # This prevents Bash from crashing if it doesn't find any files
           shopt -s nullglob
