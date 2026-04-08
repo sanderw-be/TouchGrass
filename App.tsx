@@ -56,7 +56,7 @@ function AppContent() {
   const appState = useRef(AppState.currentState);
   const deferredInitDone = useRef(false);
 
-  // Check for EAS updates on startup; fall back after 3 s so the app is never
+  // Check for EAS updates on startup; fall back after 3 seconds so the app is never
   // blocked for longer than the native fallbackToCacheTimeout.
   useEffect(() => {
     if (!Updates.isEnabled) return;
