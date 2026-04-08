@@ -1,0 +1,5 @@
+TouchGrass 1.5.1
+
+🐛 Bug fixes:
+• EAS update splash screen + manual update trigger in diagnostics (#385)
+• Onboarding permission defaults, post-tutorial feature flags, permission warning banners, widget tip spacing (#382)

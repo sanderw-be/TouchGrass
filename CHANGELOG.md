@@ -1,3 +1,10 @@
+## [1.5.1](https://github.com/sanderw-be/TouchGrass/compare/v1.5.0...v1.5.1) (2026-04-08)
+
+### Bug Fixes
+
+- EAS update splash screen + manual update trigger in diagnostics ([#385](https://github.com/sanderw-be/TouchGrass/issues/385)) ([1b101c8](https://github.com/sanderw-be/TouchGrass/commit/1b101c8a1e7d6984b1553f1544ecf85d29bd21b2))
+- onboarding permission defaults, post-tutorial feature flags, permission warning banners, widget tip spacing ([#382](https://github.com/sanderw-be/TouchGrass/issues/382)) ([8c5947c](https://github.com/sanderw-be/TouchGrass/commit/8c5947cf6f462bc3094371fbf24cade35880f76a))
+
 # [1.5.0](https://github.com/sanderw-be/TouchGrass/compare/v1.4.0...v1.5.0) (2026-04-07)
 
 ### Bug Fixes
