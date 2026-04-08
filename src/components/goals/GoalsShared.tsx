@@ -260,5 +260,12 @@ export function makeStyles(
       paddingVertical: 3,
       borderRadius: radius.full,
     },
+    permissionWarning: {
+      backgroundColor: colors.warningSurface,
+      borderRadius: radius.md,
+      padding: spacing.sm,
+      marginBottom: spacing.md,
+    },
+    permissionWarningText: { fontSize: 12, color: colors.warningText, lineHeight: 18 },
   });
 }

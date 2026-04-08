@@ -289,3 +289,57 @@ describe('SettingsScreen version badge opens DiagnosticSheet', () => {
     await waitFor(() => expect(queryByTestId('diagnostic-sheet')).toBeNull());
   });
 });
+
+describe('SettingsScreen permission warning banner', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('shows banner when GPS is enabled but permission is missing', async () => {
+    (DetectionModule.getDetectionStatus as jest.Mock).mockResolvedValue({
+      healthConnect: false,
+      healthConnectPermission: false,
+      gps: true,
+      gpsPermission: false,
+    });
+
+    const { findByText } = render(<SettingsScreen />);
+    await expect(findByText(/permission_issues_banner/)).resolves.toBeTruthy();
+  });
+
+  it('shows banner when Health Connect is enabled but permission is missing', async () => {
+    (DetectionModule.getDetectionStatus as jest.Mock).mockResolvedValue({
+      healthConnect: true,
+      healthConnectPermission: false,
+      gps: false,
+      gpsPermission: false,
+    });
+
+    const { findByText } = render(<SettingsScreen />);
+    await expect(findByText(/permission_issues_banner/)).resolves.toBeTruthy();
+  });
+
+  it('does not show banner when all permissions are satisfied', async () => {
+    (DetectionModule.getDetectionStatus as jest.Mock).mockResolvedValue({
+      healthConnect: true,
+      healthConnectPermission: true,
+      gps: true,
+      gpsPermission: true,
+    });
+
+    const { queryByText } = render(<SettingsScreen />);
+    await waitFor(() => expect(queryByText(/permission_issues_banner/)).toBeNull());
+  });
+
+  it('does not show banner when features are disabled', async () => {
+    (DetectionModule.getDetectionStatus as jest.Mock).mockResolvedValue({
+      healthConnect: false,
+      healthConnectPermission: false,
+      gps: false,
+      gpsPermission: false,
+    });
+
+    const { queryByText } = render(<SettingsScreen />);
+    await waitFor(() => expect(queryByText(/permission_issues_banner/)).toBeNull());
+  });
+});

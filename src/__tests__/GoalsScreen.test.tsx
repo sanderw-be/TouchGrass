@@ -805,3 +805,51 @@ describe('GoalsScreen smart reminders notification permission', () => {
     });
   });
 });
+
+describe('GoalsScreen permission warning banner', () => {
+  let mockGetPermissions: jest.Mock;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    (Platform as any).OS = originalPlatformOS;
+    mockGetSettingAsync.mockImplementation((key: string, def: string) => Promise.resolve(def));
+    mockCheckWeatherLocation.mockResolvedValue(false);
+    (CalendarService.hasCalendarPermissions as jest.Mock).mockResolvedValue(false);
+    mockGetPermissions = require('expo-notifications').getPermissionsAsync as jest.Mock;
+    mockGetPermissions.mockResolvedValue({ status: 'denied' });
+  });
+
+  it('shows banner when smart reminders are on and notification permission is denied', async () => {
+    mockGetSettingAsync.mockImplementation((key: string, def: string) => {
+      if (key === 'smart_reminders_count') return Promise.resolve('2');
+      return Promise.resolve(def);
+    });
+
+    const { findByText } = render(<GoalsScreen />);
+    await expect(findByText(/permission_issues_banner/)).resolves.toBeTruthy();
+  });
+
+  it('shows banner when weather is enabled and location permission is missing', async () => {
+    mockGetSettingAsync.mockImplementation((key: string, def: string) => {
+      if (key === 'weather_enabled') return Promise.resolve('1');
+      return Promise.resolve(def);
+    });
+    mockCheckWeatherLocation.mockResolvedValue(false);
+
+    const { findByText } = render(<GoalsScreen />);
+    await expect(findByText(/permission_issues_banner/)).resolves.toBeTruthy();
+  });
+
+  it('does not show banner when all permissions are satisfied', async () => {
+    mockGetSettingAsync.mockImplementation((key: string, def: string) => {
+      if (key === 'smart_reminders_count') return Promise.resolve('0');
+      if (key === 'weather_enabled') return Promise.resolve('0');
+      return Promise.resolve(def);
+    });
+    mockGetPermissions.mockResolvedValue({ status: 'granted' });
+    mockCheckWeatherLocation.mockResolvedValue(true);
+
+    const { queryByText } = render(<GoalsScreen />);
+    await waitFor(() => expect(queryByText(/permission_issues_banner/)).toBeNull());
+  });
+});

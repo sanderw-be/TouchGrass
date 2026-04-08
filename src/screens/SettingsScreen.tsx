@@ -210,6 +210,14 @@ export default function SettingsScreen() {
     ]);
   };
 
+  const settingsPermissionIssues: string[] = [];
+  if (detectionStatus.gps && !detectionStatus.gpsPermission) {
+    settingsPermissionIssues.push(t('settings_gps'));
+  }
+  if (detectionStatus.healthConnect && !detectionStatus.healthConnectPermission) {
+    settingsPermissionIssues.push(t('settings_health_connect'));
+  }
+
   return (
     <>
       <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
@@ -217,6 +225,13 @@ export default function SettingsScreen() {
       </View>
 
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+        {settingsPermissionIssues.length > 0 && (
+          <View style={styles.permissionWarning}>
+            <Text style={styles.permissionWarningText}>
+              {t('permission_issues_banner', { features: settingsPermissionIssues.join(', ') })}
+            </Text>
+          </View>
+        )}
         {/* Detection sources */}
         <Text style={styles.sectionHeader}>{t('settings_section_detection')}</Text>
         <View style={styles.card}>

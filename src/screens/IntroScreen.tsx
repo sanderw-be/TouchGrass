@@ -163,16 +163,34 @@ export default function IntroScreen({ onComplete }: Props) {
     }
   }, [currentStep, checkPermissions]);
 
-  const handleNext = () => {
+  /**
+   * Persists feature toggles that depend on permissions granted during the tutorial.
+   * Called both when the user reaches the end ("Get Started") and when they skip early.
+   *
+   * GPS is already handled inside handleRequestLocation (toggleGPS writes to the DB).
+   * Smart reminders and weather are set here based on current permission state.
+   */
+  const saveOnboardingSettings = async () => {
+    if (notificationsGranted) {
+      await setSettingAsync('smart_reminders_count', '2');
+    }
+    if (locationGranted && notificationsGranted) {
+      await setSettingAsync('weather_enabled', '1');
+    }
+  };
+
+  const handleNext = async () => {
     const nextIndex = currentIndex + 1;
     if (nextIndex < steps.length) {
       setCurrentStep(steps[nextIndex]);
     } else {
+      await saveOnboardingSettings();
       onComplete();
     }
   };
 
-  const handleSkip = () => {
+  const handleSkip = async () => {
+    await saveOnboardingSettings();
     onComplete();
   };
 
@@ -681,7 +699,7 @@ function ReadyStep({
         </View>
       </View>
       {Platform.OS === 'android' && (
-        <View style={styles.tipCard}>
+        <View style={[styles.tipCard, { marginTop: spacing.md }]}>
           <Text style={styles.tipTitle}>📌 {t('intro_ready_widget_title')}</Text>
           <Text style={styles.tipBody}>{t('intro_ready_widget_body')}</Text>
         </View>
