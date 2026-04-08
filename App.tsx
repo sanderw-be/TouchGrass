@@ -17,6 +17,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { enableScreens } from 'react-native-screens';
 import 'expo-dev-client';
+import * as Updates from 'expo-updates';
 import { initDatabase, getSetting, setSetting } from './src/storage/database';
 import i18n from './src/i18n';
 import { initDetection } from './src/detection/index';
@@ -37,6 +38,7 @@ import { LanguageContext } from './src/context/LanguageContext';
 import { ReminderFeedbackProvider } from './src/context/ReminderFeedbackContext';
 import ReminderFeedbackModal from './src/components/ReminderFeedbackModal';
 import ErrorBoundary from './src/components/ErrorBoundary';
+import UpdateSplashScreen, { UpdateSplashStatus } from './src/components/UpdateSplashScreen';
 import { refreshBatteryOptimizationSetting } from './src/utils/batteryOptimization';
 import { requestWidgetRefresh } from './src/utils/widgetHelper';
 
@@ -47,9 +49,50 @@ function AppContent() {
   const [ready, setReady] = useState(false);
   const [showIntro, setShowIntro] = useState(false);
   const [locale, setLocaleState] = useState(i18n.locale);
+  const [updateStatus, setUpdateStatus] = useState<UpdateSplashStatus | 'ready'>(() =>
+    Updates.isEnabled ? 'checking' : 'ready'
+  );
   const savedNavState = useRef<InitialState | undefined>(undefined);
   const appState = useRef(AppState.currentState);
   const deferredInitDone = useRef(false);
+
+  // Check for EAS updates on startup; fall back after 3 seconds so the app is never
+  // blocked for longer than the native fallbackToCacheTimeout.
+  useEffect(() => {
+    if (!Updates.isEnabled) return;
+
+    let cancelled = false;
+    const timeout = setTimeout(() => {
+      if (!cancelled) setUpdateStatus('ready');
+    }, 3000);
+
+    (async () => {
+      try {
+        const result = await Updates.checkForUpdateAsync();
+        if (cancelled) return;
+        clearTimeout(timeout);
+        if (result.isAvailable) {
+          setUpdateStatus('downloading');
+          await Updates.fetchUpdateAsync();
+          if (!cancelled) {
+            await Updates.reloadAsync();
+          }
+        } else {
+          setUpdateStatus('ready');
+        }
+      } catch {
+        if (!cancelled) {
+          clearTimeout(timeout);
+          setUpdateStatus('ready');
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timeout);
+    };
+  }, []);
 
   const setLocale = useCallback((code: string) => {
     i18n.locale = code;
@@ -212,6 +255,10 @@ function AppContent() {
     // blocked while showIntro was true. It will fire automatically once
     // showIntro becomes false and the navigator is visible.
   };
+
+  if (updateStatus !== 'ready') {
+    return <UpdateSplashScreen status={updateStatus} />;
+  }
 
   if (!ready) {
     return (
