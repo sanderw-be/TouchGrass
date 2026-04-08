@@ -63,9 +63,9 @@ jobs:
           script: |
             export PATH="$PATH:$HOME/.maestro/bin"
             adb install app.apk
-            $HOME/.maestro/bin/maestro test .maestro/screenshot-flow.yaml --format junit --output output/
+            $HOME/.maestro/bin/maestro test .maestro/screenshot-flow.yaml --format junit --output outputlight/
             adb shell "cmd uimode night yes"
-            $HOME/.maestro/bin/maestro test .maestro/screenshot-flow.yaml --format junit --output output/
+            $HOME/.maestro/bin/maestro test .maestro/screenshot-flow.yaml --format junit --output outputdark/
 
       - name: Send Screenshots to Discord
         if: always()
