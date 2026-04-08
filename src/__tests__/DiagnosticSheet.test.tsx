@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
 import { Share } from 'react-native';
 
 jest.mock('../i18n', () => ({
@@ -64,5 +64,54 @@ describe('DiagnosticSheet', () => {
 
     await waitFor(() => expect(shareSpy).toHaveBeenCalledTimes(1));
     expect(shareSpy.mock.calls[0][0]).toHaveProperty('message');
+  });
+
+  it('shows the check-for-update button when Updates.isEnabled is true', () => {
+    const { getByTestId } = render(<DiagnosticSheet visible onClose={jest.fn()} />);
+    expect(getByTestId('diagnostic-check-update-btn')).toBeTruthy();
+  });
+
+  it('calls checkForUpdateAsync when the check-for-update button is pressed', async () => {
+    const Updates = require('expo-updates');
+    Updates.checkForUpdateAsync.mockResolvedValueOnce({ isAvailable: false });
+
+    const { getByTestId } = render(<DiagnosticSheet visible onClose={jest.fn()} />);
+
+    await act(async () => {
+      fireEvent.press(getByTestId('diagnostic-check-update-btn'));
+    });
+
+    expect(Updates.checkForUpdateAsync).toHaveBeenCalled();
+  });
+
+  it('fetches and reloads when an update is available', async () => {
+    const Updates = require('expo-updates');
+    Updates.checkForUpdateAsync.mockResolvedValueOnce({ isAvailable: true });
+    Updates.fetchUpdateAsync.mockResolvedValueOnce({ isNew: true });
+    Updates.reloadAsync.mockResolvedValueOnce(undefined);
+
+    const { getByTestId } = render(<DiagnosticSheet visible onClose={jest.fn()} />);
+
+    await act(async () => {
+      fireEvent.press(getByTestId('diagnostic-check-update-btn'));
+    });
+
+    expect(Updates.fetchUpdateAsync).toHaveBeenCalled();
+    expect(Updates.reloadAsync).toHaveBeenCalled();
+  });
+
+  it('sets checkState to done when no update is available', async () => {
+    const Updates = require('expo-updates');
+    Updates.checkForUpdateAsync.mockResolvedValueOnce({ isAvailable: false });
+
+    const { getByTestId } = render(<DiagnosticSheet visible onClose={jest.fn()} />);
+    const btn = getByTestId('diagnostic-check-update-btn');
+
+    await act(async () => {
+      fireEvent.press(btn);
+    });
+
+    // After the check, the button should be disabled (checkState !== 'idle')
+    expect(btn.props.accessibilityState?.disabled || btn.props.disabled).toBeTruthy();
   });
 });

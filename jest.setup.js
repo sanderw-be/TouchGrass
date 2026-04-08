@@ -233,6 +233,23 @@ jest.mock('expo-updates', () => ({
   isEnabled: true,
   runtimeVersion: '1.0.0',
   isEmergencyLaunch: false,
+  checkForUpdateAsync: jest.fn(() => Promise.resolve({ isAvailable: false })),
+  fetchUpdateAsync: jest.fn(() => Promise.resolve({ isNew: true })),
+  reloadAsync: jest.fn(() => Promise.resolve()),
+  useUpdates: jest.fn(() => ({
+    currentlyRunning: {
+      updateId: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+      channel: 'preview',
+      isEmbeddedLaunch: false,
+    },
+    isUpdateAvailable: false,
+    isUpdatePending: false,
+    isChecking: false,
+    isDownloading: false,
+    checkError: undefined,
+    downloadError: undefined,
+    availableUpdate: undefined,
+  })),
 }));
 
 // Mock expo-application

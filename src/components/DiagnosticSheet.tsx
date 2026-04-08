@@ -1,8 +1,17 @@
-import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, Modal, TouchableOpacity, Share } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Modal,
+  TouchableOpacity,
+  Share,
+  ActivityIndicator,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Updates from 'expo-updates';
 import * as Application from 'expo-application';
+import { Ionicons } from '@expo/vector-icons';
 import { spacing, radius } from '../utils/theme';
 import { useTheme } from '../context/ThemeContext';
 import { t } from '../i18n';
@@ -24,6 +33,25 @@ export default function DiagnosticSheet({ visible, onClose }: Props) {
     ? t('diagnostic_launch_embedded')
     : t('diagnostic_launch_ota');
   const updateId = Updates.updateId ?? t('diagnostic_none');
+
+  type CheckState = 'idle' | 'checking' | 'done';
+  const [checkState, setCheckState] = useState<CheckState>('idle');
+
+  const handleCheckForUpdate = async () => {
+    if (checkState !== 'idle' || !Updates.isEnabled) return;
+    setCheckState('checking');
+    try {
+      const result = await Updates.checkForUpdateAsync();
+      if (result.isAvailable) {
+        await Updates.fetchUpdateAsync();
+        await Updates.reloadAsync();
+        return;
+      }
+      setCheckState('done');
+    } catch {
+      setCheckState('done');
+    }
+  };
 
   const handleShare = async () => {
     const text = [
@@ -69,7 +97,31 @@ export default function DiagnosticSheet({ visible, onClose }: Props) {
             styles={styles}
           />
           <DiagnosticRow label={t('diagnostic_launch_type')} value={launchType} styles={styles} />
-          <DiagnosticRow label={t('diagnostic_update_id')} value={updateId} mono styles={styles} />
+          <DiagnosticRow
+            label={t('diagnostic_update_id')}
+            value={updateId}
+            mono
+            styles={styles}
+            action={
+              Updates.isEnabled ? (
+                <TouchableOpacity
+                  onPress={handleCheckForUpdate}
+                  disabled={checkState !== 'idle'}
+                  style={styles.updateCheckBtn}
+                  testID="diagnostic-check-update-btn"
+                  accessibilityLabel={t('diagnostic_check_update')}
+                >
+                  {checkState === 'checking' ? (
+                    <ActivityIndicator size="small" color={colors.grass} />
+                  ) : checkState === 'done' ? (
+                    <Ionicons name="checkmark-circle" size={18} color={colors.grass} />
+                  ) : (
+                    <Ionicons name="refresh-outline" size={18} color={colors.textMuted} />
+                  )}
+                </TouchableOpacity>
+              ) : undefined
+            }
+          />
         </View>
 
         {/* Share / copy diagnostics */}
@@ -90,11 +142,13 @@ function DiagnosticRow({
   value,
   mono,
   styles,
+  action,
 }: {
   label: string;
   value: string;
   mono?: boolean;
   styles: ReturnType<typeof makeStyles>;
+  action?: React.ReactNode;
 }) {
   return (
     <View style={styles.row}>
@@ -102,6 +156,7 @@ function DiagnosticRow({
       <Text style={[styles.rowValue, mono && styles.rowValueMono]} selectable>
         {value}
       </Text>
+      {action}
     </View>
   );
 }
@@ -195,6 +250,13 @@ function makeStyles(
       color: colors.grass,
       fontSize: 15,
       fontWeight: '600',
+    },
+    updateCheckBtn: {
+      marginLeft: spacing.sm,
+      width: 24,
+      height: 24,
+      alignItems: 'center',
+      justifyContent: 'center',
     },
   });
 }

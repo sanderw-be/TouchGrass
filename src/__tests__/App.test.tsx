@@ -19,6 +19,7 @@ jest.mock('../screens/IntroScreen', () => {
 // Mock the i18n module
 jest.mock('../i18n', () => ({
   locale: 'en',
+  t: (key: string) => key,
 }));
 
 // Mock detection module

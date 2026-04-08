@@ -670,4 +670,10 @@ export default {
   diagnostic_unknown: 'onbekend',
   diagnostic_none: 'geen',
   diagnostic_share: 'Diagnostiek delen',
+  diagnostic_check_update: 'Controleer op update',
+  diagnostic_update_checking: 'Controleren…',
+  diagnostic_update_done: 'Up to date',
+  // Update splash screen
+  update_splash_checking: 'Controleren op updates…',
+  update_splash_downloading: 'Update installeren…',
 };

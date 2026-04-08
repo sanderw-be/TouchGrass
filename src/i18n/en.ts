@@ -662,4 +662,10 @@ export default {
   diagnostic_unknown: 'unknown',
   diagnostic_none: 'none',
   diagnostic_share: 'Share Diagnostics',
+  diagnostic_check_update: 'Check for update',
+  diagnostic_update_checking: 'Checking…',
+  diagnostic_update_done: 'Up to date',
+  // Update splash screen
+  update_splash_checking: 'Checking for updates…',
+  update_splash_downloading: 'Installing update…',
 };
