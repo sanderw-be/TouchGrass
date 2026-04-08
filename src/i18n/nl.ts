@@ -655,6 +655,10 @@ export default {
   exercise_wheelchair: 'rolstoel',
   exercise_unknown: 'activiteitstype {{type}}',
 
+  // Toestemmingsproblemen banner (Doelenscherm / Instellingenscherm)
+  permission_issues_banner:
+    'Toestemmingsproblemen bij: {{features}}. Scroll omlaag om te herstellen of uit te schakelen.',
+
   // Diagnostic sheet
   diagnostic_title: 'App Diagnose',
   diagnostic_environment: 'Omgeving',

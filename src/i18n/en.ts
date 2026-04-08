@@ -647,6 +647,10 @@ export default {
   exercise_wheelchair: 'wheelchair',
   exercise_unknown: 'exercise type {{type}}',
 
+  // Permission issues banner (GoalsScreen / SettingsScreen)
+  permission_issues_banner:
+    'Permission issues with: {{features}}. Scroll down to fix or disable these features.',
+
   // Diagnostic sheet
   diagnostic_title: 'App Diagnostics',
   diagnostic_environment: 'Environment',

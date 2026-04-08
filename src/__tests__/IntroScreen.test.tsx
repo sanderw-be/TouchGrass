@@ -347,7 +347,9 @@ describe('IntroScreen', () => {
     it('calls onComplete when Get Started is pressed', async () => {
       const { getByText, onComplete } = await navigateToReadyStep();
 
-      fireEvent.press(getByText('intro_get_started'));
+      await act(async () => {
+        fireEvent.press(getByText('intro_get_started'));
+      });
 
       expect(onComplete).toHaveBeenCalled();
     });
@@ -355,6 +357,72 @@ describe('IntroScreen', () => {
     it('hides widget hint on non-Android platforms', async () => {
       const { queryByText } = await navigateToReadyStep();
       expect(queryByText('intro_ready_widget_body')).toBeNull();
+    });
+
+    describe('saveOnboardingSettings', () => {
+      let mockGetNotifPermissions: jest.Mock;
+      let mockCheckGPS: jest.Mock;
+
+      beforeEach(() => {
+        mockSetSettingAsync.mockClear();
+        mockGetNotifPermissions = require('expo-notifications').getPermissionsAsync as jest.Mock;
+        mockCheckGPS = require('../detection/index').checkGPSPermissions as jest.Mock;
+      });
+
+      it('enables smart reminders when notification permission is granted', async () => {
+        mockGetNotifPermissions.mockResolvedValue({ status: 'granted' });
+        mockCheckGPS.mockResolvedValue(false);
+
+        const { getByText } = await navigateToReadyStep();
+
+        await act(async () => {
+          fireEvent.press(getByText('intro_get_started'));
+        });
+
+        expect(mockSetSettingAsync).toHaveBeenCalledWith('smart_reminders_count', '2');
+      });
+
+      it('enables weather when both location and notification permissions are granted', async () => {
+        mockGetNotifPermissions.mockResolvedValue({ status: 'granted' });
+        mockCheckGPS.mockResolvedValue(true);
+
+        const { getByText } = await navigateToReadyStep();
+
+        await act(async () => {
+          fireEvent.press(getByText('intro_get_started'));
+        });
+
+        expect(mockSetSettingAsync).toHaveBeenCalledWith('weather_enabled', '1');
+        expect(mockSetSettingAsync).toHaveBeenCalledWith('smart_reminders_count', '2');
+      });
+
+      it('does not enable weather when only location permission is granted', async () => {
+        mockGetNotifPermissions.mockResolvedValue({ status: 'denied' });
+        mockCheckGPS.mockResolvedValue(true);
+
+        const { getByText } = await navigateToReadyStep();
+
+        await act(async () => {
+          fireEvent.press(getByText('intro_get_started'));
+        });
+
+        expect(mockSetSettingAsync).not.toHaveBeenCalledWith('weather_enabled', '1');
+        expect(mockSetSettingAsync).not.toHaveBeenCalledWith('smart_reminders_count', '2');
+      });
+
+      it('does not enable smart reminders or weather when no permissions granted', async () => {
+        mockGetNotifPermissions.mockResolvedValue({ status: 'denied' });
+        mockCheckGPS.mockResolvedValue(false);
+
+        const { getByText } = await navigateToReadyStep();
+
+        await act(async () => {
+          fireEvent.press(getByText('intro_get_started'));
+        });
+
+        expect(mockSetSettingAsync).not.toHaveBeenCalledWith('smart_reminders_count', '2');
+        expect(mockSetSettingAsync).not.toHaveBeenCalledWith('weather_enabled', '1');
+      });
     });
   });
 

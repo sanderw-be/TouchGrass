@@ -415,6 +415,17 @@ export default function GoalsScreen() {
     ]);
   };
 
+  const goalsPermissionIssues: string[] = [];
+  if (smartRemindersCount > 0 && !notificationPermissionGranted) {
+    goalsPermissionIssues.push(t('settings_reminders_label'));
+  }
+  if (weatherEnabled && !weatherLocationGranted) {
+    goalsPermissionIssues.push(t('settings_weather_enabled'));
+  }
+  if (calendarEnabled && !calendarPermissionGranted) {
+    goalsPermissionIssues.push(t('settings_calendar_integration'));
+  }
+
   return (
     <>
       <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
@@ -422,6 +433,13 @@ export default function GoalsScreen() {
       </View>
 
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+        {goalsPermissionIssues.length > 0 && (
+          <View style={styles.permissionWarning}>
+            <Text style={styles.permissionWarningText}>
+              {t('permission_issues_banner', { features: goalsPermissionIssues.join(', ') })}
+            </Text>
+          </View>
+        )}
         {/* WHO recommendation note */}
         <View style={styles.tipCard}>
           <Ionicons name="bulb-outline" size={18} color={colors.grassDark} style={styles.tipIcon} />
