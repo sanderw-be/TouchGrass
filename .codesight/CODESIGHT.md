@@ -3,7 +3,7 @@
 > **Stack:** raw-http | none | react | typescript
 
 > 0 routes | 0 models | 37 components | 27 lib files | 2 env vars | 1 middleware | 0% test coverage
-> **Token savings:** this file is ~4,300 tokens. Without it, AI exploration would cost ~28,700 tokens. **Saves ~24,400 tokens per conversation.**
+> **Token savings:** this file is ~4,300 tokens. Without it, AI exploration would cost ~28,700 tokens. **Saves ~24,300 tokens per conversation.**
 
 ---
 
@@ -15,7 +15,7 @@
 - **EditSessionSheet** — props: visible, session, onClose, onSessionUpdated — `src/components/EditSessionSheet.tsx`
 - **CRASH_REPORT_FORM_URL** — `src/components/ErrorBoundary.tsx`
 - **ManualSessionSheet** — props: visible, onClose, onSessionLogged — `src/components/ManualSessionSheet.tsx`
-- **PermissionExplainerSheet** — props: visible, onClose, onOpenSettings, title, body, openSettingsLabel — `src/components/PermissionExplainerSheet.tsx`
+- **PermissionExplainerSheet** — props: visible, onClose, onOpenSettings, title, body, openSettingsLabel, onDisable, disableLabel — `src/components/PermissionExplainerSheet.tsx`
 - **ProgressRing** — props: current, target, size, strokeWidth, label, onTimerPress, timerRunning, timerSeconds — `src/components/ProgressRing.tsx`
 - **ReminderFeedbackModal** — `src/components/ReminderFeedbackModal.tsx`
 - **UndoSnackbar** — props: visible, message, onUndo, onDismiss, duration — `src/components/UndoSnackbar.tsx`
