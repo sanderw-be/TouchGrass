@@ -6,7 +6,6 @@ on:
 
 jobs:
   checks-tests-preview:
-    needs: shoot-and-deliver #REMOVE
     name: Run checks, Tests and Preview update
     runs-on: ubuntu-latest
     permissions:
@@ -108,17 +107,7 @@ jobs:
       - name: Install Maestro
         run: curl -Ls "https://get.maestro.mobile.dev" | bash
 
-      - name: Setup Expo
-        uses: expo/expo-github-action@v8
-        with:
-          eas-version: latest
-          packager: npm
-          token: ${{ secrets.EXPO_TOKEN }}
-
       - name: Fetch Latest APK from Expo
-        env:
-          CI: 1
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
           echo "Downloading from: ${{ needs.checks-tests-preview.outputs.apk_url }}"
           curl -L -o app.apk "${{ needs.checks-tests-preview.outputs.apk_url }}"
