@@ -36,9 +36,6 @@ jobs:
       - name: Run ESLint
         run: npm run lint
 
-      - name: Fix Prettier formatting (REMOVE)
-        run: npm run format
-
       - name: Check Prettier formatting
         run: npm run format:check
 
