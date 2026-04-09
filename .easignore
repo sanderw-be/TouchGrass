@@ -2,3 +2,6 @@ node_modules/
 android/
 ios/
 .expo/
+.github/
+.maestro/
+.codesight/
