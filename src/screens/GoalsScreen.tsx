@@ -292,6 +292,15 @@ export default function GoalsScreen() {
       title: t('settings_weather_permission_title'),
       body: t('settings_weather_location_permission_missing'),
       onOpen: handleOpenAppSettings,
+      onDisable: async () => {
+        pendingWeatherEnableRef.current = false;
+        try {
+          await setSettingAsync('weather_enabled', '0');
+          setWeatherEnabled(false);
+        } catch (error) {
+          console.error('[GoalsScreen.showWeatherPermissionSheet.onDisable] Error:', error);
+        }
+      },
     });
   }, []);
 
@@ -301,6 +310,15 @@ export default function GoalsScreen() {
       title: t('settings_calendar_permission_title'),
       body: t('settings_calendar_permission_body'),
       onOpen: handleOpenAppSettings,
+      onDisable: async () => {
+        pendingCalendarEnableRef.current = false;
+        try {
+          await setSettingAsync('calendar_integration_enabled', '0');
+          setCalendarEnabled(false);
+        } catch (error) {
+          console.error('[GoalsScreen.showCalendarPermissionSheet.onDisable] Error:', error);
+        }
+      },
     });
   }, []);
 
@@ -309,6 +327,15 @@ export default function GoalsScreen() {
       title: t('settings_notification_permission_title'),
       body: t('settings_notification_permission_body'),
       onOpen: handleOpenAppSettings,
+      onDisable: async () => {
+        pendingSmartRemindersEnableRef.current = false;
+        try {
+          await setSettingAsync('smart_reminders_count', '0');
+          setSmartRemindersCount(0);
+        } catch (error) {
+          console.error('[GoalsScreen.showNotificationPermissionSheet.onDisable] Error:', error);
+        }
+      },
     });
   }, []);
 
@@ -611,6 +638,8 @@ export default function GoalsScreen() {
           body={permissionSheet.body}
           openSettingsLabel={permissionSheet.openLabel}
           onOpenSettings={permissionSheet.onOpen}
+          onDisable={permissionSheet.onDisable}
+          disableLabel={permissionSheet.disableLabel}
           onClose={() => setPermissionSheet(null)}
         />
       )}

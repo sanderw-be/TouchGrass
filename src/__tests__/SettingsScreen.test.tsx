@@ -343,3 +343,61 @@ describe('SettingsScreen permission warning banner', () => {
     await waitFor(() => expect(queryByText(/permission_issues_banner/)).toBeNull());
   });
 });
+
+describe('SettingsScreen permission explainer disable button', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('shows disable button in HC permission sheet and disables HC when tapped', async () => {
+    (DetectionModule.getDetectionStatus as jest.Mock).mockResolvedValue({
+      healthConnect: true,
+      healthConnectPermission: false,
+      gps: false,
+      gpsPermission: false,
+    });
+    mockToggleHealthConnect.mockResolvedValue({ needsPermissions: false });
+
+    const { getByText, findByTestId, queryByTestId } = render(<SettingsScreen />);
+    await waitFor(() => expect(getByText('settings_hc_permission_missing')).toBeTruthy());
+
+    fireEvent.press(getByText('settings_hc_permission_missing'));
+
+    await findByTestId('permission-explainer-sheet');
+
+    await act(async () => {
+      fireEvent.press(await findByTestId('permission-disable-btn'));
+    });
+
+    await waitFor(() => {
+      expect(mockToggleHealthConnect).toHaveBeenCalledWith(false);
+      expect(queryByTestId('permission-explainer-sheet')).toBeNull();
+    });
+  });
+
+  it('shows disable button in GPS permission sheet and disables GPS when tapped', async () => {
+    (DetectionModule.getDetectionStatus as jest.Mock).mockResolvedValue({
+      healthConnect: false,
+      healthConnectPermission: false,
+      gps: true,
+      gpsPermission: false,
+    });
+    mockToggleGPS.mockResolvedValue({ needsPermissions: false });
+
+    const { getByText, findByTestId, queryByTestId } = render(<SettingsScreen />);
+    await waitFor(() => expect(getByText('settings_gps_permission_missing')).toBeTruthy());
+
+    fireEvent.press(getByText('settings_gps_permission_missing'));
+
+    await findByTestId('permission-explainer-sheet');
+
+    await act(async () => {
+      fireEvent.press(await findByTestId('permission-disable-btn'));
+    });
+
+    await waitFor(() => {
+      expect(mockToggleGPS).toHaveBeenCalledWith(false);
+      expect(queryByTestId('permission-explainer-sheet')).toBeNull();
+    });
+  });
+});

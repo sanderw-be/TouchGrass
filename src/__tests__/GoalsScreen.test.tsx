@@ -497,6 +497,33 @@ describe('GoalsScreen weather location permission', () => {
     expect(mockSetSettingAsync).not.toHaveBeenCalledWith('weather_enabled', '1');
   });
 
+  it('disables weather when disable button is pressed in weather permission sheet', async () => {
+    mockGetSettingAsync.mockImplementation((key: string, def: string) => {
+      if (key === 'weather_enabled') return Promise.resolve('0');
+      return Promise.resolve(def);
+    });
+    mockCheckWeatherLocation.mockResolvedValue(false);
+
+    const { getAllByRole, findByTestId, queryByTestId } = render(<GoalsScreen />);
+    await waitFor(() => getAllByRole('switch'));
+
+    const switches = getAllByRole('switch');
+    await act(async () => {
+      fireEvent(switches[0], 'valueChange', true);
+    });
+
+    await findByTestId('permission-explainer-sheet');
+
+    await act(async () => {
+      fireEvent.press(await findByTestId('permission-disable-btn'));
+    });
+
+    await waitFor(() => {
+      expect(mockSetSettingAsync).toHaveBeenCalledWith('weather_enabled', '0');
+      expect(queryByTestId('permission-explainer-sheet')).toBeNull();
+    });
+  });
+
   it('does not show Alert when permission is missing while enabling weather', async () => {
     mockGetSettingAsync.mockImplementation((key: string, def: string) => {
       if (key === 'weather_enabled') return Promise.resolve('0');
@@ -569,6 +596,34 @@ describe('GoalsScreen calendar permission missing state', () => {
 
     await expect(findByTestId('permission-explainer-sheet')).resolves.toBeTruthy();
     expect(mockSetSettingAsync).not.toHaveBeenCalledWith('calendar_integration_enabled', '1');
+  });
+
+  it('disables calendar when disable button is pressed in calendar permission sheet', async () => {
+    mockGetSettingAsync.mockImplementation((key: string, def: string) => {
+      if (key === 'calendar_integration_enabled') return Promise.resolve('0');
+      return Promise.resolve(def);
+    });
+    (CalendarService.hasCalendarPermissions as jest.Mock).mockResolvedValue(false);
+
+    const { getAllByRole, findByTestId, queryByTestId } = render(<GoalsScreen />);
+    await waitFor(() => getAllByRole('switch'));
+
+    const switches = getAllByRole('switch');
+    const calendarSwitch = switches[switches.length - 1];
+    await act(async () => {
+      fireEvent(calendarSwitch, 'valueChange', true);
+    });
+
+    await findByTestId('permission-explainer-sheet');
+
+    await act(async () => {
+      fireEvent.press(await findByTestId('permission-disable-btn'));
+    });
+
+    await waitFor(() => {
+      expect(mockSetSettingAsync).toHaveBeenCalledWith('calendar_integration_enabled', '0');
+      expect(queryByTestId('permission-explainer-sheet')).toBeNull();
+    });
   });
 
   it('shows data scope info in calendar permission sheet', async () => {
@@ -756,6 +811,31 @@ describe('GoalsScreen smart reminders notification permission', () => {
       'smart_reminders_count',
       expect.anything()
     );
+  });
+
+  it('disables smart reminders when disable button is pressed in notifications permission sheet', async () => {
+    mockGetSettingAsync.mockImplementation((key: string, def: string) => {
+      if (key === 'smart_reminders_count') return Promise.resolve('0');
+      return Promise.resolve(def);
+    });
+    mockGetPermissions.mockResolvedValue({ status: 'denied' });
+
+    const { findByTestId, queryByTestId } = render(<GoalsScreen />);
+    const row = await findByTestId('smart-reminders-row');
+    await act(async () => {
+      fireEvent.press(row);
+    });
+
+    await findByTestId('permission-explainer-sheet');
+
+    await act(async () => {
+      fireEvent.press(await findByTestId('permission-disable-btn'));
+    });
+
+    await waitFor(() => {
+      expect(mockSetSettingAsync).toHaveBeenCalledWith('smart_reminders_count', '0');
+      expect(queryByTestId('permission-explainer-sheet')).toBeNull();
+    });
   });
 
   it('cycles count normally when notification permission is granted', async () => {

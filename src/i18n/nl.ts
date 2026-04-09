@@ -154,6 +154,7 @@ export default {
     'Achtergrondlocatie ("Altijd toestaan") is vereist voor GPS-sessiëdetectie. TouchGrass gebruikt geofencing om te detecteren wanneer je bekende binnenlocaties verlaat en terugkeert. Geef de toestemming in Instellingen.',
   settings_permission_cancel: 'Annuleren',
   settings_permission_open: 'Instellingen openen',
+  settings_permission_disable: 'Functie uitschakelen',
   settings_gps: 'GPS-tracking',
   settings_gps_desc: 'Buitenactiviteiten detecteren via locatie',
   settings_gps_permission: 'Toestemming vereist',

@@ -154,6 +154,7 @@ export default {
     'Background location ("Allow all the time") is required for GPS session detection. TouchGrass uses geofencing to detect when you leave and return to known indoor locations. Please grant the permission in Settings.',
   settings_permission_cancel: 'Cancel',
   settings_permission_open: 'Open Settings',
+  settings_permission_disable: 'Disable this feature',
   settings_gps: 'GPS tracking',
   settings_gps_desc: 'Detect outdoor sessions via location',
   settings_gps_permission: 'Permission needed',
