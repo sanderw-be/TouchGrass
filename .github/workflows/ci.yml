@@ -3,6 +3,12 @@ name: CI — Check, Test & Update
 on:
   pull_request:
   workflow_dispatch:
+    inputs:
+      run_screenshots:
+        description: 'Run Maestro screenshots?'
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   checks-tests-preview:
@@ -93,6 +99,9 @@ jobs:
   shoot-and-deliver:
     name: Take screenshots on PR
     needs: checks-tests-preview
+    if: >
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'UI')) ||
+      (github.event_name == 'workflow_dispatch' && inputs.run_screenshots == true)
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout Code
