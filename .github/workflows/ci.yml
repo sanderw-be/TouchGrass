@@ -83,8 +83,8 @@ jobs:
 
   shoot-and-deliver:
     name: Take screenshots on PR
-    needs: checks-tests-preview
-    if: github.event_name == 'pull_request'
+#    needs: checks-tests-preview
+#    if: github.event_name == 'pull_request'
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout Code
