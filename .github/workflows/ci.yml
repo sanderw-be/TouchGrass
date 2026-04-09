@@ -12,6 +12,8 @@ jobs:
     permissions:
       contents: write
       actions: write
+    outputs:
+      apk_url: ${{ steps.get_url.outputs.url }}
 
     steps:
       - name: Checkout code
@@ -71,7 +73,15 @@ jobs:
         env:
           CI: 1
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-        run: eas update --branch preview --platform android --message "${{ github.event.head_commit.message || github.event.workflow_run.head_commit.message || github.event.pull_request.title || github.sha }}" 
+        run: eas update --branch preview --platform android --message "${{ github.event.head_commit.message || github.event.workflow_run.head_commit.message || github.event.pull_request.title || github.sha }}"
+
+      - name: Get Latest APK URL
+        id: get_url
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          LATEST_BUILD_URL=$(eas build:list --platform android --profile preview-emulator --status finished --limit 1 --json --non-interactive | jq -r '.[0].artifacts.buildUrl')
+          echo "url=$LATEST_BUILD_URL" >> "$GITHUB_OUTPUT"
 
       - name: Upload coverage reports
         uses: codecov/codecov-action@v4
@@ -83,7 +93,7 @@ jobs:
 
   shoot-and-deliver:
     name: Take screenshots on PR
-#    needs: checks-tests-preview
+    needs: checks-tests-preview
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout Code
@@ -110,11 +120,8 @@ jobs:
           CI: 1
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
-          npx eas-cli build:list --platform android --profile preview-emulator --status finished --limit 1 --json
-          # Automatically asks Expo for the URL of your most recent successful Android preview build
-          LATEST_BUILD_URL=$(npx eas-cli build:list --platform android --profile preview-emulator --status finished --limit 1 --json | jq -r '.[0].artifacts.buildUrl')
-          echo "Downloading from: $LATEST_BUILD_URL"
-          curl -L -o app.apk "$LATEST_BUILD_URL"
+          echo "Downloading from: ${{ needs.checks-tests-preview.outputs.apk_url }}"
+          curl -L -o app.apk "${{ needs.checks-tests-preview.outputs.apk_url }}"
 
       - name: Enable KVM group perms
         run: |
