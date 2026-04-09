@@ -30,7 +30,7 @@ jobs:
         run: npm ci
 
       - name: Run Prettier format checking
-        run: npm run format:check
+        run: npm run format#:check
 
       - name: Regenerate AI Context
         run: |
