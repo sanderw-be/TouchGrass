@@ -5,16 +5,12 @@ on:
   pull_request:
   workflow_dispatch:
 
-# Set minimal permissions for GITHUB_TOKEN
-permissions:
-  contents: read
-
 jobs:
   checks-tests-preview:
     name: Run checks, Tests and Preview update
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       actions: write
 
     steps:
