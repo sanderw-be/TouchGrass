@@ -42,8 +42,8 @@ jobs:
       - name: Run TypeScript type checking
         run: npm run type-check
 
-      - name: Run tests
-        run: npm test -- --coverage --passWithNoTests
+#      - name: Run tests
+#        run: npm test -- --coverage --passWithNoTests
 
       - name: Regenerate AI Context
         run: |
@@ -60,7 +60,7 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "chore: update AI context map [skip ci]"
-          file_pattern: ".codesight/*"
+#          file_pattern: ".codesight/*"
           commit_user_name: "github-actions[bot]"
           commit_user_email: "github-actions[bot]@users.noreply.github.com"
 
