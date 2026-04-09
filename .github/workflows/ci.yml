@@ -1,172 +1,20 @@
-name: CI — Test & Build
+name: CI — Check, Test & Update
 
 on:
+  push:
   pull_request:
-    branches: [main, master]
   workflow_dispatch:
-  workflow_run:
-    workflows: ['Release']
-    types: [completed]
-    branches: [main, master]
 
 # Set minimal permissions for GITHUB_TOKEN
 permissions:
   contents: read
 
 jobs:
-  test:
-    name: Build and Test
+  checks-tests-preview:
+    name: Run checks, Tests and Preview update
     runs-on: ubuntu-latest
-    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     permissions:
-      contents: read
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20.x'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run TypeScript type checking
-        run: npm run type-check
-
-      - name: Run tests
-        run: npm test -- --coverage --passWithNoTests
-
-      - name: Upload coverage reports
-        uses: codecov/codecov-action@v4
-        if: always()
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          fail_ci_if_error: false
-        continue-on-error: true
-
-  build-android:
-    name: Build Android App
-    runs-on: ubuntu-latest
-    needs: test
-    permissions:
-      contents: read
       actions: write
-      pull-requests: write
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node & NPM Cache
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20.x'
-          # This caches the global npm cache (~/.npm) automatically
-          cache: 'npm'
-
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-
-      - name: Cache Gradle
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-            ${{ env.ANDROID_SDK_ROOT }}/ndk/27.1.12297006
-          key: ${{ runner.os }}-gradle-${{ hashFiles('package-lock.json', 'app.json', 'patches/**') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Install Android NDK
-        run: |
-          yes | ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager --licenses > /dev/null 2>&1 || true
-          ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager "ndk;27.1.12297006"
-
-      - name: Install EAS CLI
-        run: npm install -g eas-cli@latest
-
-      - name: Decode Keystore from Secrets
-        env:
-          ENCODED_KEYSTORE: ${{ secrets.TOUCHGRASS_UPLOAD_STORE }}
-        run: |
-          # Create the credentials/android directory if it doesn't exist
-          mkdir -p credentials/android
-
-          # Decode the base64 string and save to the target location
-          echo "$ENCODED_KEYSTORE" | base64 --decode > credentials/android/keystore.jks
-
-          # Verify the file was created successfully
-          if [ ! -f credentials/android/keystore.jks ]; then
-            echo "ERROR: Keystore file was not created at credentials/android/keystore.jks"
-            exit 1
-          fi
-
-          # Show file size to confirm it's not empty
-          ls -lh credentials/android/keystore.jks
-          echo "✓ Keystore successfully decoded and saved to credentials/android/keystore.jks"
-
-      - name: Setup EAS Credentials
-        run: |
-          mkdir -p .gradle
-          echo "TOUCHGRASS_UPLOAD_STORE_FILE=${{ secrets.TOUCHGRASS_UPLOAD_STORE_FILE}}" > .gradle/gradle.properties
-          echo "TOUCHGRASS_UPLOAD_STORE_PASSWORD=${{ secrets.TOUCHGRASS_UPLOAD_STORE_PASSWORD}}" >> .gradle/gradle.properties
-          echo "TOUCHGRASS_UPLOAD_KEY_ALIAS=${{ secrets.TOUCHGRASS_UPLOAD_KEY_ALIAS}}" >> .gradle/gradle.properties
-          echo "TOUCHGRASS_UPLOAD_KEY_PASSWORD=${{ secrets.TOUCHGRASS_UPLOAD_KEY_PASSWORD}}" >> .gradle/gradle.properties
-
-      - name: Build Android APK
-        run: |
-          echo "Building Android APK..."
-          mkdir -p ./build-artifacts
-          eas build --platform android --profile preview --local --non-interactive --output ./build-artifacts/app-arm64.apk
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-          GRADLE_OPTS: '-Xmx3072m'
-
-      - name: Upload Android APK artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: android-preview-apk
-          path: ./build-artifacts/app-arm64.apk
-          retention-days: 30
-          if-no-files-found: error
-
-      - name: Comment PR with APK download link
-        if: github.event_name == 'pull_request'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const { data: { artifacts } } = await github.rest.actions.listWorkflowRunArtifacts({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              run_id: context.runId,
-            });
-            const apk = artifacts.find(a => a.name === 'android-preview-apk');
-            const url = apk
-              ? `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}/artifacts/${apk.id}`
-              : `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              body: `## 📱 Android Preview APK\n\nThe build succeeded — grab the APK below.\n\n[⬇️ Download APK](${url})`,
-            });
-
-  lint-and-format:
-    name: Lint and Format Check
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
 
     steps:
       - name: Checkout code
@@ -184,5 +32,41 @@ jobs:
       - name: Run ESLint
         run: npm run lint
 
+      - name: Fix Prettier formatting (REMOVE)
+        run: npm run format
+
       - name: Check Prettier formatting
         run: npm run format:check
+
+      - name: Run TypeScript type checking
+        run: npm run type-check
+
+      - name: Run tests
+        run: npm test -- --coverage --passWithNoTests
+
+      - name: Regenerate AI Context
+        run: |
+          npx --yes codesight --profile copilot
+          npx --yes codesight --wiki
+          
+          # Optional: Uncomment if you maintain Markdown docs, ADRs, or PRDs
+          # npx codesight --mode knowledge ./docs 
+
+      - name: Run Prettier format checking
+        run: npm run format:check
+
+      - name: Commit and push changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: update AI context map [skip ci]"
+          file_pattern: ".codesight/*"
+          commit_user_name: "github-actions[bot]"
+          commit_user_email: "github-actions[bot]@users.noreply.github.com"
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v4
+        if: always()
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
+        continue-on-error: true
