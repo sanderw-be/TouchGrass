@@ -114,3 +114,9 @@ describe('myFunction', () => {
 | `src/utils/theme.ts`       | Shared colors and spacing constants          |
 | `jest.setup.js`            | Global mock configuration for native modules |
 | `.github/workflows/ci.yml` | CI pipeline (test → build Android → lint)    |
+
+# Codebase Context Map
+Before answering questions, planning features, or generating code, always review the codebase summaries compiled by Codesight:
+- Read `.codesight/CODESIGHT.md` to understand existing routes, database schemas, and blast radius.
+- Read `.codesight/wiki/index.md` for targeted sub-system logic.
+- Read `.codesight/KNOWLEDGE.md` to understand architectural decisions and notes.
