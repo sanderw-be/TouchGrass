@@ -41,7 +41,7 @@ jobs:
           # npx codesight --mode knowledge ./docs 
 
       - name: Run Prettier format checking
-        run: npm run format
+        run: npm run format:check
 
       - name: Commit and push changes
         uses: stefanzweifel/git-auto-commit-action@v5
