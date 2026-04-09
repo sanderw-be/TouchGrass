@@ -26,6 +26,9 @@ jobs:
         with:
           node-version: '20' # Codesight requires Node.js >= 18
 
+      - Install packages
+        run: npm ci
+
       - name: Run Prettier format checking
         run: npm run format:check
 
