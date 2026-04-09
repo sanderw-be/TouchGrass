@@ -59,6 +59,17 @@ jobs:
           file_pattern: ".codesight/*"
           commit_user_name: "github-actions[bot]"
           commit_user_email: "github-actions[bot]@users.noreply.github.com"
+      - name: Authenticate with EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          packager: npm
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Publish EAS Update
+        env:
+          CI: 1
+        run: eas update --branch preview --platform android --message ${{ github.event.head_commit.message || github.event.workflow_run.head_commit.message || github.event.pull_request.title || github.sha }}
 
       - name: Upload coverage reports
         uses: codecov/codecov-action@v4
