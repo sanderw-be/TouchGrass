@@ -53,8 +53,8 @@ jobs:
           # Optional: Uncomment if you maintain Markdown docs, ADRs, or PRDs
           # npx codesight --mode knowledge ./docs 
 
-      - name: Run Prettier format checking
-        run: npm run format:check
+      - name: Prettier format fix for Codesight
+        run: npm run format
 
       - name: Commit and push changes
         uses: stefanzweifel/git-auto-commit-action@v5
