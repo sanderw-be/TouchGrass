@@ -110,6 +110,7 @@ jobs:
           CI: 1
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
+          npx eas-cli build:list --platform android --profile preview-emulator --status finished --limit 1 --json
           # Automatically asks Expo for the URL of your most recent successful Android preview build
           LATEST_BUILD_URL=$(npx eas-cli build:list --platform android --profile preview-emulator --status finished --limit 1 --json | jq -r '.[0].artifacts.buildUrl')
           echo "Downloading from: $LATEST_BUILD_URL"
