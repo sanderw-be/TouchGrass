@@ -84,7 +84,7 @@ jobs:
   shoot-and-deliver:
     name: Take screenshots on PR
 #    needs: checks-tests-preview
-#    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout Code
@@ -104,7 +104,7 @@ jobs:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
           # Automatically asks Expo for the URL of your most recent successful Android preview build
-          LATEST_BUILD_URL=$(npx eas-cli build:list --platform android --profile preview-emulator --status finished --limit 1 --json | jq -r '.[0].artifacts.buildUrl')
+          LATEST_BUILD_URL=$(npx --yes eas-cli build:list --platform android --profile preview-emulator --status finished --limit 1 --json | jq -r '.[0].artifacts.buildUrl')
           echo "Downloading from: $LATEST_BUILD_URL"
           curl -L -o app.apk "$LATEST_BUILD_URL"
 
