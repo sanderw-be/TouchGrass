@@ -6,9 +6,9 @@
 
 ## Scale
 
-33 UI components · 1 middleware layers · 2 environment variables
+37 UI components · 1 middleware layers · 2 environment variables
 
-**UI:** 33 components (react) — see [ui.md](./ui.md)
+**UI:** 37 components (react) — see [ui.md](./ui.md)
 
 ## High-Impact Files
 
@@ -27,4 +27,5 @@ Changes to these files have the widest blast radius across the codebase:
 - `NODE_ENV` — `metro.config.js`
 
 ---
+
 _Back to [index.md](./index.md) · Generated 2026-04-09_

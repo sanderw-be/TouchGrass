@@ -2,7 +2,7 @@
 
 > **Navigation aid.** Component inventory and prop signatures extracted via AST. Read the source files before adding props or modifying component logic.
 
-**33 components** (react)
+**37 components** (react)
 
 ## Components
 
@@ -17,8 +17,10 @@
 - **ReminderFeedbackModal** — `src/components/ReminderFeedbackModal.tsx`
 - **UndoSnackbar** — props: visible, message, onUndo, onDismiss, duration — `src/components/UndoSnackbar.tsx`
 - **UpdateSplashScreen** — props: status — `src/components/UpdateSplashScreen.tsx`
-- **CalendarSection** — props: calendarEnabled, calendarPermissionGranted, calendarBuffer, calendarDuration, calendarSelectedId, calendarOptions — `src/components/goals/CalendarSection.tsx`
+- **CalendarSection** — props: calendarEnabled, calendarPermissionGranted, calendarBuffer, calendarDuration, calendarSelectedId, calendarOptions, onToggleCalendar, onCycleCalendarBuffer, onCycleCalendarDuration, onSelectCalendar — `src/components/goals/CalendarSection.tsx`
 - **SettingRow** — props: icon, label, sublabel, right — `src/components/goals/GoalsShared.tsx`
+- **Divider** — `src/components/goals/GoalsShared.tsx`
+- **PermissionToggleRow** — props: icon, label, desc, permissionMissingLabel, enabled, permissionGranted, onToggle, onPermissionFix — `src/components/goals/GoalsShared.tsx`
 - **RemindersSection** — props: smartRemindersCount, catchupRemindersCount, notificationPermissionGranted, batteryOptimizationGranted, onCycleSmartReminders, onCycleCatchupReminders, onNavigateScheduledNotifications, onShowNotificationPermissionSheet, onShowBatteryPermissionSheet — `src/components/goals/RemindersSection.tsx`
 - **WeatherSection** — props: weatherEnabled, weatherLocationGranted, onToggleWeather, onShowWeatherPermissionSheet, onNavigateWeatherSettings — `src/components/goals/WeatherSection.tsx`
 - **IntroContext** — `src/context/IntroContext.tsx`
@@ -32,6 +34,7 @@
 - **FeedbackSupportScreen** — `src/screens/FeedbackSupportScreen.tsx`
 - **GoalsScreen** — `src/screens/GoalsScreen.tsx`
 - **HistoryScreen** — `src/screens/HistoryScreen.tsx`
+- **BarChart** — props: data, target, maxValue, period, isLoading — `src/screens/HistoryScreen.tsx`
 - **HomeScreen** — `src/screens/HomeScreen.tsx`
 - **IntroScreen** — props: onComplete — `src/screens/IntroScreen.tsx`
 - **KnownLocationsScreen** — `src/screens/KnownLocationsScreen.tsx`
@@ -39,6 +42,8 @@
 - **SettingsScreen** — `src/screens/SettingsScreen.tsx`
 - **WeatherSettingsScreen** — `src/screens/WeatherSettingsScreen.tsx`
 - **SkeletonWidget** — props: widgetWidth, widgetHeight — `src/widget/ProgressWidget.tsx`
+- **ProgressWidget** — props: current, target, timerRunning, timerStartMs, widgetWidth, widgetHeight — `src/widget/ProgressWidget.tsx`
 
 ---
+
 _Back to [overview.md](./overview.md)_

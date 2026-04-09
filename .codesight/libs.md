@@ -25,7 +25,7 @@
 - `src/detection/gpsDetection.ts`
   - function clampRadiusMeters: (r) => number
   - function loadGPSState: () => Promise<void>
-  - function _resetGPSStateForTesting: () => void
+  - function \_resetGPSStateForTesting: () => void
   - function requestLocationPermissions: () => Promise<boolean>
   - function computeMinActiveRadius: (locations) => number
   - function computeLowDistanceInterval: (minRadiusMeters) => number
@@ -63,7 +63,7 @@
   - function formatLocalDate: (ms, options?) => string
   - function formatLocalTime: (ms) => string
 - `src/notifications/notificationManager.ts`
-  - function _resetSchedulingGuards: () => void
+  - function \_resetSchedulingGuards: () => void
   - function logReminderQueueSnapshot: () => Promise<void>
   - function setupNotificationInfrastructure: () => Promise<void>
   - function requestNotificationPermissions: () => Promise<boolean>

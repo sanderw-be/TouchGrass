@@ -2,8 +2,8 @@
 
 > **Stack:** raw-http | none | react | typescript
 
-> 0 routes | 0 models | 33 components | 27 lib files | 2 env vars | 1 middleware | 0% test coverage
-> **Token savings:** this file is ~4,200 tokens. Without it, AI exploration would cost ~27,400 tokens. **Saves ~23,200 tokens per conversation.**
+> 0 routes | 0 models | 37 components | 27 lib files | 2 env vars | 1 middleware | 0% test coverage
+> **Token savings:** this file is ~4,300 tokens. Without it, AI exploration would cost ~28,700 tokens. **Saves ~24,400 tokens per conversation.**
 
 ---
 
@@ -20,8 +20,10 @@
 - **ReminderFeedbackModal** — `src/components/ReminderFeedbackModal.tsx`
 - **UndoSnackbar** — props: visible, message, onUndo, onDismiss, duration — `src/components/UndoSnackbar.tsx`
 - **UpdateSplashScreen** — props: status — `src/components/UpdateSplashScreen.tsx`
-- **CalendarSection** — props: calendarEnabled, calendarPermissionGranted, calendarBuffer, calendarDuration, calendarSelectedId, calendarOptions — `src/components/goals/CalendarSection.tsx`
+- **CalendarSection** — props: calendarEnabled, calendarPermissionGranted, calendarBuffer, calendarDuration, calendarSelectedId, calendarOptions, onToggleCalendar, onCycleCalendarBuffer, onCycleCalendarDuration, onSelectCalendar — `src/components/goals/CalendarSection.tsx`
 - **SettingRow** — props: icon, label, sublabel, right — `src/components/goals/GoalsShared.tsx`
+- **Divider** — `src/components/goals/GoalsShared.tsx`
+- **PermissionToggleRow** — props: icon, label, desc, permissionMissingLabel, enabled, permissionGranted, onToggle, onPermissionFix — `src/components/goals/GoalsShared.tsx`
 - **RemindersSection** — props: smartRemindersCount, catchupRemindersCount, notificationPermissionGranted, batteryOptimizationGranted, onCycleSmartReminders, onCycleCatchupReminders, onNavigateScheduledNotifications, onShowNotificationPermissionSheet, onShowBatteryPermissionSheet — `src/components/goals/RemindersSection.tsx`
 - **WeatherSection** — props: weatherEnabled, weatherLocationGranted, onToggleWeather, onShowWeatherPermissionSheet, onNavigateWeatherSettings — `src/components/goals/WeatherSection.tsx`
 - **IntroContext** — `src/context/IntroContext.tsx`
@@ -35,6 +37,7 @@
 - **FeedbackSupportScreen** — `src/screens/FeedbackSupportScreen.tsx`
 - **GoalsScreen** — `src/screens/GoalsScreen.tsx`
 - **HistoryScreen** — `src/screens/HistoryScreen.tsx`
+- **BarChart** — props: data, target, maxValue, period, isLoading — `src/screens/HistoryScreen.tsx`
 - **HomeScreen** — `src/screens/HomeScreen.tsx`
 - **IntroScreen** — props: onComplete — `src/screens/IntroScreen.tsx`
 - **KnownLocationsScreen** — `src/screens/KnownLocationsScreen.tsx`
@@ -42,6 +45,7 @@
 - **SettingsScreen** — `src/screens/SettingsScreen.tsx`
 - **WeatherSettingsScreen** — `src/screens/WeatherSettingsScreen.tsx`
 - **SkeletonWidget** — props: widgetWidth, widgetHeight — `src/widget/ProgressWidget.tsx`
+- **ProgressWidget** — props: current, target, timerRunning, timerStartMs, widgetWidth, widgetHeight — `src/widget/ProgressWidget.tsx`
 
 ---
 
@@ -72,7 +76,7 @@
 - `src/detection/gpsDetection.ts`
   - function clampRadiusMeters: (r) => number
   - function loadGPSState: () => Promise<void>
-  - function _resetGPSStateForTesting: () => void
+  - function \_resetGPSStateForTesting: () => void
   - function requestLocationPermissions: () => Promise<boolean>
   - function computeMinActiveRadius: (locations) => number
   - function computeLowDistanceInterval: (minRadiusMeters) => number
@@ -110,7 +114,7 @@
   - function formatLocalDate: (ms, options?) => string
   - function formatLocalTime: (ms) => string
 - `src/notifications/notificationManager.ts`
-  - function _resetSchedulingGuards: () => void
+  - function \_resetSchedulingGuards: () => void
   - function logReminderQueueSnapshot: () => Promise<void>
   - function setupNotificationInfrastructure: () => Promise<void>
   - function requestNotificationPermissions: () => Promise<boolean>
@@ -205,6 +209,7 @@
 # Middleware
 
 ## custom
+
 - generate-play-store-notes — `scripts/generate-play-store-notes.js`
 
 ---
