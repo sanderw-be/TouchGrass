@@ -97,7 +97,7 @@ jobs:
       
       # --- PATH A: NO NATIVE CHANGES ---
       - name: Publish EAS Update
-        if: steps.native_check.outputs.native == 'false'
+        if: always()  #steps.native_check.outputs.native == 'false'
         env:
           CI: 1
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
@@ -111,7 +111,7 @@ jobs:
 
       - name: Comment PR with Deep Link
         # FIX: Added `github.event_name == 'pull_request'` to prevent crash on workflow_dispatch
-        if: steps.native_check.outputs.native == 'false' && github.event_name == 'pull_request'
+        if: always() #steps.native_check.outputs.native == 'false' && github.event_name == 'pull_request'
         uses: peter-evans/create-or-update-comment@v4
         with:
           issue-number: ${{ github.event.pull_request.number }}
