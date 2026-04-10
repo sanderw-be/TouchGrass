@@ -106,4 +106,4 @@ jobs:
       - name: Build Preview APK
         if: needs.check-native-changes.outputs.native == 'true'
         # Assuming you have a 'preview' profile in your eas.json configured to output an APK
-        run: npx --yes eas-cli build --profile preview-emulator --platform android --non-interactive
+        run: npx --yes eas-cli build --profile preview-emulator --platform android --non-interactive --no-wait

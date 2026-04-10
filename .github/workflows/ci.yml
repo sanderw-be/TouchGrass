@@ -125,7 +125,7 @@ jobs:
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }} # FIX: Injected missing EXPO_TOKEN into environment
         run: |
-          npx --yes eas-cli build --profile development --platform android --non-interactive
+          npx --yes eas-cli build --profile development --platform android --non-interactive --no-wait
           
       - name: Comment PR about Native Build
         # FIX: Added `github.event_name == 'pull_request'` to prevent crash on workflow_dispatch
