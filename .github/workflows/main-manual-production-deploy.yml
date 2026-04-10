@@ -1,0 +1,52 @@
+name: 3. CD - Deploy to Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      deploy_type:
+        description: 'Choose the type of Production Deployment'
+        required: true
+        type: choice
+        options:
+          - 'OTA Update (JavaScript/Assets only)'
+          - 'Native Build (AAB to Google Play)'
+
+
+jobs:
+  # 4. Wait for manual approval, then deploy to Production
+  deploy-production:
+    name: Production Deployment
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+          cache: 'npm'
+      - run: npm ci
+
+      - name: ⚡️ Cache npx
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm/_npx
+          # We add a static string 'eas' to the key so it caches the CLI specifically
+          key: ${{ runner.os }}-npx-eas-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npx-eas-
+
+      # --- SCENARIO A: Native Build Required ---
+      - name: Build AAB
+        if: inputs.deploy_type == 'Native Build (AAB to Google Play)'
+        run: npx --yes eas-cli build --profile production --platform android --non-interactive
+
+      - name: Submit to Google Play
+        if: inputs.deploy_type == 'Native Build (AAB to Google Play)'
+        run: npx --yes eas-cli submit --profile production --platform android --non-interactive
+
+      # --- SCENARIO B: JavaScript/Asset Changes Only ---
+      - name: Publish Production OTA Update
+        if: inputs.deploy_type == 'OTA Update (JavaScript/Assets only)'
+        run: npx --yes eas-cli update --branch production --message "Manual Production OTA Deployment"

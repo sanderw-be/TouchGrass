@@ -1,0 +1,105 @@
+name: 2. CD - Auto-Deploy Preview
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  # 1. Determine if native files changed
+  check-native-changes:
+    name: Check for Native Changes
+    runs-on: ubuntu-latest
+    outputs:
+      native: ${{ steps.native_check.outputs.native }}
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Check paths
+        id: native_check
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            native:
+              - 'package.json'
+              - 'app.json'
+              - 'app.config.js'
+              - 'ios/**'
+              - 'android/**'
+
+  # 2. Run Semantic Versioning ONLY if native changes exist
+  version-bump:
+    name: Semantic Versioning
+    needs: check-native-changes
+    if: needs.check-native-changes.outputs.native == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+      id-token: write
+    outputs:
+      new_release_published: ${{ steps.semantic.outputs.new_release_published }}
+      new_release_git_tag: ${{ steps.semantic.outputs.new_release_git_tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+          cache: 'npm'
+
+      - name: Run Semantic Release
+        id: semantic
+        uses: cycjimmy/semantic-release-action@v4
+        with:
+        # List any plugins from your .releaserc.json that aren't defaults
+          extra_plugins: |
+            @semantic-release/changelog
+            @semantic-release/exec
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # 3. Automatically update the preview track (Runs for ALL merges)
+  deploy-preview:
+    name: Deploy to Preview
+    needs: [check-native-changes, version-bump]
+    # always() ensures this runs even if version-bump was skipped
+    if: always() && needs.check-native-changes.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Checks out the new tag if one was made, otherwise uses main
+          ref: ${{ needs.version-bump.outputs.new_release_git_tag || github.ref }}
+          
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+          cache: 'npm'
+      - run: npm ci
+
+      - name: ⚡️ Cache npx
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm/_npx
+          # We add a static string 'eas' to the key so it caches the CLI specifically
+          key: ${{ runner.os }}-npx-eas-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npx-eas-
+
+      # --- SCENARIO A: JavaScript/Asset changes only ---
+      - name: Publish Preview OTA Update
+        if: needs.check-native-changes.outputs.native == 'false'
+        env:
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message || github.event.workflow_run.head_commit.message || github.event.pull_request.title || github.sha }}
+        run: npx --yes eas-cli update --branch preview --message "$COMMIT_MESSAGE"
+      
+      # --- SCENARIO B: Native changes detected ---
+      - name: Build Preview APK
+        if: needs.check-native-changes.outputs.native == 'true'
+        # Assuming you have a 'preview' profile in your eas.json configured to output an APK
+        run: npx --yes eas-cli build --profile preview-emulator --platform android --non-interactive

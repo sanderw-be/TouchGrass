@@ -112,6 +112,7 @@
       "expo-background-task",
       "expo-localization",
       "expo-system-ui",
+      "expo-font",
       "./withAlarmBridgePlugin",
       [
         "react-native-android-widget",
