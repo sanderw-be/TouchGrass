@@ -50,12 +50,6 @@ jobs:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: npx --yes eas-cli build --profile production --platform android --non-interactive --no-wait
 
-      - name: Submit to Google Play
-        if: inputs.deploy_type == 'Native Build (AAB to Google Play)'
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-        run: npx --yes eas-cli submit --profile production --platform android --non-interactive
-
       # --- SCENARIO B: JavaScript/Asset Changes Only ---
       - name: Publish Production OTA Update
         if: inputs.deploy_type == 'OTA Update (JavaScript/Assets only)'
