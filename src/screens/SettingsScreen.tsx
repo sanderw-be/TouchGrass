@@ -43,6 +43,7 @@ import { t } from '../i18n';
 import { PRIVACY_POLICY_URL } from '../utils/constants';
 import type { SettingsStackParamList } from '../navigation/AppNavigator';
 import { useShowIntro } from '../context/IntroContext';
+import { emitPermissionIssuesChanged } from '../utils/permissionIssuesChangedEmitter';
 
 const LANGUAGES = [
   { code: 'en', label: 'English' },
@@ -140,6 +141,7 @@ export default function SettingsScreen() {
         try {
           await toggleHealthConnect(false);
           setDetectionStatus(await getDetectionStatus());
+          emitPermissionIssuesChanged();
         } catch (error) {
           console.error('[SettingsScreen.showHCPermissionSheet.onDisable] Error:', error);
         }
@@ -156,6 +158,7 @@ export default function SettingsScreen() {
         try {
           await toggleGPS(false);
           setDetectionStatus(await getDetectionStatus());
+          emitPermissionIssuesChanged();
         } catch (error) {
           console.error('[SettingsScreen.showGPSPermissionSheet.onDisable] Error:', error);
         }
@@ -169,6 +172,7 @@ export default function SettingsScreen() {
     try {
       const result = await toggleHealthConnect(value);
       setDetectionStatus(await getDetectionStatus());
+      emitPermissionIssuesChanged();
 
       if (value && result.needsPermissions) {
         showHCPermissionSheet();
@@ -187,6 +191,7 @@ export default function SettingsScreen() {
     try {
       const result = await toggleGPS(value);
       setDetectionStatus(await getDetectionStatus());
+      emitPermissionIssuesChanged();
 
       if (value && result.needsPermissions) {
         showGPSPermissionSheet();

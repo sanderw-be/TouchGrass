@@ -18,6 +18,7 @@ import { spacing } from '../utils/theme';
 import { useTheme } from '../context/ThemeContext';
 import { t } from '../i18n';
 import { onSessionsChanged } from '../utils/sessionsChangedEmitter';
+import { onPermissionIssuesChanged } from '../utils/permissionIssuesChangedEmitter';
 const WeatherSettingsScreen = lazy(() => import('../screens/WeatherSettingsScreen'));
 const ScheduledNotificationsScreen = lazy(() => import('../screens/ScheduledNotificationsScreen'));
 const KnownLocationsScreen = lazy(() => import('../screens/KnownLocationsScreen'));
@@ -286,6 +287,8 @@ export default function AppNavigator({
 
     // Refresh events badge whenever sessions change (e.g. background sync)
     const unsubscribe = onSessionsChanged(refreshEventsBadge);
+    // Refresh permission badges whenever a feature is enabled/disabled from within the app
+    const unsubscribePermissions = onPermissionIssuesChanged(refreshPermissionBadges);
 
     const subscription = AppState.addEventListener('change', async (nextAppState) => {
       // When app comes to foreground, refresh weather if stale and recheck permission badges
@@ -306,6 +309,7 @@ export default function AppNavigator({
 
     return () => {
       unsubscribe();
+      unsubscribePermissions();
       subscription.remove();
     };
   }, [refreshPermissionBadges, refreshEventsBadge]);

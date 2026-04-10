@@ -53,6 +53,7 @@ import {
   CATCHUP_REMINDERS_OPTIONS,
   CatchupRemindersOption,
 } from '../components/goals/GoalsShared';
+import { emitPermissionIssuesChanged } from '../utils/permissionIssuesChangedEmitter';
 
 const DAILY_PRESETS = [15, 20, 30, 45, 60, 90];
 const WEEKLY_PRESETS = [60, 90, 120, 150, 210, 300];
@@ -257,6 +258,7 @@ export default function GoalsScreen() {
     try {
       await setSettingAsync('smart_reminders_count', String(next));
       setSmartRemindersCount(next);
+      emitPermissionIssuesChanged();
     } catch (error) {
       console.error('[GoalsScreen.cycleSmartRemindersCount] Error:', error);
     }
@@ -297,6 +299,7 @@ export default function GoalsScreen() {
         try {
           await setSettingAsync('weather_enabled', '0');
           setWeatherEnabled(false);
+          emitPermissionIssuesChanged();
         } catch (error) {
           console.error('[GoalsScreen.showWeatherPermissionSheet.onDisable] Error:', error);
         }
@@ -315,6 +318,7 @@ export default function GoalsScreen() {
         try {
           await setSettingAsync('calendar_integration_enabled', '0');
           setCalendarEnabled(false);
+          emitPermissionIssuesChanged();
         } catch (error) {
           console.error('[GoalsScreen.showCalendarPermissionSheet.onDisable] Error:', error);
         }
@@ -332,6 +336,7 @@ export default function GoalsScreen() {
         try {
           await setSettingAsync('smart_reminders_count', '0');
           setSmartRemindersCount(0);
+          emitPermissionIssuesChanged();
         } catch (error) {
           console.error('[GoalsScreen.showNotificationPermissionSheet.onDisable] Error:', error);
         }
@@ -364,6 +369,7 @@ export default function GoalsScreen() {
     try {
       await setSettingAsync('weather_enabled', value ? '1' : '0');
       setWeatherEnabled(value);
+      emitPermissionIssuesChanged();
     } catch (error) {
       console.error('[GoalsScreen.toggleWeatherEnabled] Error:', error);
     }
@@ -383,6 +389,7 @@ export default function GoalsScreen() {
     try {
       await setSettingAsync('calendar_integration_enabled', value ? '1' : '0');
       setCalendarEnabled(value);
+      emitPermissionIssuesChanged();
     } catch (error) {
       console.error('[GoalsScreen.toggleCalendarIntegration] Error:', error);
     }
