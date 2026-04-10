@@ -48,7 +48,15 @@ jobs:
         if: inputs.deploy_type == 'Native Build (AAB to Google Play)'
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-        run: npx --yes eas-cli build --profile production --platform android --non-interactive --no-wait
+        run: npx --yes eas-cli build --profile production --platform android --local --output ./production-app.aab
+
+      - name: Upload Production AAB Artifact
+        if: inputs.deploy_type == 'Native Build (AAB to Google Play)'
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-aab
+          path: ./production-app.aab
+          retention-days: 14
 
       # --- SCENARIO B: JavaScript/Asset Changes Only ---
       - name: Publish Production OTA Update

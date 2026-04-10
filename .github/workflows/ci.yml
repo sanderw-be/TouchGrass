@@ -27,8 +27,7 @@ jobs:
       contents: write
       actions: write
       pull-requests: write # FIX: Corrected spelling from pull_requests and granted 'write' access
-    outputs:
-      apk_url: ${{ steps.get_url.outputs.url }}
+    outputs: {}
 
     steps:
       - name: Checkout code
@@ -126,8 +125,16 @@ jobs:
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }} # FIX: Injected missing EXPO_TOKEN into environment
         run: |
-          npx --yes eas-cli build --profile development --platform android --non-interactive --no-wait
+          npx --yes eas-cli build --profile development --platform android --local --output ./dev-app.apk
           
+      - name: Upload Dev APK Artifact
+        if: steps.native_check.outputs.native == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: dev-apk
+          path: ./dev-app.apk
+          retention-days: 7
+
       - name: Comment PR about Native Build
         # FIX: Added `github.event_name == 'pull_request'` to prevent crash on workflow_dispatch
         if: steps.native_check.outputs.native == 'true' && github.event_name == 'pull_request'
@@ -137,15 +144,6 @@ jobs:
           body: |
             ⚠️ **Native Changes Detected!**
             A new development APK is currently building on EAS. Check the Expo dashboard to download it once finished.
-
-      - name: Get Latest APK URL
-        id: get_url
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-        run: |
-          # FIX: Matched `--profile development` to the build step above so they request the same artifact
-          LATEST_BUILD_URL=$(npx --yes eas-cli build:list --platform android --profile development --status finished --limit 1 --json --non-interactive | jq -r '.[0].artifacts.buildUrl')
-          echo "url=$LATEST_BUILD_URL" >> "$GITHUB_OUTPUT"
 
       - name: Upload coverage reports
         uses: codecov/codecov-action@v4
@@ -175,10 +173,10 @@ jobs:
       - name: Install Maestro
         run: curl -Ls "https://get.maestro.mobile.dev" | bash
 
-      - name: Fetch Latest APK from Expo
-        run: |
-          echo "Downloading from: ${{ needs.checks-tests-preview.outputs.apk_url }}"
-          curl -L -o app.apk "${{ needs.checks-tests-preview.outputs.apk_url }}"
+      - name: Download APK Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dev-apk
 
       - name: Enable KVM group perms
         run: |
@@ -195,7 +193,7 @@ jobs:
           profile: pixel_6
           script: |
             export PATH="$PATH:$HOME/.maestro/bin"
-            adb install app.apk
+            adb install dev-app.apk
             # FIX: Changed `--output` from folders to .xml files
             $HOME/.maestro/bin/maestro test .maestro/screenshot-flow.yaml --format junit --output outputlight.xml
             adb shell "cmd uimode night yes"
