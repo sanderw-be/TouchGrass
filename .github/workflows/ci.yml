@@ -120,6 +120,34 @@ jobs:
             Tap here to test on your Development Client: ${{ env.DEEP_LINK }}
 
       # --- PATH B: NATIVE CHANGES DETECTED ---
+      # Dry-run semantic release to compute the upcoming version and stamp it
+      # into app.json before building. This ensures the dev APK carries the
+      # correct semver instead of the stale version from the last release.
+      - name: Dry-run Semantic Release (compute next version)
+        if: steps.native_check.outputs.native == 'true'
+        id: semantic_dry
+        uses: cycjimmy/semantic-release-action@v4
+        with:
+          dry_run: true
+          extra_plugins: |
+            @semantic-release/changelog
+            @semantic-release/exec
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Apply upcoming version to app.json
+        if: steps.native_check.outputs.native == 'true' && steps.semantic_dry.outputs.new_release_published == 'true'
+        run: node scripts/update-app-version.js ${{ steps.semantic_dry.outputs.new_release_version }}
+
+      - name: Commit version bump to PR branch
+        if: steps.native_check.outputs.native == 'true' && steps.semantic_dry.outputs.new_release_published == 'true'
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: pre-bump version to ${{ steps.semantic_dry.outputs.new_release_version }} for dev build [skip ci]"
+          file_pattern: "app.json"
+          commit_user_name: "github-actions[bot]"
+          commit_user_email: "github-actions[bot]@users.noreply.github.com"
+
       - name: Trigger EAS Build
         if: steps.native_check.outputs.native == 'true'
         env:

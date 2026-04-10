@@ -26,8 +26,15 @@ if (typeof currentVersionCode !== 'number' || !Number.isInteger(currentVersionCo
   process.exit(1);
 }
 
+const alreadyAtVersion = appJson.expo.version === version;
+
 appJson.expo.version = version;
-appJson.expo.android.versionCode = currentVersionCode + 1;
+// Only increment versionCode when the version is actually changing.
+// This prevents a double-increment when step 1 (dry-run commit) and
+// step 2 (real semantic-release) both call this script for the same version.
+if (!alreadyAtVersion) {
+  appJson.expo.android.versionCode = currentVersionCode + 1;
+}
 
 fs.writeFileSync(appJsonPath, JSON.stringify(appJson, null, 2) + '\n');
 
