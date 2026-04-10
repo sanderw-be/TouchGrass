@@ -2,8 +2,8 @@
 
 > **Stack:** raw-http | none | react | typescript
 
-> 0 routes | 0 models | 37 components | 27 lib files | 2 env vars | 1 middleware | 0% test coverage
-> **Token savings:** this file is ~4,300 tokens. Without it, AI exploration would cost ~28,700 tokens. **Saves ~24,300 tokens per conversation.**
+> 0 routes | 0 models | 37 components | 28 lib files | 2 env vars | 1 middleware | 0% test coverage
+> **Token savings:** this file is ~4,400 tokens. Without it, AI exploration would cost ~28,900 tokens. **Saves ~24,600 tokens per conversation.**
 
 ---
 
@@ -152,6 +152,7 @@
   - function formatDate: (ms) => string
   - function formatTimer: (seconds) => string
 - `src/utils/permissionIssues.ts` — function countPermissionIssues: () => Promise<
+- `src/utils/permissionIssuesChangedEmitter.ts` — function emitPermissionIssuesChanged: () => void, function onPermissionIssuesChanged: (listener) => () => void
 - `src/utils/sessionsChangedEmitter.ts` — function emitSessionsChanged: () => void, function onSessionsChanged: (listener) => () => void
 - `src/utils/temperature.ts`
   - function isFahrenheit: () => boolean
@@ -257,7 +258,7 @@
 # Test Coverage
 
 > **0%** of routes and models are covered by tests
-> 59 test files found
+> 60 test files found
 
 ---
 
