@@ -18,7 +18,7 @@
         "backgroundColor": "#4A7C59"
       },
       "package": "com.jollyheron.touchgrass",
-      "versionCode": 11,
+      "versionCode": 10,
       "permissions": [
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_FINE_LOCATION",
@@ -148,7 +148,7 @@
       }
     },
     "runtimeVersion": {
-      "policy": "appVersion"
+      "policy": "fingerprint"
     },
     "updates": {
       "url": "https://u.expo.dev/34928510-f2c8-47b0-9d37-c911af91d506",
