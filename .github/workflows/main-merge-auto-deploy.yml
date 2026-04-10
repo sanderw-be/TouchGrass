@@ -1,5 +1,9 @@
 name: 2. CD - Auto-Deploy Preview
 
+permissions:
+  contents: read
+  pull-requests: read
+
 on:
   push:
     branches:

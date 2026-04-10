@@ -1,5 +1,9 @@
 name: 1. CI — Check, Test & Update
 
+permissions:
+  pull-requests: read
+  contents: read
+
 on:
   pull_request:
     types: [opened, synchronize]
@@ -22,6 +26,7 @@ jobs:
     permissions:
       contents: write
       actions: write
+      pull_requests: read
     outputs:
       apk_url: ${{ steps.get_url.outputs.url }}
 

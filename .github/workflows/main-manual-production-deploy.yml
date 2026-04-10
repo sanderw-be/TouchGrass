@@ -1,5 +1,9 @@
 name: 3. CD - Deploy to Production
 
+permissions:
+  pull-requests: read
+  contents: read
+
 on:
   workflow_dispatch:
     inputs:
