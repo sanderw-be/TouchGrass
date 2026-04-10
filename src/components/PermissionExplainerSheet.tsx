@@ -15,6 +15,12 @@ export interface PermissionSheetConfig {
   onDisable?: () => void;
   /** Label for the disable button – defaults to t('settings_permission_disable') */
   disableLabel?: string;
+  /**
+   * Optional callback invoked when the sheet is dismissed via Cancel or the
+   * backdrop without the user taking a positive action (open settings / disable).
+   * Use this to revert any state change that triggered the sheet.
+   */
+  onCancel?: () => void;
 }
 
 interface Props {
@@ -29,6 +35,12 @@ interface Props {
   onDisable?: () => void;
   /** Label for the disable button – defaults to t('settings_permission_disable') */
   disableLabel?: string;
+  /**
+   * Optional callback invoked when the sheet is dismissed via Cancel or the
+   * backdrop without the user taking a positive action (open settings / disable).
+   * Use this to revert any state change that triggered the sheet.
+   */
+  onCancel?: () => void;
 }
 
 export default function PermissionExplainerSheet({
@@ -40,6 +52,7 @@ export default function PermissionExplainerSheet({
   openSettingsLabel,
   onDisable,
   disableLabel,
+  onCancel,
 }: Props) {
   const { colors, shadows } = useTheme();
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
@@ -55,9 +68,14 @@ export default function PermissionExplainerSheet({
     onClose();
   };
 
+  const handleCancel = () => {
+    onCancel?.();
+    onClose();
+  };
+
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onClose} />
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={handleCancel}>
+      <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={handleCancel} />
 
       <View
         style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, spacing.md) }]}
@@ -102,7 +120,11 @@ export default function PermissionExplainerSheet({
         )}
 
         {/* Cancel */}
-        <TouchableOpacity style={styles.cancelBtn} onPress={onClose} testID="permission-cancel-btn">
+        <TouchableOpacity
+          style={styles.cancelBtn}
+          onPress={handleCancel}
+          testID="permission-cancel-btn"
+        >
           <Text style={styles.cancelBtnText}>{t('settings_permission_cancel')}</Text>
         </TouchableOpacity>
       </View>

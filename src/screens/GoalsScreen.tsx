@@ -294,6 +294,9 @@ export default function GoalsScreen() {
       title: t('settings_weather_permission_title'),
       body: t('settings_weather_location_permission_missing'),
       onOpen: handleOpenAppSettings,
+      onCancel: () => {
+        pendingWeatherEnableRef.current = false;
+      },
       onDisable: async () => {
         pendingWeatherEnableRef.current = false;
         try {
@@ -313,6 +316,9 @@ export default function GoalsScreen() {
       title: t('settings_calendar_permission_title'),
       body: t('settings_calendar_permission_body'),
       onOpen: handleOpenAppSettings,
+      onCancel: () => {
+        pendingCalendarEnableRef.current = false;
+      },
       onDisable: async () => {
         pendingCalendarEnableRef.current = false;
         try {
@@ -331,6 +337,9 @@ export default function GoalsScreen() {
       title: t('settings_notification_permission_title'),
       body: t('settings_notification_permission_body'),
       onOpen: handleOpenAppSettings,
+      onCancel: () => {
+        pendingSmartRemindersEnableRef.current = false;
+      },
       onDisable: async () => {
         pendingSmartRemindersEnableRef.current = false;
         try {
@@ -647,6 +656,7 @@ export default function GoalsScreen() {
           onOpenSettings={permissionSheet.onOpen}
           onDisable={permissionSheet.onDisable}
           disableLabel={permissionSheet.disableLabel}
+          onCancel={permissionSheet.onCancel}
           onClose={() => setPermissionSheet(null)}
         />
       )}

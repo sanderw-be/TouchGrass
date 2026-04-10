@@ -479,3 +479,71 @@ describe('SettingsScreen badge refresh on feature disable', () => {
     });
   });
 });
+
+describe('SettingsScreen cancel permission sheet reverts enabled state', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('calls toggleHealthConnect(false) when Cancel is pressed after HC was enabled with missing permissions', async () => {
+    (DetectionModule.getDetectionStatus as jest.Mock).mockResolvedValue({
+      healthConnect: false,
+      healthConnectPermission: false,
+      gps: false,
+      gpsPermission: false,
+    });
+    mockToggleHealthConnect.mockResolvedValue({ needsPermissions: true });
+
+    const { getByTestId, findByTestId, queryByTestId } = render(<SettingsScreen />);
+    await waitFor(() => expect(getByTestId('hc-toggle')).toBeTruthy());
+
+    // Toggle HC ON → toggleHealthConnect(true) called, sheet shown
+    await act(async () => {
+      fireEvent(getByTestId('hc-toggle'), 'valueChange', true);
+    });
+
+    await findByTestId('permission-explainer-sheet');
+
+    // Press Cancel → should revert by calling toggleHealthConnect(false)
+    mockToggleHealthConnect.mockResolvedValue({ needsPermissions: false });
+    await act(async () => {
+      fireEvent.press(await findByTestId('permission-cancel-btn'));
+    });
+
+    await waitFor(() => {
+      expect(mockToggleHealthConnect).toHaveBeenCalledWith(false);
+      expect(queryByTestId('permission-explainer-sheet')).toBeNull();
+    });
+  });
+
+  it('calls toggleGPS(false) when Cancel is pressed after GPS was enabled with missing permissions', async () => {
+    (DetectionModule.getDetectionStatus as jest.Mock).mockResolvedValue({
+      healthConnect: false,
+      healthConnectPermission: false,
+      gps: false,
+      gpsPermission: false,
+    });
+    mockToggleGPS.mockResolvedValue({ needsPermissions: true });
+
+    const { getByTestId, findByTestId, queryByTestId } = render(<SettingsScreen />);
+    await waitFor(() => expect(getByTestId('gps-toggle')).toBeTruthy());
+
+    // Toggle GPS ON → toggleGPS(true) called, sheet shown
+    await act(async () => {
+      fireEvent(getByTestId('gps-toggle'), 'valueChange', true);
+    });
+
+    await findByTestId('permission-explainer-sheet');
+
+    // Press Cancel → should revert by calling toggleGPS(false)
+    mockToggleGPS.mockResolvedValue({ needsPermissions: false });
+    await act(async () => {
+      fireEvent.press(await findByTestId('permission-cancel-btn'));
+    });
+
+    await waitFor(() => {
+      expect(mockToggleGPS).toHaveBeenCalledWith(false);
+      expect(queryByTestId('permission-explainer-sheet')).toBeNull();
+    });
+  });
+});

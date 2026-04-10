@@ -137,6 +137,15 @@ export default function SettingsScreen() {
           Alert.alert(t('settings_hc_open_error_title'), t('settings_hc_open_error_body'));
         }
       },
+      onCancel: async () => {
+        try {
+          await toggleHealthConnect(false);
+          setDetectionStatus(await getDetectionStatus());
+          emitPermissionIssuesChanged();
+        } catch (error) {
+          console.error('[SettingsScreen.showHCPermissionSheet.onCancel] Error:', error);
+        }
+      },
       onDisable: async () => {
         try {
           await toggleHealthConnect(false);
@@ -154,6 +163,15 @@ export default function SettingsScreen() {
       title: t('settings_gps_permission_required_title'),
       body: t('settings_gps_permission_required_body'),
       onOpen: handleOpenAppSettings,
+      onCancel: async () => {
+        try {
+          await toggleGPS(false);
+          setDetectionStatus(await getDetectionStatus());
+          emitPermissionIssuesChanged();
+        } catch (error) {
+          console.error('[SettingsScreen.showGPSPermissionSheet.onCancel] Error:', error);
+        }
+      },
       onDisable: async () => {
         try {
           await toggleGPS(false);
@@ -466,6 +484,7 @@ export default function SettingsScreen() {
           onOpenSettings={permissionSheet.onOpen}
           onDisable={permissionSheet.onDisable}
           disableLabel={permissionSheet.disableLabel}
+          onCancel={permissionSheet.onCancel}
           onClose={() => setPermissionSheet(null)}
         />
       )}
