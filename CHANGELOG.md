@@ -1,3 +1,9 @@
+# [1.6.0](https://github.com/sanderw-be/TouchGrass/compare/v1.5.1...v1.6.0) (2026-04-10)
+
+### Features
+
+- **cicd:** semver in dev builds, pre-releases in preview, promote on production ([c078684](https://github.com/sanderw-be/TouchGrass/commit/c07868449387838f10a64aee098fbfde08870c80))
+
 ## [1.5.1](https://github.com/sanderw-be/TouchGrass/compare/v1.5.0...v1.5.1) (2026-04-08)
 
 ### Bug Fixes
