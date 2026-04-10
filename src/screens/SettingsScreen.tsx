@@ -127,6 +127,15 @@ export default function SettingsScreen() {
   };
 
   const showHCPermissionSheet = useCallback(() => {
+    const disableHC = async () => {
+      try {
+        await toggleHealthConnect(false);
+        setDetectionStatus(await getDetectionStatus());
+        emitPermissionIssuesChanged();
+      } catch (error) {
+        console.error('[SettingsScreen.showHCPermissionSheet.disable] Error:', error);
+      }
+    };
     setPermissionSheet({
       title: t('settings_hc_permission_title'),
       body: t('settings_hc_permission_body'),
@@ -137,50 +146,27 @@ export default function SettingsScreen() {
           Alert.alert(t('settings_hc_open_error_title'), t('settings_hc_open_error_body'));
         }
       },
-      onCancel: async () => {
-        try {
-          await toggleHealthConnect(false);
-          setDetectionStatus(await getDetectionStatus());
-          emitPermissionIssuesChanged();
-        } catch (error) {
-          console.error('[SettingsScreen.showHCPermissionSheet.onCancel] Error:', error);
-        }
-      },
-      onDisable: async () => {
-        try {
-          await toggleHealthConnect(false);
-          setDetectionStatus(await getDetectionStatus());
-          emitPermissionIssuesChanged();
-        } catch (error) {
-          console.error('[SettingsScreen.showHCPermissionSheet.onDisable] Error:', error);
-        }
-      },
+      onCancel: disableHC,
+      onDisable: disableHC,
     });
   }, []);
 
   const showGPSPermissionSheet = useCallback(() => {
+    const disableGPS = async () => {
+      try {
+        await toggleGPS(false);
+        setDetectionStatus(await getDetectionStatus());
+        emitPermissionIssuesChanged();
+      } catch (error) {
+        console.error('[SettingsScreen.showGPSPermissionSheet.disable] Error:', error);
+      }
+    };
     setPermissionSheet({
       title: t('settings_gps_permission_required_title'),
       body: t('settings_gps_permission_required_body'),
       onOpen: handleOpenAppSettings,
-      onCancel: async () => {
-        try {
-          await toggleGPS(false);
-          setDetectionStatus(await getDetectionStatus());
-          emitPermissionIssuesChanged();
-        } catch (error) {
-          console.error('[SettingsScreen.showGPSPermissionSheet.onCancel] Error:', error);
-        }
-      },
-      onDisable: async () => {
-        try {
-          await toggleGPS(false);
-          setDetectionStatus(await getDetectionStatus());
-          emitPermissionIssuesChanged();
-        } catch (error) {
-          console.error('[SettingsScreen.showGPSPermissionSheet.onDisable] Error:', error);
-        }
-      },
+      onCancel: disableGPS,
+      onDisable: disableGPS,
     });
   }, []);
 
