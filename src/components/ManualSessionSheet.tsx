@@ -46,7 +46,7 @@ export default function ManualSessionSheet({ visible, onClose, onSessionLogged }
   const [timerStartTime, setTimerStartTime] = useState<number>(0);
   const [timerSeconds, setTimerSeconds] = useState(0);
   const [fromTimer, setFromTimer] = useState(false);
-  const [notes, setNotes] = useState(t('session_notes_manual'));
+  const [notes, setNotes] = useState('');
   const stopTimerRef = useRef<(() => void) | null>(null);
   const timerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
