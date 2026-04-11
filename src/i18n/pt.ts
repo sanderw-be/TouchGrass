@@ -76,8 +76,8 @@ export default {
   // Days of week (short, Monday first)
   day_mon: 'S',
   day_tue: 'T',
-  day_wed: 'Q',
-  day_thu: 'Q',
+  day_wed: 'Qua',
+  day_thu: 'Qui',
   day_fri: 'S',
   day_sat: 'S',
   day_sun: 'D',
