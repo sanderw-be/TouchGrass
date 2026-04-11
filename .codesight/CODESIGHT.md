@@ -2,8 +2,8 @@
 
 > **Stack:** raw-http | none | react | typescript
 
-> 0 routes | 0 models | 37 components | 28 lib files | 2 env vars | 1 middleware | 0% test coverage
-> **Token savings:** this file is ~4,400 tokens. Without it, AI exploration would cost ~28,900 tokens. **Saves ~24,600 tokens per conversation.**
+> 0 routes | 0 models | 38 components | 28 lib files | 2 env vars | 1 middleware | 0% test coverage
+> **Token savings:** this file is ~4,400 tokens. Without it, AI exploration would cost ~29,300 tokens. **Saves ~24,800 tokens per conversation.**
 
 ---
 
@@ -18,6 +18,7 @@
 - **PermissionExplainerSheet** — props: visible, onClose, onOpenSettings, title, body, openSettingsLabel, onDisable, disableLabel, onCancel — `src/components/PermissionExplainerSheet.tsx`
 - **ProgressRing** — props: current, target, size, strokeWidth, label, onTimerPress, timerRunning, timerSeconds — `src/components/ProgressRing.tsx`
 - **ReminderFeedbackModal** — `src/components/ReminderFeedbackModal.tsx`
+- **SessionNotesSheet** — props: visible, session, onClose, onNoteSaved — `src/components/SessionNotesSheet.tsx`
 - **UndoSnackbar** — props: visible, message, onUndo, onDismiss, duration — `src/components/UndoSnackbar.tsx`
 - **UpdateSplashScreen** — props: status — `src/components/UpdateSplashScreen.tsx`
 - **CalendarSection** — props: calendarEnabled, calendarPermissionGranted, calendarBuffer, calendarDuration, calendarSelectedId, calendarOptions, onToggleCalendar, onCycleCalendarBuffer, onCycleCalendarDuration, onSelectCalendar — `src/components/goals/CalendarSection.tsx`
@@ -138,7 +139,7 @@
   - function getSessionsForDayAsync: (dateMs) => Promise<OutsideSession[]>
   - function getSessionsForRange: (fromMs, toMs) => OutsideSession[]
   - function getSessionsForRangeAsync: (fromMs, toMs) => Promise<OutsideSession[]>
-  - _...80 more_
+  - _...81 more_
 - `src/utils/batteryOptimization.ts`
   - function isBatteryOptimizationDisabled
   - function refreshBatteryOptimizationSetting
@@ -219,10 +220,10 @@
 
 ## Most Imported Files (change these carefully)
 
-- `src/storage/database.ts` — imported by **68** files
-- `src/i18n/index.ts` — imported by **42** files
-- `src/context/ThemeContext.tsx` — imported by **29** files
-- `src/utils/theme.ts` — imported by **26** files
+- `src/storage/database.ts` — imported by **70** files
+- `src/i18n/index.ts` — imported by **43** files
+- `src/context/ThemeContext.tsx` — imported by **30** files
+- `src/utils/theme.ts` — imported by **27** files
 - `src/utils/helpers.ts` — imported by **10** files
 - `src/detection/index.ts` — imported by **9** files
 - `src/utils/sessionsChangedEmitter.ts` — imported by **8** files
@@ -242,10 +243,10 @@
 
 ## Import Map (who imports what)
 
-- `src/storage/database.ts` ← `App.tsx`, `src/__tests__/App.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx` +63 more
-- `src/i18n/index.ts` ← `App.tsx`, `src/__tests__/ErrorBoundary.test.tsx`, `src/__tests__/FeedbackSupportScreen.test.tsx`, `src/__tests__/LanguageContext.test.tsx`, `src/__tests__/i18n.test.ts` +37 more
-- `src/context/ThemeContext.tsx` ← `App.tsx`, `src/__tests__/ThemeContext.test.tsx`, `src/components/DiagnosticSheet.tsx`, `src/components/EditLocationSheet.tsx`, `src/components/EditSessionSheet.tsx` +24 more
-- `src/utils/theme.ts` ← `src/__tests__/ThemeContext.test.tsx`, `src/components/DiagnosticSheet.tsx`, `src/components/EditLocationSheet.tsx`, `src/components/EditSessionSheet.tsx`, `src/components/ErrorBoundary.tsx` +21 more
+- `src/storage/database.ts` ← `App.tsx`, `src/__tests__/App.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx` +65 more
+- `src/i18n/index.ts` ← `App.tsx`, `src/__tests__/ErrorBoundary.test.tsx`, `src/__tests__/FeedbackSupportScreen.test.tsx`, `src/__tests__/LanguageContext.test.tsx`, `src/__tests__/i18n.test.ts` +38 more
+- `src/context/ThemeContext.tsx` ← `App.tsx`, `src/__tests__/ThemeContext.test.tsx`, `src/components/DiagnosticSheet.tsx`, `src/components/EditLocationSheet.tsx`, `src/components/EditSessionSheet.tsx` +25 more
+- `src/utils/theme.ts` ← `src/__tests__/ThemeContext.test.tsx`, `src/components/DiagnosticSheet.tsx`, `src/components/EditLocationSheet.tsx`, `src/components/EditSessionSheet.tsx`, `src/components/ErrorBoundary.tsx` +22 more
 - `src/utils/helpers.ts` ← `src/components/EditSessionSheet.tsx`, `src/components/ManualSessionSheet.tsx`, `src/components/ProgressRing.tsx`, `src/components/ReminderFeedbackModal.tsx`, `src/i18n/index.ts` +5 more
 - `src/detection/index.ts` ← `App.tsx`, `src/__tests__/IntroScreen.test.tsx`, `src/__tests__/IntroScreen.test.tsx`, `src/__tests__/IntroScreen.test.tsx`, `src/__tests__/SettingsScreen.test.tsx` +4 more
 - `src/utils/sessionsChangedEmitter.ts` ← `src/__tests__/EventsScreen.test.tsx`, `src/__tests__/HomeScreen.test.tsx`, `src/__tests__/sessionsChangedEmitter.test.ts`, `src/detection/gpsDetection.ts`, `src/detection/healthConnect.ts` +3 more
@@ -258,7 +259,7 @@
 # Test Coverage
 
 > **0%** of routes and models are covered by tests
-> 60 test files found
+> 61 test files found
 
 ---
 
