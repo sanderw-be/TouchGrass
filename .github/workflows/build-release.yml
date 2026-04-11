@@ -78,6 +78,7 @@ jobs:
           eas build --platform android --profile ${{ inputs.profile }} --local --non-interactive --output ./build-artifacts/touchgrass.aab
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          EAS_BUILD_PROFILE: ${{ inputs.profile }}
           GRADLE_OPTS: '-Xmx3072m'
 
       - name: Remove signing credentials

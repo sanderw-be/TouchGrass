@@ -112,6 +112,7 @@ jobs:
         if: needs.check-native-changes.outputs.native == 'true'
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          EAS_BUILD_PROFILE: preview-emulator
         # Assuming you have a 'preview' profile in your eas.json configured to output an APK
         run: npx --yes eas-cli build --profile preview-emulator --platform android --local --output ./preview-app.apk
 
