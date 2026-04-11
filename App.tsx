@@ -152,7 +152,7 @@ function AppContent() {
 
     // Apply stored language preference if available
     const storedLanguage = getSetting('language', 'system');
-    if (storedLanguage === 'system' || !storedLanguage) {
+    if (storedLanguage === 'system') {
       i18n.locale = getDeviceSupportedLocale();
       setLocaleState('system');
       setSetting('language', 'system');

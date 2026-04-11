@@ -119,7 +119,7 @@ describe('App', () => {
     const { getSetting, setSetting } = require('../storage/database');
     getSetting.mockImplementation((key: string, fallback: string) => {
       if (key === 'hasCompletedIntro') return '1';
-      if (key === 'language') return '';
+      if (key === 'language') return fallback;
       return fallback;
     });
 

@@ -6,6 +6,7 @@ jest.mock('../i18n', () => ({
   default: { locale: 'en' },
   formatLocalDate: jest.fn(() => ''),
   formatLocalTime: jest.fn(() => ''),
+  getDeviceSupportedLocale: jest.fn(() => 'en'),
 }));
 
 jest.mock('../context/ThemeContext', () => ({
