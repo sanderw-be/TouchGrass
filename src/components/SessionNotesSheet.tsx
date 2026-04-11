@@ -8,6 +8,7 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -49,12 +50,12 @@ export default function SessionNotesSheet({ visible, session, onClose, onNoteSav
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onClose} />
-
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.kavWrapper}
       >
+        <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onClose} />
+
         <View
           style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, spacing.sm) }]}
           testID="session-notes-sheet"
@@ -74,22 +75,28 @@ export default function SessionNotesSheet({ visible, session, onClose, onNoteSav
             </TouchableOpacity>
           </View>
 
-          {/* Notes input */}
-          <TextInput
-            style={styles.textInput}
-            value={notes}
-            onChangeText={setNotes}
-            placeholder={t('session_notes_placeholder')}
-            placeholderTextColor={colors.textMuted}
-            multiline
-            autoFocus
-            testID="notes-text-input"
-          />
+          <ScrollView keyboardShouldPersistTaps="handled">
+            {/* Notes input */}
+            <TextInput
+              style={styles.textInput}
+              value={notes}
+              onChangeText={setNotes}
+              placeholder={t('session_notes_placeholder')}
+              placeholderTextColor={colors.textMuted}
+              multiline
+              autoFocus
+              testID="notes-text-input"
+            />
 
-          {/* Save button */}
-          <TouchableOpacity style={styles.primaryBtn} onPress={handleSave} testID="notes-save-btn">
-            <Text style={styles.primaryBtnText}>{t('session_notes_save')}</Text>
-          </TouchableOpacity>
+            {/* Save button */}
+            <TouchableOpacity
+              style={styles.primaryBtn}
+              onPress={handleSave}
+              testID="notes-save-btn"
+            >
+              <Text style={styles.primaryBtnText}>{t('session_notes_save')}</Text>
+            </TouchableOpacity>
+          </ScrollView>
         </View>
       </KeyboardAvoidingView>
     </Modal>
@@ -106,6 +113,7 @@ function makeStyles(
       backgroundColor: 'rgba(0,0,0,0.4)',
     },
     kavWrapper: {
+      flex: 1,
       justifyContent: 'flex-end',
     },
     sheet: {

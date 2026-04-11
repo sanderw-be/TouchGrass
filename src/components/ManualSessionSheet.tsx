@@ -9,6 +9,7 @@ import {
   Platform,
   Alert,
   TextInput,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
@@ -165,179 +166,186 @@ export default function ManualSessionSheet({ visible, onClose, onSessionLogged }
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onClose} />
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.kavWrapper}
+      >
+        <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onClose} />
 
-      <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, spacing.sm) }]}>
-        {/* Handle */}
-        <View style={styles.handle} />
+        <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, spacing.sm) }]}>
+          {/* Handle */}
+          <View style={styles.handle} />
 
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.title}>{t('manual_title')}</Text>
-          <TouchableOpacity style={styles.closeBtn} onPress={onClose} testID="sheet-close-btn">
-            <Ionicons name="close" size={20} color={colors.textSecondary} />
-          </TouchableOpacity>
-        </View>
+          {/* Header */}
+          <View style={styles.header}>
+            <Text style={styles.title}>{t('manual_title')}</Text>
+            <TouchableOpacity style={styles.closeBtn} onPress={onClose} testID="sheet-close-btn">
+              <Ionicons name="close" size={20} color={colors.textSecondary} />
+            </TouchableOpacity>
+          </View>
 
-        {/* Tabs */}
-        <View style={styles.tabs}>
-          <TouchableOpacity
-            style={[styles.tab, tab === 'log' && styles.tabActive]}
-            onPress={() => setTab('log')}
-          >
-            <Text style={[styles.tabText, tab === 'log' && styles.tabTextActive]}>
-              {t('manual_tab_log')}
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.tab, tab === 'timer' && styles.tabActive]}
-            onPress={() => {
-              setTab('timer');
-              setFromTimer(false);
-            }}
-          >
-            <Text style={[styles.tabText, tab === 'timer' && styles.tabTextActive]}>
-              {t('manual_tab_timer')}
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-          {/* ── Log past session tab ── */}
-          {tab === 'log' && (
-            <View>
-              {/* Hint shown when log form was pre-filled from a just-ended timer */}
-              {fromTimer && (
-                <View style={styles.timerHint}>
-                  <Text style={styles.timerHintText}>{t('manual_timer_stopped_hint')}</Text>
-                </View>
-              )}
-
-              {/* Start Time */}
-              <Text style={styles.sectionLabel}>{t('manual_start_time')}</Text>
-              {Platform.OS === 'ios' ? (
-                <DateTimePicker
-                  value={startTime}
-                  mode="time"
-                  display="spinner"
-                  onChange={onStartTimeChange}
-                  style={styles.timePicker}
-                />
-              ) : (
-                <>
-                  <TouchableOpacity
-                    style={styles.timeButton}
-                    onPress={() => setShowStartPicker(true)}
-                  >
-                    <Text style={styles.timeButtonText}>
-                      {formatLocalTime(startTime.getTime())}
-                    </Text>
-                  </TouchableOpacity>
-                  {showStartPicker && (
-                    <DateTimePicker
-                      value={startTime}
-                      mode="time"
-                      is24Hour={uses24HourClock()}
-                      display="default"
-                      onChange={onStartTimeChange}
-                    />
-                  )}
-                </>
-              )}
-
-              {/* End Time */}
-              <Text style={styles.sectionLabel}>{t('manual_end_time')}</Text>
-              {Platform.OS === 'ios' ? (
-                <DateTimePicker
-                  value={endTime}
-                  mode="time"
-                  display="spinner"
-                  onChange={onEndTimeChange}
-                  style={styles.timePicker}
-                />
-              ) : (
-                <>
-                  <TouchableOpacity
-                    style={styles.timeButton}
-                    onPress={() => setShowEndPicker(true)}
-                  >
-                    <Text style={styles.timeButtonText}>{formatLocalTime(endTime.getTime())}</Text>
-                  </TouchableOpacity>
-                  {showEndPicker && (
-                    <DateTimePicker
-                      value={endTime}
-                      mode="time"
-                      is24Hour={uses24HourClock()}
-                      display="default"
-                      onChange={onEndTimeChange}
-                    />
-                  )}
-                </>
-              )}
-
-              {/* Notes */}
-              <Text style={styles.sectionLabel}>{t('session_notes_title')}</Text>
-              <TextInput
-                style={styles.notesInput}
-                value={notes}
-                onChangeText={setNotes}
-                placeholder={t('session_notes_placeholder')}
-                placeholderTextColor={colors.textMuted}
-                multiline
-                testID="manual-notes-input"
-              />
-
-              {/* Preview */}
-              {calculatedDuration > 0 && (
-                <View style={styles.preview}>
-                  <Text style={styles.previewLabel}>{t('manual_preview')}</Text>
-                  <Text style={styles.previewTime}>
-                    {formatLocalTime(startTime.getTime())} – {formatLocalTime(endTime.getTime())}
-                  </Text>
-                  <Text style={styles.previewDuration}>{formatMinutes(calculatedDuration)}</Text>
-                  <Text style={styles.previewDate}>
-                    {formatLocalDate(startTime.getTime(), {
-                      weekday: 'long',
-                      month: 'short',
-                      day: 'numeric',
-                    })}
-                  </Text>
-                </View>
-              )}
-
-              {/* Log button */}
-              <TouchableOpacity style={styles.primaryBtn} onPress={handleLogSession}>
-                <Text style={styles.primaryBtnText}>{t('manual_log_btn')}</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-
-          {/* ── Timer tab ── */}
-          {tab === 'timer' && (
-            <View style={styles.timerContainer}>
-              <Text style={styles.timerDisplay}>{formatTimer(timerSeconds)}</Text>
-              <Text style={styles.timerSub}>
-                {timerRunning ? t('manual_timer_running') : t('manual_timer_ready')}
+          {/* Tabs */}
+          <View style={styles.tabs}>
+            <TouchableOpacity
+              style={[styles.tab, tab === 'log' && styles.tabActive]}
+              onPress={() => setTab('log')}
+            >
+              <Text style={[styles.tabText, tab === 'log' && styles.tabTextActive]}>
+                {t('manual_tab_log')}
               </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.tab, tab === 'timer' && styles.tabActive]}
+              onPress={() => {
+                setTab('timer');
+                setFromTimer(false);
+              }}
+            >
+              <Text style={[styles.tabText, tab === 'timer' && styles.tabTextActive]}>
+                {t('manual_tab_timer')}
+              </Text>
+            </TouchableOpacity>
+          </View>
 
-              {!timerRunning ? (
-                <TouchableOpacity style={styles.primaryBtn} onPress={handleStartTimer}>
-                  <Text style={styles.primaryBtnText}>{t('manual_timer_start')}</Text>
+          <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+            {/* ── Log past session tab ── */}
+            {tab === 'log' && (
+              <View>
+                {/* Hint shown when log form was pre-filled from a just-ended timer */}
+                {fromTimer && (
+                  <View style={styles.timerHint}>
+                    <Text style={styles.timerHintText}>{t('manual_timer_stopped_hint')}</Text>
+                  </View>
+                )}
+
+                {/* Start Time */}
+                <Text style={styles.sectionLabel}>{t('manual_start_time')}</Text>
+                {Platform.OS === 'ios' ? (
+                  <DateTimePicker
+                    value={startTime}
+                    mode="time"
+                    display="spinner"
+                    onChange={onStartTimeChange}
+                    style={styles.timePicker}
+                  />
+                ) : (
+                  <>
+                    <TouchableOpacity
+                      style={styles.timeButton}
+                      onPress={() => setShowStartPicker(true)}
+                    >
+                      <Text style={styles.timeButtonText}>
+                        {formatLocalTime(startTime.getTime())}
+                      </Text>
+                    </TouchableOpacity>
+                    {showStartPicker && (
+                      <DateTimePicker
+                        value={startTime}
+                        mode="time"
+                        is24Hour={uses24HourClock()}
+                        display="default"
+                        onChange={onStartTimeChange}
+                      />
+                    )}
+                  </>
+                )}
+
+                {/* End Time */}
+                <Text style={styles.sectionLabel}>{t('manual_end_time')}</Text>
+                {Platform.OS === 'ios' ? (
+                  <DateTimePicker
+                    value={endTime}
+                    mode="time"
+                    display="spinner"
+                    onChange={onEndTimeChange}
+                    style={styles.timePicker}
+                  />
+                ) : (
+                  <>
+                    <TouchableOpacity
+                      style={styles.timeButton}
+                      onPress={() => setShowEndPicker(true)}
+                    >
+                      <Text style={styles.timeButtonText}>
+                        {formatLocalTime(endTime.getTime())}
+                      </Text>
+                    </TouchableOpacity>
+                    {showEndPicker && (
+                      <DateTimePicker
+                        value={endTime}
+                        mode="time"
+                        is24Hour={uses24HourClock()}
+                        display="default"
+                        onChange={onEndTimeChange}
+                      />
+                    )}
+                  </>
+                )}
+
+                {/* Notes */}
+                <Text style={styles.sectionLabel}>{t('session_notes_title')}</Text>
+                <TextInput
+                  style={styles.notesInput}
+                  value={notes}
+                  onChangeText={setNotes}
+                  placeholder={t('session_notes_placeholder')}
+                  placeholderTextColor={colors.textMuted}
+                  multiline
+                  testID="manual-notes-input"
+                />
+
+                {/* Preview */}
+                {calculatedDuration > 0 && (
+                  <View style={styles.preview}>
+                    <Text style={styles.previewLabel}>{t('manual_preview')}</Text>
+                    <Text style={styles.previewTime}>
+                      {formatLocalTime(startTime.getTime())} – {formatLocalTime(endTime.getTime())}
+                    </Text>
+                    <Text style={styles.previewDuration}>{formatMinutes(calculatedDuration)}</Text>
+                    <Text style={styles.previewDate}>
+                      {formatLocalDate(startTime.getTime(), {
+                        weekday: 'long',
+                        month: 'short',
+                        day: 'numeric',
+                      })}
+                    </Text>
+                  </View>
+                )}
+
+                {/* Log button */}
+                <TouchableOpacity style={styles.primaryBtn} onPress={handleLogSession}>
+                  <Text style={styles.primaryBtnText}>{t('manual_log_btn')}</Text>
                 </TouchableOpacity>
-              ) : (
-                <View style={styles.timerButtons}>
-                  <TouchableOpacity style={styles.secondaryBtn} onPress={handleCancelTimer}>
-                    <Text style={styles.secondaryBtnText}>{t('manual_timer_cancel')}</Text>
+              </View>
+            )}
+
+            {/* ── Timer tab ── */}
+            {tab === 'timer' && (
+              <View style={styles.timerContainer}>
+                <Text style={styles.timerDisplay}>{formatTimer(timerSeconds)}</Text>
+                <Text style={styles.timerSub}>
+                  {timerRunning ? t('manual_timer_running') : t('manual_timer_ready')}
+                </Text>
+
+                {!timerRunning ? (
+                  <TouchableOpacity style={styles.primaryBtn} onPress={handleStartTimer}>
+                    <Text style={styles.primaryBtnText}>{t('manual_timer_start')}</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity style={styles.primaryBtn} onPress={handleStopTimer}>
-                    <Text style={styles.primaryBtnText}>{t('manual_timer_stop')}</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
-            </View>
-          )}
-        </ScrollView>
-      </View>
+                ) : (
+                  <View style={styles.timerButtons}>
+                    <TouchableOpacity style={styles.secondaryBtn} onPress={handleCancelTimer}>
+                      <Text style={styles.secondaryBtnText}>{t('manual_timer_cancel')}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.primaryBtn} onPress={handleStopTimer}>
+                      <Text style={styles.primaryBtnText}>{t('manual_timer_stop')}</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </View>
+            )}
+          </ScrollView>
+        </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
@@ -350,6 +358,10 @@ function makeStyles(
     backdrop: {
       flex: 1,
       backgroundColor: 'rgba(0,0,0,0.4)',
+    },
+    kavWrapper: {
+      flex: 1,
+      justifyContent: 'flex-end',
     },
     sheet: {
       backgroundColor: colors.mist,
