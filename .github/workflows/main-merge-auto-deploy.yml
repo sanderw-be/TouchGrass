@@ -36,7 +36,7 @@ jobs:
   version-bump:
     name: Semantic Versioning
     needs: check-native-changes
-    if: needs.check-native-changes.outputs.native == 'true'
+    if: needs.check-native-changes.outputs.native == 'true' && needs.check-native-changes.outputs.native == 'false'
     runs-on: ubuntu-latest
     permissions:
       contents: write
