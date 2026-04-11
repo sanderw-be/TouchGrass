@@ -44,6 +44,16 @@ jobs:
             ${{ runner.os }}-npx-eas-
 
       # --- SCENARIO A: Native Build Required ---
+      - name: Configure Gradle for CI
+        if: inputs.deploy_type == 'Native Build (AAB to Google Play)'
+        run: |
+          mkdir -p ~/.gradle
+          cat >> ~/.gradle/gradle.properties <<'EOF'
+          org.gradle.daemon=false
+          org.gradle.jvmargs=-Xmx3072m -XX:+HeapDumpOnOutOfMemoryError
+          org.gradle.logging.stacktrace=full
+          EOF
+
       - name: Build AAB
         if: inputs.deploy_type == 'Native Build (AAB to Google Play)'
         env:

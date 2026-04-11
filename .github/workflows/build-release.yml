@@ -72,6 +72,15 @@ jobs:
           echo "TOUCHGRASS_UPLOAD_KEY_ALIAS=${{ secrets.TOUCHGRASS_UPLOAD_KEY_ALIAS}}" >> .gradle/gradle.properties
           echo "TOUCHGRASS_UPLOAD_KEY_PASSWORD=${{ secrets.TOUCHGRASS_UPLOAD_KEY_PASSWORD}}" >> .gradle/gradle.properties
 
+      - name: Configure Gradle for CI
+        run: |
+          mkdir -p ~/.gradle
+          cat >> ~/.gradle/gradle.properties <<'EOF'
+          org.gradle.daemon=false
+          org.gradle.jvmargs=-Xmx3072m -XX:+HeapDumpOnOutOfMemoryError
+          org.gradle.logging.stacktrace=full
+          EOF
+
       - name: Build Android AAB
         run: |
           mkdir -p ./build-artifacts

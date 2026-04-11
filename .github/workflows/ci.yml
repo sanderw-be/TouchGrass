@@ -133,6 +133,16 @@ jobs:
             Tap here to test on your Development Client: ${{ env.DEEP_LINK }}
 
       # --- PATH B: NATIVE CHANGES DETECTED ---
+      - name: Configure Gradle for CI
+        if: steps.native_check.outputs.native == 'true'
+        run: |
+          mkdir -p ~/.gradle
+          cat >> ~/.gradle/gradle.properties <<'EOF'
+          org.gradle.daemon=false
+          org.gradle.jvmargs=-Xmx3072m -XX:+HeapDumpOnOutOfMemoryError
+          org.gradle.logging.stacktrace=full
+          EOF
+
       - name: Trigger EAS Build
         if: steps.native_check.outputs.native == 'true'
         env:
