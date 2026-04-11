@@ -74,13 +74,13 @@ export default {
   nav_weather_settings: 'Weather Settings',
 
   // Days of week (short, Monday first)
-  day_mon: 'S',
-  day_tue: 'T',
+  day_mon: 'Seg',
+  day_tue: 'Ter',
   day_wed: 'Qua',
   day_thu: 'Qui',
-  day_fri: 'S',
-  day_sat: 'S',
-  day_sun: 'D',
+  day_fri: 'Sex',
+  day_sat: 'Sáb',
+  day_sun: 'Dom',
 
   // Goals screen
   goals_edit: 'Edit',

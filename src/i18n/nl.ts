@@ -161,7 +161,7 @@ export default {
   settings_gps: 'GPS-tracking',
   settings_gps_desc: 'Buitenmomenten herkennen via locatie',
   settings_gps_permission: 'Toestemming vereist',
-  settings_gps_permission_missing: 'Machtigingen ontbreken — tik om te herstellen',
+  settings_gps_permission_missing: 'Toegang nodig — tik om te regelen',
   settings_location_radius: '{{radius}}m straal · {{type}}',
   settings_location_indoor: 'Binnen',
   settings_location_outdoor: 'Buiten',
