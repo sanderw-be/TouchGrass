@@ -10,14 +10,16 @@
       "android": {
         "buildType": "apk"
       },
-      "channel": "development"
+      "channel": "development",
+      "node": "20.x"
     },
     "preview": {
       "distribution": "internal",
       "channel": "preview",
       "android": {
         "buildType": "apk"
-      }
+      },
+      "node": "20.x"
     },
     "preview-emulator": {
       "extends": "preview"
@@ -26,7 +28,8 @@
       "android": {
         "buildType": "app-bundle"
       },
-      "channel": "production"
+      "channel": "production",
+      "node": "20.x"
     }
   },
   "submit": {
