@@ -44,6 +44,10 @@ jest.mock('../components/EditSessionSheet', () => {
   return jest.fn(() => null);
 });
 
+jest.mock('../components/SessionNotesSheet', () => {
+  return jest.fn(() => null);
+});
+
 jest.mock('@react-navigation/native', () => {
   const React = require('react');
   return {

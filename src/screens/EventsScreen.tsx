@@ -26,6 +26,7 @@ import { formatMinutes } from '../utils/helpers';
 import { t, formatLocalDate, formatLocalTime } from '../i18n';
 import ManualSessionSheet from '../components/ManualSessionSheet';
 import EditSessionSheet from '../components/EditSessionSheet';
+import SessionNotesSheet from '../components/SessionNotesSheet';
 import UndoSnackbar from '../components/UndoSnackbar';
 import { updateTimeSlotProbability } from '../detection/sessionConfidence';
 import { onSessionsChanged, emitSessionsChanged } from '../utils/sessionsChangedEmitter';
@@ -60,6 +61,7 @@ export default function EventsScreen() {
   const [sheetVisible, setSheetVisible] = useState(false);
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [editSession, setEditSession] = useState<OutsideSession | null>(null);
+  const [notesSession, setNotesSession] = useState<OutsideSession | null>(null);
   const [undoSnackbar, setUndoSnackbar] = useState<{
     visible: boolean;
     sessionId: number | null;
@@ -204,6 +206,12 @@ export default function EventsScreen() {
           requestWidgetRefresh();
         }}
       />
+      <SessionNotesSheet
+        visible={notesSession !== null}
+        session={notesSession}
+        onClose={() => setNotesSession(null)}
+        onNoteSaved={loadData}
+      />
 
       {/* Filter toggles */}
       <View style={styles.tabs}>
@@ -279,6 +287,7 @@ export default function EventsScreen() {
                 onReReview={() => handleReReview(session.id!)}
                 onUnDiscard={() => handleUnDiscard(session.id!)}
                 onEditTimes={() => setEditSession(session)}
+                onNotes={() => setNotesSession(session)}
               />
             ))}
           </View>
@@ -304,6 +313,7 @@ function SessionRow({
   onReReview,
   onUnDiscard,
   onEditTimes,
+  onNotes,
 }: {
   session: OutsideSession;
   expanded: boolean;
@@ -313,6 +323,7 @@ function SessionRow({
   onReReview: () => void;
   onUnDiscard: () => void;
   onEditTimes: () => void;
+  onNotes: () => void;
 }) {
   const { colors, shadows } = useTheme();
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
@@ -407,6 +418,13 @@ function SessionRow({
             color={colors.textSecondary}
           />
         </View>
+        <TouchableOpacity onPress={onNotes} testID="events-notes-icon" style={styles.notesIcon}>
+          <Ionicons
+            name={session.notes ? 'document-text' : 'document-text-outline'}
+            size={16}
+            color={session.notes ? colors.grass : colors.textMuted}
+          />
+        </TouchableOpacity>
         <Text style={styles.rowChevron}>{expanded ? '▲' : '▼'}</Text>
       </TouchableOpacity>
 
@@ -644,6 +662,7 @@ function makeStyles(
     badgeDiscardedText: { color: colors.textMuted },
 
     rowIconContainer: { marginLeft: 'auto', width: 24, alignItems: 'center' },
+    notesIcon: { paddingHorizontal: spacing.xs },
     rowChevron: { fontSize: 10, color: colors.textMuted },
 
     rowDetail: {

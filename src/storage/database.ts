@@ -590,6 +590,14 @@ export async function unDiscardSessionAsync(id: number): Promise<void> {
 }
 
 /**
+ * Update a session's notes text.
+ * Pass null or empty string to clear.
+ */
+export async function updateSessionNotesAsync(id: number, notes: string | null): Promise<void> {
+  await db.runAsync(`UPDATE outside_sessions SET notes = ? WHERE id = ?`, [notes || null, id]);
+}
+
+/**
  * Update a session's start/end times and duration, and auto-approve it.
  * Sets userConfirmed = 1 and discarded = 0 so the session surfaces in the
  * Approved tab regardless of its previous state.

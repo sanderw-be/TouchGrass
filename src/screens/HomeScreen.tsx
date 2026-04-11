@@ -16,6 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import ManualSessionSheet from '../components/ManualSessionSheet';
 import ProgressRing from '../components/ProgressRing';
+import SessionNotesSheet from '../components/SessionNotesSheet';
 import UndoSnackbar from '../components/UndoSnackbar';
 import {
   getTodayMinutesAsync,
@@ -60,6 +61,7 @@ export default function HomeScreen() {
     visible: boolean;
     sessionId: number | null;
   }>({ visible: false, sessionId: null });
+  const [notesSession, setNotesSession] = useState<OutsideSession | null>(null);
 
   // Inline ring timer
   const [timerRunning, setTimerRunning] = useState(false);
@@ -391,6 +393,7 @@ export default function HomeScreen() {
                 key={session.id}
                 session={session}
                 onConfirm={(confirmed) => handleConfirm(session.id!, session.startTime, confirmed)}
+                onNotes={() => setNotesSession(session)}
               />
             ))}
           </View>
@@ -413,6 +416,13 @@ export default function HomeScreen() {
           </View>
         )}
       </ScrollView>
+
+      <SessionNotesSheet
+        visible={notesSession !== null}
+        session={notesSession}
+        onClose={() => setNotesSession(null)}
+        onNoteSaved={loadData}
+      />
 
       <UndoSnackbar
         visible={undoSnackbar.visible}
@@ -456,9 +466,11 @@ function WeekDots() {
 function SessionRow({
   session,
   onConfirm,
+  onNotes,
 }: {
   session: OutsideSession;
   onConfirm: (confirmed: boolean) => void;
+  onNotes: () => void;
 }) {
   const { colors, shadows } = useTheme();
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
@@ -515,6 +527,13 @@ function SessionRow({
           </Text>
           <Text style={styles.sessionDuration}>{formatMinutes(session.durationMinutes)}</Text>
         </View>
+        <TouchableOpacity onPress={onNotes} testID="home-notes-icon" style={styles.notesIcon}>
+          <Ionicons
+            name={session.notes ? 'document-text' : 'document-text-outline'}
+            size={18}
+            color={session.notes ? colors.grass : colors.textMuted}
+          />
+        </TouchableOpacity>
         {isPending && (
           <View style={styles.reviewBadge}>
             <Text style={styles.reviewText}>{t('review')}</Text>
@@ -685,6 +704,7 @@ function makeStyles(
     sessionIconContainer: { width: 28, marginRight: spacing.sm, alignItems: 'center' },
     sessionInfo: { flex: 1 },
     sessionPending: { opacity: 0.5 },
+    notesIcon: { paddingHorizontal: spacing.sm },
     sessionTime: { fontSize: 14, color: colors.textSecondary },
     sessionDuration: { fontSize: 16, fontWeight: '600', color: colors.textPrimary, marginTop: 2 },
     reviewBadge: {
