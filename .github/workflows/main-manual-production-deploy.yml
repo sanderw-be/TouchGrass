@@ -48,6 +48,7 @@ jobs:
         if: inputs.deploy_type == 'Native Build (AAB to Google Play)'
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          EAS_BUILD_PROFILE: production
         run: npx --yes eas-cli build --profile production --platform android --local --output ./production-app.aab
 
       - name: Upload Production AAB Artifact
