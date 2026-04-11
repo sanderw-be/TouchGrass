@@ -1,3 +1,9 @@
+# [1.6.0](https://github.com/sanderw-be/TouchGrass/compare/v1.5.1...v1.6.0) (2026-04-11)
+
+### Features
+
+- **cicd:** Perms: improve flow CI/CD: git-diff native detection, always-on OTA update, local builds with artifact upload, pre-releases on preview, promote to full release on production ([#390](https://github.com/sanderw-be/TouchGrass/issues/390)) ([2fccc3d](https://github.com/sanderw-be/TouchGrass/commit/2fccc3d3007163bf64188782f0e4ce469f1e8754))
+
 # [1.6.0](https://github.com/sanderw-be/TouchGrass/compare/v1.5.1...v1.6.0) (2026-04-10)
 
 ### Features
