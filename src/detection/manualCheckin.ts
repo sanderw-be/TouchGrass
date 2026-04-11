@@ -10,16 +10,24 @@ const CONFIDENCE_MANUAL = 1.0; // user always knows best
  * @param startTime - unix ms, defaults to now minus durationMinutes
  * @param endTime - unix ms, defaults to startTime + durationMinutes. Pass the
  *   exact stop timestamp so the stored times match what the user reviewed.
+ * @param notes - optional notes text, defaults to the localised "Manual entry." string
  */
 export function logManualSession(
   durationMinutes: number,
   startTime?: number,
-  endTime?: number
+  endTime?: number,
+  notes?: string
 ): void {
   const start = startTime ?? Date.now() - durationMinutes * 60 * 1000;
   const end = endTime ?? start + durationMinutes * 60 * 1000;
 
-  const session = buildSession(start, end, 'manual', CONFIDENCE_MANUAL, t('session_notes_manual'));
+  const session = buildSession(
+    start,
+    end,
+    'manual',
+    CONFIDENCE_MANUAL,
+    notes ?? t('session_notes_manual')
+  );
 
   // Manual sessions are auto-confirmed — the user knows what they logged
   session.userConfirmed = 1;

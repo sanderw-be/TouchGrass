@@ -8,6 +8,7 @@ import {
   ScrollView,
   Platform,
   Alert,
+  TextInput,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
@@ -45,6 +46,7 @@ export default function ManualSessionSheet({ visible, onClose, onSessionLogged }
   const [timerStartTime, setTimerStartTime] = useState<number>(0);
   const [timerSeconds, setTimerSeconds] = useState(0);
   const [fromTimer, setFromTimer] = useState(false);
+  const [notes, setNotes] = useState(t('session_notes_manual'));
   const stopTimerRef = useRef<(() => void) | null>(null);
   const timerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -53,6 +55,7 @@ export default function ManualSessionSheet({ visible, onClose, onSessionLogged }
     if (visible) {
       setTab('log');
       setFromTimer(false);
+      setNotes(t('session_notes_manual'));
 
       // Set default times: end time is now, start time is 30 minutes ago
       const now = new Date();
@@ -90,7 +93,7 @@ export default function ManualSessionSheet({ visible, onClose, onSessionLogged }
       return;
     }
 
-    logManualSession(durationMinutes, startTime.getTime(), endTime.getTime());
+    logManualSession(durationMinutes, startTime.getTime(), endTime.getTime(), notes);
     onSessionLogged();
     onClose();
   };
@@ -272,6 +275,18 @@ export default function ManualSessionSheet({ visible, onClose, onSessionLogged }
                 </>
               )}
 
+              {/* Notes */}
+              <Text style={styles.sectionLabel}>{t('session_notes_title')}</Text>
+              <TextInput
+                style={styles.notesInput}
+                value={notes}
+                onChangeText={setNotes}
+                placeholder={t('session_notes_placeholder')}
+                placeholderTextColor={colors.textMuted}
+                multiline
+                testID="manual-notes-input"
+              />
+
               {/* Preview */}
               {calculatedDuration > 0 && (
                 <View style={styles.preview}>
@@ -447,6 +462,17 @@ function makeStyles(
     },
     inputActive: { borderColor: colors.grass },
     inputUnit: { fontSize: 14, color: colors.textSecondary },
+
+    notesInput: {
+      backgroundColor: colors.card,
+      borderRadius: radius.md,
+      padding: spacing.md,
+      fontSize: 15,
+      color: colors.textPrimary,
+      minHeight: 60,
+      textAlignVertical: 'top',
+      marginBottom: spacing.md,
+    },
 
     preview: {
       backgroundColor: colors.grassPale,
