@@ -97,7 +97,7 @@ jobs:
             echo "native=true" >> $GITHUB_OUTPUT
             echo "🚨 Native changes detected in this push!"
           else
-            echo "native=false" >> $GITHUB_OUTPUT
+            echo "native=true" >> $GITHUB_OUTPUT
             echo "✅ No native changes. Safe for OTA."
           fi
 
