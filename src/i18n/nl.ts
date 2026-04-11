@@ -5,14 +5,14 @@ export default {
   greeting_evening: 'Goedenavond 🌙',
 
   // Startscherm
-  goal_reached: 'Doel bereikt! Goed buiten geweest vandaag.',
+  goal_reached: 'Lekker bezig! Je hebt je portie buitenlucht binnen.',
   outside_time_awaits: 'Nog {{amount}} buiten te gaan vandaag.',
   remaining_for_goal: 'Nog {{amount}} om je dagdoel te halen.',
   this_week: 'Deze week',
   today: 'vandaag',
   no_sessions_title: 'Nog geen buitentijd geregistreerd vandaag.',
-  no_sessions_sub: 'Ga naar buiten of log het handmatig!',
-  todays_sessions: 'Sessies vandaag',
+  no_sessions_sub: 'Tijd voor een frisse neus? Voeg het hier zelf toe!',
+  todays_sessions: 'Buitenmomenten vandaag',
 
   // Streaks
   streak_daily_singular: '{{count}} dag streak',
@@ -25,7 +25,7 @@ export default {
   ring_timer_start: 'tik om te starten',
   ring_timer_tap_stop: 'tik om te stoppen',
   ring_timer_outside: 'buiten',
-  ring_timer_info: 'Tik op de ring om een handmatige timer te starten',
+  ring_timer_info: 'Tik op de ring om je tijd buiten handmatig te starten.',
 
   // Widget
   widget_start_outside: 'start buiten\nsessie',
@@ -35,7 +35,7 @@ export default {
   widget_open_app: 'Open app om te vernieuwen',
 
   // Sessiebronnen
-  source_health_connect: 'Activiteit',
+  source_health_connect: 'Andere apps',
   source_gps: 'GPS',
   source_manual: 'Handmatig',
   source_timeline: 'Tijdlijn',
@@ -43,20 +43,20 @@ export default {
   // Sessiebeoordeling
   review: 'beoordeel',
   session_delete: 'Verwijderen',
-  session_delete_confirm_title: 'Sessie verwijderen',
+  session_delete_confirm_title: 'Moment verwijderen',
   session_delete_confirm_body:
-    'Weet je zeker dat je deze sessie wilt verwijderen? Dit kan niet ongedaan worden gemaakt.',
+    'Weet je zeker dat je dit moment wilt verwijderen? Dit kan niet ongedaan worden gemaakt.',
   session_delete_cancel: 'Annuleren',
   session_review_again: 'Opnieuw beoordelen',
   session_review_anyway: 'Toch beoordelen',
   session_edit_times: '✏️ Tijden bewerken',
-  session_edit_title: 'Sessietijden bewerken',
+  session_edit_title: 'Tijden van dit moment bewerken',
   session_edit_save: '✓ Opslaan & goedkeuren',
-  session_edit_hint: 'Opslaan met aangepaste tijden keurt deze sessie automatisch goed.',
-  session_notes_title: 'Sessienotities',
+  session_edit_hint: 'Opslaan met aangepaste tijden keurt dit moment automatisch goed.',
+  session_notes_title: 'Notities bij dit moment',
   session_notes_placeholder: 'Voeg een notitie toe…',
   session_notes_save: 'Opslaan',
-  session_swipe_hint: 'Swipe naar links om te bevestigen, naar rechts als je binnen was.',
+  session_swipe_hint: 'Links voor buiten, rechts voor binnen.',
   session_rejected_snackbar: 'Gemarkeerd als binnen',
   undo: 'Ongedaan maken',
 
@@ -68,7 +68,7 @@ export default {
   // Navigatie
   nav_home: 'Home',
   nav_history: 'Geschiedenis',
-  nav_events: 'Sessies',
+  nav_events: 'Momenten',
   nav_goals: 'Doelen',
   nav_settings: 'Instellingen',
   nav_weather_settings: 'Weerinstellingen',
@@ -101,9 +101,9 @@ export default {
   events_tab_standard: 'Standaard',
   events_tab_all: 'Alles',
   events_toggle_confirmed: 'Bevestigd',
-  events_toggle_review: 'Te beoordelen',
+  events_toggle_review: 'Nog checken',
   events_toggle_rejected: 'Afgewezen',
-  events_none_recorded: 'Nog geen sessies geregistreerd.',
+  events_none_recorded: 'Nog geen buitenmomenten gevonden.',
   events_confidence: 'Betrouwbaarheid',
   events_not_outside: '✕ Binnen',
   events_confirm: '✓ Buiten',
@@ -128,14 +128,14 @@ export default {
   history_legend_target: 'Doelstelling',
 
   // Instellingenscherm
-  settings_section_detection: 'Detectie',
+  settings_section_detection: 'Automatisch bijhouden',
   settings_section_locations: 'Bekende locaties',
   settings_section_reminders: 'Herinneringen',
   settings_section_language: 'Taal',
   settings_section_about: 'Over',
   settings_health_connect: 'Health Connect',
   settings_health_connect_desc: 'Stappen & activiteit automatisch bijhouden',
-  settings_hc_permission_missing: 'Machtigingen ontbreken — tik om te herstellen',
+  settings_hc_permission_missing: 'Toegang nodig — tik om te regelen',
   settings_hc_permission_title: 'Health Connect-toestemming',
   settings_hc_permission_body:
     'Health Connect-machtigingen zijn nodig om buitenactiviteiten automatisch bij te houden via je stappen en workouts.',
@@ -159,7 +159,7 @@ export default {
   settings_permission_open: 'Instellingen openen',
   settings_permission_disable: 'Functie uitschakelen',
   settings_gps: 'GPS-tracking',
-  settings_gps_desc: 'Buitenactiviteiten detecteren via locatie',
+  settings_gps_desc: 'Buitenmomenten herkennen via locatie',
   settings_gps_permission: 'Toestemming vereist',
   settings_gps_permission_missing: 'Machtigingen ontbreken — tik om te herstellen',
   settings_location_radius: '{{radius}}m straal · {{type}}',
@@ -168,7 +168,7 @@ export default {
   settings_location_edit_title: 'Locatie bewerken',
   location_edit_label: 'Locatie naam',
   location_edit_label_placeholder: 'bijv. Thuis, Werk, Sportschool',
-  location_edit_radius: 'Geofence straal',
+  location_edit_radius: 'Locatieherkenning',
   location_edit_radius_hint: 'Afstand vanaf locatie (25–250 meter)',
   location_edit_radius_hint_imperial: 'Afstand vanaf locatie (25–250 yard)',
   location_edit_type: 'Locatietype',
@@ -182,7 +182,7 @@ export default {
     'Weet je zeker dat je deze locatie wilt verwijderen? Dit kan niet ongedaan worden gemaakt.',
   settings_reminders_label: 'Slimme herinneringen',
   settings_reminders_sublabel:
-    'Herinnert je op het beste moment — leert je schema over tijd. Vereist meldingstoestemming.',
+    'Seintjes op het juiste moment — leert van jouw ritme. Geen dataverzameling.',
   settings_reminders_count_off: 'Uit',
   settings_reminders_count_per_day: '{{count}}/dag',
   settings_notification_permission_title: 'Meldingstoestemming',
@@ -200,7 +200,7 @@ export default {
     'De permanente melding die zichtbaar is terwijl GPS actief is. Uitschakelen via Android Instellingen → Apps → TouchGrass → Meldingen → Achtergrondtracking.',
   settings_app_sublabel: 'Jouw buitentijd-assistent',
   settings_privacy: 'Privacy',
-  settings_privacy_sublabel: 'Alle gegevens blijven op je apparaat',
+  settings_privacy_sublabel: 'Je data verlaat je telefoon nooit',
   settings_privacy_hint: 'Tik om ons privacybeleid te lezen',
   settings_clear_data: 'Alle gegevens wissen',
   settings_clear_data_sublabel: 'Verwijder alle sessies en instellingen permanent',
@@ -263,12 +263,12 @@ export default {
     'TouchGrass heeft een plek gedetecteerd die je vaak bezoekt. Tik om te beoordelen en een naam te geven.',
 
   manual_title: 'Buitentijd registreren',
-  manual_tab_log: '📝 Sessie achteraf invoeren',
+  manual_tab_log: '📝 Moment achteraf invoeren',
   manual_tab_timer: '⏱ Timer starten',
   manual_start_time: 'Starttijd',
   manual_end_time: 'Eindtijd',
-  manual_preview: 'Sessieoverzicht',
-  manual_log_btn: '✓ Sessie opslaan',
+  manual_preview: 'Overzicht',
+  manual_log_btn: '✓ Moment opslaan',
   manual_timer_ready: 'Tik op start als je naar buiten gaat',
   manual_timer_running: 'Timer loopt — geniet van de buitenlucht! 🌿',
   manual_timer_start: '🌿 Ik ga naar buiten',
@@ -285,7 +285,7 @@ export default {
   intro_next: 'Volgende',
   intro_get_started: 'Aan de slag',
   intro_welcome_title: 'Welkom bij TouchGrass',
-  intro_welcome_body: 'Je hulp voor het volgen en bereiken van buitentijddoelen.',
+  intro_welcome_body: 'Jouw hulp om vaker je telefoon weg te leggen en naar buiten te gaan.',
   intro_welcome_feature_1: 'Volg buitentijd automatisch',
   intro_welcome_feature_2: 'Stel dagelijkse doelen in en monitor ze',
   intro_welcome_feature_3: 'Ontvang slimme herinneringen',
@@ -294,7 +294,7 @@ export default {
   intro_hc_title: 'Health Connect',
   intro_hc_body:
     'TouchGrass gebruikt Health Connect om buitenactiviteiten automatisch te detecteren.',
-  intro_hc_why_title: 'Waarom hebben we dit nodig?',
+  intro_hc_why_title: 'Waarom deze toegang?',
   intro_hc_why_body:
     'Health Connect geeft toegang tot oefensessies van je fitness-apps, waardoor we je buitenactiviteiten zoals wandelen, hardlopen of fietsen kunnen volgen.',
   intro_hc_hint: 'Je kunt deze toestemming later geven in Instellingen.',
@@ -335,7 +335,7 @@ export default {
   intro_calendar_why_body:
     'Met toegang tot je agenda vermijdt TouchGrass het sturen van herinneringen als je een afspraak hebt en kan het automatisch buitentijdslots aan je agenda toevoegen.',
   intro_calendar_data_scope:
-    'TouchGrass leest alleen de titels en tijden van afspraken — geen beschrijvingen, deelnemers of andere gegevens. Niets verlaat je apparaat.',
+    'We lezen alleen tijden — geen details of personen. Alles blijft privé op je apparaat.',
   intro_calendar_hint: 'Je kunt dit later configureren in Instellingen.',
   intro_calendar_button: 'Verbind agenda',
   intro_calendar_button_granted: 'Agenda verbonden ✓',
@@ -361,11 +361,11 @@ export default {
   notif_title_1: '🌿 Tijd om buiten te zijn!',
   notif_title_2: '☀️ Even naar buiten',
   notif_title_3: '🌱 Frisse lucht wacht op je',
-  notif_title_4: '👟 Trek je schoenen aan',
+  notif_title_4: '👟 Schoenen aan en gaan?',
   notif_title_5: '🌳 De natuur roept',
 
   // Meldingsteksten
-  notif_body_none: 'Je bent vandaag nog niet buiten geweest. Een korte wandeling telt ook!',
+  notif_body_none: 'Nog niet buiten geweest vandaag? Een ommetje telt ook!',
   notif_body_halfway: 'Nog {{remaining}} minuten te gaan. Je kunt het!',
   notif_body_almost: 'Bijna! Nog maar {{remaining}} minuten buiten.',
   notif_body_done: 'Doel bereikt! Zin in een extra rondje? 🌿',
@@ -374,7 +374,7 @@ export default {
   notif_reason_pattern: 'je gaat vaak buiten rond deze tijd',
   notif_reason_lunch: 'lunchtime is een goed moment voor een wandeling',
   notif_reason_after_work: 'na het werk is een goed moment om buiten te gaan',
-  notif_reason_urgent: 'je hebt je doel nog niet bereikt vandaag',
+  notif_reason_urgent: 'vandaag nog niet gelukt om buiten te komen.',
   notif_reason_acted: 'je bent eerder buiten geweest rond deze tijd',
   notif_reason_more_often: 'je geeft de voorkeur aan herinneringen rond deze tijd',
 

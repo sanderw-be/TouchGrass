@@ -5,14 +5,14 @@ export default {
   greeting_evening: 'Good evening 🌙',
 
   // Home screen
-  goal_reached: "Nice one! You've had your daily dose of fresh air.",
+  goal_reached: 'Bravo ! Tu as déjà pris ta dose d’air frais aujourd’hui.',
   outside_time_awaits: '{{amount}} of outside time awaits today.',
   remaining_for_goal: '{{amount}} more to hit your daily goal.',
   this_week: 'This week',
   today: 'today',
-  no_sessions_title: 'No outside time recorded yet today.',
-  no_sessions_sub: 'Fancy some fresh air? Add your outside time here!',
-  todays_sessions: "Today's outside moments",
+  no_sessions_title: 'Pas encore de temps dehors enregistré aujourd’hui.',
+  no_sessions_sub: 'Envie d’un peu d’air frais ? Ajoute-le ici !',
+  todays_sessions: 'Moments dehors aujourd’hui',
 
   // Streaks
   streak_daily_singular: '{{count}} day streak',
@@ -25,7 +25,7 @@ export default {
   ring_timer_start: 'tap to start',
   ring_timer_tap_stop: 'tap to stop',
   ring_timer_outside: 'outside',
-  ring_timer_info: 'Tap the ring to start your outside timer manually.',
+  ring_timer_info: 'Touchez l’anneau pour démarrer manuellement votre temps dehors.',
 
   // Widget
   widget_start_outside: 'start outside\nsession',
@@ -35,7 +35,7 @@ export default {
   widget_open_app: 'Open app to update',
 
   // Session sources
-  source_health_connect: 'Other apps',
+  source_health_connect: 'Autres apps',
   source_gps: 'GPS',
   source_manual: 'Manual',
   source_timeline: 'Timeline',
@@ -56,7 +56,7 @@ export default {
   session_notes_title: 'Session notes',
   session_notes_placeholder: 'Add a note…',
   session_notes_save: 'Save',
-  session_swipe_hint: 'Left for outside, right for inside.',
+  session_swipe_hint: 'Gauche pour dehors, droite pour dedans.',
   session_rejected_snackbar: 'Marked as inside',
   undo: 'Undo',
 
@@ -74,13 +74,13 @@ export default {
   nav_weather_settings: 'Weather Settings',
 
   // Days of week (short, Monday first)
-  day_mon: 'M',
-  day_tue: 'T',
-  day_wed: 'W',
-  day_thu: 'T',
-  day_fri: 'F',
+  day_mon: 'L',
+  day_tue: 'M',
+  day_wed: 'M',
+  day_thu: 'J',
+  day_fri: 'V',
   day_sat: 'S',
-  day_sun: 'S',
+  day_sun: 'D',
 
   // Goals screen
   goals_edit: 'Edit',
@@ -101,9 +101,9 @@ export default {
   events_tab_standard: 'Standard',
   events_tab_all: 'All',
   events_toggle_confirmed: 'Confirmed',
-  events_toggle_review: 'Needs review',
+  events_toggle_review: 'À vérifier',
   events_toggle_rejected: 'Rejected',
-  events_none_recorded: 'No outside moments found yet.',
+  events_none_recorded: 'Aucun moment dehors trouvé pour le moment.',
   events_confidence: 'Confidence',
   events_not_outside: '✕ Inside',
   events_confirm: '✓ Outside',
@@ -128,14 +128,14 @@ export default {
   history_legend_target: 'Target',
 
   // Settings screen
-  settings_section_detection: 'Automatic tracking',
+  settings_section_detection: 'Suivi automatique',
   settings_section_locations: 'Known locations',
   settings_section_reminders: 'Reminders',
   settings_section_language: 'Language',
   settings_section_about: 'About',
   settings_health_connect: 'Health Connect',
   settings_health_connect_desc: 'Track steps & activity automatically',
-  settings_hc_permission_missing: 'Access needed — tap to set up',
+  settings_hc_permission_missing: 'Accès nécessaire — touche pour configurer',
   settings_hc_permission_title: 'Health Connect Permission',
   settings_hc_permission_body:
     'Health Connect permissions are needed to automatically track outdoor activities from your steps and workouts.',
@@ -159,16 +159,16 @@ export default {
   settings_permission_open: 'Open Settings',
   settings_permission_disable: 'Disable this feature',
   settings_gps: 'GPS tracking',
-  settings_gps_desc: 'Recognize outside moments using location',
+  settings_gps_desc: 'Repérer les moments dehors avec la localisation',
   settings_gps_permission: 'Permission needed',
-  settings_gps_permission_missing: 'Permissions missing — tap to fix',
+  settings_gps_permission_missing: 'Accès nécessaire — touche pour configurer',
   settings_location_radius: '{{radius}}m radius · {{type}}',
   settings_location_indoor: 'Indoor',
   settings_location_outdoor: 'Outdoor',
   settings_location_edit_title: 'Edit location',
   location_edit_label: 'Location name',
   location_edit_label_placeholder: 'e.g. Home, Work, Park',
-  location_edit_radius: 'Location recognition',
+  location_edit_radius: 'Reconnaissance de lieu',
   location_edit_radius_hint: 'Distance from location center (25–250 meters)',
   location_edit_radius_hint_imperial: 'Distance from location center (25–250 yards)',
   location_edit_type: 'Location type',
@@ -181,12 +181,11 @@ export default {
   location_delete_confirm_body:
     'Are you sure you want to delete this location? This cannot be undone.',
   settings_reminders_label: 'Smart reminders',
-  settings_reminders_sublabel:
-    'Nudges at the right moment — learns your rhythm over time. No data collection.',
+  settings_reminders_sublabel: 'Petits rappels au bon moment — apprend ton rythme. Aucune collecte de données.',
   settings_reminders_count_off: 'Off',
   settings_reminders_count_per_day: '{{count}}/day',
   settings_notification_permission_title: 'Notification Permission',
-  settings_notification_permission_missing: 'Permissions missing — tap to fix',
+  settings_notification_permission_missing: 'Accès nécessaire — touche pour configurer',
   settings_notification_permission_body:
     'Notification permission is needed to send smart reminders. TouchGrass only uses this to nudge you at the best moment to go outside — never for marketing.',
   settings_catchup_label: 'Help me reach my goal',
@@ -200,7 +199,7 @@ export default {
     'The persistent notification showing while GPS is active. Disable it via Android Settings → Apps → TouchGrass → Notifications → Background tracking.',
   settings_app_sublabel: 'Your outdoor time companion',
   settings_privacy: 'Privacy',
-  settings_privacy_sublabel: 'Your data never leaves your phone',
+  settings_privacy_sublabel: 'Tes données ne quittent jamais ton téléphone',
   settings_privacy_hint: 'Tap to read our privacy policy',
   settings_clear_data: 'Clear all data',
   settings_clear_data_sublabel: 'Permanently delete all sessions and settings',
@@ -265,7 +264,7 @@ export default {
   manual_tab_timer: '⏱ Start timer',
   manual_start_time: 'Start time',
   manual_end_time: 'End time',
-  manual_preview: 'Overview',
+  manual_preview: 'Aperçu',
   manual_log_btn: '✓ Log session',
   manual_timer_ready: 'Tap start when you head outside',
   manual_timer_running: 'Timer running — go enjoy the outdoors! 🌿',
@@ -282,7 +281,7 @@ export default {
   intro_next: 'Next',
   intro_get_started: 'Get Started',
   intro_welcome_title: 'Welcome to TouchGrass',
-  intro_welcome_body: 'Your helper for putting your phone down and heading outside more often.',
+  intro_welcome_body: 'Ton coup de pouce pour poser ton téléphone et sortir plus souvent.',
   intro_welcome_feature_1: 'Track outside time automatically',
   intro_welcome_feature_2: 'Set and monitor daily goals',
   intro_welcome_feature_3: 'Get smart reminders',
@@ -291,7 +290,7 @@ export default {
   intro_hc_title: 'Health Connect',
   intro_hc_body:
     'TouchGrass uses Health Connect to automatically detect outdoor exercise activities.',
-  intro_hc_why_title: 'Why this access?',
+  intro_hc_why_title: 'Pourquoi cet accès ?',
   intro_hc_why_body:
     'Health Connect provides access to exercise sessions from your fitness apps, helping us track your outdoor activities like walking, running, or cycling.',
   intro_hc_hint: 'You can grant this permission later in Settings.',
@@ -300,7 +299,7 @@ export default {
   intro_location_title: 'Location Access',
   intro_location_body:
     'TouchGrass uses your location to automatically detect outdoor sessions via geofencing.',
-  intro_location_why_title: 'Why do we need this?',
+  intro_location_why_title: 'Pourquoi cet accès ?',
   intro_location_why_body:
     'GPS tracking uses geofencing to detect when you leave and return to known indoor locations (e.g. home, work), so outdoor sessions are proposed automatically — even when the app is closed. "Allow all the time" is required for this to work in the background.\n\nIf you enable weather-aware reminders, only approximate location is used to fetch local weather conditions.',
   intro_location_hint:
@@ -317,7 +316,7 @@ export default {
   intro_location_known_hint: 'You can adjust and add locations in Settings → Known Locations.',
   intro_notifications_title: 'Reminders',
   intro_notifications_body: 'Get gentle nudges to go outside when you need them most.',
-  intro_notifications_why_title: 'Why do we need this?',
+  intro_notifications_why_title: 'Pourquoi cet accès ?',
   intro_notifications_why_body:
     'Smart reminders learn your patterns over time and only notify you at helpful moments. You can also create scheduled reminders for specific times and days. You can disable them anytime.',
   intro_notifications_hint: 'Completely optional — you can skip this.',
@@ -326,11 +325,10 @@ export default {
   intro_calendar_title: 'Calendar',
   intro_calendar_body:
     'Connect your calendar so TouchGrass can schedule outdoor time around your meetings.',
-  intro_calendar_why_title: 'Why do we need this?',
+  intro_calendar_why_title: 'Pourquoi cet accès ?',
   intro_calendar_why_body:
     'With calendar access, TouchGrass avoids sending reminders when you have a meeting coming up and can automatically add outdoor time slots to your calendar.',
-  intro_calendar_data_scope:
-    'We only read times and titles — no details or attendees. Everything stays private on your device.',
+  intro_calendar_data_scope: 'Nous lisons seulement les horaires — aucun détail ni personne. Tout reste privé sur ton appareil.',
   intro_calendar_hint: 'You can configure this later in Settings.',
   intro_calendar_button: 'Connect Calendar',
   intro_calendar_button_granted: 'Calendar Connected ✓',
@@ -356,11 +354,11 @@ export default {
   notif_title_1: '🌿 Time to touch grass!',
   notif_title_2: '☀️ Step outside for a bit',
   notif_title_3: '🌱 Fresh air awaits',
-  notif_title_4: '👟 Shoes on and let’s go?',
+  notif_title_4: '👟 On enfile ses chaussures ?',
   notif_title_5: '🌳 The outdoors is calling',
 
   // Notification bodies
-  notif_body_none: "Not been outside yet today? A short walk counts too!",
+  notif_body_none: 'Pas encore sorti aujourd’hui ? Une petite balade compte aussi !',
   notif_body_halfway: "{{remaining}} minutes to go. You've got this!",
   notif_body_almost: 'Almost there — just {{remaining}} more minutes outside.',
   notif_body_done: 'Goal reached! Feel like a bonus walk? 🌿',
@@ -369,7 +367,7 @@ export default {
   notif_reason_pattern: 'you often go outside around this time',
   notif_reason_lunch: "it's a great time for a lunchtime walk",
   notif_reason_after_work: 'after work is a great time to go outside',
-  notif_reason_urgent: "you haven't managed to get outside yet today",
+  notif_reason_urgent: 'tu n’as pas encore réussi à sortir aujourd’hui.',
   notif_reason_acted: "you've gone outside around this time before",
   notif_reason_more_often: 'you prefer reminders around this time',
 
@@ -418,7 +416,7 @@ export default {
   settings_weather_more: 'More weather settings',
   settings_weather_more_desc: 'Temperature preference, rain, heat, UV',
   settings_weather_permission_title: 'Location Permission',
-  settings_weather_permission_missing: 'Permissions missing — tap to fix',
+  settings_weather_permission_missing: 'Accès nécessaire — touche pour configurer',
   settings_weather_location_permission_missing:
     'Location permission is needed to fetch local weather. Approximate location is only used to determine weather conditions and is never stored.',
   settings_weather_location_request: 'Grant Location Access',
@@ -495,7 +493,7 @@ export default {
   settings_calendar_integration_desc:
     'Check your calendar to avoid scheduling reminders during meetings',
   settings_calendar_permission_title: 'Calendar Permission',
-  settings_calendar_permission_missing: 'Permissions missing — tap to fix',
+  settings_calendar_permission_missing: 'Accès nécessaire — touche pour configurer',
   settings_calendar_permission_body:
     'Calendar access is needed to check your appointments for smart reminders.\n\nTouchGrass reads only event titles and times — no descriptions, attendees, or other data. Nothing leaves your device.',
   settings_calendar_permission_open: 'Open Settings',
@@ -592,7 +590,7 @@ export default {
   intro_ready_checklist_item_battery: 'Set battery optimization to "Unrestricted".',
 
   // Time/date formatting locale tag
-  locale_tag: 'en-GB',
+  locale_tag: 'fr-FR',
 
   // Session description notes (stored with each session to describe how it was detected)
   session_notes_manual: 'Manual entry.',

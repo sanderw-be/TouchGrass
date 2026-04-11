@@ -3,12 +3,19 @@ import * as ExpoLocalization from 'expo-localization';
 import { uses24HourClock, normalizeAmPm } from '../utils/helpers';
 import en from './en';
 import nl from './nl';
+import de from './de';
+import es from './es';
+import pt from './pt';
+import fr from './fr';
+import ja from './ja';
 
-const i18n = new I18n({ en, nl });
+const i18n = new I18n({ en, nl, de, es, pt, fr, ja });
 
 // Detect device locale, fall back to English
 const deviceLocale = ExpoLocalization.getLocales?.()?.[0]?.languageCode ?? 'en';
-i18n.locale = ['en', 'nl'].includes(deviceLocale) ? deviceLocale : 'en';
+i18n.locale = ['en', 'nl', 'de', 'es', 'pt', 'fr', 'ja'].includes(deviceLocale)
+  ? deviceLocale
+  : 'en';
 i18n.enableFallback = true;
 i18n.defaultLocale = 'en';
 
