@@ -9,6 +9,7 @@ jest.mock('../i18n', () => ({
   default: { locale: 'en' },
   formatLocalDate: jest.fn(() => ''),
   formatLocalTime: jest.fn(() => ''),
+  getDeviceSupportedLocale: jest.fn(() => 'en'),
 }));
 
 // Mock database
@@ -110,6 +111,29 @@ describe('SettingsScreen', () => {
   it('shows the app version in the About section', async () => {
     const { getByText } = render(<SettingsScreen />);
     await waitFor(() => expect(getByText('v1.2.0')).toBeTruthy());
+  });
+
+  it('shows all language options including system default', async () => {
+    const { getByText } = render(<SettingsScreen />);
+    await waitFor(() => {
+      expect(getByText('settings_theme_system (English)')).toBeTruthy();
+      expect(getByText('Deutsch')).toBeTruthy();
+      expect(getByText('Español')).toBeTruthy();
+      expect(getByText('Português (Portugal)')).toBeTruthy();
+      expect(getByText('Français')).toBeTruthy();
+      expect(getByText('日本語')).toBeTruthy();
+    });
+  });
+
+  it('calls setLocale with system when system default is selected', async () => {
+    const { getByText } = render(<SettingsScreen />);
+    const systemRow = await waitFor(() => getByText('settings_theme_system (English)'));
+
+    await act(async () => {
+      fireEvent.press(systemRow);
+    });
+
+    expect(mockSetLocale).toHaveBeenCalledWith('system');
   });
 });
 

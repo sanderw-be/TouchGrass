@@ -39,15 +39,31 @@ import DiagnosticSheet from '../components/DiagnosticSheet';
 import { spacing, radius } from '../utils/theme';
 import { useTheme, ThemePreference } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
-import { t } from '../i18n';
+import { t, getDeviceSupportedLocale } from '../i18n';
 import { PRIVACY_POLICY_URL } from '../utils/constants';
 import type { SettingsStackParamList } from '../navigation/AppNavigator';
 import { useShowIntro } from '../context/IntroContext';
 import { emitPermissionIssuesChanged } from '../utils/permissionIssuesChangedEmitter';
 
+const LANGUAGE_LABELS: Record<string, string> = {
+  en: 'English',
+  nl: 'Nederlands',
+  de: 'Deutsch',
+  es: 'Español',
+  pt: 'Português (Portugal)',
+  fr: 'Français',
+  ja: '日本語',
+};
+
 const LANGUAGES = [
+  { code: 'system', label: 'settings_theme_system' },
   { code: 'en', label: 'English' },
   { code: 'nl', label: 'Nederlands' },
+  { code: 'de', label: 'Deutsch' },
+  { code: 'es', label: 'Español' },
+  { code: 'pt', label: 'Português (Portugal)' },
+  { code: 'fr', label: 'Français' },
+  { code: 'ja', label: '日本語' },
 ];
 
 export default function SettingsScreen() {
@@ -68,6 +84,8 @@ export default function SettingsScreen() {
   const [togglingGPS, setTogglingGPS] = useState(false);
   const [permissionSheet, setPermissionSheet] = useState<PermissionSheetConfig | null>(null);
   const [showDiagnosticSheet, setShowDiagnosticSheet] = useState(false);
+  const systemLocale =
+    typeof getDeviceSupportedLocale === 'function' ? getDeviceSupportedLocale() : 'en';
 
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const isFetchingRef = useRef(false);
@@ -366,7 +384,11 @@ export default function SettingsScreen() {
             <View key={lang.code}>
               {i > 0 && <Divider />}
               <TouchableOpacity style={styles.row} onPress={() => changeLanguage(lang.code)}>
-                <Text style={styles.rowLabel}>{lang.label}</Text>
+                <Text style={styles.rowLabel}>
+                  {lang.code === 'system'
+                    ? `${t(lang.label)} (${LANGUAGE_LABELS[systemLocale] ?? LANGUAGE_LABELS.en})`
+                    : lang.label}
+                </Text>
                 {locale === lang.code && (
                   <Ionicons
                     name="checkmark"

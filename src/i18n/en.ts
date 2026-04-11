@@ -360,7 +360,7 @@ export default {
   notif_title_5: '🌳 The outdoors is calling',
 
   // Notification bodies
-  notif_body_none: "Not been outside yet today? A short walk counts too!",
+  notif_body_none: 'Not been outside yet today? A short walk counts too!',
   notif_body_halfway: "{{remaining}} minutes to go. You've got this!",
   notif_body_almost: 'Almost there — just {{remaining}} more minutes outside.',
   notif_body_done: 'Goal reached! Feel like a bonus walk? 🌿',

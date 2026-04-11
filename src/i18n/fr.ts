@@ -181,7 +181,8 @@ export default {
   location_delete_confirm_body:
     'Are you sure you want to delete this location? This cannot be undone.',
   settings_reminders_label: 'Smart reminders',
-  settings_reminders_sublabel: 'Petits rappels au bon moment — apprend ton rythme. Aucune collecte de données.',
+  settings_reminders_sublabel:
+    'Petits rappels au bon moment — apprend ton rythme. Aucune collecte de données.',
   settings_reminders_count_off: 'Off',
   settings_reminders_count_per_day: '{{count}}/day',
   settings_notification_permission_title: 'Notification Permission',
@@ -328,7 +329,8 @@ export default {
   intro_calendar_why_title: 'Pourquoi cet accès ?',
   intro_calendar_why_body:
     'With calendar access, TouchGrass avoids sending reminders when you have a meeting coming up and can automatically add outdoor time slots to your calendar.',
-  intro_calendar_data_scope: 'Nous lisons seulement les horaires — aucun détail ni personne. Tout reste privé sur ton appareil.',
+  intro_calendar_data_scope:
+    'Nous lisons seulement les horaires — aucun détail ni personne. Tout reste privé sur ton appareil.',
   intro_calendar_hint: 'You can configure this later in Settings.',
   intro_calendar_button: 'Connect Calendar',
   intro_calendar_button_granted: 'Calendar Connected ✓',
