@@ -30,6 +30,7 @@ jobs:
               - 'app.config.js'
               - 'ios/**'
               - 'android/**'
+              - 'eas.json'
 
   # 2. Run Semantic Versioning ONLY if native changes exist
   version-bump:
