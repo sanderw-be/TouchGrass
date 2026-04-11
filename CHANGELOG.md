@@ -1,3 +1,10 @@
+## [1.6.4](https://github.com/sanderw-be/TouchGrass/compare/v1.6.3...v1.6.4) (2026-04-11)
+
+### Bug Fixes
+
+- set EAS_BUILD_PROFILE env var for local builds to fix fingerprint mismatch ([#391](https://github.com/sanderw-be/TouchGrass/issues/391)) ([1aff16e](https://github.com/sanderw-be/TouchGrass/commit/1aff16e7dc3554d7c1764972837077699bb3911b))
+- Update app.json ([c73b811](https://github.com/sanderw-be/TouchGrass/commit/c73b8118d7a689fbb334c0f0559889623b69dd44))
+
 ## [1.6.3](https://github.com/sanderw-be/TouchGrass/compare/v1.6.2...v1.6.3) (2026-04-11)
 
 ### Bug Fixes
