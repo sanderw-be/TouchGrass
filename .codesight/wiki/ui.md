@@ -12,7 +12,7 @@
 - **EditSessionSheet** — props: visible, session, onClose, onSessionUpdated — `src/components/EditSessionSheet.tsx`
 - **CRASH_REPORT_FORM_URL** — `src/components/ErrorBoundary.tsx`
 - **ManualSessionSheet** — props: visible, onClose, onSessionLogged — `src/components/ManualSessionSheet.tsx`
-- **PermissionExplainerSheet** — props: visible, onClose, onOpenSettings, title, body, openSettingsLabel — `src/components/PermissionExplainerSheet.tsx`
+- **PermissionExplainerSheet** — props: visible, onClose, onOpenSettings, title, body, openSettingsLabel, onDisable, disableLabel, onCancel — `src/components/PermissionExplainerSheet.tsx`
 - **ProgressRing** — props: current, target, size, strokeWidth, label, onTimerPress, timerRunning, timerSeconds — `src/components/ProgressRing.tsx`
 - **ReminderFeedbackModal** — `src/components/ReminderFeedbackModal.tsx`
 - **UndoSnackbar** — props: visible, message, onUndo, onDismiss, duration — `src/components/UndoSnackbar.tsx`

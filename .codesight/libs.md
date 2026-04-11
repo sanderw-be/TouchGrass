@@ -101,6 +101,7 @@
   - function formatDate: (ms) => string
   - function formatTimer: (seconds) => string
 - `src/utils/permissionIssues.ts` — function countPermissionIssues: () => Promise<
+- `src/utils/permissionIssuesChangedEmitter.ts` — function emitPermissionIssuesChanged: () => void, function onPermissionIssuesChanged: (listener) => () => void
 - `src/utils/sessionsChangedEmitter.ts` — function emitSessionsChanged: () => void, function onSessionsChanged: (listener) => () => void
 - `src/utils/temperature.ts`
   - function isFahrenheit: () => boolean

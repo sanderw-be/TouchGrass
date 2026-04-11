@@ -53,6 +53,7 @@ import {
   CATCHUP_REMINDERS_OPTIONS,
   CatchupRemindersOption,
 } from '../components/goals/GoalsShared';
+import { emitPermissionIssuesChanged } from '../utils/permissionIssuesChangedEmitter';
 
 const DAILY_PRESETS = [15, 20, 30, 45, 60, 90];
 const WEEKLY_PRESETS = [60, 90, 120, 150, 210, 300];
@@ -257,6 +258,7 @@ export default function GoalsScreen() {
     try {
       await setSettingAsync('smart_reminders_count', String(next));
       setSmartRemindersCount(next);
+      emitPermissionIssuesChanged();
     } catch (error) {
       console.error('[GoalsScreen.cycleSmartRemindersCount] Error:', error);
     }
@@ -292,6 +294,19 @@ export default function GoalsScreen() {
       title: t('settings_weather_permission_title'),
       body: t('settings_weather_location_permission_missing'),
       onOpen: handleOpenAppSettings,
+      onCancel: () => {
+        pendingWeatherEnableRef.current = false;
+      },
+      onDisable: async () => {
+        pendingWeatherEnableRef.current = false;
+        try {
+          await setSettingAsync('weather_enabled', '0');
+          setWeatherEnabled(false);
+          emitPermissionIssuesChanged();
+        } catch (error) {
+          console.error('[GoalsScreen.showWeatherPermissionSheet.onDisable] Error:', error);
+        }
+      },
     });
   }, []);
 
@@ -301,6 +316,19 @@ export default function GoalsScreen() {
       title: t('settings_calendar_permission_title'),
       body: t('settings_calendar_permission_body'),
       onOpen: handleOpenAppSettings,
+      onCancel: () => {
+        pendingCalendarEnableRef.current = false;
+      },
+      onDisable: async () => {
+        pendingCalendarEnableRef.current = false;
+        try {
+          await setSettingAsync('calendar_integration_enabled', '0');
+          setCalendarEnabled(false);
+          emitPermissionIssuesChanged();
+        } catch (error) {
+          console.error('[GoalsScreen.showCalendarPermissionSheet.onDisable] Error:', error);
+        }
+      },
     });
   }, []);
 
@@ -309,6 +337,19 @@ export default function GoalsScreen() {
       title: t('settings_notification_permission_title'),
       body: t('settings_notification_permission_body'),
       onOpen: handleOpenAppSettings,
+      onCancel: () => {
+        pendingSmartRemindersEnableRef.current = false;
+      },
+      onDisable: async () => {
+        pendingSmartRemindersEnableRef.current = false;
+        try {
+          await setSettingAsync('smart_reminders_count', '0');
+          setSmartRemindersCount(0);
+          emitPermissionIssuesChanged();
+        } catch (error) {
+          console.error('[GoalsScreen.showNotificationPermissionSheet.onDisable] Error:', error);
+        }
+      },
     });
   }, []);
 
@@ -337,6 +378,7 @@ export default function GoalsScreen() {
     try {
       await setSettingAsync('weather_enabled', value ? '1' : '0');
       setWeatherEnabled(value);
+      emitPermissionIssuesChanged();
     } catch (error) {
       console.error('[GoalsScreen.toggleWeatherEnabled] Error:', error);
     }
@@ -356,6 +398,7 @@ export default function GoalsScreen() {
     try {
       await setSettingAsync('calendar_integration_enabled', value ? '1' : '0');
       setCalendarEnabled(value);
+      emitPermissionIssuesChanged();
     } catch (error) {
       console.error('[GoalsScreen.toggleCalendarIntegration] Error:', error);
     }
@@ -611,6 +654,9 @@ export default function GoalsScreen() {
           body={permissionSheet.body}
           openSettingsLabel={permissionSheet.openLabel}
           onOpenSettings={permissionSheet.onOpen}
+          onDisable={permissionSheet.onDisable}
+          disableLabel={permissionSheet.disableLabel}
+          onCancel={permissionSheet.onCancel}
           onClose={() => setPermissionSheet(null)}
         />
       )}

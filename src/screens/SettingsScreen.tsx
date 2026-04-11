@@ -43,6 +43,7 @@ import { t } from '../i18n';
 import { PRIVACY_POLICY_URL } from '../utils/constants';
 import type { SettingsStackParamList } from '../navigation/AppNavigator';
 import { useShowIntro } from '../context/IntroContext';
+import { emitPermissionIssuesChanged } from '../utils/permissionIssuesChangedEmitter';
 
 const LANGUAGES = [
   { code: 'en', label: 'English' },
@@ -126,6 +127,15 @@ export default function SettingsScreen() {
   };
 
   const showHCPermissionSheet = useCallback(() => {
+    const disableHC = async () => {
+      try {
+        await toggleHealthConnect(false);
+        setDetectionStatus(await getDetectionStatus());
+        emitPermissionIssuesChanged();
+      } catch (error) {
+        console.error('[SettingsScreen.showHCPermissionSheet.disable] Error:', error);
+      }
+    };
     setPermissionSheet({
       title: t('settings_hc_permission_title'),
       body: t('settings_hc_permission_body'),
@@ -136,14 +146,27 @@ export default function SettingsScreen() {
           Alert.alert(t('settings_hc_open_error_title'), t('settings_hc_open_error_body'));
         }
       },
+      onCancel: disableHC,
+      onDisable: disableHC,
     });
   }, []);
 
   const showGPSPermissionSheet = useCallback(() => {
+    const disableGPS = async () => {
+      try {
+        await toggleGPS(false);
+        setDetectionStatus(await getDetectionStatus());
+        emitPermissionIssuesChanged();
+      } catch (error) {
+        console.error('[SettingsScreen.showGPSPermissionSheet.disable] Error:', error);
+      }
+    };
     setPermissionSheet({
       title: t('settings_gps_permission_required_title'),
       body: t('settings_gps_permission_required_body'),
       onOpen: handleOpenAppSettings,
+      onCancel: disableGPS,
+      onDisable: disableGPS,
     });
   }, []);
 
@@ -153,6 +176,7 @@ export default function SettingsScreen() {
     try {
       const result = await toggleHealthConnect(value);
       setDetectionStatus(await getDetectionStatus());
+      emitPermissionIssuesChanged();
 
       if (value && result.needsPermissions) {
         showHCPermissionSheet();
@@ -171,6 +195,7 @@ export default function SettingsScreen() {
     try {
       const result = await toggleGPS(value);
       setDetectionStatus(await getDetectionStatus());
+      emitPermissionIssuesChanged();
 
       if (value && result.needsPermissions) {
         showGPSPermissionSheet();
@@ -443,6 +468,9 @@ export default function SettingsScreen() {
           body={permissionSheet.body}
           openSettingsLabel={permissionSheet.openLabel}
           onOpenSettings={permissionSheet.onOpen}
+          onDisable={permissionSheet.onDisable}
+          disableLabel={permissionSheet.disableLabel}
+          onCancel={permissionSheet.onCancel}
           onClose={() => setPermissionSheet(null)}
         />
       )}

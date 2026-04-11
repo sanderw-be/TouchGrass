@@ -1,0 +1,93 @@
+name: 3. CD - Deploy to Production
+
+permissions:
+  pull-requests: read
+  contents: write
+
+on:
+  workflow_dispatch:
+    inputs:
+      deploy_type:
+        description: 'Choose the type of Production Deployment'
+        required: true
+        type: choice
+        options:
+          - 'OTA Update (JavaScript/Assets only)'
+          - 'Native Build (AAB to Google Play)'
+
+
+jobs:
+  # 4. Wait for manual approval, then deploy to Production
+  deploy-production:
+    name: Production Deployment
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+          cache: 'npm'
+      - run: npm ci
+
+      - name: ⚡️ Cache npx
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm/_npx
+          # We add a static string 'eas' to the key so it caches the CLI specifically
+          key: ${{ runner.os }}-npx-eas-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npx-eas-
+
+      # --- SCENARIO A: Native Build Required ---
+      - name: Build AAB
+        if: inputs.deploy_type == 'Native Build (AAB to Google Play)'
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: npx --yes eas-cli build --profile production --platform android --local --output ./production-app.aab
+
+      - name: Upload Production AAB Artifact
+        if: inputs.deploy_type == 'Native Build (AAB to Google Play)'
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-aab
+          path: ./production-app.aab
+          retention-days: 14
+
+      # --- SCENARIO B: JavaScript/Asset Changes Only ---
+      - name: Publish Production OTA Update
+        if: inputs.deploy_type == 'OTA Update (JavaScript/Assets only)'
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: npx --yes eas-cli update --branch production --message "Manual Production OTA Deployment"
+
+      # Promote the latest pre-release (created by step 2 / semantic-release) to
+      # a full public GitHub release now that the code has reached production.
+      - name: Promote pre-release to full release
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            // GitHub returns releases in descending creation-date order (newest first),
+            // so the first pre-release we find is always the most recent one.
+            const { data: releases } = await github.rest.repos.listReleases({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 100,
+            });
+            const preRelease = releases.find(r => r.prerelease && !r.draft);
+            if (!preRelease) {
+              core.warning('No pre-release found to promote. Skipping.');
+              return;
+            }
+            await github.rest.repos.updateRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: preRelease.id,
+              prerelease: false,
+            });
+            core.info(`Promoted release ${preRelease.tag_name} to full release.`);
