@@ -110,10 +110,13 @@
   - _...1 more_
 - `src/detection/sessionMerger.ts` — function submitSession: (candidate) => Promise<void>, function buildSession: (startTime, endTime, source, confidence, notes?, steps?, distanceMeters?, averageSpeedKmh?) => OutsideSession
 - `src/i18n/index.ts`
+  - function resolveSupportedLocale: (localeCode?) => SupportedLocale
+  - function getDeviceSupportedLocale: () => SupportedLocale
   - function t: (key, options?, unknown>) => string
   - function localeTag: () => string
   - function formatLocalDate: (ms, options?) => string
   - function formatLocalTime: (ms) => string
+  - _...1 more_
 - `src/notifications/notificationManager.ts`
   - function \_resetSchedulingGuards: () => void
   - function logReminderQueueSnapshot: () => Promise<void>
@@ -220,8 +223,8 @@
 
 ## Most Imported Files (change these carefully)
 
-- `src/storage/database.ts` — imported by **70** files
-- `src/i18n/index.ts` — imported by **43** files
+- `src/storage/database.ts` — imported by **71** files
+- `src/i18n/index.ts` — imported by **45** files
 - `src/context/ThemeContext.tsx` — imported by **30** files
 - `src/utils/theme.ts` — imported by **27** files
 - `src/utils/helpers.ts` — imported by **10** files
@@ -243,8 +246,8 @@
 
 ## Import Map (who imports what)
 
-- `src/storage/database.ts` ← `App.tsx`, `src/__tests__/App.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx` +65 more
-- `src/i18n/index.ts` ← `App.tsx`, `src/__tests__/ErrorBoundary.test.tsx`, `src/__tests__/FeedbackSupportScreen.test.tsx`, `src/__tests__/LanguageContext.test.tsx`, `src/__tests__/i18n.test.ts` +38 more
+- `src/storage/database.ts` ← `App.tsx`, `src/__tests__/App.test.tsx`, `src/__tests__/App.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx` +66 more
+- `src/i18n/index.ts` ← `App.tsx`, `src/__tests__/App.test.tsx`, `src/__tests__/App.test.tsx`, `src/__tests__/ErrorBoundary.test.tsx`, `src/__tests__/FeedbackSupportScreen.test.tsx` +40 more
 - `src/context/ThemeContext.tsx` ← `App.tsx`, `src/__tests__/ThemeContext.test.tsx`, `src/components/DiagnosticSheet.tsx`, `src/components/EditLocationSheet.tsx`, `src/components/EditSessionSheet.tsx` +25 more
 - `src/utils/theme.ts` ← `src/__tests__/ThemeContext.test.tsx`, `src/components/DiagnosticSheet.tsx`, `src/components/EditLocationSheet.tsx`, `src/components/EditSessionSheet.tsx`, `src/components/ErrorBoundary.tsx` +22 more
 - `src/utils/helpers.ts` ← `src/components/EditSessionSheet.tsx`, `src/components/ManualSessionSheet.tsx`, `src/components/ProgressRing.tsx`, `src/components/ReminderFeedbackModal.tsx`, `src/i18n/index.ts` +5 more
