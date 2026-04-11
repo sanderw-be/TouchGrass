@@ -1,3 +1,9 @@
+## [1.6.3](https://github.com/sanderw-be/TouchGrass/compare/v1.6.2...v1.6.3) (2026-04-11)
+
+### Bug Fixes
+
+- remove wrong node versions ([9ca49b3](https://github.com/sanderw-be/TouchGrass/commit/9ca49b3cfef1b3be7c8531e48195cc46057cece3))
+
 ## [1.6.2](https://github.com/sanderw-be/TouchGrass/compare/v1.6.1...v1.6.2) (2026-04-11)
 
 ### Bug Fixes
