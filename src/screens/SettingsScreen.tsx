@@ -227,6 +227,13 @@ export default function SettingsScreen() {
     setLocale(code);
   };
 
+  const getLanguageOptionLabel = (code: string, label: string, isTranslationKey: boolean) => {
+    if (code === 'system') {
+      return `${t(label)} (${LANGUAGE_LABELS[systemLocale] ?? LANGUAGE_LABELS.en})`;
+    }
+    return isTranslationKey ? t(label) : label;
+  };
+
   const handleClearData = () => {
     Alert.alert(t('settings_clear_data_confirm_title'), t('settings_clear_data_confirm_body'), [
       { text: t('settings_clear_cancel'), style: 'cancel' },
@@ -382,11 +389,7 @@ export default function SettingsScreen() {
               {i > 0 && <Divider />}
               <TouchableOpacity style={styles.row} onPress={() => changeLanguage(lang.code)}>
                 <Text style={styles.rowLabel}>
-                  {lang.code === 'system'
-                    ? `${t(lang.label)} (${LANGUAGE_LABELS[systemLocale] ?? LANGUAGE_LABELS.en})`
-                    : lang.isTranslationKey
-                      ? t(lang.label)
-                      : lang.label}
+                  {getLanguageOptionLabel(lang.code, lang.label, lang.isTranslationKey)}
                 </Text>
                 {locale === lang.code && (
                   <Ionicons

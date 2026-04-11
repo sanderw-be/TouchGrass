@@ -155,7 +155,6 @@ function AppContent() {
     if (storedLanguage === 'system') {
       i18n.locale = getDeviceSupportedLocale();
       setLocaleState('system');
-      setSetting('language', 'system');
     } else if (SUPPORTED_LOCALES.includes(storedLanguage as (typeof SUPPORTED_LOCALES)[number])) {
       i18n.locale = storedLanguage;
       setLocaleState(storedLanguage);

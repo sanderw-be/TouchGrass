@@ -126,8 +126,9 @@ describe('App', () => {
     render(<App />);
 
     await waitFor(() => {
-      expect(setSetting).toHaveBeenCalledWith('language', 'system');
+      expect(getSetting).toHaveBeenCalledWith('language', 'system');
     });
+    expect(setSetting).not.toHaveBeenCalledWith('language', 'system');
     const i18n = require('../i18n').default;
     expect(i18n.locale).toBe('en');
   });
