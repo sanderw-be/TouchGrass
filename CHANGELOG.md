@@ -1,3 +1,9 @@
+## [1.6.1](https://github.com/sanderw-be/TouchGrass/compare/v1.6.0...v1.6.1) (2026-04-11)
+
+### Bug Fixes
+
+- EAS use node version 20.x ([e1d1de2](https://github.com/sanderw-be/TouchGrass/commit/e1d1de238b27a968a164a438bcb40ee8e8197d77))
+
 # [1.6.0](https://github.com/sanderw-be/TouchGrass/compare/v1.5.1...v1.6.0) (2026-04-11)
 
 ### Features
