@@ -106,7 +106,12 @@ describe('ManualSessionSheet', () => {
     fireEvent.press(getByText('manual_timer_stop'));
     fireEvent.press(getByText('manual_log_btn'));
     // Exact start and end timestamps are passed (not a rounded duration)
-    expect(logManualSession).toHaveBeenCalledWith((endMs - startMs) / 60000, startMs, endMs);
+    expect(logManualSession).toHaveBeenCalledWith(
+      (endMs - startMs) / 60000,
+      startMs,
+      endMs,
+      'session_notes_manual'
+    );
     expect(onSessionLogged).toHaveBeenCalled();
     expect(onClose).toHaveBeenCalled();
   });
@@ -125,7 +130,12 @@ describe('ManualSessionSheet', () => {
     jest.setSystemTime(new Date(endMs));
     fireEvent.press(getByText('manual_timer_stop'));
     fireEvent.press(getByText('manual_log_btn'));
-    expect(logManualSession).toHaveBeenCalledWith((endMs - startMs) / 60000, startMs, endMs);
+    expect(logManualSession).toHaveBeenCalledWith(
+      (endMs - startMs) / 60000,
+      startMs,
+      endMs,
+      'session_notes_manual'
+    );
     expect(onSessionLogged).toHaveBeenCalled();
     expect(onClose).toHaveBeenCalled();
   });
@@ -175,5 +185,34 @@ describe('ManualSessionSheet', () => {
     );
     fireEvent.press(getByTestId('sheet-close-btn'));
     expect(onClose).toHaveBeenCalled();
+  });
+
+  it('shows a notes text field prefilled with the default manual entry text', () => {
+    const { getByTestId } = render(<ManualSessionSheet {...defaultProps} />);
+    const input = getByTestId('manual-notes-input');
+    expect(input.props.value).toBe('session_notes_manual');
+  });
+
+  it('passes edited notes to logManualSession when saving', () => {
+    const { logManualSession } = require('../detection/manualCheckin');
+    const onSessionLogged = jest.fn();
+    const onClose = jest.fn();
+    const startMs = new Date('2024-01-01T10:00:00.000Z').getTime();
+    const endMs = new Date('2024-01-01T10:10:00.000Z').getTime();
+    const { getByText, getByTestId } = render(
+      <ManualSessionSheet visible={true} onClose={onClose} onSessionLogged={onSessionLogged} />
+    );
+    fireEvent.press(getByText('manual_tab_timer'));
+    fireEvent.press(getByText('manual_timer_start'));
+    jest.setSystemTime(new Date(endMs));
+    fireEvent.press(getByText('manual_timer_stop'));
+    fireEvent.changeText(getByTestId('manual-notes-input'), 'Walked in the park');
+    fireEvent.press(getByText('manual_log_btn'));
+    expect(logManualSession).toHaveBeenCalledWith(
+      (endMs - startMs) / 60000,
+      startMs,
+      endMs,
+      'Walked in the park'
+    );
   });
 });

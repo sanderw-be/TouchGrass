@@ -45,7 +45,7 @@
   - function checkGPSPermissions: () => Promise<boolean>
   - _...6 more_
 - `src/detection/manualCheckin.ts`
-  - function logManualSession: (durationMinutes, startTime?, endTime?) => void
+  - function logManualSession: (durationMinutes, startTime?, endTime?, notes?) => void
   - function logManualSessionAsync: (durationMinutes, startTime?, endTime?) => Promise<void>
   - function startManualSession: () => () => void
 - `src/detection/sessionConfidence.ts`
@@ -87,7 +87,7 @@
   - function getSessionsForDayAsync: (dateMs) => Promise<OutsideSession[]>
   - function getSessionsForRange: (fromMs, toMs) => OutsideSession[]
   - function getSessionsForRangeAsync: (fromMs, toMs) => Promise<OutsideSession[]>
-  - _...80 more_
+  - _...81 more_
 - `src/utils/batteryOptimization.ts`
   - function isBatteryOptimizationDisabled
   - function refreshBatteryOptimizationSetting
