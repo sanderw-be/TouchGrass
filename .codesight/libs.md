@@ -45,7 +45,7 @@
   - function checkGPSPermissions: () => Promise<boolean>
   - _...6 more_
 - `src/detection/manualCheckin.ts`
-  - function logManualSession: (durationMinutes, startTime?, endTime?) => void
+  - function logManualSession: (durationMinutes, startTime?, endTime?, notes?) => void
   - function logManualSessionAsync: (durationMinutes, startTime?, endTime?) => Promise<void>
   - function startManualSession: () => () => void
 - `src/detection/sessionConfidence.ts`
