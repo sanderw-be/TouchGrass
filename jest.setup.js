@@ -1,6 +1,87 @@
 // Setup react-native-gesture-handler mocks
 import 'react-native-gesture-handler/jestSetup';
 
+// Mock react-native-reanimated
+jest.mock('react-native-reanimated', () => {
+  const Reanimated = require('react-native-reanimated/mock');
+  Reanimated.default.call = () => {};
+  return Reanimated;
+});
+
+// Mock @gorhom/bottom-sheet
+jest.mock('@gorhom/bottom-sheet', () => {
+  const React = require('react');
+  const RN = require('react-native');
+
+  const BottomSheetModal = React.forwardRef(({ children, onChange, ...props }, ref) => {
+    const [visible, setVisible] = React.useState(false);
+    React.useImperativeHandle(ref, () => ({
+      present: () => setVisible(true),
+      dismiss: () => {
+        setVisible(false);
+        onChange?.(-1);
+      },
+      snapToIndex: () => {},
+      snapToPosition: () => {},
+      expand: () => {},
+      collapse: () => {},
+      close: () => {
+        setVisible(false);
+        onChange?.(-1);
+      },
+      forceClose: () => {
+        setVisible(false);
+        onChange?.(-1);
+      },
+    }));
+    if (!visible) return null;
+    return React.createElement(RN.View, { testID: 'bottom-sheet-modal', ...props }, children);
+  });
+  BottomSheetModal.displayName = 'BottomSheetModal';
+
+  const BottomSheetView = ({ children, ...props }) =>
+    React.createElement(RN.View, props, children);
+  const BottomSheetScrollView = ({ children, ...props }) =>
+    React.createElement(RN.ScrollView, props, children);
+  const BottomSheetTextInput = React.forwardRef((props, ref) =>
+    React.createElement(RN.TextInput, { ...props, ref })
+  );
+  BottomSheetTextInput.displayName = 'BottomSheetTextInput';
+  const BottomSheetBackdrop = (props) => React.createElement(RN.View, props);
+  const BottomSheetModalProvider = ({ children }) => children;
+  const useBottomSheetModal = () => ({ dismiss: jest.fn(), dismissAll: jest.fn() });
+
+  return {
+    __esModule: true,
+    default: BottomSheetModal,
+    BottomSheetModal,
+    BottomSheetView,
+    BottomSheetScrollView,
+    BottomSheetTextInput,
+    BottomSheetBackdrop,
+    BottomSheetModalProvider,
+    useBottomSheetModal,
+  };
+});
+
+// Mock react-native-keyboard-controller
+jest.mock('react-native-keyboard-controller', () => {
+  const React = require('react');
+  return {
+    KeyboardProvider: ({ children }) => children,
+    KeyboardAvoidingView: ({ children, ...props }) =>
+      React.createElement(require('react-native').View, props, children),
+    KeyboardAwareScrollView: ({ children, ...props }) =>
+      React.createElement(require('react-native').ScrollView, props, children),
+    useKeyboardHandler: jest.fn(),
+    useReanimatedKeyboardAnimation: jest.fn(() => ({ height: { value: 0 }, progress: { value: 0 } })),
+    KeyboardStickyView: ({ children, ...props }) =>
+      React.createElement(require('react-native').View, props, children),
+    KeyboardToolbar: ({ children, ...props }) =>
+      React.createElement(require('react-native').View, props, children),
+  };
+});
+
 // Mock alarm-bridge-native (Android-only local native module)
 jest.mock('alarm-bridge-native', () => ({
   scheduleNextPulse: jest.fn(() => Promise.resolve()),
