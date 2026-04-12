@@ -5,13 +5,13 @@ export default {
   greeting_evening: 'Goedenavond 🌙',
 
   // Startscherm
-  goal_reached: 'Doel bereikt! Goed losgekoppeld vandaag.',
-  outside_time_awaits: 'Nog {{amount}} offline tijd te gaan vandaag.',
+  goal_reached: 'Doel bereikt! Lekker buiten geweest vandaag.',
+  outside_time_awaits: 'Nog {{amount}} buitentijd te gaan vandaag.',
   remaining_for_goal: 'Nog {{amount}} om je dagdoel te halen.',
   this_week: 'Deze week',
   today: 'vandaag',
   no_sessions_title: 'Nog geen buitentijd geregistreerd.',
-  no_sessions_sub: 'Leg je scherm weg of log het handmatig.',
+  no_sessions_sub: 'Ga naar buiten of log het handmatig.',
   todays_sessions: 'Sessies vandaag',
 
   // Streaks
@@ -93,7 +93,7 @@ export default {
   goals_invalid_daily: 'Voer een waarde in tussen 1 en 720 minuten.',
   goals_invalid_weekly: 'Voer een waarde in tussen 1 en 5040 minuten.',
   goals_who_tip:
-    "De WHO beveelt minimaal 150 minuten matige buitenactiviteit per week aan — dat is zo'n 30 minuten per dag offline zijn.",
+    "De WHO beveelt minimaal 150 minuten matige buitenactiviteit per week aan — dat is zo'n 30 minuten per dag naar buiten gaan.",
 
   // Sessiescherm
   events_tab_approved: 'Goedgekeurd',
@@ -102,7 +102,7 @@ export default {
   events_toggle_confirmed: 'Bevestigd',
   events_toggle_review: 'Te beoordelen',
   events_toggle_rejected: 'Afgewezen',
-  events_none_recorded: 'Geen sessies. Tijd om los te koppelen.',
+  events_none_recorded: 'Geen sessies. Tijd om naar buiten te gaan.',
   events_confidence: 'Zekerheid',
   events_not_outside: '✕ Binnen',
   events_confirm: '✓ Buiten',
@@ -180,7 +180,7 @@ export default {
   settings_reminders_count_per_day: '{{count}}/dag',
   settings_notification_permission_title: 'Meldingstoestemming',
   settings_notification_permission_missing: 'Machtigingen ontbreken — tik om te herstellen',
-  settings_notification_permission_body: 'Nodig om je eraan te herinneren je scherm weg te leggen.',
+  settings_notification_permission_body: 'Nodig om je eraan te herinneren naar buiten te gaan.',
   settings_catchup_label: 'Help me mijn doel halen',
   settings_catchup_sublabel: 'Extra duwtjes in de rug',
   settings_catchup_off: 'Uit',
@@ -190,7 +190,7 @@ export default {
   settings_background_tracking_label: 'Achtergrondmelding',
   settings_background_tracking_sublabel:
     'Uitschakelen via Android Instellingen → Apps → TouchGrass → Meldingen.',
-  settings_app_sublabel: 'Jouw offline assistent',
+  settings_app_sublabel: 'Jouw buiten-assistent',
   settings_privacy: 'Privacy',
   settings_privacy_sublabel: 'Geen tracking. Je data is van jou.',
   settings_privacy_hint: 'Tik om ons privacybeleid te lezen',
@@ -249,7 +249,7 @@ export default {
   notif_location_suggestion_title: '📍 Nieuwe plek',
   notif_location_suggestion_body: 'TouchGrass heeft lokaal een nieuwe plek gedetecteerd.',
 
-  manual_title: 'Offline tijd loggen',
+  manual_title: 'Buitentijd loggen',
   manual_tab_log: '📝 Achteraf loggen',
   manual_tab_timer: '⏱ Timer starten',
   manual_start_time: 'Starttijd',
@@ -257,7 +257,7 @@ export default {
   manual_preview: 'Overzicht',
   manual_log_btn: '✓ Log sessie',
   manual_timer_ready: 'Tik op start en leg je telefoon weg',
-  manual_timer_running: 'Timer loopt — geniet offline! 🌿',
+  manual_timer_running: 'Timer loopt — geniet van buiten! 🌿',
   manual_timer_start: '🌿 Ik ga naar buiten',
   manual_timer_stop: '✓ Ik ben terug',
   manual_timer_cancel: 'Annuleren',
@@ -270,8 +270,8 @@ export default {
   intro_next: 'Volgende',
   intro_get_started: 'Start',
   intro_welcome_title: 'Welkom bij TouchGrass',
-  intro_welcome_body: 'Jouw privéhulp om los te koppelen van je scherm.',
-  intro_welcome_feature_1: 'Volg offline tijd 100% lokaal',
+  intro_welcome_body: 'Jouw privéhulp om vaker naar buiten te gaan.',
+  intro_welcome_feature_1: 'Volg buitentijd 100% lokaal',
   intro_welcome_feature_2: 'Stel doelen in',
   intro_welcome_feature_3: 'Ontvang rustige reminders',
   intro_welcome_feature_4: 'Je data verlaat je toestel nooit',
@@ -300,7 +300,7 @@ export default {
   intro_location_known_set_work_done: '🏢 Werk ingesteld ✓',
   intro_location_known_hint: 'Aanpassen kan later via Instellingen.',
   intro_notifications_title: 'Meldingen',
-  intro_notifications_body: 'Krijg een zetje om je scherm te verlaten.',
+  intro_notifications_body: 'Krijg een zetje om naar buiten te gaan.',
   intro_notifications_why_title: 'Waarom dit nodig is?',
   intro_notifications_why_body: 'We leren je patronen lokaal en storen niet onnodig.',
   intro_notifications_hint: 'Volledig optioneel.',
@@ -317,9 +317,9 @@ export default {
   intro_calendar_buffer_label: 'Afsprakenbuffer',
   intro_calendar_buffer_desc: 'Geen meldingen vlak voor afspraken',
   intro_calendar_duration_label: 'Blokkeer buitentijd',
-  intro_calendar_duration_desc: 'Zet offline tijd direct in je agenda',
+  intro_calendar_duration_desc: 'Zet buitentijd direct in je agenda',
   intro_ready_title: 'Je bent klaar!',
-  intro_ready_body: 'Tijd om offline te gaan.',
+  intro_ready_body: 'Tijd om naar buiten te gaan.',
   intro_ready_tip_title: 'Tip',
   intro_ready_tip_body: 'Je kunt ook handmatig loggen als je je telefoon helemaal thuislaat.',
   intro_ready_checklist_title: 'Checklist',
@@ -328,32 +328,32 @@ export default {
   intro_ready_checklist_item_notifications: 'Reminders.',
   intro_ready_checklist_item_calendar: 'Agenda.',
   intro_ready_widget_title: 'Widget',
-  intro_ready_widget_body: 'Check je offline doelen direct vanaf je startscherm.',
+  intro_ready_widget_body: 'Check je buitendoelen direct vanaf je startscherm.',
 
   // Meldingstitels (willekeurig gekozen)
-  notif_title_1: '🌿 Tijd om offline te gaan!',
-  notif_title_2: '☀️ Scherm uit, naar buiten',
+  notif_title_1: '🌿 Tijd om naar buiten te gaan!',
+  notif_title_2: '☀️ Ga naar buiten!',
   notif_title_3: '🌱 Frisse lucht wacht',
   notif_title_4: '👟 Telefoon weg en gaan',
   notif_title_5: '🌳 De natuur roept',
 
   // Meldingsteksten
   notif_body_none: 'Je zat vandaag alleen maar binnen. Tijd voor een pauze!',
-  notif_body_halfway: 'Nog {{remaining}} minuten offline te gaan.',
+  notif_body_halfway: 'Nog {{remaining}} minuten buitentijd te gaan.',
   notif_body_almost: 'Bijna! Nog {{remaining}} minuten.',
-  notif_body_done: 'Doel bereikt! Nog een rondje offline? 🌿',
+  notif_body_done: 'Doel bereikt! Nog een rondje buiten? 🌿',
 
   // Reden-beschrijvingen voor herinneringen ("Waarom nu?" uitleg toegevoegd aan meldingstekst)
-  notif_reason_pattern: 'je koppelt vaak af rond deze tijd',
-  notif_reason_lunch: 'perfect voor een schermvrije lunch',
+  notif_reason_pattern: 'je gaat vaak naar buiten rond deze tijd',
+  notif_reason_lunch: 'perfect voor een lunch buiten',
   notif_reason_after_work: 'maak je hoofd leeg na werk',
-  notif_reason_urgent: 'je hebt je offline doel nog niet gehaald',
-  notif_reason_acted: 'je ging eerder offline op dit moment',
+  notif_reason_urgent: 'je hebt je buitendoel nog niet gehaald',
+  notif_reason_acted: 'je ging eerder naar buiten op dit moment',
   notif_reason_more_often: 'je wilt nu herinnerd worden',
 
   // Streak encouragement for notifications
-  notif_streak_daily: 'Houd je {{count}} dagen offline streak vol!',
-  notif_streak_weekly: 'Behoud je {{count}} weken offline streak!',
+  notif_streak_daily: 'Houd je {{count}} dagen buiten-streak vol!',
+  notif_streak_weekly: 'Behoud je {{count}} weken buiten-streak!',
   notif_streak_daily_at_risk: 'Breek je {{count}} dagen streak niet!',
   notif_streak_weekly_at_risk: 'Breek je {{count}} weken streak niet!',
 
@@ -442,7 +442,7 @@ export default {
   notif_daily_planner_body: 'Open de app om de planning voor vandaag te voltooien.',
 
   // Scheduled notifications
-  scheduled_notif_body: 'Je geplande herinnering om offline te gaan.',
+  scheduled_notif_body: 'Je geplande herinnering om naar buiten te gaan.',
   scheduled_empty: 'Geen geplande herinneringen',
   scheduled_empty_hint: 'Tik op de + knop om een vaste herinnering toe te voegen',
   scheduled_add: 'Toevoegen',
@@ -485,11 +485,11 @@ export default {
   settings_calendar_duration_desc: 'Blokkeer privétijd in je agenda',
   settings_calendar_duration_off: 'Uit',
   settings_calendar_duration_minutes: '{{minutes}} min',
-  settings_calendar_select: 'Zet offline tijd in',
+  settings_calendar_select: 'Zet buitentijd in',
   settings_calendar_select_desc: 'Kies in welke agenda dit wordt opgeslagen',
   settings_calendar_select_title: 'Agenda kiezen',
   settings_calendar_select_touchgrass: 'TouchGrass (lokaal)',
-  calendar_event_title: '🌿 Offline tijd',
+  calendar_event_title: '🌿 Buitentijd',
   calendar_event_notes: 'Lokaal gepland door TouchGrass',
   calendar_touchgrass_name: 'TouchGrass',
 
@@ -497,12 +497,12 @@ export default {
   nav_about_app: 'Over',
   about_intro_title: 'Wat is TouchGrass?',
   about_intro_body:
-    'Je persoonlijke hulp voor digitale rust. We meten de tijd zonder scherm en sturen kalme herinneringen om je los te koppelen.',
+    'Je persoonlijke hulp om vaker naar buiten te gaan. We meten je buitentijd en sturen kalme herinneringen om naar buiten te gaan.',
   about_detection_title: 'Lokale detectie',
   about_detection_body:
     'Geen cloud-tracking. We gebruiken Health Connect of lokaal geofencing via GPS. Beheer dit in Instellingen → Detectie.',
   about_goals_title: 'Doelen',
-  about_goals_body: 'Stel offline doelen in en houd je reeks bij, puur op je eigen toestel.',
+  about_goals_body: 'Stel buitendoelen in en houd je reeks bij, puur op je eigen toestel.',
   about_reminders_title: 'Slimme rust',
   about_reminders_body:
     'We leren lokaal je voorkeuren en checken weer en agenda om je op het beste moment naar buiten te sturen.',
