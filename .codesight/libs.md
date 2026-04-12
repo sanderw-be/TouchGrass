@@ -58,10 +58,13 @@
   - _...1 more_
 - `src/detection/sessionMerger.ts` — function submitSession: (candidate) => Promise<void>, function buildSession: (startTime, endTime, source, confidence, notes?, steps?, distanceMeters?, averageSpeedKmh?) => OutsideSession
 - `src/i18n/index.ts`
+  - function resolveSupportedLocale: (localeCode?) => SupportedLocale
+  - function getDeviceSupportedLocale: () => SupportedLocale
   - function t: (key, options?, unknown>) => string
   - function localeTag: () => string
   - function formatLocalDate: (ms, options?) => string
   - function formatLocalTime: (ms) => string
+  - _...1 more_
 - `src/notifications/notificationManager.ts`
   - function \_resetSchedulingGuards: () => void
   - function logReminderQueueSnapshot: () => Promise<void>

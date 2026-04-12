@@ -3,12 +3,30 @@ import * as ExpoLocalization from 'expo-localization';
 import { uses24HourClock, normalizeAmPm } from '../utils/helpers';
 import en from './en';
 import nl from './nl';
+import de from './de';
+import es from './es';
+import pt from './pt';
+import fr from './fr';
+import ja from './ja';
 
-const i18n = new I18n({ en, nl });
+export const SUPPORTED_LOCALES = ['en', 'nl', 'de', 'es', 'pt', 'fr', 'ja'] as const;
+type SupportedLocale = (typeof SUPPORTED_LOCALES)[number];
+
+export function resolveSupportedLocale(localeCode?: string | null): SupportedLocale {
+  return SUPPORTED_LOCALES.includes((localeCode ?? 'en') as SupportedLocale)
+    ? ((localeCode ?? 'en') as SupportedLocale)
+    : 'en';
+}
+
+export function getDeviceSupportedLocale(): SupportedLocale {
+  const deviceLocale = ExpoLocalization.getLocales?.()?.[0]?.languageCode;
+  return resolveSupportedLocale(deviceLocale);
+}
+
+const i18n = new I18n({ en, nl, de, es, pt, fr, ja });
 
 // Detect device locale, fall back to English
-const deviceLocale = ExpoLocalization.getLocales?.()?.[0]?.languageCode ?? 'en';
-i18n.locale = ['en', 'nl'].includes(deviceLocale) ? deviceLocale : 'en';
+i18n.locale = getDeviceSupportedLocale();
 i18n.enableFallback = true;
 i18n.defaultLocale = 'en';
 

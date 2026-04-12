@@ -19,7 +19,7 @@ import { enableScreens } from 'react-native-screens';
 import 'expo-dev-client';
 import * as Updates from 'expo-updates';
 import { initDatabase, getSetting, setSetting } from './src/storage/database';
-import i18n from './src/i18n';
+import i18n, { getDeviceSupportedLocale, SUPPORTED_LOCALES } from './src/i18n';
 import { initDetection } from './src/detection/index';
 import {
   setupNotificationInfrastructure,
@@ -48,7 +48,7 @@ function AppContent() {
   const { colors } = useTheme();
   const [ready, setReady] = useState(false);
   const [showIntro, setShowIntro] = useState(false);
-  const [locale, setLocaleState] = useState(i18n.locale);
+  const [locale, setLocaleState] = useState('system');
   const [updateStatus, setUpdateStatus] = useState<UpdateSplashStatus | 'ready'>(() =>
     Updates.isEnabled ? 'checking' : 'ready'
   );
@@ -95,9 +95,10 @@ function AppContent() {
   }, []);
 
   const setLocale = useCallback((code: string) => {
-    i18n.locale = code;
-    setSetting('language', code);
-    setLocaleState(code);
+    const languagePreference = code === 'system' ? 'system' : code;
+    i18n.locale = languagePreference === 'system' ? getDeviceSupportedLocale() : languagePreference;
+    setSetting('language', languagePreference);
+    setLocaleState(languagePreference);
   }, []);
 
   // On app foreground: run day planning and goal-reached check as a catch-up
@@ -150,12 +151,17 @@ function AppContent() {
     initDatabase();
 
     // Apply stored language preference if available
-    const storedLanguage = getSetting('language', '');
-    if (['en', 'nl'].includes(storedLanguage)) {
+    const storedLanguage = getSetting('language', 'system');
+    if (storedLanguage === 'system') {
+      i18n.locale = getDeviceSupportedLocale();
+      setLocaleState('system');
+    } else if (SUPPORTED_LOCALES.includes(storedLanguage as (typeof SUPPORTED_LOCALES)[number])) {
       i18n.locale = storedLanguage;
       setLocaleState(storedLanguage);
-    } else if (!storedLanguage) {
-      setSetting('language', i18n.locale);
+    } else {
+      i18n.locale = 'en';
+      setLocaleState('en');
+      setSetting('language', 'en');
     }
 
     // Check if user has completed intro

@@ -16,10 +16,14 @@ jest.mock('../screens/IntroScreen', () => {
   return ({ onComplete }: { onComplete: () => void }) => <Text>IntroScreen</Text>;
 });
 
+const mockGetDeviceSupportedLocale = jest.fn(() => 'en');
 // Mock the i18n module
 jest.mock('../i18n', () => ({
-  locale: 'en',
+  __esModule: true,
+  default: { locale: 'en' },
   t: (key: string) => key,
+  getDeviceSupportedLocale: () => mockGetDeviceSupportedLocale(),
+  SUPPORTED_LOCALES: ['en', 'nl', 'de', 'es', 'pt', 'fr', 'ja'],
 }));
 
 // Mock detection module
@@ -65,6 +69,13 @@ jest.mock('react-native-screens', () => ({
 }));
 
 describe('App', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    const i18n = require('../i18n').default;
+    i18n.locale = 'en';
+    mockGetDeviceSupportedLocale.mockReturnValue('en');
+  });
+
   it('renders the navigator quickly after initialization when intro is completed', async () => {
     // The critical-path init is now synchronous (database + locale + intro check),
     // so the app should reach the navigator without a noticeable loading state.
@@ -102,5 +113,23 @@ describe('App', () => {
     );
 
     expect(queryByText('IntroScreen')).toBeNull();
+  });
+
+  it('follows system language by default when no stored preference exists', async () => {
+    const { getSetting, setSetting } = require('../storage/database');
+    getSetting.mockImplementation((key: string, fallback: string) => {
+      if (key === 'hasCompletedIntro') return '1';
+      if (key === 'language') return fallback;
+      return fallback;
+    });
+
+    render(<App />);
+
+    await waitFor(() => {
+      expect(getSetting).toHaveBeenCalledWith('language', 'system');
+    });
+    expect(setSetting).not.toHaveBeenCalledWith('language', 'system');
+    const i18n = require('../i18n').default;
+    expect(i18n.locale).toBe('en');
   });
 });

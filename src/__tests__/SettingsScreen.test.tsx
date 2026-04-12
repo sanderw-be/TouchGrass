@@ -9,6 +9,7 @@ jest.mock('../i18n', () => ({
   default: { locale: 'en' },
   formatLocalDate: jest.fn(() => ''),
   formatLocalTime: jest.fn(() => ''),
+  getDeviceSupportedLocale: jest.fn(() => 'en'),
 }));
 
 // Mock database
@@ -110,6 +111,52 @@ describe('SettingsScreen', () => {
   it('shows the app version in the About section', async () => {
     const { getByText } = render(<SettingsScreen />);
     await waitFor(() => expect(getByText('v1.2.0')).toBeTruthy());
+  });
+
+  it('shows collapsed language row with current language and "Language"', async () => {
+    const { getByText, queryByText } = render(<SettingsScreen />);
+    await waitFor(() => {
+      expect(getByText('Language')).toBeTruthy();
+    });
+    // Options should be hidden when collapsed
+    expect(queryByText('Deutsch')).toBeNull();
+  });
+
+  it('expands language picker when tapped and shows all options', async () => {
+    const { getByText, getByTestId } = render(<SettingsScreen />);
+    await waitFor(() => expect(getByTestId('language-picker-toggle')).toBeTruthy());
+
+    await act(async () => {
+      fireEvent.press(getByTestId('language-picker-toggle'));
+    });
+
+    await waitFor(() => {
+      expect(getByText('settings_theme_system (English)')).toBeTruthy();
+      expect(getByText('Deutsch')).toBeTruthy();
+      expect(getByText('Español')).toBeTruthy();
+      expect(getByText('Português (Portugal)')).toBeTruthy();
+      expect(getByText('Français')).toBeTruthy();
+      expect(getByText('日本語')).toBeTruthy();
+    });
+  });
+
+  it('calls setLocale and collapses picker when a language is selected', async () => {
+    const { getByText, getByTestId, queryByText } = render(<SettingsScreen />);
+    await waitFor(() => expect(getByTestId('language-picker-toggle')).toBeTruthy());
+
+    await act(async () => {
+      fireEvent.press(getByTestId('language-picker-toggle'));
+    });
+
+    const systemRow = await waitFor(() => getByText('settings_theme_system (English)'));
+
+    await act(async () => {
+      fireEvent.press(systemRow);
+    });
+
+    expect(mockSetLocale).toHaveBeenCalledWith('system');
+    // Picker should collapse after selection
+    await waitFor(() => expect(queryByText('Deutsch')).toBeNull());
   });
 });
 

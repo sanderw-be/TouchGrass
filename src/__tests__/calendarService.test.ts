@@ -510,7 +510,7 @@ describe('calendarService', () => {
       const start = new Date('2025-06-01T10:00:00');
       const end = new Date(start.getTime() + 15 * 60 * 1000);
       mockGetEvents.mockResolvedValueOnce([
-        { title: '🌿 Outdoor time', startDate: start.toISOString(), endDate: end.toISOString() },
+        { title: '🌿 Outside time', startDate: start.toISOString(), endDate: end.toISOString() },
       ]);
 
       const result = await addOutdoorTimeToCalendar(start, 15);
@@ -938,7 +938,7 @@ describe('calendarService', () => {
         .mockResolvedValueOnce([
           {
             id: 'p1',
-            title: '🌿 Outdoor time',
+            title: '🌿 Outside time',
             startDate: '2025-06-01T10:00:00.000Z',
             endDate: '2025-06-01T10:15:00.000Z',
             allDay: false,
@@ -947,14 +947,14 @@ describe('calendarService', () => {
         .mockResolvedValueOnce([
           {
             id: 'd1',
-            title: '🌿 Outdoor time',
+            title: '🌿 Outside time',
             startDate: '2025-06-01T10:00:00.000Z',
             endDate: '2025-06-01T10:15:00.000Z',
             allDay: false,
           },
           {
             id: 'd2',
-            title: '🌿 Outdoor time',
+            title: '🌿 Outside time',
             startDate: '2025-06-01T11:00:00.000Z',
             endDate: '2025-06-01T11:15:00.000Z',
             allDay: false,
@@ -968,7 +968,7 @@ describe('calendarService', () => {
       expect(mockCreateEvent).toHaveBeenCalledTimes(1);
       expect(mockCreateEvent).toHaveBeenCalledWith(
         'primary-id',
-        expect.objectContaining({ title: '🌿 Outdoor time' })
+        expect.objectContaining({ title: '🌿 Outside time' })
       );
       expect(deleteCalendarMock).toHaveBeenCalledWith('dup-id');
       expect(mockSetSetting).toHaveBeenCalledWith('calendar_touchgrass_id', 'primary-id');
@@ -1040,8 +1040,8 @@ describe('calendarService', () => {
         return fallback;
       });
       mockGetEvents.mockResolvedValue([
-        { id: 'ev-1', title: '🌿 Outdoor time' },
-        { id: 'ev-2', title: '🌿 Outdoor time' },
+        { id: 'ev-1', title: '🌿 Outside time' },
+        { id: 'ev-2', title: '🌿 Outside time' },
       ]);
 
       const from = new Date('2026-03-14T08:00:00');
@@ -1074,7 +1074,7 @@ describe('calendarService', () => {
         if (key === 'calendar_touchgrass_id') return 'cal-123';
         return fallback;
       });
-      mockGetEvents.mockResolvedValue([{ id: 'ev-gone', title: '🌿 Outdoor time' }]);
+      mockGetEvents.mockResolvedValue([{ id: 'ev-gone', title: '🌿 Outside time' }]);
       mockDeleteEvent.mockRejectedValue(new Error('already deleted'));
 
       // Should not throw
