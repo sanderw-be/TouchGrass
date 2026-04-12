@@ -11,7 +11,7 @@ export default {
   this_week: 'Cette semaine',
   today: "aujourd'hui",
   no_sessions_title: 'Aucun temps extérieur enregistré.',
-  no_sessions_sub: 'Sortez prendre l\'air ou entrez-le manuellement.',
+  no_sessions_sub: "Sortez prendre l'air ou entrez-le manuellement.",
   todays_sessions: 'Séances du jour',
 
   // Streaks
@@ -92,8 +92,7 @@ export default {
   goals_invalid_title: 'Invalide',
   goals_invalid_daily: 'Entre 1 et 720 minutes.',
   goals_invalid_weekly: 'Entre 1 et 5040 minutes.',
-  goals_who_tip:
-    "L'OMS recommande 150 min par semaine. Soit environ 30 min dehors par jour.",
+  goals_who_tip: "L'OMS recommande 150 min par semaine. Soit environ 30 min dehors par jour.",
 
   // Events screen
   events_tab_approved: 'Approuvé',
@@ -180,7 +179,7 @@ export default {
   settings_reminders_count_per_day: '{{count}}/jour',
   settings_notification_permission_title: 'Notifications',
   settings_notification_permission_missing: 'Manquant',
-  settings_notification_permission_body: "Pour vous inciter à sortir.",
+  settings_notification_permission_body: 'Pour vous inciter à sortir.',
   settings_catchup_label: "Aide-moi à l'atteindre",
   settings_catchup_sublabel: 'Rappels supplémentaires',
   settings_catchup_off: 'Non',
@@ -298,7 +297,7 @@ export default {
   intro_location_known_set_work_done: '🏢 Travail ✓',
   intro_location_known_hint: 'Modifiable dans les Réglages.',
   intro_notifications_title: 'Alertes douces',
-  intro_notifications_body: "Un murmure pour aller dehors.",
+  intro_notifications_body: 'Un murmure pour aller dehors.',
   intro_notifications_why_title: 'Pourquoi ?',
   intro_notifications_why_body: 'Machine learning embarqué pour trouver le bon moment.',
   intro_notifications_hint: 'Facultatif.',
@@ -317,7 +316,7 @@ export default {
   intro_calendar_duration_label: "Temps dehors dans l'agenda",
   intro_calendar_duration_desc: 'Réserver du temps pour soi',
   intro_ready_title: "C'est prêt !",
-  intro_ready_body: 'L\'aventure dehors commence.',
+  intro_ready_body: "L'aventure dehors commence.",
   intro_ready_tip_title: 'Astuce',
   intro_ready_tip_body: 'Laissez votre téléphone chez vous et saisissez manuellement au retour.',
   intro_ready_checklist_title: 'Checklist',
@@ -332,7 +331,7 @@ export default {
   notif_title_1: '🌿 Temps de sortir',
   notif_title_2: "☀️ Prenez l'air",
   notif_title_3: "🌱 L'extérieur vous appelle",
-  notif_title_4: "👟 Filez dehors",
+  notif_title_4: '👟 Filez dehors',
   notif_title_5: '🌳 Pause en plein air',
 
   // Notification bodies
