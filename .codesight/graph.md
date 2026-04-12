@@ -5,7 +5,7 @@
 - `src/storage/database.ts` — imported by **71** files
 - `src/i18n/index.ts` — imported by **45** files
 - `src/context/ThemeContext.tsx` — imported by **30** files
-- `src/utils/theme.ts` — imported by **28** files
+- `src/utils/theme.ts` — imported by **27** files
 - `src/utils/helpers.ts` — imported by **10** files
 - `src/detection/index.ts` — imported by **9** files
 - `src/utils/sessionsChangedEmitter.ts` — imported by **8** files
@@ -28,7 +28,7 @@
 - `src/storage/database.ts` ← `App.tsx`, `src/__tests__/App.test.tsx`, `src/__tests__/App.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx` +66 more
 - `src/i18n/index.ts` ← `App.tsx`, `src/__tests__/App.test.tsx`, `src/__tests__/App.test.tsx`, `src/__tests__/ErrorBoundary.test.tsx`, `src/__tests__/FeedbackSupportScreen.test.tsx` +40 more
 - `src/context/ThemeContext.tsx` ← `App.tsx`, `src/__tests__/ThemeContext.test.tsx`, `src/components/DiagnosticSheet.tsx`, `src/components/EditLocationSheet.tsx`, `src/components/EditSessionSheet.tsx` +25 more
-- `src/utils/theme.ts` ← `src/__tests__/GoalsScreen.test.tsx`, `src/__tests__/ThemeContext.test.tsx`, `src/components/DiagnosticSheet.tsx`, `src/components/EditLocationSheet.tsx`, `src/components/EditSessionSheet.tsx` +23 more
+- `src/utils/theme.ts` ← `src/__tests__/ThemeContext.test.tsx`, `src/components/DiagnosticSheet.tsx`, `src/components/EditLocationSheet.tsx`, `src/components/EditSessionSheet.tsx`, `src/components/ErrorBoundary.tsx` +22 more
 - `src/utils/helpers.ts` ← `src/components/EditSessionSheet.tsx`, `src/components/ManualSessionSheet.tsx`, `src/components/ProgressRing.tsx`, `src/components/ReminderFeedbackModal.tsx`, `src/i18n/index.ts` +5 more
 - `src/detection/index.ts` ← `App.tsx`, `src/__tests__/IntroScreen.test.tsx`, `src/__tests__/IntroScreen.test.tsx`, `src/__tests__/IntroScreen.test.tsx`, `src/__tests__/SettingsScreen.test.tsx` +4 more
 - `src/utils/sessionsChangedEmitter.ts` ← `src/__tests__/EventsScreen.test.tsx`, `src/__tests__/HomeScreen.test.tsx`, `src/__tests__/sessionsChangedEmitter.test.ts`, `src/detection/gpsDetection.ts`, `src/detection/healthConnect.ts` +3 more
