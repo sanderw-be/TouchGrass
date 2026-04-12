@@ -9,7 +9,7 @@ import {
   BackHandler,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BottomSheetBackdrop, BottomSheetModal, BottomSheetScrollView } from '@gorhom/bottom-sheet';
+import { BottomSheetBackdrop, BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
 import { updateSessionTimesAsync, OutsideSession } from '../storage/database';
@@ -131,26 +131,24 @@ export default function EditSessionSheet({ visible, session, onClose, onSessionU
       backdropComponent={renderBackdrop}
       backgroundStyle={{ backgroundColor: colors.mist }}
       handleIndicatorStyle={{ backgroundColor: colors.fog }}
+      keyboardBehavior="interactive"
+      keyboardBlurBehavior="restore"
     >
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.title}>{t('session_edit_title')}</Text>
-        <TouchableOpacity
-          style={styles.closeBtn}
-          onPress={() => bottomSheetRef.current?.dismiss()}
-          testID="sheet-close-btn"
-        >
-          <Ionicons name="close" size={20} color={colors.textSecondary} />
-        </TouchableOpacity>
-      </View>
-
-      <BottomSheetScrollView
-        contentContainerStyle={[
-          styles.content,
-          { paddingBottom: Math.max(insets.bottom, spacing.xxl) },
-        ]}
-        keyboardShouldPersistTaps="handled"
+      <BottomSheetView
+        style={[styles.content, { paddingBottom: Math.max(insets.bottom, spacing.xxl) }]}
       >
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.title}>{t('session_edit_title')}</Text>
+          <TouchableOpacity
+            style={styles.closeBtn}
+            onPress={() => bottomSheetRef.current?.dismiss()}
+            testID="sheet-close-btn"
+          >
+            <Ionicons name="close" size={20} color={colors.textSecondary} />
+          </TouchableOpacity>
+        </View>
+
         {/* Hint */}
         <View style={styles.hint}>
           <Text style={styles.hintText}>{t('session_edit_hint')}</Text>
@@ -232,7 +230,7 @@ export default function EditSessionSheet({ visible, session, onClose, onSessionU
         <TouchableOpacity style={styles.primaryBtn} onPress={handleSave}>
           <Text style={styles.primaryBtnText}>{t('session_edit_save')}</Text>
         </TouchableOpacity>
-      </BottomSheetScrollView>
+      </BottomSheetView>
     </BottomSheetModal>
   );
 }
@@ -246,7 +244,6 @@ function makeStyles(
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      padding: spacing.md,
       paddingBottom: spacing.sm,
     },
     title: {

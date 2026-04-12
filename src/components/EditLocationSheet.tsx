@@ -11,8 +11,8 @@ import {
 import {
   BottomSheetBackdrop,
   BottomSheetModal,
-  BottomSheetScrollView,
   BottomSheetTextInput,
+  BottomSheetView,
 } from '@gorhom/bottom-sheet';
 import * as Location from 'expo-location';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -303,26 +303,28 @@ export default function EditLocationSheet({
       enableDynamicSizing
       onChange={handleSheetChange}
       backdropComponent={renderBackdrop}
-      keyboardBehavior="extend"
+      keyboardBehavior="interactive"
       keyboardBlurBehavior="restore"
       backgroundStyle={{ backgroundColor: colors.mist }}
       handleIndicatorStyle={{ backgroundColor: colors.fog }}
     >
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.title}>{title}</Text>
-        <TouchableOpacity style={styles.closeBtn} onPress={() => bottomSheetRef.current?.dismiss()}>
-          <Text style={styles.closeBtnText}>✕</Text>
-        </TouchableOpacity>
-      </View>
-
-      <BottomSheetScrollView
-        contentContainerStyle={[
+      <BottomSheetView
+        style={[
           styles.contentInner,
           { paddingTop: spacing.sm, paddingBottom: Math.max(insets.bottom, spacing.md) },
         ]}
-        keyboardShouldPersistTaps="handled"
       >
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.title}>{title}</Text>
+          <TouchableOpacity
+            style={styles.closeBtn}
+            onPress={() => bottomSheetRef.current?.dismiss()}
+          >
+            <Text style={styles.closeBtnText}>✕</Text>
+          </TouchableOpacity>
+        </View>
+
         {/* Address — view or editable search */}
         {(coords || addressEditing) && (
           <View style={styles.section}>
@@ -482,7 +484,7 @@ export default function EditLocationSheet({
             </TouchableOpacity>
           </View>
         )}
-      </BottomSheetScrollView>
+      </BottomSheetView>
     </BottomSheetModal>
   );
 }

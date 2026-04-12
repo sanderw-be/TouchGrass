@@ -12,8 +12,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   BottomSheetBackdrop,
   BottomSheetModal,
-  BottomSheetScrollView,
   BottomSheetTextInput,
+  BottomSheetView,
 } from '@gorhom/bottom-sheet';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
@@ -210,10 +210,10 @@ export default function ManualSessionSheet({ visible, onClose, onSessionLogged }
       backdropComponent={renderBackdrop}
       backgroundStyle={{ backgroundColor: colors.mist }}
       handleIndicatorStyle={{ backgroundColor: colors.fog }}
-      keyboardBehavior="extend"
+      keyboardBehavior="interactive"
       keyboardBlurBehavior="restore"
     >
-      <View style={{ paddingBottom: Math.max(insets.bottom, spacing.sm) }}>
+      <BottomSheetView style={{ paddingBottom: Math.max(insets.bottom, spacing.sm) }}>
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.title}>{t('manual_title')}</Text>
@@ -249,10 +249,7 @@ export default function ManualSessionSheet({ visible, onClose, onSessionLogged }
           </TouchableOpacity>
         </View>
 
-        <BottomSheetScrollView
-          contentContainerStyle={styles.content}
-          keyboardShouldPersistTaps="handled"
-        >
+        <View style={styles.content}>
           {/* ── Log past session tab ── */}
           {tab === 'log' && (
             <View>
@@ -386,8 +383,8 @@ export default function ManualSessionSheet({ visible, onClose, onSessionLogged }
               )}
             </View>
           )}
-        </BottomSheetScrollView>
-      </View>
+        </View>
+      </BottomSheetView>
     </BottomSheetModal>
   );
 }

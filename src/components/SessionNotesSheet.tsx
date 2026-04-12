@@ -4,8 +4,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   BottomSheetBackdrop,
   BottomSheetModal,
-  BottomSheetScrollView,
   BottomSheetTextInput,
+  BottomSheetView,
 } from '@gorhom/bottom-sheet';
 import { Ionicons } from '@expo/vector-icons';
 import { updateSessionNotesAsync, OutsideSession } from '../storage/database';
@@ -86,10 +86,10 @@ export default function SessionNotesSheet({ visible, session, onClose, onNoteSav
       backdropComponent={renderBackdrop}
       backgroundStyle={{ backgroundColor: colors.mist }}
       handleIndicatorStyle={{ backgroundColor: colors.fog }}
-      keyboardBehavior="extend"
+      keyboardBehavior="interactive"
       keyboardBlurBehavior="restore"
     >
-      <View
+      <BottomSheetView
         style={{ paddingBottom: Math.max(insets.bottom, spacing.sm) }}
         testID="session-notes-sheet"
       >
@@ -105,25 +105,23 @@ export default function SessionNotesSheet({ visible, session, onClose, onNoteSav
           </TouchableOpacity>
         </View>
 
-        <BottomSheetScrollView keyboardShouldPersistTaps="handled">
-          {/* Notes input */}
-          <BottomSheetTextInput
-            style={styles.textInput}
-            value={notes}
-            onChangeText={setNotes}
-            placeholder={t('session_notes_placeholder')}
-            placeholderTextColor={colors.textMuted}
-            multiline
-            autoFocus
-            testID="notes-text-input"
-          />
+        {/* Notes input */}
+        <BottomSheetTextInput
+          style={styles.textInput}
+          value={notes}
+          onChangeText={setNotes}
+          placeholder={t('session_notes_placeholder')}
+          placeholderTextColor={colors.textMuted}
+          multiline
+          autoFocus
+          testID="notes-text-input"
+        />
 
-          {/* Save button */}
-          <TouchableOpacity style={styles.primaryBtn} onPress={handleSave} testID="notes-save-btn">
-            <Text style={styles.primaryBtnText}>{t('session_notes_save')}</Text>
-          </TouchableOpacity>
-        </BottomSheetScrollView>
-      </View>
+        {/* Save button */}
+        <TouchableOpacity style={styles.primaryBtn} onPress={handleSave} testID="notes-save-btn">
+          <Text style={styles.primaryBtnText}>{t('session_notes_save')}</Text>
+        </TouchableOpacity>
+      </BottomSheetView>
     </BottomSheetModal>
   );
 }

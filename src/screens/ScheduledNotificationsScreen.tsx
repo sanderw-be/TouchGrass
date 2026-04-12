@@ -314,7 +314,7 @@ export default function ScheduledNotificationsScreen() {
         enableDynamicSizing
         onChange={handleSheetChange}
         backdropComponent={renderBackdrop}
-        keyboardBehavior="extend"
+        keyboardBehavior="interactive"
         keyboardBlurBehavior="restore"
         backgroundStyle={{ backgroundColor: colors.card }}
         handleIndicatorStyle={{ backgroundColor: colors.fog }}
