@@ -5,13 +5,13 @@ export default {
   greeting_evening: 'Good evening 🌙',
 
   // Home screen
-  goal_reached: 'Goal reached! Nice work disconnecting today.',
-  outside_time_awaits: '{{amount}} of offline time awaits today.',
+  goal_reached: 'Goal reached! Nice work getting outside today.',
+  outside_time_awaits: '{{amount}} of outside time awaits today.',
   remaining_for_goal: '{{amount}} more to hit your daily goal.',
   this_week: 'This week',
   today: 'today',
   no_sessions_title: 'No outside time recorded yet.',
-  no_sessions_sub: 'Step away from the screen or log it manually.',
+  no_sessions_sub: 'Head outside or log it manually.',
   todays_sessions: "Today's sessions",
 
   // Streaks
@@ -93,7 +93,7 @@ export default {
   goals_invalid_daily: 'Please enter a value between 1 and 720 minutes.',
   goals_invalid_weekly: 'Please enter a value between 1 and 5040 minutes.',
   goals_who_tip:
-    "The WHO recommends at least 150 minutes of moderate outdoor activity per week — that's about 30 minutes a day on weekdays to unplug.",
+    "The WHO recommends at least 150 minutes of moderate outdoor activity per week — that's about 30 minutes a day on weekdays of fresh air.",
 
   // Events screen
   events_tab_approved: 'Approved',
@@ -179,7 +179,7 @@ export default {
   location_delete_confirm_title: 'Delete location',
   location_delete_confirm_body: 'Are you sure you want to delete this location?',
   settings_reminders_label: 'Smart reminders',
-  settings_reminders_sublabel: 'Gentle local nudges to step away from the screen.',
+  settings_reminders_sublabel: 'Gentle local nudges to get outside.',
   settings_reminders_count_off: 'Off',
   settings_reminders_count_per_day: '{{count}}/day',
   settings_notification_permission_title: 'Notification Permission',
@@ -195,7 +195,7 @@ export default {
   settings_background_tracking_label: 'Background tracking notification',
   settings_background_tracking_sublabel:
     'The persistent notification showing while GPS is active. Disable it via Android Settings → Apps → TouchGrass → Notifications.',
-  settings_app_sublabel: 'Your offline time companion',
+  settings_app_sublabel: 'Your outdoor time companion',
   settings_privacy: 'Privacy',
   settings_privacy_sublabel: 'Zero tracking. Your data stays yours.',
   settings_privacy_hint: 'Tap to read our privacy policy',
@@ -203,7 +203,7 @@ export default {
   settings_clear_data_sublabel: 'Permanently wipe all sessions and settings',
   settings_clear_data_confirm_title: 'Clear all data',
   settings_clear_data_confirm_body:
-    'This will permanently delete all your offline sessions, goals, and settings. This cannot be undone.',
+    'This will permanently delete all your outdoor sessions, goals, and settings. This cannot be undone.',
   settings_clear_cancel: 'Cancel',
   settings_clear_delete: 'Delete',
   settings_clear_data_success_title: 'Data cleared',
@@ -257,19 +257,19 @@ export default {
   notif_location_suggestion_body:
     'TouchGrass detected a place you visit often. Tap to review and name it.',
 
-  manual_title: 'Log offline time',
+  manual_title: 'Log outside time',
   manual_tab_log: '📝 Log past session',
   manual_tab_timer: '⏱ Start timer',
   manual_start_time: 'Start time',
   manual_end_time: 'End time',
   manual_preview: 'Session preview',
   manual_log_btn: '✓ Log session',
-  manual_timer_ready: 'Tap start to step away',
+  manual_timer_ready: 'Tap start to head outside',
   manual_timer_running: 'Timer running — leave the phone behind! 🌿',
   manual_timer_start: "🌿 I'm heading outside",
   manual_timer_stop: "✓ I'm back",
   manual_timer_cancel: 'Cancel',
-  manual_timer_stopped_hint: 'Timer stopped — review your offline time before saving.',
+  manual_timer_stopped_hint: 'Timer stopped — review your outside time before saving.',
   manual_invalid_title: 'Invalid time range',
   manual_invalid_body:
     'Please make sure the end time is after the start time and the session is under 12 hours.',
@@ -279,8 +279,8 @@ export default {
   intro_next: 'Next',
   intro_get_started: 'Get Started',
   intro_welcome_title: 'Welcome to TouchGrass',
-  intro_welcome_body: 'Your private companion for disconnecting and tracking outdoor time.',
-  intro_welcome_feature_1: 'Track offline time locally',
+  intro_welcome_body: 'Your private companion for tracking your outdoor time.',
+  intro_welcome_feature_1: 'Track outside time locally',
   intro_welcome_feature_2: 'Set and monitor daily goals',
   intro_welcome_feature_3: 'Get smart, gentle reminders',
   intro_welcome_feature_4: 'Your data never leaves your device',
@@ -310,7 +310,7 @@ export default {
   intro_location_known_set_work_done: '🏢 Work set ✓',
   intro_location_known_hint: 'You can adjust these in Settings → Known Locations.',
   intro_notifications_title: 'Reminders',
-  intro_notifications_body: 'Get gentle nudges to step away when you need them most.',
+  intro_notifications_body: 'Get gentle nudges to go outside when you need them most.',
   intro_notifications_why_title: 'Why do we need this?',
   intro_notifications_why_body:
     'Smart reminders learn your patterns on-device. You can disable them anytime.',
@@ -329,8 +329,8 @@ export default {
   intro_calendar_button_granted: 'Calendar Connected ✓',
   intro_calendar_buffer_label: 'Meeting buffer',
   intro_calendar_buffer_desc: 'Skip reminders when a meeting starts within this window',
-  intro_calendar_duration_label: 'Add offline time to calendar',
-  intro_calendar_duration_desc: 'Automatically block out time to disconnect',
+  intro_calendar_duration_label: 'Add outside time to calendar',
+  intro_calendar_duration_desc: 'Automatically block out time to go outside',
   intro_ready_title: "You're all set!",
   intro_ready_body: 'Time to put the phone down and head outside.',
   intro_ready_tip_title: 'Quick tip',
@@ -345,29 +345,29 @@ export default {
   intro_ready_widget_body: 'Add the widget to see progress without opening the app.',
 
   // Notification titles (randomly picked)
-  notif_title_1: '🌿 Time to unplug!',
+  notif_title_1: '🌿 Time to head outside!',
   notif_title_2: '☀️ Step outside for a bit',
   notif_title_3: '🌱 Fresh air awaits',
-  notif_title_4: '👟 Leave the screen behind',
+  notif_title_4: '👟 Lace up and go',
   notif_title_5: '🌳 The outdoors is calling',
 
   // Notification bodies
-  notif_body_none: "You haven't been outside yet today. Go disconnect for a bit!",
-  notif_body_halfway: '{{remaining}} minutes of offline time to go.',
+  notif_body_none: "You haven't been outside yet today. Time to head outside!",
+  notif_body_halfway: '{{remaining}} minutes of outside time to go.',
   notif_body_almost: 'Almost there — just {{remaining}} more minutes outside.',
-  notif_body_done: 'Goal reached! Feel like leaving your phone behind again? 🌿',
+  notif_body_done: 'Goal reached! Feel like heading outside again? 🌿',
 
   // Reminder reason descriptions ("Why this time?" explanations appended to notification body)
-  notif_reason_pattern: 'you usually disconnect around this time',
-  notif_reason_lunch: "it's a great time for a screen-free lunch",
+  notif_reason_pattern: 'you usually go outside around this time',
+  notif_reason_lunch: "it's a great time for a lunch outside",
   notif_reason_after_work: 'perfect time to clear your head after work',
-  notif_reason_urgent: "you haven't reached your offline goal today",
-  notif_reason_acted: "you've stepped away around this time before",
+  notif_reason_urgent: "you haven't reached your outside goal today",
+  notif_reason_acted: "you've gone outside around this time before",
   notif_reason_more_often: 'you prefer reminders around this time',
 
   // Streak encouragement for notifications
-  notif_streak_daily: 'Keep your {{count}} day offline streak going!',
-  notif_streak_weekly: 'Maintain your {{count}} week offline streak!',
+  notif_streak_daily: 'Keep your {{count}} day outside streak going!',
+  notif_streak_weekly: 'Maintain your {{count}} week outside streak!',
   notif_streak_daily_at_risk: "Don't break your {{count}} day streak!",
   notif_streak_weekly_at_risk: "Don't break your {{count}} week streak!",
 
@@ -384,7 +384,7 @@ export default {
 
   // Notification action confirmation messages (shown briefly after tapping an action button)
   notif_confirm_title: 'TouchGrass',
-  notif_confirm_went_outside: '✅ Got it! Nice work unplugging.',
+  notif_confirm_went_outside: '✅ Got it! Nice work going outside.',
   notif_confirm_snoozed: "⏰ I'll remind you again in 30 minutes.",
   notif_confirm_less_often: "🔕 Got it! I'll remind you less often.",
 
@@ -441,13 +441,13 @@ export default {
   weather_unknown: 'Unknown',
 
   // Notification channel
-  notif_channel_name: 'Offline reminders',
+  notif_channel_name: 'Outside reminders',
   notif_channel_background_name: 'Background tracking',
   notif_channel_background_desc:
     'Shows while TouchGrass is locally tracking your outside time. Can be disabled without affecting reminders.',
   gps_tracking_notif_body: 'Tracking your outside time in the background',
   notif_channel_scheduled_name: 'Scheduled reminders',
-  notif_channel_scheduled_desc: 'Your custom scheduled reminders to step away',
+  notif_channel_scheduled_desc: 'Your custom scheduled reminders to go outside',
   notif_channel_daily_planner_name: 'Daily planner',
   notif_channel_daily_planner_desc:
     'Silent wake-up to reschedule your daily reminders. Can be disabled in Android notification settings.',
@@ -455,7 +455,7 @@ export default {
   notif_daily_planner_body: 'Open the app to complete planning for today.',
 
   // Scheduled notifications
-  scheduled_notif_body: 'Your scheduled reminder to disconnect.',
+  scheduled_notif_body: 'Your scheduled reminder to go outside.',
   scheduled_empty: 'No scheduled reminders yet',
   scheduled_empty_hint: 'Tap the + button to create a recurring reminder',
   scheduled_add: 'Add reminder',
@@ -495,15 +495,15 @@ export default {
   settings_calendar_buffer: 'Meeting buffer',
   settings_calendar_buffer_desc: 'Skip smart reminders when a meeting starts within this window',
   settings_calendar_buffer_minutes: '{{minutes}} minutes',
-  settings_calendar_duration: 'Offline time in calendar',
-  settings_calendar_duration_desc: 'Duration when adding offline time to your calendar',
+  settings_calendar_duration: 'Outside time in calendar',
+  settings_calendar_duration_desc: 'Duration when adding outside time to your calendar',
   settings_calendar_duration_off: 'Off',
   settings_calendar_duration_minutes: '{{minutes}} min',
-  settings_calendar_select: 'Write offline time to',
-  settings_calendar_select_desc: 'Calendar where offline time slots are saved',
+  settings_calendar_select: 'Write outside time to',
+  settings_calendar_select_desc: 'Calendar where outside time slots are saved',
   settings_calendar_select_title: 'Select Calendar',
   settings_calendar_select_touchgrass: 'TouchGrass (local)',
-  calendar_event_title: '🌿 Offline time',
+  calendar_event_title: '🌿 Outside time',
   calendar_event_notes: 'Scheduled by TouchGrass',
   calendar_touchgrass_name: 'TouchGrass',
 
@@ -511,22 +511,22 @@ export default {
   nav_about_app: 'About TouchGrass',
   about_intro_title: 'What is TouchGrass?',
   about_intro_body:
-    'TouchGrass is your private companion for disconnecting. It tracks the time you spend outside locally, helps you set goals, and nudges you to step away from screens.',
+    'TouchGrass is your private companion for getting outside more. It tracks the time you spend outdoors locally, helps you set goals, and gives you gentle reminders.',
   about_detection_title: 'How outdoor time is tracked',
   about_detection_body:
     'TouchGrass uses local detection methods:\n\n• Health Connect — imports step-based activity privately.\n• GPS — detects when you leave a known location via local geofencing.\n\nYou can manage these in Settings → Detection.',
   about_goals_title: 'Goals & progress',
   about_goals_body:
-    'Set a daily offline goal and track your streaks. Your progress stays on your device, visualized on your home screen and History tab.',
+    'Set a daily outdoor goal and track your streaks. Your progress stays on your device, visualized on your home screen and History tab.',
   about_reminders_title: 'Smart reminders',
   about_reminders_body:
-    'Smart reminders learn your habits locally. They check your calendar and local weather to suggest the best time to unplug. Configure these in Settings → Reminders.',
+    'Smart reminders learn your habits locally. They check your calendar and local weather to suggest the best time to go outside. Configure these in Settings → Reminders.',
   about_manual_title: 'Manual logging',
   about_manual_body:
     'Left your phone inside? Log outdoor time manually. Tap the ring to start a live timer or enter a past session.',
   about_widget_title: 'Home screen widget',
   about_widget_body:
-    'Add the widget to glance at your progress without opening the app, keeping you away from your screen.',
+    'Add the widget to glance at your progress without opening the app, without any distractions.',
   about_privacy_title: 'Privacy',
   about_privacy_body:
     'All data stays on your device. Zero tracking. Location data is used strictly for geofencing and never sent to external servers.',
