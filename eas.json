@@ -20,7 +20,10 @@
       }
     },
     "preview-emulator": {
-      "extends": "preview"
+      "extends": "preview",
+      "android": {
+        "buildType": "app-bundle"
+      }
     },
     "production": {
       "android": {
