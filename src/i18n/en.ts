@@ -551,7 +551,7 @@ export default {
 
   // Background Task
   background_task_title: 'Smart Reminders',
-  background_task_desc: 'Finding the best time to remind you to disconnect.',
+  background_task_desc: 'Finding the best time to remind you to go outside.',
 
   // Activity Log screen
   nav_activity_log: 'Activity Log',

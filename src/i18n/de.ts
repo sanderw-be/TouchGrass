@@ -6,7 +6,7 @@ export default {
 
   // Home screen
   goal_reached: 'Ziel erreicht! Gut gemacht, heute abzuschalten.',
-  outside_time_awaits: 'Noch {{amount}} Offline-Zeit warten heute.',
+  outside_time_awaits: 'Noch {{amount}} Draußenzeit übrig heute.',
   remaining_for_goal: 'Noch {{amount}} bis zu deinem Tagesziel.',
   this_week: 'Diese Woche',
   today: 'heute',
@@ -28,7 +28,7 @@ export default {
   ring_timer_info: 'Tippe auf den Ring für den manuellen Timer',
 
   // Widget
-  widget_start_outside: 'Offline-Zeit\nstarten',
+  widget_start_outside: 'Draußenzeit\nstarten',
   widget_back_inside: 'Wieder drinnen',
   widget_started: 'Gestartet',
   widget_loading: 'Lädt…',
@@ -93,7 +93,7 @@ export default {
   goals_invalid_daily: 'Wert zwischen 1 und 720 Minuten.',
   goals_invalid_weekly: 'Wert zwischen 1 und 5040 Minuten.',
   goals_who_tip:
-    'Die WHO empfiehlt wöchentlich 150 Minuten moderate Aktivität im Freien. Das sind ca. 30 Minuten tägliches digitales Detox.',
+    'Die WHO empfiehlt wöchentlich 150 Minuten moderate Aktivität im Freien. Das sind ca. 30 Minuten tägliches Draußensein.',
 
   // Events screen
   events_tab_approved: 'Bestätigt',
@@ -102,7 +102,7 @@ export default {
   events_toggle_confirmed: 'Gesichert',
   events_toggle_review: 'Zur Prüfung',
   events_toggle_rejected: 'Abgelehnt',
-  events_none_recorded: 'Noch keine Offline-Zeit erfasst.',
+  events_none_recorded: 'Noch keine Draußenzeit erfasst.',
   events_confidence: 'Konfidenz',
   events_not_outside: '✕ Drinnen',
   events_confirm: '✓ Draußen',
@@ -181,7 +181,7 @@ export default {
   settings_reminders_count_per_day: '{{count}}/Tag',
   settings_notification_permission_title: 'Benachrichtigungen',
   settings_notification_permission_missing: 'Freigabe fehlt',
-  settings_notification_permission_body: 'Nur für Erinnerungen zum Abschalten.',
+  settings_notification_permission_body: 'Nur für Erinnerungen, nach draußen zu gehen.',
   settings_catchup_label: 'Hilf mir beim Ziel',
   settings_catchup_sublabel: 'Zusätzliche Motivation',
   settings_catchup_off: 'Aus',
@@ -190,7 +190,7 @@ export default {
   settings_catchup_aggressive: 'Fordernd',
   settings_background_tracking_label: 'Hintergrund-Tracking Info',
   settings_background_tracking_sublabel: 'In den Android-Einstellungen abschaltbar.',
-  settings_app_sublabel: 'Dein Offline-Begleiter',
+  settings_app_sublabel: 'Dein Outdoor-Begleiter',
   settings_privacy: 'Datenschutz',
   settings_privacy_sublabel: '100% lokal. Keine Cloud. Kein Tracking.',
   settings_privacy_hint: 'Unsere Datenschutzerklärung lesen',
@@ -249,7 +249,7 @@ export default {
   notif_location_suggestion_title: '📍 Neuer Ort (Lokal)',
   notif_location_suggestion_body: 'Ein neuer häufiger Ort wurde auf dem Gerät erkannt.',
 
-  manual_title: 'Offline-Zeit erfassen',
+  manual_title: 'Draußenzeit erfassen',
   manual_tab_log: '📝 Nachtragen',
   manual_tab_timer: '⏱ Timer starten',
   manual_start_time: 'Startzeit',
@@ -270,8 +270,8 @@ export default {
   intro_next: 'Weiter',
   intro_get_started: 'Loslegen',
   intro_welcome_title: 'Willkommen bei TouchGrass',
-  intro_welcome_body: 'Dein privater Begleiter fürs digitale Detox.',
-  intro_welcome_feature_1: 'Offline-Zeit 100% lokal erfassen',
+  intro_welcome_body: 'Dein privater Begleiter fürs Draußensein.',
+  intro_welcome_feature_1: 'Draußenzeit 100% lokal erfassen',
   intro_welcome_feature_2: 'Ziele setzen',
   intro_welcome_feature_3: 'Diskrete Erinnerungen',
   intro_welcome_feature_4: 'Daten verlassen das Gerät nie',
@@ -291,14 +291,14 @@ export default {
   intro_location_button: 'Standort freigeben',
   intro_location_button_granted: 'Freigegeben ✓',
   intro_location_known_title: 'Lokales Profil',
-  intro_location_known_body: 'Hilft der App, deine Offline-Zeiten genauer zu berechnen.',
+  intro_location_known_body: 'Hilft der App, deine Draußenzeiten genauer zu berechnen.',
   intro_location_known_set_home: 'Zuhause',
   intro_location_known_set_work: 'Arbeit',
   intro_location_known_set_home_done: '🏠 Zuhause ✓',
   intro_location_known_set_work_done: '🏢 Arbeit ✓',
   intro_location_known_hint: 'Später anpassbar in den Einstellungen.',
   intro_notifications_title: 'Erinnerungen',
-  intro_notifications_body: 'Lass dich ans Abschalten erinnern.',
+  intro_notifications_body: 'Lass dich ans Rausgehen erinnern.',
   intro_notifications_why_title: 'Warum das?',
   intro_notifications_why_body: 'Rein lokales Muster-Lernen.',
   intro_notifications_hint: 'Komplett optional.',
@@ -315,7 +315,7 @@ export default {
   intro_calendar_buffer_label: 'Puffer',
   intro_calendar_buffer_desc: 'Keine Störung vor Terminen',
   intro_calendar_duration_label: 'Blocker eintragen',
-  intro_calendar_duration_desc: 'Offline-Zeit im Kalender reservieren',
+  intro_calendar_duration_desc: 'Draußenzeit im Kalender reservieren',
   intro_ready_title: 'Alles bereit!',
   intro_ready_body: 'Zeit, das Handy wegzulegen.',
   intro_ready_tip_title: 'Tipp',
@@ -331,26 +331,26 @@ export default {
   // Notification titles (randomly picked)
   notif_title_1: '🌿 Zeit abzuschalten!',
   notif_title_2: '☀️ Raus an die frische Luft',
-  notif_title_3: '🌱 Lass den Bildschirm zurück',
+  notif_title_3: '🌱 Ab nach draußen',
   notif_title_4: '👟 Handy weg, Schuhe an',
   notif_title_5: '🌳 Die Natur ruft',
 
   // Notification bodies
   notif_body_none: 'Du warst heute noch nicht draußen. Zeit für eine Pause!',
-  notif_body_halfway: 'Noch {{remaining}} Minuten Offline-Zeit.',
+  notif_body_halfway: 'Noch {{remaining}} Minuten Draußenzeit.',
   notif_body_almost: 'Fast geschafft! Noch {{remaining}} Minuten.',
-  notif_body_done: 'Ziel erreicht! Möchtest du weiter offline bleiben? 🌿',
+  notif_body_done: 'Ziel erreicht! Möchtest du noch draußen bleiben? 🌿',
 
   // Reminder reason descriptions ("Why this time?" explanations appended to notification body)
   notif_reason_pattern: 'du trennst dich oft um diese Zeit',
-  notif_reason_lunch: 'perfekt für eine Pause ohne Bildschirm',
+  notif_reason_lunch: 'perfekt für eine Pause draußen',
   notif_reason_after_work: 'Kopf frei bekommen nach der Arbeit',
-  notif_reason_urgent: 'dein Offline-Ziel ist noch offen',
+  notif_reason_urgent: 'dein Draußen-Ziel ist noch offen',
   notif_reason_acted: 'du warst um diese Zeit schon mal draußen',
   notif_reason_more_often: 'du wolltest eine Erinnerung',
 
   // Streak encouragement for notifications
-  notif_streak_daily: 'Halte deine {{count}}-Tage-Offline-Serie!',
+  notif_streak_daily: 'Halte deine {{count}}-Tage-Draußen-Serie!',
   notif_streak_weekly: 'Behalte deine {{count}}-Wochen-Serie bei!',
   notif_streak_daily_at_risk: 'Lass deine {{count}}-Tage-Serie nicht abreißen!',
   notif_streak_weekly_at_risk: 'Lass deine {{count}}-Wochen-Serie nicht abreißen!',
@@ -425,19 +425,19 @@ export default {
   weather_unknown: 'Unbekannt',
 
   // Notification channel
-  notif_channel_name: 'Offline-Tipps',
+  notif_channel_name: 'Draußen-Tipps',
   notif_channel_background_name: 'Hintergrund',
   notif_channel_background_desc: 'Sichtbar, solange das Geofencing aktiv ist.',
   gps_tracking_notif_body: 'Lokales Hintergrund-Tracking aktiv',
   notif_channel_scheduled_name: 'Zeitpläne',
-  notif_channel_scheduled_desc: 'Deine festen Offline-Termine',
+  notif_channel_scheduled_desc: 'Deine festen Draußen-Termine',
   notif_channel_daily_planner_name: 'Tagesplaner',
   notif_channel_daily_planner_desc: 'Stummer Check am Morgen. In Android deaktivierbar.',
   notif_daily_planner_title: 'TouchGrass',
   notif_daily_planner_body: 'Öffnen, um den Tag zu planen.',
 
   // Scheduled notifications
-  scheduled_notif_body: 'Geplante Zeit fürs Abschalten.',
+  scheduled_notif_body: 'Geplante Zeit fürs Rausgehen.',
   scheduled_empty: 'Noch nichts geplant',
   scheduled_empty_hint: 'Über + einen Termin hinzufügen',
   scheduled_add: 'Hinzufügen',
@@ -461,7 +461,7 @@ export default {
   scheduled_error_title: 'Fehler',
   scheduled_error_no_days: 'Mindestens einen Tag wählen',
   settings_scheduled_reminders: 'Zeitpläne',
-  settings_scheduled_reminders_sublabel: 'Feste Zeiten zum Abschalten',
+  settings_scheduled_reminders_sublabel: 'Feste Zeiten fürs Rausgehen',
 
   // Calendar integration
   settings_section_calendar: 'Kalender',
@@ -484,7 +484,7 @@ export default {
   settings_calendar_select_desc: 'Zielkalender für Blocker',
   settings_calendar_select_title: 'Wählen',
   settings_calendar_select_touchgrass: 'TouchGrass (Lokal)',
-  calendar_event_title: '🌿 Offline',
+  calendar_event_title: '🌿 Draußen',
   calendar_event_notes: 'Lokal eingetragen',
   calendar_touchgrass_name: 'TouchGrass',
 
@@ -492,7 +492,7 @@ export default {
   nav_about_app: 'Info',
   about_intro_title: 'Was ist das?',
   about_intro_body:
-    'Deine App für mehr Offline-Zeit. Wir messen lokal und erinnern dich dezent ans Abschalten.',
+    'Deine App für mehr Zeit draußen. Wir messen lokal und erinnern dich dezent ans Rausgehen.',
   about_detection_title: 'Wie es funktioniert',
   about_detection_body: 'Lokales Tracking über Health Connect oder GPS (Geofencing). Keine Cloud.',
   about_goals_title: 'Ziele',
@@ -502,7 +502,7 @@ export default {
   about_manual_title: 'Handy zuhause lassen',
   about_manual_body: 'Trage deine Pausen einfach später manuell nach.',
   about_widget_title: 'Homescreen-Widget',
-  about_widget_body: 'Offline-Zeit im Blick, ohne die App zu öffnen.',
+  about_widget_body: 'Draußenzeit im Blick, ohne die App zu öffnen.',
   about_privacy_title: 'Strikter Datenschutz',
   about_privacy_body: 'Alle Daten bleiben hier. Kein externes Tracking, kein Verkauf.',
 
