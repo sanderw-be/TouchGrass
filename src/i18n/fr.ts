@@ -254,7 +254,7 @@ export default {
   manual_end_time: 'Fin',
   manual_preview: 'Aperçu',
   manual_log_btn: '✓ Enregistrer',
-  manual_timer_ready: "Démarrez et posez l'appareil",
+  manual_timer_ready: 'Démarrez et sortez dehors',
   manual_timer_running: 'Sortie en cours ! 🌿',
   manual_timer_start: '🌿 Je sors',
   manual_timer_stop: '✓ Retour',

@@ -116,7 +116,7 @@ describe('SettingsScreen', () => {
   it('shows collapsed language row with current language and "Language"', async () => {
     const { getByText, queryByText } = render(<SettingsScreen />);
     await waitFor(() => {
-      expect(getByText('English / Language')).toBeTruthy();
+      expect(getByText('Language')).toBeTruthy();
     });
     // Options should be hidden when collapsed
     expect(queryByText('Deutsch')).toBeNull();

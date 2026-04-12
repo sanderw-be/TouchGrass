@@ -242,14 +242,6 @@ export default function SettingsScreen() {
     setLanguageOpen((prev) => !prev);
   };
 
-  /** Returns a human-readable label for the currently active language. */
-  const currentLanguageLabel = useMemo(() => {
-    if (locale === 'system') {
-      return LANGUAGE_LABELS[systemLocale] ?? LANGUAGE_LABELS.en;
-    }
-    return LANGUAGE_LABELS[locale] ?? LANGUAGE_LABELS.en;
-  }, [locale, systemLocale]);
-
   const getLanguageOptionLabel = (code: string, label: string, isTranslationKey: boolean) => {
     if (code === 'system') {
       return `${t(label)} (${LANGUAGE_LABELS[systemLocale] ?? LANGUAGE_LABELS.en})`;
@@ -416,7 +408,11 @@ export default function SettingsScreen() {
               <Ionicons name="language-outline" size={20} color={colors.textSecondary} />
             </View>
             <View style={styles.rowContent}>
-              <Text style={styles.rowLabel}>{currentLanguageLabel} / Language</Text>
+              <Text style={styles.rowLabel}>
+                {locale === 'en' || (locale === 'system' && systemLocale === 'en')
+                  ? 'Language'
+                  : `${t('settings_section_language')} / Language`}
+              </Text>
             </View>
             <Ionicons
               name={languageOpen ? 'chevron-up' : 'chevron-down'}

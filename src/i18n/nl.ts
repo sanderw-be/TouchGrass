@@ -256,7 +256,7 @@ export default {
   manual_end_time: 'Eindtijd',
   manual_preview: 'Overzicht',
   manual_log_btn: '✓ Log sessie',
-  manual_timer_ready: 'Tik op start en leg je telefoon weg',
+  manual_timer_ready: 'Tik op start en ga naar buiten',
   manual_timer_running: 'Timer loopt — geniet van buiten! 🌿',
   manual_timer_start: '🌿 Ik ga naar buiten',
   manual_timer_stop: '✓ Ik ben terug',
@@ -334,7 +334,7 @@ export default {
   notif_title_1: '🌿 Tijd om naar buiten te gaan!',
   notif_title_2: '☀️ Ga naar buiten!',
   notif_title_3: '🌱 Frisse lucht wacht',
-  notif_title_4: '👟 Telefoon weg en gaan',
+  notif_title_4: '👟 Schoenen aan en naar buiten',
   notif_title_5: '🌳 De natuur roept',
 
   // Meldingsteksten
@@ -506,7 +506,7 @@ export default {
   about_reminders_title: 'Slimme rust',
   about_reminders_body:
     'We leren lokaal je voorkeuren en checken weer en agenda om je op het beste moment naar buiten te sturen.',
-  about_manual_title: 'Zonder telefoon',
+  about_manual_title: 'Handmatig loggen',
   about_manual_body: 'Telefoon thuisgelaten? Log het achteraf handmatig in of gebruik de timer.',
   about_widget_title: 'Widget',
   about_widget_body: 'Houd je doelen in de gaten zonder de app in te hoeven.',

@@ -338,7 +338,7 @@ export default {
   notif_body_none: 'Aún no has salido. ¡Sal a estirar las piernas!',
   notif_body_halfway: 'Faltan {{remaining}} minutos al aire libre.',
   notif_body_almost: '¡Casi! Solo {{remaining}} minutos más.',
-  notif_body_done: '¡Meta lograda! ¿Un paseo más sin teléfono? 🌿',
+  notif_body_done: '¡Meta lograda! ¿Otro paseo al aire libre? 🌿',
 
   // Reminder reason descriptions ("Why this time?" explanations appended to notification body)
   notif_reason_pattern: 'sueles salir ahora',

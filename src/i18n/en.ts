@@ -265,7 +265,7 @@ export default {
   manual_preview: 'Session preview',
   manual_log_btn: '✓ Log session',
   manual_timer_ready: 'Tap start to head outside',
-  manual_timer_running: 'Timer running — leave the phone behind! 🌿',
+  manual_timer_running: 'Timer running — enjoy the outdoors! 🌿',
   manual_timer_start: "🌿 I'm heading outside",
   manual_timer_stop: "✓ I'm back",
   manual_timer_cancel: 'Cancel',
@@ -332,7 +332,7 @@ export default {
   intro_calendar_duration_label: 'Add outside time to calendar',
   intro_calendar_duration_desc: 'Automatically block out time to go outside',
   intro_ready_title: "You're all set!",
-  intro_ready_body: 'Time to put the phone down and head outside.',
+  intro_ready_body: 'Time to head outside.',
   intro_ready_tip_title: 'Quick tip',
   intro_ready_tip_body:
     'You can always log sessions manually if you leave your phone behind entirely.',
