@@ -505,123 +505,125 @@ export default function GoalsScreen() {
 
           {/* Daily goal */}
           <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <View>
-              <Text style={styles.cardTitle}>{t('daily_goal')}</Text>
-              <Text style={styles.cardValue}>{formatMinutes(dailyTarget)}</Text>
+            <View style={styles.cardHeader}>
+              <View>
+                <Text style={styles.cardTitle}>{t('daily_goal')}</Text>
+                <Text style={styles.cardValue}>{formatMinutes(dailyTarget)}</Text>
+              </View>
+              <TouchableOpacity
+                style={styles.editButton}
+                onPress={() => {
+                  setEditingDaily(!editingDaily);
+                  setEditingWeekly(false);
+                  setCustomDaily(String(dailyTarget));
+                }}
+              >
+                <Text style={styles.editButtonText}>
+                  {editingDaily ? t('goals_cancel') : t('goals_edit')}
+                </Text>
+              </TouchableOpacity>
             </View>
-            <TouchableOpacity
-              style={styles.editButton}
-              onPress={() => {
-                setEditingDaily(!editingDaily);
-                setEditingWeekly(false);
-                setCustomDaily(String(dailyTarget));
-              }}
-            >
-              <Text style={styles.editButtonText}>
-                {editingDaily ? t('goals_cancel') : t('goals_edit')}
-              </Text>
-            </TouchableOpacity>
-          </View>
 
-          {editingDaily && (
-            <View style={styles.editor}>
-              <Text style={styles.editorLabel}>{t('goals_quick_select')}</Text>
-              <View style={styles.presets}>
-                {DAILY_PRESETS.map((p) => (
+            {editingDaily && (
+              <View style={styles.editor}>
+                <Text style={styles.editorLabel}>{t('goals_quick_select')}</Text>
+                <View style={styles.presets}>
+                  {DAILY_PRESETS.map((p) => (
+                    <TouchableOpacity
+                      key={p}
+                      style={[styles.preset, dailyTarget === p && styles.presetActive]}
+                      onPress={() => saveDaily(p)}
+                    >
+                      <Text
+                        style={[styles.presetText, dailyTarget === p && styles.presetTextActive]}
+                      >
+                        {formatMinutes(p)}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+                <Text style={styles.editorLabel}>{t('goals_custom_minutes')}</Text>
+                <View style={styles.customRow}>
+                  <TextInput
+                    style={styles.input}
+                    value={customDaily}
+                    onChangeText={setCustomDaily}
+                    keyboardType="number-pad"
+                    placeholder={t('goals_placeholder_daily')}
+                    placeholderTextColor={colors.textMuted}
+                    maxLength={4}
+                  />
                   <TouchableOpacity
-                    key={p}
-                    style={[styles.preset, dailyTarget === p && styles.presetActive]}
-                    onPress={() => saveDaily(p)}
+                    style={styles.saveButton}
+                    onPress={() => saveDaily(parseInt(customDaily, 10))}
                   >
-                    <Text style={[styles.presetText, dailyTarget === p && styles.presetTextActive]}>
-                      {formatMinutes(p)}
-                    </Text>
+                    <Text style={styles.saveButtonText}>{t('goals_save')}</Text>
                   </TouchableOpacity>
-                ))}
+                </View>
               </View>
-              <Text style={styles.editorLabel}>{t('goals_custom_minutes')}</Text>
-              <View style={styles.customRow}>
-                <TextInput
-                  style={styles.input}
-                  value={customDaily}
-                  onChangeText={setCustomDaily}
-                  keyboardType="number-pad"
-                  placeholder={t('goals_placeholder_daily')}
-                  placeholderTextColor={colors.textMuted}
-                  maxLength={4}
-                />
-                <TouchableOpacity
-                  style={styles.saveButton}
-                  onPress={() => saveDaily(parseInt(customDaily, 10))}
-                >
-                  <Text style={styles.saveButtonText}>{t('goals_save')}</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          )}
-        </View>
+            )}
+          </View>
 
           {/* Weekly goal */}
           <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <View>
-              <Text style={styles.cardTitle}>{t('weekly_goal')}</Text>
-              <Text style={styles.cardValue}>{formatMinutes(weeklyTarget)}</Text>
+            <View style={styles.cardHeader}>
+              <View>
+                <Text style={styles.cardTitle}>{t('weekly_goal')}</Text>
+                <Text style={styles.cardValue}>{formatMinutes(weeklyTarget)}</Text>
+              </View>
+              <TouchableOpacity
+                style={styles.editButton}
+                onPress={() => {
+                  setEditingWeekly(!editingWeekly);
+                  setEditingDaily(false);
+                  setCustomWeekly(String(weeklyTarget));
+                }}
+              >
+                <Text style={styles.editButtonText}>
+                  {editingWeekly ? t('goals_cancel') : t('goals_edit')}
+                </Text>
+              </TouchableOpacity>
             </View>
-            <TouchableOpacity
-              style={styles.editButton}
-              onPress={() => {
-                setEditingWeekly(!editingWeekly);
-                setEditingDaily(false);
-                setCustomWeekly(String(weeklyTarget));
-              }}
-            >
-              <Text style={styles.editButtonText}>
-                {editingWeekly ? t('goals_cancel') : t('goals_edit')}
-              </Text>
-            </TouchableOpacity>
-          </View>
 
-          {editingWeekly && (
-            <View style={styles.editor}>
-              <Text style={styles.editorLabel}>{t('goals_quick_select')}</Text>
-              <View style={styles.presets}>
-                {WEEKLY_PRESETS.map((p) => (
-                  <TouchableOpacity
-                    key={p}
-                    style={[styles.preset, weeklyTarget === p && styles.presetActive]}
-                    onPress={() => saveWeekly(p)}
-                  >
-                    <Text
-                      style={[styles.presetText, weeklyTarget === p && styles.presetTextActive]}
+            {editingWeekly && (
+              <View style={styles.editor}>
+                <Text style={styles.editorLabel}>{t('goals_quick_select')}</Text>
+                <View style={styles.presets}>
+                  {WEEKLY_PRESETS.map((p) => (
+                    <TouchableOpacity
+                      key={p}
+                      style={[styles.preset, weeklyTarget === p && styles.presetActive]}
+                      onPress={() => saveWeekly(p)}
                     >
-                      {formatMinutes(p)}
-                    </Text>
+                      <Text
+                        style={[styles.presetText, weeklyTarget === p && styles.presetTextActive]}
+                      >
+                        {formatMinutes(p)}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+                <Text style={styles.editorLabel}>{t('goals_custom_minutes')}</Text>
+                <View style={styles.customRow}>
+                  <TextInput
+                    style={styles.input}
+                    value={customWeekly}
+                    onChangeText={setCustomWeekly}
+                    keyboardType="number-pad"
+                    placeholder={t('goals_placeholder_weekly')}
+                    placeholderTextColor={colors.textMuted}
+                    maxLength={5}
+                  />
+                  <TouchableOpacity
+                    style={styles.saveButton}
+                    onPress={() => saveWeekly(parseInt(customWeekly, 10))}
+                  >
+                    <Text style={styles.saveButtonText}>{t('goals_save')}</Text>
                   </TouchableOpacity>
-                ))}
+                </View>
               </View>
-              <Text style={styles.editorLabel}>{t('goals_custom_minutes')}</Text>
-              <View style={styles.customRow}>
-                <TextInput
-                  style={styles.input}
-                  value={customWeekly}
-                  onChangeText={setCustomWeekly}
-                  keyboardType="number-pad"
-                  placeholder={t('goals_placeholder_weekly')}
-                  placeholderTextColor={colors.textMuted}
-                  maxLength={5}
-                />
-                <TouchableOpacity
-                  style={styles.saveButton}
-                  onPress={() => saveWeekly(parseInt(customWeekly, 10))}
-                >
-                  <Text style={styles.saveButtonText}>{t('goals_save')}</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          )}
-        </View>
+            )}
+          </View>
 
           {/* Reminders */}
           <RemindersSection

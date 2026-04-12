@@ -145,9 +145,7 @@ describe('GoalsScreen', () => {
     const keyboardAvoidingView = UNSAFE_getByType(KeyboardAvoidingView);
 
     expect(scrollView.props.keyboardShouldPersistTaps).toBe('handled');
-    expect(keyboardAvoidingView.props.behavior).toBe(
-      Platform.OS === 'ios' ? 'padding' : 'height'
-    );
+    expect(keyboardAvoidingView.props.behavior).toBe(Platform.OS === 'ios' ? 'padding' : 'height');
   });
 });
 

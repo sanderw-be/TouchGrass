@@ -285,165 +285,169 @@ export default function EditLocationSheet({
             contentContainerStyle={[styles.contentInner, { paddingTop: spacing.sm }]}
             keyboardShouldPersistTaps="handled"
           >
-          {/* Address — view or editable search */}
-          {(coords || addressEditing) && (
-            <View style={styles.section}>
-              <Text style={styles.sectionLabel}>{t('location_edit_address')}</Text>
+            {/* Address — view or editable search */}
+            {(coords || addressEditing) && (
+              <View style={styles.section}>
+                <Text style={styles.sectionLabel}>{t('location_edit_address')}</Text>
 
-              {addressEditing ? (
-                /* Search input */
-                <View>
-                  <View style={styles.addressSearchRow}>
-                    <Text style={styles.addressIcon}>📍</Text>
-                    <TextInput
-                      style={styles.addressInput}
-                      value={addressQuery}
-                      onChangeText={handleAddressQueryChange}
-                      placeholder={t('location_edit_address_search_placeholder')}
-                      placeholderTextColor={colors.textMuted}
-                      autoFocus
-                    />
-                    {addressSearching && <ActivityIndicator size="small" color={colors.grass} />}
-                    <TouchableOpacity
-                      onPress={() => {
-                        setAddressEditing(false);
-                        setAddressQuery('');
-                        setAddressSuggestions([]);
-                      }}
-                    >
-                      <Text style={styles.cancelSearch}>✕</Text>
-                    </TouchableOpacity>
-                  </View>
-
-                  {/* Suggestions list */}
-                  {addressSuggestions.length > 0 && (
-                    <View style={styles.suggestionsList}>
-                      {addressSuggestions.map((s, i) => (
-                        <TouchableOpacity
-                          key={`${s.coords.latitude}-${s.coords.longitude}`}
-                          style={[
-                            styles.suggestionRow,
-                            i < addressSuggestions.length - 1 && styles.suggestionDivider,
-                          ]}
-                          onPress={() => handleSelectSuggestion(s)}
-                        >
-                          <Text style={styles.suggestionIcon}>📍</Text>
-                          <Text style={styles.suggestionText} numberOfLines={2}>
-                            {s.display}
-                          </Text>
-                        </TouchableOpacity>
-                      ))}
+                {addressEditing ? (
+                  /* Search input */
+                  <View>
+                    <View style={styles.addressSearchRow}>
+                      <Text style={styles.addressIcon}>📍</Text>
+                      <TextInput
+                        style={styles.addressInput}
+                        value={addressQuery}
+                        onChangeText={handleAddressQueryChange}
+                        placeholder={t('location_edit_address_search_placeholder')}
+                        placeholderTextColor={colors.textMuted}
+                        autoFocus
+                      />
+                      {addressSearching && <ActivityIndicator size="small" color={colors.grass} />}
+                      <TouchableOpacity
+                        onPress={() => {
+                          setAddressEditing(false);
+                          setAddressQuery('');
+                          setAddressSuggestions([]);
+                        }}
+                      >
+                        <Text style={styles.cancelSearch}>✕</Text>
+                      </TouchableOpacity>
                     </View>
-                  )}
 
-                  {!addressSearching && addressQuery.trim() && addressSuggestions.length === 0 && (
-                    <Text style={styles.noResults}>{t('location_edit_address_no_results')}</Text>
-                  )}
-                </View>
-              ) : (
-                /* Display card — tap to edit */
-                <TouchableOpacity
-                  style={styles.addressCard}
-                  onPress={() => {
-                    setAddressQuery(address ?? '');
-                    setAddressEditing(true);
-                  }}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.addressIcon}>📍</Text>
-                  {addressLoading ? (
-                    <ActivityIndicator
-                      size="small"
-                      color={colors.grass}
-                      style={{ marginLeft: spacing.sm }}
-                    />
-                  ) : (
-                    <>
-                      <Text style={styles.addressText}>
-                        {address ?? t('location_edit_address_unavailable')}
-                      </Text>
-                      <Text style={styles.addressEditHint}>✎</Text>
-                    </>
-                  )}
-                </TouchableOpacity>
-              )}
+                    {/* Suggestions list */}
+                    {addressSuggestions.length > 0 && (
+                      <View style={styles.suggestionsList}>
+                        {addressSuggestions.map((s, i) => (
+                          <TouchableOpacity
+                            key={`${s.coords.latitude}-${s.coords.longitude}`}
+                            style={[
+                              styles.suggestionRow,
+                              i < addressSuggestions.length - 1 && styles.suggestionDivider,
+                            ]}
+                            onPress={() => handleSelectSuggestion(s)}
+                          >
+                            <Text style={styles.suggestionIcon}>📍</Text>
+                            <Text style={styles.suggestionText} numberOfLines={2}>
+                              {s.display}
+                            </Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    )}
 
-              {coords && !addressEditing && (
-                <Text style={styles.hint}>
-                  {`${coords.latitude.toFixed(5)}, ${coords.longitude.toFixed(5)}`}
-                </Text>
-              )}
+                    {!addressSearching &&
+                      addressQuery.trim() &&
+                      addressSuggestions.length === 0 && (
+                        <Text style={styles.noResults}>
+                          {t('location_edit_address_no_results')}
+                        </Text>
+                      )}
+                  </View>
+                ) : (
+                  /* Display card — tap to edit */
+                  <TouchableOpacity
+                    style={styles.addressCard}
+                    onPress={() => {
+                      setAddressQuery(address ?? '');
+                      setAddressEditing(true);
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.addressIcon}>📍</Text>
+                    {addressLoading ? (
+                      <ActivityIndicator
+                        size="small"
+                        color={colors.grass}
+                        style={{ marginLeft: spacing.sm }}
+                      />
+                    ) : (
+                      <>
+                        <Text style={styles.addressText}>
+                          {address ?? t('location_edit_address_unavailable')}
+                        </Text>
+                        <Text style={styles.addressEditHint}>✎</Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+                )}
+
+                {coords && !addressEditing && (
+                  <Text style={styles.hint}>
+                    {`${coords.latitude.toFixed(5)}, ${coords.longitude.toFixed(5)}`}
+                  </Text>
+                )}
+              </View>
+            )}
+
+            {/* Location name */}
+            <View style={styles.section}>
+              <Text style={styles.sectionLabel}>{t('location_edit_label')}</Text>
+              <TextInput
+                style={styles.input}
+                value={label}
+                onChangeText={setLabel}
+                placeholder={t('location_edit_label_placeholder')}
+                placeholderTextColor={colors.textMuted}
+              />
             </View>
-          )}
 
-          {/* Location name */}
-          <View style={styles.section}>
-            <Text style={styles.sectionLabel}>{t('location_edit_label')}</Text>
-            <TextInput
-              style={styles.input}
-              value={label}
-              onChangeText={setLabel}
-              placeholder={t('location_edit_label_placeholder')}
-              placeholderTextColor={colors.textMuted}
-            />
-          </View>
-
-          {/* Radius slider */}
-          <View style={styles.section}>
-            <Text style={styles.sectionLabel}>{t('location_edit_radius')}</Text>
-            <View style={styles.radiusValueRow}>
-              <Text style={styles.radiusValue}>
+            {/* Radius slider */}
+            <View style={styles.section}>
+              <Text style={styles.sectionLabel}>{t('location_edit_radius')}</Text>
+              <View style={styles.radiusValueRow}>
+                <Text style={styles.radiusValue}>
+                  {isImperialUnits()
+                    ? `${Math.round(metersToYards(RADIUS_STEPS_METERS[radiusIdx]))} yd`
+                    : `${RADIUS_STEPS_METERS[radiusIdx]} m`}
+                </Text>
+              </View>
+              <RadiusSlider idx={radiusIdx} onChange={setRadiusIdx} />
+              <Text style={styles.hint}>
                 {isImperialUnits()
-                  ? `${Math.round(metersToYards(RADIUS_STEPS_METERS[radiusIdx]))} yd`
-                  : `${RADIUS_STEPS_METERS[radiusIdx]} m`}
+                  ? t('location_edit_radius_hint_imperial')
+                  : t('location_edit_radius_hint')}
               </Text>
             </View>
-            <RadiusSlider idx={radiusIdx} onChange={setRadiusIdx} />
-            <Text style={styles.hint}>
-              {isImperialUnits()
-                ? t('location_edit_radius_hint_imperial')
-                : t('location_edit_radius_hint')}
-            </Text>
-          </View>
 
-          {/* Indoor/Outdoor toggle */}
-          <View style={styles.section}>
-            <Text style={styles.sectionLabel}>{t('location_edit_type')}</Text>
-            <View style={styles.toggleRow}>
-              <TouchableOpacity
-                style={[styles.toggleBtn, isIndoor && styles.toggleBtnActive]}
-                onPress={() => setIsIndoor(true)}
-              >
-                <Text style={[styles.toggleText, isIndoor && styles.toggleTextActive]}>
-                  🏠 {t('settings_location_indoor')}
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.toggleBtn, !isIndoor && styles.toggleBtnActive]}
-                onPress={() => setIsIndoor(false)}
-              >
-                <Text style={[styles.toggleText, !isIndoor && styles.toggleTextActive]}>
-                  🌳 {t('settings_location_outdoor')}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* Save button */}
-          <View style={styles.section}>
-            <TouchableOpacity style={styles.primaryBtn} onPress={handleSave}>
-              <Text style={styles.primaryBtnText}>{saveLabel}</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Delete button — only for existing saved locations */}
-          {!isNew && location?.id && (
+            {/* Indoor/Outdoor toggle */}
             <View style={styles.section}>
-              <TouchableOpacity style={styles.deleteBtn} onPress={handleDelete}>
-                <Text style={styles.deleteBtnText}>{t('location_delete_btn')}</Text>
+              <Text style={styles.sectionLabel}>{t('location_edit_type')}</Text>
+              <View style={styles.toggleRow}>
+                <TouchableOpacity
+                  style={[styles.toggleBtn, isIndoor && styles.toggleBtnActive]}
+                  onPress={() => setIsIndoor(true)}
+                >
+                  <Text style={[styles.toggleText, isIndoor && styles.toggleTextActive]}>
+                    🏠 {t('settings_location_indoor')}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.toggleBtn, !isIndoor && styles.toggleBtnActive]}
+                  onPress={() => setIsIndoor(false)}
+                >
+                  <Text style={[styles.toggleText, !isIndoor && styles.toggleTextActive]}>
+                    🌳 {t('settings_location_outdoor')}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Save button */}
+            <View style={styles.section}>
+              <TouchableOpacity style={styles.primaryBtn} onPress={handleSave}>
+                <Text style={styles.primaryBtnText}>{saveLabel}</Text>
               </TouchableOpacity>
             </View>
-          )}
+
+            {/* Delete button — only for existing saved locations */}
+            {!isNew && location?.id && (
+              <View style={styles.section}>
+                <TouchableOpacity style={styles.deleteBtn} onPress={handleDelete}>
+                  <Text style={styles.deleteBtnText}>{t('location_delete_btn')}</Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </ScrollView>
         </View>
       </KeyboardAvoidingView>
