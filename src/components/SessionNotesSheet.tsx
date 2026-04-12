@@ -112,11 +112,7 @@ export default function SessionNotesSheet({ visible, session, onClose, onNoteSav
           />
 
           {/* Save button */}
-          <TouchableOpacity
-            style={styles.primaryBtn}
-            onPress={handleSave}
-            testID="notes-save-btn"
-          >
+          <TouchableOpacity style={styles.primaryBtn} onPress={handleSave} testID="notes-save-btn">
             <Text style={styles.primaryBtnText}>{t('session_notes_save')}</Text>
           </TouchableOpacity>
         </BottomSheetScrollView>

@@ -39,8 +39,7 @@ jest.mock('@gorhom/bottom-sheet', () => {
   });
   BottomSheetModal.displayName = 'BottomSheetModal';
 
-  const BottomSheetView = ({ children, ...props }) =>
-    React.createElement(RN.View, props, children);
+  const BottomSheetView = ({ children, ...props }) => React.createElement(RN.View, props, children);
   const BottomSheetScrollView = ({ children, ...props }) =>
     React.createElement(RN.ScrollView, props, children);
   const BottomSheetTextInput = React.forwardRef((props, ref) =>
@@ -74,7 +73,10 @@ jest.mock('react-native-keyboard-controller', () => {
     KeyboardAwareScrollView: ({ children, ...props }) =>
       React.createElement(require('react-native').ScrollView, props, children),
     useKeyboardHandler: jest.fn(),
-    useReanimatedKeyboardAnimation: jest.fn(() => ({ height: { value: 0 }, progress: { value: 0 } })),
+    useReanimatedKeyboardAnimation: jest.fn(() => ({
+      height: { value: 0 },
+      progress: { value: 0 },
+    })),
     KeyboardStickyView: ({ children, ...props }) =>
       React.createElement(require('react-native').View, props, children),
     KeyboardToolbar: ({ children, ...props }) =>

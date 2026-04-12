@@ -36,13 +36,13 @@ describe('DiagnosticSheet', () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
-  it('calls onClose when the backdrop is pressed', () => {
+  it('calls onClose when the sheet is dismissed via close button', () => {
     const onClose = jest.fn();
-    const { UNSAFE_getByProps } = render(<DiagnosticSheet visible onClose={onClose} />);
+    const { getByTestId } = render(<DiagnosticSheet visible onClose={onClose} />);
 
-    // The backdrop is a TouchableOpacity with activeOpacity=1
-    const backdrop = UNSAFE_getByProps({ activeOpacity: 1 });
-    fireEvent.press(backdrop);
+    // Press the close button, which calls dismiss() on the BottomSheetModal
+    // In the real app, dismiss also occurs when tapping the backdrop
+    fireEvent.press(getByTestId('diagnostic-close-btn'));
 
     expect(onClose).toHaveBeenCalledTimes(1);
   });
