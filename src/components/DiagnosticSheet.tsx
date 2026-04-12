@@ -1,14 +1,14 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  Modal,
   TouchableOpacity,
   Share,
   ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { BottomSheetBackdrop, BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet';
 import * as Updates from 'expo-updates';
 import * as Application from 'expo-application';
 import { Ionicons } from '@expo/vector-icons';
@@ -25,6 +25,31 @@ export default function DiagnosticSheet({ visible, onClose }: Props) {
   const { colors, shadows } = useTheme();
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const insets = useSafeAreaInsets();
+  const bottomSheetRef = useRef<BottomSheetModal>(null);
+
+  useEffect(() => {
+    if (visible) {
+      bottomSheetRef.current?.present();
+    } else {
+      bottomSheetRef.current?.dismiss();
+    }
+  }, [visible]);
+
+  const handleSheetChange = useCallback(
+    (index: number) => {
+      if (index === -1) {
+        onClose();
+      }
+    },
+    [onClose]
+  );
+
+  const renderBackdrop = useCallback(
+    (props: React.ComponentProps<typeof BottomSheetBackdrop>) => (
+      <BottomSheetBackdrop {...props} appearsOnIndex={0} disappearsOnIndex={-1} />
+    ),
+    []
+  );
 
   const channel = Updates.channel ?? t('diagnostic_unknown');
   const nativeVersion = Application.nativeApplicationVersion ?? '—';
@@ -70,25 +95,33 @@ export default function DiagnosticSheet({ visible, onClose }: Props) {
   };
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onClose} />
-
-      <View
-        style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, spacing.md) }]}
+    <BottomSheetModal
+      ref={bottomSheetRef}
+      enableDynamicSizing
+      onChange={handleSheetChange}
+      backdropComponent={renderBackdrop}
+      backgroundStyle={{ backgroundColor: colors.card }}
+      handleIndicatorStyle={{ backgroundColor: colors.fog }}
+    >
+      <BottomSheetView
+        style={{
+          paddingHorizontal: spacing.lg,
+          paddingTop: spacing.xs,
+          paddingBottom: Math.max(insets.bottom, spacing.md),
+        }}
         testID="diagnostic-sheet"
       >
-        {/* Drag handle */}
-        <View style={styles.handle} />
-
-        {/* Header */}
         <View style={styles.header}>
           <Text style={styles.title}>{t('diagnostic_title')}</Text>
-          <TouchableOpacity style={styles.closeBtn} onPress={onClose} testID="diagnostic-close-btn">
+          <TouchableOpacity
+            style={styles.closeBtn}
+            onPress={() => bottomSheetRef.current?.dismiss()}
+            testID="diagnostic-close-btn"
+          >
             <Text style={styles.closeBtnText}>✕</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Diagnostic rows */}
         <View style={styles.body}>
           <DiagnosticRow label={t('diagnostic_environment')} value={channel} styles={styles} />
           <DiagnosticRow
@@ -124,7 +157,6 @@ export default function DiagnosticSheet({ visible, onClose }: Props) {
           />
         </View>
 
-        {/* Share / copy diagnostics */}
         <TouchableOpacity
           style={styles.shareBtn}
           onPress={handleShare}
@@ -132,8 +164,8 @@ export default function DiagnosticSheet({ visible, onClose }: Props) {
         >
           <Text style={styles.shareBtnText}>{t('diagnostic_share')}</Text>
         </TouchableOpacity>
-      </View>
-    </Modal>
+      </BottomSheetView>
+    </BottomSheetModal>
   );
 }
 
@@ -166,26 +198,6 @@ function makeStyles(
   shadows: ReturnType<typeof useTheme>['shadows']
 ) {
   return StyleSheet.create({
-    backdrop: {
-      flex: 1,
-      backgroundColor: 'rgba(0,0,0,0.4)',
-    },
-    sheet: {
-      backgroundColor: colors.card,
-      borderTopLeftRadius: radius.lg,
-      borderTopRightRadius: radius.lg,
-      paddingHorizontal: spacing.lg,
-      paddingTop: spacing.xs,
-      ...shadows.medium,
-    },
-    handle: {
-      width: 40,
-      height: 4,
-      backgroundColor: colors.fog,
-      borderRadius: radius.full,
-      alignSelf: 'center',
-      marginBottom: spacing.md,
-    },
     header: {
       flexDirection: 'row',
       alignItems: 'center',
