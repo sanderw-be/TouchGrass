@@ -3,13 +3,16 @@ import {
   View,
   Text,
   StyleSheet,
-  Modal,
   TouchableOpacity,
-  TextInput,
   Alert,
-  ScrollView,
   ActivityIndicator,
 } from 'react-native';
+import {
+  BottomSheetBackdrop,
+  BottomSheetModal,
+  BottomSheetScrollView,
+  BottomSheetTextInput,
+} from '@gorhom/bottom-sheet';
 import * as Location from 'expo-location';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
@@ -75,6 +78,33 @@ export default function EditLocationSheet({
   const { colors, shadows } = useTheme();
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const insets = useSafeAreaInsets();
+  const bottomSheetRef = useRef<BottomSheetModal>(null);
+
+  // Present or dismiss the sheet based on visibility
+  useEffect(() => {
+    if (visible) {
+      bottomSheetRef.current?.present();
+    } else {
+      bottomSheetRef.current?.dismiss();
+    }
+  }, [visible]);
+
+  const handleSheetChange = useCallback(
+    (index: number) => {
+      if (index === -1) {
+        onClose();
+      }
+    },
+    [onClose]
+  );
+
+  const renderBackdrop = useCallback(
+    (props: React.ComponentProps<typeof BottomSheetBackdrop>) => (
+      <BottomSheetBackdrop {...props} appearsOnIndex={0} disappearsOnIndex={-1} />
+    ),
+    []
+  );
+
   const [label, setLabel] = useState('');
   const [radiusIdx, setRadiusIdx] = useState(findRadiusIdx(100));
   const [isIndoor, setIsIndoor] = useState(true);
@@ -258,25 +288,27 @@ export default function EditLocationSheet({
   const saveLabel = isNew || isSuggested ? t('location_edit_approve_confirm') : t('goals_save');
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      {/* Tappable backdrop */}
-      <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onClose} />
-
-      {/* Bottom sheet */}
-      <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, spacing.md) }]}>
-        {/* Drag handle */}
-        <View style={styles.handle} />
-
+    <BottomSheetModal
+      ref={bottomSheetRef}
+      snapPoints={['88%']}
+      onChange={handleSheetChange}
+      backdropComponent={renderBackdrop}
+      keyboardBehavior="interactive"
+      keyboardBlurBehavior="restore"
+      android_keyboardInputMode="adjustResize"
+      backgroundStyle={{ backgroundColor: colors.mist }}
+      handleIndicatorStyle={{ backgroundColor: colors.fog }}
+    >
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.title}>{title}</Text>
-          <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
+          <TouchableOpacity style={styles.closeBtn} onPress={() => bottomSheetRef.current?.dismiss()}>
             <Text style={styles.closeBtnText}>✕</Text>
           </TouchableOpacity>
         </View>
 
-        <ScrollView
-          contentContainerStyle={[styles.contentInner, { paddingTop: spacing.sm }]}
+        <BottomSheetScrollView
+          contentContainerStyle={[styles.contentInner, { paddingTop: spacing.sm, paddingBottom: Math.max(insets.bottom, spacing.md) }]}
           keyboardShouldPersistTaps="handled"
         >
           {/* Address — view or editable search */}
@@ -289,7 +321,7 @@ export default function EditLocationSheet({
                 <View>
                   <View style={styles.addressSearchRow}>
                     <Text style={styles.addressIcon}>📍</Text>
-                    <TextInput
+                    <BottomSheetTextInput
                       style={styles.addressInput}
                       value={addressQuery}
                       onChangeText={handleAddressQueryChange}
@@ -373,7 +405,7 @@ export default function EditLocationSheet({
           {/* Location name */}
           <View style={styles.section}>
             <Text style={styles.sectionLabel}>{t('location_edit_label')}</Text>
-            <TextInput
+            <BottomSheetTextInput
               style={styles.input}
               value={label}
               onChangeText={setLabel}
@@ -438,9 +470,8 @@ export default function EditLocationSheet({
               </TouchableOpacity>
             </View>
           )}
-        </ScrollView>
-      </View>
-    </Modal>
+        </BottomSheetScrollView>
+    </BottomSheetModal>
   );
 }
 
@@ -529,25 +560,6 @@ function makeStyles(
   shadows: ReturnType<typeof useTheme>['shadows']
 ) {
   return StyleSheet.create({
-    backdrop: {
-      flex: 1,
-      backgroundColor: 'rgba(0,0,0,0.4)',
-    },
-    sheet: {
-      backgroundColor: colors.mist,
-      borderTopLeftRadius: radius.lg,
-      borderTopRightRadius: radius.lg,
-      maxHeight: '88%',
-      ...shadows.medium,
-    },
-    handle: {
-      width: 40,
-      height: 4,
-      backgroundColor: colors.fog,
-      borderRadius: radius.full,
-      alignSelf: 'center',
-      marginTop: spacing.sm,
-    },
     header: {
       flexDirection: 'row',
       alignItems: 'center',
