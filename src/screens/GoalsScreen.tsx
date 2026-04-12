@@ -2,7 +2,6 @@ import React, { useState, useCallback, useMemo, useRef } from 'react';
 import {
   View,
   Text,
-  ScrollView,
   TouchableOpacity,
   TextInput,
   Alert,
@@ -11,6 +10,7 @@ import {
   AppState,
   AppStateStatus,
 } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import * as Notifications from 'expo-notifications';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -475,7 +475,7 @@ export default function GoalsScreen() {
         <Text style={styles.headerTitle}>{t('nav_goals')}</Text>
       </View>
 
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <KeyboardAwareScrollView style={styles.container} contentContainerStyle={styles.content}>
         {goalsPermissionIssues.length > 0 && (
           <View style={styles.permissionWarning}>
             <Text style={styles.permissionWarningText}>
@@ -645,7 +645,7 @@ export default function GoalsScreen() {
           onSelectCalendar={handleSelectCalendar}
           onShowCalendarPermissionSheet={showCalendarPermissionSheet}
         />
-      </ScrollView>
+      </KeyboardAwareScrollView>
 
       {permissionSheet && (
         <PermissionExplainerSheet

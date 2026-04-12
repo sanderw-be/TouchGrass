@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -6,11 +6,17 @@ import {
   ScrollView,
   TouchableOpacity,
   Switch,
-  Modal,
-  TextInput,
   Platform,
   Alert,
+  BackHandler,
 } from 'react-native';
+import {
+  BottomSheetBackdrop,
+  BottomSheetModal,
+  BottomSheetTextInput,
+  BottomSheetView,
+} from '@gorhom/bottom-sheet';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import {
@@ -32,6 +38,8 @@ const DAY_LABELS = ['day_sun', 'day_mon', 'day_tue', 'day_wed', 'day_thu', 'day_
 export default function ScheduledNotificationsScreen() {
   const { colors, shadows } = useTheme();
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
+  const insets = useSafeAreaInsets();
+  const bottomSheetRef = useRef<BottomSheetModal>(null);
   const [schedules, setSchedules] = useState<ScheduledNotification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [editingSchedule, setEditingSchedule] = useState<ScheduledNotification | null>(null);
@@ -43,6 +51,37 @@ export default function ScheduledNotificationsScreen() {
   const [label, setLabel] = useState('');
   const [showTimePicker, setShowTimePicker] = useState(false);
   const isFetchingRef = useRef(false);
+
+  // Present or dismiss the sheet based on visibility
+  useEffect(() => {
+    if (isModalVisible) {
+      bottomSheetRef.current?.present();
+    } else {
+      bottomSheetRef.current?.dismiss();
+    }
+  }, [isModalVisible]);
+
+  useEffect(() => {
+    if (!isModalVisible) return;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      bottomSheetRef.current?.dismiss();
+      return true;
+    });
+    return () => sub.remove();
+  }, [isModalVisible]);
+
+  const handleSheetChange = useCallback((index: number) => {
+    if (index === -1) {
+      setIsModalVisible(false);
+    }
+  }, []);
+
+  const renderBackdrop = useCallback(
+    (props: React.ComponentProps<typeof BottomSheetBackdrop>) => (
+      <BottomSheetBackdrop {...props} appearsOnIndex={0} disappearsOnIndex={-1} />
+    ),
+    []
+  );
 
   const loadSchedules = async () => {
     if (isFetchingRef.current) return;
@@ -269,114 +308,112 @@ export default function ScheduledNotificationsScreen() {
         <Text style={styles.addButtonText}>+ {t('scheduled_add')}</Text>
       </TouchableOpacity>
 
-      {/* Edit Modal */}
-      <Modal
-        visible={isModalVisible}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setIsModalVisible(false)}
+      {/* Edit Bottom Sheet */}
+      <BottomSheetModal
+        ref={bottomSheetRef}
+        enableDynamicSizing
+        onChange={handleSheetChange}
+        backdropComponent={renderBackdrop}
+        keyboardBehavior="interactive"
+        keyboardBlurBehavior="restore"
+        backgroundStyle={{ backgroundColor: colors.card }}
+        handleIndicatorStyle={{ backgroundColor: colors.fog }}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>
-              {editingSchedule ? t('scheduled_edit_title') : t('scheduled_add_title')}
-            </Text>
+        <BottomSheetView
+          style={{
+            paddingHorizontal: spacing.md,
+            paddingBottom: Math.max(insets.bottom, spacing.md),
+          }}
+        >
+          <Text style={styles.modalTitle}>
+            {editingSchedule ? t('scheduled_edit_title') : t('scheduled_add_title')}
+          </Text>
 
-            {/* Time Picker */}
-            <View style={styles.formGroup}>
-              <Text style={styles.label}>{t('scheduled_time')}</Text>
-              {Platform.OS === 'ios' ? (
-                <DateTimePicker
-                  value={selectedTime}
-                  mode="time"
-                  display="spinner"
-                  onChange={onTimeChange}
-                  style={styles.timePicker}
-                />
-              ) : (
-                <>
-                  <TouchableOpacity
-                    style={styles.timeButton}
-                    onPress={() => setShowTimePicker(true)}
-                  >
-                    <Text style={styles.timeButtonText}>
-                      {formatTime(selectedTime.getHours(), selectedTime.getMinutes())}
-                    </Text>
-                  </TouchableOpacity>
-                  {showTimePicker && (
-                    <DateTimePicker
-                      value={selectedTime}
-                      mode="time"
-                      is24Hour={uses24HourClock()}
-                      display="default"
-                      onChange={onTimeChange}
-                    />
-                  )}
-                </>
-              )}
-            </View>
-
-            {/* Days Selector */}
-            <View style={styles.formGroup}>
-              <View style={styles.labelRow}>
-                <Text style={styles.label}>{t('scheduled_days')}</Text>
-                <TouchableOpacity onPress={selectAllDays}>
-                  <Text style={styles.selectAllText}>{t('scheduled_select_all')}</Text>
-                </TouchableOpacity>
-              </View>
-              <View style={styles.daysRow}>
-                {[0, 1, 2, 3, 4, 5, 6].map((day) => (
-                  <TouchableOpacity
-                    key={day}
-                    style={[
-                      styles.dayButton,
-                      selectedDays.includes(day) && styles.dayButtonSelected,
-                    ]}
-                    onPress={() => toggleDay(day)}
-                  >
-                    <Text
-                      style={[
-                        styles.dayButtonText,
-                        selectedDays.includes(day) && styles.dayButtonTextSelected,
-                      ]}
-                    >
-                      {t(DAY_LABELS[day])}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-
-            {/* Label Input */}
-            <View style={styles.formGroup}>
-              <Text style={styles.label}>{t('scheduled_label')}</Text>
-              <TextInput
-                style={styles.input}
-                value={label}
-                onChangeText={setLabel}
-                placeholder={t('scheduled_label_placeholder')}
-                placeholderTextColor={colors.textMuted}
+          {/* Time Picker */}
+          <View style={styles.formGroup}>
+            <Text style={styles.label}>{t('scheduled_time')}</Text>
+            {Platform.OS === 'ios' ? (
+              <DateTimePicker
+                value={selectedTime}
+                mode="time"
+                display="spinner"
+                onChange={onTimeChange}
+                style={styles.timePicker}
               />
-            </View>
+            ) : (
+              <>
+                <TouchableOpacity style={styles.timeButton} onPress={() => setShowTimePicker(true)}>
+                  <Text style={styles.timeButtonText}>
+                    {formatTime(selectedTime.getHours(), selectedTime.getMinutes())}
+                  </Text>
+                </TouchableOpacity>
+                {showTimePicker && (
+                  <DateTimePicker
+                    value={selectedTime}
+                    mode="time"
+                    is24Hour={uses24HourClock()}
+                    display="default"
+                    onChange={onTimeChange}
+                  />
+                )}
+              </>
+            )}
+          </View>
 
-            {/* Actions */}
-            <View style={styles.modalActions}>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.cancelButton]}
-                onPress={() => setIsModalVisible(false)}
-              >
-                <Text style={styles.cancelButtonText}>{t('scheduled_cancel')}</Text>
+          {/* Days Selector */}
+          <View style={styles.formGroup}>
+            <View style={styles.labelRow}>
+              <Text style={styles.label}>{t('scheduled_days')}</Text>
+              <TouchableOpacity onPress={selectAllDays}>
+                <Text style={styles.selectAllText}>{t('scheduled_select_all')}</Text>
               </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.saveButton]}
-                onPress={handleSave}
-              >
-                <Text style={styles.saveButtonText}>{t('scheduled_save')}</Text>
-              </TouchableOpacity>
+            </View>
+            <View style={styles.daysRow}>
+              {[0, 1, 2, 3, 4, 5, 6].map((day) => (
+                <TouchableOpacity
+                  key={day}
+                  style={[styles.dayButton, selectedDays.includes(day) && styles.dayButtonSelected]}
+                  onPress={() => toggleDay(day)}
+                >
+                  <Text
+                    style={[
+                      styles.dayButtonText,
+                      selectedDays.includes(day) && styles.dayButtonTextSelected,
+                    ]}
+                  >
+                    {t(DAY_LABELS[day])}
+                  </Text>
+                </TouchableOpacity>
+              ))}
             </View>
           </View>
-        </View>
-      </Modal>
+
+          {/* Label Input */}
+          <View style={styles.formGroup}>
+            <Text style={styles.label}>{t('scheduled_label')}</Text>
+            <BottomSheetTextInput
+              style={styles.input}
+              value={label}
+              onChangeText={setLabel}
+              placeholder={t('scheduled_label_placeholder')}
+              placeholderTextColor={colors.textMuted}
+            />
+          </View>
+
+          {/* Actions */}
+          <View style={styles.modalActions}>
+            <TouchableOpacity
+              style={[styles.modalButton, styles.cancelButton]}
+              onPress={() => bottomSheetRef.current?.dismiss()}
+            >
+              <Text style={styles.cancelButtonText}>{t('scheduled_cancel')}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.modalButton, styles.saveButton]} onPress={handleSave}>
+              <Text style={styles.saveButtonText}>{t('scheduled_save')}</Text>
+            </TouchableOpacity>
+          </View>
+        </BottomSheetView>
+      </BottomSheetModal>
     </View>
   );
 }
@@ -481,18 +518,6 @@ function makeStyles(
       fontSize: 16,
       fontWeight: '700',
       color: '#FFFFFF',
-    },
-    modalOverlay: {
-      flex: 1,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
-      justifyContent: 'flex-end',
-    },
-    modalContent: {
-      backgroundColor: colors.card,
-      borderTopLeftRadius: radius.lg,
-      borderTopRightRadius: radius.lg,
-      padding: spacing.lg,
-      maxHeight: '80%',
     },
     modalTitle: {
       fontSize: 20,

@@ -14,6 +14,8 @@ import { Nunito_600SemiBold } from '@expo-google-fonts/nunito/600SemiBold';
 import { Nunito_700Bold } from '@expo-google-fonts/nunito/700Bold';
 import { Nunito_800ExtraBold } from '@expo-google-fonts/nunito/800ExtraBold';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
+import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { enableScreens } from 'react-native-screens';
 import 'expo-dev-client';
@@ -322,16 +324,20 @@ export default function App() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaProvider>
-        <ErrorBoundary>
-          <ThemeProvider>
-            <ReminderFeedbackProvider>
-              <AppContent />
-              <ReminderFeedbackModal />
-            </ReminderFeedbackProvider>
-          </ThemeProvider>
-        </ErrorBoundary>
-      </SafeAreaProvider>
+      <KeyboardProvider>
+        <BottomSheetModalProvider>
+          <SafeAreaProvider>
+            <ErrorBoundary>
+              <ThemeProvider>
+                <ReminderFeedbackProvider>
+                  <AppContent />
+                  <ReminderFeedbackModal />
+                </ReminderFeedbackProvider>
+              </ThemeProvider>
+            </ErrorBoundary>
+          </SafeAreaProvider>
+        </BottomSheetModalProvider>
+      </KeyboardProvider>
     </GestureHandlerRootView>
   );
 }

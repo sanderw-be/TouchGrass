@@ -1,6 +1,7 @@
-import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, Modal, TouchableOpacity } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, BackHandler } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { BottomSheetBackdrop, BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet';
 import { Ionicons } from '@expo/vector-icons';
 import { spacing, radius } from '../utils/theme';
 import { useTheme } from '../context/ThemeContext';
@@ -57,33 +58,80 @@ export default function PermissionExplainerSheet({
   const { colors, shadows } = useTheme();
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const insets = useSafeAreaInsets();
+  const bottomSheetRef = useRef<BottomSheetModal>(null);
+  // Tracks whether a positive action (open / disable) triggered the dismiss
+  const actionTakenRef = useRef(false);
+
+  useEffect(() => {
+    if (visible) {
+      actionTakenRef.current = false;
+      bottomSheetRef.current?.present();
+    } else {
+      bottomSheetRef.current?.dismiss();
+    }
+  }, [visible]);
+
+  useEffect(() => {
+    if (!visible) return;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      bottomSheetRef.current?.dismiss();
+      return true;
+    });
+    return () => sub.remove();
+  }, [visible]);
+
+  const handleSheetChange = useCallback(
+    (index: number) => {
+      if (index === -1) {
+        if (!actionTakenRef.current) {
+          onCancel?.();
+        }
+        onClose();
+      }
+    },
+    [onCancel, onClose]
+  );
+
+  const renderBackdrop = useCallback(
+    (props: React.ComponentProps<typeof BottomSheetBackdrop>) => (
+      <BottomSheetBackdrop {...props} appearsOnIndex={0} disappearsOnIndex={-1} />
+    ),
+    []
+  );
 
   const handleOpen = () => {
+    actionTakenRef.current = true;
     onOpenSettings();
-    onClose();
+    bottomSheetRef.current?.dismiss();
   };
 
   const handleDisable = () => {
+    actionTakenRef.current = true;
     onDisable?.();
-    onClose();
+    bottomSheetRef.current?.dismiss();
   };
 
   const handleCancel = () => {
-    onCancel?.();
-    onClose();
+    bottomSheetRef.current?.dismiss();
   };
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={handleCancel}>
-      <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={handleCancel} />
-
-      <View
-        style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, spacing.md) }]}
+    <BottomSheetModal
+      ref={bottomSheetRef}
+      enableDynamicSizing
+      onChange={handleSheetChange}
+      backdropComponent={renderBackdrop}
+      backgroundStyle={{ backgroundColor: colors.card }}
+      handleIndicatorStyle={{ backgroundColor: colors.fog }}
+    >
+      <BottomSheetView
+        style={{
+          paddingHorizontal: spacing.lg,
+          paddingTop: spacing.xs,
+          paddingBottom: Math.max(insets.bottom, spacing.md),
+        }}
         testID="permission-explainer-sheet"
       >
-        {/* Drag handle */}
-        <View style={styles.handle} />
-
         {/* Icon */}
         <View style={styles.iconRow}>
           <View style={styles.iconCircle}>
@@ -127,8 +175,8 @@ export default function PermissionExplainerSheet({
         >
           <Text style={styles.cancelBtnText}>{t('settings_permission_cancel')}</Text>
         </TouchableOpacity>
-      </View>
-    </Modal>
+      </BottomSheetView>
+    </BottomSheetModal>
   );
 }
 
@@ -137,26 +185,6 @@ function makeStyles(
   shadows: ReturnType<typeof useTheme>['shadows']
 ) {
   return StyleSheet.create({
-    backdrop: {
-      flex: 1,
-      backgroundColor: 'rgba(0,0,0,0.4)',
-    },
-    sheet: {
-      backgroundColor: colors.card,
-      borderTopLeftRadius: radius.lg,
-      borderTopRightRadius: radius.lg,
-      paddingHorizontal: spacing.lg,
-      paddingTop: spacing.xs,
-      ...shadows.medium,
-    },
-    handle: {
-      width: 40,
-      height: 4,
-      backgroundColor: colors.fog,
-      borderRadius: radius.full,
-      alignSelf: 'center',
-      marginBottom: spacing.lg,
-    },
     iconRow: {
       alignItems: 'center',
       marginBottom: spacing.md,

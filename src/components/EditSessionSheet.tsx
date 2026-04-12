@@ -1,15 +1,15 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  Modal,
   TouchableOpacity,
-  ScrollView,
   Platform,
   Alert,
+  BackHandler,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { BottomSheetBackdrop, BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
 import { updateSessionTimesAsync, OutsideSession } from '../storage/database';
@@ -29,10 +29,28 @@ export default function EditSessionSheet({ visible, session, onClose, onSessionU
   const { colors, shadows } = useTheme();
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const insets = useSafeAreaInsets();
+  const bottomSheetRef = useRef<BottomSheetModal>(null);
   const [startTime, setStartTime] = useState(new Date());
   const [endTime, setEndTime] = useState(new Date());
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
+
+  useEffect(() => {
+    if (visible) {
+      bottomSheetRef.current?.present();
+    } else {
+      bottomSheetRef.current?.dismiss();
+    }
+  }, [visible]);
+
+  useEffect(() => {
+    if (!visible) return;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      bottomSheetRef.current?.dismiss();
+      return true;
+    });
+    return () => sub.remove();
+  }, [visible]);
 
   useEffect(() => {
     if (visible && session) {
@@ -42,6 +60,22 @@ export default function EditSessionSheet({ visible, session, onClose, onSessionU
       setShowEndPicker(false);
     }
   }, [visible, session]);
+
+  const handleSheetChange = useCallback(
+    (index: number) => {
+      if (index === -1) {
+        onClose();
+      }
+    },
+    [onClose]
+  );
+
+  const renderBackdrop = useCallback(
+    (props: React.ComponentProps<typeof BottomSheetBackdrop>) => (
+      <BottomSheetBackdrop {...props} appearsOnIndex={0} disappearsOnIndex={-1} />
+    ),
+    []
+  );
 
   const onStartTimeChange = (event: DateTimePickerEvent, date?: Date) => {
     if (Platform.OS === 'android') {
@@ -90,106 +124,114 @@ export default function EditSessionSheet({ visible, session, onClose, onSessionU
   if (!session) return null;
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onClose} />
-
-      <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, spacing.sm) }]}>
-        {/* Handle */}
-        <View style={styles.handle} />
-
+    <BottomSheetModal
+      ref={bottomSheetRef}
+      enableDynamicSizing
+      onChange={handleSheetChange}
+      backdropComponent={renderBackdrop}
+      backgroundStyle={{ backgroundColor: colors.mist }}
+      handleIndicatorStyle={{ backgroundColor: colors.fog }}
+      keyboardBehavior="interactive"
+      keyboardBlurBehavior="restore"
+    >
+      <BottomSheetView
+        style={[styles.content, { paddingBottom: Math.max(insets.bottom, spacing.xxl) }]}
+      >
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.title}>{t('session_edit_title')}</Text>
-          <TouchableOpacity style={styles.closeBtn} onPress={onClose} testID="sheet-close-btn">
+          <TouchableOpacity
+            style={styles.closeBtn}
+            onPress={() => bottomSheetRef.current?.dismiss()}
+            testID="sheet-close-btn"
+          >
             <Ionicons name="close" size={20} color={colors.textSecondary} />
           </TouchableOpacity>
         </View>
 
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-          {/* Hint */}
-          <View style={styles.hint}>
-            <Text style={styles.hintText}>{t('session_edit_hint')}</Text>
+        {/* Hint */}
+        <View style={styles.hint}>
+          <Text style={styles.hintText}>{t('session_edit_hint')}</Text>
+        </View>
+
+        {/* Start Time */}
+        <Text style={styles.sectionLabel}>{t('manual_start_time')}</Text>
+        {Platform.OS === 'ios' ? (
+          <DateTimePicker
+            value={startTime}
+            mode="time"
+            display="spinner"
+            onChange={onStartTimeChange}
+            style={styles.timePicker}
+          />
+        ) : (
+          <>
+            <TouchableOpacity style={styles.timeButton} onPress={() => setShowStartPicker(true)}>
+              <Text style={styles.timeButtonText}>{formatLocalTime(startTime.getTime())}</Text>
+            </TouchableOpacity>
+            {showStartPicker && (
+              <DateTimePicker
+                value={startTime}
+                mode="time"
+                is24Hour={uses24HourClock()}
+                display="default"
+                onChange={onStartTimeChange}
+              />
+            )}
+          </>
+        )}
+
+        {/* End Time */}
+        <Text style={styles.sectionLabel}>{t('manual_end_time')}</Text>
+        {Platform.OS === 'ios' ? (
+          <DateTimePicker
+            value={endTime}
+            mode="time"
+            display="spinner"
+            onChange={onEndTimeChange}
+            style={styles.timePicker}
+          />
+        ) : (
+          <>
+            <TouchableOpacity style={styles.timeButton} onPress={() => setShowEndPicker(true)}>
+              <Text style={styles.timeButtonText}>{formatLocalTime(endTime.getTime())}</Text>
+            </TouchableOpacity>
+            {showEndPicker && (
+              <DateTimePicker
+                value={endTime}
+                mode="time"
+                is24Hour={uses24HourClock()}
+                display="default"
+                onChange={onEndTimeChange}
+              />
+            )}
+          </>
+        )}
+
+        {/* Preview */}
+        {calculatedDuration > 0 && (
+          <View style={styles.preview}>
+            <Text style={styles.previewLabel}>{t('manual_preview')}</Text>
+            <Text style={styles.previewTime}>
+              {formatLocalTime(startTime.getTime())} – {formatLocalTime(endTime.getTime())}
+            </Text>
+            <Text style={styles.previewDuration}>{formatMinutes(calculatedDuration)}</Text>
+            <Text style={styles.previewDate}>
+              {formatLocalDate(startTime.getTime(), {
+                weekday: 'long',
+                month: 'short',
+                day: 'numeric',
+              })}
+            </Text>
           </View>
+        )}
 
-          {/* Start Time */}
-          <Text style={styles.sectionLabel}>{t('manual_start_time')}</Text>
-          {Platform.OS === 'ios' ? (
-            <DateTimePicker
-              value={startTime}
-              mode="time"
-              display="spinner"
-              onChange={onStartTimeChange}
-              style={styles.timePicker}
-            />
-          ) : (
-            <>
-              <TouchableOpacity style={styles.timeButton} onPress={() => setShowStartPicker(true)}>
-                <Text style={styles.timeButtonText}>{formatLocalTime(startTime.getTime())}</Text>
-              </TouchableOpacity>
-              {showStartPicker && (
-                <DateTimePicker
-                  value={startTime}
-                  mode="time"
-                  is24Hour={uses24HourClock()}
-                  display="default"
-                  onChange={onStartTimeChange}
-                />
-              )}
-            </>
-          )}
-
-          {/* End Time */}
-          <Text style={styles.sectionLabel}>{t('manual_end_time')}</Text>
-          {Platform.OS === 'ios' ? (
-            <DateTimePicker
-              value={endTime}
-              mode="time"
-              display="spinner"
-              onChange={onEndTimeChange}
-              style={styles.timePicker}
-            />
-          ) : (
-            <>
-              <TouchableOpacity style={styles.timeButton} onPress={() => setShowEndPicker(true)}>
-                <Text style={styles.timeButtonText}>{formatLocalTime(endTime.getTime())}</Text>
-              </TouchableOpacity>
-              {showEndPicker && (
-                <DateTimePicker
-                  value={endTime}
-                  mode="time"
-                  is24Hour={uses24HourClock()}
-                  display="default"
-                  onChange={onEndTimeChange}
-                />
-              )}
-            </>
-          )}
-
-          {/* Preview */}
-          {calculatedDuration > 0 && (
-            <View style={styles.preview}>
-              <Text style={styles.previewLabel}>{t('manual_preview')}</Text>
-              <Text style={styles.previewTime}>
-                {formatLocalTime(startTime.getTime())} – {formatLocalTime(endTime.getTime())}
-              </Text>
-              <Text style={styles.previewDuration}>{formatMinutes(calculatedDuration)}</Text>
-              <Text style={styles.previewDate}>
-                {formatLocalDate(startTime.getTime(), {
-                  weekday: 'long',
-                  month: 'short',
-                  day: 'numeric',
-                })}
-              </Text>
-            </View>
-          )}
-
-          {/* Save button */}
-          <TouchableOpacity style={styles.primaryBtn} onPress={handleSave}>
-            <Text style={styles.primaryBtnText}>{t('session_edit_save')}</Text>
-          </TouchableOpacity>
-        </ScrollView>
-      </View>
-    </Modal>
+        {/* Save button */}
+        <TouchableOpacity style={styles.primaryBtn} onPress={handleSave}>
+          <Text style={styles.primaryBtnText}>{t('session_edit_save')}</Text>
+        </TouchableOpacity>
+      </BottomSheetView>
+    </BottomSheetModal>
   );
 }
 
@@ -198,30 +240,10 @@ function makeStyles(
   shadows: ReturnType<typeof useTheme>['shadows']
 ) {
   return StyleSheet.create({
-    backdrop: {
-      flex: 1,
-      backgroundColor: 'rgba(0,0,0,0.4)',
-    },
-    sheet: {
-      backgroundColor: colors.mist,
-      borderTopLeftRadius: radius.lg,
-      borderTopRightRadius: radius.lg,
-      maxHeight: '85%',
-      ...shadows.medium,
-    },
-    handle: {
-      width: 40,
-      height: 4,
-      backgroundColor: colors.fog,
-      borderRadius: radius.full,
-      alignSelf: 'center',
-      marginTop: spacing.sm,
-    },
     header: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      padding: spacing.md,
       paddingBottom: spacing.sm,
     },
     title: {
@@ -239,7 +261,6 @@ function makeStyles(
     },
     content: {
       padding: spacing.md,
-      paddingBottom: spacing.xxl,
     },
     hint: {
       backgroundColor: colors.grassPale,

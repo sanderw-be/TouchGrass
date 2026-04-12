@@ -10,6 +10,7 @@ Structural map compiled from source code via AST. No LLM — deterministic, 200m
 
 - [Overview](./overview.md)
 - [Ui](./ui.md)
+- [Libraries](./libraries.md)
 
 ## Quick Stats
 
@@ -23,7 +24,7 @@ Structural map compiled from source code via AST. No LLM — deterministic, 200m
 - **New session:** read `index.md` (this file) for orientation — WHERE things are
 - **Architecture question:** read `overview.md` (~500 tokens)
 - **Domain question:** read the relevant article, then **read those source files**
-- **Database question:** read `database.md`, then read the actual schema files
+- **Library question:** read `libraries.md`, then read the listed source files
 - **Before implementing anything:** read the source files listed in the article
 - **Full source context:** read `.codesight/CODESIGHT.md`
 
@@ -44,4 +45,4 @@ When in doubt, search the source. The wiki is a starting point, not a complete i
 
 ---
 
-_Last compiled: 2026-04-12 · 3 articles · [codesight](https://github.com/Houseofmvps/codesight)_
+_Last compiled: 2026-04-12 · 4 articles · [codesight](https://github.com/Houseofmvps/codesight)_

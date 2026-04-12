@@ -6,9 +6,11 @@
 
 ## Scale
 
-38 UI components · 1 middleware layers · 2 environment variables
+38 UI components · 28 library files · 1 middleware layers · 2 environment variables
 
 **UI:** 38 components (react) — see [ui.md](./ui.md)
+
+**Libraries:** 28 files — see [libraries.md](./libraries.md)
 
 ## High-Impact Files
 
