@@ -8,6 +8,7 @@ import {
   Switch,
   Modal,
   TextInput,
+  KeyboardAvoidingView,
   Platform,
   Alert,
 } from 'react-native';
@@ -276,7 +277,10 @@ export default function ScheduledNotificationsScreen() {
         animationType="slide"
         onRequestClose={() => setIsModalVisible(false)}
       >
-        <View style={styles.modalOverlay}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.modalOverlay}
+        >
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>
               {editingSchedule ? t('scheduled_edit_title') : t('scheduled_add_title')}
@@ -375,7 +379,7 @@ export default function ScheduledNotificationsScreen() {
               </TouchableOpacity>
             </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );

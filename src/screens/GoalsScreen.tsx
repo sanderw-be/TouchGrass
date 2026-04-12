@@ -3,6 +3,7 @@ import {
   View,
   Text,
   ScrollView,
+  KeyboardAvoidingView,
   TouchableOpacity,
   TextInput,
   Alert,
@@ -471,26 +472,39 @@ export default function GoalsScreen() {
 
   return (
     <>
-      <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
-        <Text style={styles.headerTitle}>{t('nav_goals')}</Text>
-      </View>
-
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-        {goalsPermissionIssues.length > 0 && (
-          <View style={styles.permissionWarning}>
-            <Text style={styles.permissionWarningText}>
-              {t('permission_issues_banner', { features: goalsPermissionIssues.join(', ') })}
-            </Text>
-          </View>
-        )}
-        {/* WHO recommendation note */}
-        <View style={styles.tipCard}>
-          <Ionicons name="bulb-outline" size={18} color={colors.grassDark} style={styles.tipIcon} />
-          <Text style={styles.tipText}>{t('goals_who_tip')}</Text>
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
+          <Text style={styles.headerTitle}>{t('nav_goals')}</Text>
         </View>
 
-        {/* Daily goal */}
-        <View style={styles.card}>
+        <ScrollView
+          style={styles.container}
+          contentContainerStyle={styles.content}
+          keyboardShouldPersistTaps="handled"
+        >
+          {goalsPermissionIssues.length > 0 && (
+            <View style={styles.permissionWarning}>
+              <Text style={styles.permissionWarningText}>
+                {t('permission_issues_banner', { features: goalsPermissionIssues.join(', ') })}
+              </Text>
+            </View>
+          )}
+          {/* WHO recommendation note */}
+          <View style={styles.tipCard}>
+            <Ionicons
+              name="bulb-outline"
+              size={18}
+              color={colors.grassDark}
+              style={styles.tipIcon}
+            />
+            <Text style={styles.tipText}>{t('goals_who_tip')}</Text>
+          </View>
+
+          {/* Daily goal */}
+          <View style={styles.card}>
           <View style={styles.cardHeader}>
             <View>
               <Text style={styles.cardTitle}>{t('daily_goal')}</Text>
@@ -548,8 +562,8 @@ export default function GoalsScreen() {
           )}
         </View>
 
-        {/* Weekly goal */}
-        <View style={styles.card}>
+          {/* Weekly goal */}
+          <View style={styles.card}>
           <View style={styles.cardHeader}>
             <View>
               <Text style={styles.cardTitle}>{t('weekly_goal')}</Text>
@@ -609,43 +623,44 @@ export default function GoalsScreen() {
           )}
         </View>
 
-        {/* Reminders */}
-        <RemindersSection
-          smartRemindersCount={smartRemindersCount}
-          catchupRemindersCount={catchupRemindersCount}
-          notificationPermissionGranted={notificationPermissionGranted}
-          batteryOptimizationGranted={batteryOptimizationGranted}
-          onCycleSmartReminders={cycleSmartRemindersCount}
-          onCycleCatchupReminders={cycleCatchupRemindersCount}
-          onNavigateScheduledNotifications={() => navigation.navigate('ScheduledNotifications')}
-          onShowNotificationPermissionSheet={showNotificationPermissionSheet}
-          onShowBatteryPermissionSheet={showBatteryPermissionSheet}
-        />
+          {/* Reminders */}
+          <RemindersSection
+            smartRemindersCount={smartRemindersCount}
+            catchupRemindersCount={catchupRemindersCount}
+            notificationPermissionGranted={notificationPermissionGranted}
+            batteryOptimizationGranted={batteryOptimizationGranted}
+            onCycleSmartReminders={cycleSmartRemindersCount}
+            onCycleCatchupReminders={cycleCatchupRemindersCount}
+            onNavigateScheduledNotifications={() => navigation.navigate('ScheduledNotifications')}
+            onShowNotificationPermissionSheet={showNotificationPermissionSheet}
+            onShowBatteryPermissionSheet={showBatteryPermissionSheet}
+          />
 
-        {/* Weather */}
-        <WeatherSection
-          weatherEnabled={weatherEnabled}
-          weatherLocationGranted={weatherLocationGranted}
-          onToggleWeather={toggleWeatherEnabled}
-          onShowWeatherPermissionSheet={showWeatherPermissionSheet}
-          onNavigateWeatherSettings={() => navigation.navigate('WeatherSettings')}
-        />
+          {/* Weather */}
+          <WeatherSection
+            weatherEnabled={weatherEnabled}
+            weatherLocationGranted={weatherLocationGranted}
+            onToggleWeather={toggleWeatherEnabled}
+            onShowWeatherPermissionSheet={showWeatherPermissionSheet}
+            onNavigateWeatherSettings={() => navigation.navigate('WeatherSettings')}
+          />
 
-        {/* Calendar integration */}
-        <CalendarSection
-          calendarEnabled={calendarEnabled}
-          calendarPermissionGranted={calendarPermissionGranted}
-          calendarBuffer={calendarBuffer}
-          calendarDuration={calendarDuration}
-          calendarSelectedId={calendarSelectedId}
-          calendarOptions={calendarOptions}
-          onToggleCalendar={toggleCalendarIntegration}
-          onCycleCalendarBuffer={cycleCalendarBuffer}
-          onCycleCalendarDuration={cycleCalendarDuration}
-          onSelectCalendar={handleSelectCalendar}
-          onShowCalendarPermissionSheet={showCalendarPermissionSheet}
-        />
-      </ScrollView>
+          {/* Calendar integration */}
+          <CalendarSection
+            calendarEnabled={calendarEnabled}
+            calendarPermissionGranted={calendarPermissionGranted}
+            calendarBuffer={calendarBuffer}
+            calendarDuration={calendarDuration}
+            calendarSelectedId={calendarSelectedId}
+            calendarOptions={calendarOptions}
+            onToggleCalendar={toggleCalendarIntegration}
+            onCycleCalendarBuffer={cycleCalendarBuffer}
+            onCycleCalendarDuration={cycleCalendarDuration}
+            onSelectCalendar={handleSelectCalendar}
+            onShowCalendarPermissionSheet={showCalendarPermissionSheet}
+          />
+        </ScrollView>
+      </KeyboardAvoidingView>
 
       {permissionSheet && (
         <PermissionExplainerSheet

@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, fireEvent, act, waitFor } from '@testing-library/react-native';
-import { Platform } from 'react-native';
+import { Platform, ScrollView, KeyboardAvoidingView } from 'react-native';
 
 // Mock i18n
 jest.mock('../i18n', () => ({
@@ -134,6 +134,20 @@ describe('GoalsScreen', () => {
   it('renders the calendar section', async () => {
     const { findByText } = render(<GoalsScreen />);
     await expect(findByText('settings_section_calendar')).resolves.toBeTruthy();
+  });
+
+  it('uses keyboard-safe container props for custom goal inputs', async () => {
+    const { UNSAFE_getByType } = render(<GoalsScreen />);
+
+    await waitFor(() => expect(UNSAFE_getByType(ScrollView)).toBeTruthy());
+
+    const scrollView = UNSAFE_getByType(ScrollView);
+    const keyboardAvoidingView = UNSAFE_getByType(KeyboardAvoidingView);
+
+    expect(scrollView.props.keyboardShouldPersistTaps).toBe('handled');
+    expect(keyboardAvoidingView.props.behavior).toBe(
+      Platform.OS === 'ios' ? 'padding' : 'height'
+    );
   });
 });
 

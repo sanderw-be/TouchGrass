@@ -9,6 +9,8 @@ import {
   Alert,
   ScrollView,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import * as Location from 'expo-location';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -259,26 +261,30 @@ export default function EditLocationSheet({
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      {/* Tappable backdrop */}
-      <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onClose} />
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.kavWrapper}
+      >
+        {/* Tappable backdrop */}
+        <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onClose} />
 
-      {/* Bottom sheet */}
-      <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, spacing.md) }]}>
-        {/* Drag handle */}
-        <View style={styles.handle} />
+        {/* Bottom sheet */}
+        <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, spacing.md) }]}>
+          {/* Drag handle */}
+          <View style={styles.handle} />
 
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.title}>{title}</Text>
-          <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
-            <Text style={styles.closeBtnText}>✕</Text>
-          </TouchableOpacity>
-        </View>
+          {/* Header */}
+          <View style={styles.header}>
+            <Text style={styles.title}>{title}</Text>
+            <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
+              <Text style={styles.closeBtnText}>✕</Text>
+            </TouchableOpacity>
+          </View>
 
-        <ScrollView
-          contentContainerStyle={[styles.contentInner, { paddingTop: spacing.sm }]}
-          keyboardShouldPersistTaps="handled"
-        >
+          <ScrollView
+            contentContainerStyle={[styles.contentInner, { paddingTop: spacing.sm }]}
+            keyboardShouldPersistTaps="handled"
+          >
           {/* Address — view or editable search */}
           {(coords || addressEditing) && (
             <View style={styles.section}>
@@ -438,8 +444,9 @@ export default function EditLocationSheet({
               </TouchableOpacity>
             </View>
           )}
-        </ScrollView>
-      </View>
+          </ScrollView>
+        </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
@@ -529,6 +536,10 @@ function makeStyles(
   shadows: ReturnType<typeof useTheme>['shadows']
 ) {
   return StyleSheet.create({
+    kavWrapper: {
+      flex: 1,
+      justifyContent: 'flex-end',
+    },
     backdrop: {
       flex: 1,
       backgroundColor: 'rgba(0,0,0,0.4)',
