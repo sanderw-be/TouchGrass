@@ -441,21 +441,21 @@ export default {
   weather_unknown: 'Unknown',
 
   // Notification channel
-  notif_channel_name: 'Outside reminders',
+  notif_channel_name: 'Offline reminders',
   notif_channel_background_name: 'Background tracking',
   notif_channel_background_desc:
-    'Shows while TouchGrass is tracking your outside time. Can be disabled without affecting reminders.',
+    'Shows while TouchGrass is locally tracking your outside time. Can be disabled without affecting reminders.',
   gps_tracking_notif_body: 'Tracking your outside time in the background',
   notif_channel_scheduled_name: 'Scheduled reminders',
-  notif_channel_scheduled_desc: 'Your custom scheduled reminders to go outside',
+  notif_channel_scheduled_desc: 'Your custom scheduled reminders to step away',
   notif_channel_daily_planner_name: 'Daily planner',
   notif_channel_daily_planner_desc:
-    'Silent 3 AM wake-up used to reschedule your daily reminders. Can be fully disabled in Android notification settings.',
+    'Silent wake-up to reschedule your daily reminders. Can be disabled in Android notification settings.',
   notif_daily_planner_title: 'TouchGrass',
   notif_daily_planner_body: 'Open the app to complete planning for today.',
 
   // Scheduled notifications
-  scheduled_notif_body: 'Your scheduled reminder to go outside.',
+  scheduled_notif_body: 'Your scheduled reminder to disconnect.',
   scheduled_empty: 'No scheduled reminders yet',
   scheduled_empty_hint: 'Tap the + button to create a recurring reminder',
   scheduled_add: 'Add reminder',
@@ -489,21 +489,21 @@ export default {
   settings_calendar_permission_title: 'Calendar Permission',
   settings_calendar_permission_missing: 'Permissions missing — tap to fix',
   settings_calendar_permission_body:
-    'Calendar access is needed to check your appointments for smart reminders.\n\nTouchGrass reads only event titles and times — no descriptions, attendees, or other data. Nothing leaves your device.',
+    'Calendar access is needed to check your appointments. TouchGrass reads only event times — no descriptions or attendees. Nothing leaves your device.',
   settings_calendar_permission_open: 'Open Settings',
   settings_calendar_permission_cancel: 'Cancel',
   settings_calendar_buffer: 'Meeting buffer',
   settings_calendar_buffer_desc: 'Skip smart reminders when a meeting starts within this window',
   settings_calendar_buffer_minutes: '{{minutes}} minutes',
-  settings_calendar_duration: 'Outside time in calendar',
-  settings_calendar_duration_desc: 'Duration when adding outdoor time to calendar',
+  settings_calendar_duration: 'Offline time in calendar',
+  settings_calendar_duration_desc: 'Duration when adding offline time to your calendar',
   settings_calendar_duration_off: 'Off',
   settings_calendar_duration_minutes: '{{minutes}} min',
-  settings_calendar_select: 'Write outdoor time to',
-  settings_calendar_select_desc: 'Calendar where outdoor time slots are saved',
+  settings_calendar_select: 'Write offline time to',
+  settings_calendar_select_desc: 'Calendar where offline time slots are saved',
   settings_calendar_select_title: 'Select Calendar',
   settings_calendar_select_touchgrass: 'TouchGrass (local)',
-  calendar_event_title: '🌿 Outdoor time',
+  calendar_event_title: '🌿 Offline time',
   calendar_event_notes: 'Scheduled by TouchGrass',
   calendar_touchgrass_name: 'TouchGrass',
 
@@ -511,53 +511,53 @@ export default {
   nav_about_app: 'About TouchGrass',
   about_intro_title: 'What is TouchGrass?',
   about_intro_body:
-    'TouchGrass is your personal outdoor time companion. It automatically tracks the time you spend outside, helps you set daily and weekly goals, and nudges you with smart reminders when you haven\u2019t gone out yet.',
+    'TouchGrass is your private companion for disconnecting. It tracks the time you spend outside locally, helps you set goals, and nudges you to step away from screens.',
   about_detection_title: 'How outdoor time is tracked',
   about_detection_body:
-    'TouchGrass uses two detection methods:\n\n\u2022 Health Connect \u2014 imports exercise sessions and step-based outdoor activity from your health data.\n\u2022 GPS \u2014 detects when you leave a known location (home, work) and returns, using your device\u2019s location services.\n\nYou can enable one or both methods in Settings \u2192 Detection. Sessions detected automatically show up on the Events tab for your review.',
+    'TouchGrass uses local detection methods:\n\n• Health Connect — imports step-based activity privately.\n• GPS — detects when you leave a known location via local geofencing.\n\nYou can manage these in Settings → Detection.',
   about_goals_title: 'Goals & progress',
   about_goals_body:
-    'Set a daily outdoor time goal (e.g. 30 minutes) and optionally a weekly goal. TouchGrass tracks your streak when you hit your goal on consecutive days or weeks. Your progress is shown as a ring on the home screen and as a bar chart in the History tab.',
+    'Set a daily offline goal and track your streaks. Your progress stays on your device, visualized on your home screen and History tab.',
   about_reminders_title: 'Smart reminders',
   about_reminders_body:
-    'TouchGrass can send you a reminder when you haven\u2019t reached your daily goal yet. Reminders are \u201csmart\u201d \u2014 they check your calendar for upcoming meetings and your local weather before suggesting the best time to go outside. You can configure reminder windows and thresholds in Settings \u2192 Reminders.',
+    'Smart reminders learn your habits locally. They check your calendar and local weather to suggest the best time to unplug. Configure these in Settings → Reminders.',
   about_manual_title: 'Manual logging',
   about_manual_body:
-    'Missed a session? You can log outdoor time manually from the home screen. Tap the ring or use the manual log button to enter a past session or start a live timer. Manual sessions are always approved immediately.',
+    'Left your phone inside? Log outdoor time manually. Tap the ring to start a live timer or enter a past session.',
   about_widget_title: 'Home screen widget',
   about_widget_body:
-    'Add the TouchGrass widget to your home screen for a quick glance at your daily progress. The widget shows a progress ring and lets you start or stop an outdoor session with a single tap \u2014 no need to open the app. Long-press your home screen and choose Widgets \u2192 TouchGrass to add it.',
+    'Add the widget to glance at your progress without opening the app, keeping you away from your screen.',
   about_privacy_title: 'Privacy',
   about_privacy_body:
-    'All your data stays on your device. TouchGrass does not send any personal information to external servers. Location data is used only to detect outdoor sessions and is never stored beyond what is needed. Health Connect data is read locally and is not shared.',
+    'All data stays on your device. Zero tracking. Location data is used strictly for geofencing and never sent to external servers.',
 
   // Feedback & Support screen
   nav_feedback_support: 'Feedback & Support',
   feedback_send_feedback: 'Send feedback',
-  feedback_send_feedback_sublabel: 'Share a bug report, feature idea, or general feedback',
+  feedback_send_feedback_sublabel: 'Share a bug report or feature idea',
   feedback_support_kofi: 'Support Jolly Heron',
   feedback_support_kofi_sublabel: 'Buy me a coffee — every bit helps ☕',
   feedback_google_disclosure:
-    'Feedback is submitted via Google Forms and is subject to Google\u2019s privacy practices. See our Privacy Policy.',
+    'Feedback is submitted via Google Forms and subject to Google’s privacy practices.',
   settings_feedback_support: 'Feedback & Support',
   settings_feedback_support_sublabel: 'Share feedback or support the developer',
 
   // Error boundary crash screen
   error_boundary_title: 'Something went wrong',
   error_boundary_subtitle:
-    'The app encountered an unexpected error. You can try restarting it or report the issue to help us fix it. Reporting will share your device type and app version with Google Forms.',
+    'The app encountered an unexpected error. You can restart it or report the issue.',
   error_boundary_restart: 'Restart app',
   error_boundary_report: 'Report this issue',
 
   // Background Task
   background_task_title: 'Smart Reminders',
-  background_task_desc: 'Checking for the best time to remind you to go outside.',
+  background_task_desc: 'Finding the best time to remind you to disconnect.',
 
   // Activity Log screen
   nav_activity_log: 'Activity Log',
   settings_section_activity_log: 'Transparency',
   settings_activity_log: 'Activity log',
-  settings_activity_log_sublabel: 'View what the app does in the background',
+  settings_activity_log_sublabel: 'View what the app does in the background locally',
   activity_log_empty: 'No events recorded yet.',
   activity_log_section_hc: 'Health Connect',
   activity_log_section_gps: 'GPS',
@@ -565,20 +565,18 @@ export default {
 
   // Battery optimization (Android intro)
   intro_battery_title: 'Background Activity',
-  intro_battery_body:
-    'For reliable reminders even when the app is closed, TouchGrass needs unrestricted background activity.',
+  intro_battery_body: 'For reliable reminders, TouchGrass needs unrestricted background activity.',
   intro_battery_why_title: 'Why is this needed?',
   intro_battery_why_body:
-    'Some phone manufacturers aggressively limit background apps to save battery. Without this setting, your reminders may be delayed or missed entirely.',
+    'Without this, Android may block the app from checking when to remind you to step outside.',
   intro_battery_button: 'Open Battery Settings',
   intro_battery_button_done: 'Settings Opened ✓',
-  intro_battery_hint:
-    'Find TouchGrass in the list and select "Unrestricted". You can skip this and change it later in Settings.',
+  intro_battery_hint: 'Select "Unrestricted". You can change this later.',
 
   // Settings battery optimization
   settings_battery_optimization: 'Battery optimization',
   settings_battery_optimization_sublabel:
-    'TouchGrass is very efficient — but Android can aggressively block background apps. Go to Battery → Battery optimization → find TouchGrass → set to Unrestricted.',
+    'To ensure reminders work, go to Battery → Battery optimization → find TouchGrass → set to Unrestricted.',
 
   // Intro checklist
   intro_ready_checklist_item_battery: 'Set battery optimization to "Unrestricted".',
@@ -644,8 +642,7 @@ export default {
   exercise_unknown: 'exercise type {{type}}',
 
   // Permission issues banner (GoalsScreen / SettingsScreen)
-  permission_issues_banner:
-    'Permission issues with: {{features}}. Scroll down to fix or disable these features.',
+  permission_issues_banner: 'Permission issues with: {{features}}. Scroll down to fix or disable.',
 
   // Diagnostic sheet
   diagnostic_title: 'App Diagnostics',
