@@ -3,7 +3,8 @@
 > **Stack:** raw-http | none | react | typescript
 
 > 0 routes | 0 models | 38 components | 28 lib files | 2 env vars | 1 middleware | 0% test coverage
-> **Token savings:** this file is ~4,400 tokens. Without it, AI exploration would cost ~29,300 tokens. **Saves ~24,800 tokens per conversation.**
+> **Token savings:** this file is ~4,500 tokens. Without it, AI exploration would cost ~29,300 tokens. **Saves ~24,800 tokens per conversation.**
+> **Last scanned:** 2026-04-12 18:29 — re-run after significant changes
 
 ---
 
