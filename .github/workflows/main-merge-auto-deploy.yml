@@ -118,18 +118,17 @@ jobs:
           org.gradle.logging.stacktrace=full
           EOF
 
-      - name: Build Preview APK
+      - name: Build Preview AAB
         if: needs.check-native-changes.outputs.native == 'true'
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
           EAS_BUILD_PROFILE: preview-emulator
-        # Assuming you have a 'preview' profile in your eas.json configured to output an APK
-        run: npx --yes eas-cli build --profile preview-emulator --platform android --local --output ./preview-app.apk
+        run: npx --yes eas-cli build --profile preview-emulator --platform android --local --output ./preview-app.aab
 
-      - name: Upload Preview APK Artifact
+      - name: Upload Preview AAB Artifact
         if: needs.check-native-changes.outputs.native == 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: preview-apk
-          path: ./preview-app.apk
+          name: preview-aab
+          path: ./preview-app.aab
           retention-days: 14
