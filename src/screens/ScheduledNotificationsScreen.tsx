@@ -8,7 +8,7 @@ import {
   Switch,
   Modal,
   TextInput,
-  KeyboardAvoidingView,
+  Keyboard,
   Platform,
   Alert,
 } from 'react-native';
@@ -166,7 +166,7 @@ export default function ScheduledNotificationsScreen() {
     }
 
     // Close modal after state update
-    setIsModalVisible(false);
+    handleCloseModal();
 
     // Schedule notifications in background (with await to catch errors)
     try {
@@ -218,6 +218,11 @@ export default function ScheduledNotificationsScreen() {
     if (date) {
       setSelectedTime(date);
     }
+  };
+
+  const handleCloseModal = () => {
+    Keyboard.dismiss();
+    setIsModalVisible(false);
   };
 
   return (
@@ -275,12 +280,9 @@ export default function ScheduledNotificationsScreen() {
         visible={isModalVisible}
         transparent
         animationType="slide"
-        onRequestClose={() => setIsModalVisible(false)}
+        onRequestClose={handleCloseModal}
       >
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.modalOverlay}
-        >
+        <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>
               {editingSchedule ? t('scheduled_edit_title') : t('scheduled_add_title')}
@@ -367,7 +369,7 @@ export default function ScheduledNotificationsScreen() {
             <View style={styles.modalActions}>
               <TouchableOpacity
                 style={[styles.modalButton, styles.cancelButton]}
-                onPress={() => setIsModalVisible(false)}
+                onPress={handleCloseModal}
               >
                 <Text style={styles.cancelButtonText}>{t('scheduled_cancel')}</Text>
               </TouchableOpacity>
@@ -379,7 +381,7 @@ export default function ScheduledNotificationsScreen() {
               </TouchableOpacity>
             </View>
           </View>
-        </KeyboardAvoidingView>
+        </View>
       </Modal>
     </View>
   );
