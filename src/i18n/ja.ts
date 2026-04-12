@@ -5,13 +5,13 @@ export default {
   greeting_evening: 'こんばんは 🌙',
 
   // Home screen
-  goal_reached: '目標達成！良いデジタルデトックスでしたね。',
-  outside_time_awaits: '今日はあと{{amount}}のオフライン時間があります。',
+  goal_reached: '目標達成！良い外出でしたね。',
+  outside_time_awaits: '今日はあと{{amount}}の外の時間があります。',
   remaining_for_goal: '今日の目標まであと{{amount}}。',
   this_week: '今週',
   today: '今日',
   no_sessions_title: 'まだ外の空気を吸っていません。',
-  no_sessions_sub: '画面から離れるか、手動で記録しましょう。',
+  no_sessions_sub: '外に出るか、手動で記録しましょう。',
   todays_sessions: '今日の記録',
 
   // Streaks
@@ -28,7 +28,7 @@ export default {
   ring_timer_info: 'リングをタップして手動タイマーを開始',
 
   // Widget
-  widget_start_outside: 'オフライン時間を\n開始',
+  widget_start_outside: '外出時間を\n開始',
   widget_back_inside: '屋内へ戻る',
   widget_started: '開始しました',
   widget_loading: '読み込み中…',
@@ -93,7 +93,7 @@ export default {
   goals_invalid_daily: '1〜720分の間で入力してください。',
   goals_invalid_weekly: '1〜5040分の間で入力してください。',
   goals_who_tip:
-    'WHOは週に150分の屋外での適度な運動を推奨しています。1日30分のデジタルデトックスです。',
+    'WHOは週に150分の屋外での適度な運動を推奨しています。1日30分の外出を目指しましょう。',
 
   // Events screen
   events_tab_approved: '承認済み',
@@ -175,7 +175,7 @@ export default {
   location_delete_confirm_title: '削除',
   location_delete_confirm_body: '本当に削除しますか？',
   settings_reminders_label: '穏やかなリマインダー',
-  settings_reminders_sublabel: '画面から離れるための静かな通知。',
+  settings_reminders_sublabel: '外へ出かけるための静かな通知。',
   settings_reminders_count_off: 'オフ',
   settings_reminders_count_per_day: '{{count}}回/日',
   settings_notification_permission_title: '通知権限',
@@ -189,7 +189,7 @@ export default {
   settings_catchup_aggressive: '強め',
   settings_background_tracking_label: 'Android 通知',
   settings_background_tracking_sublabel: 'Androidの設定から非表示にできます。',
-  settings_app_sublabel: 'オフラインの相棒',
+  settings_app_sublabel: 'お出かけの相棒',
   settings_privacy: 'プライバシー',
   settings_privacy_sublabel: 'トラッキングなし。データはあなただけのものです。',
   settings_privacy_hint: 'プライバシーポリシーを読む',
@@ -247,7 +247,7 @@ export default {
   notif_location_suggestion_title: '📍 新しい場所',
   notif_location_suggestion_body: '新しい習慣が端末内で検知されました。',
 
-  manual_title: 'オフライン時間を記録',
+  manual_title: '外出時間を記録',
   manual_tab_log: '📝 過去の記録',
   manual_tab_timer: '⏱ タイマー',
   manual_start_time: '開始',
@@ -255,7 +255,7 @@ export default {
   manual_preview: 'プレビュー',
   manual_log_btn: '✓ 保存',
   manual_timer_ready: '開始してスマホを置きましょう',
-  manual_timer_running: '進行中 — デジタルデトックスを！ 🌿',
+  manual_timer_running: '進行中 — 外を楽しんで！ 🌿',
   manual_timer_start: '🌿 外に出る',
   manual_timer_stop: '✓ 戻りました',
   manual_timer_cancel: 'キャンセル',
@@ -268,8 +268,8 @@ export default {
   intro_next: '次へ',
   intro_get_started: 'はじめる',
   intro_welcome_title: 'TouchGrassへようこそ',
-  intro_welcome_body: 'デジタル画面から離れるための、プライベートな相棒です。',
-  intro_welcome_feature_1: '端末内でオフライン時間を計測',
+  intro_welcome_body: '外に出るための、プライベートな相棒です。',
+  intro_welcome_feature_1: '端末内で外出時間を計測',
   intro_welcome_feature_2: 'デトックスの目標設定',
   intro_welcome_feature_3: '穏やかなリマインダー',
   intro_welcome_feature_4: 'クラウド通信なし。データは完全に保護されます',
@@ -296,7 +296,7 @@ export default {
   intro_location_known_set_work_done: '🏢 職場 ✓',
   intro_location_known_hint: '設定から変更できます。',
   intro_notifications_title: '穏やかな通知',
-  intro_notifications_body: '画面から離れるタイミングを静かにお知らせ。',
+  intro_notifications_body: '外へ出かけるタイミングを静かにお知らせ。',
   intro_notifications_why_title: 'なぜ？',
   intro_notifications_why_body: '端末内の機械学習で、邪魔にならない時間を探します。',
   intro_notifications_hint: '任意設定です。',
@@ -312,7 +312,7 @@ export default {
   intro_calendar_button_granted: '連携済み ✓',
   intro_calendar_buffer_label: '予定の前後',
   intro_calendar_buffer_desc: '通知を遅らせる',
-  intro_calendar_duration_label: 'カレンダーにオフライン時間を追加',
+  intro_calendar_duration_label: 'カレンダーに外出時間を追加',
   intro_calendar_duration_desc: '自分のための時間を確保',
   intro_ready_title: '準備完了！',
   intro_ready_body: 'デトックスを始めましょう。',
@@ -330,18 +330,18 @@ export default {
   notif_title_1: '🌿 デトックスの時間です',
   notif_title_2: '☀️ 外の空気を吸いましょう',
   notif_title_3: '🌱 自然が呼んでいます',
-  notif_title_4: '👟 画面から離れて',
-  notif_title_5: '🌳 オフラインの休息',
+  notif_title_4: '👟 外に出よう',
+  notif_title_5: '🌳 外でひと休み',
 
   // Notification bodies
   notif_body_none: '今日はまだ外に出ていません。深呼吸しましょう！',
-  notif_body_halfway: 'オフライン時間はあと{{remaining}}分です。',
+  notif_body_halfway: '外の時間はあと{{remaining}}分です。',
   notif_body_almost: 'あと少し！残り{{remaining}}分。',
   notif_body_done: '達成しました！もう一度スマホを置いていきますか？ 🌿',
 
   // Reminder reason descriptions ("Why this time?" explanations appended to notification body)
   notif_reason_pattern: 'いつもデトックスする時間です',
-  notif_reason_lunch: '画面を見ないランチに最適です',
+  notif_reason_lunch: '外でランチに最適です',
   notif_reason_after_work: '仕事後のリフレッシュに',
   notif_reason_urgent: '今日の目標までまだ時間が必要です',
   notif_reason_acted: '以前この時間に外に出ていました',
@@ -422,7 +422,7 @@ export default {
   weather_unknown: '不明',
 
   // Notification channel
-  notif_channel_name: 'オフライン通知',
+  notif_channel_name: '外出通知',
   notif_channel_background_name: 'バックグラウンド処理',
   notif_channel_background_desc: 'ローカルでの外出検知中に表示。',
   gps_tracking_notif_body: '端末内で外出をチェック中',
@@ -487,11 +487,11 @@ export default {
   // About TouchGrass screen
   nav_about_app: 'アプリについて',
   about_intro_title: 'TouchGrassとは',
-  about_intro_body: '画面から離れ、外の空気を吸うためのプライベートツール。',
+  about_intro_body: '外に出て、自然を楽しむためのプライベートツール。',
   about_detection_title: '検知の仕組み',
   about_detection_body: 'ローカルGPSまたはHealth Connectのみを使用。',
   about_goals_title: '目標',
-  about_goals_body: 'オフライン時間を記録し、連続日数を管理。',
+  about_goals_body: '外出時間を記録し、連続日数を管理。',
   about_reminders_title: '通知',
   about_reminders_body: 'ローカル学習で最適なタイミングをお知らせ。',
   about_manual_title: 'スマホを置いていく',
