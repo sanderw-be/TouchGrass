@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -6,11 +6,16 @@ import {
   ScrollView,
   TouchableOpacity,
   Switch,
-  Modal,
-  TextInput,
   Platform,
   Alert,
 } from 'react-native';
+import {
+  BottomSheetBackdrop,
+  BottomSheetModal,
+  BottomSheetTextInput,
+  BottomSheetView,
+} from '@gorhom/bottom-sheet';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import {
@@ -32,6 +37,8 @@ const DAY_LABELS = ['day_sun', 'day_mon', 'day_tue', 'day_wed', 'day_thu', 'day_
 export default function ScheduledNotificationsScreen() {
   const { colors, shadows } = useTheme();
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
+  const insets = useSafeAreaInsets();
+  const bottomSheetRef = useRef<BottomSheetModal>(null);
   const [schedules, setSchedules] = useState<ScheduledNotification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [editingSchedule, setEditingSchedule] = useState<ScheduledNotification | null>(null);
@@ -43,6 +50,31 @@ export default function ScheduledNotificationsScreen() {
   const [label, setLabel] = useState('');
   const [showTimePicker, setShowTimePicker] = useState(false);
   const isFetchingRef = useRef(false);
+
+  // Present or dismiss the sheet based on visibility
+  useEffect(() => {
+    if (isModalVisible) {
+      bottomSheetRef.current?.present();
+    } else {
+      bottomSheetRef.current?.dismiss();
+    }
+  }, [isModalVisible]);
+
+  const handleSheetChange = useCallback(
+    (index: number) => {
+      if (index === -1) {
+        setIsModalVisible(false);
+      }
+    },
+    []
+  );
+
+  const renderBackdrop = useCallback(
+    (props: React.ComponentProps<typeof BottomSheetBackdrop>) => (
+      <BottomSheetBackdrop {...props} appearsOnIndex={0} disappearsOnIndex={-1} />
+    ),
+    []
+  );
 
   const loadSchedules = async () => {
     if (isFetchingRef.current) return;
@@ -269,15 +301,24 @@ export default function ScheduledNotificationsScreen() {
         <Text style={styles.addButtonText}>+ {t('scheduled_add')}</Text>
       </TouchableOpacity>
 
-      {/* Edit Modal */}
-      <Modal
-        visible={isModalVisible}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setIsModalVisible(false)}
+      {/* Edit Bottom Sheet */}
+      <BottomSheetModal
+        ref={bottomSheetRef}
+        enableDynamicSizing
+        onChange={handleSheetChange}
+        backdropComponent={renderBackdrop}
+        keyboardBehavior="interactive"
+        keyboardBlurBehavior="restore"
+        android_keyboardInputMode="adjustResize"
+        backgroundStyle={{ backgroundColor: colors.card }}
+        handleIndicatorStyle={{ backgroundColor: colors.fog }}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+        <BottomSheetView
+          style={{
+            paddingHorizontal: spacing.md,
+            paddingBottom: Math.max(insets.bottom, spacing.md),
+          }}
+        >
             <Text style={styles.modalTitle}>
               {editingSchedule ? t('scheduled_edit_title') : t('scheduled_add_title')}
             </Text>
@@ -350,7 +391,7 @@ export default function ScheduledNotificationsScreen() {
             {/* Label Input */}
             <View style={styles.formGroup}>
               <Text style={styles.label}>{t('scheduled_label')}</Text>
-              <TextInput
+              <BottomSheetTextInput
                 style={styles.input}
                 value={label}
                 onChangeText={setLabel}
@@ -363,7 +404,7 @@ export default function ScheduledNotificationsScreen() {
             <View style={styles.modalActions}>
               <TouchableOpacity
                 style={[styles.modalButton, styles.cancelButton]}
-                onPress={() => setIsModalVisible(false)}
+                onPress={() => bottomSheetRef.current?.dismiss()}
               >
                 <Text style={styles.cancelButtonText}>{t('scheduled_cancel')}</Text>
               </TouchableOpacity>
@@ -374,9 +415,8 @@ export default function ScheduledNotificationsScreen() {
                 <Text style={styles.saveButtonText}>{t('scheduled_save')}</Text>
               </TouchableOpacity>
             </View>
-          </View>
-        </View>
-      </Modal>
+        </BottomSheetView>
+      </BottomSheetModal>
     </View>
   );
 }
@@ -481,18 +521,6 @@ function makeStyles(
       fontSize: 16,
       fontWeight: '700',
       color: '#FFFFFF',
-    },
-    modalOverlay: {
-      flex: 1,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
-      justifyContent: 'flex-end',
-    },
-    modalContent: {
-      backgroundColor: colors.card,
-      borderTopLeftRadius: radius.lg,
-      borderTopRightRadius: radius.lg,
-      padding: spacing.lg,
-      maxHeight: '80%',
     },
     modalTitle: {
       fontSize: 20,
