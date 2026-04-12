@@ -1,3 +1,16 @@
+# [1.7.0](https://github.com/sanderw-be/TouchGrass/compare/v1.6.4...v1.7.0) (2026-04-12)
+
+### Bug Fixes
+
+- configure Gradle for CI to prevent build hangs and OOM kills ([#394](https://github.com/sanderw-be/TouchGrass/issues/394)) [skip ci] ([6f7631e](https://github.com/sanderw-be/TouchGrass/commit/6f7631e5119fc5e3a6f687ad95b8115e7d99cfa5))
+
+### Features
+
+- Add notes to sessions ([#396](https://github.com/sanderw-be/TouchGrass/issues/396)) ([1b54c39](https://github.com/sanderw-be/TouchGrass/commit/1b54c39fc34351c16d6a4fae660b59d76a5c40a6))
+- **ci:** Preview builds AAB ([ffd7619](https://github.com/sanderw-be/TouchGrass/commit/ffd7619dc8a86a6b1942bb75de9b95660ddc7690))
+- Expand i18n to 7 locales, align outdoor-focused copy tone, and add collapsible language picker ([#398](https://github.com/sanderw-be/TouchGrass/issues/398)) ([504fde3](https://github.com/sanderw-be/TouchGrass/commit/504fde3c152b564d1154a471c99fff27922efed7))
+- **ui:** Use community components for bottom sheets and keyboard avoiding views ([#401](https://github.com/sanderw-be/TouchGrass/issues/401)) [skip ci] ([15ebe52](https://github.com/sanderw-be/TouchGrass/commit/15ebe525c26ded0c53229890215d915a66ade0a0))
+
 ## [1.6.4](https://github.com/sanderw-be/TouchGrass/compare/v1.6.3...v1.6.4) (2026-04-11)
 
 ### Bug Fixes
