@@ -1,8 +1,10 @@
 export default {
+  // Begroetingen
   greeting_morning: 'Goedemorgen 🌱',
   greeting_afternoon: 'Goedemiddag ☀️',
   greeting_evening: 'Goedenavond 🌙',
 
+  // Startscherm
   goal_reached: 'Doel bereikt! Goed losgekoppeld vandaag.',
   outside_time_awaits: 'Nog {{amount}} offline tijd te gaan vandaag.',
   remaining_for_goal: 'Nog {{amount}} om je dagdoel te halen.',
@@ -12,28 +14,33 @@ export default {
   no_sessions_sub: 'Leg je scherm weg of log het handmatig.',
   todays_sessions: 'Sessies vandaag',
 
+  // Streaks
   streak_daily_singular: '{{count}} dag streak',
   streak_daily_plural: '{{count}} dagen streak',
   streak_weekly_singular: '{{count}} week streak',
   streak_weekly_plural: '{{count}} weken streak',
   streak_separator: ' · ',
 
+  // Timer in voortgangsring
   ring_timer_start: 'tik om te starten',
   ring_timer_tap_stop: 'tik om te stoppen',
   ring_timer_outside: 'buiten',
   ring_timer_info: 'Tik op de ring om een handmatige timer te starten',
 
+  // Widget
   widget_start_outside: 'start\nbuitensessie',
   widget_back_inside: 'terug binnen',
   widget_started: 'gestart',
   widget_loading: 'Laden…',
   widget_open_app: 'Open app om te vernieuwen',
 
+  // Sessiebronnen
   source_health_connect: 'Activiteit',
   source_gps: 'GPS',
   source_manual: 'Handmatig',
   source_timeline: 'Tijdlijn',
 
+  // Sessiebeoordeling
   review: 'beoordeel',
   session_delete: 'Verwijderen',
   session_delete_confirm_title: 'Sessie verwijderen',
@@ -52,10 +59,12 @@ export default {
   session_rejected_snackbar: 'Gemarkeerd als binnen',
   undo: 'Ongedaan maken',
 
+  // Doelen
   of: 'van',
   daily_goal: 'Dagdoel',
   weekly_goal: 'Weekdoel',
 
+  // Navigatie
   nav_home: 'Home',
   nav_history: 'Geschiedenis',
   nav_events: 'Sessies',
@@ -63,6 +72,7 @@ export default {
   nav_settings: 'Instellingen',
   nav_weather_settings: 'Weerinstellingen',
 
+  // Dagen van de week (kort, maandag eerst)
   day_mon: 'M',
   day_tue: 'D',
   day_wed: 'W',
@@ -71,6 +81,7 @@ export default {
   day_sat: 'Z',
   day_sun: 'Z',
 
+  // Doelenscherm
   goals_edit: 'Bewerken',
   goals_cancel: 'Annuleren',
   goals_save: 'Opslaan',
@@ -81,8 +92,10 @@ export default {
   goals_invalid_title: 'Ongeldig doel',
   goals_invalid_daily: 'Voer een waarde in tussen 1 en 720 minuten.',
   goals_invalid_weekly: 'Voer een waarde in tussen 1 en 5040 minuten.',
-  goals_who_tip: 'De WHO beveelt minimaal 150 minuten matige buitenactiviteit per week aan — dat is zo\'n 30 minuten per dag offline zijn.',
+  goals_who_tip:
+    "De WHO beveelt minimaal 150 minuten matige buitenactiviteit per week aan — dat is zo'n 30 minuten per dag offline zijn.",
 
+  // Sessiescherm
   events_tab_approved: 'Goedgekeurd',
   events_tab_standard: 'Standaard',
   events_tab_all: 'Alles',
@@ -98,6 +111,7 @@ export default {
   events_discarded: 'Verworpen',
   events_proposed: 'Voorgesteld',
 
+  // Geschiedenis scherm
   history_period_week: 'Week',
   history_period_month: 'Maand',
   history_stat_total: 'Totaal',
@@ -112,6 +126,7 @@ export default {
   history_legend_today: 'Vandaag',
   history_legend_target: 'Doelstelling',
 
+  // Instellingenscherm
   settings_section_detection: 'Detectie',
   settings_section_locations: 'Bekende locaties',
   settings_section_reminders: 'Herinneringen',
@@ -129,10 +144,12 @@ export default {
   settings_hc_verified_body: 'Health Connect is verbonden. Data wordt veilig geladen.',
   settings_hc_open_error_title: 'Fout',
   settings_hc_open_error_body: 'Kon Health Connect niet openen.',
+  // GPS permission fout
   settings_error_title: 'Fout',
   settings_error_open_settings_failed: 'Kon instellingen niet openen.',
   settings_gps_permission_required_title: 'GPS-toestemming',
-  settings_gps_permission_required_body: 'Achtergrondlocatie is nodig voor geofencing. Je data blijft uitsluitend op jouw telefoon.',
+  settings_gps_permission_required_body:
+    'Achtergrondlocatie is nodig voor geofencing. Je data blijft uitsluitend op jouw telefoon.',
   settings_permission_cancel: 'Annuleren',
   settings_permission_open: 'Instellingen',
   settings_permission_disable: 'Uitschakelen',
@@ -171,7 +188,8 @@ export default {
   settings_catchup_medium: 'Gemiddeld',
   settings_catchup_aggressive: 'Intensief',
   settings_background_tracking_label: 'Achtergrondmelding',
-  settings_background_tracking_sublabel: 'Uitschakelen via Android Instellingen → Apps → TouchGrass → Meldingen.',
+  settings_background_tracking_sublabel:
+    'Uitschakelen via Android Instellingen → Apps → TouchGrass → Meldingen.',
   settings_app_sublabel: 'Jouw offline assistent',
   settings_privacy: 'Privacy',
   settings_privacy_sublabel: 'Geen tracking. Je data is van jou.',
@@ -179,7 +197,8 @@ export default {
   settings_clear_data: 'Alle gegevens wissen',
   settings_clear_data_sublabel: 'Wis al je gegevens permanent van dit toestel',
   settings_clear_data_confirm_title: 'Alles wissen',
-  settings_clear_data_confirm_body: 'Dit verwijdert alles permanent. Geen cloud-backups, dus het is echt weg.',
+  settings_clear_data_confirm_body:
+    'Dit verwijdert alles permanent. Geen cloud-backups, dus het is echt weg.',
   settings_clear_cancel: 'Annuleren',
   settings_clear_delete: 'Verwijderen',
   settings_clear_data_success_title: 'Gegevens gewist',
@@ -189,6 +208,7 @@ export default {
   settings_rerun_tutorial: 'Tutorial opnieuw',
   settings_rerun_tutorial_sublabel: 'Bekijk de gids opnieuw',
 
+  // Uiterlijk (donkere modus)
   settings_section_appearance: 'Uiterlijk',
   settings_theme_label: 'Thema',
   settings_theme_sublabel: 'Kies je kleurenschema',
@@ -196,6 +216,7 @@ export default {
   settings_theme_light: 'Licht',
   settings_theme_dark: 'Donker',
 
+  // Bekende locaties beheer
   nav_known_locations: 'Bekende locaties',
   settings_locations_manage: 'Beheer locaties',
   settings_locations_manage_desc: 'Beheer de plekken waar je vaak binnen bent',
@@ -244,6 +265,7 @@ export default {
   manual_invalid_title: 'Ongeldige tijd',
   manual_invalid_body: 'Zorg dat de sessie korter dan 12 uur is.',
 
+  // Intro/Onboarding
   intro_skip: 'Overslaan',
   intro_next: 'Volgende',
   intro_get_started: 'Start',
@@ -257,14 +279,16 @@ export default {
   intro_hc_title: 'Health Connect',
   intro_hc_body: 'TouchGrass detecteert beweging lokaal.',
   intro_hc_why_title: 'Waarom dit nodig is?',
-  intro_hc_why_body: 'Zodat we wandelen of fietsen kunnen meerekenen zonder inbreuk te maken op je privacy.',
+  intro_hc_why_body:
+    'Zodat we wandelen of fietsen kunnen meerekenen zonder inbreuk te maken op je privacy.',
   intro_hc_hint: 'Kan later ingesteld worden.',
   intro_hc_button: 'Verbind Health Connect',
   intro_hc_button_granted: 'Verbonden ✓',
   intro_location_title: 'Locatie',
   intro_location_body: 'Voor lokale geofencing hebben we je locatie nodig.',
   intro_location_why_title: 'Waarom dit nodig is?',
-  intro_location_why_body: 'Om op de achtergrond te detecteren dat je het huis verlaat. Geen data naar de cloud.',
+  intro_location_why_body:
+    'Om op de achtergrond te detecteren dat je het huis verlaat. Geen data naar de cloud.',
   intro_location_hint: 'Kies "Altijd toestaan" bij de locatierechten.',
   intro_location_button: 'Sta locatie toe',
   intro_location_button_granted: 'Toegestaan ✓',
@@ -306,17 +330,20 @@ export default {
   intro_ready_widget_title: 'Widget',
   intro_ready_widget_body: 'Check je offline doelen direct vanaf je startscherm.',
 
+  // Meldingstitels (willekeurig gekozen)
   notif_title_1: '🌿 Tijd om offline te gaan!',
   notif_title_2: '☀️ Scherm uit, naar buiten',
   notif_title_3: '🌱 Frisse lucht wacht',
   notif_title_4: '👟 Telefoon weg en gaan',
   notif_title_5: '🌳 De natuur roept',
 
+  // Meldingsteksten
   notif_body_none: 'Je zat vandaag alleen maar binnen. Tijd voor een pauze!',
   notif_body_halfway: 'Nog {{remaining}} minuten offline te gaan.',
   notif_body_almost: 'Bijna! Nog {{remaining}} minuten.',
   notif_body_done: 'Doel bereikt! Nog een rondje offline? 🌿',
 
+  // Reden-beschrijvingen voor herinneringen ("Waarom nu?" uitleg toegevoegd aan meldingstekst)
   notif_reason_pattern: 'je koppelt vaak af rond deze tijd',
   notif_reason_lunch: 'perfect voor een schermvrije lunch',
   notif_reason_after_work: 'maak je hoofd leeg na werk',
@@ -324,20 +351,306 @@ export default {
   notif_reason_acted: 'je ging eerder offline op dit moment',
   notif_reason_more_often: 'je wilt nu herinnerd worden',
 
+  // Streak encouragement for notifications
   notif_streak_daily: 'Houd je {{count}} dagen offline streak vol!',
   notif_streak_weekly: 'Behoud je {{count}} weken offline streak!',
   notif_streak_daily_at_risk: 'Breek je {{count}} dagen streak niet!',
   notif_streak_weekly_at_risk: 'Breek je {{count}} weken streak niet!',
 
+  // Verbindingswoord tussen twee reden-beschrijvingen ("X, en Y.")
   notif_contributor_and: 'en',
+  // Weercontext toegevoegd aan meldingstekst als er geen redenbeschrijvingen beschikbaar zijn
+  // {{desc}} = weersomschrijving (bijv. "Zonnig"), {{temp}} = opgemaakte temperatuur (bijv. "22°C")
   notif_weather_context: '{{desc}}, {{temp}} buiten.',
 
+  // Meldingsacties
   notif_action_went_outside: '✅ Ben buiten!',
   notif_action_snooze: '⏰ Snooze',
   notif_action_less_often: '🔕 Minder vaak',
 
+  // Bevestigingsberichten na het tikken op een meldingsknop
   notif_confirm_title: 'TouchGrass',
   notif_confirm_went_outside: '✅ Top! Geniet ervan.',
-  notif_confirm_snoozed: "⏰ Tot over 30 minuten.",
-  notif_confirm_less_often: "🔕 Begrepen! Ik zal je minder vaak herinneren."
+  notif_confirm_snoozed: '⏰ Tot over 30 minuten.',
+  notif_confirm_less_often: '🔕 Begrepen! Ik zal je minder vaak herinneren.',
+
+  // Herinneringsmodal uitlegberichten
+  notif_feedback_dismiss: 'Begrepen',
+  notif_feedback_went_outside_detail: 'We herinneren je vaker rond {{time}}.',
+  notif_feedback_snoozed_detail:
+    'We herinneren je over 30 minuten, minder vaak om {{time}} en vaker om {{snoozeTime}}.',
+  notif_feedback_less_often_detail: 'We herinneren je minder vaak om {{time}}.',
+
+  // Minder-vaak granulaire feedbackmodal
+  notif_less_often_title: 'Wat wil je doen?',
+  notif_less_often_bad_time: '🕐 Dit was een slecht moment',
+  notif_less_often_fewer_reminders: '🔕 Stuur me minder herinneringen',
+  notif_fewer_reminders_confirm:
+    'Oké, ik stuur je {{newCount}} herinnering(en) per dag in plaats van {{oldCount}}.',
+  notif_fewer_reminders_confirm_generic: 'Oké, ik stuur je minder herinneringen.',
+
+  // Weather settings
+  settings_weather_title: 'Weer',
+  settings_weather_enabled: 'Weerbewuste herinneringen',
+  settings_weather_enabled_desc:
+    'Houd rekening met weersomstandigheden bij het voorstellen van tijden',
+  settings_weather_more: 'Meer weerinstellingen',
+  settings_weather_more_desc: 'Temperatuurvoorkeur, regen, hitte, UV',
+  settings_weather_permission_title: 'Locatietoestemming',
+  settings_weather_permission_missing: 'Machtigingen ontbreken — tik om te herstellen',
+  settings_weather_location_permission_missing:
+    'Locatietoestemming is nodig om lokaal weer op te halen. Geschatte locatie wordt alleen gebruikt voor weersomstandigheden en wordt nooit opgeslagen.',
+  settings_weather_location_request: 'Locatietoegang verlenen',
+  settings_temp_preference: 'Klimaatvoorkeur',
+  settings_temp_cold: 'Voorkeur voor koeler weer',
+  settings_temp_moderate: 'Gematigd klimaat',
+  settings_temp_hot: 'Voorkeur voor warmer weer',
+  settings_weather_avoid_rain: 'Vermijd regenachtige tijden',
+  settings_weather_avoid_heat: 'Vermijd extreme hitte',
+  settings_weather_consider_uv: 'Houd rekening met UV-index',
+  settings_weather_current: 'Huidig weer',
+  settings_weather_unavailable: 'Weergegevens niet beschikbaar',
+  settings_weather_error: 'Weer ophalen mislukt',
+  settings_weather_refresh: 'Weer verversen',
+
+  // Weersomstandigheden
+  weather_clear_sky: 'Heldere hemel',
+  weather_mainly_clear: 'Grotendeels helder',
+  weather_partly_cloudy: 'Gedeeltelijk bewolkt',
+  weather_overcast: 'Bewolkt',
+  weather_foggy: 'Mistig',
+  weather_drizzle: 'Motregen',
+  weather_rain: 'Regen',
+  weather_snow: 'Sneeuw',
+  weather_rain_showers: 'Regenbuien',
+  weather_snow_showers: 'Sneeuwbuien',
+  weather_thunderstorm: 'Onweer',
+  weather_unknown: 'Onbekend',
+
+  // Meldingskanaal
+  notif_channel_name: 'Buitenherinneringen',
+  notif_channel_background_name: 'Achtergrondtracking',
+  notif_channel_background_desc:
+    'Zichtbaar terwijl TouchGrass je buitentijd bijhoudt. Kan worden uitgeschakeld zonder invloed op herinneringen.',
+  gps_tracking_notif_body: 'Traceert je buitentijd op de achtergrond',
+  notif_channel_scheduled_name: 'Geplande herinneringen',
+  notif_channel_scheduled_desc: 'Je aangepaste geplande herinneringen om naar buiten te gaan',
+  notif_channel_daily_planner_name: 'Dagelijkse planner',
+  notif_channel_daily_planner_desc:
+    'Stille 3 uur-wekker om je dagelijkse herinneringen opnieuw in te plannen. Kan volledig worden uitgeschakeld in de Android-notificatie-instellingen.',
+  notif_daily_planner_title: 'TouchGrass',
+  notif_daily_planner_body: 'Open de app om de planning voor vandaag te voltooien.',
+
+  // Scheduled notifications
+  scheduled_notif_body: 'Je geplande herinnering om naar buiten te gaan.',
+  scheduled_empty: 'Nog geen geplande herinneringen',
+  scheduled_empty_hint: 'Tik op de + knop om een terugkerende herinnering aan te maken',
+  scheduled_add: 'Herinnering toevoegen',
+  scheduled_add_title: 'Nieuwe geplande herinnering',
+  scheduled_edit: 'Bewerken',
+  scheduled_edit_title: 'Herinnering bewerken',
+  scheduled_delete: 'Verwijderen',
+  scheduled_delete_confirm_title: 'Herinnering verwijderen',
+  scheduled_delete_confirm_body: 'Weet je zeker dat je deze herinnering wilt verwijderen?',
+  scheduled_delete_cancel: 'Annuleren',
+  scheduled_delete_confirm: 'Verwijderen',
+  scheduled_cancel: 'Annuleren',
+  scheduled_save: 'Opslaan',
+  scheduled_time: 'Tijd',
+  scheduled_days: 'Dagen',
+  scheduled_select_all: 'Alle dagen',
+  scheduled_label: 'Label (optioneel)',
+  scheduled_label_placeholder: 'bijv., Ochtendwandeling',
+  scheduled_all_days: 'Elke dag',
+  scheduled_weekdays: 'Weekdagen',
+  scheduled_error_title: 'Fout',
+  scheduled_error_no_days: 'Selecteer minstens één dag',
+  settings_scheduled_reminders: 'Geplande herinneringen',
+  settings_scheduled_reminders_sublabel: 'Maak terugkerende herinneringen voor specifieke tijden',
+
+  // Kalenderintegratie
+  settings_section_calendar: 'Agenda',
+  settings_calendar_integration: 'Agendaïntegratie',
+  settings_calendar_integration_desc:
+    'Controleer je agenda om herinneringen te vermijden tijdens afspraken',
+  settings_calendar_permission_title: 'Agendatoestemming',
+  settings_calendar_permission_missing: 'Machtigingen ontbreken — tik om te herstellen',
+  settings_calendar_permission_body:
+    'Toegang tot de agenda is nodig om je afspraken te controleren voor slimme herinneringen.\n\nTouchGrass leest alleen de titels en tijden van afspraken — geen beschrijvingen, deelnemers of andere gegevens. Niets verlaat je apparaat.',
+  settings_calendar_permission_open: 'Instellingen openen',
+  settings_calendar_permission_cancel: 'Annuleren',
+  settings_calendar_buffer: 'Afspraakbuffer',
+  settings_calendar_buffer_desc:
+    'Sla slimme herinneringen over als een afspraak binnen dit venster begint',
+  settings_calendar_buffer_minutes: '{{minutes}} minuten',
+  settings_calendar_duration: 'Buitentijd in agenda',
+  settings_calendar_duration_desc: 'Duur bij het toevoegen van buitentijd aan de agenda',
+  settings_calendar_duration_off: 'Uit',
+  settings_calendar_duration_minutes: '{{minutes}} min',
+  settings_calendar_select: 'Buitentijd opslaan in',
+  settings_calendar_select_desc: 'Agenda waar buitentijdslots worden opgeslagen',
+  settings_calendar_select_title: 'Agenda selecteren',
+  settings_calendar_select_touchgrass: 'TouchGrass (lokaal)',
+  calendar_event_title: '🌿 Buitentijd',
+  calendar_event_notes: 'Gepland door TouchGrass',
+  calendar_touchgrass_name: 'TouchGrass',
+
+  // Over TouchGrass scherm
+  nav_about_app: 'Over TouchGrass',
+  about_intro_title: 'Wat is TouchGrass?',
+  about_intro_body:
+    'TouchGrass is jouw persoonlijke buitentijd-metgezel. De app houdt automatisch bij hoeveel tijd je buiten doorbrengt, helpt je dagelijkse en wekelijkse doelen in te stellen en herinnert je er slim aan wanneer je nog niet buiten bent geweest.',
+  about_detection_title: 'Hoe buitentijd wordt bijgehouden',
+  about_detection_body:
+    'TouchGrass gebruikt twee detectiemethoden:\n\n\u2022 Health Connect \u2014 importeert oefensessies en op stappen gebaseerde buitenactiviteit uit je gezondheidsgegevens.\n\u2022 GPS \u2014 detecteert wanneer je een bekende locatie (thuis, werk) verlaat en terugkeert via de locatieservices van je apparaat.\n\nJe kunt \xe9\xe9n of beide methoden inschakelen via Instellingen \u2192 Detectie. Automatisch gedetecteerde sessies verschijnen op het tabblad Activiteiten ter beoordeling.',
+  about_goals_title: 'Doelen & voortgang',
+  about_goals_body:
+    'Stel een dagelijks buitentijddoel in (bijv. 30 minuten) en optioneel een wekelijks doel. TouchGrass houdt je reeks bij wanneer je je doel op opeenvolgende dagen of weken haalt. Je voortgang wordt getoond als een ring op het startscherm en als een staafdiagram op het tabblad Geschiedenis.',
+  about_reminders_title: 'Slimme herinneringen',
+  about_reminders_body:
+    'TouchGrass kan je een herinnering sturen wanneer je je dagelijkse doel nog niet hebt gehaald. Herinneringen zijn \u201cslim\u201d \u2014 ze controleren je agenda op aankomende afspraken en het plaatselijke weer voordat ze het beste moment om naar buiten te gaan voorstellen. Je kunt herinneringsvensters en drempelwaarden instellen via Instellingen \u2192 Herinneringen.',
+  about_manual_title: 'Handmatig loggen',
+  about_manual_body:
+    'Een sessie gemist? Je kunt buitentijd handmatig loggen via het startscherm. Tik op de ring of gebruik de knop voor handmatig loggen om een eerdere sessie in te voeren of een live timer te starten. Handmatige sessies worden altijd direct goedgekeurd.',
+  about_widget_title: 'Startscherm-widget',
+  about_widget_body:
+    'Voeg de TouchGrass-widget toe aan je startscherm om snel je dagelijkse voortgang te zien. De widget toont een voortgangsring en laat je met \xe9\xe9n tik een buitensessie starten of stoppen \u2014 zonder de app te openen. Houd je startscherm ingedrukt en kies Widgets \u2192 TouchGrass om de widget toe te voegen.',
+  about_privacy_title: 'Privacy',
+  about_privacy_body:
+    'Al je gegevens blijven op je apparaat. TouchGrass stuurt geen persoonlijke informatie naar externe servers. Locatiegegevens worden alleen gebruikt om buitensessies te detecteren en worden niet langer bewaard dan nodig. Health Connect-gegevens worden lokaal gelezen en niet gedeeld.',
+
+  // Feedback & ondersteuning scherm
+  nav_feedback_support: 'Feedback & Ondersteuning',
+  feedback_send_feedback: 'Feedback sturen',
+  feedback_send_feedback_sublabel: 'Deel een bugrapport, idee of algemene feedback',
+  feedback_support_kofi: 'Jolly Heron steunen',
+  feedback_support_kofi_sublabel: 'Trakteer me op een kopje koffie — elke bijdrage helpt ☕',
+  feedback_google_disclosure:
+    'Feedback wordt ingediend via Google Formulieren en valt onder het privacybeleid van Google. Zie ons Privacybeleid.',
+  settings_feedback_support: 'Feedback & Ondersteuning',
+  settings_feedback_support_sublabel: 'Stuur feedback of steun de ontwikkelaar',
+
+  // Foutgrens crashscherm
+  error_boundary_title: 'Er is iets misgegaan',
+  error_boundary_subtitle:
+    'De app is vastgelopen door een onverwachte fout. Probeer de app opnieuw te starten of meld het probleem zodat we het kunnen oplossen. Melden deelt je apparaattype en appversie met Google Formulieren.',
+  error_boundary_restart: 'App herstarten',
+  error_boundary_report: 'Probleem melden',
+
+  // Background Task
+  background_task_title: 'Slimme Herinneringen',
+  background_task_desc:
+    'Controleren wat de beste tijd is om je te herinneren om naar buiten te gaan.',
+
+  // Activiteitenlog scherm
+  nav_activity_log: 'Activiteitenlog',
+  settings_section_activity_log: 'Transparantie',
+  settings_activity_log: 'Activiteitenlog',
+  settings_activity_log_sublabel: 'Bekijk wat de app op de achtergrond doet',
+  activity_log_empty: 'Nog geen gebeurtenissen opgeslagen.',
+  activity_log_section_hc: 'Health Connect',
+  activity_log_section_gps: 'GPS',
+  activity_log_section_reminders: 'Slimme Herinneringen',
+
+  // Batterij-optimalisatie (Android intro)
+  intro_battery_title: 'Achtergrondactiviteit',
+  intro_battery_body:
+    'Voor betrouwbare herinneringen, zelfs als de app gesloten is, heeft TouchGrass onbeperkte achtergrondactiviteit nodig.',
+  intro_battery_why_title: 'Waarom is dit nodig?',
+  intro_battery_why_body:
+    'Sommige telefoonfabrikanten beperken achtergrondapps agressief om batterij te besparen. Zonder deze instelling kunnen je herinneringen vertraagd worden of helemaal niet aankomen.',
+  intro_battery_button: 'Open batterij-instellingen',
+  intro_battery_button_done: 'Instellingen geopend ✓',
+  intro_battery_hint:
+    'Zoek TouchGrass in de lijst en selecteer "Onbeperkt". Je kunt dit overslaan en later wijzigen in Instellingen.',
+
+  // Instellingen batterij-optimalisatie
+  settings_battery_optimization: 'Batterij-optimalisatie',
+  settings_battery_optimization_sublabel:
+    'TouchGrass is zeer zuinig — maar Android kan achtergrondapps agressief blokkeren. Ga naar Batterij → Batterijoptimalisatie → zoek TouchGrass → kies Onbeperkt.',
+
+  // Intro checklist
+  intro_ready_checklist_item_battery: 'Stel batterij-optimalisatie in op "Onbeperkt".',
+
+  // Taal-/datumopmaak
+  locale_tag: 'nl-NL',
+
+  // Sessie-omschrijvingen (opgeslagen bij elke sessie om de detectiemethode te omschrijven)
+  session_notes_manual: 'Handmatig ingevoerd.',
+  // GPS-omschrijvingen — {{dist}} = numerieke afstand, {{distUnit}} = "km" of "mi",
+  //                      {{speed}} = numerieke snelheid, {{speedUnit}} = "km/u" of "mph"
+  session_notes_gps_left_returned:
+    'GPS-detectie, vertrokken bij {{start}} en teruggekeerd na {{dist}} {{distUnit}} bij {{speed}} {{speedUnit}}.',
+  session_notes_gps_left_went:
+    'GPS-detectie, vertrokken bij {{start}} en gegaan naar {{end}} na {{dist}} {{distUnit}} bij {{speed}} {{speedUnit}}.',
+  session_notes_gps_left:
+    'GPS-detectie, vertrokken bij {{start}} na {{dist}} {{distUnit}} bij {{speed}} {{speedUnit}}.',
+  session_notes_gps_returned:
+    'GPS-detectie, teruggekeerd bij {{end}} na {{dist}} {{distUnit}} bij {{speed}} {{speedUnit}}.',
+  session_notes_gps_no_location: 'GPS-detectie, {{dist}} {{distUnit}} bij {{speed}} {{speedUnit}}.',
+  // Health Connect-omschrijvingen — {{steps}} = opgemaakt getal, {{speed}} = numerieke snelheid, {{speedUnit}} = "km/u" of "mph"
+  session_notes_hc_steps: 'Health Connect, {{steps}} stappen bij {{speed}} {{speedUnit}}.',
+  session_notes_hc_exercise: 'Health Connect, {{exerciseName}}.',
+  // Snelheidseenheid voor het meetsysteem van het apparaat (in de code vervangen door "mph" voor imperiale regio's)
+  unit_speed_metric: 'km/u',
+  unit_speed_imperial: 'mph',
+  // Namen van activiteitstypen (Health Connect integer → weergavenaam)
+  exercise_badminton: 'badminton',
+  exercise_baseball: 'honkbal',
+  exercise_basketball: 'basketbal',
+  exercise_biking: 'fietsen',
+  exercise_cricket: 'cricket',
+  exercise_american_football: 'American football',
+  exercise_australian_football: 'Australisch voetbal',
+  exercise_frisbee: 'frisbee',
+  exercise_golf: 'golf',
+  exercise_handball: 'handbal',
+  exercise_hiking: 'wandelen',
+  exercise_ice_hockey: 'ijshockey',
+  exercise_ice_skating: 'schaatsen',
+  exercise_paddling: 'peddelen',
+  exercise_paragliding: 'paragliding',
+  exercise_rock_climbing: 'rotsklimmen',
+  exercise_roller_hockey: 'rollerhockey',
+  exercise_rowing: 'roeien',
+  exercise_rugby: 'rugby',
+  exercise_running: 'hardlopen',
+  exercise_sailing: 'zeilen',
+  exercise_scuba_diving: 'duiken',
+  exercise_skating: 'skeeleren',
+  exercise_skiing: 'skiën',
+  exercise_snowboarding: 'snowboarden',
+  exercise_snowshoeing: 'sneeuwschoenwandelen',
+  exercise_soccer: 'voetbal',
+  exercise_softball: 'softball',
+  exercise_surfing: 'surfen',
+  exercise_open_water_swimming: 'open water zwemmen',
+  exercise_tennis: 'tennis',
+  exercise_volleyball: 'volleybal',
+  exercise_walking: 'wandelen',
+  exercise_water_polo: 'waterpolo',
+  exercise_wheelchair: 'rolstoel',
+  exercise_unknown: 'activiteitstype {{type}}',
+
+  // Toestemmingsproblemen banner (Doelenscherm / Instellingenscherm)
+  permission_issues_banner:
+    'Toestemmingsproblemen bij: {{features}}. Scroll omlaag om te herstellen of uit te schakelen.',
+
+  // Diagnostic sheet
+  diagnostic_title: 'App Diagnose',
+  diagnostic_environment: 'Omgeving',
+  diagnostic_native_version: 'Versie',
+  diagnostic_launch_type: 'Starttype',
+  diagnostic_update_id: 'Update ID',
+  diagnostic_launch_embedded: 'Ingebouwd',
+  diagnostic_launch_ota: 'OTA-update',
+  diagnostic_unknown: 'onbekend',
+  diagnostic_none: 'geen',
+  diagnostic_share: 'Diagnostiek delen',
+  diagnostic_check_update: 'Controleer op update',
+  diagnostic_update_checking: 'Controleren…',
+  diagnostic_update_done: 'Bijgewerkt',
+  // Update splash screen
+  update_splash_checking: 'Controleren op updates…',
+  update_splash_downloading: 'Update installeren…',
 };

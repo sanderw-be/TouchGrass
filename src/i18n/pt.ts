@@ -1,8 +1,10 @@
 export default {
+  // Greetings
   greeting_morning: 'Bom dia 🌱',
   greeting_afternoon: 'Boa tarde ☀️',
   greeting_evening: 'Boa noite 🌙',
 
+  // Home screen
   goal_reached: 'Objetivo alcançado! Bom trabalho ao desconectar hoje.',
   outside_time_awaits: 'Faltam {{amount}} de tempo offline hoje.',
   remaining_for_goal: 'Faltam {{amount}} para a tua meta diária.',
@@ -12,28 +14,33 @@ export default {
   no_sessions_sub: 'Larga o ecrã ou regista manualmente.',
   todays_sessions: 'Sessões de hoje',
 
+  // Streaks
   streak_daily_singular: '{{count}} dia seguido',
   streak_daily_plural: '{{count}} dias seguidos',
   streak_weekly_singular: '{{count}} semana seguida',
   streak_weekly_plural: '{{count}} semanas seguidas',
   streak_separator: ' · ',
 
+  // Progress ring inline timer
   ring_timer_start: 'toca para iniciar',
   ring_timer_tap_stop: 'toca para parar',
   ring_timer_outside: 'lá fora',
   ring_timer_info: 'Toca no círculo para iniciar um temporizador',
 
+  // Widget
   widget_start_outside: 'iniciar sessão\noffline',
   widget_back_inside: 'de volta a casa',
   widget_started: 'iniciado',
   widget_loading: 'A carregar…',
   widget_open_app: 'Abre a app para atualizar',
 
+  // Session sources
   source_health_connect: 'Atividade',
   source_gps: 'GPS Local',
   source_manual: 'Manual',
   source_timeline: 'Linha do tempo',
 
+  // Session review
   review: 'rever',
   session_delete: 'Apagar',
   session_delete_confirm_title: 'Apagar sessão',
@@ -52,10 +59,12 @@ export default {
   session_rejected_snackbar: 'Marcado como dentro',
   undo: 'Desfazer',
 
+  // Goals
   of: 'de',
   daily_goal: 'Meta diária',
   weekly_goal: 'Meta semanal',
 
+  // Navigation
   nav_home: 'Início',
   nav_history: 'Histórico',
   nav_events: 'Sessões',
@@ -63,6 +72,7 @@ export default {
   nav_settings: 'Definições',
   nav_weather_settings: 'Meteorologia',
 
+  // Days of week (short, Monday first)
   day_mon: 'S',
   day_tue: 'T',
   day_wed: 'Q',
@@ -71,6 +81,7 @@ export default {
   day_sat: 'S',
   day_sun: 'D',
 
+  // Goals screen
   goals_edit: 'Editar',
   goals_cancel: 'Cancelar',
   goals_save: 'Guardar',
@@ -81,8 +92,10 @@ export default {
   goals_invalid_title: 'Meta inválida',
   goals_invalid_daily: 'Insere um valor entre 1 e 720 minutos.',
   goals_invalid_weekly: 'Insere um valor entre 1 e 5040 minutos.',
-  goals_who_tip: 'A OMS recomenda pelo menos 150 minutos por semana ao ar livre — cerca de 30 minutos por dia de desconexão.',
+  goals_who_tip:
+    'A OMS recomenda pelo menos 150 minutos por semana ao ar livre — cerca de 30 minutos por dia de desconexão.',
 
+  // Events screen
   events_tab_approved: 'Aprovado',
   events_tab_standard: 'Padrão',
   events_tab_all: 'Tudo',
@@ -98,6 +111,7 @@ export default {
   events_discarded: 'Descartado',
   events_proposed: 'Proposto',
 
+  // History screen
   history_period_week: 'Semana',
   history_period_month: 'Mês',
   history_stat_total: 'Total',
@@ -112,6 +126,7 @@ export default {
   history_legend_today: 'Hoje',
   history_legend_target: 'Objetivo',
 
+  // Settings screen
   settings_section_detection: 'Deteção (Local)',
   settings_section_locations: 'Locais',
   settings_section_reminders: 'Lembretes',
@@ -129,10 +144,12 @@ export default {
   settings_hc_verified_body: 'Acesso local confirmado.',
   settings_hc_open_error_title: 'Erro',
   settings_hc_open_error_body: 'Abre manualmente as definições.',
+  // GPS permission error
   settings_error_title: 'Erro',
   settings_error_open_settings_failed: 'Não foi possível abrir as definições.',
   settings_gps_permission_required_title: 'Permissão GPS',
-  settings_gps_permission_required_body: 'O geofencing precisa da localização em segundo plano. Os teus dados de localização nunca vão para a nuvem.',
+  settings_gps_permission_required_body:
+    'O geofencing precisa da localização em segundo plano. Os teus dados de localização nunca vão para a nuvem.',
   settings_permission_cancel: 'Cancelar',
   settings_permission_open: 'Abrir Definições',
   settings_permission_disable: 'Desativar',
@@ -189,6 +206,7 @@ export default {
   settings_rerun_tutorial: 'Repetir tutorial',
   settings_rerun_tutorial_sublabel: 'Ver novamente',
 
+  // Appearance (dark mode)
   settings_section_appearance: 'Aparência',
   settings_theme_label: 'Tema',
   settings_theme_sublabel: 'O teu esquema de cores preferido',
@@ -196,6 +214,7 @@ export default {
   settings_theme_light: 'Claro',
   settings_theme_dark: 'Escuro',
 
+  // Known locations management
   nav_known_locations: 'Locais',
   settings_locations_manage: 'Gerir locais conhecidos',
   settings_locations_manage_desc: 'Configura locais onde ficas muito tempo',
@@ -244,6 +263,7 @@ export default {
   manual_invalid_title: 'Inválido',
   manual_invalid_body: 'O máximo são 12 horas.',
 
+  // Intro/Onboarding
   intro_skip: 'Saltar',
   intro_next: 'Seguinte',
   intro_get_started: 'Começar',
@@ -264,7 +284,8 @@ export default {
   intro_location_title: 'Localização',
   intro_location_body: 'Geofencing privado.',
   intro_location_why_title: 'Porquê?',
-  intro_location_why_body: 'Para o telemóvel saber quando sais de casa sem te espiar num mapa online.',
+  intro_location_why_body:
+    'Para o telemóvel saber quando sais de casa sem te espiar num mapa online.',
   intro_location_hint: 'Usa "Permitir sempre" para a deteção em segundo plano.',
   intro_location_button: 'Dar permissão',
   intro_location_button_granted: 'Permitido ✓',
@@ -306,17 +327,20 @@ export default {
   intro_ready_widget_title: 'Widget',
   intro_ready_widget_body: 'Vê tudo diretamente no teu ecrã inicial.',
 
+  // Notification titles (randomly picked)
   notif_title_1: '🌿 Larga o telemóvel!',
   notif_title_2: '☀️ Vai apanhar sol',
   notif_title_3: '🌱 Respira fundo lá fora',
   notif_title_4: '👟 Deixa o ecrã para trás',
   notif_title_5: '🌳 A natureza chama',
 
+  // Notification bodies
   notif_body_none: 'Ainda não estiveste lá fora. Vai dar um passeio!',
   notif_body_halfway: 'Faltam-te {{remaining}} minutos offline.',
   notif_body_almost: 'Falta pouco! Mais {{remaining}} minutos.',
   notif_body_done: 'Conseguido! Queres mais um passeio livre de ecrãs? 🌿',
 
+  // Reminder reason descriptions ("Why this time?" explanations appended to notification body)
   notif_reason_pattern: 'costumas ir agora',
   notif_reason_lunch: 'ótima hora para almoço sem ecrãs',
   notif_reason_after_work: 'limpa a mente depois do trabalho',
@@ -324,20 +348,303 @@ export default {
   notif_reason_acted: 'já foste a esta hora',
   notif_reason_more_often: 'quiseste um lembrete',
 
+  // Streak encouragement for notifications
   notif_streak_daily: 'Mantém a sequência de {{count}} dias!',
   notif_streak_weekly: 'Não quebres a série de {{count}} semanas!',
   notif_streak_daily_at_risk: 'Não estragues a sequência de {{count}} dias!',
   notif_streak_weekly_at_risk: 'Não estragues a sequência de {{count}} semanas!',
 
+  // Connector word used between two reminder reason descriptions ("X, and Y.")
   notif_contributor_and: 'e',
+  // Weather context appended to notification body when no contributor reasons are available
+  // {{desc}} = weather description (e.g. "Sunny"), {{temp}} = formatted temperature (e.g. "22°C")
   notif_weather_context: '{{desc}}, {{temp}} lá fora.',
 
+  // Notification action buttons
   notif_action_went_outside: '✅ Fui lá fora!',
   notif_action_snooze: '⏰ Adiar',
   notif_action_less_often: '🔕 Menos',
 
+  // Notification action confirmation messages (shown briefly after tapping an action button)
   notif_confirm_title: 'TouchGrass',
   notif_confirm_went_outside: '✅ Boa! Aproveita.',
-  notif_confirm_snoozed: "⏰ Aviso daqui a 30 min.",
-  notif_confirm_less_often: "🔕 Tudo bem, vou avisar menos."
+  notif_confirm_snoozed: '⏰ Aviso daqui a 30 min.',
+  notif_confirm_less_often: '🔕 Tudo bem, vou avisar menos.',
+
+  // Reminder feedback modal explanation messages
+  notif_feedback_dismiss: 'Got it',
+  notif_feedback_went_outside_detail: "We'll remind you more around {{time}}.",
+  notif_feedback_snoozed_detail:
+    "We'll remind you in 30 minutes, remind you less at {{time}} and more at {{snoozeTime}}.",
+  notif_feedback_less_often_detail: "We'll remind you less at {{time}}.",
+
+  // Less-often granular feedback modal
+  notif_less_often_title: 'What would you like?',
+  notif_less_often_bad_time: '🕐 This was a bad time',
+  notif_less_often_fewer_reminders: '🔕 Send me fewer reminders',
+  notif_fewer_reminders_confirm:
+    "Okay, I'll send you {{newCount}} reminder(s) per day instead of {{oldCount}}.",
+  notif_fewer_reminders_confirm_generic: "Okay, I'll send you fewer reminders.",
+
+  // Weather settings
+  settings_weather_title: 'Weather',
+  settings_weather_enabled: 'Weather-aware reminders',
+  settings_weather_enabled_desc: 'Consider weather conditions when suggesting outdoor times',
+  settings_weather_more: 'More weather settings',
+  settings_weather_more_desc: 'Temperature preference, rain, heat, UV',
+  settings_weather_permission_title: 'Location Permission',
+  settings_weather_permission_missing: 'Acesso necessário — toca para configurar',
+  settings_weather_location_permission_missing:
+    'Location permission is needed to fetch local weather. Approximate location is only used to determine weather conditions and is never stored.',
+  settings_weather_location_request: 'Grant Location Access',
+  settings_temp_preference: 'Climate preference',
+  settings_temp_cold: 'Prefer cooler weather',
+  settings_temp_moderate: 'Moderate climate',
+  settings_temp_hot: 'Prefer warmer weather',
+  settings_weather_avoid_rain: 'Avoid rainy times',
+  settings_weather_avoid_heat: 'Avoid extreme heat',
+  settings_weather_consider_uv: 'Consider UV index',
+  settings_weather_current: 'Current weather',
+  settings_weather_unavailable: 'Weather data unavailable',
+  settings_weather_error: 'Failed to fetch weather',
+  settings_weather_refresh: 'Refresh weather',
+
+  // Weather conditions
+  weather_clear_sky: 'Clear sky',
+  weather_mainly_clear: 'Mainly clear',
+  weather_partly_cloudy: 'Partly cloudy',
+  weather_overcast: 'Overcast',
+  weather_foggy: 'Foggy',
+  weather_drizzle: 'Drizzle',
+  weather_rain: 'Rain',
+  weather_snow: 'Snow',
+  weather_rain_showers: 'Rain showers',
+  weather_snow_showers: 'Snow showers',
+  weather_thunderstorm: 'Thunderstorm',
+  weather_unknown: 'Unknown',
+
+  // Notification channel
+  notif_channel_name: 'Outside reminders',
+  notif_channel_background_name: 'Background tracking',
+  notif_channel_background_desc:
+    'Shows while TouchGrass is tracking your outside time. Can be disabled without affecting reminders.',
+  gps_tracking_notif_body: 'Tracking your outside time in the background',
+  notif_channel_scheduled_name: 'Scheduled reminders',
+  notif_channel_scheduled_desc: 'Your custom scheduled reminders to go outside',
+  notif_channel_daily_planner_name: 'Daily planner',
+  notif_channel_daily_planner_desc:
+    'Silent 3 AM wake-up used to reschedule your daily reminders. Can be fully disabled in Android notification settings.',
+  notif_daily_planner_title: 'TouchGrass',
+  notif_daily_planner_body: 'Open the app to complete planning for today.',
+
+  // Scheduled notifications
+  scheduled_notif_body: 'Your scheduled reminder to go outside.',
+  scheduled_empty: 'No scheduled reminders yet',
+  scheduled_empty_hint: 'Tap the + button to create a recurring reminder',
+  scheduled_add: 'Add reminder',
+  scheduled_add_title: 'New scheduled reminder',
+  scheduled_edit: 'Edit',
+  scheduled_edit_title: 'Edit reminder',
+  scheduled_delete: 'Delete',
+  scheduled_delete_confirm_title: 'Delete reminder',
+  scheduled_delete_confirm_body: 'Are you sure you want to delete this reminder?',
+  scheduled_delete_cancel: 'Cancel',
+  scheduled_delete_confirm: 'Delete',
+  scheduled_cancel: 'Cancel',
+  scheduled_save: 'Save',
+  scheduled_time: 'Time',
+  scheduled_days: 'Days',
+  scheduled_select_all: 'All days',
+  scheduled_label: 'Label (optional)',
+  scheduled_label_placeholder: 'e.g., Morning walk',
+  scheduled_all_days: 'Every day',
+  scheduled_weekdays: 'Weekdays',
+  scheduled_error_title: 'Error',
+  scheduled_error_no_days: 'Please select at least one day',
+  settings_scheduled_reminders: 'Scheduled reminders',
+  settings_scheduled_reminders_sublabel: 'Create recurring reminders for specific times',
+
+  // Calendar integration
+  settings_section_calendar: 'Calendar',
+  settings_calendar_integration: 'Calendar integration',
+  settings_calendar_integration_desc:
+    'Check your calendar to avoid scheduling reminders during meetings',
+  settings_calendar_permission_title: 'Calendar Permission',
+  settings_calendar_permission_missing: 'Acesso necessário — toca para configurar',
+  settings_calendar_permission_body:
+    'Calendar access is needed to check your appointments for smart reminders.\n\nTouchGrass reads only event titles and times — no descriptions, attendees, or other data. Nothing leaves your device.',
+  settings_calendar_permission_open: 'Open Settings',
+  settings_calendar_permission_cancel: 'Cancel',
+  settings_calendar_buffer: 'Meeting buffer',
+  settings_calendar_buffer_desc: 'Skip smart reminders when a meeting starts within this window',
+  settings_calendar_buffer_minutes: '{{minutes}} minutes',
+  settings_calendar_duration: 'Outside time in calendar',
+  settings_calendar_duration_desc: 'Duration when adding outdoor time to calendar',
+  settings_calendar_duration_off: 'Off',
+  settings_calendar_duration_minutes: '{{minutes}} min',
+  settings_calendar_select: 'Write outdoor time to',
+  settings_calendar_select_desc: 'Calendar where outdoor time slots are saved',
+  settings_calendar_select_title: 'Select Calendar',
+  settings_calendar_select_touchgrass: 'TouchGrass (local)',
+  calendar_event_title: '🌿 Outdoor time',
+  calendar_event_notes: 'Scheduled by TouchGrass',
+  calendar_touchgrass_name: 'TouchGrass',
+
+  // About TouchGrass screen
+  nav_about_app: 'About TouchGrass',
+  about_intro_title: 'What is TouchGrass?',
+  about_intro_body:
+    'TouchGrass is your personal outdoor time companion. It automatically tracks the time you spend outside, helps you set daily and weekly goals, and nudges you with smart reminders when you haven\u2019t gone out yet.',
+  about_detection_title: 'How outdoor time is tracked',
+  about_detection_body:
+    'TouchGrass uses two detection methods:\n\n\u2022 Health Connect \u2014 imports exercise sessions and step-based outdoor activity from your health data.\n\u2022 GPS \u2014 detects when you leave a known location (home, work) and returns, using your device\u2019s location services.\n\nYou can enable one or both methods in Settings \u2192 Detection. Sessions detected automatically show up on the Events tab for your review.',
+  about_goals_title: 'Goals & progress',
+  about_goals_body:
+    'Set a daily outdoor time goal (e.g. 30 minutes) and optionally a weekly goal. TouchGrass tracks your streak when you hit your goal on consecutive days or weeks. Your progress is shown as a ring on the home screen and as a bar chart in the History tab.',
+  about_reminders_title: 'Smart reminders',
+  about_reminders_body:
+    'TouchGrass can send you a reminder when you haven\u2019t reached your daily goal yet. Reminders are \u201csmart\u201d \u2014 they check your calendar for upcoming meetings and your local weather before suggesting the best time to go outside. You can configure reminder windows and thresholds in Settings \u2192 Reminders.',
+  about_manual_title: 'Manual logging',
+  about_manual_body:
+    'Missed a session? You can log outdoor time manually from the home screen. Tap the ring or use the manual log button to enter a past session or start a live timer. Manual sessions are always approved immediately.',
+  about_widget_title: 'Home screen widget',
+  about_widget_body:
+    'Add the TouchGrass widget to your home screen for a quick glance at your daily progress. The widget shows a progress ring and lets you start or stop an outdoor session with a single tap \u2014 no need to open the app. Long-press your home screen and choose Widgets \u2192 TouchGrass to add it.',
+  about_privacy_title: 'Privacy',
+  about_privacy_body:
+    'All your data stays on your device. TouchGrass does not send any personal information to external servers. Location data is used only to detect outdoor sessions and is never stored beyond what is needed. Health Connect data is read locally and is not shared.',
+
+  // Feedback & Support screen
+  nav_feedback_support: 'Feedback & Support',
+  feedback_send_feedback: 'Send feedback',
+  feedback_send_feedback_sublabel: 'Share a bug report, feature idea, or general feedback',
+  feedback_support_kofi: 'Support Jolly Heron',
+  feedback_support_kofi_sublabel: 'Buy me a coffee — every bit helps ☕',
+  feedback_google_disclosure:
+    'Feedback is submitted via Google Forms and is subject to Google\u2019s privacy practices. See our Privacy Policy.',
+  settings_feedback_support: 'Feedback & Support',
+  settings_feedback_support_sublabel: 'Share feedback or support the developer',
+
+  // Error boundary crash screen
+  error_boundary_title: 'Something went wrong',
+  error_boundary_subtitle:
+    'The app encountered an unexpected error. You can try restarting it or report the issue to help us fix it. Reporting will share your device type and app version with Google Forms.',
+  error_boundary_restart: 'Restart app',
+  error_boundary_report: 'Report this issue',
+
+  // Background Task
+  background_task_title: 'Smart Reminders',
+  background_task_desc: 'Checking for the best time to remind you to go outside.',
+
+  // Activity Log screen
+  nav_activity_log: 'Activity Log',
+  settings_section_activity_log: 'Transparency',
+  settings_activity_log: 'Activity log',
+  settings_activity_log_sublabel: 'View what the app does in the background',
+  activity_log_empty: 'No events recorded yet.',
+  activity_log_section_hc: 'Health Connect',
+  activity_log_section_gps: 'GPS',
+  activity_log_section_reminders: 'Smart Reminders',
+
+  // Battery optimization (Android intro)
+  intro_battery_title: 'Background Activity',
+  intro_battery_body:
+    'For reliable reminders even when the app is closed, TouchGrass needs unrestricted background activity.',
+  intro_battery_why_title: 'Why is this needed?',
+  intro_battery_why_body:
+    'Some phone manufacturers aggressively limit background apps to save battery. Without this setting, your reminders may be delayed or missed entirely.',
+  intro_battery_button: 'Open Battery Settings',
+  intro_battery_button_done: 'Settings Opened ✓',
+  intro_battery_hint:
+    'Find TouchGrass in the list and select "Unrestricted". You can skip this and change it later in Settings.',
+
+  // Settings battery optimization
+  settings_battery_optimization: 'Battery optimization',
+  settings_battery_optimization_sublabel:
+    'TouchGrass is very efficient — but Android can aggressively block background apps. Go to Battery → Battery optimization → find TouchGrass → set to Unrestricted.',
+
+  // Intro checklist
+  intro_ready_checklist_item_battery: 'Set battery optimization to "Unrestricted".',
+
+  // Time/date formatting locale tag
+  locale_tag: 'pt-PT',
+
+  // Session description notes (stored with each session to describe how it was detected)
+  session_notes_manual: 'Manual entry.',
+  // GPS descriptions — {{dist}} = numeric distance, {{distUnit}} = "km" or "mi",
+  //                    {{speed}} = numeric speed,   {{speedUnit}} = "km/h" or "mph"
+  session_notes_gps_left_returned:
+    'GPS detection, left {{start}} and returned for {{dist}} {{distUnit}} at {{speed}} {{speedUnit}}.',
+  session_notes_gps_left_went:
+    'GPS detection, left {{start}} and went to {{end}} for {{dist}} {{distUnit}} at {{speed}} {{speedUnit}}.',
+  session_notes_gps_left:
+    'GPS detection, left {{start}} for {{dist}} {{distUnit}} at {{speed}} {{speedUnit}}.',
+  session_notes_gps_returned:
+    'GPS detection, returned to {{end}} for {{dist}} {{distUnit}} at {{speed}} {{speedUnit}}.',
+  session_notes_gps_no_location: 'GPS detection, {{dist}} {{distUnit}} at {{speed}} {{speedUnit}}.',
+  // Health Connect descriptions — {{steps}} = formatted number, {{speed}} = numeric speed, {{speedUnit}} = "km/h" or "mph"
+  session_notes_hc_steps: 'Health Connect, {{steps}} steps at {{speed}} {{speedUnit}}.',
+  session_notes_hc_exercise: 'Health Connect, {{exerciseName}}.',
+  // Speed unit label for the device's measurement system (overridden to "mph" for imperial regions in code)
+  unit_speed_metric: 'km/h',
+  unit_speed_imperial: 'mph',
+  // Exercise type names (Health Connect integer → display string)
+  exercise_badminton: 'badminton',
+  exercise_baseball: 'baseball',
+  exercise_basketball: 'basketball',
+  exercise_biking: 'biking',
+  exercise_cricket: 'cricket',
+  exercise_american_football: 'American football',
+  exercise_australian_football: 'Australian football',
+  exercise_frisbee: 'frisbee',
+  exercise_golf: 'golf',
+  exercise_handball: 'handball',
+  exercise_hiking: 'hiking',
+  exercise_ice_hockey: 'ice hockey',
+  exercise_ice_skating: 'ice skating',
+  exercise_paddling: 'paddling',
+  exercise_paragliding: 'paragliding',
+  exercise_rock_climbing: 'rock climbing',
+  exercise_roller_hockey: 'roller hockey',
+  exercise_rowing: 'rowing',
+  exercise_rugby: 'rugby',
+  exercise_running: 'running',
+  exercise_sailing: 'sailing',
+  exercise_scuba_diving: 'scuba diving',
+  exercise_skating: 'skating',
+  exercise_skiing: 'skiing',
+  exercise_snowboarding: 'snowboarding',
+  exercise_snowshoeing: 'snowshoeing',
+  exercise_soccer: 'soccer',
+  exercise_softball: 'softball',
+  exercise_surfing: 'surfing',
+  exercise_open_water_swimming: 'open water swimming',
+  exercise_tennis: 'tennis',
+  exercise_volleyball: 'volleyball',
+  exercise_walking: 'walking',
+  exercise_water_polo: 'water polo',
+  exercise_wheelchair: 'wheelchair',
+  exercise_unknown: 'exercise type {{type}}',
+
+  // Permission issues banner (GoalsScreen / SettingsScreen)
+  permission_issues_banner:
+    'Permission issues with: {{features}}. Scroll down to fix or disable these features.',
+
+  // Diagnostic sheet
+  diagnostic_title: 'App Diagnostics',
+  diagnostic_environment: 'Environment',
+  diagnostic_native_version: 'Native Version',
+  diagnostic_launch_type: 'Launch Type',
+  diagnostic_update_id: 'Update ID',
+  diagnostic_launch_embedded: 'Embedded',
+  diagnostic_launch_ota: 'OTA Update',
+  diagnostic_unknown: 'unknown',
+  diagnostic_none: 'none',
+  diagnostic_share: 'Share Diagnostics',
+  diagnostic_check_update: 'Check for update',
+  diagnostic_update_checking: 'Checking…',
+  diagnostic_update_done: 'Up to date',
+  // Update splash screen
+  update_splash_checking: 'Checking for updates…',
+  update_splash_downloading: 'Installing update…',
 };
