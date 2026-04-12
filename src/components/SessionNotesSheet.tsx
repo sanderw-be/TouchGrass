@@ -6,7 +6,6 @@ import {
   BottomSheetModal,
   BottomSheetScrollView,
   BottomSheetTextInput,
-  BottomSheetView,
 } from '@gorhom/bottom-sheet';
 import { Ionicons } from '@expo/vector-icons';
 import { updateSessionNotesAsync, OutsideSession } from '../storage/database';
@@ -26,6 +25,7 @@ export default function SessionNotesSheet({ visible, session, onClose, onNoteSav
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const insets = useSafeAreaInsets();
   const bottomSheetRef = useRef<BottomSheetModal>(null);
+  const snapPoints = useMemo(() => ['50%'], []);
   const [notes, setNotes] = useState('');
 
   useEffect(() => {
@@ -73,17 +73,16 @@ export default function SessionNotesSheet({ visible, session, onClose, onNoteSav
   return (
     <BottomSheetModal
       ref={bottomSheetRef}
-      enableDynamicSizing
+      snapPoints={snapPoints}
       onChange={handleSheetChange}
       backdropComponent={renderBackdrop}
       backgroundStyle={{ backgroundColor: colors.mist }}
       handleIndicatorStyle={{ backgroundColor: colors.fog }}
-      keyboardBehavior="interactive"
+      keyboardBehavior="extend"
       keyboardBlurBehavior="restore"
-      android_keyboardInputMode="adjustResize"
     >
-      <BottomSheetView
-        style={{ paddingBottom: Math.max(insets.bottom, spacing.sm) }}
+      <View
+        style={{ paddingBottom: Math.max(insets.bottom, spacing.sm), flex: 1 }}
         testID="session-notes-sheet"
       >
         {/* Header */}
@@ -116,7 +115,7 @@ export default function SessionNotesSheet({ visible, session, onClose, onNoteSav
             <Text style={styles.primaryBtnText}>{t('session_notes_save')}</Text>
           </TouchableOpacity>
         </BottomSheetScrollView>
-      </BottomSheetView>
+      </View>
     </BottomSheetModal>
   );
 }

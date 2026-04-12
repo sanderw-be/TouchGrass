@@ -193,9 +193,8 @@ export default function ManualSessionSheet({ visible, onClose, onSessionLogged }
       backdropComponent={renderBackdrop}
       backgroundStyle={{ backgroundColor: colors.mist }}
       handleIndicatorStyle={{ backgroundColor: colors.fog }}
-      keyboardBehavior="interactive"
+      keyboardBehavior="extend"
       keyboardBlurBehavior="restore"
-      android_keyboardInputMode="adjustResize"
     >
       <View style={{ paddingBottom: Math.max(insets.bottom, spacing.sm), flex: 1 }}>
         {/* Header */}

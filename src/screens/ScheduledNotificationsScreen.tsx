@@ -304,9 +304,8 @@ export default function ScheduledNotificationsScreen() {
         enableDynamicSizing
         onChange={handleSheetChange}
         backdropComponent={renderBackdrop}
-        keyboardBehavior="interactive"
+        keyboardBehavior="extend"
         keyboardBlurBehavior="restore"
-        android_keyboardInputMode="adjustResize"
         backgroundStyle={{ backgroundColor: colors.card }}
         handleIndicatorStyle={{ backgroundColor: colors.fog }}
       >
