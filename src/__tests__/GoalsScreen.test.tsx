@@ -1,7 +1,6 @@
 import React from 'react';
 import { render, fireEvent, act, waitFor } from '@testing-library/react-native';
-import { Platform, ScrollView, KeyboardAvoidingView } from 'react-native';
-import { spacing } from '../utils/theme';
+import { Platform, ScrollView } from 'react-native';
 
 // Mock i18n
 jest.mock('../i18n', () => ({
@@ -143,11 +142,9 @@ describe('GoalsScreen', () => {
     await waitFor(() => expect(UNSAFE_getByType(ScrollView)).toBeTruthy());
 
     const scrollView = UNSAFE_getByType(ScrollView);
-    const keyboardAvoidingView = UNSAFE_getByType(KeyboardAvoidingView);
 
     expect(scrollView.props.keyboardShouldPersistTaps).toBe('handled');
-    expect(keyboardAvoidingView.props.behavior).toBe(Platform.OS === 'ios' ? 'padding' : 'height');
-    expect(keyboardAvoidingView.props.keyboardVerticalOffset).toBe(spacing.md);
+    expect(scrollView.props.automaticallyAdjustKeyboardInsets).toBe(true);
   });
 });
 
