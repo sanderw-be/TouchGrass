@@ -8,6 +8,7 @@ import {
   Switch,
   Platform,
   Alert,
+  BackHandler,
 } from 'react-native';
 import {
   BottomSheetBackdrop,
@@ -58,6 +59,15 @@ export default function ScheduledNotificationsScreen() {
     } else {
       bottomSheetRef.current?.dismiss();
     }
+  }, [isModalVisible]);
+
+  useEffect(() => {
+    if (!isModalVisible) return;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      bottomSheetRef.current?.dismiss();
+      return true;
+    });
+    return () => sub.remove();
   }, [isModalVisible]);
 
   const handleSheetChange = useCallback((index: number) => {

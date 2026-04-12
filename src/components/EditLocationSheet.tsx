@@ -1,5 +1,13 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Alert,
+  ActivityIndicator,
+  BackHandler,
+} from 'react-native';
 import {
   BottomSheetBackdrop,
   BottomSheetModal,
@@ -80,6 +88,15 @@ export default function EditLocationSheet({
     } else {
       bottomSheetRef.current?.dismiss();
     }
+  }, [visible]);
+
+  useEffect(() => {
+    if (!visible) return;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      bottomSheetRef.current?.dismiss();
+      return true;
+    });
+    return () => sub.remove();
   }, [visible]);
 
   const handleSheetChange = useCallback(
@@ -283,7 +300,7 @@ export default function EditLocationSheet({
   return (
     <BottomSheetModal
       ref={bottomSheetRef}
-      snapPoints={['88%']}
+      enableDynamicSizing
       onChange={handleSheetChange}
       backdropComponent={renderBackdrop}
       keyboardBehavior="extend"

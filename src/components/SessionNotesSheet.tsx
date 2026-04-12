@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, BackHandler } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   BottomSheetBackdrop,
@@ -25,7 +25,6 @@ export default function SessionNotesSheet({ visible, session, onClose, onNoteSav
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const insets = useSafeAreaInsets();
   const bottomSheetRef = useRef<BottomSheetModal>(null);
-  const snapPoints = useMemo(() => ['50%'], []);
   const [notes, setNotes] = useState('');
 
   useEffect(() => {
@@ -34,6 +33,15 @@ export default function SessionNotesSheet({ visible, session, onClose, onNoteSav
     } else {
       bottomSheetRef.current?.dismiss();
     }
+  }, [visible]);
+
+  useEffect(() => {
+    if (!visible) return;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      bottomSheetRef.current?.dismiss();
+      return true;
+    });
+    return () => sub.remove();
   }, [visible]);
 
   useEffect(() => {
@@ -73,7 +81,7 @@ export default function SessionNotesSheet({ visible, session, onClose, onNoteSav
   return (
     <BottomSheetModal
       ref={bottomSheetRef}
-      snapPoints={snapPoints}
+      enableDynamicSizing
       onChange={handleSheetChange}
       backdropComponent={renderBackdrop}
       backgroundStyle={{ backgroundColor: colors.mist }}
@@ -82,7 +90,7 @@ export default function SessionNotesSheet({ visible, session, onClose, onNoteSav
       keyboardBlurBehavior="restore"
     >
       <View
-        style={{ paddingBottom: Math.max(insets.bottom, spacing.sm), flex: 1 }}
+        style={{ paddingBottom: Math.max(insets.bottom, spacing.sm) }}
         testID="session-notes-sheet"
       >
         {/* Header */}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Platform, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Platform, Alert, BackHandler } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BottomSheetBackdrop, BottomSheetModal, BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
@@ -26,7 +26,6 @@ export default function EditSessionSheet({ visible, session, onClose, onSessionU
   const [endTime, setEndTime] = useState(new Date());
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
-  const snapPoints = useMemo(() => ['85%'], []);
 
   useEffect(() => {
     if (visible) {
@@ -34,6 +33,15 @@ export default function EditSessionSheet({ visible, session, onClose, onSessionU
     } else {
       bottomSheetRef.current?.dismiss();
     }
+  }, [visible]);
+
+  useEffect(() => {
+    if (!visible) return;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      bottomSheetRef.current?.dismiss();
+      return true;
+    });
+    return () => sub.remove();
   }, [visible]);
 
   useEffect(() => {
@@ -110,7 +118,7 @@ export default function EditSessionSheet({ visible, session, onClose, onSessionU
   return (
     <BottomSheetModal
       ref={bottomSheetRef}
-      snapPoints={snapPoints}
+      enableDynamicSizing
       onChange={handleSheetChange}
       backdropComponent={renderBackdrop}
       backgroundStyle={{ backgroundColor: colors.mist }}

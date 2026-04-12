@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Platform, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Platform, Alert, BackHandler } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   BottomSheetBackdrop,
@@ -54,6 +54,15 @@ export default function ManualSessionSheet({ visible, onClose, onSessionLogged }
     } else {
       bottomSheetRef.current?.dismiss();
     }
+  }, [visible]);
+
+  useEffect(() => {
+    if (!visible) return;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      bottomSheetRef.current?.dismiss();
+      return true;
+    });
+    return () => sub.remove();
   }, [visible]);
 
   // Reset state when sheet opens
@@ -188,7 +197,7 @@ export default function ManualSessionSheet({ visible, onClose, onSessionLogged }
   return (
     <BottomSheetModal
       ref={bottomSheetRef}
-      snapPoints={['85%']}
+      enableDynamicSizing
       onChange={handleSheetChange}
       backdropComponent={renderBackdrop}
       backgroundStyle={{ backgroundColor: colors.mist }}
@@ -196,7 +205,7 @@ export default function ManualSessionSheet({ visible, onClose, onSessionLogged }
       keyboardBehavior="extend"
       keyboardBlurBehavior="restore"
     >
-      <View style={{ paddingBottom: Math.max(insets.bottom, spacing.sm), flex: 1 }}>
+      <View style={{ paddingBottom: Math.max(insets.bottom, spacing.sm) }}>
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.title}>{t('manual_title')}</Text>
