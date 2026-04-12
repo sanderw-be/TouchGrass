@@ -5,8 +5,8 @@ export default {
   greeting_evening: 'Boa noite 🌙',
 
   // Home screen
-  goal_reached: 'Objetivo alcançado! Bom trabalho ao desconectar hoje.',
-  outside_time_awaits: 'Faltam {{amount}} de tempo offline hoje.',
+  goal_reached: 'Objetivo alcançado! Bom trabalho ao sair hoje.',
+  outside_time_awaits: 'Faltam {{amount}} de tempo ao ar livre hoje.',
   remaining_for_goal: 'Faltam {{amount}} para a tua meta diária.',
   this_week: 'Esta semana',
   today: 'hoje',
@@ -28,7 +28,7 @@ export default {
   ring_timer_info: 'Toca no círculo para iniciar um temporizador',
 
   // Widget
-  widget_start_outside: 'iniciar sessão\noffline',
+  widget_start_outside: 'iniciar sessão\nao ar livre',
   widget_back_inside: 'de volta a casa',
   widget_started: 'iniciado',
   widget_loading: 'A carregar…',
@@ -189,7 +189,7 @@ export default {
   settings_catchup_aggressive: 'Agressivo',
   settings_background_tracking_label: 'Notificação do Android',
   settings_background_tracking_sublabel: 'Podes ocultá-la nas Definições do Android.',
-  settings_app_sublabel: 'O teu companheiro offline',
+  settings_app_sublabel: 'O teu companheiro para sair',
   settings_privacy: 'Privacidade',
   settings_privacy_sublabel: 'Zero rastreio. Os teus dados são teus.',
   settings_privacy_hint: 'Lê a política de privacidade',
@@ -247,7 +247,7 @@ export default {
   notif_location_suggestion_title: '📍 Novo local',
   notif_location_suggestion_body: 'Foi detetada uma nova rotina localmente.',
 
-  manual_title: 'Registar offline',
+  manual_title: 'Registar tempo lá fora',
   manual_tab_log: '📝 Sessão passada',
   manual_tab_timer: '⏱ Temporizador',
   manual_start_time: 'Início',
@@ -269,7 +269,7 @@ export default {
   intro_get_started: 'Começar',
   intro_welcome_title: 'Bem-vindo ao TouchGrass',
   intro_welcome_body: 'O teu companheiro privado para largar os ecrãs.',
-  intro_welcome_feature_1: 'Monitoriza tempo offline localmente',
+  intro_welcome_feature_1: 'Monitoriza tempo ao ar livre localmente',
   intro_welcome_feature_2: 'Define objetivos',
   intro_welcome_feature_3: 'Lembretes pacíficos',
   intro_welcome_feature_4: 'Os teus dados ficam só no teu telemóvel',
@@ -313,7 +313,7 @@ export default {
   intro_calendar_button_granted: 'Ligado ✓',
   intro_calendar_buffer_label: 'Margem de reuniões',
   intro_calendar_buffer_desc: 'Atrasar avisos',
-  intro_calendar_duration_label: 'Agendar tempo offline',
+  intro_calendar_duration_label: 'Agendar tempo ao ar livre',
   intro_calendar_duration_desc: 'Cria blocos para ti no calendário',
   intro_ready_title: 'Tudo pronto!',
   intro_ready_body: 'Vai lá fora.',
@@ -336,7 +336,7 @@ export default {
 
   // Notification bodies
   notif_body_none: 'Ainda não estiveste lá fora. Vai dar um passeio!',
-  notif_body_halfway: 'Faltam-te {{remaining}} minutos offline.',
+  notif_body_halfway: 'Faltam-te {{remaining}} minutos lá fora.',
   notif_body_almost: 'Falta pouco! Mais {{remaining}} minutos.',
   notif_body_done: 'Conseguido! Queres mais um passeio livre de ecrãs? 🌿',
 
@@ -422,10 +422,10 @@ export default {
   weather_unknown: 'Desconhecido',
 
   // Notification channel
-  notif_channel_name: 'Avisos offline',
+  notif_channel_name: 'Avisos ao ar livre',
   notif_channel_background_name: 'Atividade de fundo',
   notif_channel_background_desc: 'Aparece se a deteção geofence local estiver ativa.',
-  gps_tracking_notif_body: 'Deteção offline em andamento',
+  gps_tracking_notif_body: 'Deteção ao ar livre em andamento',
   notif_channel_scheduled_name: 'Agendados',
   notif_channel_scheduled_desc: 'Lembretes que criaste',
   notif_channel_daily_planner_name: 'Planeamento local',
@@ -458,7 +458,7 @@ export default {
   scheduled_error_title: 'Erro',
   scheduled_error_no_days: 'Escolhe um dia',
   settings_scheduled_reminders: 'Agendamentos',
-  settings_scheduled_reminders_sublabel: 'Horas fixas para desligar',
+  settings_scheduled_reminders_sublabel: 'Horas fixas para sair',
 
   // Calendar integration
   settings_section_calendar: 'Calendário',
@@ -480,7 +480,7 @@ export default {
   settings_calendar_select_desc: 'Onde guardar a pausa',
   settings_calendar_select_title: 'Calendário',
   settings_calendar_select_touchgrass: 'TouchGrass (Local)',
-  calendar_event_title: '🌿 Desconectar',
+  calendar_event_title: '🌿 Sair',
   calendar_event_notes: 'Bloqueado localmente',
   calendar_touchgrass_name: 'TouchGrass',
 
@@ -494,7 +494,7 @@ export default {
   about_goals_body: 'Mantém a racha de desconexão diretamente no telemóvel.',
   about_reminders_title: 'Subtil',
   about_reminders_body: 'A app aprende e avisa no melhor momento.',
-  about_manual_title: 'Desconectado',
+  about_manual_title: 'Lá fora',
   about_manual_body: 'Deixaste o telemóvel? Adiciona mais tarde.',
   about_widget_title: 'Widget',
   about_widget_body: 'Vê o progresso sem mergulhar no ecrã.',
