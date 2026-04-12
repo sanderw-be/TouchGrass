@@ -1,17 +1,19 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  Modal,
   TouchableOpacity,
-  ScrollView,
   Platform,
   Alert,
-  TextInput,
-  KeyboardAvoidingView,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import {
+  BottomSheetBackdrop,
+  BottomSheetModal,
+  BottomSheetScrollView,
+  BottomSheetTextInput,
+} from '@gorhom/bottom-sheet';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
 import { logManualSession, startManualSession } from '../detection/manualCheckin';
@@ -32,6 +34,7 @@ export default function ManualSessionSheet({ visible, onClose, onSessionLogged }
   const { colors, shadows } = useTheme();
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const insets = useSafeAreaInsets();
+  const bottomSheetRef = useRef<BottomSheetModal>(null);
   const [tab, setTab] = useState<Tab>('log');
 
   // Log past session state
@@ -51,6 +54,15 @@ export default function ManualSessionSheet({ visible, onClose, onSessionLogged }
   const stopTimerRef = useRef<(() => void) | null>(null);
   const timerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Present or dismiss the sheet based on visibility
+  useEffect(() => {
+    if (visible) {
+      bottomSheetRef.current?.present();
+    } else {
+      bottomSheetRef.current?.dismiss();
+    }
+  }, [visible]);
+
   // Reset state when sheet opens
   useEffect(() => {
     if (visible) {
@@ -65,6 +77,22 @@ export default function ManualSessionSheet({ visible, onClose, onSessionLogged }
       setStartTime(start);
     }
   }, [visible]);
+
+  const handleSheetChange = useCallback(
+    (index: number) => {
+      if (index === -1) {
+        onClose();
+      }
+    },
+    [onClose]
+  );
+
+  const renderBackdrop = useCallback(
+    (props: React.ComponentProps<typeof BottomSheetBackdrop>) => (
+      <BottomSheetBackdrop {...props} appearsOnIndex={0} disappearsOnIndex={-1} />
+    ),
+    []
+  );
 
   // Timer tick - calculate elapsed time from start
   useEffect(() => {
@@ -165,21 +193,22 @@ export default function ManualSessionSheet({ visible, onClose, onSessionLogged }
   const calculatedDuration = Math.round((endTime.getTime() - startTime.getTime()) / (60 * 1000));
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.kavWrapper}
-      >
-        <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onClose} />
-
-        <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, spacing.sm) }]}>
-          {/* Handle */}
-          <View style={styles.handle} />
-
+    <BottomSheetModal
+      ref={bottomSheetRef}
+      snapPoints={['85%']}
+      onChange={handleSheetChange}
+      backdropComponent={renderBackdrop}
+      backgroundStyle={{ backgroundColor: colors.mist }}
+      handleIndicatorStyle={{ backgroundColor: colors.fog }}
+      keyboardBehavior="interactive"
+      keyboardBlurBehavior="restore"
+      android_keyboardInputMode="adjustResize"
+    >
+      <View style={{ paddingBottom: Math.max(insets.bottom, spacing.sm), flex: 1 }}>
           {/* Header */}
           <View style={styles.header}>
             <Text style={styles.title}>{t('manual_title')}</Text>
-            <TouchableOpacity style={styles.closeBtn} onPress={onClose} testID="sheet-close-btn">
+            <TouchableOpacity style={styles.closeBtn} onPress={() => bottomSheetRef.current?.dismiss()} testID="sheet-close-btn">
               <Ionicons name="close" size={20} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
@@ -207,7 +236,7 @@ export default function ManualSessionSheet({ visible, onClose, onSessionLogged }
             </TouchableOpacity>
           </View>
 
-          <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+          <BottomSheetScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
             {/* ── Log past session tab ── */}
             {tab === 'log' && (
               <View>
@@ -284,7 +313,7 @@ export default function ManualSessionSheet({ visible, onClose, onSessionLogged }
 
                 {/* Notes */}
                 <Text style={styles.sectionLabel}>{t('session_notes_title')}</Text>
-                <TextInput
+                <BottomSheetTextInput
                   style={styles.notesInput}
                   value={notes}
                   onChangeText={setNotes}
@@ -343,10 +372,9 @@ export default function ManualSessionSheet({ visible, onClose, onSessionLogged }
                 )}
               </View>
             )}
-          </ScrollView>
-        </View>
-      </KeyboardAvoidingView>
-    </Modal>
+          </BottomSheetScrollView>
+      </View>
+    </BottomSheetModal>
   );
 }
 
@@ -355,29 +383,6 @@ function makeStyles(
   shadows: ReturnType<typeof useTheme>['shadows']
 ) {
   return StyleSheet.create({
-    backdrop: {
-      flex: 1,
-      backgroundColor: 'rgba(0,0,0,0.4)',
-    },
-    kavWrapper: {
-      flex: 1,
-      justifyContent: 'flex-end',
-    },
-    sheet: {
-      backgroundColor: colors.mist,
-      borderTopLeftRadius: radius.lg,
-      borderTopRightRadius: radius.lg,
-      maxHeight: '85%',
-      ...shadows.medium,
-    },
-    handle: {
-      width: 40,
-      height: 4,
-      backgroundColor: colors.fog,
-      borderRadius: radius.full,
-      alignSelf: 'center',
-      marginTop: spacing.sm,
-    },
     header: {
       flexDirection: 'row',
       alignItems: 'center',
