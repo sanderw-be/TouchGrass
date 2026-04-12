@@ -5,8 +5,8 @@ export default {
   greeting_evening: 'Buenas noches 🌙',
 
   // Home screen
-  goal_reached: '¡Meta alcanzada! Gran trabajo desconectando hoy.',
-  outside_time_awaits: 'Te esperan {{amount}} de tiempo offline.',
+  goal_reached: '¡Meta alcanzada! Gran trabajo saliendo hoy.',
+  outside_time_awaits: 'Te esperan {{amount}} de tiempo al aire libre.',
   remaining_for_goal: 'Faltan {{amount}} para tu meta diaria.',
   this_week: 'Esta semana',
   today: 'hoy',
@@ -28,7 +28,7 @@ export default {
   ring_timer_info: 'Toca el anillo para iniciar el temporizador manual',
 
   // Widget
-  widget_start_outside: 'iniciar sesión\noffline',
+  widget_start_outside: 'iniciar sesión\nal aire libre',
   widget_back_inside: 'de vuelta a casa',
   widget_started: 'iniciado',
   widget_loading: 'Cargando…',
@@ -93,7 +93,7 @@ export default {
   goals_invalid_daily: 'Ingresa entre 1 y 720 minutos.',
   goals_invalid_weekly: 'Ingresa entre 1 y 5040 minutos.',
   goals_who_tip:
-    'La OMS recomienda al menos 150 minutos a la semana — unos 30 minutos al día para desconectar.',
+    'La OMS recomienda al menos 150 minutos a la semana — unos 30 minutos al día al aire libre.',
 
   // Events screen
   events_tab_approved: 'Aprobado',
@@ -175,7 +175,7 @@ export default {
   location_delete_confirm_title: 'Eliminar',
   location_delete_confirm_body: '¿Seguro que quieres borrar este lugar?',
   settings_reminders_label: 'Recordatorios suaves',
-  settings_reminders_sublabel: 'Te ayuda a desconectar en el mejor momento.',
+  settings_reminders_sublabel: 'Te ayuda a salir en el mejor momento.',
   settings_reminders_count_off: 'Apagado',
   settings_reminders_count_per_day: '{{count}}/día',
   settings_notification_permission_title: 'Notificaciones',
@@ -189,7 +189,7 @@ export default {
   settings_catchup_aggressive: 'Fuerte',
   settings_background_tracking_label: 'Notificación de rastreo',
   settings_background_tracking_sublabel: 'Desactívala en Ajustes de Android.',
-  settings_app_sublabel: 'Tu compañero offline',
+  settings_app_sublabel: 'Tu compañero para salir',
   settings_privacy: 'Privacidad',
   settings_privacy_sublabel: 'Cero rastreo. Tus datos son tuyos.',
   settings_privacy_hint: 'Lee nuestra política de privacidad',
@@ -247,7 +247,7 @@ export default {
   notif_location_suggestion_title: '📍 Nuevo lugar (Local)',
   notif_location_suggestion_body: 'Se detectó un sitio frecuente en tu móvil.',
 
-  manual_title: 'Anotar tiempo offline',
+  manual_title: 'Anotar tiempo al aire libre',
   manual_tab_log: '📝 Sesión pasada',
   manual_tab_timer: '⏱ Temporizador',
   manual_start_time: 'Inicio',
@@ -268,8 +268,8 @@ export default {
   intro_next: 'Siguiente',
   intro_get_started: 'Empezar',
   intro_welcome_title: 'Bienvenido a TouchGrass',
-  intro_welcome_body: 'Tu refugio privado para desconectar.',
-  intro_welcome_feature_1: 'Mide tiempo offline 100% local',
+  intro_welcome_body: 'Tu refugio privado para salir al aire libre.',
+  intro_welcome_feature_1: 'Mide tiempo al aire libre 100% local',
   intro_welcome_feature_2: 'Fíjate metas de descanso visual',
   intro_welcome_feature_3: 'Avisos suaves y privados',
   intro_welcome_feature_4: 'Tus datos no van a la nube',
@@ -314,9 +314,9 @@ export default {
   intro_calendar_buffer_label: 'Margen de reuniones',
   intro_calendar_buffer_desc: 'Sin avisos cerca de eventos',
   intro_calendar_duration_label: 'Bloquear calendario',
-  intro_calendar_duration_desc: 'Añade tu tiempo offline a la agenda',
+  intro_calendar_duration_desc: 'Añade tu tiempo al aire libre a la agenda',
   intro_ready_title: '¡Todo listo!',
-  intro_ready_body: 'Es hora de soltar la pantalla.',
+  intro_ready_body: 'Es hora de salir al aire libre.',
   intro_ready_tip_title: 'Consejo',
   intro_ready_tip_body: 'Registra a mano si dejas el móvil en casa.',
   intro_ready_checklist_title: 'Checklist',
@@ -328,21 +328,21 @@ export default {
   intro_ready_widget_body: 'Controla todo desde tu pantalla de inicio.',
 
   // Notification titles (randomly picked)
-  notif_title_1: '🌿 ¡A desconectar!',
+  notif_title_1: '🌿 ¡A salir!',
   notif_title_2: '☀️ Toma un poco de aire',
   notif_title_3: '🌱 Respira fuera un rato',
-  notif_title_4: '👟 Deja la pantalla',
+  notif_title_4: '👟 ¡Sal afuera!',
   notif_title_5: '🌳 La naturaleza te espera',
 
   // Notification bodies
   notif_body_none: 'Aún no has salido. ¡Sal a estirar las piernas!',
-  notif_body_halfway: 'Faltan {{remaining}} minutos offline.',
+  notif_body_halfway: 'Faltan {{remaining}} minutos al aire libre.',
   notif_body_almost: '¡Casi! Solo {{remaining}} minutos más.',
   notif_body_done: '¡Meta lograda! ¿Un paseo más sin teléfono? 🌿',
 
   // Reminder reason descriptions ("Why this time?" explanations appended to notification body)
-  notif_reason_pattern: 'sueles desconectar ahora',
-  notif_reason_lunch: 'perfecto para comer sin pantallas',
+  notif_reason_pattern: 'sueles salir ahora',
+  notif_reason_lunch: 'perfecto para comer al aire libre',
   notif_reason_after_work: 'despeja la mente tras el trabajo',
   notif_reason_urgent: 'aún no llegas a tu meta',
   notif_reason_acted: 'otras veces has salido a esta hora',
@@ -423,7 +423,7 @@ export default {
   weather_unknown: 'Desconocido',
 
   // Notification channel
-  notif_channel_name: 'Avisos offline',
+  notif_channel_name: 'Avisos al aire libre',
   notif_channel_background_name: 'Rastreo de fondo',
   notif_channel_background_desc: 'Se muestra cuando el geofencing local está activo.',
   gps_tracking_notif_body: 'Detección de salida activa localmente',
@@ -435,7 +435,7 @@ export default {
   notif_daily_planner_body: 'Abre la app para planear tu día.',
 
   // Scheduled notifications
-  scheduled_notif_body: 'Momento programado para desconectar.',
+  scheduled_notif_body: 'Momento programado para salir.',
   scheduled_empty: 'Nada programado',
   scheduled_empty_hint: 'Toca el + para añadir un recordatorio',
   scheduled_add: 'Añadir',
@@ -489,7 +489,7 @@ export default {
   nav_about_app: 'Acerca de',
   about_intro_title: '¿Qué es?',
   about_intro_body:
-    'Tu espacio privado para desconectar de las pantallas. Medimos tu tiempo libre y te animamos a salir.',
+    'Tu espacio privado para salir al aire libre. Medimos tu tiempo fuera y te animamos a salir.',
   about_detection_title: 'Detección local',
   about_detection_body:
     'Usamos Health Connect y GPS local. Todo se procesa en tu dispositivo. Ajustes → Detección.',
