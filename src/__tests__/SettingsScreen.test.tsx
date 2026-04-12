@@ -113,8 +113,23 @@ describe('SettingsScreen', () => {
     await waitFor(() => expect(getByText('v1.2.0')).toBeTruthy());
   });
 
-  it('shows all language options including system default', async () => {
-    const { getByText } = render(<SettingsScreen />);
+  it('shows collapsed language row with current language and "Language"', async () => {
+    const { getByText, queryByText } = render(<SettingsScreen />);
+    await waitFor(() => {
+      expect(getByText('English / Language')).toBeTruthy();
+    });
+    // Options should be hidden when collapsed
+    expect(queryByText('Deutsch')).toBeNull();
+  });
+
+  it('expands language picker when tapped and shows all options', async () => {
+    const { getByText, getByTestId } = render(<SettingsScreen />);
+    await waitFor(() => expect(getByTestId('language-picker-toggle')).toBeTruthy());
+
+    await act(async () => {
+      fireEvent.press(getByTestId('language-picker-toggle'));
+    });
+
     await waitFor(() => {
       expect(getByText('settings_theme_system (English)')).toBeTruthy();
       expect(getByText('Deutsch')).toBeTruthy();
@@ -125,8 +140,14 @@ describe('SettingsScreen', () => {
     });
   });
 
-  it('calls setLocale with system when system default is selected', async () => {
-    const { getByText } = render(<SettingsScreen />);
+  it('calls setLocale and collapses picker when a language is selected', async () => {
+    const { getByText, getByTestId, queryByText } = render(<SettingsScreen />);
+    await waitFor(() => expect(getByTestId('language-picker-toggle')).toBeTruthy());
+
+    await act(async () => {
+      fireEvent.press(getByTestId('language-picker-toggle'));
+    });
+
     const systemRow = await waitFor(() => getByText('settings_theme_system (English)'));
 
     await act(async () => {
@@ -134,6 +155,8 @@ describe('SettingsScreen', () => {
     });
 
     expect(mockSetLocale).toHaveBeenCalledWith('system');
+    // Picker should collapse after selection
+    await waitFor(() => expect(queryByText('Deutsch')).toBeNull());
   });
 });
 

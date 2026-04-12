@@ -11,6 +11,8 @@ import {
   Platform,
   AppState,
   AppStateStatus,
+  LayoutAnimation,
+  UIManager,
 } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -44,6 +46,11 @@ import { PRIVACY_POLICY_URL } from '../utils/constants';
 import type { SettingsStackParamList } from '../navigation/AppNavigator';
 import { useShowIntro } from '../context/IntroContext';
 import { emitPermissionIssuesChanged } from '../utils/permissionIssuesChangedEmitter';
+
+// Enable LayoutAnimation on Android
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 const LANGUAGE_LABELS: Record<string, string> = {
   en: 'English',
@@ -82,6 +89,7 @@ export default function SettingsScreen() {
   const [togglingGPS, setTogglingGPS] = useState(false);
   const [permissionSheet, setPermissionSheet] = useState<PermissionSheetConfig | null>(null);
   const [showDiagnosticSheet, setShowDiagnosticSheet] = useState(false);
+  const [languageOpen, setLanguageOpen] = useState(false);
   const systemLocale = getDeviceSupportedLocale();
 
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
@@ -223,9 +231,24 @@ export default function SettingsScreen() {
   };
 
   const changeLanguage = (code: string) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setLanguageOpen(false);
     // Delegates to context's setLocale which updates i18n, saves to storage, and triggers re-render
     setLocale(code);
   };
+
+  const toggleLanguagePicker = () => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setLanguageOpen((prev) => !prev);
+  };
+
+  /** Returns a human-readable label for the currently active language. */
+  const currentLanguageLabel = useMemo(() => {
+    if (locale === 'system') {
+      return LANGUAGE_LABELS[systemLocale] ?? LANGUAGE_LABELS.en;
+    }
+    return LANGUAGE_LABELS[locale] ?? LANGUAGE_LABELS.en;
+  }, [locale, systemLocale]);
 
   const getLanguageOptionLabel = (code: string, label: string, isTranslationKey: boolean) => {
     if (code === 'system') {
@@ -384,24 +407,46 @@ export default function SettingsScreen() {
 
         <Text style={styles.sectionHeader}>{t('settings_section_language')}</Text>
         <View style={styles.card}>
-          {LANGUAGES.map((lang, i) => (
-            <View key={lang.code}>
-              {i > 0 && <Divider />}
-              <TouchableOpacity style={styles.row} onPress={() => changeLanguage(lang.code)}>
-                <Text style={styles.rowLabel}>
-                  {getLanguageOptionLabel(lang.code, lang.label, lang.isTranslationKey)}
-                </Text>
-                {locale === lang.code && (
-                  <Ionicons
-                    name="checkmark"
-                    size={20}
-                    color={colors.grass}
-                    style={styles.checkmark}
-                  />
-                )}
-              </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.row}
+            onPress={toggleLanguagePicker}
+            testID="language-picker-toggle"
+          >
+            <View style={styles.rowIconContainer}>
+              <Ionicons name="language-outline" size={20} color={colors.textSecondary} />
             </View>
-          ))}
+            <View style={styles.rowContent}>
+              <Text style={styles.rowLabel}>{currentLanguageLabel} / Language</Text>
+            </View>
+            <Ionicons
+              name={languageOpen ? 'chevron-up' : 'chevron-down'}
+              size={20}
+              color={colors.textMuted}
+            />
+          </TouchableOpacity>
+
+          {languageOpen &&
+            LANGUAGES.map((lang) => (
+              <View key={lang.code}>
+                <Divider />
+                <TouchableOpacity style={styles.row} onPress={() => changeLanguage(lang.code)}>
+                  <View style={styles.rowIconContainer} />
+                  <View style={styles.rowContent}>
+                    <Text style={styles.rowLabel}>
+                      {getLanguageOptionLabel(lang.code, lang.label, lang.isTranslationKey)}
+                    </Text>
+                  </View>
+                  {locale === lang.code && (
+                    <Ionicons
+                      name="checkmark"
+                      size={20}
+                      color={colors.grass}
+                      style={styles.checkmark}
+                    />
+                  )}
+                </TouchableOpacity>
+              </View>
+            ))}
         </View>
 
         <Text style={styles.sectionHeader}>{t('settings_section_about')}</Text>
