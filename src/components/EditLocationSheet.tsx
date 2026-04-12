@@ -175,9 +175,8 @@ export default function EditLocationSheet({
     const requestId = searchRequestIdRef.current + 1;
     searchRequestIdRef.current = requestId;
     searchTimerRef.current = setTimeout(async () => {
-      const isCancelled = () =>
-        !sheetVisibleRef.current || requestId !== searchRequestIdRef.current;
-      if (isCancelled()) return;
+      const isCanceled = () => !sheetVisibleRef.current || requestId !== searchRequestIdRef.current;
+      if (isCanceled()) return;
       setAddressSearching(true);
       try {
         const results = await Location.geocodeAsync(text.trim());
@@ -206,13 +205,13 @@ export default function EditLocationSheet({
             return s;
           })
         );
-        if (isCancelled()) return;
+        if (isCanceled()) return;
         setAddressSuggestions(labelled);
       } catch {
-        if (isCancelled()) return;
+        if (isCanceled()) return;
         setAddressSuggestions([]);
       } finally {
-        if (isCancelled()) return;
+        if (isCanceled()) return;
         setAddressSearching(false);
       }
     }, 500);
@@ -237,7 +236,7 @@ export default function EditLocationSheet({
     setAddressSuggestions([]);
   };
 
-  const handleSave = useCallback(async () => {
+  const handleSave = async () => {
     if (!label.trim()) {
       Alert.alert(t('location_edit_error_title'), t('location_edit_error_label'));
       return;
@@ -260,7 +259,7 @@ export default function EditLocationSheet({
       console.error('Error saving location:', error);
       Alert.alert(t('location_edit_error_title'), t('location_edit_error_save'));
     }
-  }, [coords, handleClose, isIndoor, label, location?.id, onSave, radiusIdx]);
+  };
 
   const handleDelete = () => {
     if (!location?.id) return;
