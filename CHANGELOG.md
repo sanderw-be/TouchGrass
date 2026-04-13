@@ -1,3 +1,9 @@
+## [1.7.1](https://github.com/sanderw-be/TouchGrass/compare/v1.7.0...v1.7.1) (2026-04-13)
+
+### Bug Fixes
+
+- **ui:** Apply dynamic dark-theme background to React Navigation base layers to prevent transition flash ([#403](https://github.com/sanderw-be/TouchGrass/issues/403)) ([ffcc4fd](https://github.com/sanderw-be/TouchGrass/commit/ffcc4fd7786848664113c40e6ac359b836dcd647))
+
 ## [1.7.1-beta.1](https://github.com/sanderw-be/TouchGrass/compare/v1.7.0...v1.7.1-beta.1) (2026-04-13)
 
 ### Bug Fixes
