@@ -54,6 +54,7 @@ const i18n = new I18n({
   de,
   es,
   pt,
+  // Brazilian Portuguese inherits Portugal Portuguese strings unless it overrides them here.
   'pt-BR': { ...pt, ...ptBR },
   fr,
   ja,
