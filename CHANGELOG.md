@@ -1,3 +1,10 @@
+## [1.7.1-beta.1](https://github.com/sanderw-be/TouchGrass/compare/v1.7.0...v1.7.1-beta.1) (2026-04-13)
+
+### Bug Fixes
+
+- **ci:** Implement beta branch workflows for auto-deployment ([#405](https://github.com/sanderw-be/TouchGrass/issues/405)) ([923c9da](https://github.com/sanderw-be/TouchGrass/commit/923c9da730d9c226063d5a45d998cec83ebaf64a))
+- **ui:** Apply dynamic dark-theme background to React Navigation base layers to prevent transition flash ([#403](https://github.com/sanderw-be/TouchGrass/issues/403)) ([ffcc4fd](https://github.com/sanderw-be/TouchGrass/commit/ffcc4fd7786848664113c40e6ac359b836dcd647))
+
 # [1.7.0](https://github.com/sanderw-be/TouchGrass/compare/v1.6.4...v1.7.0) (2026-04-12)
 
 ### Bug Fixes
