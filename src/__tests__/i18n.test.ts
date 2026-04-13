@@ -1,8 +1,6 @@
-const mockGetLocales = jest.fn(() => [{ languageCode: 'en', regionCode: 'US', languageTag: 'en-US' }]);
-
 // Mock expo-localization
 jest.mock('expo-localization', () => ({
-  getLocales: () => mockGetLocales(),
+  getLocales: jest.fn(() => [{ languageCode: 'en', regionCode: 'US', languageTag: 'en-US' }]),
 }));
 
 // Mock react-native-localize
@@ -12,6 +10,7 @@ jest.mock('react-native-localize', () => ({
 }));
 
 import { formatLocalTime, getDeviceSupportedLocale, resolveSupportedLocale } from '../i18n';
+import * as ExpoLocalization from 'expo-localization';
 
 describe('formatLocalTime', () => {
   it('omits AM/PM in 24-hour mode', () => {
@@ -46,7 +45,9 @@ describe('locale resolution', () => {
   });
 
   it('detects pt-BR from the device locale', () => {
-    mockGetLocales.mockReturnValue([{ languageCode: 'pt', regionCode: 'BR', languageTag: 'pt-BR' }]);
+    (ExpoLocalization.getLocales as jest.Mock).mockReturnValue([
+      { languageCode: 'pt', regionCode: 'BR', languageTag: 'pt-BR' },
+    ]);
     expect(getDeviceSupportedLocale()).toBe('pt-BR');
   });
 });
