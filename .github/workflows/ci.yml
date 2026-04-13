@@ -110,8 +110,7 @@ jobs:
           key: ${{ runner.os }}-npx-eas-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-npx-eas-
-      
-      # --- PATH A: NO NATIVE CHANGES ---
+
       - name: Publish EAS Update
         env:
           CI: 1
@@ -122,7 +121,17 @@ jobs:
         run: |
           # FIX: Appended `--json > update.json` so jq has a file to parse
           npx --yes eas-cli update --branch "$BRANCH_NAME" --platform android --message "$COMMIT_MESSAGE" --json > update.json
-          echo "DEEP_LINK=$(jq -r '.manifests[0].uri' update.json)" >> $GITHUB_ENV
+          
+          # 2. Extract the manifestPermalink from the first item in the array
+          RAW_URL=$(jq -r '.[0].manifestPermalink' update.json)
+          
+          # 3. URL Encode the permalink (required for the ?url= parameter)
+          ENCODED_URL=$(python3 -c "import urllib.parse; print(urllib.parse.quote('$RAW_URL'))")
+          
+          # 4. Construct the final deep link
+          FINAL_LINK="exp+touchgrass://expo-development-client/?url=$ENCODED_URL"
+          
+          echo "DEEP_LINK=$FINAL_LINK" >> $GITHUB_ENV
 
       - name: Comment PR with Deep Link
         if: github.event_name == 'pull_request'
