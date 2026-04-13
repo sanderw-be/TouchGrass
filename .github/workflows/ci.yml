@@ -140,7 +140,7 @@ jobs:
           issue-number: ${{ github.event.pull_request.number }}
           body: |
             🚀 **OTA Update Published!**
-            Tap here to test on your Development Client: ${{ env.DEEP_LINK }}
+            [Tap here to test on your Development Client](${{ env.DEEP_LINK }})
 
       # --- PATH B: NATIVE CHANGES DETECTED ---
       - name: Configure Gradle for CI
