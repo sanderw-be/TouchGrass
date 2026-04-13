@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState, useCallback, Suspense, lazy } from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import React, { useEffect, useRef, useState, useCallback, Suspense, lazy, useMemo } from 'react';
+import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import type { InitialState } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
@@ -93,6 +93,7 @@ function GoalsStackNavigator() {
   return (
     <GoalsStack.Navigator
       screenOptions={{
+        cardStyle: { backgroundColor: colors.mist },
         headerStyle: { backgroundColor: colors.mist },
         headerTitleStyle: { color: colors.textPrimary, fontWeight: '700' },
         headerShadowVisible: false,
@@ -130,6 +131,7 @@ function SettingsStackNavigator() {
   return (
     <SettingsStack.Navigator
       screenOptions={{
+        cardStyle: { backgroundColor: colors.mist },
         headerStyle: { backgroundColor: colors.mist },
         headerTitleStyle: { color: colors.textPrimary, fontWeight: '700' },
         headerShadowVisible: false,
@@ -253,6 +255,7 @@ export default function AppNavigator({
   initialState?: InitialState;
   onStateChange?: (state: InitialState | undefined) => void;
 }) {
+  const { colors } = useTheme();
   const appState = useRef(AppState.currentState);
   const [goalsBadge, setGoalsBadge] = useState<number | undefined>(undefined);
   const [settingsBadge, setSettingsBadge] = useState<number | undefined>(undefined);
@@ -314,8 +317,23 @@ export default function AppNavigator({
     };
   }, [refreshPermissionBadges, refreshEventsBadge]);
 
+  const navigationTheme = useMemo(
+    () => ({
+      ...DefaultTheme,
+      colors: {
+        ...DefaultTheme.colors,
+        background: colors.mist,
+      },
+    }),
+    [colors.mist]
+  );
+
   return (
-    <NavigationContainer initialState={initialState} onStateChange={onStateChange}>
+    <NavigationContainer
+      initialState={initialState}
+      onStateChange={onStateChange}
+      theme={navigationTheme}
+    >
       <TabNavigator
         goalsBadge={goalsBadge}
         settingsBadge={settingsBadge}
