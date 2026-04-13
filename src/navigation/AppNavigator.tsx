@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback, Suspense, lazy } from 'react';
+import React, { useEffect, useRef, useState, useCallback, Suspense, lazy, useMemo } from 'react';
 import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import type { InitialState } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -317,13 +317,16 @@ export default function AppNavigator({
     };
   }, [refreshPermissionBadges, refreshEventsBadge]);
 
-  const navigationTheme = {
-    ...DefaultTheme,
-    colors: {
-      ...DefaultTheme.colors,
-      background: colors.mist,
-    },
-  };
+  const navigationTheme = useMemo(
+    () => ({
+      ...DefaultTheme,
+      colors: {
+        ...DefaultTheme.colors,
+        background: colors.mist,
+      },
+    }),
+    [colors.mist]
+  );
 
   return (
     <NavigationContainer
