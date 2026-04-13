@@ -1,4 +1,4 @@
-name: 2. CD - Auto-Deploy Preview
+name: 2. CD - Merge to Beta (Deploy Preview)
 
 permissions:
   contents: read
@@ -7,7 +7,7 @@ permissions:
 on:
   push:
     branches:
-      - main
+      - beta
 
 jobs:
   # 1. Determine if native files changed

@@ -1,4 +1,8 @@
+const packageJson = require('./package.json');
+
 module.exports = ({ config }) => {
+  // Set the version from package.json
+  config.version = packageJson.version;
   const profile = process.env.EAS_BUILD_PROFILE;
 
   // Define which profiles need all architectures (Emulators and Play Store)

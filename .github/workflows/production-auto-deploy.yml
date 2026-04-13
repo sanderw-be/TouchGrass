@@ -1,24 +1,38 @@
-name: 3. CD - Deploy to Production
+name: 3. CD - Merge to Main (Deploy Production)
 
 permissions:
   pull-requests: read
   contents: write
 
 on:
-  workflow_dispatch:
-    inputs:
-      deploy_type:
-        description: 'Choose the type of Production Deployment'
-        required: true
-        type: choice
-        options:
-          - 'OTA Update (JavaScript/Assets only)'
-          - 'Native Build (AAB to Google Play)'
-
+  push:
+    branches:
+      - main
 
 jobs:
-  # 4. Wait for manual approval, then deploy to Production
+  check-native-changes:
+    name: Check for Native Changes
+    runs-on: ubuntu-latest
+    outputs:
+      native: ${{ steps.native_check.outputs.native }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check paths
+        id: native_check
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            native:
+              - 'package.json'
+              - 'app.json'
+              - 'app.config.js'
+              - 'ios/**'
+              - 'android/**'
+              - 'eas.json'
+
   deploy-production:
+    needs: [check-native-changes]
     name: Production Deployment
     runs-on: ubuntu-latest
     permissions:
@@ -26,7 +40,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 0 # Required for semantic-release to find tags
           
       - uses: actions/setup-node@v4
         with:
@@ -45,7 +59,7 @@ jobs:
 
       # --- SCENARIO A: Native Build Required ---
       - name: Configure Gradle for CI
-        if: inputs.deploy_type == 'Native Build (AAB to Google Play)'
+        if: needs.check-native-changes.outputs.native == 'true'
         run: |
           mkdir -p ~/.gradle
           cat >> ~/.gradle/gradle.properties <<'EOF'
@@ -55,14 +69,14 @@ jobs:
           EOF
 
       - name: Build AAB
-        if: inputs.deploy_type == 'Native Build (AAB to Google Play)'
+        if: needs.check-native-changes.outputs.native == 'true'
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
           EAS_BUILD_PROFILE: production
         run: npx --yes eas-cli build --profile production --platform android --local --output ./production-app.aab
 
       - name: Upload Production AAB Artifact
-        if: inputs.deploy_type == 'Native Build (AAB to Google Play)'
+        if: needs.check-native-changes.outputs.native == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: production-aab
@@ -71,14 +85,13 @@ jobs:
 
       # --- SCENARIO B: JavaScript/Asset Changes Only ---
       - name: Publish Production OTA Update
-        if: inputs.deploy_type == 'OTA Update (JavaScript/Assets only)'
+        if: needs.check-native-changes.outputs.native == 'false'
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-        run: npx --yes eas-cli update --branch production --message "Manual Production OTA Deployment"
+        run: npx --yes eas-cli update --branch production --message "Production OTA Deployment"
 
-      # Promote the latest pre-release (created by step 2 / semantic-release) to
-      # a full public GitHub release now that the code has reached production.
       - name: Promote pre-release to full release
+        if: needs.check-native-changes.outputs.native == 'true'
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
