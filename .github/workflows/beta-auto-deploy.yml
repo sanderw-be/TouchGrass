@@ -78,10 +78,12 @@ jobs:
     # always() ensures this runs even if version-bump was skipped
     if: always() && needs.check-native-changes.result == 'success'
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
         with:
-          # Checks out the new tag if one was made, otherwise uses main
+          # Checks out the new tag if one was made, otherwise uses beta
           ref: ${{ needs.version-bump.outputs.new_release_git_tag || github.ref }}
           
       - uses: actions/setup-node@v4
