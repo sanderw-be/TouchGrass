@@ -23,7 +23,7 @@ jest.mock('../i18n', () => ({
   default: { locale: 'en' },
   t: (key: string) => key,
   getDeviceSupportedLocale: () => mockGetDeviceSupportedLocale(),
-  SUPPORTED_LOCALES: ['en', 'nl', 'de', 'es', 'pt', 'fr', 'ja'],
+  SUPPORTED_LOCALES: ['en', 'nl', 'de', 'es', 'pt', 'pt-BR', 'fr', 'ja'],
 }));
 
 // Mock detection module

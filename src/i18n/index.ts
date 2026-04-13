@@ -6,24 +6,58 @@ import nl from './nl';
 import de from './de';
 import es from './es';
 import pt from './pt';
+import ptBR from './pt-BR';
 import fr from './fr';
 import ja from './ja';
 
-export const SUPPORTED_LOCALES = ['en', 'nl', 'de', 'es', 'pt', 'fr', 'ja'] as const;
+export const SUPPORTED_LOCALES = ['en', 'nl', 'de', 'es', 'pt', 'pt-BR', 'fr', 'ja'] as const;
 type SupportedLocale = (typeof SUPPORTED_LOCALES)[number];
 
+function normalizeLocaleCode(localeCode?: string | null): string | null {
+  if (!localeCode) return null;
+
+  const [languageCode, regionCode] = localeCode.split(/[-_]/);
+  if (!languageCode) return null;
+
+  return regionCode
+    ? `${languageCode.toLowerCase()}-${regionCode.toUpperCase()}`
+    : languageCode.toLowerCase();
+}
+
 export function resolveSupportedLocale(localeCode?: string | null): SupportedLocale {
-  return SUPPORTED_LOCALES.includes((localeCode ?? 'en') as SupportedLocale)
-    ? ((localeCode ?? 'en') as SupportedLocale)
-    : 'en';
+  const normalizedLocaleCode = normalizeLocaleCode(localeCode);
+  if (normalizedLocaleCode && SUPPORTED_LOCALES.includes(normalizedLocaleCode as SupportedLocale)) {
+    return normalizedLocaleCode as SupportedLocale;
+  }
+
+  const baseLocaleCode = normalizedLocaleCode?.split('-')[0];
+  if (baseLocaleCode && SUPPORTED_LOCALES.includes(baseLocaleCode as SupportedLocale)) {
+    return baseLocaleCode as SupportedLocale;
+  }
+
+  return 'en';
 }
 
 export function getDeviceSupportedLocale(): SupportedLocale {
-  const deviceLocale = ExpoLocalization.getLocales?.()?.[0]?.languageCode;
-  return resolveSupportedLocale(deviceLocale);
+  const deviceLocale = ExpoLocalization.getLocales?.()?.[0];
+  return resolveSupportedLocale(
+    deviceLocale?.languageTag ??
+      (deviceLocale?.languageCode && deviceLocale?.regionCode
+        ? `${deviceLocale.languageCode}-${deviceLocale.regionCode}`
+        : deviceLocale?.languageCode)
+  );
 }
 
-const i18n = new I18n({ en, nl, de, es, pt, fr, ja });
+const i18n = new I18n({
+  en,
+  nl,
+  de,
+  es,
+  pt,
+  'pt-BR': { ...pt, ...ptBR },
+  fr,
+  ja,
+});
 
 // Detect device locale, fall back to English
 i18n.locale = getDeviceSupportedLocale();

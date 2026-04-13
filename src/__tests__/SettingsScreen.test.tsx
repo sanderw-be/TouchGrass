@@ -135,6 +135,7 @@ describe('SettingsScreen', () => {
       expect(getByText('Deutsch')).toBeTruthy();
       expect(getByText('Español')).toBeTruthy();
       expect(getByText('Português (Portugal)')).toBeTruthy();
+      expect(getByText('Português (Brasil)')).toBeTruthy();
       expect(getByText('Français')).toBeTruthy();
       expect(getByText('日本語')).toBeTruthy();
     });
