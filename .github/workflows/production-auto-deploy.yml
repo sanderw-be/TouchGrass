@@ -57,7 +57,12 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-npx-eas-
 
-      # --- SCENARIO A: Native Build Required ---
+      - name: Publish Production OTA Update
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: npx --yes eas-cli update --branch production --message "Production OTA Deployment"
+
+      # --- Native changes detected ---
       - name: Configure Gradle for CI
         if: needs.check-native-changes.outputs.native == 'true'
         run: |
@@ -82,13 +87,6 @@ jobs:
           name: production-aab
           path: ./production-app.aab
           retention-days: 14
-
-      # --- SCENARIO B: JavaScript/Asset Changes Only ---
-      - name: Publish Production OTA Update
-        if: needs.check-native-changes.outputs.native == 'false'
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-        run: npx --yes eas-cli update --branch production --message "Production OTA Deployment"
 
       - name: Promote pre-release to full release
         if: needs.check-native-changes.outputs.native == 'true'
