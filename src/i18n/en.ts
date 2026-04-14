@@ -137,7 +137,7 @@ export default {
   settings_hc_permission_missing: 'Permissions missing — tap to fix',
   settings_hc_permission_title: 'Health Connect Permission',
   settings_hc_permission_body:
-    'Health Connect permissions are needed to detect when you\'ve been outside. A high step count at a location usually means an outdoor walk, and exercise sessions like running or cycling are treated as outdoor activity. When GPS is also enabled, it can help rule out home trainer sessions.',
+    "Health Connect permissions are needed to detect when you've been outside. A high step count at a location usually means an outdoor walk, and exercise sessions like running or cycling are treated as outdoor activity. When GPS is also enabled, it can help rule out home trainer sessions.",
   settings_hc_open_btn: 'Open Health Connect',
   settings_hc_failed_title: 'Could not connect',
   settings_hc_failed_body:
@@ -286,10 +286,11 @@ export default {
   intro_welcome_feature_4: 'Your data never leaves your device',
   intro_privacy_policy: 'Privacy Policy',
   intro_hc_title: 'Health Connect',
-  intro_hc_body: 'TouchGrass uses Health Connect to privately detect outdoor activity from your steps and exercise sessions.',
+  intro_hc_body:
+    'TouchGrass uses Health Connect to privately detect outdoor activity from your steps and exercise sessions.',
   intro_hc_why_title: 'Why do we need this?',
   intro_hc_why_body:
-    'Many steps at a location usually means you\'ve been walking outside. Exercise sessions like running or cycling are also treated as outdoor activity. If GPS is also enabled, it can rule out home trainer sessions.',
+    "Many steps at a location usually means you've been walking outside. Exercise sessions like running or cycling are also treated as outdoor activity. If GPS is also enabled, it can rule out home trainer sessions.",
   intro_hc_hint: 'You can grant this permission later in Settings.',
   intro_hc_button: 'Connect Health Connect',
   intro_hc_button_granted: 'Connected ✓',

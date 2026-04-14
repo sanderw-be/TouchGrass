@@ -136,7 +136,8 @@ export default {
   settings_health_connect_desc: 'Passos ao ar livre e atividade',
   settings_hc_permission_missing: 'Faltam permissões',
   settings_hc_permission_title: 'Permissão Health Connect',
-  settings_hc_permission_body: 'Necessária para detetar atividade ao ar livre. Muitos passos num local geralmente indica uma caminhada no exterior; atividades como corrida ou ciclismo também contam. Com o GPS ativado, sessões de bicicleta estática podem ser excluídas.',
+  settings_hc_permission_body:
+    'Necessária para detetar atividade ao ar livre. Muitos passos num local geralmente indica uma caminhada no exterior; atividades como corrida ou ciclismo também contam. Com o GPS ativado, sessões de bicicleta estática podem ser excluídas.',
   settings_hc_open_btn: 'Abrir Health Connect',
   settings_hc_failed_title: 'Falha de ligação',
   settings_hc_failed_body: 'Dá permissão nos ajustes. Fica tudo no dispositivo.',
@@ -275,9 +276,11 @@ export default {
   intro_welcome_feature_4: 'Os teus dados ficam só no teu telemóvel',
   intro_privacy_policy: 'Privacidade',
   intro_hc_title: 'Health Connect',
-  intro_hc_body: 'O TouchGrass utiliza o Health Connect para detetar privadamente atividade ao ar livre através dos teus passos e sessões de exercício.',
+  intro_hc_body:
+    'O TouchGrass utiliza o Health Connect para detetar privadamente atividade ao ar livre através dos teus passos e sessões de exercício.',
   intro_hc_why_title: 'Porquê?',
-  intro_hc_why_body: 'Muitos passos num local geralmente significa que estiveste a caminhar ao ar livre. Atividades como corrida ou ciclismo também contam como tempo no exterior. Com o GPS ativado, sessões de bicicleta estática podem ser excluídas.',
+  intro_hc_why_body:
+    'Muitos passos num local geralmente significa que estiveste a caminhar ao ar livre. Atividades como corrida ou ciclismo também contam como tempo no exterior. Com o GPS ativado, sessões de bicicleta estática podem ser excluídas.',
   intro_hc_hint: 'Podes ativar depois.',
   intro_hc_button: 'Ligar',
   intro_hc_button_granted: 'Ligado ✓',

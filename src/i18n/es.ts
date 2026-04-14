@@ -136,7 +136,8 @@ export default {
   settings_health_connect_desc: 'Pasos al aire libre y actividad',
   settings_hc_permission_missing: 'Faltan permisos',
   settings_hc_permission_title: 'Permiso Health Connect',
-  settings_hc_permission_body: 'Necesario para detectar actividad al aire libre. Muchos pasos en un lugar suelen indicar un paseo exterior; actividades como correr o montar en bici también cuentan. Con GPS activado se pueden descartar sesiones de bicicleta estática.',
+  settings_hc_permission_body:
+    'Necesario para detectar actividad al aire libre. Muchos pasos en un lugar suelen indicar un paseo exterior; actividades como correr o montar en bici también cuentan. Con GPS activado se pueden descartar sesiones de bicicleta estática.',
   settings_hc_open_btn: 'Abrir Health Connect',
   settings_hc_failed_title: 'Error de conexión',
   settings_hc_failed_body: 'Otorga los permisos en ajustes. Todo es 100% privado.',
@@ -275,9 +276,11 @@ export default {
   intro_welcome_feature_4: 'Tus datos no van a la nube',
   intro_privacy_policy: 'Privacidad',
   intro_hc_title: 'Health Connect',
-  intro_hc_body: 'TouchGrass usa Health Connect para detectar privadamente actividad al aire libre a partir de tus pasos y sesiones de ejercicio.',
+  intro_hc_body:
+    'TouchGrass usa Health Connect para detectar privadamente actividad al aire libre a partir de tus pasos y sesiones de ejercicio.',
   intro_hc_why_title: '¿Para qué?',
-  intro_hc_why_body: 'Muchos pasos en un lugar normalmente indican que has salido a caminar. Ejercicios como correr o ir en bici también se consideran actividad al aire libre. Con GPS activado, se pueden filtrar las sesiones de bicicleta estática.',
+  intro_hc_why_body:
+    'Muchos pasos en un lugar normalmente indican que has salido a caminar. Ejercicios como correr o ir en bici también se consideran actividad al aire libre. Con GPS activado, se pueden filtrar las sesiones de bicicleta estática.',
   intro_hc_hint: 'Lo puedes activar luego.',
   intro_hc_button: 'Conectar',
   intro_hc_button_granted: 'Conectado ✓',

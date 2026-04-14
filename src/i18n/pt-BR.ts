@@ -136,7 +136,8 @@ export default {
   settings_health_connect_desc: 'Passos ao ar livre e atividade',
   settings_hc_permission_missing: 'Faltam permissões',
   settings_hc_permission_title: 'Permissão do Health Connect',
-  settings_hc_permission_body: 'Necessária para detectar atividade ao ar livre. Muitos passos em um lugar geralmente indica uma caminhada no exterior; atividades como corrida ou ciclismo também contam. Com o GPS ativado, sessões de bicicleta ergométrica podem ser excluídas.',
+  settings_hc_permission_body:
+    'Necessária para detectar atividade ao ar livre. Muitos passos em um lugar geralmente indica uma caminhada no exterior; atividades como corrida ou ciclismo também contam. Com o GPS ativado, sessões de bicicleta ergométrica podem ser excluídas.',
   settings_hc_open_btn: 'Abrir Health Connect',
   settings_hc_failed_title: 'Falha de conexão',
   settings_hc_failed_body: 'Dê permissão nas configurações. Fica tudo no próprio aparelho.',
@@ -275,9 +276,11 @@ export default {
   intro_welcome_feature_4: 'Seus dados ficam apenas no seu celular',
   intro_privacy_policy: 'Privacidade',
   intro_hc_title: 'Health Connect',
-  intro_hc_body: 'O TouchGrass usa o Health Connect para detectar privadamente atividade ao ar livre a partir dos seus passos e sessões de exercício.',
+  intro_hc_body:
+    'O TouchGrass usa o Health Connect para detectar privadamente atividade ao ar livre a partir dos seus passos e sessões de exercício.',
   intro_hc_why_title: 'Por quê?',
-  intro_hc_why_body: 'Muitos passos em um lugar geralmente significa que você estava caminhando ao ar livre. Atividades como corrida ou ciclismo também contam como tempo no exterior. Com o GPS ativado, sessões de bicicleta ergométrica podem ser excluídas.',
+  intro_hc_why_body:
+    'Muitos passos em um lugar geralmente significa que você estava caminhando ao ar livre. Atividades como corrida ou ciclismo também contam como tempo no exterior. Com o GPS ativado, sessões de bicicleta ergométrica podem ser excluídas.',
   intro_hc_hint: 'Você pode ativar isso depois nas Configurações.',
   intro_hc_button: 'Conectar',
   intro_hc_button_granted: 'Conectado ✓',

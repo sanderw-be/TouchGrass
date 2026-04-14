@@ -136,7 +136,8 @@ export default {
   settings_health_connect_desc: 'Buitenstappen & activiteit bijhouden',
   settings_hc_permission_missing: 'Machtigingen ontbreken — tik om te herstellen',
   settings_hc_permission_title: 'Health Connect-toestemming',
-  settings_hc_permission_body: 'Nodig om buitenactiviteit te detecteren. Veel stappen op een locatie wijst vaak op een buitenwandeling; activiteiten als hardlopen of fietsen tellen ook mee. Met GPS ingeschakeld kunnen hometrainersessies worden uitgesloten.',
+  settings_hc_permission_body:
+    'Nodig om buitenactiviteit te detecteren. Veel stappen op een locatie wijst vaak op een buitenwandeling; activiteiten als hardlopen of fietsen tellen ook mee. Met GPS ingeschakeld kunnen hometrainersessies worden uitgesloten.',
   settings_hc_open_btn: 'Health Connect openen',
   settings_hc_failed_title: 'Verbinding mislukt',
   settings_hc_failed_body: 'Geef machtigingen in Health Connect. Alles blijft lokaal.',
@@ -277,9 +278,11 @@ export default {
   intro_welcome_feature_4: 'Je data verlaat je toestel nooit',
   intro_privacy_policy: 'Privacybeleid',
   intro_hc_title: 'Health Connect',
-  intro_hc_body: 'TouchGrass gebruikt Health Connect om je buitenactiviteit privé te detecteren via stappen en bewegingssessies.',
+  intro_hc_body:
+    'TouchGrass gebruikt Health Connect om je buitenactiviteit privé te detecteren via stappen en bewegingssessies.',
   intro_hc_why_title: 'Waarom dit nodig is?',
-  intro_hc_why_body: 'Veel stappen op een locatie betekent meestal dat je buiten hebt gelopen. Sporten als hardlopen of fietsen tellen ook als buitenactiviteit. Met GPS ingeschakeld kunnen hometrainersessies worden uitgesloten.',
+  intro_hc_why_body:
+    'Veel stappen op een locatie betekent meestal dat je buiten hebt gelopen. Sporten als hardlopen of fietsen tellen ook als buitenactiviteit. Met GPS ingeschakeld kunnen hometrainersessies worden uitgesloten.',
   intro_hc_hint: 'Kan later ingesteld worden.',
   intro_hc_button: 'Verbind Health Connect',
   intro_hc_button_granted: 'Verbonden ✓',
