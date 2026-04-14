@@ -11,6 +11,8 @@ import {
   AppStateStatus,
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
+import * as Location from 'expo-location';
+import * as Calendar from 'expo-calendar';
 import * as Notifications from 'expo-notifications';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -24,14 +26,16 @@ import {
   getSettingAsync,
   setSettingAsync,
 } from '../storage/database';
+import { requestNotificationPermissions } from '../notifications/notificationManager';
 import {
   hasCalendarPermissions,
   getWritableCalendars,
   getOrCreateTouchGrassCalendar,
   getSelectedCalendarId,
   setSelectedCalendarId,
+  requestCalendarPermissions,
 } from '../calendar/calendarService';
-import { checkWeatherLocationPermissions } from '../detection';
+import { checkWeatherLocationPermissions, requestWeatherLocationPermissions } from '../detection';
 import { spacing } from '../utils/theme';
 import { useTheme } from '../context/ThemeContext';
 import { formatMinutes } from '../utils/helpers';
@@ -161,6 +165,7 @@ export default function GoalsScreen() {
       pendingWeatherEnableRef.current = false;
       await setSettingAsync('weather_enabled', '1');
       setWeatherEnabled(true);
+      emitPermissionIssuesChanged();
     }
   }, []);
 
@@ -175,6 +180,7 @@ export default function GoalsScreen() {
         pendingCalendarEnableRef.current = false;
         await setSettingAsync('calendar_integration_enabled', '1');
         setCalendarEnabled(true);
+        emitPermissionIssuesChanged();
       }
     }
   }, []);
@@ -188,6 +194,7 @@ export default function GoalsScreen() {
       pendingSmartRemindersEnableRef.current = false;
       await setSettingAsync('smart_reminders_count', '1');
       setSmartRemindersCount(1);
+      emitPermissionIssuesChanged();
     }
   }, []);
 
@@ -201,7 +208,6 @@ export default function GoalsScreen() {
 
       const sub = AppState.addEventListener('change', (state: AppStateStatus) => {
         if (state === 'active') {
-          loadGoalSettings();
           checkCalendarPermissions();
           checkWeatherPermissions();
           checkNotificationPermissions();
@@ -293,7 +299,27 @@ export default function GoalsScreen() {
     setPermissionSheet({
       title: t('settings_weather_permission_title'),
       body: t('settings_weather_location_permission_missing'),
-      onOpen: handleOpenAppSettings,
+      openLabel: t('settings_weather_location_request'),
+      onOpen: async () => {
+        const { status, canAskAgain } = await Location.getForegroundPermissionsAsync();
+        if (status !== 'granted' && canAskAgain === false) {
+          await handleOpenAppSettings();
+          setPermissionSheet(null);
+          return;
+        }
+
+        const granted = await requestWeatherLocationPermissions();
+        setWeatherLocationGranted(granted);
+        if (granted) {
+          pendingWeatherEnableRef.current = false;
+          await setSettingAsync('weather_enabled', '1');
+          setWeatherEnabled(true);
+          emitPermissionIssuesChanged();
+        } else {
+          await handleOpenAppSettings();
+        }
+        setPermissionSheet(null);
+      },
       onCancel: () => {
         pendingWeatherEnableRef.current = false;
       },
@@ -315,7 +341,29 @@ export default function GoalsScreen() {
     setPermissionSheet({
       title: t('settings_calendar_permission_title'),
       body: t('settings_calendar_permission_body'),
-      onOpen: handleOpenAppSettings,
+      openLabel: t('intro_calendar_button'),
+      onOpen: async () => {
+        const { status, canAskAgain } = await Calendar.getCalendarPermissionsAsync();
+        if (status !== 'granted' && canAskAgain === false) {
+          await handleOpenAppSettings();
+          setPermissionSheet(null);
+          return;
+        }
+
+        const granted = await requestCalendarPermissions();
+        setCalendarPermissionGranted(granted);
+        if (granted) {
+          const cals = await getWritableCalendars();
+          setCalendarOptions(cals.map((c) => ({ id: c.id, title: c.title })));
+          pendingCalendarEnableRef.current = false;
+          await setSettingAsync('calendar_integration_enabled', '1');
+          setCalendarEnabled(true);
+          emitPermissionIssuesChanged();
+        } else {
+          await handleOpenAppSettings();
+        }
+        setPermissionSheet(null);
+      },
       onCancel: () => {
         pendingCalendarEnableRef.current = false;
       },
@@ -336,7 +384,25 @@ export default function GoalsScreen() {
     setPermissionSheet({
       title: t('settings_notification_permission_title'),
       body: t('settings_notification_permission_body'),
-      onOpen: handleOpenAppSettings,
+      openLabel: t('intro_notifications_button'),
+      onOpen: async () => {
+        const { status, canAskAgain } = await Notifications.getPermissionsAsync();
+        if (status !== 'granted' && canAskAgain === false) {
+          await handleOpenAppSettings();
+          setPermissionSheet(null);
+          return;
+        }
+
+        const granted = await requestNotificationPermissions();
+        setNotificationPermissionGranted(granted);
+        if (granted) {
+          pendingSmartRemindersEnableRef.current = false;
+          await setSettingAsync('smart_reminders_count', '1');
+          setSmartRemindersCount(1);
+          emitPermissionIssuesChanged();
+        }
+        setPermissionSheet(null);
+      },
       onCancel: () => {
         pendingSmartRemindersEnableRef.current = false;
       },

@@ -19,6 +19,16 @@ jest.mock('../storage/database', () => ({
   clearAllDataAsync: jest.fn(() => Promise.resolve()),
 }));
 
+// Mock expo-location
+jest.mock('expo-location', () => ({
+  getForegroundPermissionsAsync: jest.fn(() =>
+    Promise.resolve({ status: 'granted', canAskAgain: true })
+  ),
+  getBackgroundPermissionsAsync: jest.fn(() =>
+    Promise.resolve({ status: 'granted', canAskAgain: true })
+  ),
+}));
+
 // Mock detection
 const mockToggleHealthConnect = jest.fn<Promise<{ needsPermissions: boolean }>, [boolean]>(() =>
   Promise.resolve({ needsPermissions: false })
@@ -40,7 +50,7 @@ jest.mock('../detection/index', () => ({
   recheckHealthConnect: jest.fn(() => Promise.resolve()),
   checkGPSPermissions: jest.fn(() => Promise.resolve()),
   requestGPSPermissions: jest.fn(() => Promise.resolve(false)),
-  openHealthConnectSettings: jest.fn(() => Promise.resolve(true)),
+  requestHealthConnect: jest.fn(() => Promise.resolve(true)),
 }));
 
 // Mock permission issues emitter so we can verify badge refresh is triggered

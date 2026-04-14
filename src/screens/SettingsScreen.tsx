@@ -19,6 +19,7 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Constants from 'expo-constants';
+import * as Location from 'expo-location';
 import {
   getKnownLocationsAsync,
   getSuggestedLocationsAsync,
@@ -31,7 +32,8 @@ import {
   toggleGPS,
   recheckHealthConnect,
   checkGPSPermissions,
-  openHealthConnectSettings,
+  requestHealthConnect,
+  requestGPSPermissions,
 } from '../detection/index';
 import PermissionExplainerSheet, {
   PermissionSheetConfig,
@@ -163,12 +165,15 @@ export default function SettingsScreen() {
     setPermissionSheet({
       title: t('settings_hc_permission_title'),
       body: t('settings_hc_permission_body'),
-      openLabel: t('settings_hc_open_btn'),
+      openLabel: t('intro_hc_button'),
       onOpen: async () => {
-        const opened = await openHealthConnectSettings();
-        if (!opened) {
-          Alert.alert(t('settings_hc_open_error_title'), t('settings_hc_open_error_body'));
+        const granted = await requestHealthConnect();
+        if (granted) {
+          await recheckHealthConnect();
+          setDetectionStatus(await getDetectionStatus());
+          emitPermissionIssuesChanged();
         }
+        setPermissionSheet(null);
       },
       onCancel: disableHC,
       onDisable: disableHC,
@@ -188,7 +193,31 @@ export default function SettingsScreen() {
     setPermissionSheet({
       title: t('settings_gps_permission_required_title'),
       body: t('settings_gps_permission_required_body'),
-      onOpen: handleOpenAppSettings,
+      openLabel: t('intro_location_button'),
+      onOpen: async () => {
+        const { status: fgStatus, canAskAgain: fgCanAskAgain } =
+          await Location.getForegroundPermissionsAsync();
+        const { status: bgStatus, canAskAgain: bgCanAskAgain } =
+          await Location.getBackgroundPermissionsAsync();
+
+        if (
+          (fgStatus !== 'granted' && fgCanAskAgain === false) ||
+          (bgStatus !== 'granted' && bgCanAskAgain === false)
+        ) {
+          await handleOpenAppSettings();
+          setPermissionSheet(null);
+          return;
+        }
+
+        const granted = await requestGPSPermissions();
+        if (granted) {
+          setDetectionStatus(await getDetectionStatus());
+          emitPermissionIssuesChanged();
+        } else {
+          await handleOpenAppSettings();
+        }
+        setPermissionSheet(null);
+      },
       onCancel: disableGPS,
       onDisable: disableGPS,
     });

@@ -36,7 +36,7 @@ export default {
 
   // Session sources
   source_health_connect: 'Atividade',
-  source_gps: 'GPS Local',
+  source_gps: 'GPS',
   source_manual: 'Manual',
   source_timeline: 'Linha do tempo',
 
@@ -127,21 +127,22 @@ export default {
   history_legend_target: 'Objetivo',
 
   // Settings screen
-  settings_section_detection: 'Deteção (Local)',
+  settings_section_detection: 'Deteção',
   settings_section_locations: 'Locais',
   settings_section_reminders: 'Lembretes',
   settings_section_language: 'Idioma',
   settings_section_about: 'Sobre',
   settings_health_connect: 'Health Connect',
-  settings_health_connect_desc: 'Sincronizar passos privadamente',
+  settings_health_connect_desc: 'Passos ao ar livre e atividade',
   settings_hc_permission_missing: 'Faltam permissões',
   settings_hc_permission_title: 'Permissão Health Connect',
-  settings_hc_permission_body: 'Necessária para verificar a tua atividade localmente.',
+  settings_hc_permission_body:
+    'Necessária para detetar atividade ao ar livre. Muitos passos num local geralmente indica uma caminhada no exterior; atividades como corrida ou ciclismo também contam. Com o GPS ativado, sessões de bicicleta estática podem ser excluídas.',
   settings_hc_open_btn: 'Abrir Health Connect',
   settings_hc_failed_title: 'Falha de ligação',
   settings_hc_failed_body: 'Dá permissão nos ajustes. Fica tudo no dispositivo.',
   settings_hc_verified_title: 'Ligado',
-  settings_hc_verified_body: 'Acesso local confirmado.',
+  settings_hc_verified_body: 'Acesso confirmado.',
   settings_hc_open_error_title: 'Erro',
   settings_hc_open_error_body: 'Abre manualmente as definições.',
   // GPS permission error
@@ -153,7 +154,7 @@ export default {
   settings_permission_cancel: 'Cancelar',
   settings_permission_open: 'Abrir Definições',
   settings_permission_disable: 'Desativar',
-  settings_gps: 'Rastreio GPS Local',
+  settings_gps: 'Rastreio GPS',
   settings_gps_desc: 'Detetar quando sais por geofencing',
   settings_gps_permission: 'Permissão necessária',
   settings_gps_permission_missing: 'Faltam permissões',
@@ -196,7 +197,7 @@ export default {
   settings_clear_data: 'Apagar todos os dados',
   settings_clear_data_sublabel: 'Eliminar tudo de forma irreversível',
   settings_clear_data_confirm_title: 'Apagar tudo',
-  settings_clear_data_confirm_body: 'Isto vai destruir a tua base de dados local permanentemente.',
+  settings_clear_data_confirm_body: 'Isto vai destruir a tua base de dados permanentemente.',
   settings_clear_cancel: 'Cancelar',
   settings_clear_delete: 'Apagar',
   settings_clear_data_success_title: 'Sucesso',
@@ -219,19 +220,19 @@ export default {
   settings_locations_manage: 'Gerir locais conhecidos',
   settings_locations_manage_desc: 'Configura locais onde ficas muito tempo',
   settings_locations_suggestions_enabled: 'Sugerir locais',
-  settings_locations_suggestions_desc: 'Deteção no próprio dispositivo',
+  settings_locations_suggestions_desc: 'Deteção automática',
   settings_locations_section_suggested: 'Sugestões',
   settings_locations_section_active: 'Ativos',
   settings_location_approve: 'Aprovar',
   settings_location_deny: 'Recusar',
   settings_location_suggested_badge: 'Pendente',
   settings_location_no_suggestions: 'Sem sugestões',
-  settings_location_no_suggestions_hint: 'Necessário ficar 2+ horas (analisado localmente).',
+  settings_location_no_suggestions_hint: 'Necessário ficar 2+ horas no mesmo local.',
   settings_location_no_active: 'Nenhum ativo',
   settings_location_no_active_hint: 'Adiciona a tua Casa.',
   settings_locations_count: '{{count}} ativos',
   settings_location_deny_title: 'Recusar',
-  settings_location_deny_body: 'Será ignorado localmente.',
+  settings_location_deny_body: 'Será ignorado.',
   settings_location_deny_confirm: 'Remover',
   settings_location_deny_cancel: 'Cancelar',
   location_suggestion_default_label: 'Local sugerido',
@@ -245,7 +246,7 @@ export default {
   location_position_error_title: 'Localização falhou',
   location_position_error_body: 'Liga o GPS.',
   notif_location_suggestion_title: '📍 Novo local',
-  notif_location_suggestion_body: 'Foi detetada uma nova rotina localmente.',
+  notif_location_suggestion_body: 'Foi detetada uma nova rotina.',
 
   manual_title: 'Registar tempo lá fora',
   manual_tab_log: '📝 Sessão passada',
@@ -269,15 +270,17 @@ export default {
   intro_get_started: 'Começar',
   intro_welcome_title: 'Bem-vindo ao TouchGrass',
   intro_welcome_body: 'O teu companheiro privado para largar os ecrãs.',
-  intro_welcome_feature_1: 'Monitoriza tempo ao ar livre localmente',
+  intro_welcome_feature_1: 'Monitoriza o tempo ao ar livre',
   intro_welcome_feature_2: 'Define objetivos',
   intro_welcome_feature_3: 'Lembretes pacíficos',
   intro_welcome_feature_4: 'Os teus dados ficam só no teu telemóvel',
   intro_privacy_policy: 'Privacidade',
   intro_hc_title: 'Health Connect',
-  intro_hc_body: 'Leitura estritamente local dos passos.',
+  intro_hc_body:
+    'O TouchGrass utiliza o Health Connect para detetar privadamente atividade ao ar livre através dos teus passos e sessões de exercício.',
   intro_hc_why_title: 'Porquê?',
-  intro_hc_why_body: 'Para não teres que levar o telemóvel nas caminhadas.',
+  intro_hc_why_body:
+    'Muitos passos num local geralmente significa que estiveste a caminhar ao ar livre. Atividades como corrida ou ciclismo também contam como tempo no exterior. Com o GPS ativado, sessões de bicicleta estática podem ser excluídas.',
   intro_hc_hint: 'Podes ativar depois.',
   intro_hc_button: 'Ligar',
   intro_hc_button_granted: 'Ligado ✓',
@@ -393,7 +396,7 @@ export default {
   settings_weather_permission_title: 'Localização',
   settings_weather_permission_missing: 'Faltam permissões',
   settings_weather_location_permission_missing:
-    'A localização local é usada para o tempo e descartada em seguida.',
+    'A localização é usada para a meteorologia e descartada em seguida.',
   settings_weather_location_request: 'Conceder',
   settings_temp_preference: 'Preferência',
   settings_temp_cold: 'Prefiro o frio',
@@ -424,12 +427,12 @@ export default {
   // Notification channel
   notif_channel_name: 'Avisos ao ar livre',
   notif_channel_background_name: 'Atividade de fundo',
-  notif_channel_background_desc: 'Aparece se a deteção geofence local estiver ativa.',
+  notif_channel_background_desc: 'Aparece se a deteção geofence estiver ativa.',
   gps_tracking_notif_body: 'Deteção ao ar livre em andamento',
   notif_channel_scheduled_name: 'Agendados',
   notif_channel_scheduled_desc: 'Lembretes que criaste',
   notif_channel_daily_planner_name: 'Planeamento local',
-  notif_channel_daily_planner_desc: 'Check silencioso. Podes ocultar.',
+  notif_channel_daily_planner_desc: 'Processo em segundo plano silencioso. Podes ocultar.',
   notif_daily_planner_title: 'TouchGrass',
   notif_daily_planner_body: 'Abre para planear o dia.',
 
@@ -462,7 +465,7 @@ export default {
 
   // Calendar integration
   settings_section_calendar: 'Calendário',
-  settings_calendar_integration: 'Integração local',
+  settings_calendar_integration: 'Integração',
   settings_calendar_integration_desc: 'Evita avisos durante reuniões',
   settings_calendar_permission_title: 'Permissão',
   settings_calendar_permission_missing: 'Falta',
@@ -481,7 +484,7 @@ export default {
   settings_calendar_select_title: 'Calendário',
   settings_calendar_select_touchgrass: 'TouchGrass (Local)',
   calendar_event_title: '🌿 Sair',
-  calendar_event_notes: 'Bloqueado localmente',
+  calendar_event_notes: 'Adicionado por TouchGrass',
   calendar_touchgrass_name: 'TouchGrass',
 
   // About TouchGrass screen
@@ -489,7 +492,7 @@ export default {
   about_intro_title: 'O que é?',
   about_intro_body: 'A tua ferramenta privada para descansar a vista.',
   about_detection_title: 'Deteção segura',
-  about_detection_body: 'Tudo local com GPS geofence ou Health Connect.',
+  about_detection_body: 'Utiliza GPS geofence ou Health Connect (passos e atividades).',
   about_goals_title: 'Objetivos',
   about_goals_body: 'Mantém a racha de desconexão diretamente no telemóvel.',
   about_reminders_title: 'Subtil',
@@ -513,18 +516,18 @@ export default {
 
   // Error boundary crash screen
   error_boundary_title: 'Falhou',
-  error_boundary_subtitle: 'Crashed local. Tenta de novo.',
+  error_boundary_subtitle: 'A app falhou. Tenta de novo.',
   error_boundary_restart: 'Reiniciar',
   error_boundary_report: 'Reportar',
 
   // Background Task
   background_task_title: 'Análise de rotina',
-  background_task_desc: 'Processo local silencioso.',
+  background_task_desc: 'Processo silencioso em segundo plano.',
 
   // Activity Log screen
   nav_activity_log: 'Registo',
   settings_section_activity_log: 'Transparência',
-  settings_activity_log: 'Logs locais',
+  settings_activity_log: 'Registo de atividades',
   settings_activity_log_sublabel: 'Vê o que se passa',
   activity_log_empty: 'Vazio.',
   activity_log_section_hc: 'Health',
@@ -535,7 +538,7 @@ export default {
   intro_battery_title: 'Bateria',
   intro_battery_body: 'Para não perderes avisos, o sistema não deve bloquear a app.',
   intro_battery_why_title: 'Porquê?',
-  intro_battery_why_body: 'Processamos localmente e o Android pode matar apps silenciosas.',
+  intro_battery_why_body: 'O Android pode encerrar apps em segundo plano.',
   intro_battery_button: 'Definições',
   intro_battery_button_done: 'Aberto ✓',
   intro_battery_hint: 'Põe Sem Restrições.',
@@ -555,13 +558,13 @@ export default {
   // GPS descriptions — {{dist}} = numeric distance, {{distUnit}} = "km" or "mi",
   //                    {{speed}} = numeric speed,   {{speedUnit}} = "km/h" or "mph"
   session_notes_gps_left_returned:
-    'Local: Saiu {{start}}, voltou {{dist}} {{distUnit}} ({{speed}} {{speedUnit}}).',
+    'GPS: Saiu {{start}}, voltou {{dist}} {{distUnit}} ({{speed}} {{speedUnit}}).',
   session_notes_gps_left_went:
-    'Local: Saiu {{start}} para {{end}}, {{dist}} {{distUnit}} ({{speed}} {{speedUnit}}).',
-  session_notes_gps_left: 'Local: Saiu {{start}}, {{dist}} {{distUnit}} ({{speed}} {{speedUnit}}).',
+    'GPS: Saiu {{start}} para {{end}}, {{dist}} {{distUnit}} ({{speed}} {{speedUnit}}).',
+  session_notes_gps_left: 'GPS: Saiu {{start}}, {{dist}} {{distUnit}} ({{speed}} {{speedUnit}}).',
   session_notes_gps_returned:
-    'Local: Chegou {{end}}, {{dist}} {{distUnit}} ({{speed}} {{speedUnit}}).',
-  session_notes_gps_no_location: 'Local: {{dist}} {{distUnit}} ({{speed}} {{speedUnit}}).',
+    'GPS: Chegou {{end}}, {{dist}} {{distUnit}} ({{speed}} {{speedUnit}}).',
+  session_notes_gps_no_location: 'GPS: {{dist}} {{distUnit}} ({{speed}} {{speedUnit}}).',
   // Health Connect descriptions — {{steps}} = formatted number, {{speed}} = numeric speed, {{speedUnit}} = "km/h" or "mph"
   session_notes_hc_steps: 'Health: {{steps}} passos ({{speed}} {{speedUnit}}).',
   session_notes_hc_exercise: 'Health: {{exerciseName}}.',
@@ -610,12 +613,12 @@ export default {
   permission_issues_banner: 'Permissão: {{features}}.',
 
   // Diagnostic sheet
-  diagnostic_title: 'Estado Local',
+  diagnostic_title: 'Diagnóstico',
   diagnostic_environment: 'Ambiente',
   diagnostic_native_version: 'Versão',
   diagnostic_launch_type: 'Tipo',
   diagnostic_update_id: 'Update ID',
-  diagnostic_launch_embedded: 'Local',
+  diagnostic_launch_embedded: 'Embutido',
   diagnostic_launch_ota: 'OTA',
   diagnostic_unknown: 'desconhecido',
   diagnostic_none: 'nenhum',

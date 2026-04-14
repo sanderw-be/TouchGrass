@@ -57,6 +57,15 @@ jest.mock('../storage/database', () => ({
   clearAllDataAsync: jest.fn(() => Promise.resolve()),
 }));
 
+jest.mock('expo-location', () => ({
+  getForegroundPermissionsAsync: jest.fn(() =>
+    Promise.resolve({ status: 'granted', canAskAgain: true })
+  ),
+  getBackgroundPermissionsAsync: jest.fn(() =>
+    Promise.resolve({ status: 'granted', canAskAgain: true })
+  ),
+}));
+
 jest.mock('../detection/index', () => ({
   getDetectionStatus: jest.fn(() =>
     Promise.resolve({
@@ -71,7 +80,7 @@ jest.mock('../detection/index', () => ({
   recheckHealthConnect: jest.fn(() => Promise.resolve()),
   checkGPSPermissions: jest.fn(() => Promise.resolve()),
   requestGPSPermissions: jest.fn(() => Promise.resolve(false)),
-  openHealthConnectSettings: jest.fn(() => Promise.resolve(true)),
+  requestHealthConnect: jest.fn(() => Promise.resolve(true)),
 }));
 
 const mockNavigate = jest.fn();
