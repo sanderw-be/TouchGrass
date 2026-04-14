@@ -98,8 +98,6 @@ export async function requestHealthPermissions(): Promise<boolean> {
       const granted = await requestPermission([
         { accessType: 'read', recordType: 'ExerciseSession' },
         { accessType: 'read', recordType: 'Steps' },
-        { accessType: 'read', recordType: 'ActiveCaloriesBurned' },
-        { accessType: 'read', recordType: 'Distance' },
       ]);
 
       // Check if permissions were granted via the dialog
