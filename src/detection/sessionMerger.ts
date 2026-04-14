@@ -111,7 +111,7 @@ export async function submitSession(candidate: OutsideSession): Promise<void> {
     const speedUnit = imperial ? t('unit_speed_imperial') : t('unit_speed_metric');
     hcNotesParts.push(
       t('session_notes_hc_steps', {
-        steps: mergedSteps.toLocaleString(),
+        steps: mergedSteps.toLocaleString(t('locale_tag')),
         speed,
         speedUnit,
       })

@@ -36,7 +36,7 @@ export default {
 
   // Session sources
   source_health_connect: 'Aktivität',
-  source_gps: 'Lokales GPS',
+  source_gps: 'GPS',
   source_manual: 'Manuell',
   source_timeline: 'Zeitachse',
 
@@ -127,16 +127,17 @@ export default {
   history_legend_target: 'Zielvorgabe',
 
   // Settings screen
-  settings_section_detection: 'Erfassung (Lokal)',
+  settings_section_detection: 'Erfassung',
   settings_section_locations: 'Bekannte Orte',
   settings_section_reminders: 'Erinnerungen',
   settings_section_language: 'Sprache',
   settings_section_about: 'Info',
   settings_health_connect: 'Health Connect',
-  settings_health_connect_desc: 'Schritte privat synchronisieren',
+  settings_health_connect_desc: 'Außenschritte & Aktivität verfolgen',
   settings_hc_permission_missing: 'Berechtigung fehlt',
   settings_hc_permission_title: 'Health Connect Freigabe',
-  settings_hc_permission_body: 'Wird benötigt, um Aktivitäten lokal abzugleichen.',
+  settings_hc_permission_body:
+    'Wird benötigt, um Außenaktivitäten zu erkennen. Viele Schritte an einem Ort weisen meist auf einen Spaziergang draußen hin; Aktivitäten wie Laufen oder Radfahren gelten ebenfalls als Außenzeit. Mit GPS kann auch der Heimtrainer ausgeschlossen werden.',
   settings_hc_open_btn: 'Health Connect öffnen',
   settings_hc_failed_title: 'Fehler',
   settings_hc_failed_body:
@@ -154,7 +155,7 @@ export default {
   settings_permission_cancel: 'Abbrechen',
   settings_permission_open: 'Einstellungen öffnen',
   settings_permission_disable: 'Deaktivieren',
-  settings_gps: 'Lokales GPS-Tracking',
+  settings_gps: 'GPS-Tracking',
   settings_gps_desc: 'Draußensein über Standort erkennen',
   settings_gps_permission: 'Berechtigung nötig',
   settings_gps_permission_missing: 'Berechtigung fehlt',
@@ -197,7 +198,7 @@ export default {
   settings_clear_data: 'Alle Daten löschen',
   settings_clear_data_sublabel: 'Gerätedaten permanent entfernen',
   settings_clear_data_confirm_title: 'Alles löschen',
-  settings_clear_data_confirm_body: 'Dadurch werden alle lokalen Daten unwiderruflich gelöscht.',
+  settings_clear_data_confirm_body: 'Dadurch werden alle Daten unwiderruflich gelöscht.',
   settings_clear_cancel: 'Abbrechen',
   settings_clear_delete: 'Löschen',
   settings_clear_data_success_title: 'Erfolgreich',
@@ -220,20 +221,19 @@ export default {
   settings_locations_manage: 'Orte verwalten',
   settings_locations_manage_desc: 'Richte Zonen ein, in denen du dich drinnen aufhältst',
   settings_locations_suggestions_enabled: 'Neue Orte vorschlagen',
-  settings_locations_suggestions_desc: 'Lokale Erkennung häufiger Orte',
+  settings_locations_suggestions_desc: 'Erkennung häufiger Orte',
   settings_locations_section_suggested: 'Vorschläge',
   settings_locations_section_active: 'Aktiv',
   settings_location_approve: 'Zulassen',
   settings_location_deny: 'Ablehnen',
   settings_location_suggested_badge: 'Ausstehend',
   settings_location_no_suggestions: 'Keine Vorschläge',
-  settings_location_no_suggestions_hint:
-    'Benötigt 2+ Stunden Verweildauer am selben Ort (lokal berechnet).',
+  settings_location_no_suggestions_hint: 'Benötigt 2+ Stunden Verweildauer am selben Ort.',
   settings_location_no_active: 'Keine aktiven Orte',
   settings_location_no_active_hint: 'Bitte manuell hinzufügen.',
   settings_locations_count: '{{count}} aktiv',
   settings_location_deny_title: 'Vorschlag ablehnen',
-  settings_location_deny_body: 'Wird lokal entfernt.',
+  settings_location_deny_body: 'Wird entfernt.',
   settings_location_deny_confirm: 'Entfernen',
   settings_location_deny_cancel: 'Abbrechen',
   location_suggestion_default_label: 'Neuer Ort',
@@ -246,7 +246,7 @@ export default {
   location_edit_approve_confirm: 'Speichern',
   location_position_error_title: 'Standort nicht verfügbar',
   location_position_error_body: 'Bitte GPS aktivieren.',
-  notif_location_suggestion_title: '📍 Neuer Ort (Lokal)',
+  notif_location_suggestion_title: '📍 Neuer Ort',
   notif_location_suggestion_body: 'Ein neuer häufiger Ort wurde auf dem Gerät erkannt.',
 
   manual_title: 'Draußenzeit erfassen',
@@ -271,26 +271,28 @@ export default {
   intro_get_started: 'Loslegen',
   intro_welcome_title: 'Willkommen bei TouchGrass',
   intro_welcome_body: 'Dein privater Begleiter fürs Draußensein.',
-  intro_welcome_feature_1: 'Draußenzeit 100% lokal erfassen',
+  intro_welcome_feature_1: 'Draußenzeit erfassen',
   intro_welcome_feature_2: 'Ziele setzen',
   intro_welcome_feature_3: 'Diskrete Erinnerungen',
   intro_welcome_feature_4: 'Daten verlassen das Gerät nie',
   intro_privacy_policy: 'Datenschutz',
   intro_hc_title: 'Health Connect',
-  intro_hc_body: 'Für lokale Bewegungserkennung.',
+  intro_hc_body:
+    'TouchGrass nutzt Health Connect, um Außenaktivitäten anhand von Schritten und Trainingssessions privat zu erkennen.',
   intro_hc_why_title: 'Warum das?',
-  intro_hc_why_body: 'Sichere Auswertung deiner Schritte auf dem Gerät.',
+  intro_hc_why_body:
+    'Viele Schritte an einem Ort bedeuten meist, dass du draußen unterwegs warst. Aktivitäten wie Laufen oder Radfahren werden ebenfalls als Außenzeit gewertet. Mit GPS aktiviert können Heimtrainersessions herausgefiltert werden.',
   intro_hc_hint: 'Kann später aktiviert werden.',
   intro_hc_button: 'Health Connect verbinden',
   intro_hc_button_granted: 'Verbunden ✓',
   intro_location_title: 'Standort',
-  intro_location_body: 'Wird nur für lokales Geofencing genutzt.',
+  intro_location_body: 'Wird nur für Geofencing genutzt.',
   intro_location_why_title: 'Warum das?',
   intro_location_why_body: 'Erkennt, wenn du das Haus verlässt. Keine Cloud, kein Tracking.',
-  intro_location_hint: '"Immer zulassen" ist für die lokale Hintergrund-Erkennung nötig.',
+  intro_location_hint: '"Immer zulassen" ist für die Hintergrund-Erkennung nötig.',
   intro_location_button: 'Standort freigeben',
   intro_location_button_granted: 'Freigegeben ✓',
-  intro_location_known_title: 'Lokales Profil',
+  intro_location_known_title: 'Genauigkeit verbessern',
   intro_location_known_body: 'Hilft der App, deine Draußenzeiten genauer zu berechnen.',
   intro_location_known_set_home: 'Zuhause',
   intro_location_known_set_work: 'Arbeit',
@@ -300,14 +302,14 @@ export default {
   intro_notifications_title: 'Erinnerungen',
   intro_notifications_body: 'Lass dich ans Rausgehen erinnern.',
   intro_notifications_why_title: 'Warum das?',
-  intro_notifications_why_body: 'Rein lokales Muster-Lernen.',
+  intro_notifications_why_body: 'Lernt deine Muster.',
   intro_notifications_hint: 'Komplett optional.',
   intro_notifications_button: 'Aktivieren',
   intro_notifications_button_granted: 'Aktiv ✓',
   intro_calendar_title: 'Kalender',
   intro_calendar_body: 'Wir stören nicht während deiner Termine.',
   intro_calendar_why_title: 'Warum das?',
-  intro_calendar_why_body: 'Lokale Prüfung deiner freien Zeiten.',
+  intro_calendar_why_body: 'Prüfung deiner freien Zeiten.',
   intro_calendar_data_scope: 'Nichts verlässt das Gerät.',
   intro_calendar_hint: 'Später anpassbar.',
   intro_calendar_button: 'Verbinden',
@@ -396,7 +398,7 @@ export default {
   settings_weather_permission_title: 'Standort für Wetter',
   settings_weather_permission_missing: 'Berechtigung fehlt',
   settings_weather_location_permission_missing:
-    'Standort (ungefähr) wird lokal abgeglichen. Keine Speicherung.',
+    'Standort (ungefähr) wird abgeglichen. Keine Speicherung.',
   settings_weather_location_request: 'Erlaubnis erteilen',
   settings_temp_preference: 'Klima',
   settings_temp_cold: 'Lieber kühler',
@@ -428,7 +430,7 @@ export default {
   notif_channel_name: 'Draußen-Tipps',
   notif_channel_background_name: 'Hintergrund',
   notif_channel_background_desc: 'Sichtbar, solange das Geofencing aktiv ist.',
-  gps_tracking_notif_body: 'Lokales Hintergrund-Tracking aktiv',
+  gps_tracking_notif_body: 'Hintergrund-Tracking aktiv',
   notif_channel_scheduled_name: 'Zeitpläne',
   notif_channel_scheduled_desc: 'Deine festen Draußen-Termine',
   notif_channel_daily_planner_name: 'Tagesplaner',
@@ -466,11 +468,10 @@ export default {
   // Calendar integration
   settings_section_calendar: 'Kalender',
   settings_calendar_integration: 'Kalender prüfen',
-  settings_calendar_integration_desc: 'Lokaler Abgleich für störungsfreie Meetings',
+  settings_calendar_integration_desc: 'Abgleich für störungsfreie Meetings',
   settings_calendar_permission_title: 'Freigabe',
   settings_calendar_permission_missing: 'Berechtigung fehlt',
-  settings_calendar_permission_body:
-    'Zugriff wird lokal verarbeitet. Keine Daten verlassen dein Gerät.',
+  settings_calendar_permission_body: 'Zugriff wird verarbeitet. Keine Daten verlassen dein Gerät.',
   settings_calendar_permission_open: 'Einstellungen',
   settings_calendar_permission_cancel: 'Abbrechen',
   settings_calendar_buffer: 'Meeting-Puffer',
@@ -485,16 +486,17 @@ export default {
   settings_calendar_select_title: 'Wählen',
   settings_calendar_select_touchgrass: 'TouchGrass (Lokal)',
   calendar_event_title: '🌿 Draußen',
-  calendar_event_notes: 'Lokal eingetragen',
+  calendar_event_notes: 'Von TouchGrass eingetragen',
   calendar_touchgrass_name: 'TouchGrass',
 
   // About TouchGrass screen
   nav_about_app: 'Info',
   about_intro_title: 'Was ist das?',
   about_intro_body:
-    'Deine App für mehr Zeit draußen. Wir messen lokal und erinnern dich dezent ans Rausgehen.',
+    'Deine App für mehr Zeit draußen. Wir messen deine Zeit und erinnern dich dezent ans Rausgehen.',
   about_detection_title: 'Wie es funktioniert',
-  about_detection_body: 'Lokales Tracking über Health Connect oder GPS (Geofencing). Keine Cloud.',
+  about_detection_body:
+    'Tracking über Health Connect (Schritte & Aktivitäten) oder GPS (Geofencing). Keine Cloud.',
   about_goals_title: 'Ziele',
   about_goals_body: 'Setze dir Limits und schaue dir deine Serien an.',
   about_reminders_title: 'Sanfte Erinnerungen',
@@ -518,19 +520,19 @@ export default {
 
   // Error boundary crash screen
   error_boundary_title: 'Hoppla',
-  error_boundary_subtitle: 'Die App ist lokal abgestürzt.',
+  error_boundary_subtitle: 'Die App ist unerwartet abgestürzt.',
   error_boundary_restart: 'Neustart',
   error_boundary_report: 'Melden',
 
   // Background Task
   background_task_title: 'Erinnerungs-Check',
-  background_task_desc: 'Lokale Prüfung der Pausenzeiten.',
+  background_task_desc: 'Prüfung der Pausenzeiten im Hintergrund.',
 
   // Activity Log screen
   nav_activity_log: 'Log',
   settings_section_activity_log: 'Transparenz',
   settings_activity_log: 'Aktivitäten-Log',
-  settings_activity_log_sublabel: 'Verfolge, was lokal passiert',
+  settings_activity_log_sublabel: 'Verfolge, was im Hintergrund passiert',
   activity_log_empty: 'Noch nichts passiert.',
   activity_log_section_hc: 'Health',
   activity_log_section_gps: 'GPS',
@@ -550,7 +552,7 @@ export default {
   // Settings battery optimization
   settings_battery_optimization: 'Akku-Ausnahme',
   settings_battery_optimization_sublabel:
-    'Stelle TouchGrass auf Uneingeschränkt, damit lokale Checks laufen.',
+    'Stelle TouchGrass auf Uneingeschränkt, damit Checks im Hintergrund laufen.',
 
   // Intro checklist
   intro_ready_checklist_item_battery: 'Akku auf Uneingeschränkt.',
@@ -563,13 +565,13 @@ export default {
   // GPS descriptions — {{dist}} = numeric distance, {{distUnit}} = "km" or "mi",
   //                    {{speed}} = numeric speed,   {{speedUnit}} = "km/h" or "mph"
   session_notes_gps_left_returned:
-    'Lokal: Los {{start}}, zurück {{dist}} {{distUnit}} ({{speed}} {{speedUnit}}).',
+    'GPS: Los {{start}}, zurück {{dist}} {{distUnit}} ({{speed}} {{speedUnit}}).',
   session_notes_gps_left_went:
-    'Lokal: Los {{start}} nach {{end}}, {{dist}} {{distUnit}} ({{speed}} {{speedUnit}}).',
-  session_notes_gps_left: 'Lokal: Los {{start}}, {{dist}} {{distUnit}} ({{speed}} {{speedUnit}}).',
+    'GPS: Los {{start}} nach {{end}}, {{dist}} {{distUnit}} ({{speed}} {{speedUnit}}).',
+  session_notes_gps_left: 'GPS: Los {{start}}, {{dist}} {{distUnit}} ({{speed}} {{speedUnit}}).',
   session_notes_gps_returned:
-    'Lokal: Zurück {{end}}, {{dist}} {{distUnit}} ({{speed}} {{speedUnit}}).',
-  session_notes_gps_no_location: 'Lokal: {{dist}} {{distUnit}} ({{speed}} {{speedUnit}}).',
+    'GPS: Zurück {{end}}, {{dist}} {{distUnit}} ({{speed}} {{speedUnit}}).',
+  session_notes_gps_no_location: 'GPS: {{dist}} {{distUnit}} ({{speed}} {{speedUnit}}).',
   // Health Connect descriptions — {{steps}} = formatted number, {{speed}} = numeric speed, {{speedUnit}} = "km/h" or "mph"
   session_notes_hc_steps: 'Health: {{steps}} Schritte ({{speed}} {{speedUnit}}).',
   session_notes_hc_exercise: 'Health: {{exerciseName}}.',
@@ -623,7 +625,7 @@ export default {
   diagnostic_native_version: 'Version',
   diagnostic_launch_type: 'Start-Typ',
   diagnostic_update_id: 'Update ID',
-  diagnostic_launch_embedded: 'Lokal',
+  diagnostic_launch_embedded: 'Eingebettet',
   diagnostic_launch_ota: 'OTA',
   diagnostic_unknown: 'Unbekannt',
   diagnostic_none: 'Keine',

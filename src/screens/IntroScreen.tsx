@@ -27,9 +27,10 @@ import {
   toggleHealthConnect,
   toggleGPS,
   recheckHealthConnect,
-  openHealthConnectSettings,
   requestGPSPermissions,
   checkGPSPermissions,
+  requestHealthConnect,
+  checkWeatherLocationPermissions,
 } from '../detection/index';
 
 import { requestNotificationPermissions } from '../notifications/notificationManager';
@@ -174,7 +175,8 @@ export default function IntroScreen({ onComplete }: Props) {
     if (notificationsGranted) {
       await setSettingAsync('smart_reminders_count', '2');
     }
-    if (locationGranted && notificationsGranted) {
+    const weatherGranted = await checkWeatherLocationPermissions();
+    if (weatherGranted && notificationsGranted) {
       await setSettingAsync('weather_enabled', '1');
     }
   };
@@ -200,10 +202,12 @@ export default function IntroScreen({ onComplete }: Props) {
       // Enable the user toggle and check current permissions.
       const result = await toggleHealthConnect(true);
       if (result.needsPermissions) {
-        // Permissions not yet granted — open Health Connect so the user can allow them.
-        // When the user returns, the AppState listener fires checkPermissions() which
-        // calls recheckHealthConnect() and updates healthConnectGranted.
-        await openHealthConnectSettings();
+        // Request permissions inline (pops the app-scoped native dialog via expo-health-connect)
+        await requestHealthConnect();
+
+        // Re-check immediately because the in-app dialog doesn't trigger an AppState change
+        const isGranted = await recheckHealthConnect();
+        setHealthConnectGranted(isGranted);
       } else {
         setHealthConnectGranted(true);
       }
