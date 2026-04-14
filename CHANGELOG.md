@@ -1,3 +1,9 @@
+## [1.7.2-beta.1](https://github.com/sanderw-be/TouchGrass/compare/v1.7.1...v1.7.2-beta.1) (2026-04-14)
+
+### Bug Fixes
+
+- Minimize HC permissions, improve all permission flows, clarify Health Connect detects outdoor time via steps AND exercise sessions ([#409](https://github.com/sanderw-be/TouchGrass/issues/409)) ([9686d8e](https://github.com/sanderw-be/TouchGrass/commit/9686d8e73909a0e69b77f1b007f310a2adf8602e))
+
 ## [1.7.1](https://github.com/sanderw-be/TouchGrass/compare/v1.7.0...v1.7.1) (2026-04-13)
 
 ### Bug Fixes
