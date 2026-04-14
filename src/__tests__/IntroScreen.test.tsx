@@ -3,6 +3,7 @@ import { render, fireEvent, act, waitFor } from '@testing-library/react-native';
 import { Linking } from 'react-native';
 import IntroScreen from '../screens/IntroScreen';
 import { PRIVACY_POLICY_URL } from '../utils/constants';
+import { requestHealthConnect } from '../detection';
 
 // Mock the i18n module
 jest.mock('../i18n', () => ({
@@ -22,7 +23,8 @@ jest.mock('../detection/index', () => ({
   recheckHealthConnect: jest.fn(() => Promise.resolve(false)),
   requestGPSPermissions: jest.fn(() => Promise.resolve(false)),
   checkGPSPermissions: jest.fn(() => Promise.resolve(false)),
-  openHealthConnectSettings: jest.fn(() => Promise.resolve(true)),
+  requestHealthConnect: jest.fn(() => Promise.resolve(true)),
+  checkWeatherLocationPermissions: jest.fn(() => Promise.resolve(false)),
 }));
 
 // Mock notification manager
@@ -259,8 +261,7 @@ describe('IntroScreen', () => {
       await waitFor(() => expect(getByText('intro_hc_button_granted')).toBeTruthy());
     });
 
-    it('opens Health Connect settings when permissions are needed', async () => {
-      const { openHealthConnectSettings } = require('../detection/index');
+    it('requests Health Connect permissions when needed', async () => {
       mockToggleHealthConnect.mockResolvedValueOnce({ needsPermissions: true });
       const { getByText } = await navigateToHCStep();
 
@@ -268,7 +269,7 @@ describe('IntroScreen', () => {
         fireEvent.press(getByText('intro_hc_button'));
       });
 
-      await waitFor(() => expect(openHealthConnectSettings).toHaveBeenCalled());
+      await waitFor(() => expect(requestHealthConnect).toHaveBeenCalled());
     });
   });
 
@@ -362,16 +363,20 @@ describe('IntroScreen', () => {
     describe('saveOnboardingSettings', () => {
       let mockGetNotifPermissions: jest.Mock;
       let mockCheckGPS: jest.Mock;
+      let mockCheckWeather: jest.Mock;
 
       beforeEach(() => {
         mockSetSettingAsync.mockClear();
         mockGetNotifPermissions = require('expo-notifications').getPermissionsAsync as jest.Mock;
         mockCheckGPS = require('../detection/index').checkGPSPermissions as jest.Mock;
+        mockCheckWeather = require('../detection/index')
+          .checkWeatherLocationPermissions as jest.Mock;
       });
 
       it('enables smart reminders when notification permission is granted', async () => {
         mockGetNotifPermissions.mockResolvedValue({ status: 'granted' });
         mockCheckGPS.mockResolvedValue(false);
+        mockCheckWeather.mockResolvedValue(false);
 
         const { getByText } = await navigateToReadyStep();
 
@@ -382,9 +387,10 @@ describe('IntroScreen', () => {
         expect(mockSetSettingAsync).toHaveBeenCalledWith('smart_reminders_count', '2');
       });
 
-      it('enables weather when both location and notification permissions are granted', async () => {
+      it('enables weather when both weather location and notification permissions are granted', async () => {
         mockGetNotifPermissions.mockResolvedValue({ status: 'granted' });
         mockCheckGPS.mockResolvedValue(true);
+        mockCheckWeather.mockResolvedValue(true);
 
         const { getByText } = await navigateToReadyStep();
 
@@ -396,9 +402,10 @@ describe('IntroScreen', () => {
         expect(mockSetSettingAsync).toHaveBeenCalledWith('smart_reminders_count', '2');
       });
 
-      it('does not enable weather when only location permission is granted', async () => {
+      it('does not enable weather when only weather location permission is granted', async () => {
         mockGetNotifPermissions.mockResolvedValue({ status: 'denied' });
         mockCheckGPS.mockResolvedValue(true);
+        mockCheckWeather.mockResolvedValue(true);
 
         const { getByText } = await navigateToReadyStep();
 
@@ -413,6 +420,7 @@ describe('IntroScreen', () => {
       it('does not enable smart reminders or weather when no permissions granted', async () => {
         mockGetNotifPermissions.mockResolvedValue({ status: 'denied' });
         mockCheckGPS.mockResolvedValue(false);
+        mockCheckWeather.mockResolvedValue(false);
 
         const { getByText } = await navigateToReadyStep();
 

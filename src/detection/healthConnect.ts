@@ -186,7 +186,7 @@ function stepsToSpeedKmh(steps: number, durationMs: number): number {
  * Example (imperial): "Health Connect, 3,200 steps at 2.8 mph."
  */
 function buildHCStepsNotes(steps: number, speedKmh: number): string {
-  const stepsFormatted = steps.toLocaleString();
+  const stepsFormatted = steps.toLocaleString(t('locale_tag'));
   const imperial = isImperialUnits();
   const speed = imperial ? kmhToMph(speedKmh).toFixed(1) : speedKmh.toFixed(1);
   const speedUnit = imperial ? t('unit_speed_imperial') : t('unit_speed_metric');
@@ -332,16 +332,31 @@ export async function syncHealthConnect(): Promise<boolean> {
     const knownLocations = await getKnownLocationsAsync();
 
     // Read exercise sessions
-    const exerciseResult = await readRecords('ExerciseSession', {
+    const initialExerciseResult = await readRecords('ExerciseSession', {
       timeRangeFilter: {
         operator: 'between',
         startTime: startTimeISO,
         endTime: endTimeISO,
       },
     });
+    const exerciseRecords = [...initialExerciseResult.records];
+    let exercisePageToken = initialExerciseResult.pageToken;
+
+    while (exercisePageToken) {
+      const nextResult = await readRecords('ExerciseSession', {
+        timeRangeFilter: {
+          operator: 'between',
+          startTime: startTimeISO,
+          endTime: endTimeISO,
+        },
+        pageToken: exercisePageToken,
+      });
+      exerciseRecords.push(...nextResult.records);
+      exercisePageToken = nextResult.pageToken;
+    }
 
     let exerciseSessionsRecorded = 0;
-    for (const record of exerciseResult.records) {
+    for (const record of exerciseRecords) {
       const start = new Date(record.startTime).getTime();
       const end = new Date(record.endTime).getTime();
       const duration = end - start;
@@ -377,16 +392,31 @@ export async function syncHealthConnect(): Promise<boolean> {
     let stepRecordCount = 0;
     let stepSessionsRecorded = 0;
     try {
-      const stepsResult = await readRecords('Steps', {
+      const initialStepsResult = await readRecords('Steps', {
         timeRangeFilter: {
           operator: 'between',
           startTime: startTimeISO,
           endTime: endTimeISO,
         },
       });
+      const stepsRecords = [...initialStepsResult.records];
+      let stepsPageToken = initialStepsResult.pageToken;
 
-      stepRecordCount = stepsResult.records.length;
-      for (const record of stepsResult.records) {
+      while (stepsPageToken) {
+        const nextResult = await readRecords('Steps', {
+          timeRangeFilter: {
+            operator: 'between',
+            startTime: startTimeISO,
+            endTime: endTimeISO,
+          },
+          pageToken: stepsPageToken,
+        });
+        stepsRecords.push(...nextResult.records);
+        stepsPageToken = nextResult.pageToken;
+      }
+
+      stepRecordCount = stepsRecords.length;
+      for (const record of stepsRecords) {
         const start = new Date(record.startTime).getTime();
         const end = new Date(record.endTime).getTime();
         const recordedDuration = end - start;
@@ -443,7 +473,7 @@ export async function syncHealthConnect(): Promise<boolean> {
     const totalSessionsRecorded = exerciseSessionsRecorded + stepSessionsRecorded;
     await insertBackgroundLogAsync(
       'health_connect',
-      `Read: ${stepRecordCount} step record(s), ${exerciseResult.records.length} exercise record(s)` +
+      `Read: ${stepRecordCount} step record(s), ${exerciseRecords.length} exercise record(s)` +
         (totalSessionsRecorded > 0 ? ` — recorded ${totalSessionsRecorded} session(s)` : '')
     );
 

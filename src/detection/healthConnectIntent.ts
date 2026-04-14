@@ -117,8 +117,11 @@ export async function verifyHealthConnectPermissions(): Promise<boolean> {
   try {
     await initialize();
     const granted = await getGrantedPermissions();
-    // Require at least ExerciseSession read access (the primary data source).
-    return granted.some((p) => p.accessType === 'read' && p.recordType === 'ExerciseSession');
+    // Require both ExerciseSession and Steps read access.
+    const hasExercise = granted.some((p) => p.accessType === 'read' && p.recordType === 'ExerciseSession');
+    const hasSteps = granted.some((p) => p.accessType === 'read' && p.recordType === 'Steps');
+    
+    return hasExercise && hasSteps;
   } catch (error) {
     console.warn('Health Connect permission check error:', error);
     return false;
