@@ -133,11 +133,11 @@ export default {
   settings_section_language: 'Language',
   settings_section_about: 'About',
   settings_health_connect: 'Health Connect',
-  settings_health_connect_desc: 'Track steps & activity',
+  settings_health_connect_desc: 'Track outside steps & activity',
   settings_hc_permission_missing: 'Permissions missing — tap to fix',
   settings_hc_permission_title: 'Health Connect Permission',
   settings_hc_permission_body:
-    'Health Connect permissions are needed to track outdoor activities from your steps privately.',
+    'Health Connect permissions are needed to detect when you\'ve been outside. A high step count at a location usually means an outdoor walk, and exercise sessions like running or cycling are treated as outdoor activity. When GPS is also enabled, it can help rule out home trainer sessions.',
   settings_hc_open_btn: 'Open Health Connect',
   settings_hc_failed_title: 'Could not connect',
   settings_hc_failed_body:
@@ -286,10 +286,10 @@ export default {
   intro_welcome_feature_4: 'Your data never leaves your device',
   intro_privacy_policy: 'Privacy Policy',
   intro_hc_title: 'Health Connect',
-  intro_hc_body: 'TouchGrass uses Health Connect to privately detect outdoor exercise.',
+  intro_hc_body: 'TouchGrass uses Health Connect to privately detect outdoor activity from your steps and exercise sessions.',
   intro_hc_why_title: 'Why do we need this?',
   intro_hc_why_body:
-    'It helps us track your outdoor activities like walking or cycling, entirely on-device.',
+    'Many steps at a location usually means you\'ve been walking outside. Exercise sessions like running or cycling are also treated as outdoor activity. If GPS is also enabled, it can rule out home trainer sessions.',
   intro_hc_hint: 'You can grant this permission later in Settings.',
   intro_hc_button: 'Connect Health Connect',
   intro_hc_button_granted: 'Connected ✓',
@@ -514,7 +514,7 @@ export default {
     'TouchGrass is your private companion for getting outside more. It tracks the time you spend outdoors, helps you set goals, and gives you gentle reminders.',
   about_detection_title: 'How outdoor time is tracked',
   about_detection_body:
-    'TouchGrass uses local detection methods:\n\n• Health Connect — imports step-based activity privately.\n• GPS — detects when you leave a known location via local geofencing.\n\nYou can manage these in Settings → Detection.',
+    'TouchGrass uses local detection methods:\n\n• Health Connect — detects outdoor activity using steps and exercise sessions. A high step count typically means an outdoor walk; activities like running or cycling are treated as outdoor. If GPS is also enabled, it can rule out home trainer sessions.\n• GPS — detects when you leave a known location via local geofencing.\n\nYou can manage these in Settings → Detection.',
   about_goals_title: 'Goals & progress',
   about_goals_body:
     'Set a daily outdoor goal and track your streaks. Your progress stays on your device, visualized on your home screen and History tab.',
