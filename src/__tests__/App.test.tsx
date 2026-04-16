@@ -16,6 +16,19 @@ jest.mock('../screens/IntroScreen', () => {
   return ({ onComplete }: { onComplete: () => void }) => <Text>IntroScreen</Text>;
 });
 
+// Mock useOTAUpdates hook
+jest.mock('../hooks/useOTAUpdates', () => ({
+  useOTAUpdates: jest.fn(() => ({ updateStatus: 'ready' })),
+}));
+
+// Mock UpdateSplashScreen
+jest.mock('../components/UpdateSplashScreen', () => {
+  const React = require('react');
+  const { Text } = require('react-native');
+  // eslint-disable-next-line @typescript-eslint/no-shadow
+  return ({ status }: { status: string }) => <Text>UpdateSplashScreen status={status}</Text>;
+});
+
 const mockGetDeviceSupportedLocale = jest.fn(() => 'en');
 // Mock the i18n module
 jest.mock('../i18n', () => ({
@@ -73,6 +86,8 @@ jest.mock('react-native-screens', () => ({
 describe('App', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    const { useOTAUpdates } = require('../hooks/useOTAUpdates');
+    useOTAUpdates.mockReturnValue({ updateStatus: 'ready' });
     const i18n = require('../i18n').default;
     i18n.locale = 'en';
     mockGetDeviceSupportedLocale.mockReturnValue('en');
@@ -141,5 +156,43 @@ describe('App', () => {
     render(<App />);
 
     expect(useForegroundSync).toHaveBeenCalled();
+  });
+
+  describe('OTA Updates', () => {
+    it('renders UpdateSplashScreen with "checking" status when update is checking', async () => {
+      const { useOTAUpdates } = require('../hooks/useOTAUpdates');
+      useOTAUpdates.mockReturnValue({ updateStatus: 'checking' });
+
+      const { getByText, queryByText } = render(<App />);
+
+      await waitFor(() => {
+        expect(getByText('UpdateSplashScreen status=checking')).toBeTruthy();
+      });
+      expect(queryByText('AppNavigator')).toBeNull();
+    });
+
+    it('renders UpdateSplashScreen with "downloading" status when update is downloading', async () => {
+      const { useOTAUpdates } = require('../hooks/useOTAUpdates');
+      useOTAUpdates.mockReturnValue({ updateStatus: 'downloading' });
+
+      const { getByText, queryByText } = render(<App />);
+
+      await waitFor(() => {
+        expect(getByText('UpdateSplashScreen status=downloading')).toBeTruthy();
+      });
+      expect(queryByText('AppNavigator')).toBeNull();
+    });
+
+    it('does not render UpdateSplashScreen when update status is "ready"', async () => {
+      const { useOTAUpdates } = require('../hooks/useOTAUpdates');
+      useOTAUpdates.mockReturnValue({ updateStatus: 'ready' });
+
+      const { queryByText, getByText } = render(<App />);
+
+      await waitFor(() => {
+        expect(getByText('AppNavigator')).toBeTruthy();
+      });
+      expect(queryByText(/UpdateSplashScreen/)).toBeNull();
+    });
   });
 });
