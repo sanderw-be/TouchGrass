@@ -32,7 +32,7 @@ import { ReminderFeedbackProvider } from './src/context/ReminderFeedbackContext'
 import ReminderFeedbackModal from './src/components/ReminderFeedbackModal';
 import ErrorBoundary from './src/components/ErrorBoundary';
 import UpdateSplashScreen from './src/components/UpdateSplashScreen';
-import { useOTAUpdates, UpdateSplashStatus } from './src/hooks/useOTAUpdates';
+import { useOTAUpdates } from './src/hooks/useOTAUpdates';
 import { refreshBatteryOptimizationSetting } from './src/utils/batteryOptimization';
 import { requestWidgetRefresh } from './src/utils/widgetHelper';
 
