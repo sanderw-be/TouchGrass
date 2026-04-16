@@ -57,6 +57,9 @@
   - const DISCARD_CONFIDENCE_THRESHOLD
   - _...1 more_
 - `src/detection/sessionMerger.ts` — function submitSession: (candidate) => Promise<void>, function buildSession: (startTime, endTime, source, confidence, notes?, steps?, distanceMeters?, averageSpeedKmh?) => OutsideSession
+- `src/hooks/useAppStateSync.ts` — function useAppStateSync: () => void
+- `src/hooks/useForegroundSync.ts` — function useForegroundSync: () => void
+- `src/hooks/useOTAUpdates.ts` — function useOTAUpdates: () => void, type UpdateSplashStatus
 - `src/i18n/index.ts`
   - function resolveSupportedLocale: (localeCode?) => SupportedLocale
   - function getDeviceSupportedLocale: () => SupportedLocale

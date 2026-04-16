@@ -2,7 +2,7 @@
 
 > **Navigation aid.** Library inventory extracted via AST. Read the source files listed here before modifying exported functions.
 
-**28 library files** across 9 modules
+**31 library files** across 10 modules
 
 ## Utils (9 files)
 
@@ -31,6 +31,12 @@
 - `src/background/alarmTiming.ts` — computeNextSleepMs, scheduleNextAlarmPulse, PULSE_INTERVAL_DAY_MS, PULSE_INTERVAL_NIGHT_MS
 - `src/background/unifiedBackgroundTask.ts` — registerUnifiedBackgroundTask, unregisterUnifiedBackgroundTask, UNIFIED_BACKGROUND_TASK
 - `src/background/backgroundTick.ts` — performBackgroundTick
+
+## Hooks (3 files)
+
+- `src/hooks/useOTAUpdates.ts` — useOTAUpdates, UpdateSplashStatus
+- `src/hooks/useAppStateSync.ts` — useAppStateSync
+- `src/hooks/useForegroundSync.ts` — useForegroundSync
 
 ## Notifications (3 files)
 
