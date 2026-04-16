@@ -1,13 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import type { InitialState } from '@react-navigation/native';
-import {
-  View,
-  ActivityIndicator,
-  StyleSheet,
-  AppState,
-  AppStateStatus,
-  InteractionManager,
-} from 'react-native';
+import { View, ActivityIndicator, StyleSheet, InteractionManager } from 'react-native';
 import { useFonts } from 'expo-font';
 import { Nunito_400Regular } from '@expo-google-fonts/nunito/400Regular';
 import { Nunito_600SemiBold } from '@expo-google-fonts/nunito/600SemiBold';
@@ -26,13 +19,12 @@ import { initDetection } from './src/detection/index';
 import {
   setupNotificationInfrastructure,
   scheduleDayReminders,
-  processReminderQueue,
 } from './src/notifications/notificationManager';
-import { cleanupTouchGrassCalendars } from './src/calendar/calendarService';
 import { registerUnifiedBackgroundTask } from './src/background/unifiedBackgroundTask';
 import { scheduleNextAlarmPulse } from './src/background/alarmTiming';
 
 import AppNavigator from './src/navigation/AppNavigator';
+import { useForegroundSync } from './src/hooks/useForegroundSync';
 import IntroScreen from './src/screens/IntroScreen';
 import { IntroContext } from './src/context/IntroContext';
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
@@ -55,7 +47,6 @@ function AppContent() {
     Updates.isEnabled ? 'checking' : 'ready'
   );
   const savedNavState = useRef<InitialState | undefined>(undefined);
-  const appState = useRef(AppState.currentState);
   const deferredInitDone = useRef(false);
 
   // Check for EAS updates on startup; fall back after 3 seconds so the app is never
@@ -103,48 +94,7 @@ function AppContent() {
     setLocaleState(languagePreference);
   }, []);
 
-  // On app foreground: run day planning and goal-reached check as a catch-up
-  // for missed background wakes, plus calendar cleanup.
-  // Deferred via InteractionManager so the resumed UI frame renders first.
-  useEffect(() => {
-    const subscription = AppState.addEventListener('change', (nextAppState: AppStateStatus) => {
-      if (appState.current !== 'active' && nextAppState === 'active') {
-        const hasCompletedIntro = getSetting('hasCompletedIntro', '0') === '1';
-        if (hasCompletedIntro) {
-          refreshBatteryOptimizationSetting().catch((e) =>
-            console.warn('Battery optimization status check error:', e)
-          );
-          InteractionManager.runAfterInteractions(() => {
-            scheduleDayReminders().catch((e) =>
-              console.warn('TouchGrass: foreground scheduleDayReminders error:', e)
-            );
-            processReminderQueue().catch((e) =>
-              console.warn('TouchGrass: foreground processReminderQueue error:', e)
-            );
-            cleanupTouchGrassCalendars().catch((e) =>
-              console.warn('TouchGrass: foreground calendar cleanup error:', e)
-            );
-            // Re-arm the Pulsar alarm chain on every foreground wake.
-            // This keeps the chain alive and resets the timer from "now" so
-            // the next tick fires ~15 min after the user last used the app.
-            scheduleNextAlarmPulse().catch((e) =>
-              console.warn('TouchGrass: foreground alarm re-arm error:', e)
-            );
-            // Safety net: refresh the widget whenever the user opens the app so
-            // it always shows up-to-date data (covers the post-update blank case).
-            requestWidgetRefresh().catch((e) =>
-              console.warn('TouchGrass: foreground widget refresh error:', e)
-            );
-          });
-          // Calendar events are only created by scheduleDayReminders() at planned
-          // half-hour slots. Do NOT call maybeAddOutdoorTimeToCalendar(new Date())
-          // here — it would create events at arbitrary foreground-wake times.
-        }
-      }
-      appState.current = nextAppState;
-    });
-    return () => subscription.remove();
-  }, []);
+  useForegroundSync();
 
   // Critical-path init: only what is required before the first render.
   // Everything else is deferred to the post-render effect below.

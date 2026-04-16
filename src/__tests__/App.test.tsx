@@ -35,7 +35,6 @@ jest.mock('../detection/index', () => ({
 jest.mock('../notifications/notificationManager', () => ({
   setupNotificationInfrastructure: jest.fn().mockResolvedValue(undefined),
   scheduleDayReminders: jest.fn().mockResolvedValue(undefined),
-  processReminderQueue: jest.fn().mockResolvedValue(undefined),
 }));
 
 // Mock scheduled notifications
@@ -51,6 +50,9 @@ jest.mock('../background/unifiedBackgroundTask', () => ({
 jest.mock('../utils/batteryOptimization', () => ({
   refreshBatteryOptimizationSetting: jest.fn().mockResolvedValue(true),
 }));
+
+// Mock foreground sync hook
+jest.mock('../hooks/useForegroundSync');
 
 // Mock database module
 jest.mock('../storage/database', () => ({
@@ -131,5 +133,13 @@ describe('App', () => {
     expect(setSetting).not.toHaveBeenCalledWith('language', 'system');
     const i18n = require('../i18n').default;
     expect(i18n.locale).toBe('en');
+  });
+
+  it('calls useForegroundSync to handle app state transitions', () => {
+    const { useForegroundSync } = require('../hooks/useForegroundSync');
+
+    render(<App />);
+
+    expect(useForegroundSync).toHaveBeenCalled();
   });
 });
