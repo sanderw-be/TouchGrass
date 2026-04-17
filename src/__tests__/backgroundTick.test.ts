@@ -17,7 +17,7 @@ jest.mock('../weather/weatherService', () => ({
 
 jest.mock('../storage/database', () => ({
   getSettingAsync: jest.fn(),
-  initDatabase: jest.fn(),
+  initDatabaseAsync: jest.fn(),
   insertBackgroundLogAsync: jest.fn(),
 }));
 
@@ -31,12 +31,13 @@ describe('performBackgroundTick', () => {
     jest.clearAllMocks();
   });
 
-  it('calls initDatabase on every tick', async () => {
+  it('calls initDatabaseAsync on every tick', async () => {
     (Database.getSettingAsync as jest.Mock).mockResolvedValue('0');
+    (Database.initDatabaseAsync as jest.Mock).mockResolvedValue(undefined);
 
     await performBackgroundTick();
 
-    expect(Database.initDatabase).toHaveBeenCalledTimes(1);
+    expect(Database.initDatabaseAsync).toHaveBeenCalledTimes(1);
   });
 
   it('runs all four reminder operations when reminders are enabled', async () => {
@@ -223,7 +224,7 @@ describe('performBackgroundTick', () => {
       await Promise.all([firstTick, secondTick]);
 
       // initDatabase should only have been called once (from the first tick).
-      expect(Database.initDatabase).toHaveBeenCalledTimes(1);
+      expect(Database.initDatabaseAsync).toHaveBeenCalledTimes(1);
       // The skip log must appear exactly once.
       const skipCalls = (Database.insertBackgroundLogAsync as jest.Mock).mock.calls.filter(
         ([, msg]: [string, string]) => msg === 'Background tick skipped — already running'
@@ -242,7 +243,7 @@ describe('performBackgroundTick', () => {
       await performBackgroundTick();
 
       // Both ticks ran to completion — initDatabase called twice.
-      expect(Database.initDatabase).toHaveBeenCalledTimes(2);
+      expect(Database.initDatabaseAsync).toHaveBeenCalledTimes(2);
     });
 
     it('releases the guard even when the tick throws', async () => {
@@ -258,7 +259,7 @@ describe('performBackgroundTick', () => {
 
       // Second tick should run normally (not be blocked by a stale flag).
       await expect(performBackgroundTick()).resolves.not.toThrow();
-      expect(Database.initDatabase).toHaveBeenCalledTimes(2);
+      expect(Database.initDatabaseAsync).toHaveBeenCalledTimes(2);
     });
   });
 });

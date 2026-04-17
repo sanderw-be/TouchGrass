@@ -136,7 +136,23 @@ export default {
   settings_hc_permission_missing: 'Permissions manquantes',
   settings_hc_permission_title: 'Health Connect',
   settings_hc_permission_body:
-    "Nécessaire pour détecter les activités en extérieur. Un grand nombre de pas à un endroit indique souvent une marche dehors ; les activités comme le vélo ou la course comptent aussi. Avec le GPS activé, les séances de vélo d'appartement peuvent être exclues.",
+    "TouchGrass lit votre nombre de pas et vos séances d'exercice pour détecter automatiquement quand vous êtes à l'extérieur. Une augmentation soutenue du nombre de pas suggère généralement une marche en extérieur, et les activités enregistrées comme le cyclisme ou la course à pied sont directement ajoutées à vos progrès quotidiens. Toutes les données restent privées sur votre appareil.",
+
+  // Health Connect Rationale Screen
+  hc_rationale_title: "Détection d'activité en extérieur",
+  hc_rationale_intro:
+    "TouchGrass utilise Health Connect pour détecter automatiquement et de manière privée quand vous êtes à l'extérieur en se basant sur vos données d'activité.",
+  hc_rationale_steps_title: 'Pas (Accès en lecture)',
+  hc_rationale_steps_body:
+    'En lisant votre nombre de pas, TouchGrass peut identifier automatiquement les marches en extérieur sans que vous ayez à lancer manuellement un minuteur. Cela garantit que tous vos mouvements sont capturés avec précision tout en préservant votre vie privée.',
+  hc_rationale_exercise_title: "Séances d'exercice (Accès en lecture)",
+  hc_rationale_exercise_body:
+    "Les activités de plein air comme la course à pied, le cyclisme ou la randonnée provenant d'autres applications sont directement synchronisées en tant que \"temps d'herbe\". Cela offre une vue d'ensemble complète et précise de votre activité de plein air sans aucun effort manuel.",
+  hc_rationale_privacy:
+    "TouchGrass lit uniquement les horaires et les types d'activités. Aucune donnée de santé, participant ou note ne quitte votre appareil.",
+  hc_rationale_button: 'Se connecter à Health Connect',
+  hc_rationale_cancel: 'Peut-être plus tard',
+
   settings_hc_open_btn: 'Ouvrir',
   settings_hc_failed_title: 'Échec',
   settings_hc_failed_body: "Autorisez depuis les réglages. Aucune donnée n'est envoyée.",
@@ -490,9 +506,9 @@ export default {
   nav_about_app: 'Info',
   about_intro_title: "C'est quoi ?",
   about_intro_body: 'Un compagnon qui vous pousse à sortir dehors.',
-  about_detection_title: 'GPS & Santé',
+  about_detection_title: 'Comment le temps extérieur est suivi',
   about_detection_body:
-    "Traçage Health Connect (pas et activités) ou Geofencing local. Rien n'est transmis.",
+    "TouchGrass utilise des méthodes de détection locales pour vous aider à rester concentré sur le fait d'être dehors :\n\n• Health Connect — Détecte automatiquement l'activité de plein air en lisant votre nombre de pas et vos séances d'exercice. Un nombre de pas élevé indique généralement une marche en extérieur, tandis que les activités comme la course à pied ou le cyclisme sont directement créditées comme temps en extérieur. Cette méthode respecte la vie privée et économise la batterie.\n• GPS — Détecte quand vous quittez un lieu connu (comme la maison ou le travail) à l'aide du géofencing local.\n\nVous pouvez gérer ces paramètres dans Paramètres → Détection.",
   about_goals_title: 'Objectifs',
   about_goals_body: 'Respectez vos pauses et bâtissez votre série.',
   about_reminders_title: 'Apprentissage',

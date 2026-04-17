@@ -2,15 +2,16 @@
 
 > **Stack:** raw-http | none | react | typescript
 
-> 0 routes | 0 models | 38 components | 28 lib files | 2 env vars | 1 middleware | 0% test coverage
-> **Token savings:** this file is ~4,500 tokens. Without it, AI exploration would cost ~29,300 tokens. **Saves ~24,800 tokens per conversation.**
-> **Last scanned:** 2026-04-14 20:54 — re-run after significant changes
+> 0 routes | 0 models | 40 components | 32 lib files | 2 env vars | 1 middleware | 0% test coverage
+> **Token savings:** this file is ~4,700 tokens. Without it, AI exploration would cost ~30,900 tokens. **Saves ~26,300 tokens per conversation.**
+> **Last scanned:** 2026-04-17 20:07 — re-run after significant changes
 
 ---
 
 # Components
 
 - **App** — `App.tsx`
+- **AppProviders** — `src/components/AppProviders.tsx`
 - **DiagnosticSheet** — props: visible, onClose — `src/components/DiagnosticSheet.tsx`
 - **EditLocationSheet** — props: visible, location, initialCoords, initialLabel, onClose, onSave — `src/components/EditLocationSheet.tsx`
 - **EditSessionSheet** — props: visible, session, onClose, onSessionUpdated — `src/components/EditSessionSheet.tsx`
@@ -38,6 +39,7 @@
 - **EventsScreen** — `src/screens/EventsScreen.tsx`
 - **FeedbackSupportScreen** — `src/screens/FeedbackSupportScreen.tsx`
 - **GoalsScreen** — `src/screens/GoalsScreen.tsx`
+- **HealthConnectRationaleScreen** — `src/screens/HealthConnectRationaleScreen.tsx`
 - **HistoryScreen** — `src/screens/HistoryScreen.tsx`
 - **BarChart** — props: data, target, maxValue, period, isLoading — `src/screens/HistoryScreen.tsx`
 - **HomeScreen** — `src/screens/HomeScreen.tsx`
@@ -53,6 +55,10 @@
 
 # Libraries
 
+- `appBootstrap.ts`
+  - function performCriticalInitializationAsync: () => Promise<CriticalAppState>
+  - function performDeferredInitialization: () => void
+  - interface CriticalAppState
 - `modules/alarm-bridge-native/src/index.ts`
   - function scheduleNextPulse: (delayMs) => Promise<void>
   - function cancelPulse: () => Promise<void>
@@ -73,7 +79,7 @@
   - function hasCalendarPermissions: () => Promise<boolean>
   - function getWritableCalendars: () => Promise<Calendar.Calendar[]>
   - function getOrCreateTouchGrassCalendar: (forceCreate) => Promise<string | null>
-  - function getSelectedCalendarId: () => string
+  - function getSelectedCalendarId: () => Promise<string>
   - _...6 more_
 - `src/detection/gpsDetection.ts`
   - function clampRadiusMeters: (r) => number
@@ -110,6 +116,9 @@
   - const DISCARD_CONFIDENCE_THRESHOLD
   - _...1 more_
 - `src/detection/sessionMerger.ts` — function submitSession: (candidate) => Promise<void>, function buildSession: (startTime, endTime, source, confidence, notes?, steps?, distanceMeters?, averageSpeedKmh?) => OutsideSession
+- `src/hooks/useAppInitialization.ts` — function useAppInitialization: () => AppInitializationState
+- `src/hooks/useForegroundSync.ts` — function useForegroundSync: () => void
+- `src/hooks/useOTAUpdates.ts` — function useOTAUpdates: () => void, type OTAUpdateStatus
 - `src/i18n/index.ts`
   - function resolveSupportedLocale: (localeCode?) => SupportedLocale
   - function getDeviceSupportedLocale: () => SupportedLocale
@@ -137,13 +146,13 @@
   - function isSlotNearScheduledNotification: (slotHour, slotMinute, windowMinutes) => Promise<boolean>
   - function hasScheduledNotificationNearby: (windowMinutes) => Promise<boolean>
 - `src/storage/database.ts`
-  - function initDatabase: () => void
-  - function insertSession: (session) => number
+  - function initDatabaseAsync: () => Promise<void>
   - function insertSessionAsync: (session) => Promise<number>
   - function getSessionsForDayAsync: (dateMs) => Promise<OutsideSession[]>
-  - function getSessionsForRange: (fromMs, toMs) => OutsideSession[]
   - function getSessionsForRangeAsync: (fromMs, toMs) => Promise<OutsideSession[]>
-  - _...81 more_
+  - function deleteSessionAsync: (id) => Promise<void>
+  - function deleteSessionsByIdsAsync: (ids) => Promise<void>
+  - _...57 more_
 - `src/utils/batteryOptimization.ts`
   - function isBatteryOptimizationDisabled
   - function refreshBatteryOptimizationSetting
@@ -224,46 +233,46 @@
 
 ## Most Imported Files (change these carefully)
 
-- `src/storage/database.ts` — imported by **71** files
-- `src/i18n/index.ts` — imported by **45** files
-- `src/context/ThemeContext.tsx` — imported by **30** files
-- `src/utils/theme.ts` — imported by **27** files
-- `src/detection/index.ts` — imported by **10** files
+- `src/storage/database.ts` — imported by **63** files
+- `src/i18n/index.ts` — imported by **47** files
+- `src/context/ThemeContext.tsx` — imported by **32** files
+- `src/utils/theme.ts` — imported by **28** files
+- `src/detection/index.ts` — imported by **12** files
 - `src/utils/helpers.ts` — imported by **10** files
+- `src/notifications/notificationManager.ts` — imported by **9** files
 - `src/utils/sessionsChangedEmitter.ts` — imported by **8** files
 - `src/detection/manualCheckin.ts` — imported by **8** files
-- `src/notifications/notificationManager.ts` — imported by **7** files
+- `src/background/alarmTiming.ts` — imported by **7** files
+- `src/utils/widgetHelper.ts` — imported by **7** files
+- `src/calendar/calendarService.ts` — imported by **7** files
 - `src/weather/weatherService.ts` — imported by **7** files
-- `src/calendar/calendarService.ts` — imported by **6** files
 - `src/utils/constants.ts` — imported by **6** files
 - `src/detection/sessionMerger.ts` — imported by **6** files
 - `src/utils/units.ts` — imported by **5** files
-- `src/background/alarmTiming.ts` — imported by **4** files
 - `src/navigation/AppNavigator.tsx` — imported by **4** files
+- `src/utils/batteryOptimization.ts` — imported by **4** files
 - `src/context/ReminderFeedbackContext.tsx` — imported by **4** files
-- `src/utils/widgetHelper.ts` — imported by **4** files
 - `src/utils/temperature.ts` — imported by **4** files
-- `src/context/LanguageContext.tsx` — imported by **3** files
 
 ## Import Map (who imports what)
 
-- `src/storage/database.ts` ← `App.tsx`, `src/__tests__/App.test.tsx`, `src/__tests__/App.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx` +66 more
-- `src/i18n/index.ts` ← `App.tsx`, `src/__tests__/App.test.tsx`, `src/__tests__/App.test.tsx`, `src/__tests__/ErrorBoundary.test.tsx`, `src/__tests__/FeedbackSupportScreen.test.tsx` +40 more
-- `src/context/ThemeContext.tsx` ← `App.tsx`, `src/__tests__/ThemeContext.test.tsx`, `src/components/DiagnosticSheet.tsx`, `src/components/EditLocationSheet.tsx`, `src/components/EditSessionSheet.tsx` +25 more
-- `src/utils/theme.ts` ← `src/__tests__/ThemeContext.test.tsx`, `src/components/DiagnosticSheet.tsx`, `src/components/EditLocationSheet.tsx`, `src/components/EditSessionSheet.tsx`, `src/components/ErrorBoundary.tsx` +22 more
-- `src/detection/index.ts` ← `App.tsx`, `src/__tests__/IntroScreen.test.tsx`, `src/__tests__/IntroScreen.test.tsx`, `src/__tests__/IntroScreen.test.tsx`, `src/__tests__/IntroScreen.test.tsx` +5 more
+- `src/storage/database.ts` ← `appBootstrap.ts`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx` +58 more
+- `src/i18n/index.ts` ← `appBootstrap.ts`, `src/__tests__/ErrorBoundary.test.tsx`, `src/__tests__/FeedbackSupportScreen.test.tsx`, `src/__tests__/LanguageContext.test.tsx`, `src/__tests__/appBootstrap.test.ts` +42 more
+- `src/context/ThemeContext.tsx` ← `App.tsx`, `src/__tests__/ThemeContext.test.tsx`, `src/components/AppProviders.tsx`, `src/components/DiagnosticSheet.tsx`, `src/components/EditLocationSheet.tsx` +27 more
+- `src/utils/theme.ts` ← `src/__tests__/ThemeContext.test.tsx`, `src/components/DiagnosticSheet.tsx`, `src/components/EditLocationSheet.tsx`, `src/components/EditSessionSheet.tsx`, `src/components/ErrorBoundary.tsx` +23 more
+- `src/detection/index.ts` ← `appBootstrap.ts`, `src/__tests__/IntroScreen.test.tsx`, `src/__tests__/IntroScreen.test.tsx`, `src/__tests__/IntroScreen.test.tsx`, `src/__tests__/IntroScreen.test.tsx` +7 more
 - `src/utils/helpers.ts` ← `src/components/EditSessionSheet.tsx`, `src/components/ManualSessionSheet.tsx`, `src/components/ProgressRing.tsx`, `src/components/ReminderFeedbackModal.tsx`, `src/i18n/index.ts` +5 more
+- `src/notifications/notificationManager.ts` ← `src/__tests__/backgroundService.test.ts`, `src/__tests__/backgroundTick.test.ts`, `src/__tests__/notificationManager.test.ts`, `src/__tests__/useForegroundSync.test.ts`, `src/hooks/useForegroundSync.ts` +4 more
 - `src/utils/sessionsChangedEmitter.ts` ← `src/__tests__/EventsScreen.test.tsx`, `src/__tests__/HomeScreen.test.tsx`, `src/__tests__/sessionsChangedEmitter.test.ts`, `src/detection/gpsDetection.ts`, `src/detection/healthConnect.ts` +3 more
 - `src/detection/manualCheckin.ts` ← `src/__tests__/ManualSessionSheet.test.tsx`, `src/__tests__/ManualSessionSheet.test.tsx`, `src/__tests__/ManualSessionSheet.test.tsx`, `src/__tests__/ManualSessionSheet.test.tsx`, `src/__tests__/widget-task-handler.test.tsx` +3 more
-- `src/notifications/notificationManager.ts` ← `src/__tests__/backgroundService.test.ts`, `src/__tests__/backgroundTick.test.ts`, `src/__tests__/notificationManager.test.ts`, `src/screens/EventsScreen.tsx`, `src/screens/GoalsScreen.tsx` +2 more
-- `src/weather/weatherService.ts` ← `src/__tests__/backgroundService.test.ts`, `src/__tests__/backgroundTick.test.ts`, `src/__tests__/notificationManager.test.ts`, `src/__tests__/reminderAlgorithm.test.ts`, `src/background/backgroundTick.ts` +2 more
+- `src/background/alarmTiming.ts` ← `appBootstrap.ts`, `index.ts`, `src/__tests__/appBootstrap.test.ts`, `src/__tests__/backgroundService.test.ts`, `src/__tests__/useForegroundSync.test.ts` +2 more
 
 ---
 
 # Test Coverage
 
 > **0%** of routes and models are covered by tests
-> 61 test files found
+> 65 test files found
 
 ---
 

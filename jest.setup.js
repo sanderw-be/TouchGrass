@@ -335,6 +335,11 @@ jest.mock('expo-updates', () => ({
   })),
 }));
 
+// Mock expo-battery
+jest.mock('expo-battery', () => ({
+  isBatteryOptimizationEnabledAsync: jest.fn(() => Promise.resolve(false)),
+}));
+
 // Mock expo-application
 jest.mock('expo-application', () => ({
   nativeApplicationVersion: '1.2.0',

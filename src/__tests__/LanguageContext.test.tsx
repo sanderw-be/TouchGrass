@@ -4,9 +4,9 @@ import { Text, TouchableOpacity } from 'react-native';
 import { LanguageContext, useLanguage } from '../context/LanguageContext';
 
 // Mock database
-const mockSetSetting = jest.fn();
+const mockSetSetting = jest.fn(async (_key: string, _value: string) => {});
 jest.mock('../storage/database', () => ({
-  setSetting: (key: string, value: string) => mockSetSetting(key, value),
+  setSettingAsync: (key: string, value: string) => mockSetSetting(key, value),
 }));
 
 // Mock i18n
@@ -52,16 +52,16 @@ describe('LanguageContext', () => {
     expect(setLocale).toHaveBeenCalledWith('nl');
   });
 
-  it('setLocale updates i18n locale, saves to storage, and triggers re-render', () => {
+  it('setLocale updates i18n locale, saves to storage, and triggers re-render', async () => {
     // Simulate App.tsx's setLocale implementation with persistence
-    const setSetting = require('../storage/database').setSetting;
+    const setSettingAsync = require('../storage/database').setSettingAsync;
     const i18n = require('../i18n').default;
 
     function ProviderWithRealSetLocale({ children }: { children: React.ReactNode }) {
       const [locale, setLocaleState] = React.useState('en');
       const setLocale = React.useCallback((code: string) => {
         i18n.locale = code;
-        setSetting('language', code);
+        setSettingAsync('language', code);
         setLocaleState(code);
       }, []);
       return (

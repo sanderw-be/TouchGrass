@@ -222,9 +222,9 @@ describe('ActivityLogScreen', () => {
     // Find and press the day header (it shows the formatted date)
     await waitFor(() => {
       // The day label should be visible
-      expect(getByText(/Jan 15/)).toBeTruthy();
+      expect(getByText(/15 Jan|Jan 15/)).toBeTruthy();
     });
-    fireEvent.press(getByText(/Jan 15/));
+    fireEvent.press(getByText(/15 Jan|Jan 15/));
 
     await waitFor(() => {
       expect(getByText('Daily plan: 13:00, 17:00')).toBeTruthy();

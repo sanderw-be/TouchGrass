@@ -15,7 +15,7 @@ import {
   updateUpcomingReminderContent,
 } from '../notifications/notificationManager';
 import { fetchWeatherForecast } from '../weather/weatherService';
-import { getSettingAsync, initDatabase, insertBackgroundLogAsync } from '../storage/database';
+import { getSettingAsync, initDatabaseAsync, insertBackgroundLogAsync } from '../storage/database';
 
 // ---------------------------------------------------------------------------
 // Concurrency guard
@@ -44,7 +44,7 @@ export async function performBackgroundTick(): Promise<void> {
   try {
     // Ensure DB schema and defaults are in place — the background runtime has
     // no guarantee that App.tsx has run first.
-    initDatabase();
+    await initDatabaseAsync();
 
     await insertBackgroundLogAsync('reminder', 'Background tick start');
 

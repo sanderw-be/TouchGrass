@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { useColorScheme } from 'react-native';
 import { colors as lightColors, darkColors, makeShadows, Shadows } from '../utils/theme';
-import { getSetting, setSetting } from '../storage/database';
+import { getSettingAsync, setSettingAsync } from '../storage/database';
 
 export type ThemePreference = 'system' | 'light' | 'dark';
 
@@ -24,16 +24,28 @@ export const ThemeContext = createContext<ThemeContextType>({
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const systemColorScheme = useColorScheme();
   const [themePreference, setThemePreferenceState] = useState<ThemePreference>('system');
+  const [isThemeLoading, setIsThemeLoading] = useState(true);
 
   useEffect(() => {
-    const stored = getSetting('theme_preference', 'system');
-    if (stored === 'light' || stored === 'dark' || stored === 'system') {
-      setThemePreferenceState(stored);
+    async function loadTheme() {
+      try {
+        const stored = await getSettingAsync('theme_preference', 'system');
+        if (stored === 'light' || stored === 'dark' || stored === 'system') {
+          setThemePreferenceState(stored as ThemePreference);
+        }
+      } catch (error) {
+        console.error('[ThemeContext] Failed to load theme preference:', error);
+      } finally {
+        setIsThemeLoading(false);
+      }
     }
+    loadTheme();
   }, []);
 
   const setThemePreference = (pref: ThemePreference) => {
-    setSetting('theme_preference', pref);
+    setSettingAsync('theme_preference', pref).catch((err) =>
+      console.error('[ThemeContext] Failed to save theme preference:', err)
+    );
     setThemePreferenceState(pref);
   };
 
@@ -42,6 +54,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   const activeColors = isDark ? darkColors : lightColors;
   const activeShadows = useMemo(() => makeShadows(activeColors), [activeColors]);
+
+  if (isThemeLoading) {
+    return null; // Or a splash screen, but null is usually fine if App handles its own ready state
+  }
 
   return (
     <ThemeContext.Provider

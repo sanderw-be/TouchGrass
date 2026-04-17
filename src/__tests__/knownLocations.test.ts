@@ -346,7 +346,7 @@ describe('autoDetectLocations', () => {
 // ── database functions for known locations ────────────────
 
 describe('database known location functions', () => {
-  it('exports getAllKnownLocations', () => {
+  it('exports getAllKnownLocationsAsync', () => {
     expect(typeof Database.getAllKnownLocationsAsync).toBe('function');
   });
 

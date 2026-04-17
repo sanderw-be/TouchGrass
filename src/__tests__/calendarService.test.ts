@@ -15,14 +15,14 @@ import {
 
 // Mock the database module
 jest.mock('../storage/database', () => ({
-  getSetting: jest.fn((key: string, fallback: string) => fallback),
-  setSetting: jest.fn(),
+  getSettingAsync: jest.fn(async (key: string, fallback: string) => fallback),
+  setSettingAsync: jest.fn(async () => {}),
 }));
 
-import { getSetting, setSetting } from '../storage/database';
+import { getSettingAsync, setSettingAsync } from '../storage/database';
 
-const mockGetSetting = getSetting as jest.Mock;
-const mockSetSetting = setSetting as jest.Mock;
+const mockGetSetting = getSettingAsync as jest.Mock;
+const mockSetSetting = setSettingAsync as jest.Mock;
 const mockGetCalendarPermissions = Calendar.getCalendarPermissionsAsync as jest.Mock;
 const mockRequestCalendarPermissions = Calendar.requestCalendarPermissionsAsync as jest.Mock;
 const mockGetCalendars = Calendar.getCalendarsAsync as jest.Mock;
@@ -35,7 +35,7 @@ describe('calendarService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     // Default: calendar integration disabled
-    mockGetSetting.mockImplementation((key: string, fallback: string) => {
+    mockGetSetting.mockImplementation(async (key: string, fallback: string) => {
       if (key === 'calendar_integration_enabled') return '0';
       return fallback;
     });
@@ -83,7 +83,7 @@ describe('calendarService', () => {
 
   describe('hasUpcomingEvent', () => {
     it('returns false when calendar integration is disabled', async () => {
-      mockGetSetting.mockImplementation((key: string, fallback: string) => {
+      mockGetSetting.mockImplementation(async (key: string, fallback: string) => {
         if (key === 'calendar_integration_enabled') return '0';
         return fallback;
       });
@@ -93,7 +93,7 @@ describe('calendarService', () => {
     });
 
     it('returns false when permissions are not granted', async () => {
-      mockGetSetting.mockImplementation((key: string, fallback: string) => {
+      mockGetSetting.mockImplementation(async (key: string, fallback: string) => {
         if (key === 'calendar_integration_enabled') return '1';
         return fallback;
       });
@@ -103,7 +103,7 @@ describe('calendarService', () => {
     });
 
     it('returns false when no calendars are found', async () => {
-      mockGetSetting.mockImplementation((key: string, fallback: string) => {
+      mockGetSetting.mockImplementation(async (key: string, fallback: string) => {
         if (key === 'calendar_integration_enabled') return '1';
         return fallback;
       });
@@ -114,7 +114,7 @@ describe('calendarService', () => {
     });
 
     it('returns false when no events in the window', async () => {
-      mockGetSetting.mockImplementation((key: string, fallback: string) => {
+      mockGetSetting.mockImplementation(async (key: string, fallback: string) => {
         if (key === 'calendar_integration_enabled') return '1';
         return fallback;
       });
@@ -126,7 +126,7 @@ describe('calendarService', () => {
     });
 
     it('returns true when an event exists in the window', async () => {
-      mockGetSetting.mockImplementation((key: string, fallback: string) => {
+      mockGetSetting.mockImplementation(async (key: string, fallback: string) => {
         if (key === 'calendar_integration_enabled') return '1';
         return fallback;
       });
@@ -138,7 +138,7 @@ describe('calendarService', () => {
     });
 
     it('returns false on error', async () => {
-      mockGetSetting.mockImplementation((key: string, fallback: string) => {
+      mockGetSetting.mockImplementation(async (key: string, fallback: string) => {
         if (key === 'calendar_integration_enabled') return '1';
         return fallback;
       });
@@ -232,7 +232,7 @@ describe('calendarService', () => {
     });
 
     it('logs that fallback payload succeeded when calendar debug logging is enabled', async () => {
-      mockGetSetting.mockImplementation((key: string, fallback: string) => {
+      mockGetSetting.mockImplementation(async (key: string, fallback: string) => {
         if (key === 'calendar_debug_logging') return '1';
         return fallback;
       });
@@ -264,7 +264,7 @@ describe('calendarService', () => {
     });
 
     it('logs TouchGrass label when write succeeds in debug mode', async () => {
-      mockGetSetting.mockImplementation((key: string, fallback: string) => {
+      mockGetSetting.mockImplementation(async (key: string, fallback: string) => {
         if (key === 'calendar_debug_logging') return '1';
         return fallback;
       });
@@ -439,7 +439,7 @@ describe('calendarService', () => {
 
     it('includes fingerprint in the attempting primary event payload debug log', async () => {
       mockGetCalendarPermissions.mockResolvedValueOnce({ status: 'granted' });
-      mockGetSetting.mockImplementation((key: string, fallback: string) => {
+      mockGetSetting.mockImplementation(async (key: string, fallback: string) => {
         if (key === 'calendar_debug_logging') return '1';
         return fallback;
       });
@@ -537,7 +537,7 @@ describe('calendarService', () => {
 
   describe('maybeAddOutdoorTimeToCalendar', () => {
     it('does nothing when calendar integration is disabled', async () => {
-      mockGetSetting.mockImplementation((key: string, fallback: string) => {
+      mockGetSetting.mockImplementation(async (key: string, fallback: string) => {
         if (key === 'calendar_integration_enabled') return '0';
         return fallback;
       });
@@ -547,7 +547,7 @@ describe('calendarService', () => {
     });
 
     it('does nothing when duration is Off (0)', async () => {
-      mockGetSetting.mockImplementation((key: string, fallback: string) => {
+      mockGetSetting.mockImplementation(async (key: string, fallback: string) => {
         if (key === 'calendar_integration_enabled') return '1';
         if (key === 'calendar_default_duration') return '0';
         return fallback;
@@ -558,7 +558,7 @@ describe('calendarService', () => {
     });
 
     it('creates a calendar event when integration is enabled and duration is non-zero', async () => {
-      mockGetSetting.mockImplementation((key: string, fallback: string) => {
+      mockGetSetting.mockImplementation(async (key: string, fallback: string) => {
         if (key === 'calendar_integration_enabled') return '1';
         if (key === 'calendar_default_duration') return '15';
         return fallback;
@@ -581,7 +581,7 @@ describe('calendarService', () => {
     });
 
     it('uses the configured duration from settings', async () => {
-      mockGetSetting.mockImplementation((key: string, fallback: string) => {
+      mockGetSetting.mockImplementation(async (key: string, fallback: string) => {
         if (key === 'calendar_integration_enabled') return '1';
         if (key === 'calendar_default_duration') return '30';
         return fallback;
@@ -639,7 +639,7 @@ describe('calendarService', () => {
 
   describe('getOrCreateTouchGrassCalendar', () => {
     it('returns cached ID when the calendar still exists', async () => {
-      mockGetSetting.mockImplementation((key: string, fallback: string) => {
+      mockGetSetting.mockImplementation(async (key: string, fallback: string) => {
         if (key === 'calendar_touchgrass_id') return 'existing-tg-id';
         return fallback;
       });
@@ -657,7 +657,7 @@ describe('calendarService', () => {
     });
 
     it('creates a new calendar when no cached ID is saved (savedId is empty)', async () => {
-      mockGetSetting.mockImplementation((_key: string, fallback: string) => fallback);
+      mockGetSetting.mockImplementation(async (_key: string, fallback: string) => fallback);
       mockCreateCalendar.mockResolvedValueOnce('new-tg-id');
       mockGetCalendars
         .mockResolvedValueOnce([])
@@ -681,7 +681,7 @@ describe('calendarService', () => {
     });
 
     it('warns when newly created calendar has allowsModifications=false', async () => {
-      mockGetSetting.mockImplementation((_key: string, fallback: string) => fallback);
+      mockGetSetting.mockImplementation(async (_key: string, fallback: string) => fallback);
       mockCreateCalendar.mockResolvedValueOnce('new-tg-id');
       mockGetCalendars.mockResolvedValueOnce([]).mockResolvedValueOnce([
         {
@@ -703,7 +703,7 @@ describe('calendarService', () => {
     });
 
     it('recreates calendar when cached calendar is read-only', async () => {
-      mockGetSetting.mockImplementation((key: string, fallback: string) => {
+      mockGetSetting.mockImplementation(async (key: string, fallback: string) => {
         if (key === 'calendar_touchgrass_id') return 'readonly-id';
         return fallback;
       });
@@ -726,7 +726,7 @@ describe('calendarService', () => {
     });
 
     it('creates a new calendar when cached ID no longer exists on device', async () => {
-      mockGetSetting.mockImplementation((key: string, fallback: string) => {
+      mockGetSetting.mockImplementation(async (key: string, fallback: string) => {
         if (key === 'calendar_touchgrass_id') return 'stale-id';
         return fallback;
       });
@@ -742,7 +742,7 @@ describe('calendarService', () => {
 
     it('returns null when createCalendarAsync throws', async () => {
       // savedId = '' → no existing calendar found, falls through to create
-      mockGetSetting.mockImplementation((_key: string, fallback: string) => fallback);
+      mockGetSetting.mockImplementation(async (_key: string, fallback: string) => fallback);
       mockCreateCalendar.mockRejectedValueOnce(new Error('create failed'));
 
       const id = await getOrCreateTouchGrassCalendar();
@@ -753,7 +753,7 @@ describe('calendarService', () => {
       // Even though a writable TouchGrass calendar exists, forceCreate must ignore it.
       // This simulates the signing-key mismatch scenario: the existing calendar was created
       // by a different build, and we need a fresh calendar owned by the current app UID.
-      mockGetSetting.mockImplementation((key: string, fallback: string) => {
+      mockGetSetting.mockImplementation(async (key: string, fallback: string) => {
         if (key === 'calendar_touchgrass_id') return 'old-build-id';
         return fallback;
       });
@@ -772,21 +772,21 @@ describe('calendarService', () => {
   });
 
   describe('getSelectedCalendarId / setSelectedCalendarId', () => {
-    it('returns empty string when no preference is saved', () => {
-      mockGetSetting.mockImplementation((_key: string, fallback: string) => fallback);
-      expect(getSelectedCalendarId()).toBe('');
+    it('returns empty string when no preference is saved', async () => {
+      mockGetSetting.mockImplementation(async (_key: string, fallback: string) => fallback);
+      expect(await getSelectedCalendarId()).toBe('');
     });
 
-    it('returns the saved calendar ID', () => {
-      mockGetSetting.mockImplementation((key: string, fallback: string) => {
+    it('returns the saved calendar ID', async () => {
+      mockGetSetting.mockImplementation(async (key: string, fallback: string) => {
         if (key === 'calendar_selected_id') return 'my-cal-id';
         return fallback;
       });
-      expect(getSelectedCalendarId()).toBe('my-cal-id');
+      expect(await getSelectedCalendarId()).toBe('my-cal-id');
     });
 
-    it('persists the selected calendar ID', () => {
-      setSelectedCalendarId('chosen-cal');
+    it('persists the selected calendar ID', async () => {
+      await setSelectedCalendarId('chosen-cal');
       expect(mockSetSetting).toHaveBeenCalledWith('calendar_selected_id', 'chosen-cal');
     });
   });
@@ -812,7 +812,7 @@ describe('calendarService', () => {
 
     it('ignores selected calendar and always writes to TouchGrass calendar', async () => {
       mockGetCalendarPermissions.mockResolvedValueOnce({ status: 'granted' });
-      mockGetSetting.mockImplementation((key: string, fallback: string) => {
+      mockGetSetting.mockImplementation(async (key: string, fallback: string) => {
         if (key === 'calendar_selected_id') return 'preferred-cal';
         return fallback;
       });
@@ -891,7 +891,7 @@ describe('calendarService', () => {
     });
 
     it('creates new calendar with isSynced and isVisible', async () => {
-      mockGetSetting.mockImplementation((_key: string, fallback: string) => fallback);
+      mockGetSetting.mockImplementation(async (_key: string, fallback: string) => fallback);
       mockCreateCalendar.mockResolvedValueOnce('new-tg-id');
       mockGetCalendars.mockResolvedValueOnce([{ id: 'new-tg-id', allowsModifications: true }]);
 
@@ -914,7 +914,7 @@ describe('calendarService', () => {
       (Calendar as any).deleteCalendarAsync = deleteCalendarMock;
 
       mockGetCalendarPermissions.mockResolvedValueOnce({ status: 'granted' });
-      mockGetSetting.mockImplementation((key: string, fallback: string) => {
+      mockGetSetting.mockImplementation(async (key: string, fallback: string) => {
         if (key === 'calendar_touchgrass_id') return 'primary-id';
         return fallback;
       });
@@ -978,7 +978,7 @@ describe('calendarService', () => {
     it('returns no-op result when calendar permission is not granted', async () => {
       mockGetCalendarPermissions.mockReset();
       mockGetCalendarPermissions.mockResolvedValue({ status: 'denied' });
-      mockGetSetting.mockImplementation((_key: string, fallback: string) => fallback);
+      mockGetSetting.mockImplementation(async (_key: string, fallback: string) => fallback);
 
       const result = await cleanupTouchGrassCalendars();
 
@@ -997,7 +997,7 @@ describe('calendarService', () => {
     });
 
     it('does nothing when calendar integration is disabled', async () => {
-      mockGetSetting.mockImplementation((key: string, fallback: string) => {
+      mockGetSetting.mockImplementation(async (key: string, fallback: string) => {
         if (key === 'calendar_integration_enabled') return '0';
         return fallback;
       });
@@ -1009,7 +1009,7 @@ describe('calendarService', () => {
     });
 
     it('does nothing when no TouchGrass calendar ID is stored', async () => {
-      mockGetSetting.mockImplementation((key: string, fallback: string) => {
+      mockGetSetting.mockImplementation(async (key: string, fallback: string) => {
         if (key === 'calendar_integration_enabled') return '1';
         // calendar_touchgrass_id returns '' (fallback)
         return fallback;
@@ -1022,7 +1022,7 @@ describe('calendarService', () => {
 
     it('does nothing when calendar permission is not granted', async () => {
       mockGetCalendarPermissions.mockResolvedValue({ status: 'denied' });
-      mockGetSetting.mockImplementation((key: string, fallback: string) => {
+      mockGetSetting.mockImplementation(async (key: string, fallback: string) => {
         if (key === 'calendar_integration_enabled') return '1';
         if (key === 'calendar_touchgrass_id') return 'cal-123';
         return fallback;
@@ -1034,7 +1034,7 @@ describe('calendarService', () => {
     });
 
     it('deletes all events returned by getEventsAsync in the given window', async () => {
-      mockGetSetting.mockImplementation((key: string, fallback: string) => {
+      mockGetSetting.mockImplementation(async (key: string, fallback: string) => {
         if (key === 'calendar_integration_enabled') return '1';
         if (key === 'calendar_touchgrass_id') return 'cal-123';
         return fallback;
@@ -1053,7 +1053,7 @@ describe('calendarService', () => {
     });
 
     it('queries the correct end time (from + daysAhead * 24h)', async () => {
-      mockGetSetting.mockImplementation((key: string, fallback: string) => {
+      mockGetSetting.mockImplementation(async (key: string, fallback: string) => {
         if (key === 'calendar_integration_enabled') return '1';
         if (key === 'calendar_touchgrass_id') return 'cal-123';
         return fallback;
@@ -1069,7 +1069,7 @@ describe('calendarService', () => {
     });
 
     it('silently ignores errors when deleting individual events', async () => {
-      mockGetSetting.mockImplementation((key: string, fallback: string) => {
+      mockGetSetting.mockImplementation(async (key: string, fallback: string) => {
         if (key === 'calendar_integration_enabled') return '1';
         if (key === 'calendar_touchgrass_id') return 'cal-123';
         return fallback;

@@ -1,5 +1,9 @@
 # Libraries
 
+- `appBootstrap.ts`
+  - function performCriticalInitializationAsync: () => Promise<CriticalAppState>
+  - function performDeferredInitialization: () => void
+  - interface CriticalAppState
 - `modules/alarm-bridge-native/src/index.ts`
   - function scheduleNextPulse: (delayMs) => Promise<void>
   - function cancelPulse: () => Promise<void>
@@ -20,7 +24,7 @@
   - function hasCalendarPermissions: () => Promise<boolean>
   - function getWritableCalendars: () => Promise<Calendar.Calendar[]>
   - function getOrCreateTouchGrassCalendar: (forceCreate) => Promise<string | null>
-  - function getSelectedCalendarId: () => string
+  - function getSelectedCalendarId: () => Promise<string>
   - _...6 more_
 - `src/detection/gpsDetection.ts`
   - function clampRadiusMeters: (r) => number
@@ -57,6 +61,9 @@
   - const DISCARD_CONFIDENCE_THRESHOLD
   - _...1 more_
 - `src/detection/sessionMerger.ts` — function submitSession: (candidate) => Promise<void>, function buildSession: (startTime, endTime, source, confidence, notes?, steps?, distanceMeters?, averageSpeedKmh?) => OutsideSession
+- `src/hooks/useAppInitialization.ts` — function useAppInitialization: () => AppInitializationState
+- `src/hooks/useForegroundSync.ts` — function useForegroundSync: () => void
+- `src/hooks/useOTAUpdates.ts` — function useOTAUpdates: () => void, type OTAUpdateStatus
 - `src/i18n/index.ts`
   - function resolveSupportedLocale: (localeCode?) => SupportedLocale
   - function getDeviceSupportedLocale: () => SupportedLocale
@@ -84,13 +91,13 @@
   - function isSlotNearScheduledNotification: (slotHour, slotMinute, windowMinutes) => Promise<boolean>
   - function hasScheduledNotificationNearby: (windowMinutes) => Promise<boolean>
 - `src/storage/database.ts`
-  - function initDatabase: () => void
-  - function insertSession: (session) => number
+  - function initDatabaseAsync: () => Promise<void>
   - function insertSessionAsync: (session) => Promise<number>
   - function getSessionsForDayAsync: (dateMs) => Promise<OutsideSession[]>
-  - function getSessionsForRange: (fromMs, toMs) => OutsideSession[]
   - function getSessionsForRangeAsync: (fromMs, toMs) => Promise<OutsideSession[]>
-  - _...81 more_
+  - function deleteSessionAsync: (id) => Promise<void>
+  - function deleteSessionsByIdsAsync: (ids) => Promise<void>
+  - _...57 more_
 - `src/utils/batteryOptimization.ts`
   - function isBatteryOptimizationDisabled
   - function refreshBatteryOptimizationSetting
