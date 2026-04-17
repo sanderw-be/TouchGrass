@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import * as Updates from 'expo-updates';
 
-export type UpdateSplashStatus = 'checking' | 'downloading' | 'ready';
+export type OTAUpdateStatus = 'checking' | 'downloading' | 'ready';
 
 export function useOTAUpdates() {
   // Initialize state based on environment. If in dev, we are instantly 'ready'.
-  const [updateStatus, setUpdateStatus] = useState<UpdateSplashStatus>(() =>
+  const [updateStatus, setUpdateStatus] = useState<OTAUpdateStatus>(() =>
     !__DEV__ && Updates.isEnabled ? 'checking' : 'ready'
   );
 

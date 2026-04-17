@@ -2,7 +2,7 @@
 
 > **Navigation aid.** Library inventory extracted via AST. Read the source files listed here before modifying exported functions.
 
-**28 library files** across 9 modules
+**30 library files** across 10 modules
 
 ## Utils (9 files)
 
@@ -37,6 +37,11 @@
 - `src/notifications/notificationManager.ts` — \_resetSchedulingGuards, logReminderQueueSnapshot, setupNotificationInfrastructure, requestNotificationPermissions, setupNotifications, scheduleNextReminder, …
 - `src/notifications/reminderAlgorithm.ts` — scoreReminderHours, shouldRemindNow, ScoreContributor, HourScore
 - `src/notifications/scheduledNotifications.ts` — scheduleAllScheduledNotifications, cancelAllScheduledNotifications, isSlotNearScheduledNotification, hasScheduledNotificationNearby
+
+## Hooks (2 files)
+
+- `src/hooks/useOTAUpdates.ts` — useOTAUpdates, OTAUpdateStatus
+- `src/hooks/useForegroundSync.ts` — useForegroundSync
 
 ## Weather (2 files)
 
