@@ -1,4 +1,10 @@
-jest.mock('../storage/database');
+jest.mock('../storage/database', () => ({
+  getKnownLocationsAsync: jest.fn(),
+  getSettingAsync: jest.fn(),
+  setSettingAsync: jest.fn(),
+  initDatabaseAsync: jest.fn(),
+  insertBackgroundLogAsync: jest.fn(),
+}));
 jest.mock('../detection/sessionMerger');
 
 import * as TaskManager from 'expo-task-manager';
@@ -305,17 +311,18 @@ describe('processLocationUpdate', () => {
 });
 
 describe('TOUCHGRASS_LOCATION_TRACK background task', () => {
-  it('calls initDatabase to ensure schema migrations run before any DB access', async () => {
+  it('calls initDatabaseAsync to ensure schema migrations run before any DB access', async () => {
     expect(_locationTrackCallback).toBeDefined();
 
     jest.clearAllMocks();
     (Database.getSettingAsync as jest.Mock).mockImplementation(
       async (_k: string, fb: string) => fb
     );
+    (Database.initDatabaseAsync as jest.Mock).mockResolvedValue(undefined);
 
     await _locationTrackCallback!({ data: { locations: [] }, error: null });
 
-    expect(Database.initDatabase).toHaveBeenCalled();
+    expect(Database.initDatabaseAsync).toHaveBeenCalled();
   });
 
   it('loads GPS state from SQLite at every task invocation', async () => {

@@ -1,14 +1,28 @@
 import { act } from '@testing-library/react-native';
 import { InteractionManager } from 'react-native';
-import { getSetting, initDatabase, setSetting } from '../storage/database';
+import {
+  getSetting,
+  initDatabase,
+  setSetting,
+  initDatabaseAsync,
+  getSettingAsync,
+  setSettingAsync,
+} from '../storage/database';
 import i18n, { getDeviceSupportedLocale } from '../i18n';
-import { performCriticalInitialization, performDeferredInitialization } from '../../appBootstrap';
+import {
+  performCriticalInitialization,
+  performCriticalInitializationAsync,
+  performDeferredInitialization,
+} from '../../appBootstrap';
 
 // Mock dependencies
 jest.mock('../storage/database', () => ({
   initDatabase: jest.fn(),
   getSetting: jest.fn(),
   setSetting: jest.fn(),
+  initDatabaseAsync: jest.fn(),
+  getSettingAsync: jest.fn(),
+  setSettingAsync: jest.fn(),
 }));
 
 jest.mock('../i18n', () => ({
@@ -36,7 +50,6 @@ jest.mock('react-native', () => ({
 jest.mock('expo-constants', () => ({
   __esModule: true,
   default: {
-    // This mock was insufficient. Add a manifest object to satisfy dependencies.
     expoConfig: { extra: {} },
     manifest: { extra: {} },
   },
@@ -117,6 +130,57 @@ describe('services/appBootstrap', () => {
       expect(i18n.locale).toBe('en');
       expect(result.initialLocale).toBe('en');
       expect(setSetting).toHaveBeenCalledWith('language', 'en');
+    });
+  });
+
+  describe('performCriticalInitializationAsync', () => {
+    it('initializes db asynchronously and returns correct state', async () => {
+      (initDatabaseAsync as jest.Mock).mockResolvedValue(undefined);
+      (getSettingAsync as jest.Mock).mockImplementation(async (key) => {
+        if (key === 'hasCompletedIntro') return '1';
+        if (key === 'language') return 'nl';
+        return '';
+      });
+
+      const result = await performCriticalInitializationAsync();
+
+      expect(initDatabaseAsync).toHaveBeenCalledTimes(1);
+      expect(i18n.locale).toBe('nl');
+      expect(result).toEqual({
+        showIntro: false,
+        initialLocale: 'nl',
+      });
+    });
+
+    it('handles "system" language asynchronously', async () => {
+      (initDatabaseAsync as jest.Mock).mockResolvedValue(undefined);
+      (getSettingAsync as jest.Mock).mockImplementation(async (key) => {
+        if (key === 'hasCompletedIntro') return '0';
+        if (key === 'language') return 'system';
+        return '';
+      });
+      (getDeviceSupportedLocale as jest.Mock).mockReturnValue('nl');
+
+      const result = await performCriticalInitializationAsync();
+
+      expect(i18n.locale).toBe('nl');
+      expect(result.initialLocale).toBe('system');
+    });
+
+    it('handles invalid language asynchronously', async () => {
+      (initDatabaseAsync as jest.Mock).mockResolvedValue(undefined);
+      (getSettingAsync as jest.Mock).mockImplementation(async (key) => {
+        if (key === 'hasCompletedIntro') return '1';
+        if (key === 'language') return 'fr';
+        return '';
+      });
+      (setSettingAsync as jest.Mock).mockResolvedValue(undefined);
+
+      const result = await performCriticalInitializationAsync();
+
+      expect(i18n.locale).toBe('en');
+      expect(setSettingAsync).toHaveBeenCalledWith('language', 'en');
+      expect(result.initialLocale).toBe('en');
     });
   });
 

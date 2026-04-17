@@ -1,5 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { performCriticalInitialization, performDeferredInitialization } from '../../appBootstrap';
+import {
+  performCriticalInitializationAsync,
+  performDeferredInitialization,
+} from '../../appBootstrap';
 import { setSetting } from '../storage/database';
 import i18n, { getDeviceSupportedLocale } from '../i18n';
 
@@ -20,10 +23,19 @@ export function useAppInitialization(): AppInitializationState {
 
   // Critical-path init
   useEffect(() => {
-    const { showIntro: initialShowIntro, initialLocale } = performCriticalInitialization();
-    setShowIntro(initialShowIntro);
-    setLocaleState(initialLocale);
-    setIsReady(true);
+    async function bootstrapApp() {
+      try {
+        const { showIntro: initialShowIntro, initialLocale } =
+          await performCriticalInitializationAsync();
+        setShowIntro(initialShowIntro);
+        setLocaleState(initialLocale);
+      } catch (error) {
+        console.error('Critical initialization failed:', error);
+      } finally {
+        setIsReady(true);
+      }
+    }
+    bootstrapApp();
   }, []);
 
   // Deferred init

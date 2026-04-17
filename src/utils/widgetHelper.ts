@@ -17,7 +17,7 @@ import {
   getTodayMinutesAsync,
   getCurrentDailyGoalAsync,
   getSettingAsync,
-  initDatabase,
+  initDatabaseAsync,
 } from '../storage/database';
 
 export const WIDGET_TIMER_KEY = 'widget_timer_start';
@@ -42,7 +42,7 @@ export async function requestWidgetRefresh(): Promise<void> {
   if (Platform.OS !== 'android') return;
 
   try {
-    initDatabase();
+    await initDatabaseAsync();
     const current = await getTodayMinutesAsync();
     const target = (await getCurrentDailyGoalAsync())?.targetMinutes ?? 30;
     const marker = await getSettingAsync(WIDGET_TIMER_KEY, '');

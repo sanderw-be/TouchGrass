@@ -6,7 +6,7 @@ import i18n from '../i18n';
 
 // Mock dependencies
 jest.mock('../../appBootstrap', () => ({
-  performCriticalInitialization: jest.fn(),
+  performCriticalInitializationAsync: jest.fn(),
   performDeferredInitialization: jest.fn(),
 }));
 jest.mock('expo-battery');
@@ -26,52 +26,68 @@ const mockBootstrap = appBootstrap as jest.Mocked<typeof appBootstrap>;
 describe('hooks/useAppInitialization', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockBootstrap.performCriticalInitialization.mockReturnValue({
+    mockBootstrap.performCriticalInitializationAsync.mockResolvedValue({
       showIntro: true,
       initialLocale: 'system',
     });
   });
 
-  it('should perform critical initialization on mount', () => {
+  it('should perform critical initialization on mount', async () => {
     const { result } = renderHook(() => useAppInitialization());
 
-    expect(mockBootstrap.performCriticalInitialization).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(mockBootstrap.performCriticalInitializationAsync).toHaveBeenCalledTimes(1);
     expect(result.current.isReady).toBe(true);
     expect(result.current.showIntro).toBe(true);
     expect(result.current.locale).toBe('system');
   });
 
-  it('should not perform deferred initialization if intro is shown', () => {
-    mockBootstrap.performCriticalInitialization.mockReturnValue({
+  it('should not perform deferred initialization if intro is shown', async () => {
+    mockBootstrap.performCriticalInitializationAsync.mockResolvedValue({
       showIntro: true,
       initialLocale: 'system',
     });
 
     renderHook(() => useAppInitialization());
 
+    await act(async () => {
+      await Promise.resolve();
+    });
+
     expect(mockBootstrap.performDeferredInitialization).not.toHaveBeenCalled();
   });
 
-  it('should perform deferred initialization once ready and intro is not shown', () => {
-    mockBootstrap.performCriticalInitialization.mockReturnValue({
+  it('should perform deferred initialization once ready and intro is not shown', async () => {
+    mockBootstrap.performCriticalInitializationAsync.mockResolvedValue({
       showIntro: false,
       initialLocale: 'en',
     });
 
     const { result } = renderHook(() => useAppInitialization());
 
+    await act(async () => {
+      await Promise.resolve();
+    });
+
     expect(result.current.isReady).toBe(true);
     expect(result.current.showIntro).toBe(false);
     expect(mockBootstrap.performDeferredInitialization).toHaveBeenCalledTimes(1);
   });
 
-  it('should only run deferred initialization once', () => {
-    mockBootstrap.performCriticalInitialization.mockReturnValue({
+  it('should only run deferred initialization once', async () => {
+    mockBootstrap.performCriticalInitializationAsync.mockResolvedValue({
       showIntro: false,
       initialLocale: 'en',
     });
 
     const { rerender } = renderHook(() => useAppInitialization());
+
+    await act(async () => {
+      await Promise.resolve();
+    });
 
     expect(mockBootstrap.performDeferredInitialization).toHaveBeenCalledTimes(1);
 
@@ -80,18 +96,22 @@ describe('hooks/useAppInitialization', () => {
     expect(mockBootstrap.performDeferredInitialization).toHaveBeenCalledTimes(1);
   });
 
-  it('should perform deferred initialization after intro is completed', () => {
-    mockBootstrap.performCriticalInitialization.mockReturnValue({
+  it('should perform deferred initialization after intro is completed', async () => {
+    mockBootstrap.performCriticalInitializationAsync.mockResolvedValue({
       showIntro: true,
       initialLocale: 'system',
     });
 
     const { result } = renderHook(() => useAppInitialization());
 
+    await act(async () => {
+      await Promise.resolve();
+    });
+
     expect(result.current.showIntro).toBe(true);
     expect(mockBootstrap.performDeferredInitialization).not.toHaveBeenCalled();
 
-    act(() => {
+    await act(async () => {
       result.current.handleIntroComplete();
     });
 
@@ -100,10 +120,18 @@ describe('hooks/useAppInitialization', () => {
     expect(mockBootstrap.performDeferredInitialization).toHaveBeenCalledTimes(1);
   });
 
-  it('setLocale should update i18n, database, and state', () => {
+  it('setLocale should update i18n, database, and state', async () => {
+    mockBootstrap.performCriticalInitializationAsync.mockResolvedValue({
+      showIntro: false,
+      initialLocale: 'en',
+    });
     const { result } = renderHook(() => useAppInitialization());
 
-    act(() => {
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    await act(async () => {
       result.current.setLocale('nl');
     });
 
