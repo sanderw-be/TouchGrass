@@ -133,11 +133,27 @@ export default {
   settings_section_language: 'Taal',
   settings_section_about: 'Over',
   settings_health_connect: 'Health Connect',
-  settings_health_connect_desc: 'Buitenstappen & activiteit bijhouden',
+  settings_health_connect_desc: 'Buitensessies detecteren via stappen',
   settings_hc_permission_missing: 'Machtigingen ontbreken — tik om te herstellen',
   settings_hc_permission_title: 'Health Connect-toestemming',
   settings_hc_permission_body:
-    'Nodig om buitenactiviteit te detecteren. Veel stappen op een locatie wijst vaak op een buitenwandeling; activiteiten als hardlopen of fietsen tellen ook mee. Met GPS ingeschakeld kunnen hometrainersessies worden uitgesloten.',
+    'TouchGrass leest je stappenaantal en sportsessies om automatisch te detecteren wanneer je buiten bent. Een aanhoudende toename in het aantal stappen wijst meestal op een buitenwandeling, en geregistreerde activiteiten zoals fietsen of hardlopen worden direct bijgehouden als voortgang voor je dagelijkse doel. Alle gegevens blijven privé op je apparaat.',
+
+  // Health Connect Rationale Screen
+  hc_rationale_title: 'Buitenactiviteit Detectie',
+  hc_rationale_intro:
+    'TouchGrass gebruikt Health Connect om automatisch en privé te detecteren wanneer je buiten bent op basis van je activiteitsgegevens.',
+  hc_rationale_steps_title: 'Stappen (Leestoegang)',
+  hc_rationale_steps_body:
+    'Door je stappenaantal te lezen, kan TouchGrass automatisch buitenwandelingen herkennen zonder dat je handmatig een timer hoeft te starten. Dit zorgt ervoor dat al je beweging nauwkeurig wordt vastgelegd, met behoud van je privacy.',
+  hc_rationale_exercise_title: 'Sportsessies (Leestoegang)',
+  hc_rationale_exercise_body:
+    'Buitenactiviteiten zoals hardlopen, fietsen of wandelen uit andere apps worden direct gesynchroniseerd als "buitentijd". Dit geeft een volledig en nauwkeurig overzicht van je buitenactiviteiten zonder handmatige invoer.',
+  hc_rationale_privacy:
+    'TouchGrass leest alleen de tijden en types van activiteiten. Geen gezondheidsstatistieken, deelnemers of notities verlaten ooit je apparaat.',
+  hc_rationale_button: 'Verbind met Health Connect',
+  hc_rationale_cancel: 'Misschien later',
+
   settings_hc_open_btn: 'Health Connect openen',
   settings_hc_failed_title: 'Verbinding mislukt',
   settings_hc_failed_body: 'Geef machtigingen in Health Connect. Alles blijft lokaal.',
@@ -500,9 +516,9 @@ export default {
   about_intro_title: 'Wat is TouchGrass?',
   about_intro_body:
     'Je persoonlijke hulp om vaker naar buiten te gaan. We meten je buitentijd en sturen kalme herinneringen om naar buiten te gaan.',
-  about_detection_title: 'Detectie',
+  about_detection_title: 'Hoe buitentijd wordt gemeten',
   about_detection_body:
-    'Geen cloud-tracking. We gebruiken Health Connect (stappen en activiteiten) of geofencing via GPS. Beheer dit in Instellingen → Detectie.',
+    'TouchGrass gebruikt lokale detectiemethoden om je te helpen focussen op buitenzijn:\n\n• Health Connect — Detecteert automatisch buitenactiviteit door je stappenaantal en sportsessies te lezen. Een hoog aantal stappen wijst meestal op een buitenwandeling, terwijl activiteiten zoals hardlopen of fietsen direct als buitentijd worden meegeteld. Deze methode is privacyvriendelijk en batterijzuinig.\n• GPS — Detecteert wanneer je een bekende locatie (zoals thuis of werk) verlaat via lokale geofencing.\n\nJe kunt deze beheren in Instellingen → Detectie.',
   about_goals_title: 'Doelen',
   about_goals_body: 'Stel buitendoelen in en houd je reeks bij, puur op je eigen toestel.',
   about_reminders_title: 'Slimme rust',

@@ -1,5 +1,5 @@
 import * as Calendar from 'expo-calendar';
-import { getSetting, setSetting } from '../storage/database';
+import { getSettingAsync, setSettingAsync } from '../storage/database';
 import { t } from '../i18n';
 
 const TOUCHGRASS_CALENDAR_SETTING = 'calendar_touchgrass_id';
@@ -90,7 +90,7 @@ export async function cleanupTouchGrassCalendars(): Promise<CalendarCleanupResul
       (calendar) => calendar.source?.isLocalAccount && matchesTouchGrassCalendar(calendar)
     );
 
-    const savedId = getSetting(TOUCHGRASS_CALENDAR_SETTING, '');
+    const savedId = await getSettingAsync(TOUCHGRASS_CALENDAR_SETTING, '');
     const preferred = touchGrassLocalCalendars.find(
       (calendar) => calendar.id === savedId && calendar.allowsModifications
     );
@@ -115,8 +115,8 @@ export async function cleanupTouchGrassCalendars(): Promise<CalendarCleanupResul
 
     const resolvedPrimaryCalendarId: string = primaryCalendarId;
 
-    setSetting(TOUCHGRASS_CALENDAR_SETTING, resolvedPrimaryCalendarId);
-    setSetting(SELECTED_CALENDAR_SETTING, resolvedPrimaryCalendarId);
+    await setSettingAsync(TOUCHGRASS_CALENDAR_SETTING, resolvedPrimaryCalendarId);
+    await setSettingAsync(SELECTED_CALENDAR_SETTING, resolvedPrimaryCalendarId);
 
     const from = new Date(Date.now() - 24 * 60 * 60 * 1000);
     const to = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
@@ -196,12 +196,16 @@ function isEventNotSavedError(error: unknown): boolean {
   return typeof maybeCode === 'string' && maybeCode === 'E_EVENT_NOT_SAVED';
 }
 
-function isCalendarWriteDebugEnabled(): boolean {
-  return getSetting('calendar_debug_logging', '0') === '1';
+async function isCalendarWriteDebugEnabled(): Promise<boolean> {
+  return (await getSettingAsync('calendar_debug_logging', '0')) === '1';
 }
 
-function logCalendarWriteDebug(message: string, details?: Record<string, unknown>): void {
-  if (!isCalendarWriteDebugEnabled()) return;
+async function logCalendarWriteDebug(
+  message: string,
+  details?: Record<string, unknown>
+): Promise<void> {
+  const enabled = await isCalendarWriteDebugEnabled();
+  if (!enabled) return;
   if (details) {
     console.log(`TouchGrass: Calendar write debug - ${message}`, details);
   } else {
@@ -217,7 +221,7 @@ export async function requestCalendarPermissions(): Promise<boolean> {
   try {
     const { status } = await Calendar.requestCalendarPermissionsAsync();
     const granted = status === 'granted';
-    setSetting('calendar_permission_granted', granted ? '1' : '0');
+    await setSettingAsync('calendar_permission_granted', granted ? '1' : '0');
     return granted;
   } catch (e) {
     console.warn('TouchGrass: Failed to request calendar permissions:', e);
@@ -270,7 +274,7 @@ export async function getOrCreateTouchGrassCalendar(forceCreate = false): Promis
   try {
     if (!forceCreate) {
       const calendars = await Calendar.getCalendarsAsync(Calendar.EntityTypes.EVENT);
-      const savedId = getSetting(TOUCHGRASS_CALENDAR_SETTING, '');
+      const savedId = await getSettingAsync(TOUCHGRASS_CALENDAR_SETTING, '');
       if (savedId) {
         const existing = calendars.find((c) => c.id === savedId);
         if (existing) {
@@ -307,7 +311,7 @@ export async function getOrCreateTouchGrassCalendar(forceCreate = false): Promis
         } catch {
           // Non-critical: best-effort update for legacy calendars
         }
-        setSetting(TOUCHGRASS_CALENDAR_SETTING, reusable.id);
+        await setSettingAsync(TOUCHGRASS_CALENDAR_SETTING, reusable.id);
         return reusable.id;
       }
     }
@@ -340,7 +344,7 @@ export async function getOrCreateTouchGrassCalendar(forceCreate = false): Promis
       });
     }
 
-    setSetting(TOUCHGRASS_CALENDAR_SETTING, id);
+    await setSettingAsync(TOUCHGRASS_CALENDAR_SETTING, id);
     return id;
   } catch (e) {
     console.warn('TouchGrass: Failed to create local TouchGrass calendar:', e);
@@ -352,15 +356,15 @@ export async function getOrCreateTouchGrassCalendar(forceCreate = false): Promis
  * Return the ID of the calendar the user has chosen to write outdoor events to.
  * Returns an empty string when no preference is saved.
  */
-export function getSelectedCalendarId(): string {
-  return getSetting(SELECTED_CALENDAR_SETTING, '');
+export async function getSelectedCalendarId(): Promise<string> {
+  return await getSettingAsync(SELECTED_CALENDAR_SETTING, '');
 }
 
 /**
  * Persist the user's preferred calendar ID.
  */
-export function setSelectedCalendarId(id: string): void {
-  setSetting(SELECTED_CALENDAR_SETTING, id);
+export async function setSelectedCalendarId(id: string): Promise<void> {
+  await setSettingAsync(SELECTED_CALENDAR_SETTING, id);
 }
 
 /**
@@ -368,7 +372,7 @@ export function setSelectedCalendarId(id: string): void {
  * Used to skip smart reminders when a meeting is imminent.
  */
 export async function hasUpcomingEvent(windowMinutes: number): Promise<boolean> {
-  const calendarEnabled = getSetting('calendar_integration_enabled', '0') === '1';
+  const calendarEnabled = (await getSettingAsync('calendar_integration_enabled', '0')) === '1';
   if (!calendarEnabled) return false;
 
   const permissionGranted = await hasCalendarPermissions();
@@ -398,10 +402,10 @@ export async function hasUpcomingEvent(windowMinutes: number): Promise<boolean> 
  * Safe to call when calendar integration is disabled or no events exist.
  */
 export async function deleteFutureTouchGrassEvents(from: Date, daysAhead: number): Promise<void> {
-  const enabled = getSetting('calendar_integration_enabled', '0') === '1';
+  const enabled = (await getSettingAsync('calendar_integration_enabled', '0')) === '1';
   if (!enabled) return;
 
-  const calendarId = getSetting(TOUCHGRASS_CALENDAR_SETTING, '');
+  const calendarId = await getSettingAsync(TOUCHGRASS_CALENDAR_SETTING, '');
   if (!calendarId) return;
 
   const permissionGranted = await hasCalendarPermissions();
@@ -433,10 +437,10 @@ export async function deleteFutureTouchGrassEvents(from: Date, daysAhead: number
  * duration is set to Off (0).  Safe to call fire-and-forget.
  */
 export async function maybeAddOutdoorTimeToCalendar(startTime: Date): Promise<void> {
-  const enabled = getSetting('calendar_integration_enabled', '0') === '1';
+  const enabled = (await getSettingAsync('calendar_integration_enabled', '0')) === '1';
   if (!enabled) return;
 
-  const duration = parseInt(getSetting('calendar_default_duration', '0'), 10);
+  const duration = parseInt(await getSettingAsync('calendar_default_duration', '0'), 10);
   if (duration === 0) return;
 
   await addOutdoorTimeToCalendar(startTime, duration);
@@ -525,7 +529,7 @@ export async function addOutdoorTimeToCalendar(
     ): Promise<void> => {
       const duplicate = await hasDuplicateEvent(calendarId, startTime, endTime, eventTitle);
       if (duplicate) {
-        logCalendarWriteDebug('duplicate event detected; skipping write', {
+        await logCalendarWriteDebug('duplicate event detected; skipping write', {
           calendarId,
           calendarLabel,
           startTime: startTime.toISOString(),
@@ -536,7 +540,7 @@ export async function addOutdoorTimeToCalendar(
       }
 
       // Stage 1: primary payload (with timeZone)
-      logCalendarWriteDebug('attempting primary event payload', {
+      await logCalendarWriteDebug('attempting primary event payload', {
         calendarId,
         calendarLabel,
         fingerprint,
@@ -544,7 +548,7 @@ export async function addOutdoorTimeToCalendar(
       });
       try {
         await Calendar.createEventAsync(calendarId, eventDetails);
-        logCalendarWriteDebug('event write succeeded', {
+        await logCalendarWriteDebug('event write succeeded', {
           calendarId,
           calendarLabel,
           payload: 'primary',
@@ -562,7 +566,7 @@ export async function addOutdoorTimeToCalendar(
       );
       try {
         await Calendar.createEventAsync(calendarId, fallbackEventDetails);
-        logCalendarWriteDebug('event write succeeded', {
+        await logCalendarWriteDebug('event write succeeded', {
           calendarId,
           calendarLabel,
           payload: 'fallback',
@@ -580,7 +584,7 @@ export async function addOutdoorTimeToCalendar(
       // Stage 3: ultra-minimal payload (title, startDate, endDate only — no allDay, no timeZone)
       try {
         await Calendar.createEventAsync(calendarId, ultraMinimalEventDetails);
-        logCalendarWriteDebug('event write succeeded', {
+        await logCalendarWriteDebug('event write succeeded', {
           calendarId,
           calendarLabel,
           payload: 'ultra-minimal',
@@ -607,7 +611,7 @@ export async function addOutdoorTimeToCalendar(
         calendarId,
         calendarLabel,
       });
-      setSetting(TOUCHGRASS_CALENDAR_SETTING, ''); // clear stale cached ID
+      await setSettingAsync(TOUCHGRASS_CALENDAR_SETTING, ''); // clear stale cached ID
       const freshCalendarId = await getOrCreateTouchGrassCalendar(true); // forceCreate: bypass any existing calendar
       if (!freshCalendarId) {
         throw new Error('TouchGrass: Could not recreate TouchGrass calendar for retry');
@@ -647,7 +651,7 @@ export async function addOutdoorTimeToCalendar(
       ] as const) {
         try {
           await Calendar.createEventAsync(freshCalendarId, payload);
-          logCalendarWriteDebug('event write succeeded after calendar recreation', {
+          await logCalendarWriteDebug('event write succeeded after calendar recreation', {
             calendarId: freshCalendarId,
             calendarLabel,
             payload: label,

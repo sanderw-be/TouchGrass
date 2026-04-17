@@ -5,7 +5,7 @@ import {
   checkGPSPermissions,
   recheckHealthConnect,
 } from '../detection';
-import { getSetting } from '../storage/database';
+import { getSettingAsync } from '../storage/database';
 import { hasCalendarPermissions } from '../calendar/calendarService';
 
 /**
@@ -33,19 +33,19 @@ export async function countPermissionIssues(): Promise<{ goals: number; settings
 
   let goalsIssues = 0;
 
-  const weatherEnabled = getSetting('weather_enabled', '1') === '1';
+  const weatherEnabled = (await getSettingAsync('weather_enabled', '1')) === '1';
   if (weatherEnabled) {
     const weatherOk = await checkWeatherLocationPermissions();
     if (!weatherOk) goalsIssues++;
   }
 
-  const calendarEnabled = getSetting('calendar_integration_enabled', '0') === '1';
+  const calendarEnabled = (await getSettingAsync('calendar_integration_enabled', '0')) === '1';
   if (calendarEnabled) {
     const calOk = await hasCalendarPermissions();
     if (!calOk) goalsIssues++;
   }
 
-  const smartRemindersCount = parseInt(getSetting('smart_reminders_count', '2'), 10);
+  const smartRemindersCount = parseInt(await getSettingAsync('smart_reminders_count', '2'), 10);
   if (smartRemindersCount > 0) {
     const { status } = await Notifications.getPermissionsAsync();
     if (status !== 'granted') goalsIssues++;

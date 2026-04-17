@@ -19,7 +19,7 @@ jest.mock('../weather/weatherService', () => ({
 
 jest.mock('../storage/database', () => ({
   getSettingAsync: jest.fn(),
-  initDatabase: jest.fn(),
+  initDatabaseAsync: jest.fn(() => Promise.resolve()),
   insertBackgroundLogAsync: jest.fn(),
 }));
 
@@ -119,12 +119,12 @@ describe('unifiedBackgroundTask', () => {
       expect(taskCallback).toBeDefined();
     });
 
-    it('calls initDatabase on every tick to ensure DB is initialised in the background runtime', async () => {
+    it('calls initDatabaseAsync on every tick to ensure DB is initialised in the background runtime', async () => {
       (Database.getSettingAsync as jest.Mock).mockResolvedValue('0');
 
       await taskCallback();
 
-      expect(Database.initDatabase).toHaveBeenCalledTimes(1);
+      expect(Database.initDatabaseAsync).toHaveBeenCalledTimes(1);
     });
 
     it('runs all four reminder operations when reminders are enabled', async () => {

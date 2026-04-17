@@ -7,7 +7,7 @@ import {
   getCurrentDailyGoalAsync,
   getSettingAsync,
   setSettingAsync,
-  initDatabase,
+  initDatabaseAsync,
 } from '../storage/database';
 import { logManualSessionAsync } from '../detection/manualCheckin';
 import { WIDGET_TIMER_KEY, isWidgetTimerRunning } from '../utils/widgetHelper';
@@ -50,9 +50,9 @@ export async function widgetTaskHandler(props: WidgetTaskHandlerProps): Promise<
   }
 
   try {
-    initDatabase();
+    await initDatabaseAsync();
   } catch (error) {
-    console.error('[widgetTaskHandler] initDatabase failed:', error);
+    console.error('[widgetTaskHandler] initDatabaseAsync failed:', error);
   }
 
   switch (widgetAction) {

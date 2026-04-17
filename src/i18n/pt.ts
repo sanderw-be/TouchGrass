@@ -137,7 +137,23 @@ export default {
   settings_hc_permission_missing: 'Faltam permissões',
   settings_hc_permission_title: 'Permissão Health Connect',
   settings_hc_permission_body:
-    'Necessária para detetar atividade ao ar livre. Muitos passos num local geralmente indica uma caminhada no exterior; atividades como corrida ou ciclismo também contam. Com o GPS ativado, sessões de bicicleta estática podem ser excluídas.',
+    'O TouchGrass lê a sua contagem de passos e sessões de exercício para detetar automaticamente quando está ao ar livre. Um aumento sustentado nos passos sugere normalmente uma caminhada ao ar livre, e atividades registadas como ciclismo ou corrida são adicionadas diretamente ao seu progresso diário. Todos os dados permanecem privados no seu dispositivo.',
+
+  // Health Connect Rationale Screen
+  hc_rationale_title: 'Deteção de atividade ao ar livre',
+  hc_rationale_intro:
+    'O TouchGrass utiliza o Health Connect para detetar automaticamente e de forma privada quando está ao ar livre, com base nos seus dados de atividade.',
+  hc_rationale_steps_title: 'Passos (Acesso de leitura)',
+  hc_rationale_steps_body:
+    'Ao ler a sua contagem de passos, o TouchGrass pode identificar automaticamente caminhadas ao ar livre sem que tenha de iniciar manualmente um temporizador. Isto garante que todo o seu movimento é captado com precisão, mantendo a sua privacidade.',
+  hc_rationale_exercise_title: 'Sessões de exercício (Acesso de leitura)',
+  hc_rationale_exercise_body:
+    'Atividades ao ar livre, como corrida, ciclismo ou caminhada de outras aplicações, são sincronizadas diretamente como "tempo de relva". Isto proporciona uma visão completa e precisa da sua atividade ao ar livre sem qualquer esforço manual.',
+  hc_rationale_privacy:
+    'O TouchGrass apenas lê os horários e tipos de atividades. Nenhuma métrica de saúde, participantes ou notas saem do seu dispositivo.',
+  hc_rationale_button: 'Ligar ao Health Connect',
+  hc_rationale_cancel: 'Talvez mais tarde',
+
   settings_hc_open_btn: 'Abrir Health Connect',
   settings_hc_failed_title: 'Falha de ligação',
   settings_hc_failed_body: 'Dá permissão nos ajustes. Fica tudo no dispositivo.',
@@ -491,8 +507,9 @@ export default {
   nav_about_app: 'Sobre',
   about_intro_title: 'O que é?',
   about_intro_body: 'A tua ferramenta privada para descansar a vista.',
-  about_detection_title: 'Deteção segura',
-  about_detection_body: 'Utiliza GPS geofence ou Health Connect (passos e atividades).',
+  about_detection_title: 'Como o tempo ao ar livre é rastreado',
+  about_detection_body:
+    'O TouchGrass utiliza métodos de deteção local para ajudar-te a manter o foco em estar ao ar livre:\n\n• Health Connect — Deteta automaticamente atividades ao ar livre ao ler a tua contagem de passos e sessões de exercício. Uma contagem elevada de passos indica normalmente uma caminhada ao ar livre, enquanto atividades como corrida ou ciclismo são creditadas diretamente como tempo externo. Este método prioriza a privacidade e poupa bateria.\n• GPS — Deteta quando sais de um local conhecido (como casa ou trabalho) utilizando geofencing local.\n\nPodes gerir estas opções em Definições → Deteção.',
   about_goals_title: 'Objetivos',
   about_goals_body: 'Mantém a racha de desconexão diretamente no telemóvel.',
   about_reminders_title: 'Subtil',

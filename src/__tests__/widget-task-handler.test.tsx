@@ -4,7 +4,7 @@ import * as database from '../storage/database';
 import * as manualCheckin from '../detection/manualCheckin';
 
 jest.mock('../storage/database', () => ({
-  initDatabase: jest.fn(),
+  initDatabaseAsync: jest.fn(() => Promise.resolve()),
   getTodayMinutesAsync: jest.fn(() => Promise.resolve(20)),
   getCurrentDailyGoalAsync: jest.fn(() => Promise.resolve({ targetMinutes: 60 })),
   getSettingAsync: jest.fn(() => Promise.resolve('')),
@@ -60,17 +60,17 @@ describe('widgetTaskHandler', () => {
     expect(props.renderWidget).not.toHaveBeenCalled();
   });
 
-  it('calls initDatabase once before processing widget data', async () => {
+  it('calls initDatabaseAsync once before processing widget data', async () => {
     const props = mockProps({ widgetAction: 'WIDGET_UPDATE' });
     await widgetTaskHandler(props);
-    expect(database.initDatabase).toHaveBeenCalledTimes(1);
+    expect(database.initDatabaseAsync).toHaveBeenCalledTimes(1);
   });
 
-  it('renders the skeleton before initDatabase is called', async () => {
+  it('renders the skeleton before initDatabaseAsync is called', async () => {
     let skeletonRenderedBeforeDb = false;
     let dbCalled = false;
 
-    (database.initDatabase as jest.Mock).mockImplementation(() => {
+    (database.initDatabaseAsync as jest.Mock).mockImplementation(() => {
       dbCalled = true;
     });
 

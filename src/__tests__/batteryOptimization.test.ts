@@ -25,9 +25,9 @@ jest.mock('expo-intent-launcher', () => ({
   },
 }));
 
-const mockSetSetting = jest.fn();
+const mockSetSetting = jest.fn(async (_key: string, _value: string) => {});
 jest.mock('../storage/database', () => ({
-  setSetting: (key: string, value: string) => mockSetSetting(key, value),
+  setSettingAsync: (key: string, value: string) => mockSetSetting(key, value),
 }));
 
 const mockIsBatteryOptimizationEnabledAsync =

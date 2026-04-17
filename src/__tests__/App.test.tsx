@@ -1,135 +1,103 @@
 import React from 'react';
-import { render, waitFor } from '@testing-library/react-native';
+import { render, screen, waitFor } from '@testing-library/react-native';
 import App from '../../App';
+import { useAppInitialization } from '../hooks/useAppInitialization';
+import { useOTAUpdates } from '../hooks/useOTAUpdates';
 
-// Mock the navigation module
+// Mock hooks
+jest.mock('../hooks/useAppInitialization');
+jest.mock('../hooks/useOTAUpdates');
+jest.mock('expo-font');
+jest.mock('expo-battery');
+
+// Mock components that are complex or have side effects
 jest.mock('../navigation/AppNavigator', () => {
   const React = require('react');
-  const { Text } = require('react-native');
-  return () => <Text>AppNavigator</Text>;
+  const { View } = require('react-native');
+  const MockAppNavigator = () => <View testID="app-navigator" />;
+  return MockAppNavigator;
 });
-
-// Mock IntroScreen
 jest.mock('../screens/IntroScreen', () => {
   const React = require('react');
-  const { Text } = require('react-native');
-  return ({ onComplete }: { onComplete: () => void }) => <Text>IntroScreen</Text>;
+  const { View } = require('react-native');
+  const MockIntroScreen = () => <View testID="intro-screen" />;
+  return MockIntroScreen;
+});
+jest.mock('../components/UpdateSplashScreen', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  const MockUpdateSplashScreen = () => <View testID="update-splash-screen" />;
+  return MockUpdateSplashScreen;
+});
+jest.mock('react-native/Libraries/Components/ActivityIndicator/ActivityIndicator', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  const MockActivityIndicator = (props: any) => <View {...props} testID="activity-indicator" />;
+  return { default: MockActivityIndicator };
 });
 
-const mockGetDeviceSupportedLocale = jest.fn(() => 'en');
-// Mock the i18n module
-jest.mock('../i18n', () => ({
-  __esModule: true,
-  default: { locale: 'en' },
-  t: (key: string) => key,
-  getDeviceSupportedLocale: () => mockGetDeviceSupportedLocale(),
-  SUPPORTED_LOCALES: ['en', 'nl', 'de', 'es', 'pt', 'pt-BR', 'fr', 'ja'],
-}));
+const mockUseAppInitialization = useAppInitialization as jest.Mock;
+const mockUseOTAUpdates = useOTAUpdates as jest.Mock;
+const mockUseFonts = require('expo-font').useFonts as jest.Mock;
 
-// Mock detection module
-jest.mock('../detection/index', () => ({
-  initDetection: jest.fn().mockResolvedValue(undefined),
-}));
-
-// Mock notification manager
-jest.mock('../notifications/notificationManager', () => ({
-  setupNotificationInfrastructure: jest.fn().mockResolvedValue(undefined),
-  scheduleDayReminders: jest.fn().mockResolvedValue(undefined),
-  processReminderQueue: jest.fn().mockResolvedValue(undefined),
-}));
-
-// Mock scheduled notifications
-jest.mock('../notifications/scheduledNotifications', () => ({
-  scheduleAllScheduledNotifications: jest.fn().mockResolvedValue(undefined),
-}));
-
-// Mock unified background task
-jest.mock('../background/unifiedBackgroundTask', () => ({
-  registerUnifiedBackgroundTask: jest.fn().mockResolvedValue(undefined),
-}));
-
-jest.mock('../utils/batteryOptimization', () => ({
-  refreshBatteryOptimizationSetting: jest.fn().mockResolvedValue(true),
-}));
-
-// Mock database module
-jest.mock('../storage/database', () => ({
-  initDatabase: jest.fn(),
-  getSetting: jest.fn((key: string, fallback: string) => {
-    if (key === 'hasCompletedIntro') return '1';
-    if (key === 'language') return 'en';
-    return fallback;
-  }),
-  setSetting: jest.fn(),
-}));
-
-// Mock react-native-screens
-jest.mock('react-native-screens', () => ({
-  enableScreens: jest.fn(),
-}));
-
-describe('App', () => {
+describe('<App />', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    const i18n = require('../i18n').default;
-    i18n.locale = 'en';
-    mockGetDeviceSupportedLocale.mockReturnValue('en');
+    mockUseFonts.mockReturnValue([true]);
+    mockUseOTAUpdates.mockReturnValue({ updateStatus: 'ready' });
+    mockUseAppInitialization.mockReturnValue({
+      isReady: true,
+      showIntro: false,
+      locale: 'en',
+      setLocale: jest.fn(),
+      handleShowIntro: jest.fn(),
+      handleIntroComplete: jest.fn(),
+    });
   });
 
-  it('renders the navigator quickly after initialization when intro is completed', async () => {
-    // The critical-path init is now synchronous (database + locale + intro check),
-    // so the app should reach the navigator without a noticeable loading state.
-    // AppNavigator is mocked above to render the literal text 'AppNavigator'.
-    const { getByText } = render(<App />);
-
-    await waitFor(
-      () => {
-        expect(getByText('AppNavigator')).toBeTruthy();
-      },
-      { timeout: 3000 }
-    );
-  });
-
-  it('initializes the database on mount', async () => {
-    const { initDatabase } = require('../storage/database');
-
+  it('renders font loading indicator if fonts are not loaded', async () => {
+    mockUseFonts.mockReturnValue([false]);
     render(<App />);
-
     await waitFor(() => {
-      expect(initDatabase).toHaveBeenCalled();
+      expect(screen.queryByTestId('activity-indicator')).toBeTruthy();
     });
   });
 
-  it('renders AppNavigator (not IntroScreen) when intro is already completed', async () => {
-    // IntroScreen mock renders 'IntroScreen'; AppNavigator mock renders 'AppNavigator'.
-    // getSetting mock returns '1' for hasCompletedIntro, so the intro should be skipped.
-    const { getByText, queryByText } = render(<App />);
-
-    await waitFor(
-      () => {
-        expect(getByText('AppNavigator')).toBeTruthy();
-      },
-      { timeout: 3000 }
-    );
-
-    expect(queryByText('IntroScreen')).toBeNull();
-  });
-
-  it('follows system language by default when no stored preference exists', async () => {
-    const { getSetting, setSetting } = require('../storage/database');
-    getSetting.mockImplementation((key: string, fallback: string) => {
-      if (key === 'hasCompletedIntro') return '1';
-      if (key === 'language') return fallback;
-      return fallback;
-    });
-
+  it('renders UpdateSplashScreen if OTA update is in progress', async () => {
+    mockUseOTAUpdates.mockReturnValue({ updateStatus: 'downloading' });
     render(<App />);
-
     await waitFor(() => {
-      expect(getSetting).toHaveBeenCalledWith('language', 'system');
+      expect(screen.queryByTestId('update-splash-screen')).toBeTruthy();
     });
-    expect(setSetting).not.toHaveBeenCalledWith('language', 'system');
-    const i18n = require('../i18n').default;
-    expect(i18n.locale).toBe('en');
+  });
+
+  it('renders loading indicator while app is not ready', async () => {
+    mockUseAppInitialization.mockReturnValue({
+      ...mockUseAppInitialization(),
+      isReady: false,
+    });
+    render(<App />);
+    await waitFor(() => {
+      expect(screen.queryByTestId('activity-indicator')).toBeTruthy();
+    });
+  });
+
+  it('renders IntroScreen if showIntro is true', async () => {
+    mockUseAppInitialization.mockReturnValue({
+      ...mockUseAppInitialization(),
+      isReady: true,
+      showIntro: true,
+    });
+    render(<App />);
+    await waitFor(() => {
+      expect(screen.queryByTestId('intro-screen')).toBeTruthy();
+    });
+  });
+
+  it('renders AppNavigator when ready and intro is complete', async () => {
+    render(<App />);
+    await waitFor(() => {
+      expect(screen.queryByTestId('app-navigator')).toBeTruthy();
+    });
   });
 });

@@ -163,9 +163,7 @@ If the dialog doesn't appear (Android version differences, etc.):
     "android": {
       "permissions": [
         "android.permission.health.READ_EXERCISE",
-        "android.permission.health.READ_STEPS",
-        "android.permission.health.READ_ACTIVE_CALORIES_BURNED",
-        "android.permission.health.READ_DISTANCE"
+        "android.permission.health.READ_STEPS"
       ]
     }
   }
@@ -221,6 +219,27 @@ User taps "Connect"
   → Auto-verification succeeds
   → Success alert shows
 ```
+
+### Required Permissions (Manifest)
+
+```xml
+<uses-permission android:name="android.permission.health.READ_EXERCISE" />
+<uses-permission android:name="android.permission.health.READ_STEPS" />
+```
+
+### Rationale for Permissions (Play Console)
+
+- **ExerciseSession (Read):** TouchGrass tracks time spent outdoors. We read exercise sessions to automatically credit activities that take place outside (e.g. running, cycling, hiking) towards the user's daily outdoor time goal.
+- **Steps (Read):** A sustained increase in step count indicates an outdoor walk. We analyze step intervals locally to automatically detect when a user has been walking outside, allowing for hands-free tracking.
+
+### Data Processing
+
+All Health Connect data is processed **locally** on the user's device:
+
+1.  **Exercise Sessions:** The app queries for sessions with types typically performed outdoors (e.g., WALKING, RUNNING, BIKING).
+2.  **Steps:** The app queries step counts in 10-minute intervals to detect sustained activity.
+
+No health data is ever transmitted to external servers.
 
 ## References
 

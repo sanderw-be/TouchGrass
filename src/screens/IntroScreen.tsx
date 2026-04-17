@@ -12,6 +12,7 @@ import {
   Alert,
   Linking,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Notifications from 'expo-notifications';
 import * as Location from 'expo-location';
@@ -338,7 +339,7 @@ export default function IntroScreen({ onComplete }: Props) {
         <ScrollView style={styles.content} contentContainerStyle={styles.contentInner}>
           {currentStep === 'welcome' && <WelcomeStep />}
           {currentStep === 'health-connect' && (
-            <HealthConnectStep
+            <HealthConnectRationaleStep
               onRequest={handleRequestHealthConnect}
               granted={healthConnectGranted}
               requesting={requestingPermission}
@@ -432,7 +433,7 @@ function WelcomeStep() {
   );
 }
 
-function HealthConnectStep({
+function HealthConnectRationaleStep({
   onRequest,
   granted,
   requesting,
@@ -446,12 +447,31 @@ function HealthConnectStep({
   return (
     <View style={styles.stepContainer}>
       <Text style={styles.emoji}>👟</Text>
-      <Text style={styles.title}>{t('intro_hc_title')}</Text>
-      <Text style={styles.body}>{t('intro_hc_body')}</Text>
-      <View style={styles.permissionCard}>
-        <Text style={styles.permissionTitle}>{t('intro_hc_why_title')}</Text>
-        <Text style={styles.permissionBody}>{t('intro_hc_why_body')}</Text>
+      <Text style={styles.title}>{t('hc_rationale_title')}</Text>
+      <Text style={styles.body}>{t('hc_rationale_intro')}</Text>
+
+      <View style={styles.rationaleCard}>
+        <View style={styles.rationaleItem}>
+          <Ionicons name="footsteps-outline" size={24} color={colors.grass} />
+          <View style={styles.rationaleContent}>
+            <Text style={styles.rationaleTitle}>{t('hc_rationale_steps_title')}</Text>
+            <Text style={styles.rationaleBody}>{t('hc_rationale_steps_body')}</Text>
+          </View>
+        </View>
+        <View style={styles.rationaleItem}>
+          <Ionicons name="fitness-outline" size={24} color={colors.grass} />
+          <View style={styles.rationaleContent}>
+            <Text style={styles.rationaleTitle}>{t('hc_rationale_exercise_title')}</Text>
+            <Text style={styles.rationaleBody}>{t('hc_rationale_exercise_body')}</Text>
+          </View>
+        </View>
       </View>
+
+      <View style={styles.privacyTip}>
+        <Ionicons name="lock-closed-outline" size={16} color={colors.grass} />
+        <Text style={styles.privacyTipText}>{t('hc_rationale_privacy')}</Text>
+      </View>
+
       {Platform.OS === 'android' && (
         <TouchableOpacity
           style={[styles.permissionButton, granted && styles.permissionButtonGranted]}
@@ -888,6 +908,50 @@ function makeStyles(
       fontSize: 14,
       color: colors.textSecondary,
       lineHeight: 20,
+    },
+    rationaleCard: {
+      width: '100%',
+      backgroundColor: colors.card,
+      borderRadius: radius.lg,
+      padding: spacing.md,
+      marginBottom: spacing.md,
+      ...shadows.soft,
+    },
+    rationaleItem: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: spacing.md,
+      paddingVertical: spacing.sm,
+    },
+    rationaleContent: {
+      flex: 1,
+    },
+    rationaleTitle: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.textPrimary,
+      marginBottom: 2,
+    },
+    rationaleBody: {
+      fontSize: 13,
+      color: colors.textSecondary,
+      lineHeight: 18,
+    },
+    privacyTip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.xs,
+      backgroundColor: colors.grassPale,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      borderRadius: radius.md,
+      marginBottom: spacing.lg,
+    },
+    privacyTipText: {
+      fontSize: 12,
+      color: colors.grassDark,
+      fontWeight: '500',
+      flex: 1,
     },
     dataScope: {
       marginTop: spacing.sm,

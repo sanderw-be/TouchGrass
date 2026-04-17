@@ -2,7 +2,7 @@
 
 > **Navigation aid.** Library inventory extracted via AST. Read the source files listed here before modifying exported functions.
 
-**28 library files** across 9 modules
+**32 library files** across 11 modules
 
 ## Utils (9 files)
 
@@ -32,6 +32,12 @@
 - `src/background/unifiedBackgroundTask.ts` — registerUnifiedBackgroundTask, unregisterUnifiedBackgroundTask, UNIFIED_BACKGROUND_TASK
 - `src/background/backgroundTick.ts` — performBackgroundTick
 
+## Hooks (3 files)
+
+- `src/hooks/useOTAUpdates.ts` — useOTAUpdates, OTAUpdateStatus
+- `src/hooks/useAppInitialization.ts` — useAppInitialization
+- `src/hooks/useForegroundSync.ts` — useForegroundSync
+
 ## Notifications (3 files)
 
 - `src/notifications/notificationManager.ts` — \_resetSchedulingGuards, logReminderQueueSnapshot, setupNotificationInfrastructure, requestNotificationPermissions, setupNotifications, scheduleNextReminder, …
@@ -47,6 +53,10 @@
 
 - `modules/alarm-bridge-native/src/index.ts` — scheduleNextPulse, cancelPulse, PULSE_TASK_NAME
 
+## AppBootstrap.ts (1 files)
+
+- `appBootstrap.ts` — performCriticalInitializationAsync, performDeferredInitialization, CriticalAppState
+
 ## Calendar (1 files)
 
 - `src/calendar/calendarService.ts` — cleanupTouchGrassCalendars, requestCalendarPermissions, hasCalendarPermissions, getWritableCalendars, getOrCreateTouchGrassCalendar, getSelectedCalendarId, …
@@ -57,7 +67,7 @@
 
 ## Storage (1 files)
 
-- `src/storage/database.ts` — initDatabase, insertSession, insertSessionAsync, getSessionsForDayAsync, getSessionsForRange, getSessionsForRangeAsync, …
+- `src/storage/database.ts` — initDatabaseAsync, insertSessionAsync, getSessionsForDayAsync, getSessionsForRangeAsync, deleteSessionAsync, deleteSessionsByIdsAsync, …
 
 ---
 

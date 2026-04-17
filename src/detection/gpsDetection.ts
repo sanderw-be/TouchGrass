@@ -8,7 +8,7 @@ import {
   getSettingAsync,
   setSettingAsync,
   KnownLocation,
-  initDatabase,
+  initDatabaseAsync,
   insertBackgroundLogAsync,
 } from '../storage/database';
 import { submitSession, buildSession } from './sessionMerger';
@@ -835,7 +835,7 @@ TaskManager.defineTask(
     }
     // Ensure the DB schema and migrations are applied before any DB access.
     // The background JS runtime does not guarantee App.tsx has run first.
-    initDatabase();
+    await initDatabaseAsync();
     // Always read persisted GPS state from SQLite at every task invocation so
     // that in-memory state never lags behind what was last written to the DB.
     await loadGPSState();
