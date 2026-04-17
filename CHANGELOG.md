@@ -1,3 +1,9 @@
+## [1.7.2-beta.2](https://github.com/sanderw-be/TouchGrass/compare/v1.7.2-beta.1...v1.7.2-beta.2) (2026-04-17)
+
+### Bug Fixes
+
+- update Health Connect rationale and permissions handling in multiple languages and start major refactor ([3c96ff8](https://github.com/sanderw-be/TouchGrass/commit/3c96ff8ce0a2e8e8de84648099bfcb38e88da30f))
+
 ## [1.7.2-beta.1](https://github.com/sanderw-be/TouchGrass/compare/v1.7.1...v1.7.2-beta.1) (2026-04-14)
 
 ### Bug Fixes
