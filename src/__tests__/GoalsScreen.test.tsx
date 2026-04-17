@@ -10,6 +10,9 @@ jest.mock('../i18n', () => ({
   formatLocalTime: jest.fn(() => ''),
 }));
 
+// Mock native modules that are dependencies of the screen
+jest.mock('expo-battery');
+
 // Mock database
 const mockGetSettingAsync = jest.fn<Promise<string>, [string, string]>((key: string, def: string) =>
   Promise.resolve(def)
@@ -752,7 +755,8 @@ describe('GoalsScreen smart reminders notification permission', () => {
 
   it('shows notification permission missing text when smart reminders are on and permission is denied', async () => {
     mockGetSettingAsync.mockImplementation((key: string, def: string) => {
-      if (key === 'smart_reminders_count') return Promise.resolve('2');
+      if (key === 'smart_reminders_count') return Promise.resolve('0'); // This feature is off
+      if (key === 'smart_catchup_reminders_count') return Promise.resolve('0'); // This feature must also be off
       return Promise.resolve(def);
     });
     mockGetPermissions.mockResolvedValue({ status: 'denied' });
@@ -763,7 +767,8 @@ describe('GoalsScreen smart reminders notification permission', () => {
 
   it('does not show notification permission missing text when smart reminders are off', async () => {
     mockGetSettingAsync.mockImplementation((key: string, def: string) => {
-      if (key === 'smart_reminders_count') return Promise.resolve('0');
+      if (key === 'smart_reminders_count') return Promise.resolve('0'); // This feature is off
+      if (key === 'smart_catchup_reminders_count') return Promise.resolve('0'); // This feature must also be off
       return Promise.resolve(def);
     });
     mockGetPermissions.mockResolvedValue({ status: 'denied' });

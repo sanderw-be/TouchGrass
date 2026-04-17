@@ -1,198 +1,93 @@
 import React from 'react';
-import { render, waitFor } from '@testing-library/react-native';
+import { render, screen } from '@testing-library/react-native';
 import App from '../../App';
+import { useAppInitialization } from '../hooks/useAppInitialization';
+import { useOTAUpdates } from '../hooks/useOTAUpdates';
 
-// Mock the navigation module
+// Mock hooks
+jest.mock('../hooks/useAppInitialization');
+jest.mock('../hooks/useOTAUpdates');
+jest.mock('expo-font');
+jest.mock('expo-battery');
+
+// Mock components that are complex or have side effects
 jest.mock('../navigation/AppNavigator', () => {
   const React = require('react');
-  const { Text } = require('react-native');
-  return () => <Text>AppNavigator</Text>;
+  const { View } = require('react-native');
+  const MockAppNavigator = () => <View testID="app-navigator" />;
+  return MockAppNavigator;
 });
-
-// Mock IntroScreen
 jest.mock('../screens/IntroScreen', () => {
   const React = require('react');
-  const { Text } = require('react-native');
-  return ({ onComplete }: { onComplete: () => void }) => <Text>IntroScreen</Text>;
+  const { View } = require('react-native');
+  const MockIntroScreen = () => <View testID="intro-screen" />;
+  return MockIntroScreen;
 });
-
-// Mock useOTAUpdates hook
-jest.mock('../hooks/useOTAUpdates', () => ({
-  useOTAUpdates: jest.fn(() => ({ updateStatus: 'ready' })),
-}));
-
-// Mock UpdateSplashScreen
 jest.mock('../components/UpdateSplashScreen', () => {
   const React = require('react');
-  const { Text } = require('react-native');
-  // eslint-disable-next-line @typescript-eslint/no-shadow
-  return ({ status }: { status: string }) => <Text>UpdateSplashScreen status={status}</Text>;
+  const { View } = require('react-native');
+  const MockUpdateSplashScreen = () => <View testID="update-splash-screen" />;
+  return MockUpdateSplashScreen;
+});
+jest.mock('react-native/Libraries/Components/ActivityIndicator/ActivityIndicator', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  const MockActivityIndicator = (props: any) => <View {...props} testID="activity-indicator" />;
+  return { default: MockActivityIndicator };
 });
 
-const mockGetDeviceSupportedLocale = jest.fn(() => 'en');
-// Mock the i18n module
-jest.mock('../i18n', () => ({
-  __esModule: true,
-  default: { locale: 'en' },
-  t: (key: string) => key,
-  getDeviceSupportedLocale: () => mockGetDeviceSupportedLocale(),
-  SUPPORTED_LOCALES: ['en', 'nl', 'de', 'es', 'pt', 'pt-BR', 'fr', 'ja'],
-}));
+const mockUseAppInitialization = useAppInitialization as jest.Mock;
+const mockUseOTAUpdates = useOTAUpdates as jest.Mock;
+const mockUseFonts = require('expo-font').useFonts as jest.Mock;
 
-// Mock detection module
-jest.mock('../detection/index', () => ({
-  initDetection: jest.fn().mockResolvedValue(undefined),
-}));
-
-// Mock notification manager
-jest.mock('../notifications/notificationManager', () => ({
-  setupNotificationInfrastructure: jest.fn().mockResolvedValue(undefined),
-  scheduleDayReminders: jest.fn().mockResolvedValue(undefined),
-}));
-
-// Mock scheduled notifications
-jest.mock('../notifications/scheduledNotifications', () => ({
-  scheduleAllScheduledNotifications: jest.fn().mockResolvedValue(undefined),
-}));
-
-// Mock unified background task
-jest.mock('../background/unifiedBackgroundTask', () => ({
-  registerUnifiedBackgroundTask: jest.fn().mockResolvedValue(undefined),
-}));
-
-jest.mock('../utils/batteryOptimization', () => ({
-  refreshBatteryOptimizationSetting: jest.fn().mockResolvedValue(true),
-}));
-
-// Mock foreground sync hook
-jest.mock('../hooks/useForegroundSync');
-
-// Mock database module
-jest.mock('../storage/database', () => ({
-  initDatabase: jest.fn(),
-  getSetting: jest.fn((key: string, fallback: string) => {
-    if (key === 'hasCompletedIntro') return '1';
-    if (key === 'language') return 'en';
-    return fallback;
-  }),
-  setSetting: jest.fn(),
-}));
-
-// Mock react-native-screens
-jest.mock('react-native-screens', () => ({
-  enableScreens: jest.fn(),
-}));
-
-describe('App', () => {
+describe('<App />', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    const { useOTAUpdates } = require('../hooks/useOTAUpdates');
-    useOTAUpdates.mockReturnValue({ updateStatus: 'ready' });
-    const i18n = require('../i18n').default;
-    i18n.locale = 'en';
-    mockGetDeviceSupportedLocale.mockReturnValue('en');
+    mockUseFonts.mockReturnValue([true]);
+    mockUseOTAUpdates.mockReturnValue({ updateStatus: 'ready' });
+    mockUseAppInitialization.mockReturnValue({
+      isReady: true,
+      showIntro: false,
+      locale: 'en',
+      setLocale: jest.fn(),
+      handleShowIntro: jest.fn(),
+      handleIntroComplete: jest.fn(),
+    });
   });
 
-  it('renders the navigator quickly after initialization when intro is completed', async () => {
-    // The critical-path init is now synchronous (database + locale + intro check),
-    // so the app should reach the navigator without a noticeable loading state.
-    // AppNavigator is mocked above to render the literal text 'AppNavigator'.
-    const { getByText } = render(<App />);
-
-    await waitFor(
-      () => {
-        expect(getByText('AppNavigator')).toBeTruthy();
-      },
-      { timeout: 3000 }
-    );
-  });
-
-  it('initializes the database on mount', async () => {
-    const { initDatabase } = require('../storage/database');
-
+  it('renders font loading indicator if fonts are not loaded', () => {
+    mockUseFonts.mockReturnValue([false]);
     render(<App />);
-
-    await waitFor(() => {
-      expect(initDatabase).toHaveBeenCalled();
-    });
+    expect(screen.getByTestId('activity-indicator')).toBeTruthy();
   });
 
-  it('renders AppNavigator (not IntroScreen) when intro is already completed', async () => {
-    // IntroScreen mock renders 'IntroScreen'; AppNavigator mock renders 'AppNavigator'.
-    // getSetting mock returns '1' for hasCompletedIntro, so the intro should be skipped.
-    const { getByText, queryByText } = render(<App />);
-
-    await waitFor(
-      () => {
-        expect(getByText('AppNavigator')).toBeTruthy();
-      },
-      { timeout: 3000 }
-    );
-
-    expect(queryByText('IntroScreen')).toBeNull();
-  });
-
-  it('follows system language by default when no stored preference exists', async () => {
-    const { getSetting, setSetting } = require('../storage/database');
-    getSetting.mockImplementation((key: string, fallback: string) => {
-      if (key === 'hasCompletedIntro') return '1';
-      if (key === 'language') return fallback;
-      return fallback;
-    });
-
+  it('renders UpdateSplashScreen if OTA update is in progress', () => {
+    mockUseOTAUpdates.mockReturnValue({ updateStatus: 'downloading' });
     render(<App />);
-
-    await waitFor(() => {
-      expect(getSetting).toHaveBeenCalledWith('language', 'system');
-    });
-    expect(setSetting).not.toHaveBeenCalledWith('language', 'system');
-    const i18n = require('../i18n').default;
-    expect(i18n.locale).toBe('en');
+    expect(screen.getByTestId('update-splash-screen')).toBeTruthy();
   });
 
-  it('calls useForegroundSync to handle app state transitions', () => {
-    const { useForegroundSync } = require('../hooks/useForegroundSync');
-
+  it('renders loading indicator while app is not ready', () => {
+    mockUseAppInitialization.mockReturnValue({
+      ...mockUseAppInitialization(),
+      isReady: false,
+    });
     render(<App />);
-
-    expect(useForegroundSync).toHaveBeenCalled();
+    expect(screen.getByTestId('activity-indicator')).toBeTruthy();
   });
 
-  describe('OTA Updates', () => {
-    it('renders UpdateSplashScreen with "checking" status when update is checking', async () => {
-      const { useOTAUpdates } = require('../hooks/useOTAUpdates');
-      useOTAUpdates.mockReturnValue({ updateStatus: 'checking' });
-
-      const { getByText, queryByText } = render(<App />);
-
-      await waitFor(() => {
-        expect(getByText('UpdateSplashScreen status=checking')).toBeTruthy();
-      });
-      expect(queryByText('AppNavigator')).toBeNull();
+  it('renders IntroScreen if showIntro is true', () => {
+    mockUseAppInitialization.mockReturnValue({
+      ...mockUseAppInitialization(),
+      isReady: true,
+      showIntro: true,
     });
+    render(<App />);
+    expect(screen.getByTestId('intro-screen')).toBeTruthy();
+  });
 
-    it('renders UpdateSplashScreen with "downloading" status when update is downloading', async () => {
-      const { useOTAUpdates } = require('../hooks/useOTAUpdates');
-      useOTAUpdates.mockReturnValue({ updateStatus: 'downloading' });
-
-      const { getByText, queryByText } = render(<App />);
-
-      await waitFor(() => {
-        expect(getByText('UpdateSplashScreen status=downloading')).toBeTruthy();
-      });
-      expect(queryByText('AppNavigator')).toBeNull();
-    });
-
-    it('does not render UpdateSplashScreen when update status is "ready"', async () => {
-      const { useOTAUpdates } = require('../hooks/useOTAUpdates');
-      useOTAUpdates.mockReturnValue({ updateStatus: 'ready' });
-
-      const { queryByText, getByText } = render(<App />);
-
-      await waitFor(() => {
-        expect(getByText('AppNavigator')).toBeTruthy();
-      });
-      expect(queryByText(/UpdateSplashScreen/)).toBeNull();
-    });
+  it('renders AppNavigator when ready and intro is complete', () => {
+    render(<App />);
+    expect(screen.getByTestId('app-navigator')).toBeTruthy();
   });
 });

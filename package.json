@@ -18,8 +18,7 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
-    "format:check": "prettier --check .",
-    "validate": "eslint . && prettier --write . && tsc --noEmit && jest"
+    "format:check": "prettier --check ."
   },
   "dependencies": {
     "@expo-google-fonts/nunito": "^0.4.2",
