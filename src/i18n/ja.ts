@@ -137,7 +137,23 @@ export default {
   settings_hc_permission_missing: '権限が不足しています',
   settings_hc_permission_title: 'Health Connect 権限',
   settings_hc_permission_body:
-    '屋外活動を検出するために必要です。その場所での多くの歩数は屋外での歩きを示し、ランニングやサイクリングなどの運動セッションも屋外時間としてカウントされます。GPSが有効な場合、ホームトレーニングセッションを除外することもできます。',
+    'TouchGrassは歩数とエクササイズセッションを読み取り、屋外にいることを自動的に検出します。歩数が持続的に増加している場合は通常、屋外でのウォーキングを示唆しており、サイクリングやランニングなどの記録されたアクティビティは直接毎日の進捗に追加されます。すべてのデータはデバイス上で非公開に保たれます。',
+
+  // Health Connect Rationale Screen
+  hc_rationale_title: '屋外活動の検出',
+  hc_rationale_intro:
+    'TouchGrassはHealth Connectを使用して、アクティビティデータに基づいて屋外にいることを自動的かつプライベートに検出します。',
+  hc_rationale_steps_title: '歩数 (読み取りアクセス)',
+  hc_rationale_steps_body:
+    '歩数を読み取ることで、手動でタイマーを開始しなくても、TouchGrassは屋外でのウォーキングを自動的に識別できます。これにより、プライバシーを維持しながら、すべての動きを正確に把握できます。',
+  hc_rationale_exercise_title: 'エクササイズセッション (読み取りアクセス)',
+  hc_rationale_exercise_body:
+    '他のアプリからのランニング、サイクリング、ハイキングなどの屋外アクティビティは、「芝生時間」として直接同期されます。これにより、手動の操作なしで屋外アクティビティの完全かつ正確な概要が提供されます。',
+  hc_rationale_privacy:
+    'TouchGrassはアクティビティの時間と種類のみを読み取ります。健康指標、参加者、メモなどがデバイスから送信されることはありません。',
+  hc_rationale_button: 'Health Connectに接続',
+  hc_rationale_cancel: '後で',
+
   settings_hc_open_btn: 'Health Connectを開く',
   settings_hc_failed_title: '接続エラー',
   settings_hc_failed_body: '設定から権限を付与してください。データは外部に送信されません。',
@@ -490,10 +506,10 @@ export default {
   // About TouchGrass screen
   nav_about_app: 'アプリについて',
   about_intro_title: 'TouchGrassとは',
-  about_intro_body: '外に出て、自然を楽しむためのプライベートツール。',
-  about_detection_title: '検知の仕組み',
+  about_intro_body: '外に出る、自然を楽しむためのプライベートツール。',
+  about_detection_title: '屋外時間の追跡方法',
   about_detection_body:
-    'Health Connect（歩数と運動）またはGPS（ジオフェンス）を使用。クラウドは不使用。',
+    'TouchGrassは、屋外にいることに集中できるように、ローカルな検出方法を使用しています：\n\n• Health Connect — 歩数とエクササイズセッションを読み取ることで、屋外アクティビティを自動的に検出します。歩数が多い場合は通常、屋外でのウォーキングを示し、ランニングやサイクリングなどのアクティビティは直接屋外時間として加算されます。この方法はプライバシーを重視し、バッテリー効率に優れています。\n• GPS — ローカルのジオフェンスを使用して、既知の場所（自宅や職場など）から離れたことを検出します。\n\nこれらは「設定 → 検出」で管理できます。',
   about_goals_title: '目標',
   about_goals_body: '外出時間を記録し、連続日数を管理。',
   about_reminders_title: '通知',
