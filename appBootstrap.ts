@@ -1,12 +1,5 @@
 import { InteractionManager } from 'react-native';
-import {
-  initDatabase,
-  initDatabaseAsync,
-  getSetting,
-  getSettingAsync,
-  setSetting,
-  setSettingAsync,
-} from './src/storage/database';
+import { initDatabaseAsync, getSettingAsync, setSettingAsync } from './src/storage/database';
 import i18n, { getDeviceSupportedLocale, SUPPORTED_LOCALES } from './src/i18n';
 import {
   setupNotificationInfrastructure,
@@ -24,42 +17,7 @@ export interface CriticalAppState {
 }
 
 /**
- * Performs critical-path initialization: database and language settings.
- * This must complete before the first render. It is synchronous.
- * @deprecated Use performCriticalInitializationAsync instead to avoid blocking JS thread.
- */
-export function performCriticalInitialization(): CriticalAppState {
-  // Database must be ready before anything else
-  initDatabase();
-
-  // Apply stored language preference if available
-  const storedLanguage = getSetting('language', 'system');
-  let initialLocale: string;
-
-  if (storedLanguage === 'system') {
-    i18n.locale = getDeviceSupportedLocale();
-    initialLocale = 'system';
-  } else if (SUPPORTED_LOCALES.includes(storedLanguage as (typeof SUPPORTED_LOCALES)[number])) {
-    i18n.locale = storedLanguage;
-    initialLocale = storedLanguage;
-  } else {
-    i18n.locale = 'en';
-    initialLocale = 'en';
-    setSetting('language', 'en');
-  }
-
-  // Check if user has completed intro
-  const hasCompletedIntro = getSetting('hasCompletedIntro', '0') === '1';
-
-  return {
-    showIntro: !hasCompletedIntro,
-    initialLocale,
-  };
-}
-
-/**
  * Performs critical-path initialization asynchronously: database and language settings.
- * This avoids blocking the JS thread on cold boot.
  */
 export async function performCriticalInitializationAsync(): Promise<CriticalAppState> {
   // Database must be ready before anything else

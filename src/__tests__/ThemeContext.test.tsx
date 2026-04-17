@@ -1,15 +1,15 @@
 import React from 'react';
-import { render, act } from '@testing-library/react-native';
+import { render, act, waitFor } from '@testing-library/react-native';
 import { Text } from 'react-native';
 import { ThemeProvider, useTheme } from '../context/ThemeContext';
 import { colors as lightColors, darkColors } from '../utils/theme';
 
 // Mock database
-const mockGetSetting = jest.fn((key: string, def: string) => def);
-const mockSetSetting = jest.fn();
+const mockGetSetting = jest.fn(async (_key: string, def: string) => def);
+const mockSetSetting = jest.fn(async (_key: string, _value: string) => {});
 jest.mock('../storage/database', () => ({
-  getSetting: (key: string, def: string) => mockGetSetting(key, def),
-  setSetting: (key: string, value: string) => mockSetSetting(key, value),
+  getSettingAsync: (key: string, def: string) => mockGetSetting(key, def),
+  setSettingAsync: (key: string, value: string) => mockSetSetting(key, value),
 }));
 
 // Mock useColorScheme
@@ -44,36 +44,36 @@ function TestConsumer() {
 describe('ThemeContext', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockGetSetting.mockImplementation((key: string, def: string) => def);
+    mockGetSetting.mockImplementation(async (key: string, def: string) => def);
     useColorSchemeMock.mockReturnValue('light');
   });
 
-  it('defaults to system preference with light colors', () => {
+  it('defaults to system preference with light colors', async () => {
     const { getByTestId } = render(
       <ThemeProvider>
         <TestConsumer />
       </ThemeProvider>
     );
-    expect(getByTestId('pref').props.children).toBe('system');
+    await waitFor(() => expect(getByTestId('pref').props.children).toBe('system'));
     expect(getByTestId('isDark').props.children).toBe('light');
     expect(getByTestId('bg').props.children).toBe(lightColors.mist);
     expect(getByTestId('shadowColor').props.children).toBe(lightColors.grassDark);
   });
 
-  it('uses dark colors when system is dark and preference is system', () => {
+  it('uses dark colors when system is dark and preference is system', async () => {
     useColorSchemeMock.mockReturnValue('dark');
     const { getByTestId } = render(
       <ThemeProvider>
         <TestConsumer />
       </ThemeProvider>
     );
-    expect(getByTestId('isDark').props.children).toBe('dark');
+    await waitFor(() => expect(getByTestId('isDark').props.children).toBe('dark'));
     expect(getByTestId('bg').props.children).toBe(darkColors.mist);
     expect(getByTestId('shadowColor').props.children).toBe(darkColors.grassDark);
   });
 
-  it('uses stored preference from database', () => {
-    mockGetSetting.mockImplementation((key: string, def: string) => {
+  it('uses stored preference from database', async () => {
+    mockGetSetting.mockImplementation(async (key: string, def: string) => {
       if (key === 'theme_preference') return 'dark';
       return def;
     });
@@ -82,13 +82,13 @@ describe('ThemeContext', () => {
         <TestConsumer />
       </ThemeProvider>
     );
-    expect(getByTestId('pref').props.children).toBe('dark');
+    await waitFor(() => expect(getByTestId('pref').props.children).toBe('dark'));
     expect(getByTestId('isDark').props.children).toBe('dark');
   });
 
-  it('uses light colors when preference is light even if system is dark', () => {
+  it('uses light colors when preference is light even if system is dark', async () => {
     useColorSchemeMock.mockReturnValue('dark');
-    mockGetSetting.mockImplementation((key: string, def: string) => {
+    mockGetSetting.mockImplementation(async (key: string, def: string) => {
       if (key === 'theme_preference') return 'light';
       return def;
     });
@@ -97,16 +97,17 @@ describe('ThemeContext', () => {
         <TestConsumer />
       </ThemeProvider>
     );
-    expect(getByTestId('isDark').props.children).toBe('light');
+    await waitFor(() => expect(getByTestId('isDark').props.children).toBe('light'));
     expect(getByTestId('bg').props.children).toBe(lightColors.mist);
   });
 
-  it('saves preference to database when setThemePreference is called', () => {
+  it('saves preference to database when setThemePreference is called', async () => {
     const { getByTestId } = render(
       <ThemeProvider>
         <TestConsumer />
       </ThemeProvider>
     );
+    await waitFor(() => getByTestId('setPref'));
     act(() => {
       getByTestId('setPref').props.onPress();
     });
@@ -115,12 +116,13 @@ describe('ThemeContext', () => {
     expect(getByTestId('pref').props.children).toBe('dark');
   });
 
-  it('switches back to light mode', () => {
+  it('switches back to light mode', async () => {
     const { getByTestId } = render(
       <ThemeProvider>
         <TestConsumer />
       </ThemeProvider>
     );
+    await waitFor(() => getByTestId('setPref'));
     act(() => {
       getByTestId('setPref').props.onPress();
     });
@@ -131,13 +133,14 @@ describe('ThemeContext', () => {
     expect(mockSetSetting).toHaveBeenLastCalledWith('theme_preference', 'light');
   });
 
-  it('switches to system mode', () => {
+  it('switches to system mode', async () => {
     useColorSchemeMock.mockReturnValue('dark');
     const { getByTestId } = render(
       <ThemeProvider>
         <TestConsumer />
       </ThemeProvider>
     );
+    await waitFor(() => getByTestId('setPrefLight'));
     // Start on light preference
     act(() => {
       getByTestId('setPrefLight').props.onPress();

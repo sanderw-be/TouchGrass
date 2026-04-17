@@ -1,7 +1,7 @@
 import { renderHook, act } from '@testing-library/react-native';
 import { useAppInitialization } from '../hooks/useAppInitialization';
 import * as appBootstrap from '../../appBootstrap';
-import { setSetting } from '../storage/database';
+import { setSettingAsync } from '../storage/database';
 import i18n from '../i18n';
 
 // Mock dependencies
@@ -11,7 +11,7 @@ jest.mock('../../appBootstrap', () => ({
 }));
 jest.mock('expo-battery');
 jest.mock('../storage/database', () => ({
-  setSetting: jest.fn(),
+  setSettingAsync: jest.fn().mockResolvedValue(undefined),
 }));
 jest.mock('../i18n', () => ({
   __esModule: true,
@@ -116,7 +116,7 @@ describe('hooks/useAppInitialization', () => {
     });
 
     expect(result.current.showIntro).toBe(false);
-    expect(setSetting).toHaveBeenCalledWith('hasCompletedIntro', '1');
+    expect(setSettingAsync).toHaveBeenCalledWith('hasCompletedIntro', '1');
     expect(mockBootstrap.performDeferredInitialization).toHaveBeenCalledTimes(1);
   });
 
@@ -136,7 +136,7 @@ describe('hooks/useAppInitialization', () => {
     });
 
     expect(i18n.locale).toBe('nl');
-    expect(setSetting).toHaveBeenCalledWith('language', 'nl');
+    expect(setSettingAsync).toHaveBeenCalledWith('language', 'nl');
     expect(result.current.locale).toBe('nl');
   });
 });

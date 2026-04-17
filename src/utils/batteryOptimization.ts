@@ -2,7 +2,7 @@ import Constants from 'expo-constants';
 import * as IntentLauncher from 'expo-intent-launcher';
 import * as Battery from 'expo-battery';
 import { Platform } from 'react-native';
-import { setSetting } from '../storage/database';
+import { setSettingAsync } from '../storage/database';
 
 const DEFAULT_ANDROID_PACKAGE = 'com.jollyheron.touchgrass';
 
@@ -38,7 +38,7 @@ export const isBatteryOptimizationDisabled = async (): Promise<boolean> => {
 export const refreshBatteryOptimizationSetting = async (): Promise<boolean> => {
   const granted = await isBatteryOptimizationDisabled();
   if (Platform.OS === 'android') {
-    setSetting(BATTERY_OPTIMIZATION_SETTING_KEY, granted ? '1' : '0');
+    await setSettingAsync(BATTERY_OPTIMIZATION_SETTING_KEY, granted ? '1' : '0');
   }
   return granted;
 };

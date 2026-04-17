@@ -1,25 +1,14 @@
 import { act } from '@testing-library/react-native';
 import { InteractionManager } from 'react-native';
-import {
-  getSetting,
-  initDatabase,
-  setSetting,
-  initDatabaseAsync,
-  getSettingAsync,
-  setSettingAsync,
-} from '../storage/database';
+import { initDatabaseAsync, getSettingAsync, setSettingAsync } from '../storage/database';
 import i18n, { getDeviceSupportedLocale } from '../i18n';
 import {
-  performCriticalInitialization,
   performCriticalInitializationAsync,
   performDeferredInitialization,
 } from '../../appBootstrap';
 
 // Mock dependencies
 jest.mock('../storage/database', () => ({
-  initDatabase: jest.fn(),
-  getSetting: jest.fn(),
-  setSetting: jest.fn(),
   initDatabaseAsync: jest.fn(),
   getSettingAsync: jest.fn(),
   setSettingAsync: jest.fn(),
@@ -44,6 +33,11 @@ jest.mock('react-native', () => ({
   Platform: {
     OS: 'android',
     select: jest.fn((specs) => specs.android ?? specs.default),
+  },
+  console: {
+    log: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
   },
 }));
 
@@ -78,59 +72,6 @@ import { requestWidgetRefresh } from '../utils/widgetHelper';
 describe('services/appBootstrap', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-  });
-
-  describe('performCriticalInitialization', () => {
-    it('initializes db and returns correct state for a returning user', () => {
-      (getSetting as jest.Mock).mockImplementation((key) => {
-        if (key === 'hasCompletedIntro') return '1';
-        if (key === 'language') return 'system';
-        return '';
-      });
-      (getDeviceSupportedLocale as jest.Mock).mockReturnValue('nl');
-
-      const result = performCriticalInitialization();
-
-      expect(initDatabase).toHaveBeenCalledTimes(1);
-      expect(getSetting).toHaveBeenCalledWith('language', 'system');
-      expect(getSetting).toHaveBeenCalledWith('hasCompletedIntro', '0');
-      expect(i18n.locale).toBe('nl');
-      expect(result).toEqual({
-        showIntro: false,
-        initialLocale: 'system',
-      });
-      expect(setSetting).not.toHaveBeenCalled();
-    });
-
-    it('returns correct state for a new user', () => {
-      (getSetting as jest.Mock).mockImplementation((key) => {
-        if (key === 'hasCompletedIntro') return '0';
-        if (key === 'language') return 'en';
-        return '';
-      });
-
-      const result = performCriticalInitialization();
-
-      expect(initDatabase).toHaveBeenCalledTimes(1);
-      expect(i18n.locale).toBe('en');
-      expect(result).toEqual({
-        showIntro: true,
-        initialLocale: 'en',
-      });
-    });
-
-    it('handles an invalid stored language by defaulting to "en"', () => {
-      (getSetting as jest.Mock).mockImplementation((key) => {
-        if (key === 'language') return 'fr'; // Not in SUPPORTED_LOCALES
-        return '1';
-      });
-
-      const result = performCriticalInitialization();
-
-      expect(i18n.locale).toBe('en');
-      expect(result.initialLocale).toBe('en');
-      expect(setSetting).toHaveBeenCalledWith('language', 'en');
-    });
   });
 
   describe('performCriticalInitializationAsync', () => {

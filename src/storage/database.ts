@@ -74,205 +74,6 @@ export interface ScheduledNotification {
   label: string; // optional label like "Morning walk"
 }
 
-export function initDatabase(): void {
-  // Read the current schema version and check whether the DB already exists
-  // *before* running CREATE TABLE so we can distinguish a fresh install (tables
-  // about to be created with the full schema) from an existing install that
-  // needs incremental ALTER TABLE migrations.
-  const currentVersion =
-    db.getFirstSync<{ user_version: number }>('PRAGMA user_version')?.user_version ?? 0;
-  const tableAlreadyExists =
-    (db.getFirstSync<{ count: number }>(
-      "SELECT COUNT(*) as count FROM sqlite_master WHERE type='table' AND name='outside_sessions'"
-    )?.count ?? 0) > 0;
-
-  db.execSync(`
-    CREATE TABLE IF NOT EXISTS outside_sessions (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      startTime INTEGER NOT NULL,
-      endTime INTEGER NOT NULL,
-      durationMinutes REAL NOT NULL,
-      source TEXT NOT NULL,
-      confidence REAL NOT NULL DEFAULT 0.8,
-      userConfirmed INTEGER,
-      notes TEXT,
-      discarded INTEGER NOT NULL DEFAULT 0,
-      steps INTEGER,
-      distanceMeters REAL,
-      averageSpeedKmh REAL
-    );
-
-    CREATE TABLE IF NOT EXISTS daily_goals (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      targetMinutes INTEGER NOT NULL,
-      createdAt INTEGER NOT NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS weekly_goals (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      targetMinutes INTEGER NOT NULL,
-      createdAt INTEGER NOT NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS reminder_feedback (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      timestamp INTEGER NOT NULL,
-      action TEXT NOT NULL,
-      scheduledHour INTEGER NOT NULL,
-      scheduledMinute INTEGER NOT NULL DEFAULT 0,
-      dayOfWeek INTEGER NOT NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS known_locations (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      label TEXT NOT NULL,
-      latitude REAL NOT NULL,
-      longitude REAL NOT NULL,
-      radiusMeters REAL NOT NULL DEFAULT 100,
-      isIndoor INTEGER NOT NULL DEFAULT 1,
-      status TEXT NOT NULL DEFAULT 'active'
-    );
-
-    CREATE TABLE IF NOT EXISTS app_settings (
-      key TEXT PRIMARY KEY,
-      value TEXT NOT NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS weather_conditions (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      timestamp INTEGER NOT NULL,
-      forecastHour INTEGER NOT NULL,
-      forecastDate INTEGER NOT NULL,
-      temperature REAL NOT NULL,
-      precipitationProbability REAL NOT NULL,
-      cloudCover REAL NOT NULL,
-      uvIndex REAL NOT NULL,
-      windSpeed REAL NOT NULL,
-      weatherCode INTEGER NOT NULL,
-      isDay INTEGER NOT NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS weather_cache (
-      id INTEGER PRIMARY KEY,
-      fetchedAt INTEGER NOT NULL,
-      latitude REAL NOT NULL,
-      longitude REAL NOT NULL,
-      expiresAt INTEGER NOT NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS scheduled_notifications (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      hour INTEGER NOT NULL,
-      minute INTEGER NOT NULL,
-      daysOfWeek TEXT NOT NULL,
-      enabled INTEGER NOT NULL DEFAULT 1,
-      label TEXT NOT NULL DEFAULT ''
-    );
-
-    CREATE TABLE IF NOT EXISTS background_task_logs (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      timestamp INTEGER NOT NULL,
-      category TEXT NOT NULL,
-      message TEXT NOT NULL
-    );
-  `);
-
-  // Seed default goals if none exist
-  const goalCount = db.getFirstSync<{ count: number }>('SELECT COUNT(*) as count FROM daily_goals');
-  if (goalCount?.count === 0) {
-    db.runSync('INSERT INTO daily_goals (targetMinutes, createdAt) VALUES (?, ?)', [
-      30,
-      Date.now(),
-    ]);
-    db.runSync('INSERT INTO weekly_goals (targetMinutes, createdAt) VALUES (?, ?)', [
-      150,
-      Date.now(),
-    ]);
-  }
-
-  // Seed default settings that must be readable by the background task before
-  // the user ever opens the app. OR IGNORE ensures existing user preferences
-  // are never overwritten.
-  db.runSync(
-    "INSERT OR IGNORE INTO app_settings (key, value) VALUES ('smart_reminders_count', '0'), ('weather_enabled', '0')"
-  );
-
-  // Clean up any corrupted scheduled notifications (one-time maintenance task)
-  try {
-    const deletedCount = cleanupInvalidScheduledNotifications();
-    if (deletedCount > 0) {
-      console.log(
-        `Database migration: Removed ${deletedCount} corrupted scheduled notification(s)`
-      );
-    }
-  } catch (error) {
-    console.error('Error cleaning up scheduled notifications:', error);
-  }
-
-  if (!tableAlreadyExists) {
-    // Brand-new install: tables were just created with the full schema, so no
-    // ALTER TABLE statements are needed.  Just stamp the current version so
-    // future boots skip the migration block entirely.
-    db.execSync(`PRAGMA user_version = ${DB_VERSION}`);
-  } else if (currentVersion < DB_VERSION) {
-    // Existing install with an older schema: apply only the migrations that
-    // have not been applied yet, then advance the stored version.
-    //
-    // Each ALTER TABLE is wrapped in a try/catch as a one-time safety net for
-    // users upgrading from the old exception-driven migration code: they may
-    // already have some columns added by the previous code even though
-    // PRAGMA user_version was never set (i.e. currentVersion=0).  After this
-    // block runs successfully, PRAGMA user_version is stamped and these
-    // try/catch blocks are never reached again.
-    if (currentVersion < 1) {
-      try {
-        db.execSync(`ALTER TABLE known_locations ADD COLUMN status TEXT NOT NULL DEFAULT 'active'`);
-      } catch {
-        // Column already exists from previous migration run — safe to ignore
-      }
-    }
-    if (currentVersion < 2) {
-      try {
-        db.execSync(`ALTER TABLE outside_sessions ADD COLUMN discarded INTEGER NOT NULL DEFAULT 0`);
-      } catch {
-        // Column already exists from previous migration run — safe to ignore
-      }
-    }
-    if (currentVersion < 3) {
-      try {
-        db.execSync(`ALTER TABLE outside_sessions ADD COLUMN steps INTEGER`);
-      } catch {
-        // Column already exists from previous migration run — safe to ignore
-      }
-    }
-    if (currentVersion < 4) {
-      try {
-        db.execSync(
-          `ALTER TABLE reminder_feedback ADD COLUMN scheduledMinute INTEGER NOT NULL DEFAULT 0`
-        );
-      } catch {
-        // Column already exists from previous migration run — safe to ignore
-      }
-    }
-    if (currentVersion < 5) {
-      try {
-        db.execSync(`ALTER TABLE outside_sessions ADD COLUMN distanceMeters REAL`);
-      } catch {
-        // Column already exists from previous migration run — safe to ignore
-      }
-    }
-    if (currentVersion < 6) {
-      try {
-        db.execSync(`ALTER TABLE outside_sessions ADD COLUMN averageSpeedKmh REAL`);
-      } catch {
-        // Column already exists from previous migration run — safe to ignore
-      }
-    }
-    db.execSync(`PRAGMA user_version = ${DB_VERSION}`);
-    console.log(`Database migrated from version ${currentVersion} to ${DB_VERSION}`);
-  }
-}
-
 export async function initDatabaseAsync(): Promise<void> {
   const currentVersion =
     (await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version'))?.user_version ?? 0;
@@ -466,27 +267,6 @@ export async function initDatabaseAsync(): Promise<void> {
 
 // ── Sessions ──────────────────────────────────────────────
 
-export function insertSession(session: OutsideSession): number {
-  const result = db.runSync(
-    `INSERT INTO outside_sessions (startTime, endTime, durationMinutes, source, confidence, userConfirmed, notes, steps, distanceMeters, averageSpeedKmh, discarded)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [
-      session.startTime,
-      session.endTime,
-      session.durationMinutes,
-      session.source,
-      session.confidence,
-      session.userConfirmed === null ? null : session.userConfirmed ? 1 : 0,
-      session.notes ?? null,
-      session.steps ?? null,
-      session.distanceMeters ?? null,
-      session.averageSpeedKmh ?? null,
-      session.discarded ?? 0,
-    ]
-  );
-  return result.lastInsertRowId;
-}
-
 export async function insertSessionAsync(session: OutsideSession): Promise<number> {
   const result = await db.runAsync(
     `INSERT INTO outside_sessions (startTime, endTime, durationMinutes, source, confidence, userConfirmed, notes, steps, distanceMeters, averageSpeedKmh, discarded)
@@ -522,18 +302,6 @@ export async function getSessionsForDayAsync(dateMs: number): Promise<OutsideSes
   }
 }
 
-export function getSessionsForRange(fromMs: number, toMs: number): OutsideSession[] {
-  try {
-    return db.getAllSync<OutsideSession>(
-      'SELECT * FROM outside_sessions WHERE startTime < ? AND endTime > ? ORDER BY startTime ASC',
-      [toMs, fromMs]
-    );
-  } catch (error) {
-    console.error('[getSessionsForRange] Database error:', error);
-    return [];
-  }
-}
-
 export async function getSessionsForRangeAsync(
   fromMs: number,
   toMs: number
@@ -547,10 +315,6 @@ export async function getSessionsForRangeAsync(
     console.error('[getSessionsForRangeAsync] Database error:', error);
     return [];
   }
-}
-
-export function deleteSession(id: number): void {
-  db.runSync('DELETE FROM outside_sessions WHERE id = ?', [id]);
 }
 
 export async function deleteSessionAsync(id: number): Promise<void> {
@@ -601,23 +365,6 @@ export async function insertSessionsBatchAsync(sessions: OutsideSession[]): Prom
     }
   });
   return ids;
-}
-
-export function getTodayMinutes(): number {
-  try {
-    const start = startOfDay(Date.now());
-    const end = start + 86400000;
-    const row = db.getFirstSync<{ total: number }>(
-      `SELECT COALESCE(SUM(durationMinutes), 0) as total
-       FROM outside_sessions
-       WHERE startTime >= ? AND startTime < ? AND userConfirmed = 1`,
-      [start, end]
-    );
-    return row?.total ?? 0;
-  } catch (error) {
-    console.error('[getTodayMinutes] Database error:', error);
-    return 0;
-  }
 }
 
 export async function getTodayMinutesAsync(): Promise<number> {
@@ -823,24 +570,6 @@ export async function updateSessionTimesAsync(
  *
  * Returns the number of rows deleted.
  */
-export function pruneShortDiscardedHealthConnectSessions(
-  beforeMs: number,
-  minStepsPerMinute: number
-): number {
-  const result = db.runSync(
-    `DELETE FROM outside_sessions
-     WHERE source = 'health_connect'
-       AND userConfirmed IS NULL
-       AND endTime < ?
-       AND (
-         (discarded = 1 AND durationMinutes < 5)
-         OR (steps IS NOT NULL AND durationMinutes > 0 AND CAST(steps AS REAL) / durationMinutes < ?)
-       )`,
-    [beforeMs, minStepsPerMinute]
-  );
-  return result.changes;
-}
-
 export async function pruneShortDiscardedHealthConnectSessionsAsync(
   beforeMs: number,
   minStepsPerMinute: number
@@ -861,15 +590,6 @@ export async function pruneShortDiscardedHealthConnectSessionsAsync(
 
 // ── Goals ─────────────────────────────────────────────────
 
-export function getCurrentDailyGoal(): DailyGoal | null {
-  try {
-    return db.getFirstSync<DailyGoal>('SELECT * FROM daily_goals ORDER BY createdAt DESC LIMIT 1');
-  } catch (error) {
-    console.error('[getCurrentDailyGoal] Database error:', error);
-    return null;
-  }
-}
-
 export async function getCurrentDailyGoalAsync(): Promise<DailyGoal | null> {
   try {
     return await db.getFirstAsync<DailyGoal>(
@@ -877,17 +597,6 @@ export async function getCurrentDailyGoalAsync(): Promise<DailyGoal | null> {
     );
   } catch (error) {
     console.error('[getCurrentDailyGoalAsync] Database error:', error);
-    return null;
-  }
-}
-
-export function getCurrentWeeklyGoal(): WeeklyGoal | null {
-  try {
-    return db.getFirstSync<WeeklyGoal>(
-      'SELECT * FROM weekly_goals ORDER BY createdAt DESC LIMIT 1'
-    );
-  } catch (error) {
-    console.error('[getCurrentWeeklyGoal] Database error:', error);
     return null;
   }
 }
@@ -918,59 +627,6 @@ export async function setWeeklyGoalAsync(minutes: number): Promise<void> {
 }
 
 // ── Streaks ───────────────────────────────────────────────
-
-/**
- * Calculate the current daily streak (consecutive days of reaching daily goal).
- * Returns the number of consecutive days ending today where daily goal was reached.
- *
- * Uses a single query to fetch all approved sessions within the look-back window,
- * then groups them by local calendar day in memory. This avoids opening a new DB
- * cursor for every day of the streak, which caused "AbstractCursor.close" leaks
- * on Android when navigating between screens.
- */
-export function getDailyStreak(): number {
-  try {
-    const dailyGoal = getCurrentDailyGoal();
-    if (!dailyGoal) return 0;
-
-    const targetMinutes = dailyGoal.targetMinutes;
-    const todayStart = startOfDay(Date.now());
-    // Look back at most 365 days to bound the query
-    const cutoffMs = todayStart - 365 * 86400000;
-
-    const rows = db.getAllSync<{ startTime: number; durationMinutes: number }>(
-      `SELECT startTime, durationMinutes
-       FROM outside_sessions
-       WHERE userConfirmed = 1 AND startTime >= ?
-       ORDER BY startTime DESC`,
-      [cutoffMs]
-    );
-
-    // Aggregate minutes per local calendar day
-    const minutesByDay = new Map<number, number>();
-    for (const row of rows) {
-      const dayStart = startOfDay(row.startTime);
-      minutesByDay.set(dayStart, (minutesByDay.get(dayStart) ?? 0) + row.durationMinutes);
-    }
-
-    // Count consecutive days from today going backwards
-    let streak = 0;
-    let currentDay = todayStart;
-    while (streak < 365) {
-      if ((minutesByDay.get(currentDay) ?? 0) >= targetMinutes) {
-        streak++;
-        currentDay -= 86400000;
-      } else {
-        break;
-      }
-    }
-
-    return streak;
-  } catch (error) {
-    console.error('[getDailyStreak] Database error:', error);
-    return 0;
-  }
-}
 
 export async function getDailyStreakAsync(): Promise<number> {
   try {
@@ -1012,59 +668,6 @@ export async function getDailyStreakAsync(): Promise<number> {
     return streak;
   } catch (error) {
     console.error('[getDailyStreakAsync] Database error:', error);
-    return 0;
-  }
-}
-
-/**
- * Calculate the current weekly streak (consecutive weeks of reaching weekly goal).
- * Returns the number of consecutive weeks ending with the current week where weekly goal was reached.
- *
- * Uses a single query to fetch all approved sessions within the look-back window,
- * then groups them by local calendar week in memory. This avoids opening a new DB
- * cursor for every week of the streak, which caused "AbstractCursor.close" leaks
- * on Android when navigating between screens.
- */
-export function getWeeklyStreak(): number {
-  try {
-    const weeklyGoal = getCurrentWeeklyGoal();
-    if (!weeklyGoal) return 0;
-
-    const targetMinutes = weeklyGoal.targetMinutes;
-    const thisWeekStart = startOfWeek(Date.now());
-    // Look back at most 52 weeks to bound the query
-    const cutoffMs = thisWeekStart - 52 * 7 * 86400000;
-
-    const rows = db.getAllSync<{ startTime: number; durationMinutes: number }>(
-      `SELECT startTime, durationMinutes
-       FROM outside_sessions
-       WHERE userConfirmed = 1 AND startTime >= ?
-       ORDER BY startTime DESC`,
-      [cutoffMs]
-    );
-
-    // Aggregate minutes per local calendar week
-    const minutesByWeek = new Map<number, number>();
-    for (const row of rows) {
-      const weekStart = startOfWeek(row.startTime);
-      minutesByWeek.set(weekStart, (minutesByWeek.get(weekStart) ?? 0) + row.durationMinutes);
-    }
-
-    // Count consecutive weeks from the current week going backwards
-    let streak = 0;
-    let currentWeek = thisWeekStart;
-    while (streak < 52) {
-      if ((minutesByWeek.get(currentWeek) ?? 0) >= targetMinutes) {
-        streak++;
-        currentWeek -= 7 * 86400000;
-      } else {
-        break;
-      }
-    }
-
-    return streak;
-  } catch (error) {
-    console.error('[getWeeklyStreak] Database error:', error);
     return 0;
   }
 }
@@ -1115,17 +718,6 @@ export async function getWeeklyStreakAsync(): Promise<number> {
 
 // ── Reminder feedback ─────────────────────────────────────
 
-export function insertReminderFeedback(feedback: ReminderFeedback): void {
-  const d = new Date(feedback.timestamp);
-  const minute = d.getMinutes();
-  const slotMinute = minute >= 30 ? 30 : 0;
-  db.runSync(
-    `INSERT INTO reminder_feedback (timestamp, action, scheduledHour, scheduledMinute, dayOfWeek)
-     VALUES (?, ?, ?, ?, ?)`,
-    [feedback.timestamp, feedback.action, d.getHours(), slotMinute, d.getDay()]
-  );
-}
-
 export async function insertReminderFeedbackAsync(feedback: ReminderFeedback): Promise<void> {
   const d = new Date(feedback.timestamp);
   const minute = d.getMinutes();
@@ -1137,12 +729,6 @@ export async function insertReminderFeedbackAsync(feedback: ReminderFeedback): P
   );
 }
 
-export function getReminderFeedback(): ReminderFeedback[] {
-  return db.getAllSync<ReminderFeedback>(
-    'SELECT * FROM reminder_feedback ORDER BY timestamp DESC LIMIT 200'
-  );
-}
-
 export async function getReminderFeedbackAsync(): Promise<ReminderFeedback[]> {
   return await db.getAllAsync<ReminderFeedback>(
     'SELECT * FROM reminder_feedback ORDER BY timestamp DESC LIMIT 200'
@@ -1150,17 +736,6 @@ export async function getReminderFeedbackAsync(): Promise<ReminderFeedback[]> {
 }
 
 // ── Known locations ───────────────────────────────────────
-
-export function getKnownLocations(): KnownLocation[] {
-  try {
-    return db
-      .getAllSync<KnownLocationRow>('SELECT * FROM known_locations WHERE status = ?', ['active'])
-      .map(mapLocation);
-  } catch (error) {
-    console.error('[getKnownLocations] Database error:', error);
-    return [];
-  }
-}
 
 export async function getKnownLocationsAsync(): Promise<KnownLocation[]> {
   try {
@@ -1171,15 +746,6 @@ export async function getKnownLocationsAsync(): Promise<KnownLocation[]> {
     return rows.map(mapLocation);
   } catch (error) {
     console.error('[getKnownLocationsAsync] Database error:', error);
-    return [];
-  }
-}
-
-export function getAllKnownLocations(): KnownLocation[] {
-  try {
-    return db.getAllSync<KnownLocationRow>('SELECT * FROM known_locations').map(mapLocation);
-  } catch (error) {
-    console.error('[getAllKnownLocations] Database error:', error);
     return [];
   }
 }
@@ -1247,29 +813,6 @@ function mapLocation(row: KnownLocationRow): KnownLocation {
   };
 }
 
-export function upsertKnownLocation(loc: KnownLocation): void {
-  const status = loc.status ?? 'active';
-  if (loc.id) {
-    db.runSync(
-      `UPDATE known_locations SET label=?, latitude=?, longitude=?, radiusMeters=?, isIndoor=?, status=? WHERE id=?`,
-      [
-        loc.label,
-        loc.latitude,
-        loc.longitude,
-        loc.radiusMeters,
-        loc.isIndoor ? 1 : 0,
-        status,
-        loc.id,
-      ]
-    );
-  } else {
-    db.runSync(
-      `INSERT INTO known_locations (label, latitude, longitude, radiusMeters, isIndoor, status) VALUES (?,?,?,?,?,?)`,
-      [loc.label, loc.latitude, loc.longitude, loc.radiusMeters, loc.isIndoor ? 1 : 0, status]
-    );
-  }
-}
-
 export async function upsertKnownLocationAsync(loc: KnownLocation): Promise<void> {
   const status = loc.status ?? 'active';
   if (loc.id) {
@@ -1303,18 +846,6 @@ export async function deleteKnownLocationAsync(id: number): Promise<void> {
 
 // ── Settings ──────────────────────────────────────────────
 
-export function getSetting(key: string, fallback: string): string {
-  try {
-    const row = db.getFirstSync<{ value: string }>('SELECT value FROM app_settings WHERE key = ?', [
-      key,
-    ]);
-    return row?.value ?? fallback;
-  } catch (error) {
-    console.error('[getSetting] Database error:', error);
-    return fallback;
-  }
-}
-
 export async function getSettingAsync(key: string, fallback: string): Promise<string> {
   try {
     const row = await db.getFirstAsync<{ value: string }>(
@@ -1326,10 +857,6 @@ export async function getSettingAsync(key: string, fallback: string): Promise<st
     console.error('[getSettingAsync] Database error:', error);
     return fallback;
   }
-}
-
-export function setSetting(key: string, value: string): void {
-  db.runSync('INSERT OR REPLACE INTO app_settings (key, value) VALUES (?, ?)', [key, value]);
 }
 
 export async function setSettingAsync(key: string, value: string): Promise<void> {
@@ -1394,29 +921,6 @@ export function startOfNextMonth(ms: number): number {
 
 // ── Weather ───────────────────────────────────────────────
 
-export function saveWeatherConditions(conditions: WeatherCondition[]): void {
-  for (const condition of conditions) {
-    db.runSync(
-      `INSERT INTO weather_conditions 
-       (timestamp, forecastHour, forecastDate, temperature, precipitationProbability, 
-        cloudCover, uvIndex, windSpeed, weatherCode, isDay)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        condition.timestamp,
-        condition.forecastHour,
-        condition.forecastDate,
-        condition.temperature,
-        condition.precipitationProbability,
-        condition.cloudCover,
-        condition.uvIndex,
-        condition.windSpeed,
-        condition.weatherCode,
-        condition.isDay ? 1 : 0,
-      ]
-    );
-  }
-}
-
 export async function saveWeatherConditionsAsync(conditions: WeatherCondition[]): Promise<void> {
   await db.withTransactionAsync(async () => {
     for (const condition of conditions) {
@@ -1440,33 +944,6 @@ export async function saveWeatherConditionsAsync(conditions: WeatherCondition[])
       );
     }
   });
-}
-
-export function getWeatherConditionsForHour(
-  forecastDate: number,
-  startHour: number,
-  endHour: number
-): WeatherCondition[] {
-  const rows = db.getAllSync<WeatherConditionRow>(
-    `SELECT * FROM weather_conditions 
-     WHERE forecastDate = ? AND forecastHour >= ? AND forecastHour < ?
-     ORDER BY forecastHour ASC`,
-    [forecastDate, startHour, endHour]
-  );
-
-  return rows.map((row) => ({
-    id: row.id,
-    timestamp: row.timestamp,
-    forecastHour: row.forecastHour,
-    forecastDate: row.forecastDate,
-    temperature: row.temperature,
-    precipitationProbability: row.precipitationProbability,
-    cloudCover: row.cloudCover,
-    uvIndex: row.uvIndex,
-    windSpeed: row.windSpeed,
-    weatherCode: row.weatherCode,
-    isDay: row.isDay === 1,
-  }));
 }
 
 export async function getWeatherConditionsForHourAsync(
@@ -1496,14 +973,6 @@ export async function getWeatherConditionsForHourAsync(
   }));
 }
 
-export function saveWeatherCache(cache: WeatherCache): void {
-  db.runSync(
-    `INSERT OR REPLACE INTO weather_cache (id, fetchedAt, latitude, longitude, expiresAt)
-     VALUES (1, ?, ?, ?, ?)`,
-    [cache.fetchedAt, cache.latitude, cache.longitude, cache.expiresAt]
-  );
-}
-
 export async function saveWeatherCacheAsync(cache: WeatherCache): Promise<void> {
   await db.runAsync(
     `INSERT OR REPLACE INTO weather_cache (id, fetchedAt, latitude, longitude, expiresAt)
@@ -1512,18 +981,8 @@ export async function saveWeatherCacheAsync(cache: WeatherCache): Promise<void> 
   );
 }
 
-export function getWeatherCache(): WeatherCache | null {
-  return db.getFirstSync<WeatherCache>('SELECT * FROM weather_cache WHERE id = 1');
-}
-
 export async function getWeatherCacheAsync(): Promise<WeatherCache | null> {
   return await db.getFirstAsync<WeatherCache>('SELECT * FROM weather_cache WHERE id = 1');
-}
-
-export function clearExpiredWeatherData(now: number): void {
-  // Delete weather conditions older than 24 hours
-  const cutoff = now - 24 * 60 * 60 * 1000;
-  db.runSync('DELETE FROM weather_conditions WHERE timestamp < ?', [cutoff]);
 }
 
 export async function clearExpiredWeatherDataAsync(now: number): Promise<void> {
@@ -1532,25 +991,6 @@ export async function clearExpiredWeatherDataAsync(now: number): Promise<void> {
 }
 
 // ── Scheduled Notifications ───────────────────────────────
-
-export function getScheduledNotifications(): ScheduledNotification[] {
-  const rows = db.getAllSync<ScheduledNotificationRow>(
-    'SELECT * FROM scheduled_notifications ORDER BY hour, minute'
-  );
-  return rows.map((row) => ({
-    id: row.id,
-    hour: row.hour,
-    minute: row.minute,
-    daysOfWeek: row.daysOfWeek
-      ? row.daysOfWeek
-          .split(',')
-          .map((d: string) => parseInt(d.trim(), 10))
-          .filter((d: number) => !isNaN(d) && d >= 0 && d <= 6) // Filter out invalid values
-      : [], // Handle empty/null daysOfWeek
-    enabled: row.enabled,
-    label: row.label,
-  }));
-}
 
 export async function getScheduledNotificationsAsync(): Promise<ScheduledNotification[]> {
   const rows = await db.getAllAsync<ScheduledNotificationRow>(
@@ -1629,27 +1069,6 @@ export async function toggleScheduledNotificationAsync(
   ]);
 }
 
-/**
- * Clean up corrupted scheduled notifications with invalid daysOfWeek data.
- * This removes notifications that have empty or invalid day selections.
- */
-export function cleanupInvalidScheduledNotifications(): number {
-  // Find and delete notifications with empty or invalid daysOfWeek
-  const result = db.runSync(
-    `DELETE FROM scheduled_notifications 
-     WHERE daysOfWeek = '' 
-        OR daysOfWeek IS NULL 
-        OR length(trim(daysOfWeek)) = 0`
-  );
-
-  const deletedCount = result.changes;
-  if (deletedCount > 0) {
-    console.log(`Cleaned up ${deletedCount} corrupted scheduled notification(s)`);
-  }
-
-  return deletedCount;
-}
-
 export async function cleanupInvalidScheduledNotificationsAsync(): Promise<number> {
   const result = await db.runAsync(
     `DELETE FROM scheduled_notifications 
@@ -1679,35 +1098,6 @@ export interface BackgroundTaskLog {
 
 /** Maximum number of log entries to keep per category (oldest are pruned). */
 const MAX_LOGS_PER_CATEGORY = 200;
-
-/**
- * Insert a background task log entry. Prunes oldest entries when the per-category
- * limit is exceeded so the log table stays bounded in size.
- */
-export function insertBackgroundLog(category: BackgroundLogCategory, message: string): void {
-  try {
-    const now = Date.now();
-    db.runSync('INSERT INTO background_task_logs (timestamp, category, message) VALUES (?, ?, ?)', [
-      now,
-      category,
-      message,
-    ]);
-    // Prune oldest beyond limit
-    db.runSync(
-      `DELETE FROM background_task_logs
-       WHERE category = ?
-         AND id NOT IN (
-           SELECT id FROM background_task_logs
-           WHERE category = ?
-           ORDER BY timestamp DESC
-           LIMIT ?
-         )`,
-      [category, category, MAX_LOGS_PER_CATEGORY]
-    );
-  } catch {
-    // Log writing is best-effort — never crash the background task
-  }
-}
 
 export async function insertBackgroundLogAsync(
   category: BackgroundLogCategory,

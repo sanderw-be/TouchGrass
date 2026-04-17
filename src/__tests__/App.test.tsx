@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react-native';
+import { render, screen, waitFor } from '@testing-library/react-native';
 import App from '../../App';
 import { useAppInitialization } from '../hooks/useAppInitialization';
 import { useOTAUpdates } from '../hooks/useOTAUpdates';
@@ -55,39 +55,49 @@ describe('<App />', () => {
     });
   });
 
-  it('renders font loading indicator if fonts are not loaded', () => {
+  it('renders font loading indicator if fonts are not loaded', async () => {
     mockUseFonts.mockReturnValue([false]);
     render(<App />);
-    expect(screen.getByTestId('activity-indicator')).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.queryByTestId('activity-indicator')).toBeTruthy();
+    });
   });
 
-  it('renders UpdateSplashScreen if OTA update is in progress', () => {
+  it('renders UpdateSplashScreen if OTA update is in progress', async () => {
     mockUseOTAUpdates.mockReturnValue({ updateStatus: 'downloading' });
     render(<App />);
-    expect(screen.getByTestId('update-splash-screen')).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.queryByTestId('update-splash-screen')).toBeTruthy();
+    });
   });
 
-  it('renders loading indicator while app is not ready', () => {
+  it('renders loading indicator while app is not ready', async () => {
     mockUseAppInitialization.mockReturnValue({
       ...mockUseAppInitialization(),
       isReady: false,
     });
     render(<App />);
-    expect(screen.getByTestId('activity-indicator')).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.queryByTestId('activity-indicator')).toBeTruthy();
+    });
   });
 
-  it('renders IntroScreen if showIntro is true', () => {
+  it('renders IntroScreen if showIntro is true', async () => {
     mockUseAppInitialization.mockReturnValue({
       ...mockUseAppInitialization(),
       isReady: true,
       showIntro: true,
     });
     render(<App />);
-    expect(screen.getByTestId('intro-screen')).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.queryByTestId('intro-screen')).toBeTruthy();
+    });
   });
 
-  it('renders AppNavigator when ready and intro is complete', () => {
+  it('renders AppNavigator when ready and intro is complete', async () => {
     render(<App />);
-    expect(screen.getByTestId('app-navigator')).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.queryByTestId('app-navigator')).toBeTruthy();
+    });
   });
 });

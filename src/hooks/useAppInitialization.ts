@@ -3,7 +3,7 @@ import {
   performCriticalInitializationAsync,
   performDeferredInitialization,
 } from '../../appBootstrap';
-import { setSetting } from '../storage/database';
+import { setSettingAsync } from '../storage/database';
 import i18n, { getDeviceSupportedLocale } from '../i18n';
 
 interface AppInitializationState {
@@ -50,17 +50,23 @@ export function useAppInitialization(): AppInitializationState {
   const setLocale = useCallback((code: string) => {
     const languagePreference = code === 'system' ? 'system' : code;
     i18n.locale = languagePreference === 'system' ? getDeviceSupportedLocale() : languagePreference;
-    setSetting('language', languagePreference);
+    setSettingAsync('language', languagePreference).catch((err) =>
+      console.error('[useAppInitialization] Failed to save language preference:', err)
+    );
     setLocaleState(languagePreference);
   }, []);
 
   const handleShowIntro = () => {
-    setSetting('hasCompletedIntro', '0');
+    setSettingAsync('hasCompletedIntro', '0').catch((err) =>
+      console.error('[useAppInitialization] Failed to reset intro status:', err)
+    );
     setShowIntro(true);
   };
 
   const handleIntroComplete = () => {
-    setSetting('hasCompletedIntro', '1');
+    setSettingAsync('hasCompletedIntro', '1').catch((err) =>
+      console.error('[useAppInitialization] Failed to save intro completion:', err)
+    );
     setShowIntro(false);
     // deferredInitDone is still false because the deferred init effect was
     // blocked while showIntro was true. It will fire automatically once

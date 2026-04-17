@@ -14,9 +14,9 @@ jest.mock('../detection', () => ({
 }));
 
 // Mock database
-const mockGetSetting = jest.fn((key: string, def: string) => def);
+const mockGetSetting = jest.fn(async (key: string, def: string) => def);
 jest.mock('../storage/database', () => ({
-  getSetting: (key: string, def: string) => mockGetSetting(key, def),
+  getSettingAsync: (key: string, def: string) => mockGetSetting(key, def),
 }));
 
 // Mock calendar service
@@ -33,7 +33,7 @@ import * as CalendarService from '../calendar/calendarService';
 describe('countPermissionIssues', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockGetSetting.mockImplementation((key: string, def: string) => def);
+    mockGetSetting.mockImplementation(async (key: string, def: string) => def);
     (detection.getDetectionStatus as jest.Mock).mockResolvedValue({
       gps: false,
       gpsPermission: true,
@@ -52,7 +52,7 @@ describe('countPermissionIssues', () => {
   it('returns zero issues when everything is fine', async () => {
     const Notifications = require('expo-notifications');
     (Notifications.getPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'granted' });
-    mockGetSetting.mockImplementation((key: string, def: string) => {
+    mockGetSetting.mockImplementation(async (key: string, def: string) => {
       if (key === 'smart_reminders_count') return '0'; // reminders off
       return def;
     });
@@ -69,7 +69,7 @@ describe('countPermissionIssues', () => {
       healthConnectPermission: true,
     });
     (detection.checkGPSPermissions as jest.Mock).mockResolvedValue(false);
-    mockGetSetting.mockImplementation((key: string, def: string) => {
+    mockGetSetting.mockImplementation(async (key: string, def: string) => {
       if (key === 'smart_reminders_count') return '0';
       return def;
     });
@@ -88,7 +88,7 @@ describe('countPermissionIssues', () => {
       healthConnectPermission: false,
     });
     (detection.checkGPSPermissions as jest.Mock).mockResolvedValue(true); // live OS check: granted
-    mockGetSetting.mockImplementation((key: string, def: string) => {
+    mockGetSetting.mockImplementation(async (key: string, def: string) => {
       if (key === 'smart_reminders_count') return '0';
       if (key === 'weather_enabled') return '0';
       return def;
@@ -106,7 +106,7 @@ describe('countPermissionIssues', () => {
       healthConnectPermission: false, // stale cache value
     });
     (detection.recheckHealthConnect as jest.Mock).mockResolvedValue(true); // live OS check: granted
-    mockGetSetting.mockImplementation((key: string, def: string) => {
+    mockGetSetting.mockImplementation(async (key: string, def: string) => {
       if (key === 'smart_reminders_count') return '0';
       if (key === 'weather_enabled') return '0';
       return def;
@@ -118,7 +118,7 @@ describe('countPermissionIssues', () => {
 
   it('counts weather permission issue as goals issue', async () => {
     (detection.checkWeatherLocationPermissions as jest.Mock).mockResolvedValue(false);
-    mockGetSetting.mockImplementation((key: string, def: string) => {
+    mockGetSetting.mockImplementation(async (key: string, def: string) => {
       if (key === 'weather_enabled') return '1';
       if (key === 'smart_reminders_count') return '0';
       return def;
@@ -131,7 +131,7 @@ describe('countPermissionIssues', () => {
   it('counts notification permission issue as goals issue when smart reminders are on', async () => {
     const Notifications = require('expo-notifications');
     (Notifications.getPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'denied' });
-    mockGetSetting.mockImplementation((key: string, def: string) => {
+    mockGetSetting.mockImplementation(async (key: string, def: string) => {
       if (key === 'smart_reminders_count') return '2';
       return def;
     });
@@ -143,7 +143,7 @@ describe('countPermissionIssues', () => {
   it('does not count notification permission issue when smart reminders are off', async () => {
     const Notifications = require('expo-notifications');
     (Notifications.getPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'denied' });
-    mockGetSetting.mockImplementation((key: string, def: string) => {
+    mockGetSetting.mockImplementation(async (key: string, def: string) => {
       if (key === 'smart_reminders_count') return '0';
       if (key === 'weather_enabled') return '0'; // disable weather to isolate
       return def;
@@ -156,7 +156,7 @@ describe('countPermissionIssues', () => {
   it('counts notification permission as granted when status is granted', async () => {
     const Notifications = require('expo-notifications');
     (Notifications.getPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'granted' });
-    mockGetSetting.mockImplementation((key: string, def: string) => {
+    mockGetSetting.mockImplementation(async (key: string, def: string) => {
       if (key === 'smart_reminders_count') return '2';
       if (key === 'weather_enabled') return '0'; // disable weather to isolate
       return def;

@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react-native';
+import { render, screen, waitFor } from '@testing-library/react-native';
 import { View, Text } from 'react-native';
 import { AppProviders } from '../components/AppProviders';
 
@@ -10,7 +10,7 @@ jest.mock('../components/ReminderFeedbackModal', () => {
 });
 
 describe('AppProviders', () => {
-  it('renders children and ReminderFeedbackModal', () => {
+  it('renders children and ReminderFeedbackModal', async () => {
     render(
       <AppProviders>
         <View>
@@ -19,7 +19,9 @@ describe('AppProviders', () => {
       </AppProviders>
     );
 
-    expect(screen.getByTestId('child-text')).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.queryByTestId('child-text')).toBeTruthy();
+    });
     expect(screen.getByText('Child Content')).toBeTruthy();
     expect(screen.getByTestId('reminder-feedback-modal')).toBeTruthy();
   });

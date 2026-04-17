@@ -1,7 +1,7 @@
 import { renderHook, act } from '@testing-library/react-native';
 import { AppState, InteractionManager } from 'react-native';
 import { useForegroundSync } from '../hooks/useForegroundSync';
-import { getSetting } from '../storage/database';
+import { getSettingAsync } from '../storage/database';
 import { scheduleDayReminders, processReminderQueue } from '../notifications/notificationManager';
 import { cleanupTouchGrassCalendars } from '../calendar/calendarService';
 import { scheduleNextAlarmPulse } from '../background/alarmTiming';
@@ -24,7 +24,7 @@ jest.mock('react-native', () => {
 });
 
 // Mock internal dependencies
-jest.mock('../storage/database', () => ({ getSetting: jest.fn() }));
+jest.mock('../storage/database', () => ({ getSettingAsync: jest.fn() }));
 jest.mock('../notifications/notificationManager', () => ({
   scheduleDayReminders: jest.fn().mockResolvedValue(undefined),
   processReminderQueue: jest.fn().mockResolvedValue(undefined),
@@ -68,35 +68,35 @@ describe('useForegroundSync', () => {
     expect(mockRemove).toHaveBeenCalled();
   });
 
-  it('should not run sync functions if transitioning to a non-active state', () => {
+  it('should not run sync functions if transitioning to a non-active state', async () => {
     renderHook(() => useForegroundSync());
 
-    act(() => {
+    await act(async () => {
       appStateChangeHandler('inactive'); // transitioning to inactive, not active
     });
 
-    expect(getSetting).not.toHaveBeenCalled();
+    expect(getSettingAsync).not.toHaveBeenCalled();
     expect(refreshBatteryOptimizationSetting).not.toHaveBeenCalled();
   });
 
-  it('should not run sync functions if intro is not completed', () => {
-    (getSetting as jest.Mock).mockReturnValue('0'); // Intro not completed
+  it('should not run sync functions if intro is not completed', async () => {
+    (getSettingAsync as jest.Mock).mockResolvedValue('0'); // Intro not completed
     renderHook(() => useForegroundSync());
 
-    act(() => {
+    await act(async () => {
       appStateChangeHandler('active');
     });
 
-    expect(getSetting).toHaveBeenCalledWith('hasCompletedIntro', '0');
+    expect(getSettingAsync).toHaveBeenCalledWith('hasCompletedIntro', '0');
     expect(refreshBatteryOptimizationSetting).not.toHaveBeenCalled();
     expect(scheduleDayReminders).not.toHaveBeenCalled();
   });
 
-  it('should run sync functions deferred by InteractionManager when intro is completed and foregrounded', () => {
-    (getSetting as jest.Mock).mockReturnValue('1'); // Intro completed
+  it('should run sync functions deferred by InteractionManager when intro is completed and foregrounded', async () => {
+    (getSettingAsync as jest.Mock).mockResolvedValue('1'); // Intro completed
     renderHook(() => useForegroundSync());
 
-    act(() => {
+    await act(async () => {
       appStateChangeHandler('active');
     });
 
