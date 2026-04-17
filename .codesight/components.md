@@ -29,6 +29,7 @@
 - **EventsScreen** — `src/screens/EventsScreen.tsx`
 - **FeedbackSupportScreen** — `src/screens/FeedbackSupportScreen.tsx`
 - **GoalsScreen** — `src/screens/GoalsScreen.tsx`
+- **HealthConnectRationaleScreen** — `src/screens/HealthConnectRationaleScreen.tsx`
 - **HistoryScreen** — `src/screens/HistoryScreen.tsx`
 - **BarChart** — props: data, target, maxValue, period, isLoading — `src/screens/HistoryScreen.tsx`
 - **HomeScreen** — `src/screens/HomeScreen.tsx`

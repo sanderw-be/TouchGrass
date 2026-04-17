@@ -2,7 +2,7 @@
 
 > **Navigation aid.** Component inventory and prop signatures extracted via AST. Read the source files before adding props or modifying component logic.
 
-**39 components** (react)
+**40 components** (react)
 
 ## Components
 
@@ -35,6 +35,7 @@
 - **EventsScreen** — `src/screens/EventsScreen.tsx`
 - **FeedbackSupportScreen** — `src/screens/FeedbackSupportScreen.tsx`
 - **GoalsScreen** — `src/screens/GoalsScreen.tsx`
+- **HealthConnectRationaleScreen** — `src/screens/HealthConnectRationaleScreen.tsx`
 - **HistoryScreen** — `src/screens/HistoryScreen.tsx`
 - **BarChart** — props: data, target, maxValue, period, isLoading — `src/screens/HistoryScreen.tsx`
 - **HomeScreen** — `src/screens/HomeScreen.tsx`
