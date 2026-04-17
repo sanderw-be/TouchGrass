@@ -2,7 +2,7 @@
 
 > **Navigation aid.** Library inventory extracted via AST. Read the source files listed here before modifying exported functions.
 
-**30 library files** across 10 modules
+**32 library files** across 11 modules
 
 ## Utils (9 files)
 
@@ -32,16 +32,17 @@
 - `src/background/unifiedBackgroundTask.ts` — registerUnifiedBackgroundTask, unregisterUnifiedBackgroundTask, UNIFIED_BACKGROUND_TASK
 - `src/background/backgroundTick.ts` — performBackgroundTick
 
+## Hooks (3 files)
+
+- `src/hooks/useOTAUpdates.ts` — useOTAUpdates, OTAUpdateStatus
+- `src/hooks/useAppInitialization.ts` — useAppInitialization
+- `src/hooks/useForegroundSync.ts` — useForegroundSync
+
 ## Notifications (3 files)
 
 - `src/notifications/notificationManager.ts` — \_resetSchedulingGuards, logReminderQueueSnapshot, setupNotificationInfrastructure, requestNotificationPermissions, setupNotifications, scheduleNextReminder, …
 - `src/notifications/reminderAlgorithm.ts` — scoreReminderHours, shouldRemindNow, ScoreContributor, HourScore
 - `src/notifications/scheduledNotifications.ts` — scheduleAllScheduledNotifications, cancelAllScheduledNotifications, isSlotNearScheduledNotification, hasScheduledNotificationNearby
-
-## Hooks (2 files)
-
-- `src/hooks/useOTAUpdates.ts` — useOTAUpdates, OTAUpdateStatus
-- `src/hooks/useForegroundSync.ts` — useForegroundSync
 
 ## Weather (2 files)
 
@@ -51,6 +52,10 @@
 ## Alarm-bridge-native (1 files)
 
 - `modules/alarm-bridge-native/src/index.ts` — scheduleNextPulse, cancelPulse, PULSE_TASK_NAME
+
+## AppBootstrap.ts (1 files)
+
+- `appBootstrap.ts` — performCriticalInitialization, performDeferredInitialization, CriticalAppState
 
 ## Calendar (1 files)
 
