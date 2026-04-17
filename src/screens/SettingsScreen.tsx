@@ -32,7 +32,6 @@ import {
   toggleGPS,
   recheckHealthConnect,
   checkGPSPermissions,
-  requestHealthConnect,
   requestGPSPermissions,
 } from '../detection/index';
 import PermissionExplainerSheet, {
@@ -167,18 +166,13 @@ export default function SettingsScreen() {
       body: t('settings_hc_permission_body'),
       openLabel: t('intro_hc_button'),
       onOpen: async () => {
-        const granted = await requestHealthConnect();
-        if (granted) {
-          await recheckHealthConnect();
-          setDetectionStatus(await getDetectionStatus());
-          emitPermissionIssuesChanged();
-        }
         setPermissionSheet(null);
+        navigation.navigate('HealthConnectRationale');
       },
       onCancel: disableHC,
       onDisable: disableHC,
     });
-  }, []);
+  }, [navigation]);
 
   const showGPSPermissionSheet = useCallback(() => {
     const disableGPS = async () => {

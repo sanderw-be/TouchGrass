@@ -105,7 +105,7 @@ describe('IntroScreen', () => {
 
     // Advance to step 2: health-connect
     fireEvent.press(getByText('intro_next'));
-    expect(getByText('intro_hc_title')).toBeTruthy();
+    expect(getByText('hc_rationale_title')).toBeTruthy();
 
     // Advance to step 3: location
     fireEvent.press(getByText('intro_next'));
@@ -236,7 +236,7 @@ describe('IntroScreen', () => {
       const utils = render(<IntroScreen onComplete={onComplete} />);
       // welcome → health-connect
       fireEvent.press(utils.getByText('intro_next'));
-      await waitFor(() => expect(utils.getByText('intro_hc_title')).toBeTruthy());
+      await waitFor(() => expect(utils.getByText('hc_rationale_title')).toBeTruthy());
       return { ...utils, onComplete };
     }
 

@@ -439,6 +439,27 @@ describe('SettingsScreen permission explainer disable button', () => {
     });
   });
 
+  it('navigates to HealthConnectRationale when Connect is pressed on the HC permission sheet', async () => {
+    (DetectionModule.getDetectionStatus as jest.Mock).mockResolvedValue({
+      healthConnect: true,
+      healthConnectPermission: false,
+      gps: false,
+      gpsPermission: false,
+    });
+
+    const { getByText, findByTestId } = render(<SettingsScreen />);
+    await waitFor(() => expect(getByText('settings_hc_permission_missing')).toBeTruthy());
+
+    fireEvent.press(getByText('settings_hc_permission_missing'));
+    await findByTestId('permission-explainer-sheet');
+
+    await act(async () => {
+      fireEvent.press(await findByTestId('permission-open-settings-btn'));
+    });
+
+    expect(mockNavigate).toHaveBeenCalledWith('HealthConnectRationale');
+  });
+
   it('shows disable button in GPS permission sheet and disables GPS when tapped', async () => {
     (DetectionModule.getDetectionStatus as jest.Mock).mockResolvedValue({
       healthConnect: false,

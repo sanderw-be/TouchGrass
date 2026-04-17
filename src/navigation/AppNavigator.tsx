@@ -25,11 +25,13 @@ const KnownLocationsScreen = lazy(() => import('../screens/KnownLocationsScreen'
 const FeedbackSupportScreen = lazy(() => import('../screens/FeedbackSupportScreen'));
 const ActivityLogScreen = lazy(() => import('../screens/ActivityLogScreen'));
 const AboutAppScreen = lazy(() => import('../screens/AboutAppScreen'));
+const HealthConnectRationaleScreen = lazy(() => import('../screens/HealthConnectRationaleScreen'));
 
 export type GoalsStackParamList = {
   GoalsMain: undefined;
   WeatherSettings: undefined;
   ScheduledNotifications: undefined;
+  HealthConnectRationale: undefined;
 };
 
 export type SettingsStackParamList = {
@@ -38,6 +40,7 @@ export type SettingsStackParamList = {
   FeedbackSupport: undefined;
   ActivityLog: undefined;
   AboutApp: undefined;
+  HealthConnectRationale: undefined;
 };
 
 const Tab = createBottomTabNavigator();
@@ -122,6 +125,16 @@ function GoalsStackNavigator() {
           </Suspense>
         )}
       </GoalsStack.Screen>
+      <GoalsStack.Screen
+        name="HealthConnectRationale"
+        options={{ presentation: 'modal', headerShown: false }}
+      >
+        {() => (
+          <Suspense fallback={<ScreenFallback />}>
+            <HealthConnectRationaleScreen />
+          </Suspense>
+        )}
+      </GoalsStack.Screen>
     </GoalsStack.Navigator>
   );
 }
@@ -168,6 +181,16 @@ function SettingsStackNavigator() {
         {() => (
           <Suspense fallback={<ScreenFallback />}>
             <AboutAppScreen />
+          </Suspense>
+        )}
+      </SettingsStack.Screen>
+      <SettingsStack.Screen
+        name="HealthConnectRationale"
+        options={{ presentation: 'modal', headerShown: false }}
+      >
+        {() => (
+          <Suspense fallback={<ScreenFallback />}>
+            <HealthConnectRationaleScreen />
           </Suspense>
         )}
       </SettingsStack.Screen>
