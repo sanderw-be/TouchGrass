@@ -55,7 +55,7 @@
 
 ## AppBootstrap.ts (1 files)
 
-- `appBootstrap.ts` — performCriticalInitialization, performDeferredInitialization, CriticalAppState
+- `appBootstrap.ts` — performCriticalInitialization, performCriticalInitializationAsync, performDeferredInitialization, CriticalAppState
 
 ## Calendar (1 files)
 
@@ -67,7 +67,7 @@
 
 ## Storage (1 files)
 
-- `src/storage/database.ts` — initDatabase, insertSession, insertSessionAsync, getSessionsForDayAsync, getSessionsForRange, getSessionsForRangeAsync, …
+- `src/storage/database.ts` — initDatabase, initDatabaseAsync, insertSession, insertSessionAsync, getSessionsForDayAsync, getSessionsForRange, …
 
 ---
 

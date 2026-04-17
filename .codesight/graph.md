@@ -2,7 +2,7 @@
 
 ## Most Imported Files (change these carefully)
 
-- `src/storage/database.ts` — imported by **74** files
+- `src/storage/database.ts` — imported by **72** files
 - `src/i18n/index.ts` — imported by **46** files
 - `src/context/ThemeContext.tsx` — imported by **31** files
 - `src/utils/theme.ts` — imported by **27** files
@@ -25,7 +25,7 @@
 
 ## Import Map (who imports what)
 
-- `src/storage/database.ts` ← `appBootstrap.ts`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx` +69 more
+- `src/storage/database.ts` ← `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/HistoryScreen.test.tsx` +67 more
 - `src/i18n/index.ts` ← `appBootstrap.ts`, `src/__tests__/ErrorBoundary.test.tsx`, `src/__tests__/FeedbackSupportScreen.test.tsx`, `src/__tests__/LanguageContext.test.tsx`, `src/__tests__/appBootstrap.test.ts` +41 more
 - `src/context/ThemeContext.tsx` ← `App.tsx`, `src/__tests__/ThemeContext.test.tsx`, `src/components/AppProviders.tsx`, `src/components/DiagnosticSheet.tsx`, `src/components/EditLocationSheet.tsx` +26 more
 - `src/utils/theme.ts` ← `src/__tests__/ThemeContext.test.tsx`, `src/components/DiagnosticSheet.tsx`, `src/components/EditLocationSheet.tsx`, `src/components/EditSessionSheet.tsx`, `src/components/ErrorBoundary.tsx` +22 more

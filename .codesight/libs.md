@@ -2,6 +2,7 @@
 
 - `appBootstrap.ts`
   - function performCriticalInitialization: () => CriticalAppState
+  - function performCriticalInitializationAsync: () => Promise<CriticalAppState>
   - function performDeferredInitialization: () => void
   - interface CriticalAppState
 - `modules/alarm-bridge-native/src/index.ts`
@@ -92,12 +93,12 @@
   - function hasScheduledNotificationNearby: (windowMinutes) => Promise<boolean>
 - `src/storage/database.ts`
   - function initDatabase: () => void
+  - function initDatabaseAsync: () => Promise<void>
   - function insertSession: (session) => number
   - function insertSessionAsync: (session) => Promise<number>
   - function getSessionsForDayAsync: (dateMs) => Promise<OutsideSession[]>
   - function getSessionsForRange: (fromMs, toMs) => OutsideSession[]
-  - function getSessionsForRangeAsync: (fromMs, toMs) => Promise<OutsideSession[]>
-  - _...81 more_
+  - _...82 more_
 - `src/utils/batteryOptimization.ts`
   - function isBatteryOptimizationDisabled
   - function refreshBatteryOptimizationSetting

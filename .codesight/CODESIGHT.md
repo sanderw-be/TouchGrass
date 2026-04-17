@@ -4,7 +4,7 @@
 
 > 0 routes | 0 models | 39 components | 32 lib files | 2 env vars | 1 middleware | 0% test coverage
 > **Token savings:** this file is ~4,600 tokens. Without it, AI exploration would cost ~30,600 tokens. **Saves ~26,000 tokens per conversation.**
-> **Last scanned:** 2026-04-17 13:00 — re-run after significant changes
+> **Last scanned:** 2026-04-17 13:07 — re-run after significant changes
 
 ---
 
@@ -56,6 +56,7 @@
 
 - `appBootstrap.ts`
   - function performCriticalInitialization: () => CriticalAppState
+  - function performCriticalInitializationAsync: () => Promise<CriticalAppState>
   - function performDeferredInitialization: () => void
   - interface CriticalAppState
 - `modules/alarm-bridge-native/src/index.ts`
@@ -146,12 +147,12 @@
   - function hasScheduledNotificationNearby: (windowMinutes) => Promise<boolean>
 - `src/storage/database.ts`
   - function initDatabase: () => void
+  - function initDatabaseAsync: () => Promise<void>
   - function insertSession: (session) => number
   - function insertSessionAsync: (session) => Promise<number>
   - function getSessionsForDayAsync: (dateMs) => Promise<OutsideSession[]>
   - function getSessionsForRange: (fromMs, toMs) => OutsideSession[]
-  - function getSessionsForRangeAsync: (fromMs, toMs) => Promise<OutsideSession[]>
-  - _...81 more_
+  - _...82 more_
 - `src/utils/batteryOptimization.ts`
   - function isBatteryOptimizationDisabled
   - function refreshBatteryOptimizationSetting
@@ -232,7 +233,7 @@
 
 ## Most Imported Files (change these carefully)
 
-- `src/storage/database.ts` — imported by **74** files
+- `src/storage/database.ts` — imported by **72** files
 - `src/i18n/index.ts` — imported by **46** files
 - `src/context/ThemeContext.tsx` — imported by **31** files
 - `src/utils/theme.ts` — imported by **27** files
@@ -255,7 +256,7 @@
 
 ## Import Map (who imports what)
 
-- `src/storage/database.ts` ← `appBootstrap.ts`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx` +69 more
+- `src/storage/database.ts` ← `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/HistoryScreen.test.tsx` +67 more
 - `src/i18n/index.ts` ← `appBootstrap.ts`, `src/__tests__/ErrorBoundary.test.tsx`, `src/__tests__/FeedbackSupportScreen.test.tsx`, `src/__tests__/LanguageContext.test.tsx`, `src/__tests__/appBootstrap.test.ts` +41 more
 - `src/context/ThemeContext.tsx` ← `App.tsx`, `src/__tests__/ThemeContext.test.tsx`, `src/components/AppProviders.tsx`, `src/components/DiagnosticSheet.tsx`, `src/components/EditLocationSheet.tsx` +26 more
 - `src/utils/theme.ts` ← `src/__tests__/ThemeContext.test.tsx`, `src/components/DiagnosticSheet.tsx`, `src/components/EditLocationSheet.tsx`, `src/components/EditSessionSheet.tsx`, `src/components/ErrorBoundary.tsx` +22 more
