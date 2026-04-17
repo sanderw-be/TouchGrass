@@ -1,33 +1,32 @@
 # Libraries
 
 - `appBootstrap.ts`
-  - function performCriticalInitialization: () => CriticalAppState
   - function performCriticalInitializationAsync: () => Promise<CriticalAppState>
   - function performDeferredInitialization: () => void
   - interface CriticalAppState
-- `modules\alarm-bridge-native\src\index.ts`
+- `modules/alarm-bridge-native/src/index.ts`
   - function scheduleNextPulse: (delayMs) => Promise<void>
   - function cancelPulse: () => Promise<void>
   - const PULSE_TASK_NAME
-- `src\background\alarmTiming.ts`
+- `src/background/alarmTiming.ts`
   - function computeNextSleepMs: (now) => void
   - function scheduleNextAlarmPulse: (now?) => Promise<void>
   - const PULSE_INTERVAL_DAY_MS
   - const PULSE_INTERVAL_NIGHT_MS
-- `src\background\backgroundTick.ts` — function performBackgroundTick: () => Promise<void>
-- `src\background\unifiedBackgroundTask.ts`
+- `src/background/backgroundTick.ts` — function performBackgroundTick: () => Promise<void>
+- `src/background/unifiedBackgroundTask.ts`
   - function registerUnifiedBackgroundTask: () => Promise<void>
   - function unregisterUnifiedBackgroundTask: () => Promise<void>
   - const UNIFIED_BACKGROUND_TASK
-- `src\calendar\calendarService.ts`
+- `src/calendar/calendarService.ts`
   - function cleanupTouchGrassCalendars: () => Promise<CalendarCleanupResult>
   - function requestCalendarPermissions: () => Promise<boolean>
   - function hasCalendarPermissions: () => Promise<boolean>
   - function getWritableCalendars: () => Promise<Calendar.Calendar[]>
   - function getOrCreateTouchGrassCalendar: (forceCreate) => Promise<string | null>
-  - function getSelectedCalendarId: () => string
+  - function getSelectedCalendarId: () => Promise<string>
   - _...6 more_
-- `src\detection\gpsDetection.ts`
+- `src/detection/gpsDetection.ts`
   - function clampRadiusMeters: (r) => number
   - function loadGPSState: () => Promise<void>
   - function \_resetGPSStateForTesting: () => void
@@ -35,13 +34,13 @@
   - function computeMinActiveRadius: (locations) => number
   - function computeLowDistanceInterval: (minRadiusMeters) => number
   - _...19 more_
-- `src\detection\healthConnect.ts`
+- `src/detection/healthConnect.ts`
   - function isHealthConnectAvailable: () => Promise<boolean>
   - function requestHealthPermissions: () => Promise<boolean>
   - function openHealthConnectForManagement: () => Promise<boolean>
   - function syncHealthConnect: () => Promise<boolean>
-- `src\detection\healthConnectIntent.ts` — function openHealthConnectPermissionsViaIntent: () => Promise<boolean>, function verifyHealthConnectPermissions: () => Promise<boolean>
-- `src\detection\index.ts`
+- `src/detection/healthConnectIntent.ts` — function openHealthConnectPermissionsViaIntent: () => Promise<boolean>, function verifyHealthConnectPermissions: () => Promise<boolean>
+- `src/detection/index.ts`
   - function initDetection: () => Promise<DetectionStatus>
   - function requestHealthConnect: () => Promise<boolean>
   - function recheckHealthConnect: () => Promise<boolean>
@@ -49,11 +48,11 @@
   - function getDetectionStatus: () => Promise<DetectionStatus>
   - function checkGPSPermissions: () => Promise<boolean>
   - _...6 more_
-- `src\detection\manualCheckin.ts`
+- `src/detection/manualCheckin.ts`
   - function logManualSession: (durationMinutes, startTime?, endTime?, notes?) => void
   - function logManualSessionAsync: (durationMinutes, startTime?, endTime?) => Promise<void>
   - function startManualSession: () => () => void
-- `src\detection\sessionConfidence.ts`
+- `src/detection/sessionConfidence.ts`
   - function getTimeSlotProbability: (hour, dayOfWeek) => Promise<number>
   - function updateTimeSlotProbability: (hour, dayOfWeek, confirmed) => Promise<void>
   - function scoreDuration: (durationMs) => number
@@ -61,11 +60,11 @@
   - function computeSessionScoreFromProbs: (session, probs, number>) => number
   - const DISCARD_CONFIDENCE_THRESHOLD
   - _...1 more_
-- `src\detection\sessionMerger.ts` — function submitSession: (candidate) => Promise<void>, function buildSession: (startTime, endTime, source, confidence, notes?, steps?, distanceMeters?, averageSpeedKmh?) => OutsideSession
-- `src\hooks\useAppInitialization.ts` — function useAppInitialization: () => AppInitializationState
-- `src\hooks\useForegroundSync.ts` — function useForegroundSync: () => void
-- `src\hooks\useOTAUpdates.ts` — function useOTAUpdates: () => void, type OTAUpdateStatus
-- `src\i18n\index.ts`
+- `src/detection/sessionMerger.ts` — function submitSession: (candidate) => Promise<void>, function buildSession: (startTime, endTime, source, confidence, notes?, steps?, distanceMeters?, averageSpeedKmh?) => OutsideSession
+- `src/hooks/useAppInitialization.ts` — function useAppInitialization: () => AppInitializationState
+- `src/hooks/useForegroundSync.ts` — function useForegroundSync: () => void
+- `src/hooks/useOTAUpdates.ts` — function useOTAUpdates: () => void, type OTAUpdateStatus
+- `src/i18n/index.ts`
   - function resolveSupportedLocale: (localeCode?) => SupportedLocale
   - function getDeviceSupportedLocale: () => SupportedLocale
   - function t: (key, options?, unknown>) => string
@@ -73,7 +72,7 @@
   - function formatLocalDate: (ms, options?) => string
   - function formatLocalTime: (ms) => string
   - _...1 more_
-- `src\notifications\notificationManager.ts`
+- `src/notifications/notificationManager.ts`
   - function \_resetSchedulingGuards: () => void
   - function logReminderQueueSnapshot: () => Promise<void>
   - function setupNotificationInfrastructure: () => Promise<void>
@@ -81,44 +80,44 @@
   - function setupNotifications: () => Promise<void>
   - function scheduleNextReminder: () => Promise<void>
   - _...12 more_
-- `src\notifications\reminderAlgorithm.ts`
+- `src/notifications/reminderAlgorithm.ts`
   - function scoreReminderHours: (todayMinutes, dailyTargetMinutes, currentHour, currentMinute, plannedSlots) => Promise<HourScore[]>
   - function shouldRemindNow: (todayMinutes, dailyTargetMinutes, lastReminderMs, isCurrentlyOutside) => Promise<
   - interface ScoreContributor
   - interface HourScore
-- `src\notifications\scheduledNotifications.ts`
+- `src/notifications/scheduledNotifications.ts`
   - function scheduleAllScheduledNotifications: () => Promise<void>
   - function cancelAllScheduledNotifications: () => Promise<void>
   - function isSlotNearScheduledNotification: (slotHour, slotMinute, windowMinutes) => Promise<boolean>
   - function hasScheduledNotificationNearby: (windowMinutes) => Promise<boolean>
-- `src\storage\database.ts`
-  - function initDatabase: () => void
+- `src/storage/database.ts`
   - function initDatabaseAsync: () => Promise<void>
-  - function insertSession: (session) => number
   - function insertSessionAsync: (session) => Promise<number>
   - function getSessionsForDayAsync: (dateMs) => Promise<OutsideSession[]>
-  - function getSessionsForRange: (fromMs, toMs) => OutsideSession[]
-  - _...82 more_
+  - function getSessionsForRangeAsync: (fromMs, toMs) => Promise<OutsideSession[]>
+  - function deleteSessionAsync: (id) => Promise<void>
+  - function deleteSessionsByIdsAsync: (ids) => Promise<void>
+  - _...57 more_
 - `src/utils/batteryOptimization.ts`
   - function isBatteryOptimizationDisabled
   - function refreshBatteryOptimizationSetting
   - function openBatteryOptimizationSettings
   - const BATTERY_OPTIMIZATION_SETTING_KEY
-- `src\utils\helpers.ts`
+- `src/utils/helpers.ts`
   - function uses24HourClock: () => boolean
   - function formatMinutes: (minutes) => string
   - function normalizeAmPm: (s) => string
   - function formatTime: (ms) => string
   - function formatDate: (ms) => string
   - function formatTimer: (seconds) => string
-- `src\utils\permissionIssues.ts` — function countPermissionIssues: () => Promise<
-- `src\utils\permissionIssuesChangedEmitter.ts` — function emitPermissionIssuesChanged: () => void, function onPermissionIssuesChanged: (listener) => () => void
-- `src\utils\sessionsChangedEmitter.ts` — function emitSessionsChanged: () => void, function onSessionsChanged: (listener) => () => void
-- `src\utils\temperature.ts`
+- `src/utils/permissionIssues.ts` — function countPermissionIssues: () => Promise<
+- `src/utils/permissionIssuesChangedEmitter.ts` — function emitPermissionIssuesChanged: () => void, function onPermissionIssuesChanged: (listener) => () => void
+- `src/utils/sessionsChangedEmitter.ts` — function emitSessionsChanged: () => void, function onSessionsChanged: (listener) => () => void
+- `src/utils/temperature.ts`
   - function isFahrenheit: () => boolean
   - function celsiusToFahrenheit: (celsius) => number
   - function formatTemperature: (celsius) => string
-- `src\utils\theme.ts`
+- `src/utils/theme.ts`
   - function makeShadows: (themeColors) => Shadows
   - function progressColor: (percent) => string
   - type ThemeColors
@@ -126,22 +125,22 @@
   - const colors
   - const darkColors: typeof colors
   - _...4 more_
-- `src\utils\units.ts`
+- `src/utils/units.ts`
   - function isImperialUnits: () => boolean
   - function metersToYards: (m) => number
   - function yardsToMeters: (yd) => number
   - function kmToMiles: (km) => number
   - function kmhToMph: (kmh) => number
-- `src\utils\widgetHelper.ts`
+- `src/utils/widgetHelper.ts`
   - function isWidgetTimerRunning: (marker) => boolean
   - function requestWidgetRefresh: () => Promise<void>
   - const WIDGET_TIMER_KEY
-- `src\weather\weatherAlgorithm.ts`
+- `src/weather/weatherAlgorithm.ts`
   - function scoreWeatherCondition: (condition, preferences) => number
   - function getWeatherPreferences: () => Promise<WeatherPreferences>
   - function getWeatherDescription: (condition) => string
   - function getWeatherEmoji: (condition) => string
-- `src\weather\weatherService.ts`
+- `src/weather/weatherService.ts`
   - function fetchWeatherForecast: (options) => Promise<WeatherFetchResult>
   - function getWeatherForHour: (hour) => Promise<WeatherCondition | null>
   - function isWeatherDataAvailable: () => Promise<boolean>
