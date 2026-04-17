@@ -6,10 +6,6 @@ import { Nunito_400Regular } from '@expo-google-fonts/nunito/400Regular';
 import { Nunito_600SemiBold } from '@expo-google-fonts/nunito/600SemiBold';
 import { Nunito_700Bold } from '@expo-google-fonts/nunito/700Bold';
 import { Nunito_800ExtraBold } from '@expo-google-fonts/nunito/800ExtraBold';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
-import { KeyboardProvider } from 'react-native-keyboard-controller';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { enableScreens } from 'react-native-screens';
 import 'expo-dev-client';
 
@@ -17,14 +13,12 @@ import AppNavigator from './src/navigation/AppNavigator';
 import { useForegroundSync } from './src/hooks/useForegroundSync';
 import IntroScreen from './src/screens/IntroScreen';
 import { IntroContext } from './src/context/IntroContext';
-import { ThemeProvider, useTheme } from './src/context/ThemeContext';
+import { useTheme } from './src/context/ThemeContext';
 import { LanguageContext } from './src/context/LanguageContext';
-import { ReminderFeedbackProvider } from './src/context/ReminderFeedbackContext';
-import ReminderFeedbackModal from './src/components/ReminderFeedbackModal';
-import ErrorBoundary from './src/components/ErrorBoundary';
 import UpdateSplashScreen from './src/components/UpdateSplashScreen';
 import { useOTAUpdates } from './src/hooks/useOTAUpdates';
 import { useAppInitialization } from './src/hooks/useAppInitialization';
+import { AppProviders } from './src/components/AppProviders';
 
 enableScreens();
 
@@ -97,22 +91,9 @@ export default function App() {
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <KeyboardProvider>
-        <BottomSheetModalProvider>
-          <SafeAreaProvider>
-            <ErrorBoundary>
-              <ThemeProvider>
-                <ReminderFeedbackProvider>
-                  <AppContent />
-                  <ReminderFeedbackModal />
-                </ReminderFeedbackProvider>
-              </ThemeProvider>
-            </ErrorBoundary>
-          </SafeAreaProvider>
-        </BottomSheetModalProvider>
-      </KeyboardProvider>
-    </GestureHandlerRootView>
+    <AppProviders>
+      <AppContent />
+    </AppProviders>
   );
 }
 
