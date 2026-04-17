@@ -2,11 +2,12 @@
 
 > **Navigation aid.** Component inventory and prop signatures extracted via AST. Read the source files before adding props or modifying component logic.
 
-**38 components** (react)
+**39 components** (react)
 
 ## Components
 
 - **App** — `App.tsx`
+- **AppProviders** — `src/components/AppProviders.tsx`
 - **DiagnosticSheet** — props: visible, onClose — `src/components/DiagnosticSheet.tsx`
 - **EditLocationSheet** — props: visible, location, initialCoords, initialLabel, onClose, onSave — `src/components/EditLocationSheet.tsx`
 - **EditSessionSheet** — props: visible, session, onClose, onSessionUpdated — `src/components/EditSessionSheet.tsx`

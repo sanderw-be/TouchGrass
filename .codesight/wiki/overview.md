@@ -6,9 +6,9 @@
 
 ## Scale
 
-38 UI components · 32 library files · 1 middleware layers · 2 environment variables
+39 UI components · 32 library files · 1 middleware layers · 2 environment variables
 
-**UI:** 38 components (react) — see [ui.md](./ui.md)
+**UI:** 39 components (react) — see [ui.md](./ui.md)
 
 **Libraries:** 32 files — see [libraries.md](./libraries.md)
 
@@ -18,7 +18,7 @@ Changes to these files have the widest blast radius across the codebase:
 
 - `src/storage/database.ts` — imported by **74** files
 - `src/i18n/index.ts` — imported by **46** files
-- `src/context/ThemeContext.tsx` — imported by **30** files
+- `src/context/ThemeContext.tsx` — imported by **31** files
 - `src/utils/theme.ts` — imported by **27** files
 - `src/detection/index.ts` — imported by **11** files
 - `src/utils/helpers.ts` — imported by **10** files

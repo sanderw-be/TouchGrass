@@ -2,15 +2,16 @@
 
 > **Stack:** raw-http | none | react | typescript
 
-> 0 routes | 0 models | 38 components | 32 lib files | 2 env vars | 1 middleware | 0% test coverage
-> **Token savings:** this file is ~4,600 tokens. Without it, AI exploration would cost ~30,300 tokens. **Saves ~25,700 tokens per conversation.**
-> **Last scanned:** 2026-04-17 12:34 — re-run after significant changes
+> 0 routes | 0 models | 39 components | 32 lib files | 2 env vars | 1 middleware | 0% test coverage
+> **Token savings:** this file is ~4,600 tokens. Without it, AI exploration would cost ~30,600 tokens. **Saves ~26,000 tokens per conversation.**
+> **Last scanned:** 2026-04-17 13:00 — re-run after significant changes
 
 ---
 
 # Components
 
 - **App** — `App.tsx`
+- **AppProviders** — `src/components/AppProviders.tsx`
 - **DiagnosticSheet** — props: visible, onClose — `src/components/DiagnosticSheet.tsx`
 - **EditLocationSheet** — props: visible, location, initialCoords, initialLabel, onClose, onSave — `src/components/EditLocationSheet.tsx`
 - **EditSessionSheet** — props: visible, session, onClose, onSessionUpdated — `src/components/EditSessionSheet.tsx`
@@ -233,7 +234,7 @@
 
 - `src/storage/database.ts` — imported by **74** files
 - `src/i18n/index.ts` — imported by **46** files
-- `src/context/ThemeContext.tsx` — imported by **30** files
+- `src/context/ThemeContext.tsx` — imported by **31** files
 - `src/utils/theme.ts` — imported by **27** files
 - `src/detection/index.ts` — imported by **11** files
 - `src/utils/helpers.ts` — imported by **10** files
@@ -248,15 +249,15 @@
 - `src/detection/sessionMerger.ts` — imported by **6** files
 - `src/utils/units.ts` — imported by **5** files
 - `src/navigation/AppNavigator.tsx` — imported by **4** files
-- `src/context/ReminderFeedbackContext.tsx` — imported by **4** files
 - `src/utils/batteryOptimization.ts` — imported by **4** files
+- `src/context/ReminderFeedbackContext.tsx` — imported by **4** files
 - `src/utils/temperature.ts` — imported by **4** files
 
 ## Import Map (who imports what)
 
 - `src/storage/database.ts` ← `appBootstrap.ts`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx` +69 more
 - `src/i18n/index.ts` ← `appBootstrap.ts`, `src/__tests__/ErrorBoundary.test.tsx`, `src/__tests__/FeedbackSupportScreen.test.tsx`, `src/__tests__/LanguageContext.test.tsx`, `src/__tests__/appBootstrap.test.ts` +41 more
-- `src/context/ThemeContext.tsx` ← `App.tsx`, `src/__tests__/ThemeContext.test.tsx`, `src/components/DiagnosticSheet.tsx`, `src/components/EditLocationSheet.tsx`, `src/components/EditSessionSheet.tsx` +25 more
+- `src/context/ThemeContext.tsx` ← `App.tsx`, `src/__tests__/ThemeContext.test.tsx`, `src/components/AppProviders.tsx`, `src/components/DiagnosticSheet.tsx`, `src/components/EditLocationSheet.tsx` +26 more
 - `src/utils/theme.ts` ← `src/__tests__/ThemeContext.test.tsx`, `src/components/DiagnosticSheet.tsx`, `src/components/EditLocationSheet.tsx`, `src/components/EditSessionSheet.tsx`, `src/components/ErrorBoundary.tsx` +22 more
 - `src/detection/index.ts` ← `appBootstrap.ts`, `src/__tests__/IntroScreen.test.tsx`, `src/__tests__/IntroScreen.test.tsx`, `src/__tests__/IntroScreen.test.tsx`, `src/__tests__/IntroScreen.test.tsx` +6 more
 - `src/utils/helpers.ts` ← `src/components/EditSessionSheet.tsx`, `src/components/ManualSessionSheet.tsx`, `src/components/ProgressRing.tsx`, `src/components/ReminderFeedbackModal.tsx`, `src/i18n/index.ts` +5 more
@@ -270,7 +271,7 @@
 # Test Coverage
 
 > **0%** of routes and models are covered by tests
-> 65 test files found
+> 66 test files found
 
 ---
 
