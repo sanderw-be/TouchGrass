@@ -99,7 +99,7 @@
   - function getSessionsForDayAsync: (dateMs) => Promise<OutsideSession[]>
   - function getSessionsForRange: (fromMs, toMs) => OutsideSession[]
   - _...82 more_
-- `src\utils\batteryOptimization.ts`
+- `src/utils/batteryOptimization.ts`
   - function isBatteryOptimizationDisabled
   - function refreshBatteryOptimizationSetting
   - function openBatteryOptimizationSettings

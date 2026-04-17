@@ -67,7 +67,7 @@
 
 ## Storage (1 files)
 
-- `src\storage\database.ts` — initDatabase, initDatabaseAsync, insertSession, insertSessionAsync, getSessionsForDayAsync, getSessionsForRange, …
+- `src/storage/database.ts` — initDatabase, initDatabaseAsync, insertSession, insertSessionAsync, getSessionsForDayAsync, getSessionsForRange, …
 
 ---
 

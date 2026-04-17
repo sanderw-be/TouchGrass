@@ -16,12 +16,12 @@
 
 Changes to these files have the widest blast radius across the codebase:
 
-- `src\storage\database.ts` — imported by **72** files
-- `src\context\ThemeContext.tsx` — imported by **31** files
-- `src\utils\theme.ts` — imported by **27** files
-- `src\utils\helpers.ts` — imported by **10** files
-- `src\notifications\notificationManager.ts` — imported by **9** files
-- `src\detection\index.ts` — imported by **8** files
+- `src/storage/database.ts` — imported by **72** files
+- `src/i18n/index.ts` — imported by **46** files
+- `src/context/ThemeContext.tsx` — imported by **31** files
+- `src/utils/theme.ts` — imported by **27** files
+- `src/detection/index.ts` — imported by **11** files
+- `src/utils/helpers.ts` — imported by **10** files
 
 ## Required Environment Variables
 
