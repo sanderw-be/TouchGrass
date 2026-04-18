@@ -170,8 +170,7 @@ class BackgroundServiceImpl {
   }
 }
 
-const backgroundService = new BackgroundServiceImpl();
-export { backgroundService as BackgroundService };
+export const BackgroundService = new BackgroundServiceImpl();
 
 /**
  * Define the unified background task.
@@ -181,14 +180,12 @@ TaskManager.defineTask(UNIFIED_BACKGROUND_TASK, async () => {
   try {
     console.log('TouchGrass: [UnifiedTask] Tick (WorkManager fallback)');
 
-    await backgroundService.performBackgroundTick();
+    await BackgroundService.performBackgroundTick();
 
     // Re-arm the Pulsar chain in case it was interrupted.
-    await backgroundService
-      .scheduleNextAlarmPulse()
-      .catch((e: Error) =>
-        console.warn('TouchGrass: [UnifiedTask] Failed to re-arm alarm chain', e)
-      );
+    await BackgroundService.scheduleNextAlarmPulse().catch((e: Error) =>
+      console.warn('TouchGrass: [UnifiedTask] Failed to re-arm alarm chain', e)
+    );
 
     console.log('TouchGrass: [UnifiedTask] Tick done');
     return BackgroundTask.BackgroundTaskResult.Success;
