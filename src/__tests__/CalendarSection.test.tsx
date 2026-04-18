@@ -6,27 +6,29 @@ jest.mock('../i18n', () => ({
   default: { locale: 'en' },
 }));
 
-jest.mock('../context/ThemeContext', () => {
-  const mockColors = {
-    mist: '#f5f5f5',
-    card: '#ffffff',
-    grass: '#4caf50',
-    grassLight: '#81c784',
-    grassDark: '#2e7d32',
-    grassPale: '#e8f5e9',
-    fog: '#e0e0e0',
-    textPrimary: '#212121',
-    textSecondary: '#757575',
-    textMuted: '#9e9e9e',
-    textInverse: '#ffffff',
-    inactive: '#bdbdbd',
-    error: '#f44336',
-  };
-  const mockShadows = { soft: {} };
-  return {
-    useTheme: () => ({ colors: mockColors, shadows: mockShadows }),
-  };
-});
+// Mock App Store
+jest.mock('../store/useAppStore', () => ({
+  useAppStore: jest.fn((selector) =>
+    selector({
+      colors: {
+        mist: '#f5f5f5',
+        card: '#ffffff',
+        grass: '#4caf50',
+        grassLight: '#81c784',
+        grassDark: '#2e7d32',
+        grassPale: '#e8f5e9',
+        fog: '#e0e0e0',
+        textPrimary: '#212121',
+        textSecondary: '#757575',
+        textMuted: '#9e9e9e',
+        textInverse: '#ffffff',
+        inactive: '#bdbdbd',
+        error: '#f44336',
+      },
+      shadows: { soft: {} },
+    })
+  ),
+}));
 
 import CalendarSection from '../components/goals/CalendarSection';
 

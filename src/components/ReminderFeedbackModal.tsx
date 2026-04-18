@@ -1,15 +1,17 @@
 import React, { useMemo, useState } from 'react';
 import { Modal, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { useReminderFeedback } from '../context/ReminderFeedbackContext';
-import { useTheme } from '../context/ThemeContext';
-import { spacing, radius } from '../utils/theme';
+import { useAppStore } from '../store/useAppStore';
+import { spacing, radius, ThemeColors, Shadows } from '../utils/theme';
 import { t } from '../i18n';
 import { uses24HourClock, normalizeAmPm } from '../utils/helpers';
 import { insertReminderFeedbackAsync, getSettingAsync, setSettingAsync } from '../storage/database';
 
 export default function ReminderFeedbackModal() {
-  const { visible, data, dismiss } = useReminderFeedback();
-  const { colors, shadows } = useTheme();
+  const visible = useAppStore((state) => state.feedbackVisible);
+  const data = useAppStore((state) => state.feedbackData);
+  const dismiss = useAppStore((state) => state.dismissFeedback);
+  const colors = useAppStore((state) => state.colors);
+  const shadows = useAppStore((state) => state.shadows);
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const [showFewerConfirmation, setShowFewerConfirmation] = useState(false);
   const [fewerConfirmationMessage, setFewerConfirmationMessage] = useState('');
@@ -169,10 +171,7 @@ export default function ReminderFeedbackModal() {
   );
 }
 
-function makeStyles(
-  colors: ReturnType<typeof useTheme>['colors'],
-  shadows: ReturnType<typeof useTheme>['shadows']
-) {
+function makeStyles(colors: ThemeColors, shadows: Shadows) {
   return StyleSheet.create({
     overlay: {
       flex: 1,

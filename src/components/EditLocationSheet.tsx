@@ -21,8 +21,8 @@ import {
   deleteKnownLocationAsync,
   KnownLocation,
 } from '../storage/database';
-import { spacing, radius } from '../utils/theme';
-import { useTheme } from '../context/ThemeContext';
+import { spacing, radius, ThemeColors, Shadows } from '../utils/theme';
+import { useAppStore } from '../store/useAppStore';
 import { t } from '../i18n';
 import { isImperialUnits, metersToYards } from '../utils/units';
 import { clampRadiusMeters } from '../detection/gpsDetection';
@@ -76,7 +76,8 @@ export default function EditLocationSheet({
   onClose,
   onSave,
 }: Props) {
-  const { colors, shadows } = useTheme();
+  const colors = useAppStore((state) => state.colors);
+  const shadows = useAppStore((state) => state.shadows);
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const insets = useSafeAreaInsets();
   const bottomSheetRef = useRef<BottomSheetModal>(null);
@@ -492,7 +493,7 @@ export default function EditLocationSheet({
 // ── Radius step slider ──────────────────────────────────
 
 function RadiusSlider({ idx, onChange }: { idx: number; onChange: (i: number) => void }) {
-  const { colors } = useTheme();
+  const colors = useAppStore((state) => state.colors);
   const styles = useMemo(() => makeSliderStyles(colors), [colors]);
   const last = RADIUS_STEPS_METERS.length - 1;
   const fillPercent = Math.round((idx / last) * 100);
@@ -520,7 +521,7 @@ function RadiusSlider({ idx, onChange }: { idx: number; onChange: (i: number) =>
   );
 }
 
-function makeSliderStyles(colors: ReturnType<typeof useTheme>['colors']) {
+function makeSliderStyles(colors: ThemeColors) {
   return StyleSheet.create({
     wrapper: {
       height: 40,
@@ -569,10 +570,7 @@ function makeSliderStyles(colors: ReturnType<typeof useTheme>['colors']) {
   });
 }
 
-function makeStyles(
-  colors: ReturnType<typeof useTheme>['colors'],
-  shadows: ReturnType<typeof useTheme>['shadows']
-) {
+function makeStyles(colors: ThemeColors, shadows: Shadows) {
   return StyleSheet.create({
     header: {
       flexDirection: 'row',

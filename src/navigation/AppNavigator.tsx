@@ -15,7 +15,7 @@ import { fetchWeatherForecast, isWeatherDataAvailable } from '../weather/weather
 import { getSettingAsync, countProposedSessionsAsync } from '../storage/database';
 import { countPermissionIssues } from '../utils/permissionIssues';
 import { spacing } from '../utils/theme';
-import { useTheme } from '../context/ThemeContext';
+import { useAppStore } from '../store/useAppStore';
 import { t } from '../i18n';
 import { onSessionsChanged } from '../utils/sessionsChangedEmitter';
 import { onPermissionIssuesChanged } from '../utils/permissionIssuesChangedEmitter';
@@ -48,7 +48,7 @@ const GoalsStack = createStackNavigator<GoalsStackParamList>();
 const SettingsStack = createStackNavigator<SettingsStackParamList>();
 
 function ScreenFallback() {
-  const { colors } = useTheme();
+  const colors = useAppStore((state) => state.colors);
   return (
     <View
       style={{
@@ -72,7 +72,7 @@ const icons: Record<string, keyof typeof Ionicons.glyphMap> = {
 };
 
 function HomeHeaderTitle() {
-  const { colors } = useTheme();
+  const colors = useAppStore((state) => state.colors);
   return (
     <View style={headerStyles.row}>
       <Image
@@ -92,7 +92,7 @@ const headerStyles = StyleSheet.create({
 });
 
 function GoalsStackNavigator() {
-  const { colors } = useTheme();
+  const colors = useAppStore((state) => state.colors);
   return (
     <GoalsStack.Navigator
       screenOptions={{
@@ -140,7 +140,7 @@ function GoalsStackNavigator() {
 }
 
 function SettingsStackNavigator() {
-  const { colors } = useTheme();
+  const colors = useAppStore((state) => state.colors);
   return (
     <SettingsStack.Navigator
       screenOptions={{
@@ -208,7 +208,7 @@ function TabNavigator({
   eventsBadge?: number;
 }) {
   const insets = useSafeAreaInsets();
-  const { colors } = useTheme();
+  const colors = useAppStore((state) => state.colors);
 
   return (
     <Tab.Navigator
@@ -278,7 +278,7 @@ export default function AppNavigator({
   initialState?: InitialState;
   onStateChange?: (state: InitialState | undefined) => void;
 }) {
-  const { colors } = useTheme();
+  const colors = useAppStore((state) => state.colors);
   const appState = useRef(AppState.currentState);
   const [goalsBadge, setGoalsBadge] = useState<number | undefined>(undefined);
   const [settingsBadge, setSettingsBadge] = useState<number | undefined>(undefined);

@@ -9,7 +9,7 @@ jest.mock('../calendar/calendarService', () => ({
   maybeAddOutdoorTimeToCalendar: jest.fn(() => Promise.resolve()),
   deleteFutureTouchGrassEvents: jest.fn(() => Promise.resolve()),
 }));
-jest.mock('../context/ReminderFeedbackContext', () => ({
+jest.mock('../store/useAppStore', () => ({
   triggerReminderFeedbackModal: jest.fn(),
 }));
 
@@ -20,7 +20,7 @@ import * as ReminderAlgorithm from '../notifications/reminderAlgorithm';
 import * as WeatherService from '../weather/weatherService';
 import * as WeatherAlgorithm from '../weather/weatherAlgorithm';
 import * as CalendarService from '../calendar/calendarService';
-import * as FeedbackContext from '../context/ReminderFeedbackContext';
+import * as AppStore from '../store/useAppStore';
 import {
   NotificationService,
   FAILSAFE_REMINDER_PREFIX,
@@ -1608,7 +1608,7 @@ describe('notificationManager', () => {
         notification: { request: { identifier: 'notif-abc' } },
         actionIdentifier: 'went_outside',
       });
-      expect(FeedbackContext.triggerReminderFeedbackModal).toHaveBeenCalledWith(
+      expect(AppStore.triggerReminderFeedbackModal).toHaveBeenCalledWith(
         expect.objectContaining({
           action: 'went_outside',
           confirmBodyKey: 'notif_confirm_went_outside',
@@ -1621,7 +1621,7 @@ describe('notificationManager', () => {
         notification: { request: { identifier: 'notif-abc' } },
         actionIdentifier: 'snoozed',
       });
-      expect(FeedbackContext.triggerReminderFeedbackModal).toHaveBeenCalledWith(
+      expect(AppStore.triggerReminderFeedbackModal).toHaveBeenCalledWith(
         expect.objectContaining({
           action: 'snoozed',
           confirmBodyKey: 'notif_confirm_snoozed',
@@ -1634,13 +1634,13 @@ describe('notificationManager', () => {
         notification: { request: { identifier: 'notif-abc' } },
         actionIdentifier: 'less_often',
       });
-      expect(FeedbackContext.triggerReminderFeedbackModal).toHaveBeenCalledWith(
+      expect(AppStore.triggerReminderFeedbackModal).toHaveBeenCalledWith(
         expect.objectContaining({
           action: 'less_often',
         })
       );
       // confirmBodyKey must NOT be present for less_often — the modal shows a choice picker
-      const call = (FeedbackContext.triggerReminderFeedbackModal as jest.Mock).mock.calls[0][0];
+      const call = (AppStore.triggerReminderFeedbackModal as jest.Mock).mock.calls[0][0];
       expect(call).not.toHaveProperty('confirmBodyKey');
     });
 
@@ -1706,7 +1706,7 @@ describe('notificationManager', () => {
         notification: { request: { identifier: 'notif-abc' } },
         actionIdentifier: 'com.apple.UNNotificationDefaultActionIdentifier',
       });
-      expect(FeedbackContext.triggerReminderFeedbackModal).not.toHaveBeenCalled();
+      expect(AppStore.triggerReminderFeedbackModal).not.toHaveBeenCalled();
       expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
     });
 
@@ -1733,7 +1733,7 @@ describe('notificationManager', () => {
         actionIdentifier: 'went_outside',
       });
 
-      expect(FeedbackContext.triggerReminderFeedbackModal).toHaveBeenCalledWith(
+      expect(AppStore.triggerReminderFeedbackModal).toHaveBeenCalledWith(
         expect.objectContaining({ hour: 14, minute: 30 })
       );
 

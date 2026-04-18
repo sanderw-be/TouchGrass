@@ -39,14 +39,12 @@ import PermissionExplainerSheet, {
 } from '../components/PermissionExplainerSheet';
 import DiagnosticSheet from '../components/DiagnosticSheet';
 
-import { spacing, radius } from '../utils/theme';
-import { useTheme, ThemePreference } from '../context/ThemeContext';
-import { useLanguage } from '../context/LanguageContext';
+import { spacing, radius, ThemeColors, Shadows } from '../utils/theme';
 import { t, getDeviceSupportedLocale } from '../i18n';
 import { PRIVACY_POLICY_URL } from '../utils/constants';
 import type { SettingsStackParamList } from '../navigation/AppNavigator';
-import { useShowIntro } from '../context/IntroContext';
 import { emitPermissionIssuesChanged } from '../utils/permissionIssuesChangedEmitter';
+import { useAppStore, ThemePreference } from '../store/useAppStore';
 
 // Enable LayoutAnimation on Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -74,9 +72,14 @@ const LANGUAGES = [
 ];
 
 export default function SettingsScreen() {
-  const showIntro = useShowIntro();
-  const { colors, shadows, themePreference, setThemePreference } = useTheme();
-  const { locale, setLocale } = useLanguage();
+  const handleShowIntro = useAppStore((state) => state.handleShowIntro);
+  const colors = useAppStore((state) => state.colors);
+  const shadows = useAppStore((state) => state.shadows);
+  const themePreference = useAppStore((state) => state.themePreference);
+  const setThemePreference = useAppStore((state) => state.setThemePreference);
+  const locale = useAppStore((state) => state.locale);
+  const setLocale = useAppStore((state) => state.setLocale);
+
   const navigation = useNavigation<StackNavigationProp<SettingsStackParamList>>();
   const insets = useSafeAreaInsets();
   const [detectionStatus, setDetectionStatus] = useState({
@@ -257,7 +260,7 @@ export default function SettingsScreen() {
   const changeLanguage = (code: string) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setLanguageOpen(false);
-    // Delegates to context's setLocale which updates i18n, saves to storage, and triggers re-render
+    // Delegates to store's setLocale which updates i18n, saves to storage, and triggers re-render
     setLocale(code);
   };
 
@@ -282,7 +285,7 @@ export default function SettingsScreen() {
         onPress: async () => {
           try {
             await clearAllDataAsync();
-            showIntro();
+            handleShowIntro();
             Alert.alert(
               t('settings_clear_data_success_title'),
               t('settings_clear_data_success_body')
@@ -507,7 +510,7 @@ export default function SettingsScreen() {
             label={t('settings_rerun_tutorial')}
             sublabel={t('settings_rerun_tutorial_sublabel')}
             right={
-              <TouchableOpacity style={styles.editBtn} onPress={showIntro}>
+              <TouchableOpacity style={styles.editBtn} onPress={handleShowIntro}>
                 <Text style={styles.editBtnText}>{t('settings_rerun_tutorial')}</Text>
               </TouchableOpacity>
             }
@@ -584,7 +587,8 @@ function SettingRow({
   hint?: string;
   right?: React.ReactNode;
 }) {
-  const { colors, shadows } = useTheme();
+  const colors = useAppStore((state) => state.colors);
+  const shadows = useAppStore((state) => state.shadows);
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   return (
     <View style={styles.row}>
@@ -600,7 +604,8 @@ function SettingRow({
 }
 
 function Divider() {
-  const { colors, shadows } = useTheme();
+  const colors = useAppStore((state) => state.colors);
+  const shadows = useAppStore((state) => state.shadows);
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   return <View style={styles.divider} />;
 }
@@ -628,7 +633,8 @@ function DetectionSettingRow({
   onPermissionFix?: () => void;
   testID?: string;
 }) {
-  const { colors, shadows } = useTheme();
+  const colors = useAppStore((state) => state.colors);
+  const shadows = useAppStore((state) => state.shadows);
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const hasError = enabled && !permissionGranted;
 
@@ -667,10 +673,7 @@ function DetectionSettingRow({
   );
 }
 
-function makeStyles(
-  colors: ReturnType<typeof useTheme>['colors'],
-  shadows: ReturnType<typeof useTheme>['shadows']
-) {
+function makeStyles(colors: ThemeColors, shadows: Shadows) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.mist },
     content: { padding: spacing.md, paddingBottom: spacing.xxl },

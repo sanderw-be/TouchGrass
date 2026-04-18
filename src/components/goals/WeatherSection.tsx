@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../../context/ThemeContext';
+import { useAppStore } from '../../store/useAppStore';
 import { t } from '../../i18n';
 import { PermissionToggleRow, SettingRow, Divider, makeStyles } from './GoalsShared';
 
@@ -20,7 +20,8 @@ export default function WeatherSection({
   onShowWeatherPermissionSheet,
   onNavigateWeatherSettings,
 }: WeatherSectionProps) {
-  const { colors, shadows } = useTheme();
+  const colors = useAppStore((state) => state.colors);
+  const shadows = useAppStore((state) => state.shadows);
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
 
   return (

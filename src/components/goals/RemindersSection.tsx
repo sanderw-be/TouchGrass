@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { View, Text, TouchableOpacity, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../../context/ThemeContext';
+import { useAppStore } from '../../store/useAppStore';
 import { t } from '../../i18n';
 import { SettingRow, Divider, makeStyles, CATCHUP_REMINDERS_OPTIONS } from './GoalsShared';
 
@@ -28,7 +28,8 @@ export default function RemindersSection({
   onShowNotificationPermissionSheet,
   onShowBatteryPermissionSheet,
 }: RemindersSectionProps) {
-  const { colors, shadows } = useTheme();
+  const colors = useAppStore((state) => state.colors);
+  const shadows = useAppStore((state) => state.shadows);
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
 
   const catchupRemindersLabels = useMemo<Record<number, string>>(
