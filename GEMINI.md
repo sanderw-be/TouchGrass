@@ -11,7 +11,8 @@ TouchGrass is a privacy-focused React Native (Expo) application designed to enco
   - **Language**: TypeScript (Strict Mode)
   - **Database**: SQLite (`expo-sqlite`) for local storage.
   - **Navigation**: React Navigation 7.x (Stack + Bottom Tabs)
-  - **Styling**: Vanilla CSS / React Native StyleSheet (Theme-aware via `ThemeContext`).
+  - **Styling**: Vanilla CSS / React Native StyleSheet (Theme-aware via `useAppStore`).
+  - **State Management**: Zustand (`src/store/useAppStore.ts`) for global app state (Theme, Locale, Intro, Feedback).
   - **Detection**: Background location (Geofencing) and Health Connect (Exercise/Steps).
   - **Notifications**: `expo-notifications` for smart reminders.
   - **Android Specific**: Custom Android widgets (`react-native-android-widget`) and native alarm bridge for precise background execution.
@@ -21,7 +22,7 @@ TouchGrass is a privacy-focused React Native (Expo) application designed to enco
 - `src/background/`: Unified background tasks and alarm timing logic.
 - `src/calendar/`: Integration with device calendars.
 - `src/components/`: Reusable UI components.
-- `src/context/`: React Context providers (Theme, Language, Feedback, etc.).
+- `src/store/`: Zustand state management (Theme, Language, Feedback, etc.).
 - `src/detection/`: Logic for GPS and Health Connect outdoor detection.
 - `src/hooks/`: Custom React hooks (Init, Foreground sync, OTA updates).
 - `src/i18n/`: Internationalization files (English `en`, Dutch `nl`).
@@ -89,5 +90,5 @@ See `CONTRIBUTING_AGENTS.md` for full details.
 ## Architectural Insights
 
 - **Foreground Sync**: `useForegroundSync` is triggered when the app is opened to catch up on background tasks and refresh the UI/widget.
-- **Initialization**: `useAppInitialization` handles critical (database, settings) and deferred (background tasks) startup logic.
+- **Initialization**: `useAppStore.getState().initialize()` handles critical (database, settings) and deferred (background tasks) startup logic on app mount.
 - **Alarm Bridge**: Uses a local native module (`modules/alarm-bridge-native`) to overcome Android background limitations for precise reminder scheduling.
