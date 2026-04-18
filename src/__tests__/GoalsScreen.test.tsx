@@ -58,6 +58,13 @@ jest.mock('../utils/permissionIssuesChangedEmitter', () => ({
   emitPermissionIssuesChanged: () => mockEmitPermissionIssuesChanged(),
 }));
 
+// Mock NotificationService
+jest.mock('../notifications/notificationManager', () => ({
+  NotificationService: {
+    requestNotificationPermissions: jest.fn(() => Promise.resolve(false)),
+  },
+}));
+
 // Mock expo-intent-launcher
 jest.mock('expo-intent-launcher', () => ({
   startActivityAsync: jest.fn(() => Promise.resolve()),
@@ -761,8 +768,8 @@ describe('GoalsScreen smart reminders notification permission', () => {
 
   it('shows notification permission missing text when smart reminders are on and permission is denied', async () => {
     mockGetSettingAsync.mockImplementation((key: string, def: string) => {
-      if (key === 'smart_reminders_count') return Promise.resolve('0'); // This feature is off
-      if (key === 'smart_catchup_reminders_count') return Promise.resolve('0'); // This feature must also be off
+      if (key === 'smart_reminders_count') return Promise.resolve('2'); // This feature is on
+      if (key === 'smart_catchup_reminders_count') return Promise.resolve('0');
       return Promise.resolve(def);
     });
     mockGetPermissions.mockResolvedValue({ status: 'denied' });

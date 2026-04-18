@@ -202,7 +202,9 @@ describe('performBackgroundTick', () => {
       throw new Error('DB exploded');
     });
 
-    await expect(BackgroundService.performBackgroundTick()).rejects.toThrow('DB exploded');
+    await expect(BackgroundService.performBackgroundTick()).rejects.toThrow(
+      'All background sync modules failed'
+    );
   });
 
   describe('concurrency guard', () => {
@@ -252,12 +254,17 @@ describe('performBackgroundTick', () => {
       let callCount = 0;
       (Database.getSettingAsync as jest.Mock).mockImplementation(async () => {
         callCount++;
-        if (callCount === 1) throw new Error('DB exploded');
+        if (callCount <= 2) {
+          // Fail for weather and reminder sync
+          throw new Error('DB exploded');
+        }
         return '0';
       });
 
       // First tick throws — guard must still be cleared via finally.
-      await expect(BackgroundService.performBackgroundTick()).rejects.toThrow('DB exploded');
+      await expect(BackgroundService.performBackgroundTick()).rejects.toThrow(
+        'All background sync modules failed'
+      );
 
       // Second tick should run normally (not be blocked by a stale flag).
       await expect(BackgroundService.performBackgroundTick()).resolves.not.toThrow();

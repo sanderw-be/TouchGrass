@@ -543,9 +543,9 @@ describe('notificationManager', () => {
         { hour: 19, minute: 0, score: 0.65, reason: 'after-work' },
       ]);
       // Mark first slot as near a scheduled notification, allow the other two
-      jest.spyOn(NotificationService, 'isSlotNearScheduledNotification').mockImplementation(
-        (h: number) => h === 12
-      );
+      jest
+        .spyOn(NotificationService, 'isSlotNearScheduledNotification')
+        .mockImplementation((h: number) => Promise.resolve(h === 12));
 
       await NotificationService.scheduleDayReminders();
 
@@ -1021,9 +1021,9 @@ describe('notificationManager', () => {
         { hour: 14, minute: 0, score: 0.7, reason: 'afternoon' }, // near scheduled notif
         { hour: 16, minute: 0, score: 0.65, reason: 'afternoon' }, // clear
       ]);
-      jest.spyOn(NotificationService, 'isSlotNearScheduledNotification').mockImplementation(
-        (h: number) => h === 14
-      );
+      jest
+        .spyOn(NotificationService, 'isSlotNearScheduledNotification')
+        .mockImplementation((h: number) => Promise.resolve(h === 14));
 
       await NotificationService.maybeScheduleCatchUpReminder();
 

@@ -48,48 +48,92 @@ class BackgroundServiceImpl {
       return;
     }
     this.tickInProgress = true;
+
     try {
+      // Step 1: Initialize Database (Fatal if fails)
       await initDatabaseAsync();
       await insertBackgroundLogAsync('reminder', 'Background tick start');
 
-      const weatherEnabled = (await getSettingAsync('weather_enabled', '1')) === '1';
-      if (weatherEnabled) {
-        try {
-          await fetchWeatherForecast({ allowPermissionPrompt: false });
-          await insertBackgroundLogAsync('reminder', 'Weather refresh succeeded');
-        } catch (weatherError) {
-          console.error('TouchGrass: [BackgroundTick] Weather fetch failed', weatherError);
-          await insertBackgroundLogAsync('reminder', 'Weather refresh failed');
-        }
-      } else {
-        await insertBackgroundLogAsync('reminder', 'Weather disabled — skipping refresh');
+      // Step 2: Sync Modules (Isolated)
+      let weatherSyncSuccess = true;
+      let reminderSyncSuccess = true;
+
+      try {
+        await this.handleWeatherSync();
+      } catch (e) {
+        console.error('TouchGrass: [BackgroundTick] Weather sync failed', e);
+        await insertBackgroundLogAsync('reminder', 'Weather refresh failed');
+        weatherSyncSuccess = false;
       }
 
-      const remindersCountRaw = await getSettingAsync('smart_reminders_count', '0');
-      const remindersEnabled = parseInt(remindersCountRaw, 10) > 0;
-      console.log(
-        `TouchGrass: [BackgroundTick] smart_reminders_count=${remindersCountRaw} → reminders ${remindersEnabled ? 'enabled' : 'disabled'}`
-      );
-      if (remindersEnabled) {
-        await NotificationService.logReminderQueueSnapshot();
-        try {
-          await NotificationService.scheduleDayReminders();
-          await NotificationService.processReminderQueue();
-          await NotificationService.updateUpcomingReminderContent();
-          await NotificationService.maybeScheduleCatchUpReminder();
-        } catch (reminderError) {
-          console.error('TouchGrass: [BackgroundTick] Reminder operations failed', reminderError);
-        }
-      } else {
-        await insertBackgroundLogAsync(
-          'reminder',
-          'Reminders disabled — skipping background tick work'
-        );
+      try {
+        await this.handleReminderSync();
+      } catch (e) {
+        console.error('TouchGrass: [BackgroundTick] Reminder sync failed', e);
+        reminderSyncSuccess = false;
+      }
+
+      // Step 3: Final Status Check
+      if (!weatherSyncSuccess && !reminderSyncSuccess) {
+        // Only throw if NO module succeeded. This fulfills the isolation requirement.
+        throw new Error('All background sync modules failed');
       }
 
       await insertBackgroundLogAsync('reminder', 'Background tick done');
+    } catch (fatalError) {
+      console.error('TouchGrass: [BackgroundTick] Error during tick', fatalError);
+      // Propagate original fatal errors (e.g. "DB exploded") or the collective failure.
+      throw fatalError;
     } finally {
       this.tickInProgress = false;
+    }
+  }
+
+  /**
+   * Private helper to handle weather forecast refresh.
+   */
+  private async handleWeatherSync(): Promise<void> {
+    const weatherEnabled = (await getSettingAsync('weather_enabled', '1')) === '1';
+    if (weatherEnabled) {
+      try {
+        await fetchWeatherForecast({ allowPermissionPrompt: false });
+        await insertBackgroundLogAsync('reminder', 'Weather refresh succeeded');
+      } catch (weatherError) {
+        console.error('TouchGrass: [BackgroundTick] Weather fetch failed', weatherError);
+        throw weatherError; // Re-throw to be caught by the isolated try/catch in orchestrator
+      }
+    } else {
+      await insertBackgroundLogAsync('reminder', 'Weather disabled — skipping refresh');
+    }
+  }
+
+  /**
+   * Private helper to handle reminder planning and processing.
+   */
+  private async handleReminderSync(): Promise<void> {
+    const remindersCountRaw = await getSettingAsync('smart_reminders_count', '0');
+    const remindersEnabled = parseInt(remindersCountRaw, 10) > 0;
+
+    console.log(
+      `TouchGrass: [BackgroundTick] smart_reminders_count=${remindersCountRaw} → reminders ${remindersEnabled ? 'enabled' : 'disabled'}`
+    );
+
+    if (remindersEnabled) {
+      await NotificationService.logReminderQueueSnapshot();
+      try {
+        await NotificationService.scheduleDayReminders();
+        await NotificationService.processReminderQueue();
+        await NotificationService.updateUpcomingReminderContent();
+        await NotificationService.maybeScheduleCatchUpReminder();
+      } catch (reminderError) {
+        console.error('TouchGrass: [BackgroundTick] Reminder operations failed', reminderError);
+        throw reminderError; // Re-throw to be caught by the isolated try/catch in orchestrator
+      }
+    } else {
+      await insertBackgroundLogAsync(
+        'reminder',
+        'Reminders disabled — skipping background tick work'
+      );
     }
   }
 
@@ -140,9 +184,11 @@ TaskManager.defineTask(UNIFIED_BACKGROUND_TASK, async () => {
     await backgroundService.performBackgroundTick();
 
     // Re-arm the Pulsar chain in case it was interrupted.
-    await backgroundService.scheduleNextAlarmPulse().catch((e: Error) =>
-      console.warn('TouchGrass: [UnifiedTask] Failed to re-arm alarm chain', e)
-    );
+    await backgroundService
+      .scheduleNextAlarmPulse()
+      .catch((e: Error) =>
+        console.warn('TouchGrass: [UnifiedTask] Failed to re-arm alarm chain', e)
+      );
 
     console.log('TouchGrass: [UnifiedTask] Tick done');
     return BackgroundTask.BackgroundTaskResult.Success;
