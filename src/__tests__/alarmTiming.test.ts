@@ -10,12 +10,10 @@ jest.mock('alarm-bridge-native', () => ({
 
 import * as AlarmBridgeNative from 'alarm-bridge-native';
 import {
-  computeNextSleepMs,
-  scheduleNextAlarmPulse,
-  cancelAlarmPulse,
+  BackgroundService,
   PULSE_INTERVAL_DAY_MS,
   PULSE_INTERVAL_NIGHT_MS,
-} from '../background/alarmTiming';
+} from '../background/unifiedBackgroundTask';
 
 describe('alarmTiming', () => {
   beforeEach(() => {
@@ -25,32 +23,32 @@ describe('alarmTiming', () => {
   describe('computeNextSleepMs', () => {
     it('returns the day interval during active hours (06:00)', () => {
       const now = new Date('2024-01-01T06:00:00');
-      expect(computeNextSleepMs(now)).toBe(PULSE_INTERVAL_DAY_MS);
+      expect(BackgroundService.computeNextSleepMs(now)).toBe(PULSE_INTERVAL_DAY_MS);
     });
 
     it('returns the day interval at noon', () => {
       const now = new Date('2024-01-01T12:00:00');
-      expect(computeNextSleepMs(now)).toBe(PULSE_INTERVAL_DAY_MS);
+      expect(BackgroundService.computeNextSleepMs(now)).toBe(PULSE_INTERVAL_DAY_MS);
     });
 
     it('returns the day interval at 23:59', () => {
       const now = new Date('2024-01-01T23:59:00');
-      expect(computeNextSleepMs(now)).toBe(PULSE_INTERVAL_DAY_MS);
+      expect(BackgroundService.computeNextSleepMs(now)).toBe(PULSE_INTERVAL_DAY_MS);
     });
 
     it('returns the night interval at midnight (00:00)', () => {
       const now = new Date('2024-01-01T00:00:00');
-      expect(computeNextSleepMs(now)).toBe(PULSE_INTERVAL_NIGHT_MS);
+      expect(BackgroundService.computeNextSleepMs(now)).toBe(PULSE_INTERVAL_NIGHT_MS);
     });
 
     it('returns the night interval at 03:00', () => {
       const now = new Date('2024-01-01T03:00:00');
-      expect(computeNextSleepMs(now)).toBe(PULSE_INTERVAL_NIGHT_MS);
+      expect(BackgroundService.computeNextSleepMs(now)).toBe(PULSE_INTERVAL_NIGHT_MS);
     });
 
     it('returns the night interval at 05:59', () => {
       const now = new Date('2024-01-01T05:59:00');
-      expect(computeNextSleepMs(now)).toBe(PULSE_INTERVAL_NIGHT_MS);
+      expect(BackgroundService.computeNextSleepMs(now)).toBe(PULSE_INTERVAL_NIGHT_MS);
     });
 
     it('day interval is 15 minutes', () => {
@@ -65,25 +63,25 @@ describe('alarmTiming', () => {
   describe('scheduleNextAlarmPulse', () => {
     it('calls scheduleNextPulse with the day interval during active hours', async () => {
       const now = new Date('2024-01-01T10:00:00');
-      await scheduleNextAlarmPulse(now);
+      await BackgroundService.scheduleNextAlarmPulse(now);
       expect(AlarmBridgeNative.scheduleNextPulse).toHaveBeenCalledWith(PULSE_INTERVAL_DAY_MS);
     });
 
     it('calls scheduleNextPulse with the night interval during quiet hours', async () => {
       const now = new Date('2024-01-01T02:00:00');
-      await scheduleNextAlarmPulse(now);
+      await BackgroundService.scheduleNextAlarmPulse(now);
       expect(AlarmBridgeNative.scheduleNextPulse).toHaveBeenCalledWith(PULSE_INTERVAL_NIGHT_MS);
     });
 
     it('uses the current time when no date is provided', async () => {
-      await scheduleNextAlarmPulse();
+      await BackgroundService.scheduleNextAlarmPulse();
       expect(AlarmBridgeNative.scheduleNextPulse).toHaveBeenCalledTimes(1);
     });
   });
 
   describe('cancelAlarmPulse', () => {
     it('delegates to cancelPulse from alarm-bridge-native', async () => {
-      await cancelAlarmPulse();
+      await BackgroundService.cancelAlarmPulse();
       expect(AlarmBridgeNative.cancelPulse).toHaveBeenCalledTimes(1);
     });
   });

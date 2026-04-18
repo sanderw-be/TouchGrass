@@ -4,11 +4,13 @@
  */
 
 jest.mock('../notifications/notificationManager', () => ({
-  scheduleDayReminders: jest.fn(),
-  maybeScheduleCatchUpReminder: jest.fn(),
-  processReminderQueue: jest.fn(),
-  logReminderQueueSnapshot: jest.fn(),
-  updateUpcomingReminderContent: jest.fn(),
+  NotificationService: {
+    scheduleDayReminders: jest.fn(),
+    maybeScheduleCatchUpReminder: jest.fn(),
+    processReminderQueue: jest.fn(),
+    logReminderQueueSnapshot: jest.fn(),
+    updateUpcomingReminderContent: jest.fn(),
+  },
 }));
 
 jest.mock('../weather/weatherService', () => ({
@@ -21,10 +23,10 @@ jest.mock('../storage/database', () => ({
   insertBackgroundLogAsync: jest.fn(),
 }));
 
-import * as NotificationManager from '../notifications/notificationManager';
+import { NotificationService } from '../notifications/notificationManager';
 import * as WeatherService from '../weather/weatherService';
 import * as Database from '../storage/database';
-import { performBackgroundTick } from '../background/backgroundTick';
+import { BackgroundService } from '../background/unifiedBackgroundTask';
 
 describe('performBackgroundTick', () => {
   beforeEach(() => {
@@ -35,7 +37,7 @@ describe('performBackgroundTick', () => {
     (Database.getSettingAsync as jest.Mock).mockResolvedValue('0');
     (Database.initDatabaseAsync as jest.Mock).mockResolvedValue(undefined);
 
-    await performBackgroundTick();
+    await BackgroundService.performBackgroundTick();
 
     expect(Database.initDatabaseAsync).toHaveBeenCalledTimes(1);
   });
@@ -46,18 +48,18 @@ describe('performBackgroundTick', () => {
       if (key === 'weather_enabled') return '0';
       return '';
     });
-    (NotificationManager.scheduleDayReminders as jest.Mock).mockResolvedValue(undefined);
-    (NotificationManager.processReminderQueue as jest.Mock).mockResolvedValue(undefined);
-    (NotificationManager.updateUpcomingReminderContent as jest.Mock).mockResolvedValue(undefined);
-    (NotificationManager.maybeScheduleCatchUpReminder as jest.Mock).mockResolvedValue(undefined);
+    (NotificationService.scheduleDayReminders as jest.Mock).mockResolvedValue(undefined);
+    (NotificationService.processReminderQueue as jest.Mock).mockResolvedValue(undefined);
+    (NotificationService.updateUpcomingReminderContent as jest.Mock).mockResolvedValue(undefined);
+    (NotificationService.maybeScheduleCatchUpReminder as jest.Mock).mockResolvedValue(undefined);
 
-    await performBackgroundTick();
+    await BackgroundService.performBackgroundTick();
 
-    expect(NotificationManager.logReminderQueueSnapshot).toHaveBeenCalledTimes(1);
-    expect(NotificationManager.scheduleDayReminders).toHaveBeenCalledTimes(1);
-    expect(NotificationManager.processReminderQueue).toHaveBeenCalledTimes(1);
-    expect(NotificationManager.updateUpcomingReminderContent).toHaveBeenCalledTimes(1);
-    expect(NotificationManager.maybeScheduleCatchUpReminder).toHaveBeenCalledTimes(1);
+    expect(NotificationService.logReminderQueueSnapshot).toHaveBeenCalledTimes(1);
+    expect(NotificationService.scheduleDayReminders).toHaveBeenCalledTimes(1);
+    expect(NotificationService.processReminderQueue).toHaveBeenCalledTimes(1);
+    expect(NotificationService.updateUpcomingReminderContent).toHaveBeenCalledTimes(1);
+    expect(NotificationService.maybeScheduleCatchUpReminder).toHaveBeenCalledTimes(1);
   });
 
   it('skips reminder operations when reminders are disabled (count = 0)', async () => {
@@ -67,13 +69,13 @@ describe('performBackgroundTick', () => {
       return '';
     });
 
-    await performBackgroundTick();
+    await BackgroundService.performBackgroundTick();
 
-    expect(NotificationManager.logReminderQueueSnapshot).not.toHaveBeenCalled();
-    expect(NotificationManager.scheduleDayReminders).not.toHaveBeenCalled();
-    expect(NotificationManager.processReminderQueue).not.toHaveBeenCalled();
-    expect(NotificationManager.updateUpcomingReminderContent).not.toHaveBeenCalled();
-    expect(NotificationManager.maybeScheduleCatchUpReminder).not.toHaveBeenCalled();
+    expect(NotificationService.logReminderQueueSnapshot).not.toHaveBeenCalled();
+    expect(NotificationService.scheduleDayReminders).not.toHaveBeenCalled();
+    expect(NotificationService.processReminderQueue).not.toHaveBeenCalled();
+    expect(NotificationService.updateUpcomingReminderContent).not.toHaveBeenCalled();
+    expect(NotificationService.maybeScheduleCatchUpReminder).not.toHaveBeenCalled();
   });
 
   it('fetches weather when weather is enabled', async () => {
@@ -84,7 +86,7 @@ describe('performBackgroundTick', () => {
     });
     (WeatherService.fetchWeatherForecast as jest.Mock).mockResolvedValue({ success: true });
 
-    await performBackgroundTick();
+    await BackgroundService.performBackgroundTick();
 
     expect(WeatherService.fetchWeatherForecast).toHaveBeenCalledWith({
       allowPermissionPrompt: false,
@@ -98,7 +100,7 @@ describe('performBackgroundTick', () => {
       return '';
     });
 
-    await performBackgroundTick();
+    await BackgroundService.performBackgroundTick();
 
     expect(WeatherService.fetchWeatherForecast).not.toHaveBeenCalled();
   });
@@ -113,13 +115,13 @@ describe('performBackgroundTick', () => {
     (WeatherService.fetchWeatherForecast as jest.Mock).mockImplementation(async () => {
       callOrder.push('weather');
     });
-    (NotificationManager.scheduleDayReminders as jest.Mock).mockImplementation(async () => {
+    (NotificationService.scheduleDayReminders as jest.Mock).mockImplementation(async () => {
       callOrder.push('reminders');
     });
-    (NotificationManager.processReminderQueue as jest.Mock).mockResolvedValue(undefined);
-    (NotificationManager.maybeScheduleCatchUpReminder as jest.Mock).mockResolvedValue(undefined);
+    (NotificationService.processReminderQueue as jest.Mock).mockResolvedValue(undefined);
+    (NotificationService.maybeScheduleCatchUpReminder as jest.Mock).mockResolvedValue(undefined);
 
-    await performBackgroundTick();
+    await BackgroundService.performBackgroundTick();
 
     expect(callOrder[0]).toBe('weather');
     expect(callOrder[1]).toBe('reminders');
@@ -132,7 +134,7 @@ describe('performBackgroundTick', () => {
       return '';
     });
 
-    await performBackgroundTick();
+    await BackgroundService.performBackgroundTick();
 
     const messages = (Database.insertBackgroundLogAsync as jest.Mock).mock.calls.map(
       ([, msg]: [string, string]) => msg
@@ -154,13 +156,13 @@ describe('performBackgroundTick', () => {
     (WeatherService.fetchWeatherForecast as jest.Mock).mockRejectedValue(
       new Error('network error')
     );
-    (NotificationManager.scheduleDayReminders as jest.Mock).mockResolvedValue(undefined);
-    (NotificationManager.processReminderQueue as jest.Mock).mockResolvedValue(undefined);
-    (NotificationManager.maybeScheduleCatchUpReminder as jest.Mock).mockResolvedValue(undefined);
+    (NotificationService.scheduleDayReminders as jest.Mock).mockResolvedValue(undefined);
+    (NotificationService.processReminderQueue as jest.Mock).mockResolvedValue(undefined);
+    (NotificationService.maybeScheduleCatchUpReminder as jest.Mock).mockResolvedValue(undefined);
 
-    await expect(performBackgroundTick()).resolves.not.toThrow();
+    await expect(BackgroundService.performBackgroundTick()).resolves.not.toThrow();
 
-    expect(NotificationManager.scheduleDayReminders).toHaveBeenCalled();
+    expect(NotificationService.scheduleDayReminders).toHaveBeenCalled();
   });
 
   it('logs weather failure without stopping the tick', async () => {
@@ -173,7 +175,7 @@ describe('performBackgroundTick', () => {
       new Error('network error')
     );
 
-    await expect(performBackgroundTick()).resolves.not.toThrow();
+    await expect(BackgroundService.performBackgroundTick()).resolves.not.toThrow();
 
     const messages = (Database.insertBackgroundLogAsync as jest.Mock).mock.calls.map(
       ([, msg]: [string, string]) => msg
@@ -188,11 +190,11 @@ describe('performBackgroundTick', () => {
       if (key === 'weather_enabled') return '0';
       return '';
     });
-    (NotificationManager.scheduleDayReminders as jest.Mock).mockRejectedValue(
+    (NotificationService.scheduleDayReminders as jest.Mock).mockRejectedValue(
       new Error('reminder error')
     );
 
-    await expect(performBackgroundTick()).resolves.not.toThrow();
+    await expect(BackgroundService.performBackgroundTick()).resolves.not.toThrow();
   });
 
   it('throws when a fatal error occurs (e.g. DB unavailable)', async () => {
@@ -200,7 +202,7 @@ describe('performBackgroundTick', () => {
       throw new Error('DB exploded');
     });
 
-    await expect(performBackgroundTick()).rejects.toThrow('DB exploded');
+    await expect(BackgroundService.performBackgroundTick()).rejects.toThrow('DB exploded');
   });
 
   describe('concurrency guard', () => {
@@ -217,9 +219,9 @@ describe('performBackgroundTick', () => {
 
       // Start the first tick without awaiting — it runs synchronously until the
       // first `await` (fetchWeatherForecast) and sets tickInProgress = true.
-      const firstTick = performBackgroundTick();
+      const firstTick = BackgroundService.performBackgroundTick();
       // The second tick starts before the first has finished: the flag is set.
-      const secondTick = performBackgroundTick();
+      const secondTick = BackgroundService.performBackgroundTick();
 
       await Promise.all([firstTick, secondTick]);
 
@@ -239,8 +241,8 @@ describe('performBackgroundTick', () => {
         return '';
       });
 
-      await performBackgroundTick();
-      await performBackgroundTick();
+      await BackgroundService.performBackgroundTick();
+      await BackgroundService.performBackgroundTick();
 
       // Both ticks ran to completion — initDatabase called twice.
       expect(Database.initDatabaseAsync).toHaveBeenCalledTimes(2);
@@ -255,10 +257,10 @@ describe('performBackgroundTick', () => {
       });
 
       // First tick throws — guard must still be cleared via finally.
-      await expect(performBackgroundTick()).rejects.toThrow('DB exploded');
+      await expect(BackgroundService.performBackgroundTick()).rejects.toThrow('DB exploded');
 
       // Second tick should run normally (not be blocked by a stale flag).
-      await expect(performBackgroundTick()).resolves.not.toThrow();
+      await expect(BackgroundService.performBackgroundTick()).resolves.not.toThrow();
       expect(Database.initDatabaseAsync).toHaveBeenCalledTimes(2);
     });
   });

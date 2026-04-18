@@ -52,21 +52,26 @@ jest.mock('expo-constants', () => ({
 // Mock all deferred tasks
 jest.mock('expo-battery');
 jest.mock('../utils/batteryOptimization');
-jest.mock('../notifications/notificationManager');
+jest.mock('../notifications/notificationManager', () => ({
+  NotificationService: {
+    setupNotificationInfrastructure: jest.fn(),
+    scheduleDayReminders: jest.fn(),
+    scheduleAllScheduledNotifications: jest.fn(),
+  },
+}));
 jest.mock('../detection/index');
-jest.mock('../notifications/scheduledNotifications');
-jest.mock('../background/unifiedBackgroundTask');
-jest.mock('../background/alarmTiming');
+jest.mock('../background/unifiedBackgroundTask', () => ({
+  BackgroundService: {
+    registerUnifiedBackgroundTask: jest.fn(),
+    scheduleNextAlarmPulse: jest.fn(),
+  },
+}));
 jest.mock('../utils/widgetHelper');
 
 import { refreshBatteryOptimizationSetting } from '../utils/batteryOptimization';
-import {
-  setupNotificationInfrastructure,
-  scheduleDayReminders,
-} from '../notifications/notificationManager';
+import { NotificationService } from '../notifications/notificationManager';
 import { initDetection } from '../detection/index';
-import { registerUnifiedBackgroundTask } from '../background/unifiedBackgroundTask';
-import { scheduleNextAlarmPulse } from '../background/alarmTiming';
+import { BackgroundService } from '../background/unifiedBackgroundTask';
 import { requestWidgetRefresh } from '../utils/widgetHelper';
 
 describe('services/appBootstrap', () => {
@@ -133,11 +138,12 @@ describe('services/appBootstrap', () => {
 
       expect(InteractionManager.runAfterInteractions).toHaveBeenCalledTimes(1);
       expect(refreshBatteryOptimizationSetting).toHaveBeenCalledTimes(1);
-      expect(setupNotificationInfrastructure).toHaveBeenCalledTimes(1);
+      expect(NotificationService.setupNotificationInfrastructure).toHaveBeenCalledTimes(1);
       expect(initDetection).toHaveBeenCalledTimes(1);
-      expect(scheduleDayReminders).toHaveBeenCalledTimes(1);
-      expect(registerUnifiedBackgroundTask).toHaveBeenCalledTimes(1);
-      expect(scheduleNextAlarmPulse).toHaveBeenCalledTimes(1);
+      expect(NotificationService.scheduleDayReminders).toHaveBeenCalledTimes(1);
+      expect(NotificationService.scheduleAllScheduledNotifications).toHaveBeenCalledTimes(1);
+      expect(BackgroundService.registerUnifiedBackgroundTask).toHaveBeenCalledTimes(1);
+      expect(BackgroundService.scheduleNextAlarmPulse).toHaveBeenCalledTimes(1);
       expect(requestWidgetRefresh).toHaveBeenCalledTimes(1);
     });
 
@@ -153,7 +159,7 @@ describe('services/appBootstrap', () => {
         "TouchGrass: Deferred init task 'Detection Initialization' failed:",
         expect.any(Error)
       );
-      expect(scheduleDayReminders).toHaveBeenCalledTimes(1); // A task after the failed one
+      expect(NotificationService.scheduleDayReminders).toHaveBeenCalledTimes(1); // A task after the failed one
       consoleWarnSpy.mockRestore();
     });
   });
