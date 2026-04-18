@@ -18,8 +18,8 @@ import {
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
 import { logManualSession, startManualSession } from '../detection/manualCheckin';
-import { spacing, radius } from '../utils/theme';
-import { useTheme } from '../context/ThemeContext';
+import { spacing, radius, ThemeColors, Shadows } from '../utils/theme';
+import { useAppStore } from '../store/useAppStore';
 import { formatMinutes, formatTimer, uses24HourClock } from '../utils/helpers';
 import { t, formatLocalDate, formatLocalTime } from '../i18n';
 
@@ -32,7 +32,8 @@ interface Props {
 type Tab = 'log' | 'timer';
 
 export default function ManualSessionSheet({ visible, onClose, onSessionLogged }: Props) {
-  const { colors, shadows } = useTheme();
+  const colors = useAppStore((state) => state.colors);
+  const shadows = useAppStore((state) => state.shadows);
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const insets = useSafeAreaInsets();
   const bottomSheetRef = useRef<BottomSheetModal>(null);
@@ -389,10 +390,7 @@ export default function ManualSessionSheet({ visible, onClose, onSessionLogged }
   );
 }
 
-function makeStyles(
-  colors: ReturnType<typeof useTheme>['colors'],
-  shadows: ReturnType<typeof useTheme>['shadows']
-) {
+function makeStyles(colors: ThemeColors, shadows: Shadows) {
   return StyleSheet.create({
     header: {
       flexDirection: 'row',

@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { View, Text, ScrollView } from 'react-native';
-import { spacing, radius } from '../utils/theme';
-import { useTheme } from '../context/ThemeContext';
+import { spacing, radius, ThemeColors, Shadows } from '../utils/theme';
+import { useAppStore } from '../store/useAppStore';
 import { Ionicons } from '@expo/vector-icons';
 import { t } from '../i18n';
 
@@ -30,7 +30,8 @@ const SECTIONS: Section[] = [
 ];
 
 export default function AboutAppScreen() {
-  const { colors, shadows } = useTheme();
+  const colors = useAppStore((state) => state.colors);
+  const shadows = useAppStore((state) => state.shadows);
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
 
   return (
@@ -48,10 +49,7 @@ export default function AboutAppScreen() {
   );
 }
 
-function makeStyles(
-  colors: ReturnType<typeof useTheme>['colors'],
-  shadows: ReturnType<typeof useTheme>['shadows']
-) {
+function makeStyles(colors: ThemeColors, shadows: Shadows) {
   return {
     container: {
       flex: 1,

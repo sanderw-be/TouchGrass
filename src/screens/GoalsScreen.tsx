@@ -37,7 +37,7 @@ import {
 } from '../calendar/calendarService';
 import { checkWeatherLocationPermissions, requestWeatherLocationPermissions } from '../detection';
 import { spacing } from '../utils/theme';
-import { useTheme } from '../context/ThemeContext';
+import { useAppStore } from '../store/useAppStore';
 import { formatMinutes } from '../utils/helpers';
 import { t } from '../i18n';
 import type { GoalsStackParamList } from '../navigation/AppNavigator';
@@ -64,7 +64,8 @@ const WEEKLY_PRESETS = [60, 90, 120, 150, 210, 300];
 const SMART_REMINDERS_OPTIONS = [0, 1, 2, 3];
 
 export default function GoalsScreen() {
-  const { colors, shadows } = useTheme();
+  const colors = useAppStore((state) => state.colors);
+  const shadows = useAppStore((state) => state.shadows);
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const navigation = useNavigation<StackNavigationProp<GoalsStackParamList>>();
   const insets = useSafeAreaInsets();

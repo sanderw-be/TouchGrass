@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, Switch, TouchableOpacity } from 'react-native';
-import { useTheme } from '../../context/ThemeContext';
-import { spacing, radius } from '../../utils/theme';
+import { spacing, radius, ThemeColors, Shadows } from '../../utils/theme';
+import { useAppStore } from '../../store/useAppStore';
 import { t } from '../../i18n';
 
 export const CATCHUP_REMINDERS_OPTIONS = [0, 1, 2, 3] as const;
@@ -18,7 +18,8 @@ export function SettingRow({
   sublabel?: string;
   right?: React.ReactNode;
 }) {
-  const { colors, shadows } = useTheme();
+  const colors = useAppStore((state) => state.colors);
+  const shadows = useAppStore((state) => state.shadows);
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   return (
     <View style={styles.row}>
@@ -33,7 +34,8 @@ export function SettingRow({
 }
 
 export function Divider() {
-  const { colors, shadows } = useTheme();
+  const colors = useAppStore((state) => state.colors);
+  const shadows = useAppStore((state) => state.shadows);
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   return <View style={styles.divider} />;
 }
@@ -62,7 +64,8 @@ export function PermissionToggleRow({
   onToggle: (value: boolean) => void;
   onPermissionFix?: () => void;
 }) {
-  const { colors, shadows } = useTheme();
+  const colors = useAppStore((state) => state.colors);
+  const shadows = useAppStore((state) => state.shadows);
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const hasError = enabled && !permissionGranted;
 
@@ -99,10 +102,7 @@ export function PermissionToggleRow({
   );
 }
 
-export function makeStyles(
-  colors: ReturnType<typeof useTheme>['colors'],
-  shadows: ReturnType<typeof useTheme>['shadows']
-) {
+export function makeStyles(colors: ThemeColors, shadows: Shadows) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.mist },
     content: { padding: spacing.md, paddingBottom: spacing.xxl },

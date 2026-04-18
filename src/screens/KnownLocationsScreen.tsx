@@ -12,14 +12,15 @@ import {
   setSettingAsync,
 } from '../storage/database';
 import { getDetectionStatus } from '../detection/index';
-import { spacing, radius } from '../utils/theme';
-import { useTheme } from '../context/ThemeContext';
+import { spacing, radius, ThemeColors, Shadows } from '../utils/theme';
+import { useAppStore } from '../store/useAppStore';
 import { t } from '../i18n';
 import EditLocationSheet from '../components/EditLocationSheet';
 import type { SettingsStackParamList } from '../navigation/AppNavigator';
 
 export default function KnownLocationsScreen() {
-  const { colors, shadows } = useTheme();
+  const colors = useAppStore((state) => state.colors);
+  const shadows = useAppStore((state) => state.shadows);
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const navigation = useNavigation<StackNavigationProp<SettingsStackParamList>>();
   const insets = useSafeAreaInsets();
@@ -261,10 +262,7 @@ export default function KnownLocationsScreen() {
   );
 }
 
-function makeStyles(
-  colors: ReturnType<typeof useTheme>['colors'],
-  shadows: ReturnType<typeof useTheme>['shadows']
-) {
+function makeStyles(colors: ThemeColors, shadows: Shadows) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.mist },
     content: { padding: spacing.md },

@@ -31,8 +31,8 @@ import {
   setSettingAsync,
   OutsideSession,
 } from '../storage/database';
-import { spacing, radius } from '../utils/theme';
-import { useTheme } from '../context/ThemeContext';
+import { spacing, radius, ThemeColors, Shadows } from '../utils/theme';
+import { useAppStore } from '../store/useAppStore';
 import { formatMinutes, formatTime } from '../utils/helpers';
 import { t, formatLocalDate } from '../i18n';
 import { updateTimeSlotProbability } from '../detection/sessionConfidence';
@@ -46,7 +46,9 @@ import {
 } from '../utils/widgetHelper';
 
 export default function HomeScreen() {
-  const { colors, shadows, isDark } = useTheme();
+  const colors = useAppStore((state) => state.colors);
+  const shadows = useAppStore((state) => state.shadows);
+  const isDark = useAppStore((state) => state.isDark);
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const [todayMinutes, setTodayMinutes] = useState(0);
   const [weekMinutes, setWeekMinutes] = useState(0);
@@ -435,7 +437,8 @@ export default function HomeScreen() {
 }
 
 function WeekDots() {
-  const { colors, shadows } = useTheme();
+  const colors = useAppStore((state) => state.colors);
+  const shadows = useAppStore((state) => state.shadows);
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const today = new Date().getDay();
   const days = [
@@ -472,7 +475,8 @@ function SessionRow({
   onConfirm: (confirmed: boolean) => void;
   onNotes: () => void;
 }) {
-  const { colors, shadows } = useTheme();
+  const colors = useAppStore((state) => state.colors);
+  const shadows = useAppStore((state) => state.shadows);
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const swipeableRef = useRef<Swipeable>(null);
   const isPending = session.userConfirmed === null && session.discarded !== 1;
@@ -575,10 +579,7 @@ function SessionRow({
   );
 }
 
-function makeStyles(
-  colors: ReturnType<typeof useTheme>['colors'],
-  shadows: ReturnType<typeof useTheme>['shadows']
-) {
+function makeStyles(colors: ThemeColors, shadows: Shadows) {
   return StyleSheet.create({
     screenContainer: { flex: 1, backgroundColor: colors.mist },
     container: { flex: 1, backgroundColor: colors.mist },

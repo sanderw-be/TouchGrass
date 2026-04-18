@@ -27,7 +27,7 @@ import {
   maybeAddOutdoorTimeToCalendar,
   deleteFutureTouchGrassEvents,
 } from '../calendar/calendarService';
-import { triggerReminderFeedbackModal } from '../context/ReminderFeedbackContext';
+import { triggerReminderFeedbackModal } from '../store/useAppStore';
 import { t } from '../i18n';
 import { formatTemperature } from '../utils/temperature';
 

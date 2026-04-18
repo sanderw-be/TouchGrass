@@ -2,9 +2,9 @@
 
 > **Stack:** raw-http | none | react | typescript
 
-> 0 routes | 0 models | 40 components | 27 lib files | 2 env vars | 1 middleware | 0% test coverage
-> **Token savings:** this file is ~4,300 tokens. Without it, AI exploration would cost ~29,600 tokens. **Saves ~25,300 tokens per conversation.**
-> **Last scanned:** 2026-04-18 15:33 — re-run after significant changes
+> 0 routes | 0 models | 36 components | 27 lib files | 2 env vars | 1 middleware | 0% test coverage
+> **Token savings:** this file is ~4,200 tokens. Without it, AI exploration would cost ~28,300 tokens. **Saves ~24,100 tokens per conversation.**
+> **Last scanned:** 2026-04-18 16:54 — re-run after significant changes
 
 ---
 
@@ -15,7 +15,7 @@
 - **DiagnosticSheet** — props: visible, onClose — `src/components/DiagnosticSheet.tsx`
 - **EditLocationSheet** — props: visible, location, initialCoords, initialLabel, onClose, onSave — `src/components/EditLocationSheet.tsx`
 - **EditSessionSheet** — props: visible, session, onClose, onSessionUpdated — `src/components/EditSessionSheet.tsx`
-- **CRASH_REPORT_FORM_URL** — `src/components/ErrorBoundary.tsx`
+- **ErrorBoundary** — `src/components/ErrorBoundary.tsx`
 - **ManualSessionSheet** — props: visible, onClose, onSessionLogged — `src/components/ManualSessionSheet.tsx`
 - **PermissionExplainerSheet** — props: visible, onClose, onOpenSettings, title, body, openSettingsLabel, onDisable, disableLabel, onCancel — `src/components/PermissionExplainerSheet.tsx`
 - **ProgressRing** — props: current, target, size, strokeWidth, label, onTimerPress, timerRunning, timerSeconds — `src/components/ProgressRing.tsx`
@@ -29,10 +29,6 @@
 - **PermissionToggleRow** — props: icon, label, desc, permissionMissingLabel, enabled, permissionGranted, onToggle, onPermissionFix — `src/components/goals/GoalsShared.tsx`
 - **RemindersSection** — props: smartRemindersCount, catchupRemindersCount, notificationPermissionGranted, batteryOptimizationGranted, onCycleSmartReminders, onCycleCatchupReminders, onNavigateScheduledNotifications, onShowNotificationPermissionSheet, onShowBatteryPermissionSheet — `src/components/goals/RemindersSection.tsx`
 - **WeatherSection** — props: weatherEnabled, weatherLocationGranted, onToggleWeather, onShowWeatherPermissionSheet, onNavigateWeatherSettings — `src/components/goals/WeatherSection.tsx`
-- **IntroContext** — `src/context/IntroContext.tsx`
-- **LanguageContext** — `src/context/LanguageContext.tsx`
-- **ReminderFeedbackProvider** — `src/context/ReminderFeedbackContext.tsx`
-- **ThemeProvider** — `src/context/ThemeContext.tsx`
 - **AppNavigator** — props: initialState, onStateChange — `src/navigation/AppNavigator.tsx`
 - **AboutAppScreen** — `src/screens/AboutAppScreen.tsx`
 - **ActivityLogScreen** — `src/screens/ActivityLogScreen.tsx`
@@ -106,7 +102,6 @@
   - const DISCARD_CONFIDENCE_THRESHOLD
   - _...1 more_
 - `src/detection/sessionMerger.ts` — function submitSession: (candidate) => Promise<void>, function buildSession: (startTime, endTime, source, confidence, notes?, steps?, distanceMeters?, averageSpeedKmh?) => OutsideSession
-- `src/hooks/useAppInitialization.ts` — function useAppInitialization: () => AppInitializationState
 - `src/hooks/useForegroundSync.ts` — function useForegroundSync: () => void
 - `src/hooks/useOTAUpdates.ts` — function useOTAUpdates: () => void, type OTAUpdateStatus
 - `src/i18n/index.ts`
@@ -130,6 +125,13 @@
   - function deleteSessionAsync: (id) => Promise<void>
   - function deleteSessionsByIdsAsync: (ids) => Promise<void>
   - _...57 more_
+- `src/store/useAppStore.ts`
+  - function triggerReminderFeedbackModal: (data) => void
+  - interface FeedbackModalData
+  - interface AppState
+  - type ThemePreference
+  - type FeedbackAction
+  - const useAppStore
 - `src/utils/batteryOptimization.ts`
   - function isBatteryOptimizationDisabled
   - function refreshBatteryOptimizationSetting
@@ -210,10 +212,10 @@
 
 ## Most Imported Files (change these carefully)
 
-- `src/storage/database.ts` — imported by **62** files
-- `src/i18n/index.ts` — imported by **46** files
-- `src/context/ThemeContext.tsx` — imported by **32** files
-- `src/utils/theme.ts` — imported by **28** files
+- `src/storage/database.ts` — imported by **60** files
+- `src/i18n/index.ts` — imported by **45** files
+- `src/store/useAppStore.ts` — imported by **34** files
+- `src/utils/theme.ts` — imported by **26** files
 - `src/notifications/notificationManager.ts` — imported by **14** files
 - `src/detection/index.ts` — imported by **12** files
 - `src/utils/helpers.ts` — imported by **10** files
@@ -228,15 +230,15 @@
 - `src/utils/units.ts` — imported by **5** files
 - `src/navigation/AppNavigator.tsx` — imported by **4** files
 - `src/utils/batteryOptimization.ts` — imported by **4** files
-- `src/context/ReminderFeedbackContext.tsx` — imported by **4** files
 - `src/utils/temperature.ts` — imported by **4** files
+- `src/hooks/useOTAUpdates.ts` — imported by **3** files
 
 ## Import Map (who imports what)
 
-- `src/storage/database.ts` ← `appBootstrap.ts`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx` +57 more
-- `src/i18n/index.ts` ← `appBootstrap.ts`, `src/__tests__/ErrorBoundary.test.tsx`, `src/__tests__/FeedbackSupportScreen.test.tsx`, `src/__tests__/LanguageContext.test.tsx`, `src/__tests__/appBootstrap.test.ts` +41 more
-- `src/context/ThemeContext.tsx` ← `App.tsx`, `src/__tests__/ThemeContext.test.tsx`, `src/components/AppProviders.tsx`, `src/components/DiagnosticSheet.tsx`, `src/components/EditLocationSheet.tsx` +27 more
-- `src/utils/theme.ts` ← `src/__tests__/ThemeContext.test.tsx`, `src/components/DiagnosticSheet.tsx`, `src/components/EditLocationSheet.tsx`, `src/components/EditSessionSheet.tsx`, `src/components/ErrorBoundary.tsx` +23 more
+- `src/storage/database.ts` ← `appBootstrap.ts`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx` +55 more
+- `src/i18n/index.ts` ← `appBootstrap.ts`, `src/__tests__/ErrorBoundary.test.tsx`, `src/__tests__/FeedbackSupportScreen.test.tsx`, `src/__tests__/appBootstrap.test.ts`, `src/__tests__/i18n.test.ts` +40 more
+- `src/store/useAppStore.ts` ← `App.tsx`, `src/__tests__/App.test.tsx`, `src/__tests__/notificationManager.test.ts`, `src/__tests__/useAppStore.test.ts`, `src/components/DiagnosticSheet.tsx` +29 more
+- `src/utils/theme.ts` ← `src/components/DiagnosticSheet.tsx`, `src/components/EditLocationSheet.tsx`, `src/components/EditSessionSheet.tsx`, `src/components/ErrorBoundary.tsx`, `src/components/ManualSessionSheet.tsx` +21 more
 - `src/notifications/notificationManager.ts` ← `appBootstrap.ts`, `src/__tests__/appBootstrap.test.ts`, `src/__tests__/backgroundService.test.ts`, `src/__tests__/backgroundTick.test.ts`, `src/__tests__/notificationManager.test.ts` +9 more
 - `src/detection/index.ts` ← `appBootstrap.ts`, `src/__tests__/IntroScreen.test.tsx`, `src/__tests__/IntroScreen.test.tsx`, `src/__tests__/IntroScreen.test.tsx`, `src/__tests__/IntroScreen.test.tsx` +7 more
 - `src/utils/helpers.ts` ← `src/components/EditSessionSheet.tsx`, `src/components/ManualSessionSheet.tsx`, `src/components/ProgressRing.tsx`, `src/components/ReminderFeedbackModal.tsx`, `src/i18n/index.ts` +5 more
@@ -249,7 +251,7 @@
 # Test Coverage
 
 > **0%** of routes and models are covered by tests
-> 65 test files found
+> 63 test files found
 
 ---
 

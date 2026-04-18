@@ -1,6 +1,6 @@
-import React, { useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
 import type { InitialState } from '@react-navigation/native';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, ActivityIndicator, StyleSheet, useColorScheme } from 'react-native';
 import { useFonts } from 'expo-font';
 import { Nunito_400Regular } from '@expo-google-fonts/nunito/400Regular';
 import { Nunito_600SemiBold } from '@expo-google-fonts/nunito/600SemiBold';
@@ -12,23 +12,35 @@ import 'expo-dev-client';
 import AppNavigator from './src/navigation/AppNavigator';
 import { useForegroundSync } from './src/hooks/useForegroundSync';
 import IntroScreen from './src/screens/IntroScreen';
-import { IntroContext } from './src/context/IntroContext';
-import { useTheme } from './src/context/ThemeContext';
-import { LanguageContext } from './src/context/LanguageContext';
 import UpdateSplashScreen from './src/components/UpdateSplashScreen';
 import { useOTAUpdates } from './src/hooks/useOTAUpdates';
-import { useAppInitialization } from './src/hooks/useAppInitialization';
 import { AppProviders } from './src/components/AppProviders';
+import { useAppStore } from './src/store/useAppStore';
 
 enableScreens();
 
 function AppContent() {
-  const { colors } = useTheme();
+  const colors = useAppStore((state) => state.colors);
+  const isReady = useAppStore((state) => state.isReady);
+  const showIntro = useAppStore((state) => state.showIntro);
+  const locale = useAppStore((state) => state.locale);
+  const handleIntroComplete = useAppStore((state) => state.handleIntroComplete);
+  const initialize = useAppStore((state) => state.initialize);
+  const setSystemColorScheme = useAppStore((state) => state.setSystemColorScheme);
+
+  const systemColorScheme = useColorScheme();
   const { updateStatus } = useOTAUpdates();
   const savedNavState = useRef<InitialState | undefined>(undefined);
 
-  const { isReady, showIntro, locale, setLocale, handleShowIntro, handleIntroComplete } =
-    useAppInitialization();
+  // Initialize store on mount
+  useEffect(() => {
+    initialize(systemColorScheme);
+  }, [initialize, systemColorScheme]);
+
+  // Sync system theme changes to store
+  useEffect(() => {
+    setSystemColorScheme(systemColorScheme);
+  }, [setSystemColorScheme, systemColorScheme]);
 
   useForegroundSync();
 
@@ -52,25 +64,17 @@ function AppContent() {
   }
 
   if (showIntro) {
-    return (
-      <LanguageContext.Provider value={{ locale, setLocale }}>
-        <IntroScreen key={locale} onComplete={handleIntroComplete} />
-      </LanguageContext.Provider>
-    );
+    return <IntroScreen key={locale} onComplete={handleIntroComplete} />;
   }
 
   return (
-    <LanguageContext.Provider value={{ locale, setLocale }}>
-      <IntroContext.Provider value={handleShowIntro}>
-        <AppNavigator
-          key={locale}
-          initialState={savedNavState.current}
-          onStateChange={(state) => {
-            savedNavState.current = state;
-          }}
-        />
-      </IntroContext.Provider>
-    </LanguageContext.Provider>
+    <AppNavigator
+      key={locale}
+      initialState={savedNavState.current}
+      onStateChange={(state) => {
+        savedNavState.current = state;
+      }}
+    />
   );
 }
 

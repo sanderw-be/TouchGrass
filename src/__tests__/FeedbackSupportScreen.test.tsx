@@ -10,36 +10,38 @@ jest.mock('../i18n', () => ({
   default: { locale: 'en' },
 }));
 
-// Mock ThemeContext
-jest.mock('../context/ThemeContext', () => ({
-  useTheme: () => ({
-    colors: {
-      mist: '#f5f5f5',
-      card: '#ffffff',
-      textPrimary: '#000000',
-      textMuted: '#888888',
-      fog: '#e0e0e0',
-      grass: '#4CAF50',
-      grassDark: '#2D5240',
-      textInverse: '#ffffff',
-    },
-    shadows: {
-      soft: {
-        shadowColor: '#2D5240',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.08,
-        shadowRadius: 8,
-        elevation: 3,
+// Mock App Store
+jest.mock('../store/useAppStore', () => ({
+  useAppStore: jest.fn((selector) =>
+    selector({
+      colors: {
+        mist: '#f5f5f5',
+        card: '#ffffff',
+        textPrimary: '#000000',
+        textMuted: '#888888',
+        fog: '#e0e0e0',
+        grass: '#4CAF50',
+        grassDark: '#2D5240',
+        textInverse: '#ffffff',
       },
-      medium: {
-        shadowColor: '#2D5240',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.12,
-        shadowRadius: 16,
-        elevation: 6,
+      shadows: {
+        soft: {
+          shadowColor: '#2D5240',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.08,
+          shadowRadius: 8,
+          elevation: 3,
+        },
+        medium: {
+          shadowColor: '#2D5240',
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.12,
+          shadowRadius: 16,
+          elevation: 6,
+        },
       },
-    },
-  }),
+    })
+  ),
 }));
 
 import FeedbackSupportScreen from '../screens/FeedbackSupportScreen';

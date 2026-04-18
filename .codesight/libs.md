@@ -51,7 +51,6 @@
   - const DISCARD_CONFIDENCE_THRESHOLD
   - _...1 more_
 - `src/detection/sessionMerger.ts` — function submitSession: (candidate) => Promise<void>, function buildSession: (startTime, endTime, source, confidence, notes?, steps?, distanceMeters?, averageSpeedKmh?) => OutsideSession
-- `src/hooks/useAppInitialization.ts` — function useAppInitialization: () => AppInitializationState
 - `src/hooks/useForegroundSync.ts` — function useForegroundSync: () => void
 - `src/hooks/useOTAUpdates.ts` — function useOTAUpdates: () => void, type OTAUpdateStatus
 - `src/i18n/index.ts`
@@ -75,6 +74,13 @@
   - function deleteSessionAsync: (id) => Promise<void>
   - function deleteSessionsByIdsAsync: (ids) => Promise<void>
   - _...57 more_
+- `src/store/useAppStore.ts`
+  - function triggerReminderFeedbackModal: (data) => void
+  - interface FeedbackModalData
+  - interface AppState
+  - type ThemePreference
+  - type FeedbackAction
+  - const useAppStore
 - `src/utils/batteryOptimization.ts`
   - function isBatteryOptimizationDisabled
   - function refreshBatteryOptimizationSetting

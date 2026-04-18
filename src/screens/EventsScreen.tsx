@@ -20,8 +20,8 @@ import {
   unDiscardSessionAsync,
   OutsideSession,
 } from '../storage/database';
-import { spacing, radius } from '../utils/theme';
-import { useTheme } from '../context/ThemeContext';
+import { spacing, radius, ThemeColors, Shadows } from '../utils/theme';
+import { useAppStore } from '../store/useAppStore';
 import { formatMinutes } from '../utils/helpers';
 import { t, formatLocalDate, formatLocalTime } from '../i18n';
 import ManualSessionSheet from '../components/ManualSessionSheet';
@@ -50,7 +50,8 @@ function groupByDay(sessions: OutsideSession[]): { dayMs: number; sessions: Outs
 }
 
 export default function EventsScreen() {
-  const { colors, shadows } = useTheme();
+  const colors = useAppStore((state) => state.colors);
+  const shadows = useAppStore((state) => state.shadows);
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const [includeConfirmed, setIncludeConfirmed] = useState(true);
   const [includeReview, setIncludeReview] = useState(true);
@@ -325,7 +326,8 @@ function SessionRow({
   onEditTimes: () => void;
   onNotes: () => void;
 }) {
-  const { colors, shadows } = useTheme();
+  const colors = useAppStore((state) => state.colors);
+  const shadows = useAppStore((state) => state.shadows);
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const swipeableRef = useRef<Swipeable>(null);
   const sourceIcon: Record<string, keyof typeof Ionicons.glyphMap> = {
@@ -568,10 +570,7 @@ function SessionRow({
   );
 }
 
-function makeStyles(
-  colors: ReturnType<typeof useTheme>['colors'],
-  shadows: ReturnType<typeof useTheme>['shadows']
-) {
+function makeStyles(colors: ThemeColors, shadows: Shadows) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.mist },
 

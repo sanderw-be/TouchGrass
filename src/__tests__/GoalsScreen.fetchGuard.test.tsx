@@ -8,42 +8,45 @@ jest.mock('../i18n', () => ({
   formatLocalTime: jest.fn(() => ''),
 }));
 
-jest.mock('../context/ThemeContext', () => ({
-  useTheme: () => ({
-    colors: {
-      grass: '#4A7C59',
-      grassLight: '#6BAF7A',
-      grassPale: '#E8F5EC',
-      grassDark: '#2D5240',
-      sky: '#7EB8D4',
-      skyLight: '#B8DFF0',
-      sun: '#F5C842',
-      mist: '#F8F9F7',
-      fog: '#E8EBE6',
-      card: '#FFFFFF',
-      textPrimary: '#1A2E1F',
-      textSecondary: '#5A7060',
-      textMuted: '#8FA892',
-      textInverse: '#FFFFFF',
-    },
-    shadows: {
-      soft: {
-        shadowColor: '#2D5240',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.08,
-        shadowRadius: 8,
-        elevation: 3,
+// Mock App Store
+jest.mock('../store/useAppStore', () => ({
+  useAppStore: jest.fn((selector) =>
+    selector({
+      colors: {
+        grass: '#4A7C59',
+        grassLight: '#6BAF7A',
+        grassPale: '#E8F5EC',
+        grassDark: '#2D5240',
+        sky: '#7EB8D4',
+        skyLight: '#B8DFF0',
+        sun: '#F5C842',
+        mist: '#F8F9F7',
+        fog: '#E8EBE6',
+        card: '#FFFFFF',
+        textPrimary: '#1A2E1F',
+        textSecondary: '#5A7060',
+        textMuted: '#8FA892',
+        textInverse: '#FFFFFF',
       },
-      medium: {
-        shadowColor: '#2D5240',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.12,
-        shadowRadius: 16,
-        elevation: 6,
+      shadows: {
+        soft: {
+          shadowColor: '#2D5240',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.08,
+          shadowRadius: 8,
+          elevation: 3,
+        },
+        medium: {
+          shadowColor: '#2D5240',
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.12,
+          shadowRadius: 16,
+          elevation: 6,
+        },
       },
-    },
-    isDark: false,
-  }),
+      isDark: false,
+    })
+  ),
 }));
 
 const mockGetCurrentDailyGoal = jest.fn(

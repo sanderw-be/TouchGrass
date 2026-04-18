@@ -8,8 +8,8 @@ import {
   startOfDay,
   startOfWeek,
 } from '../storage/database';
-import { spacing, radius } from '../utils/theme';
-import { useTheme } from '../context/ThemeContext';
+import { spacing, radius, ThemeColors, Shadows } from '../utils/theme';
+import { useAppStore } from '../store/useAppStore';
 import { formatMinutes } from '../utils/helpers';
 import { formatLocalDate, t } from '../i18n';
 
@@ -20,7 +20,8 @@ const DAY_MS = 86400000;
 type Period = 'week' | 'month';
 
 export default function HistoryScreen() {
-  const { colors, shadows } = useTheme();
+  const colors = useAppStore((state) => state.colors);
+  const shadows = useAppStore((state) => state.shadows);
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const [period, setPeriod] = useState<Period>('week');
   const [dailyData, setDailyData] = useState<{ date: number; minutes: number }[]>([]);
@@ -146,7 +147,8 @@ export default function HistoryScreen() {
 }
 
 function StatBox({ label, value }: { label: string; value: string }) {
-  const { colors, shadows } = useTheme();
+  const colors = useAppStore((state) => state.colors);
+  const shadows = useAppStore((state) => state.shadows);
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   return (
     <View style={styles.statBox}>
@@ -169,7 +171,8 @@ export function BarChart({
   period: Period;
   isLoading?: boolean;
 }) {
-  const { colors, shadows } = useTheme();
+  const colors = useAppStore((state) => state.colors);
+  const shadows = useAppStore((state) => state.shadows);
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const CHART_HEIGHT = 160;
   const targetY = CHART_HEIGHT - (target / maxValue) * CHART_HEIGHT;
@@ -289,10 +292,7 @@ export function BarChart({
   );
 }
 
-function makeStyles(
-  colors: ReturnType<typeof useTheme>['colors'],
-  shadows: ReturnType<typeof useTheme>['shadows']
-) {
+function makeStyles(colors: ThemeColors, shadows: Shadows) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.mist },
     content: { padding: spacing.md, paddingBottom: spacing.xxl },

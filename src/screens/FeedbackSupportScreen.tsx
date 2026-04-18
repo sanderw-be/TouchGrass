@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Linking, Alert } from 'react-native';
-import { spacing, radius } from '../utils/theme';
-import { useTheme } from '../context/ThemeContext';
+import { spacing, radius, ThemeColors, Shadows } from '../utils/theme';
+import { useAppStore } from '../store/useAppStore';
 import { Ionicons } from '@expo/vector-icons';
 import i18n, { t } from '../i18n';
 import { PRIVACY_POLICY_URL } from '../utils/constants';
@@ -33,7 +33,8 @@ async function openUrl(url: string): Promise<void> {
 }
 
 export default function FeedbackSupportScreen() {
-  const { colors, shadows } = useTheme();
+  const colors = useAppStore((state) => state.colors);
+  const shadows = useAppStore((state) => state.shadows);
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
 
   return (
@@ -75,7 +76,8 @@ function SettingRow({
   sublabel?: string;
   right?: React.ReactNode;
 }) {
-  const { colors, shadows } = useTheme();
+  const colors = useAppStore((state) => state.colors);
+  const shadows = useAppStore((state) => state.shadows);
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   return (
     <View style={styles.row}>
@@ -90,15 +92,13 @@ function SettingRow({
 }
 
 function Divider() {
-  const { colors, shadows } = useTheme();
+  const colors = useAppStore((state) => state.colors);
+  const shadows = useAppStore((state) => state.shadows);
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   return <View style={styles.divider} />;
 }
 
-function makeStyles(
-  colors: ReturnType<typeof useTheme>['colors'],
-  shadows: ReturnType<typeof useTheme>['shadows']
-) {
+function makeStyles(colors: ThemeColors, shadows: Shadows) {
   return {
     container: {
       flex: 1,

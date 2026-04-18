@@ -11,8 +11,8 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { getSettingAsync, setSettingAsync } from '../storage/database';
-import { spacing, radius } from '../utils/theme';
-import { useTheme } from '../context/ThemeContext';
+import { spacing, radius, ThemeColors, Shadows } from '../utils/theme';
+import { useAppStore } from '../store/useAppStore';
 import { Ionicons } from '@expo/vector-icons';
 import { t } from '../i18n';
 import {
@@ -24,7 +24,8 @@ import { getWeatherDescription, getWeatherEmoji } from '../weather/weatherAlgori
 import { formatTemperature } from '../utils/temperature';
 
 export default function WeatherSettingsScreen() {
-  const { colors, shadows } = useTheme();
+  const colors = useAppStore((state) => state.colors);
+  const shadows = useAppStore((state) => state.shadows);
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const [tempPreference, setTempPreference] = useState<'cold' | 'moderate' | 'hot'>('moderate');
   const [avoidRain, setAvoidRain] = useState(true);
@@ -269,7 +270,8 @@ function SettingRow({
   sublabel?: string;
   right?: React.ReactNode;
 }) {
-  const { colors, shadows } = useTheme();
+  const colors = useAppStore((state) => state.colors);
+  const shadows = useAppStore((state) => state.shadows);
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   return (
     <View style={styles.row}>
@@ -284,15 +286,13 @@ function SettingRow({
 }
 
 function Divider() {
-  const { colors, shadows } = useTheme();
+  const colors = useAppStore((state) => state.colors);
+  const shadows = useAppStore((state) => state.shadows);
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   return <View style={styles.divider} />;
 }
 
-function makeStyles(
-  colors: ReturnType<typeof useTheme>['colors'],
-  shadows: ReturnType<typeof useTheme>['shadows']
-) {
+function makeStyles(colors: ThemeColors, shadows: Shadows) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.mist },
     content: { padding: spacing.md, paddingBottom: spacing.xxl },
