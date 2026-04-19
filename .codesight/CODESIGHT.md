@@ -2,9 +2,9 @@
 
 > **Stack:** raw-http | none | react | typescript
 
-> 0 routes | 0 models | 39 components | 30 lib files | 2 env vars | 1 middleware | 0% test coverage
-> **Token savings:** this file is ~4,400 tokens. Without it, AI exploration would cost ~30,100 tokens. **Saves ~25,700 tokens per conversation.**
-> **Last scanned:** 2026-04-19 13:02 — re-run after significant changes
+> 0 routes | 0 models | 39 components | 38 lib files | 2 env vars | 1 middleware | 0% test coverage
+> **Token savings:** this file is ~5,200 tokens. Without it, AI exploration would cost ~32,200 tokens. **Saves ~27,000 tokens per conversation.**
+> **Last scanned:** 2026-04-19 13:48 — re-run after significant changes
 
 ---
 
@@ -126,14 +126,54 @@
   - function shouldRemindNow: (todayMinutes, dailyTargetMinutes, lastReminderMs, isCurrentlyOutside) => Promise<
   - interface ScoreContributor
   - interface HourScore
-- `src/storage/database.ts`
+- `src/storage/dateHelpers.ts`
+  - function startOfDay: (ms) => number
+  - function startOfWeek: (ms) => number
+  - function startOfMonth: (ms) => number
+  - function startOfNextMonth: (ms) => number
+- `src/storage/db.ts`
   - function initDatabaseAsync: () => Promise<void>
+  - function clearAllDataAsync: () => Promise<void>
+  - const db
+  - const SEVEN_DAYS_MS
+- `src/storage/repositories/GoalRepository.ts`
+  - function getCurrentDailyGoalAsync: () => Promise<DailyGoal | null>
+  - function getCurrentWeeklyGoalAsync: () => Promise<WeeklyGoal | null>
+  - function setDailyGoalAsync: (minutes) => Promise<void>
+  - function setWeeklyGoalAsync: (minutes) => Promise<void>
+  - function getDailyStreakAsync: () => Promise<number>
+  - function getWeeklyStreakAsync: () => Promise<number>
+- `src/storage/repositories/LocationRepository.ts`
+  - function getKnownLocationsAsync: () => Promise<KnownLocation[]>
+  - function getAllKnownLocationsAsync: () => Promise<KnownLocation[]>
+  - function getSuggestedLocationsAsync: () => Promise<KnownLocation[]>
+  - function upsertKnownLocationAsync: (loc) => Promise<void>
+  - function denyKnownLocationAsync: (id) => Promise<void>
+  - function deleteKnownLocationAsync: (id) => Promise<void>
+- `src/storage/repositories/LogRepository.ts` — function insertBackgroundLogAsync: (category, message) => Promise<void>, function getBackgroundLogsAsync: (category?, limit) => Promise<BackgroundTaskLog[]>
+- `src/storage/repositories/NotificationRepository.ts`
+  - function insertReminderFeedbackAsync: (feedback) => Promise<void>
+  - function getReminderFeedbackAsync: () => Promise<ReminderFeedback[]>
+  - function getScheduledNotificationsAsync: () => Promise<ScheduledNotification[]>
+  - function insertScheduledNotificationAsync: (notification, 'id'>) => Promise<number>
+  - function updateScheduledNotificationAsync: (notification) => Promise<void>
+  - function deleteScheduledNotificationAsync: (id) => Promise<void>
+  - _...2 more_
+- `src/storage/repositories/SessionRepository.ts`
   - function insertSessionAsync: (session) => Promise<number>
   - function getSessionsForDayAsync: (dateMs) => Promise<OutsideSession[]>
   - function getSessionsForRangeAsync: (fromMs, toMs) => Promise<OutsideSession[]>
   - function deleteSessionAsync: (id) => Promise<void>
   - function deleteSessionsByIdsAsync: (ids) => Promise<void>
-  - _...57 more_
+  - function insertSessionsBatchAsync: (sessions) => Promise<number[]>
+  - _...14 more_
+- `src/storage/repositories/SettingRepository.ts` — function getSettingAsync: (key, fallback) => Promise<string>, function setSettingAsync: (key, value) => Promise<void>
+- `src/storage/repositories/WeatherRepository.ts`
+  - function saveWeatherConditionsAsync: (conditions) => Promise<void>
+  - function getWeatherConditionsForHourAsync: (forecastDate, startHour, endHour) => Promise<WeatherCondition[]>
+  - function saveWeatherCacheAsync: (cache) => Promise<void>
+  - function getWeatherCacheAsync: () => Promise<WeatherCache | null>
+  - function clearExpiredWeatherDataAsync: (now) => Promise<void>
 - `src/store/useAppStore.ts`
   - function triggerReminderFeedbackModal: (data) => void
   - interface FeedbackModalData
@@ -221,7 +261,7 @@
 
 ## Most Imported Files (change these carefully)
 
-- `src/storage/database.ts` — imported by **63** files
+- `src/storage/index.ts` — imported by **67** files
 - `src/i18n/index.ts` — imported by **49** files
 - `src/store/useAppStore.ts` — imported by **34** files
 - `src/utils/theme.ts` — imported by **29** files
@@ -230,21 +270,21 @@
 - `src/utils/helpers.ts` — imported by **10** files
 - `src/utils/sessionsChangedEmitter.ts` — imported by **8** files
 - `src/detection/manualCheckin.ts` — imported by **8** files
+- `src/storage/db.ts` — imported by **8** files
 - `src/background/unifiedBackgroundTask.ts` — imported by **7** files
 - `src/utils/widgetHelper.ts` — imported by **7** files
 - `src/calendar/calendarService.ts` — imported by **7** files
 - `src/weather/weatherService.ts` — imported by **7** files
 - `src/utils/constants.ts` — imported by **6** files
 - `src/detection/sessionMerger.ts` — imported by **6** files
+- `src/storage/types.ts` — imported by **6** files
 - `src/navigation/AppNavigator.tsx` — imported by **5** files
 - `src/utils/units.ts` — imported by **5** files
 - `src/components/goals/GoalsShared.tsx` — imported by **5** files
-- `src/utils/batteryOptimization.ts` — imported by **4** files
-- `src/utils/temperature.ts` — imported by **4** files
 
 ## Import Map (who imports what)
 
-- `src/storage/database.ts` ← `appBootstrap.ts`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx` +58 more
+- `src/storage/index.ts` ← `appBootstrap.ts`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx` +62 more
 - `src/i18n/index.ts` ← `appBootstrap.ts`, `src/__tests__/ErrorBoundary.test.tsx`, `src/__tests__/FeedbackSupportScreen.test.tsx`, `src/__tests__/appBootstrap.test.ts`, `src/__tests__/i18n.test.ts` +44 more
 - `src/store/useAppStore.ts` ← `App.tsx`, `src/__tests__/App.test.tsx`, `src/__tests__/notificationManager.test.ts`, `src/__tests__/useAppStore.test.ts`, `src/components/DiagnosticSheet.tsx` +29 more
 - `src/utils/theme.ts` ← `src/components/DiagnosticSheet.tsx`, `src/components/EditLocationSheet.tsx`, `src/components/EditSessionSheet.tsx`, `src/components/ErrorBoundary.tsx`, `src/components/ManualSessionSheet.tsx` +24 more
@@ -253,7 +293,7 @@
 - `src/utils/helpers.ts` ← `src/components/EditSessionSheet.tsx`, `src/components/ManualSessionSheet.tsx`, `src/components/ProgressRing.tsx`, `src/components/ReminderFeedbackModal.tsx`, `src/i18n/index.ts` +5 more
 - `src/utils/sessionsChangedEmitter.ts` ← `src/__tests__/EventsScreen.test.tsx`, `src/__tests__/HomeScreen.test.tsx`, `src/__tests__/sessionsChangedEmitter.test.ts`, `src/detection/gpsDetection.ts`, `src/detection/healthConnect.ts` +3 more
 - `src/detection/manualCheckin.ts` ← `src/__tests__/ManualSessionSheet.test.tsx`, `src/__tests__/ManualSessionSheet.test.tsx`, `src/__tests__/ManualSessionSheet.test.tsx`, `src/__tests__/ManualSessionSheet.test.tsx`, `src/__tests__/widget-task-handler.test.tsx` +3 more
-- `src/background/unifiedBackgroundTask.ts` ← `appBootstrap.ts`, `index.ts`, `src/__tests__/appBootstrap.test.ts`, `src/__tests__/backgroundService.test.ts`, `src/__tests__/backgroundTick.test.ts` +2 more
+- `src/storage/db.ts` ← `src/storage/index.ts`, `src/storage/repositories/GoalRepository.ts`, `src/storage/repositories/LocationRepository.ts`, `src/storage/repositories/LogRepository.ts`, `src/storage/repositories/NotificationRepository.ts` +3 more
 
 ---
 
