@@ -49,7 +49,7 @@ export default function CalendarSection({
   return (
     <>
       <Text style={styles.sectionHeader}>{t('settings_section_calendar')}</Text>
-      <Card variant="flat" style={{ padding: 0, overflow: 'hidden' }}>
+      <Card style={{ padding: 0, overflow: 'hidden' }}>
         <PermissionToggleRow
           icon={<Ionicons name="calendar-outline" size={20} color={colors.textSecondary} />}
           label={t('settings_calendar_integration')}

@@ -27,7 +27,7 @@ export default function WeatherSection({
   return (
     <>
       <Text style={styles.sectionHeader}>{t('settings_weather_title')}</Text>
-      <Card variant="flat" style={{ padding: 0, overflow: 'hidden' }}>
+      <Card style={{ padding: 0, overflow: 'hidden' }}>
         <PermissionToggleRow
           icon={<Ionicons name="partly-sunny-outline" size={20} color={colors.textSecondary} />}
           label={t('settings_weather_enabled')}

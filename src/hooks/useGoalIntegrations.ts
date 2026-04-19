@@ -24,10 +24,12 @@ import { emitPermissionIssuesChanged } from '../utils/permissionIssuesChangedEmi
 import { t } from '../i18n';
 import { PermissionSheetConfig } from '../components/PermissionExplainerSheet';
 import { CATCHUP_REMINDERS_OPTIONS, CatchupRemindersOption } from '../components/goals/GoalsShared';
-
-const SMART_REMINDERS_OPTIONS = [0, 1, 2, 3];
-const CALENDAR_BUFFER_OPTIONS = [10, 20, 30, 45, 60];
-const CALENDAR_DURATION_OPTIONS = [0, 5, 10, 15, 20, 30];
+import {
+  SMART_REMINDERS_OPTIONS,
+  CALENDAR_BUFFER_OPTIONS,
+  CALENDAR_DURATION_OPTIONS,
+  getPermissionIssueLabels,
+} from '../domain/ReminderDomain';
 
 export function useGoalIntegrations() {
   // Reminders state
@@ -427,17 +429,19 @@ export function useGoalIntegrations() {
   };
 
   const goalsPermissionIssues = useMemo(() => {
-    const issues: string[] = [];
-    if (smartRemindersCount > 0 && !notificationPermissionGranted) {
-      issues.push(t('settings_reminders_label'));
-    }
-    if (weatherEnabled && !weatherLocationGranted) {
-      issues.push(t('settings_weather_enabled'));
-    }
-    if (calendarEnabled && !calendarPermissionGranted) {
-      issues.push(t('settings_calendar_integration'));
-    }
-    return issues;
+    return getPermissionIssueLabels(
+      smartRemindersCount,
+      notificationPermissionGranted,
+      weatherEnabled,
+      weatherLocationGranted,
+      calendarEnabled,
+      calendarPermissionGranted,
+      {
+        reminders: t('settings_reminders_label'),
+        weather: t('settings_weather_enabled'),
+        calendar: t('settings_calendar_integration'),
+      }
+    );
   }, [
     smartRemindersCount,
     notificationPermissionGranted,

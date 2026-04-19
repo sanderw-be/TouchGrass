@@ -7,6 +7,8 @@ import { getSettingAsync, setSettingAsync } from '../storage';
 jest.mock('../storage', () => ({
   getSettingAsync: jest.fn(),
   setSettingAsync: jest.fn(),
+  getSelectedCalendarId: jest.fn(),
+  setSelectedCalendarId: jest.fn(),
 }));
 jest.mock('../calendar/calendarService', () => ({
   hasCalendarPermissions: jest.fn(),
@@ -54,10 +56,11 @@ describe('useGoalIntegrations', () => {
   });
 
   it('initializes and loads settings', async () => {
-    (getSettingAsync as jest.Mock).mockImplementation((key) => {
+    (getSettingAsync as jest.Mock).mockImplementation((key, fallback) => {
       if (key === 'smart_reminders_count') return Promise.resolve('3');
       if (key === 'weather_enabled') return Promise.resolve('0');
-      return Promise.resolve('0');
+      // All other settings should return their fallback
+      return Promise.resolve(fallback);
     });
 
     const { result } = renderHook(() => useGoalIntegrations());
@@ -67,7 +70,12 @@ describe('useGoalIntegrations', () => {
     });
 
     expect(result.current.smartRemindersCount).toBe(3);
+    expect(result.current.catchupRemindersCount).toBe(2); // fallback
     expect(result.current.weatherEnabled).toBe(false);
+    expect(result.current.calendarEnabled).toBe(false); // fallback '0'
+    expect(result.current.calendarBuffer).toBe(30); // fallback '30'
+    expect(result.current.calendarDuration).toBe(0); // fallback '0'
+    expect(result.current.batteryOptimizationGranted).toBe(false); // fallback '0'
   });
 
   it('cycles smart reminders count', async () => {
