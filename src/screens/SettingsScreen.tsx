@@ -1,51 +1,34 @@
-import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import React, { useCallback, useMemo, useRef, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Switch,
   Alert,
   Linking,
-  Platform,
-  AppState,
-  AppStateStatus,
   BackHandler,
 } from 'react-native';
-import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet';
 import Constants from 'expo-constants';
-import * as Location from 'expo-location';
 
-import {
-  getKnownLocationsAsync,
-  getSuggestedLocationsAsync,
-  KnownLocation,
-  clearAllDataAsync,
-} from '../storage/database';
-import {
-  getDetectionStatus,
-  toggleHealthConnect,
-  toggleGPS,
-  recheckHealthConnect,
-  checkGPSPermissions,
-  requestGPSPermissions,
-} from '../detection/index';
-import PermissionExplainerSheet, {
-  PermissionSheetConfig,
-} from '../components/PermissionExplainerSheet';
+import { clearAllDataAsync } from '../storage/database';
+import PermissionExplainerSheet from '../components/PermissionExplainerSheet';
 import DiagnosticSheet from '../components/DiagnosticSheet';
+import { SettingRow } from '../components/Settings/SettingRow';
+import { Divider } from '../components/Settings/Divider';
+import { DetectionSettingRow } from '../components/Settings/DetectionSettingRow';
 
 import { spacing, radius, ThemeColors, Shadows } from '../utils/theme';
 import { t, getDeviceSupportedLocale } from '../i18n';
 import { PRIVACY_POLICY_URL } from '../utils/constants';
 import type { SettingsStackParamList } from '../navigation/AppNavigator';
-import { emitPermissionIssuesChanged } from '../utils/permissionIssuesChangedEmitter';
 import { useAppStore, ThemePreference } from '../store/useAppStore';
+import { useDetectionSettings } from '../hooks/useDetectionSettings';
 
 const LANGUAGE_LABELS: Record<string, string> = {
   en: 'English',
@@ -78,30 +61,32 @@ export default function SettingsScreen() {
 
   const navigation = useNavigation<StackNavigationProp<SettingsStackParamList>>();
 
+  const {
+    detectionStatus,
+    knownLocations,
+    suggestedCount,
+    togglingHC,
+    togglingGPS,
+    permissionSheet,
+    setPermissionSheet,
+    handleToggleHC,
+    handleToggleGPS,
+    showHCPermissionSheet,
+    showGPSPermissionSheet,
+  } = useDetectionSettings();
+
   // Update navigation header title reactively
   React.useLayoutEffect(() => {
     navigation.setOptions({ title: t('nav_settings') });
   }, [navigation, locale]);
 
   const insets = useSafeAreaInsets();
-  const [detectionStatus, setDetectionStatus] = useState({
-    healthConnect: false,
-    healthConnectPermission: false,
-    gps: false,
-    gpsPermission: false,
-  });
-  const [knownLocations, setKnownLocations] = useState<KnownLocation[]>([]);
-  const [suggestedCount, setSuggestedCount] = useState(0);
-  const [togglingHC, setTogglingHC] = useState(false);
-  const [togglingGPS, setTogglingGPS] = useState(false);
-  const [permissionSheet, setPermissionSheet] = useState<PermissionSheetConfig | null>(null);
-  const [showDiagnosticSheet, setShowDiagnosticSheet] = useState(false);
-  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [showDiagnosticSheet, setShowDiagnosticSheet] = React.useState(false);
+  const [isSheetOpen, setIsSheetOpen] = React.useState(false);
   const languageSheetRef = useRef<BottomSheetModal>(null);
   const systemLocale = getDeviceSupportedLocale();
 
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
-  const isFetchingRef = useRef(false);
 
   // Hardware back press to close language sheet
   useEffect(() => {
@@ -116,163 +101,6 @@ export default function SettingsScreen() {
   const handleSheetChange = useCallback((index: number) => {
     setIsSheetOpen(index >= 0);
   }, []);
-
-  const loadStatus = useCallback(async () => {
-    if (isFetchingRef.current) return;
-    isFetchingRef.current = true;
-    try {
-      setDetectionStatus(await getDetectionStatus());
-      setKnownLocations(await getKnownLocationsAsync());
-      setSuggestedCount((await getSuggestedLocationsAsync()).length);
-    } catch (error) {
-      console.error('[SettingsScreen.loadStatus] Error:', error);
-    } finally {
-      isFetchingRef.current = false;
-    }
-  }, []);
-
-  // Re-check permission status silently (no popups) when the screen regains focus
-  // or the app returns to the foreground.  The UI shows an error indicator on
-  // the toggle row when the user has enabled a source but permissions are gone.
-  const checkAndUpdatePermissions = useCallback(async () => {
-    await Promise.all([recheckHealthConnect(), checkGPSPermissions()]);
-
-    setDetectionStatus(await getDetectionStatus());
-  }, []);
-
-  useFocusEffect(
-    useCallback(() => {
-      loadStatus();
-
-      // Re-check Health Connect and GPS when screen comes into focus
-      // (user may have granted permissions in Android Settings or Health Connect)
-      checkAndUpdatePermissions();
-
-      // Also re-check when app comes back to foreground
-      const sub = AppState.addEventListener('change', (state: AppStateStatus) => {
-        if (state === 'active') {
-          checkAndUpdatePermissions();
-        }
-      });
-      return () => sub.remove();
-    }, [loadStatus, checkAndUpdatePermissions])
-  );
-
-  const handleOpenAppSettings = async () => {
-    try {
-      if (Platform.OS === 'android') {
-        await Linking.openSettings();
-      } else if (Platform.OS === 'ios') {
-        await Linking.openURL('app-settings:');
-      }
-    } catch (error) {
-      console.error('Error opening app settings:', error);
-      Alert.alert(t('settings_error_title'), t('settings_error_open_settings_failed'));
-    }
-  };
-
-  const showHCPermissionSheet = useCallback(() => {
-    const disableHC = async () => {
-      try {
-        await toggleHealthConnect(false);
-        setDetectionStatus(await getDetectionStatus());
-        emitPermissionIssuesChanged();
-      } catch (error) {
-        console.error('[SettingsScreen.showHCPermissionSheet.disable] Error:', error);
-      }
-    };
-    setPermissionSheet({
-      title: t('settings_hc_permission_title'),
-      body: t('settings_hc_permission_body'),
-      openLabel: t('intro_hc_button'),
-      onOpen: async () => {
-        setPermissionSheet(null);
-        navigation.navigate('HealthConnectRationale');
-      },
-      onCancel: disableHC,
-      onDisable: disableHC,
-    });
-  }, [navigation]);
-
-  const showGPSPermissionSheet = useCallback(() => {
-    const disableGPS = async () => {
-      try {
-        await toggleGPS(false);
-        setDetectionStatus(await getDetectionStatus());
-        emitPermissionIssuesChanged();
-      } catch (error) {
-        console.error('[SettingsScreen.showGPSPermissionSheet.disable] Error:', error);
-      }
-    };
-    setPermissionSheet({
-      title: t('settings_gps_permission_required_title'),
-      body: t('settings_gps_permission_required_body'),
-      openLabel: t('intro_location_button'),
-      onOpen: async () => {
-        const { status: fgStatus, canAskAgain: fgCanAskAgain } =
-          await Location.getForegroundPermissionsAsync();
-        const { status: bgStatus, canAskAgain: bgCanAskAgain } =
-          await Location.getBackgroundPermissionsAsync();
-
-        if (
-          (fgStatus !== 'granted' && fgCanAskAgain === false) ||
-          (bgStatus !== 'granted' && bgCanAskAgain === false)
-        ) {
-          await handleOpenAppSettings();
-          setPermissionSheet(null);
-          return;
-        }
-
-        const granted = await requestGPSPermissions();
-        if (granted) {
-          setDetectionStatus(await getDetectionStatus());
-          emitPermissionIssuesChanged();
-        } else {
-          await handleOpenAppSettings();
-        }
-        setPermissionSheet(null);
-      },
-      onCancel: disableGPS,
-      onDisable: disableGPS,
-    });
-  }, []);
-
-  const handleToggleHC = async (value: boolean) => {
-    if (togglingHC) return;
-    setTogglingHC(true);
-    try {
-      const result = await toggleHealthConnect(value);
-      setDetectionStatus(await getDetectionStatus());
-      emitPermissionIssuesChanged();
-
-      if (value && result.needsPermissions) {
-        showHCPermissionSheet();
-      }
-    } catch (error) {
-      console.error('Error toggling Health Connect:', error);
-      Alert.alert(t('settings_hc_open_error_title'), t('settings_hc_open_error_body'));
-    } finally {
-      setTogglingHC(false);
-    }
-  };
-
-  const handleToggleGPS = async (value: boolean) => {
-    if (togglingGPS) return;
-    setTogglingGPS(true);
-    try {
-      const result = await toggleGPS(value);
-      setDetectionStatus(await getDetectionStatus());
-      emitPermissionIssuesChanged();
-
-      if (value && result.needsPermissions) {
-        showGPSPermissionSheet();
-      }
-    } catch (error) {
-      console.error('Error toggling GPS:', error);
-    } finally {
-      setTogglingGPS(false);
-    }
-  };
 
   const changeLanguage = (code: string) => {
     setLocale(code);
@@ -356,8 +184,9 @@ export default function SettingsScreen() {
             isLoading={togglingHC}
             onPermissionFix={showHCPermissionSheet}
             testID="hc-toggle"
+            colors={colors}
           />
-          <Divider />
+          <Divider colors={colors} />
           <DetectionSettingRow
             enabled={detectionStatus.gps}
             permissionGranted={detectionStatus.gpsPermission}
@@ -369,12 +198,14 @@ export default function SettingsScreen() {
             isLoading={togglingGPS}
             onPermissionFix={showGPSPermissionSheet}
             testID="gps-toggle"
+            colors={colors}
           />
-          <Divider />
+          <Divider colors={colors} />
           <SettingRow
             icon={<Ionicons name="radio-outline" size={20} color={colors.textSecondary} />}
             label={t('settings_background_tracking_label')}
             sublabel={t('settings_background_tracking_sublabel')}
+            colors={colors}
           />
         </View>
 
@@ -390,6 +221,7 @@ export default function SettingsScreen() {
                   ? t('settings_locations_count', { count: knownLocations.length })
                   : t('settings_locations_manage_desc')
               }
+              colors={colors}
               right={
                 <View style={styles.locationRight}>
                   {suggestedCount > 0 && (
@@ -408,7 +240,7 @@ export default function SettingsScreen() {
         <View style={styles.card}>
           {(['system', 'light', 'dark'] as ThemePreference[]).map((pref, i) => (
             <View key={pref}>
-              {i > 0 && <Divider />}
+              {i > 0 && <Divider colors={colors} />}
               <TouchableOpacity style={styles.row} onPress={() => setThemePreference(pref)}>
                 <View style={styles.rowIconContainer}>
                   <Ionicons
@@ -473,6 +305,7 @@ export default function SettingsScreen() {
               icon={<Ionicons name="leaf-outline" size={20} color={colors.textSecondary} />}
               label="TouchGrass"
               sublabel={t('settings_app_sublabel')}
+              colors={colors}
               right={
                 <View style={styles.rowRightInline}>
                   {Constants.expoConfig?.version ? (
@@ -488,41 +321,45 @@ export default function SettingsScreen() {
               }
             />
           </TouchableOpacity>
-          <Divider />
+          <Divider colors={colors} />
           <TouchableOpacity onPress={() => Linking.openURL(PRIVACY_POLICY_URL)}>
             <SettingRow
               icon={<Ionicons name="lock-closed-outline" size={20} color={colors.textSecondary} />}
               label={t('settings_privacy')}
               sublabel={t('settings_privacy_sublabel')}
               hint={t('settings_privacy_hint')}
+              colors={colors}
               right={<Ionicons name="chevron-forward" size={20} color={colors.textMuted} />}
             />
           </TouchableOpacity>
-          <Divider />
+          <Divider colors={colors} />
           <SettingRow
             icon={<Ionicons name="school-outline" size={20} color={colors.textSecondary} />}
             label={t('settings_rerun_tutorial')}
             sublabel={t('settings_rerun_tutorial_sublabel')}
+            colors={colors}
             right={
               <TouchableOpacity style={styles.editBtn} onPress={handleShowIntro}>
                 <Text style={styles.editBtnText}>{t('settings_rerun_tutorial')}</Text>
               </TouchableOpacity>
             }
           />
-          <Divider />
+          <Divider colors={colors} />
           <TouchableOpacity onPress={() => navigation.navigate('FeedbackSupport')}>
             <SettingRow
               icon={<Ionicons name="cafe-outline" size={20} color={colors.textSecondary} />}
               label={t('settings_feedback_support')}
               sublabel={t('settings_feedback_support_sublabel')}
+              colors={colors}
               right={<Ionicons name="chevron-forward" size={20} color={colors.textMuted} />}
             />
           </TouchableOpacity>
-          <Divider />
+          <Divider colors={colors} />
           <SettingRow
             icon={<Ionicons name="trash-outline" size={20} color={colors.textSecondary} />}
             label={t('settings_clear_data')}
             sublabel={t('settings_clear_data_sublabel')}
+            colors={colors}
             right={
               <TouchableOpacity style={styles.dangerBtn} onPress={handleClearData}>
                 <Text style={styles.dangerBtnText}>{t('settings_clear_data')}</Text>
@@ -541,6 +378,7 @@ export default function SettingsScreen() {
               }
               label={t('settings_activity_log')}
               sublabel={t('settings_activity_log_sublabel')}
+              colors={colors}
               right={<Ionicons name="chevron-forward" size={20} color={colors.textMuted} />}
             />
           </TouchableOpacity>
@@ -579,7 +417,7 @@ export default function SettingsScreen() {
           <Text style={styles.sheetTitle}>{t('settings_section_language')}</Text>
           {LANGUAGES.map((lang, index) => (
             <View key={lang.code}>
-              {index > 0 && <Divider />}
+              {index > 0 && <Divider colors={colors} />}
               <TouchableOpacity style={styles.row} onPress={() => changeLanguage(lang.code)}>
                 <View style={styles.rowIconContainer}>
                   <Ionicons
@@ -612,105 +450,6 @@ export default function SettingsScreen() {
         </BottomSheetView>
       </BottomSheetModal>
     </>
-  );
-}
-
-function SettingRow({
-  icon,
-  label,
-  sublabel,
-  hint,
-  right,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  sublabel?: string;
-  hint?: string;
-  right?: React.ReactNode;
-}) {
-  const colors = useAppStore((state) => state.colors);
-  const shadows = useAppStore((state) => state.shadows);
-  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
-  return (
-    <View style={styles.row}>
-      <View style={styles.rowIconContainer}>{icon}</View>
-      <View style={styles.rowContent}>
-        <Text style={styles.rowLabel}>{label}</Text>
-        {sublabel && <Text style={styles.rowSublabel}>{sublabel}</Text>}
-        {hint && <Text style={styles.rowHint}>{hint}</Text>}
-      </View>
-      {right && <View style={styles.rowRight}>{right}</View>}
-    </View>
-  );
-}
-
-function Divider() {
-  const colors = useAppStore((state) => state.colors);
-  const shadows = useAppStore((state) => state.shadows);
-  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
-  return <View style={styles.divider} />;
-}
-
-function DetectionSettingRow({
-  enabled,
-  permissionGranted,
-  icon,
-  label,
-  desc,
-  permissionMissingLabel,
-  onToggle,
-  isLoading,
-  onPermissionFix,
-  testID,
-}: {
-  enabled: boolean;
-  permissionGranted: boolean;
-  icon: React.ReactNode;
-  label: string;
-  desc: string;
-  permissionMissingLabel: string;
-  onToggle: (value: boolean) => void;
-  isLoading?: boolean;
-  onPermissionFix?: () => void;
-  testID?: string;
-}) {
-  const colors = useAppStore((state) => state.colors);
-  const shadows = useAppStore((state) => state.shadows);
-  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
-  const hasError = enabled && !permissionGranted;
-
-  return (
-    <View>
-      <View style={styles.row}>
-        <View style={styles.rowIconContainer}>{icon}</View>
-        <View style={styles.rowContent}>
-          <Text style={styles.rowLabel}>{label}</Text>
-          {hasError ? (
-            <TouchableOpacity
-              onPress={onPermissionFix}
-              disabled={!onPermissionFix}
-              accessibilityRole="button"
-              accessibilityLabel={permissionMissingLabel}
-              accessibilityHint={t('settings_permission_open')}
-            >
-              <Text style={[styles.rowSublabel, { color: colors.error }]}>
-                {permissionMissingLabel}
-              </Text>
-            </TouchableOpacity>
-          ) : (
-            <Text style={styles.rowSublabel}>{desc}</Text>
-          )}
-        </View>
-        <Switch
-          value={enabled}
-          onValueChange={onToggle}
-          disabled={isLoading}
-          trackColor={{ false: colors.fog, true: colors.grassLight }}
-          thumbColor={enabled ? colors.grass : colors.inactive}
-          testID={testID}
-        />
-      </View>
-    </View>
   );
 }
 
@@ -776,22 +515,6 @@ function makeStyles(colors: ThemeColors, shadows: Shadows) {
       borderRadius: radius.full,
     },
 
-    divider: { height: 1, backgroundColor: colors.fog, marginLeft: spacing.md + 28 + spacing.md },
-
-    statusDot: { width: 10, height: 10, borderRadius: 5 },
-    statusDotActive: { backgroundColor: colors.grass },
-    statusDotInactive: { backgroundColor: colors.inactive },
-
-    settingsBtn: {
-      backgroundColor: colors.grassPale,
-      borderRadius: radius.full,
-      width: 32,
-      height: 32,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    settingsBtnText: { fontSize: 16 },
-
     editBtn: {
       backgroundColor: colors.grassPale,
       borderRadius: radius.full,
@@ -799,13 +522,6 @@ function makeStyles(colors: ThemeColors, shadows: Shadows) {
       paddingVertical: 4,
     },
     editBtnText: { fontSize: 12, color: colors.grass, fontWeight: '600' },
-    connectBtn: {
-      backgroundColor: colors.grass,
-      borderRadius: radius.full,
-      paddingHorizontal: spacing.sm,
-      paddingVertical: 4,
-    },
-    connectBtnText: { fontSize: 12, color: colors.textInverse, fontWeight: '600' },
 
     dangerBtn: {
       backgroundColor: colors.errorSurface,
@@ -817,16 +533,6 @@ function makeStyles(colors: ThemeColors, shadows: Shadows) {
 
     checkmark: { marginLeft: spacing.md },
 
-    valueChip: {
-      fontSize: 13,
-      color: colors.grass,
-      fontWeight: '600',
-      backgroundColor: colors.grassPale,
-      paddingHorizontal: spacing.sm,
-      paddingVertical: 3,
-      borderRadius: radius.full,
-    },
-
     permissionWarning: {
       backgroundColor: colors.warningSurface,
       marginHorizontal: spacing.md,
@@ -835,13 +541,6 @@ function makeStyles(colors: ThemeColors, shadows: Shadows) {
       padding: spacing.sm,
     },
     permissionWarningText: { fontSize: 12, color: colors.warningText, lineHeight: 18 },
-
-    emptyText: {
-      fontSize: 13,
-      color: colors.textMuted,
-      padding: spacing.md,
-      lineHeight: 20,
-    },
 
     locationRight: {
       flexDirection: 'row',

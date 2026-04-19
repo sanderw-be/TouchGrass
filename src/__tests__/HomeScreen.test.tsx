@@ -80,6 +80,10 @@ jest.mock('@react-navigation/native', () => ({
       cb();
     }, []);
   },
+  useNavigation: () => ({
+    navigate: jest.fn(),
+    setOptions: jest.fn(),
+  }),
 }));
 
 jest.mock('react-native-gesture-handler/Swipeable', () => {
