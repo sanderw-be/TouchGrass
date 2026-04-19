@@ -3,7 +3,7 @@ import { render, act, waitFor } from '@testing-library/react-native';
 
 // Mock database BEFORE importing the component
 const mockGetScheduledNotificationsAsync = jest.fn(() => Promise.resolve([]));
-jest.mock('../storage/database', () => ({
+jest.mock('../storage', () => ({
   getScheduledNotificationsAsync: mockGetScheduledNotificationsAsync,
   insertScheduledNotificationAsync: jest.fn(() => Promise.resolve()),
   updateScheduledNotificationAsync: jest.fn(() => Promise.resolve()),

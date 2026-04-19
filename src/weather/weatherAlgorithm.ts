@@ -4,7 +4,7 @@
  */
 
 import { WeatherCondition, WEATHER_CODES, WeatherPreferences } from './types';
-import { getSettingAsync } from '../storage/database';
+import { getSettingAsync } from '../storage';
 import { t } from '../i18n';
 
 /**

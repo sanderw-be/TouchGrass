@@ -19,7 +19,7 @@ import {
   deleteSessionAsync,
   unDiscardSessionAsync,
   OutsideSession,
-} from '../storage/database';
+} from '../storage';
 import { spacing, radius, ThemeColors, Shadows } from '../utils/theme';
 import { useAppStore } from '../store/useAppStore';
 import { formatMinutes } from '../utils/helpers';

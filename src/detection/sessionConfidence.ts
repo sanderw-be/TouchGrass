@@ -1,4 +1,4 @@
-import { OutsideSession, getSettingAsync, setSettingAsync } from '../storage/database';
+import { OutsideSession, getSettingAsync, setSettingAsync } from '../storage';
 
 /**
  * Combined confidence score below this threshold causes a session to be stored

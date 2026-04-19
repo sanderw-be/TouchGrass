@@ -15,7 +15,7 @@ jest.mock('../detection', () => ({
 
 // Mock database
 const mockGetSetting = jest.fn(async (key: string, def: string) => def);
-jest.mock('../storage/database', () => ({
+jest.mock('../storage', () => ({
   getSettingAsync: (key: string, def: string) => mockGetSetting(key, def),
 }));
 

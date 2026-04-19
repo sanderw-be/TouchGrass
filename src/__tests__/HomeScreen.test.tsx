@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, fireEvent, act } from '@testing-library/react-native';
-import type { OutsideSession } from '../storage/database';
+import type { OutsideSession } from '../storage';
 
 jest.mock('../i18n', () => ({
   t: (key: string) => key,
@@ -29,7 +29,7 @@ const mockGetWeeklyStreak = jest.fn(() => Promise.resolve(0));
 const mockGetSetting = jest.fn<Promise<string>, [string, string]>(() => Promise.resolve(''));
 const mockSetSetting = jest.fn<Promise<void>, [string, string]>(() => Promise.resolve());
 
-jest.mock('../storage/database', () => ({
+jest.mock('../storage', () => ({
   getTodayMinutesAsync: () => mockGetTodayMinutes(),
   getWeekMinutesAsync: () => mockGetWeekMinutes(),
   getCurrentDailyGoalAsync: () => mockGetCurrentDailyGoal(),

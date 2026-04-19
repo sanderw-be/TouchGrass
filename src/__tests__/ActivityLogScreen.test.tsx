@@ -35,7 +35,7 @@ jest.mock('react-native-safe-area-context', () => ({
 }));
 
 const mockGetBackgroundLogs = jest.fn();
-jest.mock('../storage/database', () => ({
+jest.mock('../storage', () => ({
   getBackgroundLogsAsync: (...args: unknown[]) => mockGetBackgroundLogs(...args),
 }));
 

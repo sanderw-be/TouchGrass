@@ -8,7 +8,7 @@ jest.mock('../i18n', () => ({
   formatLocalTime: () => '10:00',
 }));
 
-jest.mock('../storage/database', () => ({
+jest.mock('../storage', () => ({
   updateSessionTimesAsync: jest.fn().mockResolvedValue(undefined),
 }));
 
@@ -17,7 +17,7 @@ jest.mock('../utils/helpers', () => ({
 }));
 
 import EditSessionSheet from '../components/EditSessionSheet';
-import { OutsideSession } from '../storage/database';
+import { OutsideSession } from '../storage';
 
 const mockSession: OutsideSession = {
   id: 42,
@@ -64,7 +64,7 @@ describe('EditSessionSheet', () => {
   });
 
   it('calls updateSessionTimesAsync and onSessionUpdated when save is pressed', async () => {
-    const { updateSessionTimesAsync } = require('../storage/database');
+    const { updateSessionTimesAsync } = require('../storage');
     const onSessionUpdated = jest.fn();
     const onClose = jest.fn();
     const { getByText } = render(
@@ -82,7 +82,7 @@ describe('EditSessionSheet', () => {
 
   it('shows an alert and does not save when duration is zero', () => {
     const alertSpy = jest.spyOn(Alert, 'alert');
-    const { updateSessionTimesAsync } = require('../storage/database');
+    const { updateSessionTimesAsync } = require('../storage');
     const onSessionUpdated = jest.fn();
 
     const zeroSession: OutsideSession = {
@@ -107,7 +107,7 @@ describe('EditSessionSheet', () => {
 
   it('shows an alert and does not save when duration exceeds 12 hours', () => {
     const alertSpy = jest.spyOn(Alert, 'alert');
-    const { updateSessionTimesAsync } = require('../storage/database');
+    const { updateSessionTimesAsync } = require('../storage');
     const onSessionUpdated = jest.fn();
 
     const longSession: OutsideSession = {

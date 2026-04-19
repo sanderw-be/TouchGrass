@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, act } from '@testing-library/react-native';
 import { AppState } from 'react-native';
-import type { OutsideSession } from '../storage/database';
+import type { OutsideSession } from '../storage';
 
 // ---------------------------------------------------------------------------
 // Concurrency tracking
@@ -67,7 +67,7 @@ const mockGetWeeklyStreak = jest.fn(() => delay(50).then(() => 0));
 const mockGetSetting = jest.fn<Promise<string>, [string, string]>(() => Promise.resolve(''));
 const mockSetSetting = jest.fn<Promise<void>, [string, string]>(() => Promise.resolve());
 
-jest.mock('../storage/database', () => ({
+jest.mock('../storage', () => ({
   getTodayMinutesAsync: () => mockGetTodayMinutes(),
   getWeekMinutesAsync: () => mockGetWeekMinutes(),
   getCurrentDailyGoalAsync: () => mockGetCurrentDailyGoal(),

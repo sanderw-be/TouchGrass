@@ -1,9 +1,9 @@
-jest.mock('../storage/database');
+jest.mock('../storage');
 jest.mock('../weather/weatherService');
 jest.mock('../weather/weatherAlgorithm');
 jest.mock('../i18n', () => ({ t: (key: string) => key }));
 
-import * as Database from '../storage/database';
+import * as Database from '../storage';
 import * as WeatherService from '../weather/weatherService';
 import * as WeatherAlgorithm from '../weather/weatherAlgorithm';
 import {

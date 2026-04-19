@@ -51,7 +51,7 @@ jest.mock('../store/useAppStore', () => ({
 const mockGetAllSessions = jest.fn(() => new Promise<never[]>((r) => setTimeout(() => r([]), 50)));
 const mockAutoClose = jest.fn(() => new Promise<number>((r) => setTimeout(() => r(0), 50)));
 
-jest.mock('../storage/database', () => ({
+jest.mock('../storage', () => ({
   getAllSessionsIncludingDiscardedAsync: () => mockGetAllSessions(),
   autoCloseOldProposedSessionsAsync: () => mockAutoClose(),
   confirmSessionAsync: jest.fn(() => Promise.resolve()),

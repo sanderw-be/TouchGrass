@@ -8,7 +8,7 @@ import {
   BottomSheetView,
 } from '@gorhom/bottom-sheet';
 import { Ionicons } from '@expo/vector-icons';
-import { updateSessionNotesAsync, OutsideSession } from '../storage/database';
+import { updateSessionNotesAsync, OutsideSession } from '../storage';
 import { spacing, radius, ThemeColors, Shadows } from '../utils/theme';
 import { useAppStore } from '../store/useAppStore';
 import { t } from '../i18n';

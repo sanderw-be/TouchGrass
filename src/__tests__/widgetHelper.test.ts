@@ -9,7 +9,7 @@ jest.mock('react-native-android-widget', () => ({
   requestWidgetUpdate: jest.fn(() => Promise.resolve()),
 }));
 
-jest.mock('../storage/database', () => ({
+jest.mock('../storage', () => ({
   initDatabaseAsync: jest.fn(() => Promise.resolve()),
   getTodayMinutesAsync: jest.fn(() => Promise.resolve(15)),
   getCurrentDailyGoalAsync: jest.fn(() => Promise.resolve({ targetMinutes: 60 })),

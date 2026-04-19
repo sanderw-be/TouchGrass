@@ -12,11 +12,7 @@ import {
   checkGPSPermissions,
   requestGPSPermissions,
 } from '../detection/index';
-import {
-  getKnownLocationsAsync,
-  getSuggestedLocationsAsync,
-  KnownLocation,
-} from '../storage/database';
+import { getKnownLocationsAsync, getSuggestedLocationsAsync, KnownLocation } from '../storage';
 import { PermissionSheetConfig } from '../components/PermissionExplainerSheet';
 import { emitPermissionIssuesChanged } from '../utils/permissionIssuesChangedEmitter';
 import { t } from '../i18n';

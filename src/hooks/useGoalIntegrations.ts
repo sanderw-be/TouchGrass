@@ -4,7 +4,7 @@ import * as Location from 'expo-location';
 import * as Calendar from 'expo-calendar';
 import * as Notifications from 'expo-notifications';
 import { useFocusEffect } from '@react-navigation/native';
-import { getSettingAsync, setSettingAsync } from '../storage/database';
+import { getSettingAsync, setSettingAsync } from '../storage';
 import { NotificationService } from '../notifications/notificationManager';
 import {
   hasCalendarPermissions,

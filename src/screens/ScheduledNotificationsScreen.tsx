@@ -26,7 +26,7 @@ import {
   deleteScheduledNotificationAsync,
   toggleScheduledNotificationAsync,
   ScheduledNotification,
-} from '../storage/database';
+} from '../storage';
 import { NotificationService } from '../notifications/notificationManager';
 import { spacing, radius, ThemeColors, Shadows } from '../utils/theme';
 import { useAppStore } from '../store/useAppStore';

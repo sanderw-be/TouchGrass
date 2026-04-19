@@ -2,7 +2,7 @@ import Constants from 'expo-constants';
 import * as IntentLauncher from 'expo-intent-launcher';
 import * as Battery from 'expo-battery';
 import { Platform } from 'react-native';
-import { setSettingAsync } from '../storage/database';
+import { setSettingAsync } from '../storage';
 
 const DEFAULT_ANDROID_PACKAGE = 'com.jollyheron.touchgrass';
 

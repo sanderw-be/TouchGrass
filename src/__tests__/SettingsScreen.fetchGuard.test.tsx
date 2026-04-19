@@ -59,7 +59,7 @@ const mockGetKnownLocations = jest.fn(
   () => new Promise<never[]>((r) => setTimeout(() => r([]), 50))
 );
 
-jest.mock('../storage/database', () => ({
+jest.mock('../storage', () => ({
   getKnownLocationsAsync: () => mockGetKnownLocations(),
   getSuggestedLocationsAsync: jest.fn(() => Promise.resolve([])),
   clearAllDataAsync: jest.fn(() => Promise.resolve()),

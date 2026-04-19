@@ -7,7 +7,7 @@ import {
   Shadows,
   ThemeColors,
 } from '../utils/theme';
-import { getSettingAsync, setSettingAsync } from '../storage/database';
+import { getSettingAsync, setSettingAsync } from '../storage';
 import i18n, { getDeviceSupportedLocale } from '../i18n';
 import {
   performCriticalInitializationAsync,

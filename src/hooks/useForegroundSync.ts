@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { AppState, AppStateStatus, InteractionManager } from 'react-native';
-import { getSettingAsync } from '../storage/database';
+import { getSettingAsync } from '../storage';
 import { NotificationService } from '../notifications/notificationManager';
 import { cleanupTouchGrassCalendars } from '../calendar/calendarService';
 import { BackgroundService } from '../background/unifiedBackgroundTask';

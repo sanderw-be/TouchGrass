@@ -17,7 +17,7 @@ jest.mock('../weather/weatherService', () => ({
   fetchWeatherForecast: jest.fn(),
 }));
 
-jest.mock('../storage/database', () => ({
+jest.mock('../storage', () => ({
   getSettingAsync: jest.fn(),
   initDatabaseAsync: jest.fn(),
   insertBackgroundLogAsync: jest.fn(),
@@ -25,7 +25,7 @@ jest.mock('../storage/database', () => ({
 
 import { NotificationService } from '../notifications/notificationManager';
 import * as WeatherService from '../weather/weatherService';
-import * as Database from '../storage/database';
+import * as Database from '../storage';
 import { BackgroundService } from '../background/unifiedBackgroundTask';
 
 describe('performBackgroundTick', () => {

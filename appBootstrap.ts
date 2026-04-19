@@ -1,5 +1,5 @@
 import { InteractionManager } from 'react-native';
-import { initDatabaseAsync, getSettingAsync, setSettingAsync } from './src/storage/database';
+import { initDatabaseAsync, getSettingAsync, setSettingAsync } from './src/storage';
 import i18n, { getDeviceSupportedLocale, SUPPORTED_LOCALES } from './src/i18n';
 import { NotificationService } from './src/notifications/notificationManager';
 import { BackgroundService } from './src/background/unifiedBackgroundTask';

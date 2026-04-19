@@ -48,7 +48,7 @@ const mockGetSetting = jest.fn(
   (key: string, def: string) => new Promise<string>((r) => setTimeout(() => r(def), 50))
 );
 
-jest.mock('../storage/database', () => ({
+jest.mock('../storage', () => ({
   getSettingAsync: (key: string, def: string) => mockGetSetting(key, def),
   setSettingAsync: jest.fn(() => Promise.resolve()),
 }));

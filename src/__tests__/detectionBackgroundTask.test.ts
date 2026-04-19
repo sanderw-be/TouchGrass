@@ -1,4 +1,4 @@
-jest.mock('../storage/database');
+jest.mock('../storage');
 jest.mock('./healthConnect', () => ({}), { virtual: true });
 jest.mock('../detection/healthConnect', () => ({
   syncHealthConnect: jest.fn().mockResolvedValue(true),
@@ -15,7 +15,7 @@ jest.mock('../detection/gpsDetection', () => ({
   autoDetectLocations: jest.fn().mockResolvedValue(undefined),
 }));
 
-import * as Database from '../storage/database';
+import * as Database from '../storage';
 import * as HealthConnect from '../detection/healthConnect';
 import * as HealthConnectIntent from '../detection/healthConnectIntent';
 import * as GpsDetection from '../detection/gpsDetection';

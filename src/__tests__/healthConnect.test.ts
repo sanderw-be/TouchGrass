@@ -1,10 +1,10 @@
-jest.mock('../storage/database');
+jest.mock('../storage');
 jest.mock('../detection/sessionMerger');
 jest.mock('react-native-health-connect');
 jest.mock('../detection/healthConnectIntent');
 
 import * as HealthConnect from 'react-native-health-connect';
-import * as Database from '../storage/database';
+import * as Database from '../storage';
 import * as SessionMerger from '../detection/sessionMerger';
 import * as HealthConnectIntent from '../detection/healthConnectIntent';
 import {

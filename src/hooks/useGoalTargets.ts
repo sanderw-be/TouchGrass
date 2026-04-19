@@ -5,7 +5,7 @@ import {
   getCurrentWeeklyGoalAsync,
   setDailyGoalAsync,
   setWeeklyGoalAsync,
-} from '../storage/database';
+} from '../storage';
 import { t } from '../i18n';
 
 export const DAILY_PRESETS = [15, 20, 30, 45, 60, 90];

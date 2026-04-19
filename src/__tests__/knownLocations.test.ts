@@ -1,7 +1,7 @@
-jest.mock('../storage/database');
+jest.mock('../storage');
 jest.mock('../detection/sessionMerger');
 
-import * as Database from '../storage/database';
+import * as Database from '../storage';
 import {
   computeDwellClusters,
   autoDetectLocations,

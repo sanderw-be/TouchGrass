@@ -12,7 +12,7 @@ import EventsScreen from '../screens/EventsScreen';
 import GoalsScreen from '../screens/GoalsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import { fetchWeatherForecast, isWeatherDataAvailable } from '../weather/weatherService';
-import { getSettingAsync, countProposedSessionsAsync } from '../storage/database';
+import { getSettingAsync, countProposedSessionsAsync } from '../storage';
 import { countPermissionIssues } from '../utils/permissionIssues';
 import { spacing } from '../utils/theme';
 import { useAppStore } from '../store/useAppStore';

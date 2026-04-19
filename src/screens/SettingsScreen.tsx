@@ -16,7 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet';
 import Constants from 'expo-constants';
 
-import { clearAllDataAsync } from '../storage/database';
+import { clearAllDataAsync } from '../storage';
 import PermissionExplainerSheet from '../components/PermissionExplainerSheet';
 import DiagnosticSheet from '../components/DiagnosticSheet';
 import { SettingRow } from '../components/Settings/SettingRow';

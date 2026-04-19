@@ -3,7 +3,7 @@ import * as TaskManager from 'expo-task-manager';
 import { scheduleNextPulse, cancelPulse } from 'alarm-bridge-native';
 import { NotificationService } from '../notifications/notificationManager';
 import { fetchWeatherForecast } from '../weather/weatherService';
-import { getSettingAsync, initDatabaseAsync, insertBackgroundLogAsync } from '../storage/database';
+import { getSettingAsync, initDatabaseAsync, insertBackgroundLogAsync } from '../storage';
 
 export const UNIFIED_BACKGROUND_TASK = 'TOUCHGRASS_UNIFIED_TASK';
 

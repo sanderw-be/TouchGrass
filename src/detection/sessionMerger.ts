@@ -4,7 +4,7 @@ import {
   insertSessionsBatchAsync,
   getSessionsForRangeAsync,
   deleteSessionsByIdsAsync,
-} from '../storage/database';
+} from '../storage';
 import {
   computeSessionScoreFromProbs,
   loadTimeSlotProbabilities,

@@ -8,7 +8,7 @@ import {
   getSettingAsync,
   setSettingAsync,
   initDatabaseAsync,
-} from '../storage/database';
+} from '../storage';
 import { logManualSessionAsync } from '../detection/manualCheckin';
 import { WIDGET_TIMER_KEY, isWidgetTimerRunning } from '../utils/widgetHelper';
 

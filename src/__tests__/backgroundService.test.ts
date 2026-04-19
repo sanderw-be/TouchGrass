@@ -19,7 +19,7 @@ jest.mock('../weather/weatherService', () => ({
   fetchWeatherForecast: jest.fn(),
 }));
 
-jest.mock('../storage/database', () => ({
+jest.mock('../storage', () => ({
   getSettingAsync: jest.fn(),
   initDatabaseAsync: jest.fn(() => Promise.resolve()),
   insertBackgroundLogAsync: jest.fn(),
@@ -29,7 +29,7 @@ import * as BackgroundTask from 'expo-background-task';
 import * as TaskManager from 'expo-task-manager';
 import { NotificationService } from '../notifications/notificationManager';
 import * as WeatherService from '../weather/weatherService';
-import * as Database from '../storage/database';
+import * as Database from '../storage';
 import { UNIFIED_BACKGROUND_TASK, BackgroundService } from '../background/unifiedBackgroundTask';
 
 describe('unifiedBackgroundTask', () => {

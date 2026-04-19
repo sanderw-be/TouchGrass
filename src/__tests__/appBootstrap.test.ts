@@ -1,6 +1,6 @@
 import { act } from '@testing-library/react-native';
 import { InteractionManager } from 'react-native';
-import { initDatabaseAsync, getSettingAsync, setSettingAsync } from '../storage/database';
+import { initDatabaseAsync, getSettingAsync, setSettingAsync } from '../storage';
 import i18n, { getDeviceSupportedLocale } from '../i18n';
 import {
   performCriticalInitializationAsync,
@@ -8,7 +8,7 @@ import {
 } from '../../appBootstrap';
 
 // Mock dependencies
-jest.mock('../storage/database', () => ({
+jest.mock('../storage', () => ({
   initDatabaseAsync: jest.fn(),
   getSettingAsync: jest.fn(),
   setSettingAsync: jest.fn(),

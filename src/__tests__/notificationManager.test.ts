@@ -1,5 +1,5 @@
 jest.mock('expo-notifications');
-jest.mock('../storage/database');
+jest.mock('../storage');
 jest.mock('../notifications/reminderAlgorithm');
 jest.mock('../weather/weatherService');
 jest.mock('../weather/weatherAlgorithm');
@@ -15,7 +15,7 @@ jest.mock('../store/useAppStore', () => ({
 
 import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
-import * as Database from '../storage/database';
+import * as Database from '../storage';
 import * as ReminderAlgorithm from '../notifications/reminderAlgorithm';
 import * as WeatherService from '../weather/weatherService';
 import * as WeatherAlgorithm from '../weather/weatherAlgorithm';
