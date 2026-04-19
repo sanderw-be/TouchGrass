@@ -53,6 +53,11 @@
 - `src/detection/sessionMerger.ts` — function submitSession: (candidate) => Promise<void>, function buildSession: (startTime, endTime, source, confidence, notes?, steps?, distanceMeters?, averageSpeedKmh?) => OutsideSession
 - `src/hooks/useDetectionSettings.ts` — function useDetectionSettings: () => void
 - `src/hooks/useForegroundSync.ts` — function useForegroundSync: () => void
+- `src/hooks/useGoalIntegrations.ts` — function useGoalIntegrations: () => void
+- `src/hooks/useGoalTargets.ts`
+  - function useGoalTargets: () => void
+  - const DAILY_PRESETS
+  - const WEEKLY_PRESETS
 - `src/hooks/useOTAUpdates.ts` — function useOTAUpdates: () => void, type OTAUpdateStatus
 - `src/i18n/index.ts`
   - function resolveSupportedLocale: (localeCode?) => SupportedLocale
