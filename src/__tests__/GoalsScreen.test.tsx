@@ -79,7 +79,7 @@ jest.mock('@react-navigation/native', () => {
     useFocusEffect: (cb: () => void) => {
       React.useEffect(cb, []);
     },
-    useNavigation: () => ({ navigate: jest.fn() }),
+    useNavigation: () => ({ navigate: jest.fn(), setOptions: jest.fn() }),
   };
 });
 
@@ -787,6 +787,7 @@ describe('GoalsScreen smart reminders notification permission', () => {
     mockGetPermissions.mockResolvedValue({ status: 'denied' });
 
     const { queryByText } = render(<GoalsScreen />);
+    await act(async () => {});
     await waitFor(() => {
       const element = queryByText('settings_notification_permission_missing');
       expect(element).toBeNull();
@@ -801,6 +802,7 @@ describe('GoalsScreen smart reminders notification permission', () => {
     mockGetPermissions.mockResolvedValue({ status: 'granted' });
 
     const { queryByText } = render(<GoalsScreen />);
+    await act(async () => {});
     await waitFor(() => {
       const element = queryByText('settings_notification_permission_missing');
       expect(element).toBeNull();

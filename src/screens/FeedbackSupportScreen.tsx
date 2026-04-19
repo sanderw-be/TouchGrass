@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Linking, Alert } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { spacing, radius, ThemeColors, Shadows } from '../utils/theme';
 import { useAppStore } from '../store/useAppStore';
 import { Ionicons } from '@expo/vector-icons';
@@ -35,7 +36,13 @@ async function openUrl(url: string): Promise<void> {
 export default function FeedbackSupportScreen() {
   const colors = useAppStore((state) => state.colors);
   const shadows = useAppStore((state) => state.shadows);
+  const locale = useAppStore((state) => state.locale);
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
+  const navigation = useNavigation();
+
+  React.useLayoutEffect(() => {
+    navigation.setOptions({ title: t('nav_feedback_support') });
+  }, [navigation, locale]);
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>

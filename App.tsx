@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useCallback } from 'react';
 import type { InitialState } from '@react-navigation/native';
 import { View, ActivityIndicator, StyleSheet, useColorScheme } from 'react-native';
 import { useFonts } from 'expo-font';
@@ -23,7 +23,6 @@ function AppContent() {
   const colors = useAppStore((state) => state.colors);
   const isReady = useAppStore((state) => state.isReady);
   const showIntro = useAppStore((state) => state.showIntro);
-  const locale = useAppStore((state) => state.locale);
   const handleIntroComplete = useAppStore((state) => state.handleIntroComplete);
   const initialize = useAppStore((state) => state.initialize);
   const setSystemColorScheme = useAppStore((state) => state.setSystemColorScheme);
@@ -31,6 +30,10 @@ function AppContent() {
   const systemColorScheme = useColorScheme();
   const { updateStatus } = useOTAUpdates();
   const savedNavState = useRef<InitialState | undefined>(undefined);
+
+  const handleStateChange = useCallback((state: InitialState | undefined) => {
+    savedNavState.current = state;
+  }, []);
 
   // Initialize store on mount
   useEffect(() => {
@@ -64,18 +67,10 @@ function AppContent() {
   }
 
   if (showIntro) {
-    return <IntroScreen key={locale} onComplete={handleIntroComplete} />;
+    return <IntroScreen onComplete={handleIntroComplete} />;
   }
 
-  return (
-    <AppNavigator
-      key={locale}
-      initialState={savedNavState.current}
-      onStateChange={(state) => {
-        savedNavState.current = state;
-      }}
-    />
-  );
+  return <AppNavigator initialState={savedNavState.current} onStateChange={handleStateChange} />;
 }
 
 export default function App() {

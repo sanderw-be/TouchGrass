@@ -21,6 +21,7 @@ import type { SettingsStackParamList } from '../navigation/AppNavigator';
 export default function KnownLocationsScreen() {
   const colors = useAppStore((state) => state.colors);
   const shadows = useAppStore((state) => state.shadows);
+  const locale = useAppStore((state) => state.locale);
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const navigation = useNavigation<StackNavigationProp<SettingsStackParamList>>();
   const insets = useSafeAreaInsets();
@@ -80,6 +81,7 @@ export default function KnownLocationsScreen() {
   // Add "+" button to the stack navigator header
   useLayoutEffect(() => {
     navigation.setOptions({
+      title: t('nav_known_locations'),
       headerRight: () => (
         <TouchableOpacity
           onPress={handleAddLocation}
@@ -90,7 +92,7 @@ export default function KnownLocationsScreen() {
         </TouchableOpacity>
       ),
     });
-  }, [navigation, handleAddLocation, styles.headerAddBtn, styles.headerAddBtnText]);
+  }, [navigation, handleAddLocation, styles.headerAddBtn, styles.headerAddBtnText, locale]);
 
   const closeSheet = useCallback(() => {
     setEditingLocation(null);

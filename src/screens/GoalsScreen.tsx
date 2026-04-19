@@ -66,8 +66,14 @@ const SMART_REMINDERS_OPTIONS = [0, 1, 2, 3];
 export default function GoalsScreen() {
   const colors = useAppStore((state) => state.colors);
   const shadows = useAppStore((state) => state.shadows);
+  const locale = useAppStore((state) => state.locale);
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const navigation = useNavigation<StackNavigationProp<GoalsStackParamList>>();
+
+  React.useLayoutEffect(() => {
+    navigation.setOptions({ title: t('nav_goals') });
+  }, [navigation, locale]);
+
   const insets = useSafeAreaInsets();
 
   // Goals state

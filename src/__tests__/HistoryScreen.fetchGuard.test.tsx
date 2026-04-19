@@ -58,6 +58,10 @@ jest.mock('@react-navigation/native', () => ({
       cb();
     }, []);
   },
+  useNavigation: () => ({
+    navigate: jest.fn(),
+    setOptions: jest.fn(),
+  }),
 }));
 
 const mockGetSessionsForRange = jest.fn(

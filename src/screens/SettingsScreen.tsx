@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,15 +11,16 @@ import {
   Platform,
   AppState,
   AppStateStatus,
-  LayoutAnimation,
-  UIManager,
+  BackHandler,
 } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet';
 import Constants from 'expo-constants';
 import * as Location from 'expo-location';
+
 import {
   getKnownLocationsAsync,
   getSuggestedLocationsAsync,
@@ -45,11 +46,6 @@ import { PRIVACY_POLICY_URL } from '../utils/constants';
 import type { SettingsStackParamList } from '../navigation/AppNavigator';
 import { emitPermissionIssuesChanged } from '../utils/permissionIssuesChangedEmitter';
 import { useAppStore, ThemePreference } from '../store/useAppStore';
-
-// Enable LayoutAnimation on Android
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
 
 const LANGUAGE_LABELS: Record<string, string> = {
   en: 'English',
@@ -81,6 +77,12 @@ export default function SettingsScreen() {
   const setLocale = useAppStore((state) => state.setLocale);
 
   const navigation = useNavigation<StackNavigationProp<SettingsStackParamList>>();
+
+  // Update navigation header title reactively
+  React.useLayoutEffect(() => {
+    navigation.setOptions({ title: t('nav_settings') });
+  }, [navigation, locale]);
+
   const insets = useSafeAreaInsets();
   const [detectionStatus, setDetectionStatus] = useState({
     healthConnect: false,
@@ -94,11 +96,26 @@ export default function SettingsScreen() {
   const [togglingGPS, setTogglingGPS] = useState(false);
   const [permissionSheet, setPermissionSheet] = useState<PermissionSheetConfig | null>(null);
   const [showDiagnosticSheet, setShowDiagnosticSheet] = useState(false);
-  const [languageOpen, setLanguageOpen] = useState(false);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const languageSheetRef = useRef<BottomSheetModal>(null);
   const systemLocale = getDeviceSupportedLocale();
 
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const isFetchingRef = useRef(false);
+
+  // Hardware back press to close language sheet
+  useEffect(() => {
+    if (!isSheetOpen) return;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      languageSheetRef.current?.dismiss();
+      return true; // Consume event
+    });
+    return () => sub.remove();
+  }, [isSheetOpen]);
+
+  const handleSheetChange = useCallback((index: number) => {
+    setIsSheetOpen(index >= 0);
+  }, []);
 
   const loadStatus = useCallback(async () => {
     if (isFetchingRef.current) return;
@@ -258,15 +275,12 @@ export default function SettingsScreen() {
   };
 
   const changeLanguage = (code: string) => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setLanguageOpen(false);
-    // Delegates to store's setLocale which updates i18n, saves to storage, and triggers re-render
     setLocale(code);
+    languageSheetRef.current?.dismiss();
   };
 
-  const toggleLanguagePicker = () => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setLanguageOpen((prev) => !prev);
+  const presentLanguageSheet = () => {
+    languageSheetRef.current?.present();
   };
 
   const getLanguageOptionLabel = (code: string, label: string, isTranslationKey: boolean) => {
@@ -306,6 +320,13 @@ export default function SettingsScreen() {
   if (detectionStatus.healthConnect && !detectionStatus.healthConnectPermission) {
     settingsPermissionIssues.push(t('settings_health_connect'));
   }
+
+  const renderBackdrop = useCallback(
+    (props: React.ComponentProps<typeof BottomSheetBackdrop>) => (
+      <BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} />
+    ),
+    []
+  );
 
   return (
     <>
@@ -428,7 +449,7 @@ export default function SettingsScreen() {
         <View style={styles.card}>
           <TouchableOpacity
             style={styles.row}
-            onPress={toggleLanguagePicker}
+            onPress={presentLanguageSheet}
             testID="language-picker-toggle"
           >
             <View style={styles.rowIconContainer}>
@@ -441,35 +462,8 @@ export default function SettingsScreen() {
                   : `${t('settings_section_language')} / Language`}
               </Text>
             </View>
-            <Ionicons
-              name={languageOpen ? 'chevron-up' : 'chevron-down'}
-              size={20}
-              color={colors.textMuted}
-            />
+            <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
           </TouchableOpacity>
-
-          {languageOpen &&
-            LANGUAGES.map((lang) => (
-              <View key={lang.code}>
-                <Divider />
-                <TouchableOpacity style={styles.row} onPress={() => changeLanguage(lang.code)}>
-                  <View style={styles.rowIconContainer} />
-                  <View style={styles.rowContent}>
-                    <Text style={styles.rowLabel}>
-                      {getLanguageOptionLabel(lang.code, lang.label, lang.isTranslationKey)}
-                    </Text>
-                  </View>
-                  {locale === lang.code && (
-                    <Ionicons
-                      name="checkmark"
-                      size={20}
-                      color={colors.grass}
-                      style={styles.checkmark}
-                    />
-                  )}
-                </TouchableOpacity>
-              </View>
-            ))}
         </View>
 
         <Text style={styles.sectionHeader}>{t('settings_section_about')}</Text>
@@ -570,6 +564,53 @@ export default function SettingsScreen() {
         visible={showDiagnosticSheet}
         onClose={() => setShowDiagnosticSheet(false)}
       />
+
+      <BottomSheetModal
+        ref={languageSheetRef}
+        enableDynamicSizing
+        backdropComponent={renderBackdrop}
+        onChange={handleSheetChange}
+        backgroundStyle={{ backgroundColor: colors.card }}
+        handleIndicatorStyle={{ backgroundColor: colors.fog }}
+      >
+        <BottomSheetView
+          style={[styles.sheetContent, { paddingBottom: Math.max(insets.bottom, spacing.md) }]}
+        >
+          <Text style={styles.sheetTitle}>{t('settings_section_language')}</Text>
+          {LANGUAGES.map((lang, index) => (
+            <View key={lang.code}>
+              {index > 0 && <Divider />}
+              <TouchableOpacity style={styles.row} onPress={() => changeLanguage(lang.code)}>
+                <View style={styles.rowIconContainer}>
+                  <Ionicons
+                    name="language-outline"
+                    size={20}
+                    color={locale === lang.code ? colors.grass : colors.textSecondary}
+                  />
+                </View>
+                <View style={styles.rowContent}>
+                  <Text
+                    style={[
+                      styles.rowLabel,
+                      locale === lang.code && { color: colors.grass, fontWeight: '700' },
+                    ]}
+                  >
+                    {getLanguageOptionLabel(lang.code, lang.label, lang.isTranslationKey)}
+                  </Text>
+                </View>
+                {locale === lang.code && (
+                  <Ionicons
+                    name="checkmark"
+                    size={20}
+                    color={colors.grass}
+                    style={styles.checkmark}
+                  />
+                )}
+              </TouchableOpacity>
+            </View>
+          ))}
+        </BottomSheetView>
+      </BottomSheetModal>
     </>
   );
 }
@@ -817,5 +858,17 @@ function makeStyles(colors: ThemeColors, shadows: Shadows) {
       paddingHorizontal: 5,
     },
     badgeText: { fontSize: 11, color: colors.textInverse, fontWeight: '700' },
+
+    sheetContent: {
+      paddingHorizontal: spacing.sm,
+      paddingTop: spacing.sm,
+    },
+    sheetTitle: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: colors.textPrimary,
+      marginBottom: spacing.sm,
+      textAlign: 'center',
+    },
   });
 }

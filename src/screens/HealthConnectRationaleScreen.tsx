@@ -11,6 +11,7 @@ import { requestHealthConnect } from '../detection/index';
 export default function HealthConnectRationaleScreen() {
   const colors = useAppStore((state) => state.colors);
   const shadows = useAppStore((state) => state.shadows);
+  useAppStore((state) => state.locale);
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();

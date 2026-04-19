@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import {
   getAllSessionsIncludingDiscardedAsync,
   autoCloseOldProposedSessionsAsync,
@@ -52,7 +52,14 @@ function groupByDay(sessions: OutsideSession[]): { dayMs: number; sessions: Outs
 export default function EventsScreen() {
   const colors = useAppStore((state) => state.colors);
   const shadows = useAppStore((state) => state.shadows);
+  const locale = useAppStore((state) => state.locale);
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
+  const navigation = useNavigation();
+
+  React.useLayoutEffect(() => {
+    navigation.setOptions({ title: t('nav_events') });
+  }, [navigation, locale]);
+
   const [includeConfirmed, setIncludeConfirmed] = useState(true);
   const [includeReview, setIncludeReview] = useState(true);
   const [includeRejected, setIncludeRejected] = useState(false);

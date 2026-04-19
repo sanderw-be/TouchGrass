@@ -91,8 +91,9 @@ const headerStyles = StyleSheet.create({
   title: { fontSize: 17, fontWeight: '700' },
 });
 
-function GoalsStackNavigator() {
+const GoalsStackNavigator = React.memo(function GoalsStackNavigator() {
   const colors = useAppStore((state) => state.colors);
+
   return (
     <GoalsStack.Navigator
       screenOptions={{
@@ -108,17 +109,14 @@ function GoalsStackNavigator() {
         component={GoalsScreen}
         options={{ headerShown: false }}
       />
-      <GoalsStack.Screen name="WeatherSettings" options={{ title: t('nav_weather_settings') }}>
+      <GoalsStack.Screen name="WeatherSettings">
         {() => (
           <Suspense fallback={<ScreenFallback />}>
             <WeatherSettingsScreen />
           </Suspense>
         )}
       </GoalsStack.Screen>
-      <GoalsStack.Screen
-        name="ScheduledNotifications"
-        options={{ title: t('settings_scheduled_reminders') }}
-      >
+      <GoalsStack.Screen name="ScheduledNotifications">
         {() => (
           <Suspense fallback={<ScreenFallback />}>
             <ScheduledNotificationsScreen />
@@ -137,10 +135,11 @@ function GoalsStackNavigator() {
       </GoalsStack.Screen>
     </GoalsStack.Navigator>
   );
-}
+});
 
-function SettingsStackNavigator() {
+const SettingsStackNavigator = React.memo(function SettingsStackNavigator() {
   const colors = useAppStore((state) => state.colors);
+
   return (
     <SettingsStack.Navigator
       screenOptions={{
@@ -156,28 +155,28 @@ function SettingsStackNavigator() {
         component={SettingsScreen}
         options={{ headerShown: false }}
       />
-      <SettingsStack.Screen name="KnownLocations" options={{ title: t('nav_known_locations') }}>
+      <SettingsStack.Screen name="KnownLocations">
         {() => (
           <Suspense fallback={<ScreenFallback />}>
             <KnownLocationsScreen />
           </Suspense>
         )}
       </SettingsStack.Screen>
-      <SettingsStack.Screen name="FeedbackSupport" options={{ title: t('nav_feedback_support') }}>
+      <SettingsStack.Screen name="FeedbackSupport">
         {() => (
           <Suspense fallback={<ScreenFallback />}>
             <FeedbackSupportScreen />
           </Suspense>
         )}
       </SettingsStack.Screen>
-      <SettingsStack.Screen name="ActivityLog" options={{ title: t('nav_activity_log') }}>
+      <SettingsStack.Screen name="ActivityLog">
         {() => (
           <Suspense fallback={<ScreenFallback />}>
             <ActivityLogScreen />
           </Suspense>
         )}
       </SettingsStack.Screen>
-      <SettingsStack.Screen name="AboutApp" options={{ title: t('nav_about_app') }}>
+      <SettingsStack.Screen name="AboutApp">
         {() => (
           <Suspense fallback={<ScreenFallback />}>
             <AboutAppScreen />
@@ -196,9 +195,9 @@ function SettingsStackNavigator() {
       </SettingsStack.Screen>
     </SettingsStack.Navigator>
   );
-}
+});
 
-function TabNavigator({
+const TabNavigator = React.memo(function TabNavigator({
   goalsBadge,
   settingsBadge,
   eventsBadge,
@@ -209,6 +208,7 @@ function TabNavigator({
 }) {
   const insets = useSafeAreaInsets();
   const colors = useAppStore((state) => state.colors);
+  useAppStore((state) => state.locale);
 
   return (
     <Tab.Navigator
@@ -269,9 +269,9 @@ function TabNavigator({
       />
     </Tab.Navigator>
   );
-}
+});
 
-export default function AppNavigator({
+const AppNavigator = React.memo(function AppNavigator({
   initialState,
   onStateChange,
 }: {
@@ -364,4 +364,6 @@ export default function AppNavigator({
       />
     </NavigationContainer>
   );
-}
+});
+
+export default AppNavigator;

@@ -12,6 +12,7 @@ export default function ReminderFeedbackModal() {
   const dismiss = useAppStore((state) => state.dismissFeedback);
   const colors = useAppStore((state) => state.colors);
   const shadows = useAppStore((state) => state.shadows);
+  useAppStore((state) => state.locale);
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const [showFewerConfirmation, setShowFewerConfirmation] = useState(false);
   const [fewerConfirmationMessage, setFewerConfirmationMessage] = useState('');
