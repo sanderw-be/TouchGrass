@@ -194,6 +194,42 @@ describe('SettingsScreen', () => {
   });
 });
 
+describe('SettingsScreen initial loading', () => {
+  it('shows ActivityIndicator while initializing', async () => {
+    // Create a promise that we can control
+    let resolveDetection: (value: any) => void;
+    const detectionPromise = new Promise((resolve) => {
+      resolveDetection = resolve;
+    });
+    (DetectionModule.getDetectionStatus as jest.Mock).mockReturnValue(detectionPromise);
+
+    const { getAllByTestId, queryByTestId } = render(<SettingsScreen />);
+
+    // Loader should be visible
+    expect(getAllByTestId('switch-loader').length).toBeGreaterThan(0);
+    // Switches should not be visible yet
+    expect(queryByTestId('hc-toggle')).toBeNull();
+    expect(queryByTestId('gps-toggle')).toBeNull();
+
+    // Resolve the promise
+    await act(async () => {
+      resolveDetection!({
+        healthConnect: false,
+        healthConnectPermission: false,
+        gps: false,
+        gpsPermission: false,
+      });
+    });
+
+    // Now switches should be visible and loaders gone
+    await waitFor(() => {
+      expect(queryByTestId('switch-loader')).toBeNull();
+      expect(queryByTestId('hc-toggle')).toBeTruthy();
+      expect(queryByTestId('gps-toggle')).toBeTruthy();
+    });
+  });
+});
+
 describe('SettingsScreen detection toggles', () => {
   beforeEach(() => {
     jest.clearAllMocks();

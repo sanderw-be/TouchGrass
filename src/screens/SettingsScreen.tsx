@@ -68,6 +68,7 @@ export default function SettingsScreen() {
     togglingHC,
     togglingGPS,
     permissionSheet,
+    isInitializing,
     setPermissionSheet,
     handleToggleHC,
     handleToggleGPS,
@@ -182,6 +183,7 @@ export default function SettingsScreen() {
             permissionMissingLabel={t('settings_hc_permission_missing')}
             onToggle={handleToggleHC}
             isLoading={togglingHC}
+            isInitializing={isInitializing}
             onPermissionFix={showHCPermissionSheet}
             testID="hc-toggle"
             colors={colors}
@@ -196,6 +198,7 @@ export default function SettingsScreen() {
             permissionMissingLabel={t('settings_gps_permission_missing')}
             onToggle={handleToggleGPS}
             isLoading={togglingGPS}
+            isInitializing={isInitializing}
             onPermissionFix={showGPSPermissionSheet}
             testID="gps-toggle"
             colors={colors}
