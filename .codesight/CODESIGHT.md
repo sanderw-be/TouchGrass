@@ -4,7 +4,7 @@
 
 > 0 routes | 0 models | 36 components | 27 lib files | 2 env vars | 1 middleware | 0% test coverage
 > **Token savings:** this file is ~4,200 tokens. Without it, AI exploration would cost ~28,300 tokens. **Saves ~24,100 tokens per conversation.**
-> **Last scanned:** 2026-04-18 16:54 — re-run after significant changes
+> **Last scanned:** 2026-04-19 07:07 — re-run after significant changes
 
 ---
 
@@ -29,7 +29,7 @@
 - **PermissionToggleRow** — props: icon, label, desc, permissionMissingLabel, enabled, permissionGranted, onToggle, onPermissionFix — `src/components/goals/GoalsShared.tsx`
 - **RemindersSection** — props: smartRemindersCount, catchupRemindersCount, notificationPermissionGranted, batteryOptimizationGranted, onCycleSmartReminders, onCycleCatchupReminders, onNavigateScheduledNotifications, onShowNotificationPermissionSheet, onShowBatteryPermissionSheet — `src/components/goals/RemindersSection.tsx`
 - **WeatherSection** — props: weatherEnabled, weatherLocationGranted, onToggleWeather, onShowWeatherPermissionSheet, onNavigateWeatherSettings — `src/components/goals/WeatherSection.tsx`
-- **AppNavigator** — props: initialState, onStateChange — `src/navigation/AppNavigator.tsx`
+- **WeatherSettingsScreen** — `src/navigation/AppNavigator.tsx`
 - **AboutAppScreen** — `src/screens/AboutAppScreen.tsx`
 - **ActivityLogScreen** — `src/screens/ActivityLogScreen.tsx`
 - **EventsScreen** — `src/screens/EventsScreen.tsx`

@@ -19,7 +19,7 @@
 - **PermissionToggleRow** — props: icon, label, desc, permissionMissingLabel, enabled, permissionGranted, onToggle, onPermissionFix — `src/components/goals/GoalsShared.tsx`
 - **RemindersSection** — props: smartRemindersCount, catchupRemindersCount, notificationPermissionGranted, batteryOptimizationGranted, onCycleSmartReminders, onCycleCatchupReminders, onNavigateScheduledNotifications, onShowNotificationPermissionSheet, onShowBatteryPermissionSheet — `src/components/goals/RemindersSection.tsx`
 - **WeatherSection** — props: weatherEnabled, weatherLocationGranted, onToggleWeather, onShowWeatherPermissionSheet, onNavigateWeatherSettings — `src/components/goals/WeatherSection.tsx`
-- **AppNavigator** — props: initialState, onStateChange — `src/navigation/AppNavigator.tsx`
+- **WeatherSettingsScreen** — `src/navigation/AppNavigator.tsx`
 - **AboutAppScreen** — `src/screens/AboutAppScreen.tsx`
 - **ActivityLogScreen** — `src/screens/ActivityLogScreen.tsx`
 - **EventsScreen** — `src/screens/EventsScreen.tsx`
