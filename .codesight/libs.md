@@ -75,6 +75,7 @@
   - const DAILY_PRESETS
   - const WEEKLY_PRESETS
 - `src/hooks/useOTAUpdates.ts` — function useOTAUpdates: () => void, type OTAUpdateStatus
+- `src/hooks/useTheme.ts` — function useTheme: () => void
 - `src/i18n/index.ts`
   - function resolveSupportedLocale: (localeCode?) => SupportedLocale
   - function getDeviceSupportedLocale: () => SupportedLocale
