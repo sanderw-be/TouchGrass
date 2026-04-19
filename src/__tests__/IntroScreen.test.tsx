@@ -25,6 +25,7 @@ jest.mock('../detection/index', () => ({
   checkGPSPermissions: jest.fn(() => Promise.resolve(false)),
   requestHealthConnect: jest.fn(() => Promise.resolve(true)),
   checkWeatherLocationPermissions: jest.fn(() => Promise.resolve(false)),
+  clampRadiusMeters: jest.fn((r) => r),
 }));
 
 // Mock notification manager

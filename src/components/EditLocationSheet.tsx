@@ -21,7 +21,7 @@ import { spacing, radius, ThemeColors, Shadows } from '../utils/theme';
 import { useAppStore } from '../store/useAppStore';
 import { t } from '../i18n';
 import { isImperialUnits, metersToYards } from '../utils/units';
-import { clampRadiusMeters } from '../detection/gpsDetection';
+import { clampRadiusMeters } from '../detection';
 
 // Radius step values in metres that the slider snaps to.
 // Range: 25–250 m, which matches the configurable geofence range.
