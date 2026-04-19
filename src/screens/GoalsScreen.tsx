@@ -20,9 +20,10 @@ import { useGoalIntegrations } from '../hooks/useGoalIntegrations';
 
 import { Card } from '../components/ui';
 
+import { useTheme } from '../hooks/useTheme';
+
 export default function GoalsScreen() {
-  const colors = useAppStore((state) => state.colors);
-  const shadows = useAppStore((state) => state.shadows);
+  const { colors, shadows } = useTheme();
   const locale = useAppStore((state) => state.locale);
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const navigation = useNavigation<StackNavigationProp<GoalsStackParamList>>();

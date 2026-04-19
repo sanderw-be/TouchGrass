@@ -45,7 +45,7 @@ export default function RemindersSection({
   return (
     <>
       <Text style={styles.sectionHeader}>{t('settings_section_reminders')}</Text>
-      <Card variant="flat" style={{ padding: 0, overflow: 'hidden' }}>
+      <Card style={{ padding: 0, overflow: 'hidden' }}>
         <TouchableOpacity
           onPress={
             smartRemindersCount > 0 && !notificationPermissionGranted

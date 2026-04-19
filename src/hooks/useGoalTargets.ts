@@ -7,9 +7,14 @@ import {
   setWeeklyGoalAsync,
 } from '../storage';
 import { t } from '../i18n';
+import {
+  DAILY_PRESETS,
+  WEEKLY_PRESETS,
+  validateDailyGoal,
+  validateWeeklyGoal,
+} from '../domain/GoalDomain';
 
-export const DAILY_PRESETS = [15, 20, 30, 45, 60, 90];
-export const WEEKLY_PRESETS = [60, 90, 120, 150, 210, 300];
+export { DAILY_PRESETS, WEEKLY_PRESETS };
 
 export function useGoalTargets() {
   const [dailyTarget, setDailyTargetState] = useState(30);
@@ -33,7 +38,7 @@ export function useGoalTargets() {
   }, []);
 
   const saveDaily = async (minutes: number) => {
-    if (isNaN(minutes) || minutes < 1 || minutes > 720) {
+    if (!validateDailyGoal(minutes)) {
       Alert.alert(t('goals_invalid_title'), t('goals_invalid_daily'));
       return;
     }
@@ -47,7 +52,7 @@ export function useGoalTargets() {
   };
 
   const saveWeekly = async (minutes: number) => {
-    if (isNaN(minutes) || minutes < 1 || minutes > 5040) {
+    if (!validateWeeklyGoal(minutes)) {
       Alert.alert(t('goals_invalid_title'), t('goals_invalid_weekly'));
       return;
     }
