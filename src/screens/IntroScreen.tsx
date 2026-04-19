@@ -55,6 +55,7 @@ type Step =
 export default function IntroScreen({ onComplete }: Props) {
   const colors = useAppStore((state) => state.colors);
   const shadows = useAppStore((state) => state.shadows);
+  useAppStore((state) => state.locale);
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const [currentStep, setCurrentStep] = useState<Step>('welcome');
   const [healthConnectGranted, setHealthConnectGranted] = useState(false);

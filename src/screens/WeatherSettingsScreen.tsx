@@ -9,7 +9,7 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { getSettingAsync, setSettingAsync } from '../storage/database';
 import { spacing, radius, ThemeColors, Shadows } from '../utils/theme';
 import { useAppStore } from '../store/useAppStore';
@@ -26,7 +26,15 @@ import { formatTemperature } from '../utils/temperature';
 export default function WeatherSettingsScreen() {
   const colors = useAppStore((state) => state.colors);
   const shadows = useAppStore((state) => state.shadows);
+  const locale = useAppStore((state) => state.locale);
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
+  const navigation = useNavigation();
+
+  // Update navigation header title reactively
+  React.useLayoutEffect(() => {
+    navigation.setOptions({ title: t('nav_weather_settings') });
+  }, [navigation, locale]);
+
   const [tempPreference, setTempPreference] = useState<'cold' | 'moderate' | 'hot'>('moderate');
   const [avoidRain, setAvoidRain] = useState(true);
   const [avoidHeat, setAvoidHeat] = useState(true);

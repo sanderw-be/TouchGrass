@@ -64,6 +64,10 @@ jest.mock('@react-navigation/native', () => ({
       cb();
     }, [cb]);
   },
+  useNavigation: () => ({
+    navigate: jest.fn(),
+    setOptions: jest.fn(),
+  }),
 }));
 
 // Real startOfDay / startOfWeek so the divisor logic works correctly in tests

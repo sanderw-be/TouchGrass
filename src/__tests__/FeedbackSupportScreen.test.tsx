@@ -44,6 +44,14 @@ jest.mock('../store/useAppStore', () => ({
   ),
 }));
 
+// Mock Navigation
+jest.mock('@react-navigation/native', () => ({
+  useNavigation: () => ({
+    navigate: jest.fn(),
+    setOptions: jest.fn(),
+  }),
+}));
+
 import FeedbackSupportScreen from '../screens/FeedbackSupportScreen';
 
 describe('FeedbackSupportScreen', () => {

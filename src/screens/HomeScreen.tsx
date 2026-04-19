@@ -49,6 +49,7 @@ export default function HomeScreen() {
   const colors = useAppStore((state) => state.colors);
   const shadows = useAppStore((state) => state.shadows);
   const isDark = useAppStore((state) => state.isDark);
+  useAppStore((state) => state.locale);
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const [todayMinutes, setTodayMinutes] = useState(0);
   const [weekMinutes, setWeekMinutes] = useState(0);

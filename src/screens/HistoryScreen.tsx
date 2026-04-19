@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import {
   getDailyTotalsForMonthAsync,
   getSessionsForRangeAsync,
@@ -22,7 +22,14 @@ type Period = 'week' | 'month';
 export default function HistoryScreen() {
   const colors = useAppStore((state) => state.colors);
   const shadows = useAppStore((state) => state.shadows);
+  const locale = useAppStore((state) => state.locale);
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
+  const navigation = useNavigation();
+
+  React.useLayoutEffect(() => {
+    navigation.setOptions({ title: t('nav_history') });
+  }, [navigation, locale]);
+
   const [period, setPeriod] = useState<Period>('week');
   const [dailyData, setDailyData] = useState<{ date: number; minutes: number }[]>([]);
   const [dailyTarget, setDailyTarget] = useState(30);

@@ -100,7 +100,7 @@ jest.mock('@react-navigation/native', () => {
         cb();
       }, []);
     },
-    useNavigation: () => ({ navigate: mockNavigate }),
+    useNavigation: () => ({ navigate: mockNavigate, setOptions: jest.fn() }),
   };
 });
 

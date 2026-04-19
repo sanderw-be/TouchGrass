@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import {
   getBackgroundLogsAsync,
@@ -48,7 +48,13 @@ function formatDayLabel(day: string): string {
 export default function ActivityLogScreen() {
   const colors = useAppStore((state) => state.colors);
   const shadows = useAppStore((state) => state.shadows);
+  const locale = useAppStore((state) => state.locale);
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
+  const navigation = useNavigation();
+
+  React.useLayoutEffect(() => {
+    navigation.setOptions({ title: t('nav_activity_log') });
+  }, [navigation, locale]);
 
   const [hcLogs, setHcLogs] = useState<BackgroundTaskLog[]>([]);
   const [gpsLogs, setGpsLogs] = useState<BackgroundTaskLog[]>([]);

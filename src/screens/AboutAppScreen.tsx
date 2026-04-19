@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { View, Text, ScrollView } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { spacing, radius, ThemeColors, Shadows } from '../utils/theme';
 import { useAppStore } from '../store/useAppStore';
 import { Ionicons } from '@expo/vector-icons';
@@ -32,7 +33,13 @@ const SECTIONS: Section[] = [
 export default function AboutAppScreen() {
   const colors = useAppStore((state) => state.colors);
   const shadows = useAppStore((state) => state.shadows);
+  const locale = useAppStore((state) => state.locale);
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
+  const navigation = useNavigation();
+
+  React.useLayoutEffect(() => {
+    navigation.setOptions({ title: t('nav_about_app') });
+  }, [navigation, locale]);
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
