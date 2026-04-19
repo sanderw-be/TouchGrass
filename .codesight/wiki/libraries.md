@@ -2,7 +2,23 @@
 
 > **Navigation aid.** Library inventory extracted via AST. Read the source files listed here before modifying exported functions.
 
-**38 library files** across 11 modules
+**44 library files** across 11 modules
+
+## Detection (13 files)
+
+- `src/detection/index.ts` — initDetection, checkWeatherLocationPermissions, requestWeatherLocationPermissions, checkGPSPermissions, requestGPSPermissions, refreshDetectionSync, …
+- `src/detection/GeofenceManager.ts` — isAtKnownIndoorLocation, wasDefinitelyAtKnownIndoorLocationSync, shouldTriggerBurst, computeMinActiveRadius, clampRadiusMeters, createClusterObject, …
+- `src/detection/gpsDetection.ts` — loadGPSState, requestLocationPermissions, computeMinActiveRadius, startLocationTracking, stopLocationTracking, switchLocationProfile, …
+- `src/detection/sessionConfidence.ts` — getTimeSlotProbability, updateTimeSlotProbability, scoreDuration, computeSessionScore, computeSessionScoreFromProbs, DISCARD_CONFIDENCE_THRESHOLD, …
+- `src/detection/healthConnect.ts` — isHealthConnectAvailable, requestHealthPermissions, openHealthConnectForManagement, syncHealthConnect
+- `src/detection/manualCheckin.ts` — logManualSession, logManualSessionAsync, startManualSession
+- `src/detection/utils.ts` — haversineDistance, EARTH_RADIUS_METERS, haversineDistanceMeters
+- `src/detection/healthConnectIntent.ts` — openHealthConnectPermissionsViaIntent, verifyHealthConnectPermissions
+- `src/detection/sessionMerger.ts` — submitSession, buildSession
+- `src/detection/GpsSessionBuilder.ts` — buildGpsNotes
+- `src/detection/HealthSessionBuilder.ts` — HealthSessionBuilder
+- `src/detection/LocationTracker.ts` — LocationTracker
+- `src/detection/PermissionService.ts` — PermissionService
 
 ## Storage (9 files)
 
@@ -27,16 +43,6 @@
 - `src/utils/permissionIssuesChangedEmitter.ts` — emitPermissionIssuesChanged, onPermissionIssuesChanged
 - `src/utils/sessionsChangedEmitter.ts` — emitSessionsChanged, onSessionsChanged
 - `src/utils/permissionIssues.ts` — countPermissionIssues
-
-## Detection (7 files)
-
-- `src/detection/gpsDetection.ts` — clampRadiusMeters, loadGPSState, \_resetGPSStateForTesting, requestLocationPermissions, computeMinActiveRadius, computeLowDistanceInterval, …
-- `src/detection/index.ts` — initDetection, requestHealthConnect, recheckHealthConnect, openHealthConnectSettings, getDetectionStatus, checkGPSPermissions, …
-- `src/detection/sessionConfidence.ts` — getTimeSlotProbability, updateTimeSlotProbability, scoreDuration, computeSessionScore, computeSessionScoreFromProbs, DISCARD_CONFIDENCE_THRESHOLD, …
-- `src/detection/healthConnect.ts` — isHealthConnectAvailable, requestHealthPermissions, openHealthConnectForManagement, syncHealthConnect
-- `src/detection/manualCheckin.ts` — logManualSession, logManualSessionAsync, startManualSession
-- `src/detection/healthConnectIntent.ts` — openHealthConnectPermissionsViaIntent, verifyHealthConnectPermissions
-- `src/detection/sessionMerger.ts` — submitSession, buildSession
 
 ## Hooks (5 files)
 

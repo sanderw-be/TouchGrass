@@ -16,14 +16,26 @@
   - function getOrCreateTouchGrassCalendar: (forceCreate) => Promise<string | null>
   - function getSelectedCalendarId: () => Promise<string>
   - _...6 more_
+- `src/detection/GeofenceManager.ts`
+  - function isAtKnownIndoorLocation: (lat, lon, locations) => boolean
+  - function wasDefinitelyAtKnownIndoorLocationSync: (startMs, endMs, allSamples, knownLocations) => boolean
+  - function shouldTriggerBurst: (lat, lon, locations, now, lastBurstAtTimestamp, currentProfile, locationAccuracy?) => boolean
+  - function computeMinActiveRadius: (locations) => number
+  - function clampRadiusMeters: (radius) => number
+  - function createClusterObject: (samples) => LocationCluster
+  - _...4 more_
+- `src/detection/GpsSessionBuilder.ts` — function buildGpsNotes: (startLocationLabel, endLocationLabel, distanceMeters, averageSpeedKmh) => string
+- `src/detection/HealthSessionBuilder.ts` — class HealthSessionBuilder
+- `src/detection/LocationTracker.ts` — class LocationTracker
+- `src/detection/PermissionService.ts` — class PermissionService
 - `src/detection/gpsDetection.ts`
-  - function clampRadiusMeters: (r) => number
   - function loadGPSState: () => Promise<void>
-  - function \_resetGPSStateForTesting: () => void
   - function requestLocationPermissions: () => Promise<boolean>
   - function computeMinActiveRadius: (locations) => number
-  - function computeLowDistanceInterval: (minRadiusMeters) => number
-  - _...19 more_
+  - function startLocationTracking: (profile, minRadiusMeters) => Promise<void>
+  - function stopLocationTracking: () => Promise<void>
+  - function switchLocationProfile: (profile, minRadiusMeters) => Promise<void>
+  - _...2 more_
 - `src/detection/healthConnect.ts`
   - function isHealthConnectAvailable: () => Promise<boolean>
   - function requestHealthPermissions: () => Promise<boolean>
@@ -32,11 +44,11 @@
 - `src/detection/healthConnectIntent.ts` — function openHealthConnectPermissionsViaIntent: () => Promise<boolean>, function verifyHealthConnectPermissions: () => Promise<boolean>
 - `src/detection/index.ts`
   - function initDetection: () => Promise<DetectionStatus>
-  - function requestHealthConnect: () => Promise<boolean>
-  - function recheckHealthConnect: () => Promise<boolean>
-  - function openHealthConnectSettings: () => Promise<boolean>
-  - function getDetectionStatus: () => Promise<DetectionStatus>
+  - function checkWeatherLocationPermissions: () => Promise<boolean>
+  - function requestWeatherLocationPermissions: () => Promise<boolean>
   - function checkGPSPermissions: () => Promise<boolean>
+  - function requestGPSPermissions: () => Promise<boolean>
+  - function refreshDetectionSync: () => Promise<void>
   - _...6 more_
 - `src/detection/manualCheckin.ts`
   - function logManualSession: (durationMinutes, startTime?, endTime?, notes?) => void
@@ -51,6 +63,10 @@
   - const DISCARD_CONFIDENCE_THRESHOLD
   - _...1 more_
 - `src/detection/sessionMerger.ts` — function submitSession: (candidate) => Promise<void>, function buildSession: (startTime, endTime, source, confidence, notes?, steps?, distanceMeters?, averageSpeedKmh?) => OutsideSession
+- `src/detection/utils.ts`
+  - function haversineDistance: (lat1, lon1, lat2, lon2) => number
+  - const EARTH_RADIUS_METERS
+  - const haversineDistanceMeters
 - `src/hooks/useDetectionSettings.ts` — function useDetectionSettings: () => void
 - `src/hooks/useForegroundSync.ts` — function useForegroundSync: () => void
 - `src/hooks/useGoalIntegrations.ts` — function useGoalIntegrations: () => void
