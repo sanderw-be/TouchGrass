@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, Switch, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Switch, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { ThemeColors, spacing } from '../../utils/theme';
 import { t } from '../../i18n';
 
@@ -12,6 +12,7 @@ interface DetectionSettingRowProps {
   permissionMissingLabel: string;
   onToggle: (value: boolean) => void;
   isLoading?: boolean;
+  isInitializing?: boolean;
   onPermissionFix?: () => void;
   testID?: string;
   colors: ThemeColors;
@@ -26,6 +27,7 @@ export function DetectionSettingRow({
   permissionMissingLabel,
   onToggle,
   isLoading,
+  isInitializing,
   onPermissionFix,
   testID,
   colors,
@@ -53,14 +55,20 @@ export function DetectionSettingRow({
           <Text style={[styles.rowSublabel, { color: colors.textMuted }]}>{desc}</Text>
         )}
       </View>
-      <Switch
-        value={enabled}
-        onValueChange={onToggle}
-        disabled={isLoading}
-        trackColor={{ false: colors.fog, true: colors.grassLight }}
-        thumbColor={enabled ? colors.grass : colors.inactive}
-        testID={testID}
-      />
+      {isInitializing ? (
+        <View style={styles.switchLoader} testID="switch-loader">
+          <ActivityIndicator size="small" color={colors.grass} />
+        </View>
+      ) : (
+        <Switch
+          value={enabled}
+          onValueChange={onToggle}
+          disabled={isLoading}
+          trackColor={{ false: colors.fog, true: colors.grassLight }}
+          thumbColor={enabled ? colors.grass : colors.inactive}
+          testID={testID}
+        />
+      )}
     </View>
   );
 }
@@ -80,4 +88,9 @@ const styles = StyleSheet.create({
   rowContent: { flex: 1 },
   rowLabel: { fontSize: 15, fontWeight: '500' },
   rowSublabel: { fontSize: 12, marginTop: 2 },
+  switchLoader: {
+    width: 50, // Typical switch width
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });

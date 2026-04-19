@@ -36,6 +36,7 @@ export function useDetectionSettings() {
   const [togglingHC, setTogglingHC] = useState(false);
   const [togglingGPS, setTogglingGPS] = useState(false);
   const [permissionSheet, setPermissionSheet] = useState<PermissionSheetConfig | null>(null);
+  const [isInitializing, setIsInitializing] = useState(true);
 
   const isFetchingRef = useRef(false);
 
@@ -50,6 +51,7 @@ export function useDetectionSettings() {
       console.error('[useDetectionSettings.loadStatus] Error:', error);
     } finally {
       isFetchingRef.current = false;
+      setIsInitializing(false);
     }
   }, []);
 
@@ -195,6 +197,7 @@ export function useDetectionSettings() {
     togglingHC,
     togglingGPS,
     permissionSheet,
+    isInitializing,
     setPermissionSheet,
     handleToggleHC,
     handleToggleGPS,
