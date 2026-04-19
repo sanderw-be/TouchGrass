@@ -1,9 +1,9 @@
 import React, { useMemo } from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { Text, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppStore } from '../../store/useAppStore';
 import { t } from '../../i18n';
-import { PermissionToggleRow, SettingRow, Divider, makeStyles } from './GoalsShared';
+import { PermissionToggleRow, SettingRow, Divider, makeStyles, Card } from './GoalsShared';
 
 interface WeatherSectionProps {
   weatherEnabled: boolean;
@@ -27,7 +27,7 @@ export default function WeatherSection({
   return (
     <>
       <Text style={styles.sectionHeader}>{t('settings_weather_title')}</Text>
-      <View style={styles.settingsCard}>
+      <Card variant="flat" style={{ padding: 0, overflow: 'hidden' }}>
         <PermissionToggleRow
           icon={<Ionicons name="partly-sunny-outline" size={20} color={colors.textSecondary} />}
           label={t('settings_weather_enabled')}
@@ -51,7 +51,7 @@ export default function WeatherSection({
             </TouchableOpacity>
           </>
         )}
-      </View>
+      </Card>
     </>
   );
 }

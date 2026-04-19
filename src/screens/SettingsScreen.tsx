@@ -19,9 +19,7 @@ import Constants from 'expo-constants';
 import { clearAllDataAsync } from '../storage';
 import PermissionExplainerSheet from '../components/PermissionExplainerSheet';
 import DiagnosticSheet from '../components/DiagnosticSheet';
-import { SettingRow } from '../components/Settings/SettingRow';
-import { Divider } from '../components/Settings/Divider';
-import { DetectionSettingRow } from '../components/Settings/DetectionSettingRow';
+import { SettingRow, Divider, DetectionSettingRow, Card } from '../components/ui';
 
 import { spacing, radius, ThemeColors, Shadows } from '../utils/theme';
 import { t, getDeviceSupportedLocale } from '../i18n';
@@ -173,7 +171,7 @@ export default function SettingsScreen() {
         )}
         {/* Detection sources */}
         <Text style={styles.sectionHeader}>{t('settings_section_detection')}</Text>
-        <View style={styles.card}>
+        <Card style={styles.card}>
           <DetectionSettingRow
             enabled={detectionStatus.healthConnect}
             permissionGranted={detectionStatus.healthConnectPermission}
@@ -186,9 +184,8 @@ export default function SettingsScreen() {
             isInitializing={isInitializing}
             onPermissionFix={showHCPermissionSheet}
             testID="hc-toggle"
-            colors={colors}
           />
-          <Divider colors={colors} />
+          <Divider />
           <DetectionSettingRow
             enabled={detectionStatus.gps}
             permissionGranted={detectionStatus.gpsPermission}
@@ -201,20 +198,18 @@ export default function SettingsScreen() {
             isInitializing={isInitializing}
             onPermissionFix={showGPSPermissionSheet}
             testID="gps-toggle"
-            colors={colors}
           />
-          <Divider colors={colors} />
+          <Divider />
           <SettingRow
             icon={<Ionicons name="radio-outline" size={20} color={colors.textSecondary} />}
             label={t('settings_background_tracking_label')}
             sublabel={t('settings_background_tracking_sublabel')}
-            colors={colors}
           />
-        </View>
+        </Card>
 
         {/* Known locations */}
         <Text style={styles.sectionHeader}>{t('settings_section_locations')}</Text>
-        <View style={styles.card}>
+        <Card style={styles.card}>
           <TouchableOpacity onPress={() => navigation.navigate('KnownLocations')}>
             <SettingRow
               icon={<Ionicons name="location-outline" size={20} color={colors.textSecondary} />}
@@ -224,7 +219,6 @@ export default function SettingsScreen() {
                   ? t('settings_locations_count', { count: knownLocations.length })
                   : t('settings_locations_manage_desc')
               }
-              colors={colors}
               right={
                 <View style={styles.locationRight}>
                   {suggestedCount > 0 && (
@@ -237,78 +231,68 @@ export default function SettingsScreen() {
               }
             />
           </TouchableOpacity>
-        </View>
+        </Card>
 
         <Text style={styles.sectionHeader}>{t('settings_section_appearance')}</Text>
-        <View style={styles.card}>
+        <Card style={styles.card}>
           {(['system', 'light', 'dark'] as ThemePreference[]).map((pref, i) => (
             <View key={pref}>
-              {i > 0 && <Divider colors={colors} />}
-              <TouchableOpacity style={styles.row} onPress={() => setThemePreference(pref)}>
-                <View style={styles.rowIconContainer}>
-                  <Ionicons
-                    name={
-                      pref === 'system'
-                        ? 'phone-portrait-outline'
-                        : pref === 'light'
-                          ? 'sunny-outline'
-                          : 'moon-outline'
-                    }
-                    size={20}
-                    color={colors.textSecondary}
-                  />
-                </View>
-                <View style={styles.rowContent}>
-                  <Text style={styles.rowLabel}>
-                    {pref === 'system'
+              {i > 0 && <Divider />}
+              <TouchableOpacity onPress={() => setThemePreference(pref)}>
+                <SettingRow
+                  icon={
+                    <Ionicons
+                      name={
+                        pref === 'system'
+                          ? 'phone-portrait-outline'
+                          : pref === 'light'
+                            ? 'sunny-outline'
+                            : 'moon-outline'
+                      }
+                      size={20}
+                      color={colors.textSecondary}
+                    />
+                  }
+                  label={
+                    pref === 'system'
                       ? t('settings_theme_system')
                       : pref === 'light'
                         ? t('settings_theme_light')
-                        : t('settings_theme_dark')}
-                  </Text>
-                </View>
-                {themePreference === pref && (
-                  <Ionicons
-                    name="checkmark"
-                    size={20}
-                    color={colors.grass}
-                    style={styles.checkmark}
-                  />
-                )}
+                        : t('settings_theme_dark')
+                  }
+                  right={
+                    themePreference === pref && (
+                      <Ionicons name="checkmark" size={20} color={colors.grass} />
+                    )
+                  }
+                />
               </TouchableOpacity>
             </View>
           ))}
-        </View>
+        </Card>
 
         <Text style={styles.sectionHeader}>{t('settings_section_language')}</Text>
-        <View style={styles.card}>
-          <TouchableOpacity
-            style={styles.row}
-            onPress={presentLanguageSheet}
-            testID="language-picker-toggle"
-          >
-            <View style={styles.rowIconContainer}>
-              <Ionicons name="language-outline" size={20} color={colors.textSecondary} />
-            </View>
-            <View style={styles.rowContent}>
-              <Text style={styles.rowLabel}>
-                {locale === 'en' || (locale === 'system' && systemLocale === 'en')
+        <Card style={styles.card}>
+          <TouchableOpacity onPress={presentLanguageSheet} testID="language-picker-toggle">
+            <SettingRow
+              icon={<Ionicons name="language-outline" size={20} color={colors.textSecondary} />}
+              label={
+                locale === 'en' || (locale === 'system' && systemLocale === 'en')
                   ? 'Language'
-                  : `${t('settings_section_language')} / Language`}
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+                  : `${t('settings_section_language')} / Language`
+              }
+              right={<Ionicons name="chevron-forward" size={20} color={colors.textMuted} />}
+            />
           </TouchableOpacity>
-        </View>
+        </Card>
 
         <Text style={styles.sectionHeader}>{t('settings_section_about')}</Text>
-        <View style={styles.card}>
+        <Card style={styles.card}>
           <TouchableOpacity onPress={() => navigation.navigate('AboutApp')}>
             <SettingRow
               icon={<Ionicons name="leaf-outline" size={20} color={colors.textSecondary} />}
               label="TouchGrass"
               sublabel={t('settings_app_sublabel')}
-              colors={colors}
               right={
                 <View style={styles.rowRightInline}>
                   {Constants.expoConfig?.version ? (
@@ -324,56 +308,52 @@ export default function SettingsScreen() {
               }
             />
           </TouchableOpacity>
-          <Divider colors={colors} />
+          <Divider />
           <TouchableOpacity onPress={() => Linking.openURL(PRIVACY_POLICY_URL)}>
             <SettingRow
               icon={<Ionicons name="lock-closed-outline" size={20} color={colors.textSecondary} />}
               label={t('settings_privacy')}
               sublabel={t('settings_privacy_sublabel')}
               hint={t('settings_privacy_hint')}
-              colors={colors}
               right={<Ionicons name="chevron-forward" size={20} color={colors.textMuted} />}
             />
           </TouchableOpacity>
-          <Divider colors={colors} />
+          <Divider />
           <SettingRow
             icon={<Ionicons name="school-outline" size={20} color={colors.textSecondary} />}
             label={t('settings_rerun_tutorial')}
             sublabel={t('settings_rerun_tutorial_sublabel')}
-            colors={colors}
             right={
               <TouchableOpacity style={styles.editBtn} onPress={handleShowIntro}>
                 <Text style={styles.editBtnText}>{t('settings_rerun_tutorial')}</Text>
               </TouchableOpacity>
             }
           />
-          <Divider colors={colors} />
+          <Divider />
           <TouchableOpacity onPress={() => navigation.navigate('FeedbackSupport')}>
             <SettingRow
               icon={<Ionicons name="cafe-outline" size={20} color={colors.textSecondary} />}
               label={t('settings_feedback_support')}
               sublabel={t('settings_feedback_support_sublabel')}
-              colors={colors}
               right={<Ionicons name="chevron-forward" size={20} color={colors.textMuted} />}
             />
           </TouchableOpacity>
-          <Divider colors={colors} />
+          <Divider />
           <SettingRow
             icon={<Ionicons name="trash-outline" size={20} color={colors.textSecondary} />}
             label={t('settings_clear_data')}
             sublabel={t('settings_clear_data_sublabel')}
-            colors={colors}
             right={
               <TouchableOpacity style={styles.dangerBtn} onPress={handleClearData}>
                 <Text style={styles.dangerBtnText}>{t('settings_clear_data')}</Text>
               </TouchableOpacity>
             }
           />
-        </View>
+        </Card>
 
         {/* Activity Log (Transparency) */}
         <Text style={styles.sectionHeader}>{t('settings_section_activity_log')}</Text>
-        <View style={styles.card}>
+        <Card style={styles.card}>
           <TouchableOpacity onPress={() => navigation.navigate('ActivityLog')}>
             <SettingRow
               icon={
@@ -381,11 +361,10 @@ export default function SettingsScreen() {
               }
               label={t('settings_activity_log')}
               sublabel={t('settings_activity_log_sublabel')}
-              colors={colors}
               right={<Ionicons name="chevron-forward" size={20} color={colors.textMuted} />}
             />
           </TouchableOpacity>
-        </View>
+        </Card>
       </ScrollView>
 
       {permissionSheet && (
@@ -420,33 +399,23 @@ export default function SettingsScreen() {
           <Text style={styles.sheetTitle}>{t('settings_section_language')}</Text>
           {LANGUAGES.map((lang, index) => (
             <View key={lang.code}>
-              {index > 0 && <Divider colors={colors} />}
-              <TouchableOpacity style={styles.row} onPress={() => changeLanguage(lang.code)}>
-                <View style={styles.rowIconContainer}>
-                  <Ionicons
-                    name="language-outline"
-                    size={20}
-                    color={locale === lang.code ? colors.grass : colors.textSecondary}
-                  />
-                </View>
-                <View style={styles.rowContent}>
-                  <Text
-                    style={[
-                      styles.rowLabel,
-                      locale === lang.code && { color: colors.grass, fontWeight: '700' },
-                    ]}
-                  >
-                    {getLanguageOptionLabel(lang.code, lang.label, lang.isTranslationKey)}
-                  </Text>
-                </View>
-                {locale === lang.code && (
-                  <Ionicons
-                    name="checkmark"
-                    size={20}
-                    color={colors.grass}
-                    style={styles.checkmark}
-                  />
-                )}
+              {index > 0 && <Divider />}
+              <TouchableOpacity onPress={() => changeLanguage(lang.code)}>
+                <SettingRow
+                  icon={
+                    <Ionicons
+                      name="language-outline"
+                      size={20}
+                      color={locale === lang.code ? colors.grass : colors.textSecondary}
+                    />
+                  }
+                  label={getLanguageOptionLabel(lang.code, lang.label, lang.isTranslationKey)}
+                  right={
+                    locale === lang.code && (
+                      <Ionicons name="checkmark" size={20} color={colors.grass} />
+                    )
+                  }
+                />
               </TouchableOpacity>
             </View>
           ))}
@@ -484,28 +453,10 @@ function makeStyles(colors: ThemeColors, shadows: Shadows) {
     },
 
     card: {
-      backgroundColor: colors.card,
-      borderRadius: radius.lg,
+      padding: 0,
       overflow: 'hidden',
-      ...shadows.soft,
     },
 
-    row: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      padding: spacing.md,
-    },
-    rowIconContainer: {
-      width: 28,
-      marginRight: spacing.md,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    rowContent: { flex: 1 },
-    rowLabel: { fontSize: 15, color: colors.textPrimary, fontWeight: '500' },
-    rowSublabel: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
-    rowHint: { fontSize: 12, color: colors.grass, marginTop: 2 },
-    rowRight: { marginLeft: spacing.sm },
     rowRightInline: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
 
     versionBadge: {

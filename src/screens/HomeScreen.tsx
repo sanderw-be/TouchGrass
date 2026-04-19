@@ -45,6 +45,8 @@ import {
   requestWidgetRefresh,
 } from '../utils/widgetHelper';
 
+import { Card } from '../components/ui';
+
 export default function HomeScreen() {
   const colors = useAppStore((state) => state.colors);
   const shadows = useAppStore((state) => state.shadows);
@@ -329,7 +331,7 @@ export default function HomeScreen() {
         </View>
 
         {/* Main progress ring */}
-        <View style={styles.ringCard}>
+        <Card style={styles.ringCard}>
           <ProgressRing
             current={todayMinutes}
             target={dailyTarget}
@@ -368,10 +370,10 @@ export default function HomeScreen() {
               )}
             </View>
           )}
-        </View>
+        </Card>
 
         {/* Weekly strip */}
-        <View style={styles.weekCard}>
+        <Card style={styles.weekCard}>
           <View style={styles.weekHeader}>
             <Text style={styles.weekTitle}>{t('this_week')}</Text>
             <Text style={styles.weekValue}>
@@ -385,7 +387,7 @@ export default function HomeScreen() {
             <View style={[styles.weekBarFill, { width: `${weeklyPercent * 100}%` }]} />
           </View>
           <WeekDots />
-        </View>
+        </Card>
 
         {/* Today's sessions */}
         {todaySessions.length > 0 && (
@@ -517,7 +519,7 @@ function SessionRow({
   );
 
   const rowContent = (
-    <View style={styles.sessionCard}>
+    <Card style={styles.sessionCard}>
       <View style={styles.sessionRow}>
         <View style={styles.sessionIconContainer}>
           <Ionicons
@@ -553,7 +555,7 @@ function SessionRow({
           <Ionicons name="arrow-forward-outline" size={14} color={colors.textMuted} />
         </View>
       )}
-    </View>
+    </Card>
   );
 
   if (!isPending) {
@@ -607,12 +609,8 @@ function makeStyles(colors: ThemeColors, shadows: Shadows) {
     },
 
     ringCard: {
-      backgroundColor: colors.card,
-      borderRadius: radius.lg,
       padding: spacing.xl,
       alignItems: 'center',
-      marginBottom: spacing.md,
-      ...shadows.soft,
     },
     motivation: {
       marginTop: spacing.md,
@@ -649,11 +647,7 @@ function makeStyles(colors: ThemeColors, shadows: Shadows) {
     },
 
     weekCard: {
-      backgroundColor: colors.card,
-      borderRadius: radius.lg,
       padding: spacing.lg,
-      marginBottom: spacing.md,
-      ...shadows.soft,
     },
     weekHeader: {
       flexDirection: 'row',
@@ -693,10 +687,8 @@ function makeStyles(colors: ThemeColors, shadows: Shadows) {
     },
 
     sessionCard: {
-      backgroundColor: colors.card,
       borderRadius: radius.md,
       marginBottom: spacing.xs,
-      ...shadows.soft,
     },
     sessionRow: {
       flexDirection: 'row',
