@@ -4,7 +4,7 @@
 
 > 0 routes | 0 models | 39 components | 30 lib files | 2 env vars | 1 middleware | 0% test coverage
 > **Token savings:** this file is ~4,400 tokens. Without it, AI exploration would cost ~30,100 tokens. **Saves ~25,700 tokens per conversation.**
-> **Last scanned:** 2026-04-19 12:16 — re-run after significant changes
+> **Last scanned:** 2026-04-19 13:02 — re-run after significant changes
 
 ---
 
@@ -21,7 +21,7 @@
 - **ProgressRing** — props: current, target, size, strokeWidth, label, onTimerPress, timerRunning, timerSeconds — `src/components/ProgressRing.tsx`
 - **ReminderFeedbackModal** — `src/components/ReminderFeedbackModal.tsx`
 - **SessionNotesSheet** — props: visible, session, onClose, onNoteSaved — `src/components/SessionNotesSheet.tsx`
-- **DetectionSettingRow** — props: enabled, permissionGranted, icon, label, desc, permissionMissingLabel, onToggle, isLoading, onPermissionFix, testID — `src/components/Settings/DetectionSettingRow.tsx`
+- **DetectionSettingRow** — props: enabled, permissionGranted, icon, label, desc, permissionMissingLabel, onToggle, isLoading, isInitializing, onPermissionFix — `src/components/Settings/DetectionSettingRow.tsx`
 - **Divider** — props: colors — `src/components/Settings/Divider.tsx`
 - **SettingRow** — props: icon, label, sublabel, hint, right, colors — `src/components/Settings/SettingRow.tsx`
 - **UndoSnackbar** — props: visible, message, onUndo, onDismiss, duration — `src/components/UndoSnackbar.tsx`
