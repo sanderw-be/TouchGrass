@@ -2,7 +2,7 @@
 
 > **Navigation aid.** Library inventory extracted via AST. Read the source files listed here before modifying exported functions.
 
-**27 library files** across 11 modules
+**28 library files** across 11 modules
 
 ## Utils (9 files)
 
@@ -26,9 +26,10 @@
 - `src/detection/healthConnectIntent.ts` — openHealthConnectPermissionsViaIntent, verifyHealthConnectPermissions
 - `src/detection/sessionMerger.ts` — submitSession, buildSession
 
-## Hooks (2 files)
+## Hooks (3 files)
 
 - `src/hooks/useOTAUpdates.ts` — useOTAUpdates, OTAUpdateStatus
+- `src/hooks/useDetectionSettings.ts` — useDetectionSettings
 - `src/hooks/useForegroundSync.ts` — useForegroundSync
 
 ## Weather (2 files)

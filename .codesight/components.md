@@ -11,6 +11,9 @@
 - **ProgressRing** — props: current, target, size, strokeWidth, label, onTimerPress, timerRunning, timerSeconds — `src/components/ProgressRing.tsx`
 - **ReminderFeedbackModal** — `src/components/ReminderFeedbackModal.tsx`
 - **SessionNotesSheet** — props: visible, session, onClose, onNoteSaved — `src/components/SessionNotesSheet.tsx`
+- **DetectionSettingRow** — props: enabled, permissionGranted, icon, label, desc, permissionMissingLabel, onToggle, isLoading, onPermissionFix, testID — `src/components/Settings/DetectionSettingRow.tsx`
+- **Divider** — props: colors — `src/components/Settings/Divider.tsx`
+- **SettingRow** — props: icon, label, sublabel, hint, right, colors — `src/components/Settings/SettingRow.tsx`
 - **UndoSnackbar** — props: visible, message, onUndo, onDismiss, duration — `src/components/UndoSnackbar.tsx`
 - **UpdateSplashScreen** — props: status — `src/components/UpdateSplashScreen.tsx`
 - **CalendarSection** — props: calendarEnabled, calendarPermissionGranted, calendarBuffer, calendarDuration, calendarSelectedId, calendarOptions, onToggleCalendar, onCycleCalendarBuffer, onCycleCalendarDuration, onSelectCalendar — `src/components/goals/CalendarSection.tsx`

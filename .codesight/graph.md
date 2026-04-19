@@ -2,10 +2,10 @@
 
 ## Most Imported Files (change these carefully)
 
-- `src/storage/database.ts` — imported by **60** files
-- `src/i18n/index.ts` — imported by **45** files
+- `src/storage/database.ts` — imported by **61** files
+- `src/i18n/index.ts` — imported by **47** files
 - `src/store/useAppStore.ts` — imported by **34** files
-- `src/utils/theme.ts` — imported by **26** files
+- `src/utils/theme.ts` — imported by **29** files
 - `src/notifications/notificationManager.ts` — imported by **14** files
 - `src/detection/index.ts` — imported by **12** files
 - `src/utils/helpers.ts` — imported by **10** files
@@ -17,18 +17,18 @@
 - `src/weather/weatherService.ts` — imported by **7** files
 - `src/utils/constants.ts` — imported by **6** files
 - `src/detection/sessionMerger.ts` — imported by **6** files
+- `src/navigation/AppNavigator.tsx` — imported by **5** files
 - `src/utils/units.ts` — imported by **5** files
-- `src/navigation/AppNavigator.tsx` — imported by **4** files
 - `src/utils/batteryOptimization.ts` — imported by **4** files
 - `src/utils/temperature.ts` — imported by **4** files
 - `src/hooks/useOTAUpdates.ts` — imported by **3** files
 
 ## Import Map (who imports what)
 
-- `src/storage/database.ts` ← `appBootstrap.ts`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx` +55 more
-- `src/i18n/index.ts` ← `appBootstrap.ts`, `src/__tests__/ErrorBoundary.test.tsx`, `src/__tests__/FeedbackSupportScreen.test.tsx`, `src/__tests__/appBootstrap.test.ts`, `src/__tests__/i18n.test.ts` +40 more
+- `src/storage/database.ts` ← `appBootstrap.ts`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx` +56 more
+- `src/i18n/index.ts` ← `appBootstrap.ts`, `src/__tests__/ErrorBoundary.test.tsx`, `src/__tests__/FeedbackSupportScreen.test.tsx`, `src/__tests__/appBootstrap.test.ts`, `src/__tests__/i18n.test.ts` +42 more
 - `src/store/useAppStore.ts` ← `App.tsx`, `src/__tests__/App.test.tsx`, `src/__tests__/notificationManager.test.ts`, `src/__tests__/useAppStore.test.ts`, `src/components/DiagnosticSheet.tsx` +29 more
-- `src/utils/theme.ts` ← `src/components/DiagnosticSheet.tsx`, `src/components/EditLocationSheet.tsx`, `src/components/EditSessionSheet.tsx`, `src/components/ErrorBoundary.tsx`, `src/components/ManualSessionSheet.tsx` +21 more
+- `src/utils/theme.ts` ← `src/components/DiagnosticSheet.tsx`, `src/components/EditLocationSheet.tsx`, `src/components/EditSessionSheet.tsx`, `src/components/ErrorBoundary.tsx`, `src/components/ManualSessionSheet.tsx` +24 more
 - `src/notifications/notificationManager.ts` ← `appBootstrap.ts`, `src/__tests__/appBootstrap.test.ts`, `src/__tests__/backgroundService.test.ts`, `src/__tests__/backgroundTick.test.ts`, `src/__tests__/notificationManager.test.ts` +9 more
 - `src/detection/index.ts` ← `appBootstrap.ts`, `src/__tests__/IntroScreen.test.tsx`, `src/__tests__/IntroScreen.test.tsx`, `src/__tests__/IntroScreen.test.tsx`, `src/__tests__/IntroScreen.test.tsx` +7 more
 - `src/utils/helpers.ts` ← `src/components/EditSessionSheet.tsx`, `src/components/ManualSessionSheet.tsx`, `src/components/ProgressRing.tsx`, `src/components/ReminderFeedbackModal.tsx`, `src/i18n/index.ts` +5 more

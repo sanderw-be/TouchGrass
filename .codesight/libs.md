@@ -51,6 +51,7 @@
   - const DISCARD_CONFIDENCE_THRESHOLD
   - _...1 more_
 - `src/detection/sessionMerger.ts` — function submitSession: (candidate) => Promise<void>, function buildSession: (startTime, endTime, source, confidence, notes?, steps?, distanceMeters?, averageSpeedKmh?) => OutsideSession
+- `src/hooks/useDetectionSettings.ts` — function useDetectionSettings: () => void
 - `src/hooks/useForegroundSync.ts` — function useForegroundSync: () => void
 - `src/hooks/useOTAUpdates.ts` — function useOTAUpdates: () => void, type OTAUpdateStatus
 - `src/i18n/index.ts`
