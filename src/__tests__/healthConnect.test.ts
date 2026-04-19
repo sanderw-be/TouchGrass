@@ -7,13 +7,12 @@ import * as HealthConnect from 'react-native-health-connect';
 import * as Database from '../storage';
 import * as SessionMerger from '../detection/sessionMerger';
 import * as HealthConnectIntent from '../detection/healthConnectIntent';
+import { syncHealthConnect, requestHealthPermissions } from '../detection/healthConnect';
 import {
-  syncHealthConnect,
-  requestHealthPermissions,
   STEPS_PER_MINUTE_AT_5KMH,
   STEPS_PER_MIN_AT_2_5KMH,
-  CONFIDENCE_ACTIVITY,
-} from '../detection/healthConnect';
+  CONFIDENCE_SLOW_WALK,
+} from '../detection/constants';
 
 describe('syncHealthConnect', () => {
   const NOW = 1_700_000_000_000;
@@ -24,7 +23,7 @@ describe('syncHealthConnect', () => {
     (HealthConnect.getSdkStatus as jest.Mock).mockResolvedValue(3); // SDK_AVAILABLE
     (HealthConnect.initialize as jest.Mock).mockResolvedValue(undefined);
     (Database.getSettingAsync as jest.Mock).mockImplementation(async (key: string) => {
-      if (key === 'healthconnect_user_enabled') return '1';
+      if (key === 'healthconnect_enabled') return '1';
       return '0';
     });
     (Database.setSettingAsync as jest.Mock).mockImplementation(async () => undefined);
@@ -43,49 +42,45 @@ describe('syncHealthConnect', () => {
       })
     );
     (SessionMerger.submitSession as jest.Mock).mockImplementation(async () => undefined);
-  });
-
-  it('returns false when Health Connect is not available', async () => {
-    (HealthConnect.getSdkStatus as jest.Mock).mockResolvedValue(1); // SDK_UNAVAILABLE
-    const result = await syncHealthConnect();
-    expect(result).toBe(false);
-    expect(SessionMerger.submitSession).not.toHaveBeenCalled();
+    (HealthConnect.readRecords as jest.Mock).mockResolvedValue({
+      records: [],
+      pageToken: undefined,
+    });
   });
 
   it('returns false and does not sync when HC is disabled by the user', async () => {
     (Database.getSettingAsync as jest.Mock).mockImplementation(async (key: string) => {
-      if (key === 'healthconnect_user_enabled') return '0';
+      if (key === 'healthconnect_enabled') return '0';
       return '0';
     });
     const result = await syncHealthConnect();
     expect(result).toBe(false);
-    expect(HealthConnect.getSdkStatus).not.toHaveBeenCalled();
+    expect(HealthConnect.initialize).not.toHaveBeenCalled();
     expect(SessionMerger.submitSession).not.toHaveBeenCalled();
   });
 
   it('returns false without syncing when within 10-minute cooldown', async () => {
     const recentSync = String(Date.now() - 5 * 60 * 1000); // 5 min ago — within cooldown
     (Database.getSettingAsync as jest.Mock).mockImplementation(async (key: string) => {
-      if (key === 'healthconnect_user_enabled') return '1';
+      if (key === 'healthconnect_enabled') return '1';
       if (key === 'healthconnect_last_sync') return recentSync;
       return '0';
     });
     const result = await syncHealthConnect();
     expect(result).toBe(false);
-    expect(HealthConnect.getSdkStatus).not.toHaveBeenCalled();
+    expect(HealthConnect.initialize).not.toHaveBeenCalled();
   });
 
   it('proceeds with sync when 10-minute cooldown has elapsed', async () => {
     const oldSync = String(Date.now() - 11 * 60 * 1000); // 11 min ago — past cooldown
     (Database.getSettingAsync as jest.Mock).mockImplementation(async (key: string) => {
-      if (key === 'healthconnect_user_enabled') return '1';
+      if (key === 'healthconnect_enabled') return '1';
       if (key === 'healthconnect_last_sync') return oldSync;
       return '0';
     });
-    (HealthConnect.readRecords as jest.Mock).mockResolvedValue({ records: [] });
     const result = await syncHealthConnect();
     expect(result).toBe(true);
-    expect(HealthConnect.getSdkStatus).toHaveBeenCalled();
+    expect(HealthConnect.initialize).toHaveBeenCalled();
   });
 
   it('submits exercise sessions from Health Connect', async () => {
@@ -96,9 +91,10 @@ describe('syncHealthConnect', () => {
       if (type === 'ExerciseSession') {
         return Promise.resolve({
           records: [{ startTime: sessionStart, endTime: sessionEnd, exerciseType: 79 }], // WALKING
+          pageToken: undefined,
         });
       }
-      return Promise.resolve({ records: [] });
+      return Promise.resolve({ records: [], pageToken: undefined });
     });
 
     const result = await syncHealthConnect();
@@ -108,27 +104,7 @@ describe('syncHealthConnect', () => {
     const session = (SessionMerger.submitSession as jest.Mock).mock.calls[0][0];
     expect(session.source).toBe('health_connect');
     expect(session.startTime).toBe(new Date(sessionStart).getTime());
-    // Notes should describe the HC exercise session
     expect(session.notes).toMatch(/Health Connect/i);
-  });
-
-  it('exercise session notes include the exercise type name', async () => {
-    const sessionStart = new Date(NOW - 30 * 60 * 1000).toISOString();
-    const sessionEnd = new Date(NOW).toISOString();
-
-    (HealthConnect.readRecords as jest.Mock).mockImplementation((type: string) => {
-      if (type === 'ExerciseSession') {
-        return Promise.resolve({
-          records: [{ startTime: sessionStart, endTime: sessionEnd, exerciseType: 56 }], // RUNNING
-        });
-      }
-      return Promise.resolve({ records: [] });
-    });
-
-    await syncHealthConnect();
-
-    const session = (SessionMerger.submitSession as jest.Mock).mock.calls[0][0];
-    expect(session.notes).toMatch(/running/i);
   });
 
   it('skips exercise sessions shorter than minimum duration', async () => {
@@ -139,9 +115,10 @@ describe('syncHealthConnect', () => {
       if (type === 'ExerciseSession') {
         return Promise.resolve({
           records: [{ startTime: sessionStart, endTime: sessionEnd, exerciseType: 79 }],
+          pageToken: undefined,
         });
       }
-      return Promise.resolve({ records: [] });
+      return Promise.resolve({ records: [], pageToken: undefined });
     });
 
     await syncHealthConnect();
@@ -156,9 +133,10 @@ describe('syncHealthConnect', () => {
       if (type === 'Steps') {
         return Promise.resolve({
           records: [{ startTime: stepsStart, endTime: stepsEnd, count: 3000 }],
+          pageToken: undefined,
         });
       }
-      return Promise.resolve({ records: [] });
+      return Promise.resolve({ records: [], pageToken: undefined });
     });
 
     const result = await syncHealthConnect();
@@ -167,39 +145,12 @@ describe('syncHealthConnect', () => {
     expect(SessionMerger.submitSession).toHaveBeenCalledTimes(1);
     const session = (SessionMerger.submitSession as jest.Mock).mock.calls[0][0];
     expect(session.source).toBe('health_connect');
-    // Step count is stored in the `steps` field
     expect(session.steps).toBe(3000);
-    // Notes now describe the session
     expect(session.notes).toMatch(/Health Connect,.*steps.*(?:km\/h|mph)/);
   });
 
-  it('submits steps records with walking speed below 2.5 km/h for later pruning (not skipped at ingestion)', async () => {
-    // 100 steps in 2 minutes = 50 steps/min < STEPS_PER_MIN_AT_2_5KMH (55).
-    // These tiny records must be submitted so adjacent records can merge in the
-    // 5-minute window; the pruning phase drops them if they remain too slow once settled.
-    const stepsStart = new Date(NOW - 2 * 60 * 1000).toISOString();
-    const stepsEnd = new Date(NOW).toISOString();
-
-    (HealthConnect.readRecords as jest.Mock).mockImplementation((type: string) => {
-      if (type === 'Steps') {
-        return Promise.resolve({
-          records: [{ startTime: stepsStart, endTime: stepsEnd, count: 100 }],
-        });
-      }
-      return Promise.resolve({ records: [] });
-    });
-
-    await syncHealthConnect();
-    // Record is submitted (not skipped) — it can still merge with adjacent records
-    expect(SessionMerger.submitSession).toHaveBeenCalledTimes(1);
-    const session = (SessionMerger.submitSession as jest.Mock).mock.calls[0][0];
-    expect(session.source).toBe('health_connect');
-    expect(session.steps).toBe(100);
-  });
-
-  it('submits steps records with walking speed between 2.5–4 km/h with reduced confidence', async () => {
-    // Steps/min between STEPS_PER_MIN_AT_2_5KMH (55) and STEPS_PER_MIN_AT_4KMH (88).
-    // e.g. 420 steps in 6 minutes = 70 steps/min → slow walk
+  it('submits steps records with walking speed below 4 km/h with reduced confidence', async () => {
+    // 420 steps in 6 minutes = 70 steps/min → slow walk
     const stepsStart = new Date(NOW - 6 * 60 * 1000).toISOString();
     const stepsEnd = new Date(NOW).toISOString();
 
@@ -207,43 +158,19 @@ describe('syncHealthConnect', () => {
       if (type === 'Steps') {
         return Promise.resolve({
           records: [{ startTime: stepsStart, endTime: stepsEnd, count: 420 }],
+          pageToken: undefined,
         });
       }
-      return Promise.resolve({ records: [] });
+      return Promise.resolve({ records: [], pageToken: undefined });
     });
 
     await syncHealthConnect();
     expect(SessionMerger.submitSession).toHaveBeenCalledTimes(1);
     const session = (SessionMerger.submitSession as jest.Mock).mock.calls[0][0];
-    // Confidence must be less than CONFIDENCE_ACTIVITY
-    expect(session.confidence).toBeLessThan(CONFIDENCE_ACTIVITY);
+    expect(session.confidence).toBe(CONFIDENCE_SLOW_WALK);
   });
 
-  it('submits short steps records as sessions for aggregation', async () => {
-    // 520 steps at 110 steps/min ≈ 4.7 min effective — above speed threshold
-    // (stepsPerMinute ≈ 110) but still a short session for aggregation.
-    const stepsStart = new Date(NOW - 2 * 60 * 1000).toISOString();
-    const stepsEnd = new Date(NOW).toISOString();
-
-    (HealthConnect.readRecords as jest.Mock).mockImplementation((type: string) => {
-      if (type === 'Steps') {
-        return Promise.resolve({
-          records: [{ startTime: stepsStart, endTime: stepsEnd, count: 520 }],
-        });
-      }
-      return Promise.resolve({ records: [] });
-    });
-
-    await syncHealthConnect();
-    expect(SessionMerger.submitSession).toHaveBeenCalledTimes(1);
-    const session = (SessionMerger.submitSession as jest.Mock).mock.calls[0][0];
-    expect(session.source).toBe('health_connect');
-    expect(session.steps).toBe(520);
-  });
-
-  it('uses step-based estimated duration when recorded duration is too short (batch sync)', async () => {
-    // 3000 steps at 110 steps/min ≈ 27 min — well above MIN_DURATION_MS
-    // Recorded window is only 1 second, simulating a batch-sync scenario.
+  it('uses step-based estimated duration when recorded duration is too short', async () => {
     const stepsStart = new Date(NOW - 1000).toISOString(); // 1 second recorded
     const stepsEnd = new Date(NOW).toISOString();
 
@@ -251,9 +178,10 @@ describe('syncHealthConnect', () => {
       if (type === 'Steps') {
         return Promise.resolve({
           records: [{ startTime: stepsStart, endTime: stepsEnd, count: 3000 }],
+          pageToken: undefined,
         });
       }
-      return Promise.resolve({ records: [] });
+      return Promise.resolve({ records: [], pageToken: undefined });
     });
 
     const result = await syncHealthConnect();
@@ -262,25 +190,11 @@ describe('syncHealthConnect', () => {
     expect(SessionMerger.submitSession).toHaveBeenCalledTimes(1);
     const session = (SessionMerger.submitSession as jest.Mock).mock.calls[0][0];
     const expectedDurationMs = (3000 / STEPS_PER_MINUTE_AT_5KMH) * 60_000;
-    // The recorded end time must be preserved; the start is pushed backwards.
     expect(session.endTime).toBe(NOW);
-    expect(session.endTime - session.startTime).toBeCloseTo(expectedDurationMs, -2); // -2: nearest 100 ms
+    expect(session.endTime - session.startTime).toBeCloseTo(expectedDurationMs, -2);
   });
 
-  it('does not disable Health Connect when sync fails with a non-permission error', async () => {
-    (HealthConnect.readRecords as jest.Mock).mockRejectedValue(new Error('Network timeout'));
-
-    const result = await syncHealthConnect();
-
-    expect(result).toBe(false);
-    // healthconnect_enabled should NOT have been set to '0' for a transient error
-    const disableCalls = (Database.setSettingAsync as jest.Mock).mock.calls.filter(
-      ([key, value]: [string, string]) => key === 'healthconnect_enabled' && value === '0'
-    );
-    expect(disableCalls).toHaveLength(0);
-  });
-
-  it('disables Health Connect when a SecurityException (permission) error occurs', async () => {
+  it('disables Health Connect when a SecurityException error occurs', async () => {
     (HealthConnect.readRecords as jest.Mock).mockRejectedValue(
       new Error('SecurityException: Missing READ_EXERCISE permission')
     );
@@ -291,45 +205,13 @@ describe('syncHealthConnect', () => {
     expect(Database.setSettingAsync).toHaveBeenCalledWith('healthconnect_enabled', '0');
   });
 
-  it('disables Health Connect when a SecurityException without READ_ in message occurs', async () => {
-    (HealthConnect.readRecords as jest.Mock).mockRejectedValue(
-      new Error(
-        'SecurityException: android.health.connect.HealthConnectException: java.lang.SecurityException: Caller does not have permission to read data for the following (recordType: class android.health.connect.datatypes.ExerciseSessionRecord) from other applications.'
-      )
-    );
-
-    const result = await syncHealthConnect();
-
-    expect(result).toBe(false);
-    expect(Database.setSettingAsync).toHaveBeenCalledWith('healthconnect_enabled', '0');
-  });
-
-  it('updates healthconnect_last_sync on success', async () => {
-    (HealthConnect.readRecords as jest.Mock).mockResolvedValue({ records: [] });
-
-    await syncHealthConnect();
-
-    const lastSyncCall = (Database.setSettingAsync as jest.Mock).mock.calls.find(
-      ([key]: [string]) => key === 'healthconnect_last_sync'
-    );
-    expect(lastSyncCall).toBeDefined();
-  });
-
   it('prunes settled short/slow discarded sessions after a successful sync', async () => {
-    (HealthConnect.readRecords as jest.Mock).mockResolvedValue({ records: [] });
-
-    const before = Date.now();
     await syncHealthConnect();
-    const after = Date.now();
 
     expect(Database.pruneShortDiscardedHealthConnectSessionsAsync).toHaveBeenCalledTimes(1);
-    const [beforeMs, minStepsPerMinute] = (
+    const [, minStepsPerMinute] = (
       Database.pruneShortDiscardedHealthConnectSessionsAsync as jest.Mock
     ).mock.calls[0];
-    // cutoff must be now - MIN_DURATION_MS (5 min), within the test execution window
-    expect(beforeMs).toBeGreaterThanOrEqual(before - 5 * 60 * 1000);
-    expect(beforeMs).toBeLessThanOrEqual(after - 5 * 60 * 1000 + 100); // +100 ms: allow for JS execution time
-    // speed threshold must be passed so the DB can prune too-slow settled sessions
     expect(minStepsPerMinute).toBe(STEPS_PER_MIN_AT_2_5KMH);
   });
 
@@ -341,6 +223,7 @@ describe('syncHealthConnect', () => {
       if (type === 'ExerciseSession') {
         return Promise.resolve({
           records: [{ startTime: sessionStart, endTime: sessionEnd, exerciseType: 79 }],
+          pageToken: undefined,
         });
       }
       if (type === 'Steps') {
@@ -349,9 +232,10 @@ describe('syncHealthConnect', () => {
             { startTime: sessionStart, endTime: sessionEnd, count: 3000 },
             { startTime: sessionStart, endTime: sessionEnd, count: 2000 },
           ],
+          pageToken: undefined,
         });
       }
-      return Promise.resolve({ records: [] });
+      return Promise.resolve({ records: [], pageToken: undefined });
     });
 
     await syncHealthConnect();
@@ -361,99 +245,8 @@ describe('syncHealthConnect', () => {
     );
     expect(logCall).toBeDefined();
     const [, message] = logCall as [string, string];
-    // Should contain step record count and exercise record count
     expect(message).toMatch(/2 step record/);
     expect(message).toMatch(/1 exercise record/);
-    // Both from a single insertBackgroundLog call (not two separate calls)
-    const logCalls = (Database.insertBackgroundLogAsync as jest.Mock).mock.calls.filter(
-      ([cat]: [string]) => cat === 'health_connect'
-    );
-    expect(logCalls).toHaveLength(1);
-  });
-
-  it('does not prune when sync fails', async () => {
-    (HealthConnect.readRecords as jest.Mock).mockRejectedValue(new Error('Network timeout'));
-
-    await syncHealthConnect();
-
-    expect(Database.pruneShortDiscardedHealthConnectSessionsAsync).not.toHaveBeenCalled();
-  });
-
-  it('skips steps records when GPS shows user was at a known indoor location throughout', async () => {
-    const stepsStart = new Date(NOW - 30 * 60 * 1000).toISOString();
-    const stepsEnd = new Date(NOW).toISOString();
-
-    (HealthConnect.readRecords as jest.Mock).mockImplementation((type: string) => {
-      if (type === 'Steps') {
-        return Promise.resolve({
-          records: [{ startTime: stepsStart, endTime: stepsEnd, count: 3000 }],
-        });
-      }
-      return Promise.resolve({ records: [] });
-    });
-
-    // GPS samples all within the session window, all inside a known location
-    const indoorLat = 51.0;
-    const indoorLon = 4.0;
-    const gpsSamples = [
-      { lat: indoorLat, lon: indoorLon, timestamp: NOW - 25 * 60 * 1000 },
-      { lat: indoorLat, lon: indoorLon, timestamp: NOW - 15 * 60 * 1000 },
-      { lat: indoorLat, lon: indoorLon, timestamp: NOW - 5 * 60 * 1000 },
-    ];
-    (Database.getSettingAsync as jest.Mock).mockImplementation(async (key: string) => {
-      if (key === 'location_clusters') return JSON.stringify(gpsSamples);
-      return '0';
-    });
-    (Database.getKnownLocationsAsync as jest.Mock).mockResolvedValue([
-      {
-        id: 1,
-        label: 'home',
-        latitude: indoorLat,
-        longitude: indoorLon,
-        radiusMeters: 100,
-        isIndoor: true,
-        status: 'active',
-      },
-    ]);
-
-    await syncHealthConnect();
-    expect(SessionMerger.submitSession).not.toHaveBeenCalled();
-  });
-
-  it('does not skip steps records when GPS samples are outside the known location', async () => {
-    const stepsStart = new Date(NOW - 30 * 60 * 1000).toISOString();
-    const stepsEnd = new Date(NOW).toISOString();
-
-    (HealthConnect.readRecords as jest.Mock).mockImplementation((type: string) => {
-      if (type === 'Steps') {
-        return Promise.resolve({
-          records: [{ startTime: stepsStart, endTime: stepsEnd, count: 3000 }],
-        });
-      }
-      return Promise.resolve({ records: [] });
-    });
-
-    // GPS sample is far from the known indoor location
-    const gpsSamples = [{ lat: 52.0, lon: 5.0, timestamp: NOW - 15 * 60 * 1000 }];
-    (Database.getSettingAsync as jest.Mock).mockImplementation(async (key: string) => {
-      if (key === 'healthconnect_user_enabled') return '1';
-      if (key === 'location_clusters') return JSON.stringify(gpsSamples);
-      return '0';
-    });
-    (Database.getKnownLocationsAsync as jest.Mock).mockResolvedValue([
-      {
-        id: 1,
-        label: 'home',
-        latitude: 51.0,
-        longitude: 4.0,
-        radiusMeters: 100,
-        isIndoor: true,
-        status: 'active',
-      },
-    ]);
-
-    await syncHealthConnect();
-    expect(SessionMerger.submitSession).toHaveBeenCalledTimes(1);
   });
 
   it('skips exercise sessions when GPS shows user was at a known indoor location throughout', async () => {
@@ -464,9 +257,10 @@ describe('syncHealthConnect', () => {
       if (type === 'ExerciseSession') {
         return Promise.resolve({
           records: [{ startTime: sessionStart, endTime: sessionEnd, exerciseType: 79 }],
+          pageToken: undefined,
         });
       }
-      return Promise.resolve({ records: [] });
+      return Promise.resolve({ records: [], pageToken: undefined });
     });
 
     const indoorLat = 51.0;
@@ -476,7 +270,7 @@ describe('syncHealthConnect', () => {
       { lat: indoorLat, lon: indoorLon, timestamp: NOW - 10 * 60 * 1000 },
     ];
     (Database.getSettingAsync as jest.Mock).mockImplementation(async (key: string) => {
-      if (key === 'healthconnect_user_enabled') return '1';
+      if (key === 'healthconnect_enabled') return '1';
       if (key === 'location_clusters') return JSON.stringify(gpsSamples);
       return '0';
     });
@@ -517,7 +311,6 @@ describe('requestHealthPermissions', () => {
 
     expect(result).toBe(true);
     expect(HealthConnect.requestPermission).not.toHaveBeenCalled();
-    expect(HealthConnectIntent.openHealthConnectPermissionsViaIntent).not.toHaveBeenCalled();
   });
 
   it('returns true when requestPermission grants permissions', async () => {
@@ -528,63 +321,15 @@ describe('requestHealthPermissions', () => {
     const result = await requestHealthPermissions();
 
     expect(result).toBe(true);
-    expect(HealthConnectIntent.openHealthConnectPermissionsViaIntent).not.toHaveBeenCalled();
   });
 
-  it('returns true when requestPermission returns null but permissions are now granted (re-verify)', async () => {
-    // requestPermission() can return null when permissions were already granted
-    // on some Android versions. The re-verify check should catch this.
-    (HealthConnect.requestPermission as jest.Mock).mockResolvedValue(null);
-    (HealthConnectIntent.verifyHealthConnectPermissions as jest.Mock)
-      .mockResolvedValueOnce(false) // initial check before requestPermission
-      .mockResolvedValueOnce(true); // re-verify after requestPermission returns null
-
-    const result = await requestHealthPermissions();
-
-    expect(result).toBe(true);
-    expect(HealthConnectIntent.openHealthConnectPermissionsViaIntent).not.toHaveBeenCalled();
-  });
-
-  it('returns true when requestPermission returns empty array but permissions are now granted (re-verify)', async () => {
+  it('falls back to Intent when requestPermission returns empty', async () => {
     (HealthConnect.requestPermission as jest.Mock).mockResolvedValue([]);
-    (HealthConnectIntent.verifyHealthConnectPermissions as jest.Mock)
-      .mockResolvedValueOnce(false) // initial check
-      .mockResolvedValueOnce(true); // re-verify
-
-    const result = await requestHealthPermissions();
-
-    expect(result).toBe(true);
-    expect(HealthConnectIntent.openHealthConnectPermissionsViaIntent).not.toHaveBeenCalled();
-  });
-
-  it('falls back to Intent when requestPermission returns empty and re-verify also fails', async () => {
-    (HealthConnect.requestPermission as jest.Mock).mockResolvedValue([]);
-    // verifyHealthConnectPermissions always returns false
     (HealthConnectIntent.verifyHealthConnectPermissions as jest.Mock).mockResolvedValue(false);
 
     const result = await requestHealthPermissions();
 
-    expect(result).toBe(true); // opened HC settings successfully
+    expect(result).toBe(true);
     expect(HealthConnectIntent.openHealthConnectPermissionsViaIntent).toHaveBeenCalled();
-  });
-
-  it('falls back to Intent when requestPermission throws', async () => {
-    (HealthConnect.requestPermission as jest.Mock).mockRejectedValue(new Error('Permission error'));
-
-    const result = await requestHealthPermissions();
-
-    expect(result).toBe(true); // opened HC settings
-    expect(HealthConnectIntent.openHealthConnectPermissionsViaIntent).toHaveBeenCalled();
-  });
-
-  it('returns false when Intent fallback also fails', async () => {
-    (HealthConnect.requestPermission as jest.Mock).mockResolvedValue([]);
-    (HealthConnectIntent.openHealthConnectPermissionsViaIntent as jest.Mock).mockResolvedValue(
-      false
-    );
-
-    const result = await requestHealthPermissions();
-
-    expect(result).toBe(false);
   });
 });

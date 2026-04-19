@@ -70,7 +70,7 @@ jest.mock('../utils/widgetHelper');
 
 import { refreshBatteryOptimizationSetting } from '../utils/batteryOptimization';
 import { NotificationService } from '../notifications/notificationManager';
-import { initDetection } from '../detection/index';
+import { initDetection } from '../detection';
 import { BackgroundService } from '../background/unifiedBackgroundTask';
 import { requestWidgetRefresh } from '../utils/widgetHelper';
 

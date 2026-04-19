@@ -1,12 +1,12 @@
 jest.mock('../storage');
 jest.mock('../detection/sessionMerger');
+jest.mock('../i18n', () => ({
+  t: (key: string) => key,
+}));
 
 import * as Database from '../storage';
-import {
-  computeDwellClusters,
-  autoDetectLocations,
-  _resetGPSStateForTesting,
-} from '../detection/gpsDetection';
+import { computeDwellClusters, autoDetectLocations } from '../detection';
+import { _resetGPSStateForTesting } from '../detection/gpsDetection';
 import * as Location from 'expo-location';
 import * as Notifications from 'expo-notifications';
 
@@ -168,7 +168,7 @@ describe('autoDetectLocations', () => {
     await autoDetectLocations();
 
     expect(Database.upsertKnownLocationAsync).toHaveBeenCalledWith(
-      expect.objectContaining({ status: 'suggested', label: '' })
+      expect.objectContaining({ status: 'suggested', label: 'location_suggested_label' })
     );
   });
 
@@ -260,7 +260,7 @@ describe('autoDetectLocations', () => {
 
     // 3h dwell >= 3h threshold → should suggest
     expect(Database.upsertKnownLocationAsync).toHaveBeenCalledWith(
-      expect.objectContaining({ status: 'suggested', label: '' })
+      expect.objectContaining({ status: 'suggested', label: 'location_suggested_label' })
     );
   });
 
@@ -314,7 +314,7 @@ describe('autoDetectLocations', () => {
 
     expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledWith(
       expect.objectContaining({
-        trigger: expect.objectContaining({ channelId: 'touchgrass_reminders' }),
+        trigger: null,
       })
     );
   });

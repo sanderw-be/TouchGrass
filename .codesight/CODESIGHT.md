@@ -2,9 +2,9 @@
 
 > **Stack:** raw-http | none | react | typescript
 
-> 0 routes | 0 models | 39 components | 38 lib files | 2 env vars | 1 middleware | 0% test coverage
-> **Token savings:** this file is ~5,200 tokens. Without it, AI exploration would cost ~32,200 tokens. **Saves ~27,000 tokens per conversation.**
-> **Last scanned:** 2026-04-19 13:48 — re-run after significant changes
+> 0 routes | 0 models | 39 components | 44 lib files | 2 env vars | 1 middleware | 0% test coverage
+> **Token savings:** this file is ~5,500 tokens. Without it, AI exploration would cost ~33,700 tokens. **Saves ~28,300 tokens per conversation.**
+> **Last scanned:** 2026-04-19 14:25 — re-run after significant changes
 
 ---
 
@@ -70,14 +70,26 @@
   - function getOrCreateTouchGrassCalendar: (forceCreate) => Promise<string | null>
   - function getSelectedCalendarId: () => Promise<string>
   - _...6 more_
+- `src/detection/GeofenceManager.ts`
+  - function isAtKnownIndoorLocation: (lat, lon, locations) => boolean
+  - function wasDefinitelyAtKnownIndoorLocationSync: (startMs, endMs, allSamples, knownLocations) => boolean
+  - function shouldTriggerBurst: (lat, lon, locations, now, lastBurstAtTimestamp, currentProfile, locationAccuracy?) => boolean
+  - function computeMinActiveRadius: (locations) => number
+  - function clampRadiusMeters: (radius) => number
+  - function createClusterObject: (samples) => LocationCluster
+  - _...4 more_
+- `src/detection/GpsSessionBuilder.ts` — function buildGpsNotes: (startLocationLabel, endLocationLabel, distanceMeters, averageSpeedKmh) => string
+- `src/detection/HealthSessionBuilder.ts` — class HealthSessionBuilder
+- `src/detection/LocationTracker.ts` — class LocationTracker
+- `src/detection/PermissionService.ts` — class PermissionService
 - `src/detection/gpsDetection.ts`
-  - function clampRadiusMeters: (r) => number
   - function loadGPSState: () => Promise<void>
-  - function \_resetGPSStateForTesting: () => void
   - function requestLocationPermissions: () => Promise<boolean>
   - function computeMinActiveRadius: (locations) => number
-  - function computeLowDistanceInterval: (minRadiusMeters) => number
-  - _...19 more_
+  - function startLocationTracking: (profile, minRadiusMeters) => Promise<void>
+  - function stopLocationTracking: () => Promise<void>
+  - function switchLocationProfile: (profile, minRadiusMeters) => Promise<void>
+  - _...2 more_
 - `src/detection/healthConnect.ts`
   - function isHealthConnectAvailable: () => Promise<boolean>
   - function requestHealthPermissions: () => Promise<boolean>
@@ -86,11 +98,11 @@
 - `src/detection/healthConnectIntent.ts` — function openHealthConnectPermissionsViaIntent: () => Promise<boolean>, function verifyHealthConnectPermissions: () => Promise<boolean>
 - `src/detection/index.ts`
   - function initDetection: () => Promise<DetectionStatus>
-  - function requestHealthConnect: () => Promise<boolean>
-  - function recheckHealthConnect: () => Promise<boolean>
-  - function openHealthConnectSettings: () => Promise<boolean>
-  - function getDetectionStatus: () => Promise<DetectionStatus>
+  - function checkWeatherLocationPermissions: () => Promise<boolean>
+  - function requestWeatherLocationPermissions: () => Promise<boolean>
   - function checkGPSPermissions: () => Promise<boolean>
+  - function requestGPSPermissions: () => Promise<boolean>
+  - function refreshDetectionSync: () => Promise<void>
   - _...6 more_
 - `src/detection/manualCheckin.ts`
   - function logManualSession: (durationMinutes, startTime?, endTime?, notes?) => void
@@ -105,6 +117,10 @@
   - const DISCARD_CONFIDENCE_THRESHOLD
   - _...1 more_
 - `src/detection/sessionMerger.ts` — function submitSession: (candidate) => Promise<void>, function buildSession: (startTime, endTime, source, confidence, notes?, steps?, distanceMeters?, averageSpeedKmh?) => OutsideSession
+- `src/detection/utils.ts`
+  - function haversineDistance: (lat1, lon1, lat2, lon2) => number
+  - const EARTH_RADIUS_METERS
+  - const haversineDistanceMeters
 - `src/hooks/useDetectionSettings.ts` — function useDetectionSettings: () => void
 - `src/hooks/useForegroundSync.ts` — function useForegroundSync: () => void
 - `src/hooks/useGoalIntegrations.ts` — function useGoalIntegrations: () => void
@@ -261,12 +277,12 @@
 
 ## Most Imported Files (change these carefully)
 
-- `src/storage/index.ts` — imported by **67** files
-- `src/i18n/index.ts` — imported by **49** files
+- `src/storage/index.ts` — imported by **69** files
+- `src/i18n/index.ts` — imported by **51** files
 - `src/store/useAppStore.ts` — imported by **34** files
 - `src/utils/theme.ts` — imported by **29** files
 - `src/notifications/notificationManager.ts` — imported by **14** files
-- `src/detection/index.ts` — imported by **12** files
+- `src/detection/index.ts` — imported by **14** files
 - `src/utils/helpers.ts` — imported by **10** files
 - `src/utils/sessionsChangedEmitter.ts` — imported by **8** files
 - `src/detection/manualCheckin.ts` — imported by **8** files
@@ -284,14 +300,14 @@
 
 ## Import Map (who imports what)
 
-- `src/storage/index.ts` ← `appBootstrap.ts`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx` +62 more
-- `src/i18n/index.ts` ← `appBootstrap.ts`, `src/__tests__/ErrorBoundary.test.tsx`, `src/__tests__/FeedbackSupportScreen.test.tsx`, `src/__tests__/appBootstrap.test.ts`, `src/__tests__/i18n.test.ts` +44 more
+- `src/storage/index.ts` ← `appBootstrap.ts`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx` +64 more
+- `src/i18n/index.ts` ← `appBootstrap.ts`, `src/__tests__/ErrorBoundary.test.tsx`, `src/__tests__/FeedbackSupportScreen.test.tsx`, `src/__tests__/appBootstrap.test.ts`, `src/__tests__/i18n.test.ts` +46 more
 - `src/store/useAppStore.ts` ← `App.tsx`, `src/__tests__/App.test.tsx`, `src/__tests__/notificationManager.test.ts`, `src/__tests__/useAppStore.test.ts`, `src/components/DiagnosticSheet.tsx` +29 more
 - `src/utils/theme.ts` ← `src/components/DiagnosticSheet.tsx`, `src/components/EditLocationSheet.tsx`, `src/components/EditSessionSheet.tsx`, `src/components/ErrorBoundary.tsx`, `src/components/ManualSessionSheet.tsx` +24 more
 - `src/notifications/notificationManager.ts` ← `appBootstrap.ts`, `src/__tests__/appBootstrap.test.ts`, `src/__tests__/backgroundService.test.ts`, `src/__tests__/backgroundTick.test.ts`, `src/__tests__/notificationManager.test.ts` +9 more
-- `src/detection/index.ts` ← `appBootstrap.ts`, `src/__tests__/IntroScreen.test.tsx`, `src/__tests__/IntroScreen.test.tsx`, `src/__tests__/IntroScreen.test.tsx`, `src/__tests__/IntroScreen.test.tsx` +7 more
+- `src/detection/index.ts` ← `appBootstrap.ts`, `src/__tests__/IntroScreen.test.tsx`, `src/__tests__/IntroScreen.test.tsx`, `src/__tests__/IntroScreen.test.tsx`, `src/__tests__/IntroScreen.test.tsx` +9 more
 - `src/utils/helpers.ts` ← `src/components/EditSessionSheet.tsx`, `src/components/ManualSessionSheet.tsx`, `src/components/ProgressRing.tsx`, `src/components/ReminderFeedbackModal.tsx`, `src/i18n/index.ts` +5 more
-- `src/utils/sessionsChangedEmitter.ts` ← `src/__tests__/EventsScreen.test.tsx`, `src/__tests__/HomeScreen.test.tsx`, `src/__tests__/sessionsChangedEmitter.test.ts`, `src/detection/gpsDetection.ts`, `src/detection/healthConnect.ts` +3 more
+- `src/utils/sessionsChangedEmitter.ts` ← `src/__tests__/EventsScreen.test.tsx`, `src/__tests__/HomeScreen.test.tsx`, `src/__tests__/sessionsChangedEmitter.test.ts`, `src/detection/HealthSessionBuilder.ts`, `src/detection/LocationTracker.ts` +3 more
 - `src/detection/manualCheckin.ts` ← `src/__tests__/ManualSessionSheet.test.tsx`, `src/__tests__/ManualSessionSheet.test.tsx`, `src/__tests__/ManualSessionSheet.test.tsx`, `src/__tests__/ManualSessionSheet.test.tsx`, `src/__tests__/widget-task-handler.test.tsx` +3 more
 - `src/storage/db.ts` ← `src/storage/index.ts`, `src/storage/repositories/GoalRepository.ts`, `src/storage/repositories/LocationRepository.ts`, `src/storage/repositories/LogRepository.ts`, `src/storage/repositories/NotificationRepository.ts` +3 more
 
