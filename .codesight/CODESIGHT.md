@@ -2,9 +2,9 @@
 
 > **Stack:** raw-http | none | react | typescript
 
-> 0 routes | 0 models | 39 components | 28 lib files | 2 env vars | 1 middleware | 0% test coverage
-> **Token savings:** this file is ~4,400 tokens. Without it, AI exploration would cost ~29,600 tokens. **Saves ~25,200 tokens per conversation.**
-> **Last scanned:** 2026-04-19 11:54 — re-run after significant changes
+> 0 routes | 0 models | 39 components | 30 lib files | 2 env vars | 1 middleware | 0% test coverage
+> **Token savings:** this file is ~4,400 tokens. Without it, AI exploration would cost ~30,100 tokens. **Saves ~25,700 tokens per conversation.**
+> **Last scanned:** 2026-04-19 12:16 — re-run after significant changes
 
 ---
 
@@ -107,6 +107,11 @@
 - `src/detection/sessionMerger.ts` — function submitSession: (candidate) => Promise<void>, function buildSession: (startTime, endTime, source, confidence, notes?, steps?, distanceMeters?, averageSpeedKmh?) => OutsideSession
 - `src/hooks/useDetectionSettings.ts` — function useDetectionSettings: () => void
 - `src/hooks/useForegroundSync.ts` — function useForegroundSync: () => void
+- `src/hooks/useGoalIntegrations.ts` — function useGoalIntegrations: () => void
+- `src/hooks/useGoalTargets.ts`
+  - function useGoalTargets: () => void
+  - const DAILY_PRESETS
+  - const WEEKLY_PRESETS
 - `src/hooks/useOTAUpdates.ts` — function useOTAUpdates: () => void, type OTAUpdateStatus
 - `src/i18n/index.ts`
   - function resolveSupportedLocale: (localeCode?) => SupportedLocale
@@ -216,8 +221,8 @@
 
 ## Most Imported Files (change these carefully)
 
-- `src/storage/database.ts` — imported by **61** files
-- `src/i18n/index.ts` — imported by **47** files
+- `src/storage/database.ts` — imported by **63** files
+- `src/i18n/index.ts` — imported by **49** files
 - `src/store/useAppStore.ts` — imported by **34** files
 - `src/utils/theme.ts` — imported by **29** files
 - `src/notifications/notificationManager.ts` — imported by **14** files
@@ -233,14 +238,14 @@
 - `src/detection/sessionMerger.ts` — imported by **6** files
 - `src/navigation/AppNavigator.tsx` — imported by **5** files
 - `src/utils/units.ts` — imported by **5** files
+- `src/components/goals/GoalsShared.tsx` — imported by **5** files
 - `src/utils/batteryOptimization.ts` — imported by **4** files
 - `src/utils/temperature.ts` — imported by **4** files
-- `src/hooks/useOTAUpdates.ts` — imported by **3** files
 
 ## Import Map (who imports what)
 
-- `src/storage/database.ts` ← `appBootstrap.ts`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx` +56 more
-- `src/i18n/index.ts` ← `appBootstrap.ts`, `src/__tests__/ErrorBoundary.test.tsx`, `src/__tests__/FeedbackSupportScreen.test.tsx`, `src/__tests__/appBootstrap.test.ts`, `src/__tests__/i18n.test.ts` +42 more
+- `src/storage/database.ts` ← `appBootstrap.ts`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx` +58 more
+- `src/i18n/index.ts` ← `appBootstrap.ts`, `src/__tests__/ErrorBoundary.test.tsx`, `src/__tests__/FeedbackSupportScreen.test.tsx`, `src/__tests__/appBootstrap.test.ts`, `src/__tests__/i18n.test.ts` +44 more
 - `src/store/useAppStore.ts` ← `App.tsx`, `src/__tests__/App.test.tsx`, `src/__tests__/notificationManager.test.ts`, `src/__tests__/useAppStore.test.ts`, `src/components/DiagnosticSheet.tsx` +29 more
 - `src/utils/theme.ts` ← `src/components/DiagnosticSheet.tsx`, `src/components/EditLocationSheet.tsx`, `src/components/EditSessionSheet.tsx`, `src/components/ErrorBoundary.tsx`, `src/components/ManualSessionSheet.tsx` +24 more
 - `src/notifications/notificationManager.ts` ← `appBootstrap.ts`, `src/__tests__/appBootstrap.test.ts`, `src/__tests__/backgroundService.test.ts`, `src/__tests__/backgroundTick.test.ts`, `src/__tests__/notificationManager.test.ts` +9 more
@@ -255,7 +260,7 @@
 # Test Coverage
 
 > **0%** of routes and models are covered by tests
-> 63 test files found
+> 65 test files found
 
 ---
 

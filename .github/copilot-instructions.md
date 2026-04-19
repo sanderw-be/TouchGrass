@@ -2,12 +2,12 @@
 
 **Stack:** raw-http | none | typescript
 
-0 routes | 0 models | 2 env vars | 392 import links
+0 routes | 0 models | 2 env vars | 404 import links
 
 
 **High-impact files** (change carefully):
-- src/storage/database.ts (imported by 61 files)
-- src/i18n/index.ts (imported by 47 files)
+- src/storage/database.ts (imported by 63 files)
+- src/i18n/index.ts (imported by 49 files)
 - src/store/useAppStore.ts (imported by 34 files)
 - src/utils/theme.ts (imported by 29 files)
 - src/notifications/notificationManager.ts (imported by 14 files)
