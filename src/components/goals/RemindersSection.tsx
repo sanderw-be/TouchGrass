@@ -1,9 +1,9 @@
 import React, { useMemo } from 'react';
-import { View, Text, TouchableOpacity, Platform } from 'react-native';
+import { Text, TouchableOpacity, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppStore } from '../../store/useAppStore';
 import { t } from '../../i18n';
-import { SettingRow, Divider, makeStyles, CATCHUP_REMINDERS_OPTIONS } from './GoalsShared';
+import { SettingRow, Divider, makeStyles, CATCHUP_REMINDERS_OPTIONS, Card } from './GoalsShared';
 
 interface RemindersSectionProps {
   smartRemindersCount: number;
@@ -45,7 +45,7 @@ export default function RemindersSection({
   return (
     <>
       <Text style={styles.sectionHeader}>{t('settings_section_reminders')}</Text>
-      <View style={styles.settingsCard}>
+      <Card variant="flat" style={{ padding: 0, overflow: 'hidden' }}>
         <TouchableOpacity
           onPress={
             smartRemindersCount > 0 && !notificationPermissionGranted
@@ -54,28 +54,26 @@ export default function RemindersSection({
           }
           testID="smart-reminders-row"
         >
-          <View style={styles.row}>
-            <View style={styles.rowIconContainer}>
-              <Ionicons name="notifications-outline" size={20} color={colors.textSecondary} />
-            </View>
-            <View style={styles.rowContent}>
-              <Text style={styles.rowLabel}>{t('settings_reminders_label')}</Text>
-              {smartRemindersCount > 0 && !notificationPermissionGranted ? (
-                <Text style={[styles.rowSublabel, { color: colors.error }]}>
+          <SettingRow
+            icon={<Ionicons name="notifications-outline" size={20} color={colors.textSecondary} />}
+            label={t('settings_reminders_label')}
+            sublabel={
+              smartRemindersCount > 0 && !notificationPermissionGranted ? (
+                <Text style={{ color: colors.error }}>
                   {t('settings_notification_permission_missing')}
                 </Text>
               ) : (
-                <Text style={styles.rowSublabel}>{t('settings_reminders_sublabel')}</Text>
-              )}
-            </View>
-            <View style={styles.rowRight}>
+                t('settings_reminders_sublabel')
+              )
+            }
+            right={
               <Text style={styles.valueChip}>
                 {smartRemindersCount === 0
                   ? t('settings_reminders_count_off')
                   : t('settings_reminders_count_per_day', { count: smartRemindersCount })}
               </Text>
-            </View>
-          </View>
+            }
+          />
         </TouchableOpacity>
         <Divider />
         <TouchableOpacity onPress={onCycleCatchupReminders}>
@@ -129,7 +127,7 @@ export default function RemindersSection({
             </TouchableOpacity>
           </>
         )}
-      </View>
+      </Card>
     </>
   );
 }

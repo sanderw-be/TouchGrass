@@ -2,9 +2,9 @@
 
 > **Stack:** raw-http | none | react | typescript
 
-> 0 routes | 0 models | 39 components | 44 lib files | 2 env vars | 1 middleware | 0% test coverage
-> **Token savings:** this file is ~5,500 tokens. Without it, AI exploration would cost ~33,700 tokens. **Saves ~28,300 tokens per conversation.**
-> **Last scanned:** 2026-04-19 14:25 — re-run after significant changes
+> 0 routes | 0 models | 34 components | 45 lib files | 2 env vars | 1 middleware | 0% test coverage
+> **Token savings:** this file is ~5,300 tokens. Without it, AI exploration would cost ~32,400 tokens. **Saves ~27,100 tokens per conversation.**
+> **Last scanned:** 2026-04-19 17:23 — re-run after significant changes
 
 ---
 
@@ -21,15 +21,10 @@
 - **ProgressRing** — props: current, target, size, strokeWidth, label, onTimerPress, timerRunning, timerSeconds — `src/components/ProgressRing.tsx`
 - **ReminderFeedbackModal** — `src/components/ReminderFeedbackModal.tsx`
 - **SessionNotesSheet** — props: visible, session, onClose, onNoteSaved — `src/components/SessionNotesSheet.tsx`
-- **DetectionSettingRow** — props: enabled, permissionGranted, icon, label, desc, permissionMissingLabel, onToggle, isLoading, isInitializing, onPermissionFix — `src/components/Settings/DetectionSettingRow.tsx`
-- **Divider** — props: colors — `src/components/Settings/Divider.tsx`
-- **SettingRow** — props: icon, label, sublabel, hint, right, colors — `src/components/Settings/SettingRow.tsx`
 - **UndoSnackbar** — props: visible, message, onUndo, onDismiss, duration — `src/components/UndoSnackbar.tsx`
 - **UpdateSplashScreen** — props: status — `src/components/UpdateSplashScreen.tsx`
 - **CalendarSection** — props: calendarEnabled, calendarPermissionGranted, calendarBuffer, calendarDuration, calendarSelectedId, calendarOptions, onToggleCalendar, onCycleCalendarBuffer, onCycleCalendarDuration, onSelectCalendar — `src/components/goals/CalendarSection.tsx`
-- **SettingRow** — props: icon, label, sublabel, right — `src/components/goals/GoalsShared.tsx`
-- **Divider** — `src/components/goals/GoalsShared.tsx`
-- **PermissionToggleRow** — props: icon, label, desc, permissionMissingLabel, enabled, permissionGranted, onToggle, onPermissionFix — `src/components/goals/GoalsShared.tsx`
+- **CATCHUP_REMINDERS_OPTIONS** — `src/components/goals/GoalsShared.tsx`
 - **RemindersSection** — props: smartRemindersCount, catchupRemindersCount, notificationPermissionGranted, batteryOptimizationGranted, onCycleSmartReminders, onCycleCatchupReminders, onNavigateScheduledNotifications, onShowNotificationPermissionSheet, onShowBatteryPermissionSheet — `src/components/goals/RemindersSection.tsx`
 - **WeatherSection** — props: weatherEnabled, weatherLocationGranted, onToggleWeather, onShowWeatherPermissionSheet, onNavigateWeatherSettings — `src/components/goals/WeatherSection.tsx`
 - **WeatherSettingsScreen** — `src/navigation/AppNavigator.tsx`
@@ -129,6 +124,7 @@
   - const DAILY_PRESETS
   - const WEEKLY_PRESETS
 - `src/hooks/useOTAUpdates.ts` — function useOTAUpdates: () => void, type OTAUpdateStatus
+- `src/hooks/useTheme.ts` — function useTheme: () => void
 - `src/i18n/index.ts`
   - function resolveSupportedLocale: (localeCode?) => SupportedLocale
   - function getDeviceSupportedLocale: () => SupportedLocale
@@ -280,7 +276,7 @@
 - `src/storage/index.ts` — imported by **69** files
 - `src/i18n/index.ts` — imported by **51** files
 - `src/store/useAppStore.ts` — imported by **34** files
-- `src/utils/theme.ts` — imported by **29** files
+- `src/utils/theme.ts` — imported by **31** files
 - `src/notifications/notificationManager.ts` — imported by **14** files
 - `src/detection/index.ts` — imported by **14** files
 - `src/utils/helpers.ts` — imported by **10** files
@@ -303,7 +299,7 @@
 - `src/storage/index.ts` ← `appBootstrap.ts`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx` +64 more
 - `src/i18n/index.ts` ← `appBootstrap.ts`, `src/__tests__/ErrorBoundary.test.tsx`, `src/__tests__/FeedbackSupportScreen.test.tsx`, `src/__tests__/appBootstrap.test.ts`, `src/__tests__/i18n.test.ts` +46 more
 - `src/store/useAppStore.ts` ← `App.tsx`, `src/__tests__/App.test.tsx`, `src/__tests__/notificationManager.test.ts`, `src/__tests__/useAppStore.test.ts`, `src/components/DiagnosticSheet.tsx` +29 more
-- `src/utils/theme.ts` ← `src/components/DiagnosticSheet.tsx`, `src/components/EditLocationSheet.tsx`, `src/components/EditSessionSheet.tsx`, `src/components/ErrorBoundary.tsx`, `src/components/ManualSessionSheet.tsx` +24 more
+- `src/utils/theme.ts` ← `src/components/DiagnosticSheet.tsx`, `src/components/EditLocationSheet.tsx`, `src/components/EditSessionSheet.tsx`, `src/components/ErrorBoundary.tsx`, `src/components/ManualSessionSheet.tsx` +26 more
 - `src/notifications/notificationManager.ts` ← `appBootstrap.ts`, `src/__tests__/appBootstrap.test.ts`, `src/__tests__/backgroundService.test.ts`, `src/__tests__/backgroundTick.test.ts`, `src/__tests__/notificationManager.test.ts` +9 more
 - `src/detection/index.ts` ← `appBootstrap.ts`, `src/__tests__/IntroScreen.test.tsx`, `src/__tests__/IntroScreen.test.tsx`, `src/__tests__/IntroScreen.test.tsx`, `src/__tests__/IntroScreen.test.tsx` +9 more
 - `src/utils/helpers.ts` ← `src/components/EditSessionSheet.tsx`, `src/components/ManualSessionSheet.tsx`, `src/components/ProgressRing.tsx`, `src/components/ReminderFeedbackModal.tsx`, `src/i18n/index.ts` +5 more

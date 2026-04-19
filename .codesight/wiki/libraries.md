@@ -2,7 +2,7 @@
 
 > **Navigation aid.** Library inventory extracted via AST. Read the source files listed here before modifying exported functions.
 
-**44 library files** across 11 modules
+**45 library files** across 11 modules
 
 ## Detection (13 files)
 
@@ -44,13 +44,14 @@
 - `src/utils/sessionsChangedEmitter.ts` — emitSessionsChanged, onSessionsChanged
 - `src/utils/permissionIssues.ts` — countPermissionIssues
 
-## Hooks (5 files)
+## Hooks (6 files)
 
 - `src/hooks/useGoalTargets.ts` — useGoalTargets, DAILY_PRESETS, WEEKLY_PRESETS
 - `src/hooks/useOTAUpdates.ts` — useOTAUpdates, OTAUpdateStatus
 - `src/hooks/useDetectionSettings.ts` — useDetectionSettings
 - `src/hooks/useForegroundSync.ts` — useForegroundSync
 - `src/hooks/useGoalIntegrations.ts` — useGoalIntegrations
+- `src/hooks/useTheme.ts` — useTheme
 
 ## Weather (2 files)
 

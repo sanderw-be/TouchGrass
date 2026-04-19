@@ -1,41 +1,45 @@
 import React from 'react';
-import { View, Text, StyleSheet, Switch, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { ThemeColors, spacing } from '../../utils/theme';
-import { t } from '../../i18n';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Switch,
+  TouchableOpacity,
+  ViewStyle,
+  StyleProp,
+} from 'react-native';
+import { spacing } from '../../../utils/theme';
+import { useTheme } from '../../../hooks/useTheme';
+import { t } from '../../../i18n';
 
-interface DetectionSettingRowProps {
-  enabled: boolean;
-  permissionGranted: boolean;
+interface PermissionToggleRowProps {
   icon: React.ReactNode;
   label: string;
   desc: string;
   permissionMissingLabel: string;
+  enabled: boolean;
+  permissionGranted: boolean;
   onToggle: (value: boolean) => void;
-  isLoading?: boolean;
-  isInitializing?: boolean;
   onPermissionFix?: () => void;
-  testID?: string;
-  colors: ThemeColors;
+  style?: StyleProp<ViewStyle>;
 }
 
-export function DetectionSettingRow({
-  enabled,
-  permissionGranted,
+export function PermissionToggleRow({
   icon,
   label,
   desc,
   permissionMissingLabel,
+  enabled,
+  permissionGranted,
   onToggle,
-  isLoading,
-  isInitializing,
   onPermissionFix,
-  testID,
-  colors,
-}: DetectionSettingRowProps) {
+  style,
+}: PermissionToggleRowProps) {
+  const { colors } = useTheme();
   const hasError = enabled && !permissionGranted;
 
   return (
-    <View style={styles.row}>
+    <View style={[styles.row, style]}>
       <View style={styles.rowIconContainer}>{icon}</View>
       <View style={styles.rowContent}>
         <Text style={[styles.rowLabel, { color: colors.textPrimary }]}>{label}</Text>
@@ -55,20 +59,14 @@ export function DetectionSettingRow({
           <Text style={[styles.rowSublabel, { color: colors.textMuted }]}>{desc}</Text>
         )}
       </View>
-      {isInitializing ? (
-        <View style={styles.switchLoader} testID="switch-loader">
-          <ActivityIndicator size="small" color={colors.grass} />
-        </View>
-      ) : (
+      <View style={styles.rowRight}>
         <Switch
           value={enabled}
           onValueChange={onToggle}
-          disabled={isLoading}
           trackColor={{ false: colors.fog, true: colors.grassLight }}
           thumbColor={enabled ? colors.grass : colors.inactive}
-          testID={testID}
         />
-      )}
+      </View>
     </View>
   );
 }
@@ -88,9 +86,5 @@ const styles = StyleSheet.create({
   rowContent: { flex: 1 },
   rowLabel: { fontSize: 15, fontWeight: '500' },
   rowSublabel: { fontSize: 12, marginTop: 2 },
-  switchLoader: {
-    width: 50, // Typical switch width
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  rowRight: { marginLeft: spacing.sm },
 });

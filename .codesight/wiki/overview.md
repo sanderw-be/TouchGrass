@@ -6,11 +6,11 @@
 
 ## Scale
 
-39 UI components · 44 library files · 1 middleware layers · 2 environment variables
+34 UI components · 45 library files · 1 middleware layers · 2 environment variables
 
-**UI:** 39 components (react) — see [ui.md](./ui.md)
+**UI:** 34 components (react) — see [ui.md](./ui.md)
 
-**Libraries:** 44 files — see [libraries.md](./libraries.md)
+**Libraries:** 45 files — see [libraries.md](./libraries.md)
 
 ## High-Impact Files
 
@@ -19,7 +19,7 @@ Changes to these files have the widest blast radius across the codebase:
 - `src/storage/index.ts` — imported by **69** files
 - `src/i18n/index.ts` — imported by **51** files
 - `src/store/useAppStore.ts` — imported by **34** files
-- `src/utils/theme.ts` — imported by **29** files
+- `src/utils/theme.ts` — imported by **31** files
 - `src/notifications/notificationManager.ts` — imported by **14** files
 - `src/detection/index.ts` — imported by **14** files
 
