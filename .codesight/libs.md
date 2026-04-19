@@ -55,25 +55,46 @@
   - function logManualSessionAsync: (durationMinutes, startTime?, endTime?) => Promise<void>
   - function startManualSession: () => () => void
 - `src/detection/sessionConfidence.ts`
+  - function loadTimeSlotProbabilities: () => Promise<Record<string, number>>
   - function getTimeSlotProbability: (hour, dayOfWeek) => Promise<number>
   - function updateTimeSlotProbability: (hour, dayOfWeek, confirmed) => Promise<void>
   - function scoreDuration: (durationMs) => number
   - function computeSessionScore: (session) => Promise<number>
   - function computeSessionScoreFromProbs: (session, probs, number>) => number
-  - const DISCARD_CONFIDENCE_THRESHOLD
-  - _...1 more_
 - `src/detection/sessionMerger.ts` — function submitSession: (candidate) => Promise<void>, function buildSession: (startTime, endTime, source, confidence, notes?, steps?, distanceMeters?, averageSpeedKmh?) => OutsideSession
 - `src/detection/utils.ts`
   - function haversineDistance: (lat1, lon1, lat2, lon2) => number
   - const EARTH_RADIUS_METERS
   - const haversineDistanceMeters
+- `src/domain/GoalDomain.ts`
+  - function validateDailyGoal: (minutes) => boolean
+  - function validateWeeklyGoal: (minutes) => boolean
+  - const DAILY_PRESETS
+  - const WEEKLY_PRESETS
+  - const MIN_DAILY_MINUTES
+  - const MAX_DAILY_MINUTES
+  - _...2 more_
+- `src/domain/ReminderDomain.ts`
+  - function isPermissionIssue: (enabled, permissionGranted) => boolean
+  - function getPermissionIssueLabels: (smartRemindersCount, notificationPermissionGranted, weatherEnabled, weatherLocationGranted, calendarEnabled, calendarPermissionGranted, labels) => string[]
+  - const SMART_REMINDERS_OPTIONS
+  - const CALENDAR_BUFFER_OPTIONS
+  - const CALENDAR_DURATION_OPTIONS
+- `src/domain/ScoringDomain.ts`
+  - function calculateUpdatedProbability: (currentProb, confirmed) => number
+  - function scoreDuration: (durationMs) => number
+  - function calculateSessionScore: (baseConfidence, durationMs, timeSlotProb) => number
+  - const DISCARD_CONFIDENCE_THRESHOLD
+  - const DEFAULT_TIME_SLOT_PROBABILITY
+- `src/domain/SessionDomain.ts`
+  - function mergeSessionData: (candidate, unconfirmedSessions) => MergedSessionData
+  - function calculateMergedSpeed: (durationMs, distanceMeters?, steps?, stepsPerMinBaseline, speedBaselineKmh) => number | undefined
+  - function splitRangeAroundConfirmed: (rangeStart, rangeEnd, confirmedSessions) => [number, number][]
+  - interface MergedSessionData
 - `src/hooks/useDetectionSettings.ts` — function useDetectionSettings: () => void
 - `src/hooks/useForegroundSync.ts` — function useForegroundSync: () => void
 - `src/hooks/useGoalIntegrations.ts` — function useGoalIntegrations: () => void
-- `src/hooks/useGoalTargets.ts`
-  - function useGoalTargets: () => void
-  - const DAILY_PRESETS
-  - const WEEKLY_PRESETS
+- `src/hooks/useGoalTargets.ts` — function useGoalTargets: () => void
 - `src/hooks/useOTAUpdates.ts` — function useOTAUpdates: () => void, type OTAUpdateStatus
 - `src/hooks/useTheme.ts` — function useTheme: () => void
 - `src/i18n/index.ts`

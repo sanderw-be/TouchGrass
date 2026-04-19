@@ -2,9 +2,9 @@
 
 > **Stack:** raw-http | none | react | typescript
 
-> 0 routes | 0 models | 34 components | 45 lib files | 2 env vars | 1 middleware | 0% test coverage
-> **Token savings:** this file is ~5,300 tokens. Without it, AI exploration would cost ~32,400 tokens. **Saves ~27,100 tokens per conversation.**
-> **Last scanned:** 2026-04-19 19:06 — re-run after significant changes
+> 0 routes | 0 models | 34 components | 49 lib files | 2 env vars | 1 middleware | 0% test coverage
+> **Token savings:** this file is ~5,700 tokens. Without it, AI exploration would cost ~33,400 tokens. **Saves ~27,700 tokens per conversation.**
+> **Last scanned:** 2026-04-19 19:22 — re-run after significant changes
 
 ---
 
@@ -104,25 +104,46 @@
   - function logManualSessionAsync: (durationMinutes, startTime?, endTime?) => Promise<void>
   - function startManualSession: () => () => void
 - `src/detection/sessionConfidence.ts`
+  - function loadTimeSlotProbabilities: () => Promise<Record<string, number>>
   - function getTimeSlotProbability: (hour, dayOfWeek) => Promise<number>
   - function updateTimeSlotProbability: (hour, dayOfWeek, confirmed) => Promise<void>
   - function scoreDuration: (durationMs) => number
   - function computeSessionScore: (session) => Promise<number>
   - function computeSessionScoreFromProbs: (session, probs, number>) => number
-  - const DISCARD_CONFIDENCE_THRESHOLD
-  - _...1 more_
 - `src/detection/sessionMerger.ts` — function submitSession: (candidate) => Promise<void>, function buildSession: (startTime, endTime, source, confidence, notes?, steps?, distanceMeters?, averageSpeedKmh?) => OutsideSession
 - `src/detection/utils.ts`
   - function haversineDistance: (lat1, lon1, lat2, lon2) => number
   - const EARTH_RADIUS_METERS
   - const haversineDistanceMeters
+- `src/domain/GoalDomain.ts`
+  - function validateDailyGoal: (minutes) => boolean
+  - function validateWeeklyGoal: (minutes) => boolean
+  - const DAILY_PRESETS
+  - const WEEKLY_PRESETS
+  - const MIN_DAILY_MINUTES
+  - const MAX_DAILY_MINUTES
+  - _...2 more_
+- `src/domain/ReminderDomain.ts`
+  - function isPermissionIssue: (enabled, permissionGranted) => boolean
+  - function getPermissionIssueLabels: (smartRemindersCount, notificationPermissionGranted, weatherEnabled, weatherLocationGranted, calendarEnabled, calendarPermissionGranted, labels) => string[]
+  - const SMART_REMINDERS_OPTIONS
+  - const CALENDAR_BUFFER_OPTIONS
+  - const CALENDAR_DURATION_OPTIONS
+- `src/domain/ScoringDomain.ts`
+  - function calculateUpdatedProbability: (currentProb, confirmed) => number
+  - function scoreDuration: (durationMs) => number
+  - function calculateSessionScore: (baseConfidence, durationMs, timeSlotProb) => number
+  - const DISCARD_CONFIDENCE_THRESHOLD
+  - const DEFAULT_TIME_SLOT_PROBABILITY
+- `src/domain/SessionDomain.ts`
+  - function mergeSessionData: (candidate, unconfirmedSessions) => MergedSessionData
+  - function calculateMergedSpeed: (durationMs, distanceMeters?, steps?, stepsPerMinBaseline, speedBaselineKmh) => number | undefined
+  - function splitRangeAroundConfirmed: (rangeStart, rangeEnd, confirmedSessions) => [number, number][]
+  - interface MergedSessionData
 - `src/hooks/useDetectionSettings.ts` — function useDetectionSettings: () => void
 - `src/hooks/useForegroundSync.ts` — function useForegroundSync: () => void
 - `src/hooks/useGoalIntegrations.ts` — function useGoalIntegrations: () => void
-- `src/hooks/useGoalTargets.ts`
-  - function useGoalTargets: () => void
-  - const DAILY_PRESETS
-  - const WEEKLY_PRESETS
+- `src/hooks/useGoalTargets.ts` — function useGoalTargets: () => void
 - `src/hooks/useOTAUpdates.ts` — function useOTAUpdates: () => void, type OTAUpdateStatus
 - `src/hooks/useTheme.ts` — function useTheme: () => void
 - `src/i18n/index.ts`
@@ -282,6 +303,7 @@
 - `src/utils/helpers.ts` — imported by **10** files
 - `src/utils/sessionsChangedEmitter.ts` — imported by **8** files
 - `src/detection/manualCheckin.ts` — imported by **8** files
+- `src/storage/types.ts` — imported by **8** files
 - `src/storage/db.ts` — imported by **8** files
 - `src/background/unifiedBackgroundTask.ts` — imported by **7** files
 - `src/utils/widgetHelper.ts` — imported by **7** files
@@ -289,10 +311,9 @@
 - `src/weather/weatherService.ts` — imported by **7** files
 - `src/utils/constants.ts` — imported by **6** files
 - `src/detection/sessionMerger.ts` — imported by **6** files
-- `src/storage/types.ts` — imported by **6** files
+- `src/hooks/useTheme.ts` — imported by **6** files
 - `src/navigation/AppNavigator.tsx` — imported by **5** files
 - `src/utils/units.ts` — imported by **5** files
-- `src/components/goals/GoalsShared.tsx` — imported by **5** files
 
 ## Import Map (who imports what)
 
@@ -305,14 +326,14 @@
 - `src/utils/helpers.ts` ← `src/components/EditSessionSheet.tsx`, `src/components/ManualSessionSheet.tsx`, `src/components/ProgressRing.tsx`, `src/components/ReminderFeedbackModal.tsx`, `src/i18n/index.ts` +5 more
 - `src/utils/sessionsChangedEmitter.ts` ← `src/__tests__/EventsScreen.test.tsx`, `src/__tests__/HomeScreen.test.tsx`, `src/__tests__/sessionsChangedEmitter.test.ts`, `src/detection/HealthSessionBuilder.ts`, `src/detection/LocationTracker.ts` +3 more
 - `src/detection/manualCheckin.ts` ← `src/__tests__/ManualSessionSheet.test.tsx`, `src/__tests__/ManualSessionSheet.test.tsx`, `src/__tests__/ManualSessionSheet.test.tsx`, `src/__tests__/ManualSessionSheet.test.tsx`, `src/__tests__/widget-task-handler.test.tsx` +3 more
-- `src/storage/db.ts` ← `src/storage/index.ts`, `src/storage/repositories/GoalRepository.ts`, `src/storage/repositories/LocationRepository.ts`, `src/storage/repositories/LogRepository.ts`, `src/storage/repositories/NotificationRepository.ts` +3 more
+- `src/storage/types.ts` ← `src/__tests__/domain.test.ts`, `src/domain/SessionDomain.ts`, `src/storage/index.ts`, `src/storage/repositories/GoalRepository.ts`, `src/storage/repositories/LocationRepository.ts` +3 more
 
 ---
 
 # Test Coverage
 
 > **0%** of routes and models are covered by tests
-> 65 test files found
+> 66 test files found
 
 ---
 

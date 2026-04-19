@@ -2,14 +2,14 @@
 
 > **Navigation aid.** Library inventory extracted via AST. Read the source files listed here before modifying exported functions.
 
-**45 library files** across 11 modules
+**49 library files** across 12 modules
 
 ## Detection (13 files)
 
 - `src/detection/index.ts` — initDetection, checkWeatherLocationPermissions, requestWeatherLocationPermissions, checkGPSPermissions, requestGPSPermissions, refreshDetectionSync, …
 - `src/detection/GeofenceManager.ts` — isAtKnownIndoorLocation, wasDefinitelyAtKnownIndoorLocationSync, shouldTriggerBurst, computeMinActiveRadius, clampRadiusMeters, createClusterObject, …
 - `src/detection/gpsDetection.ts` — loadGPSState, requestLocationPermissions, computeMinActiveRadius, startLocationTracking, stopLocationTracking, switchLocationProfile, …
-- `src/detection/sessionConfidence.ts` — getTimeSlotProbability, updateTimeSlotProbability, scoreDuration, computeSessionScore, computeSessionScoreFromProbs, DISCARD_CONFIDENCE_THRESHOLD, …
+- `src/detection/sessionConfidence.ts` — loadTimeSlotProbabilities, getTimeSlotProbability, updateTimeSlotProbability, scoreDuration, computeSessionScore, computeSessionScoreFromProbs
 - `src/detection/healthConnect.ts` — isHealthConnectAvailable, requestHealthPermissions, openHealthConnectForManagement, syncHealthConnect
 - `src/detection/manualCheckin.ts` — logManualSession, logManualSessionAsync, startManualSession
 - `src/detection/utils.ts` — haversineDistance, EARTH_RADIUS_METERS, haversineDistanceMeters
@@ -46,12 +46,19 @@
 
 ## Hooks (6 files)
 
-- `src/hooks/useGoalTargets.ts` — useGoalTargets, DAILY_PRESETS, WEEKLY_PRESETS
 - `src/hooks/useOTAUpdates.ts` — useOTAUpdates, OTAUpdateStatus
 - `src/hooks/useDetectionSettings.ts` — useDetectionSettings
 - `src/hooks/useForegroundSync.ts` — useForegroundSync
 - `src/hooks/useGoalIntegrations.ts` — useGoalIntegrations
+- `src/hooks/useGoalTargets.ts` — useGoalTargets
 - `src/hooks/useTheme.ts` — useTheme
+
+## Domain (4 files)
+
+- `src/domain/GoalDomain.ts` — validateDailyGoal, validateWeeklyGoal, DAILY_PRESETS, WEEKLY_PRESETS, MIN_DAILY_MINUTES, MAX_DAILY_MINUTES, …
+- `src/domain/ReminderDomain.ts` — isPermissionIssue, getPermissionIssueLabels, SMART_REMINDERS_OPTIONS, CALENDAR_BUFFER_OPTIONS, CALENDAR_DURATION_OPTIONS
+- `src/domain/ScoringDomain.ts` — calculateUpdatedProbability, scoreDuration, calculateSessionScore, DISCARD_CONFIDENCE_THRESHOLD, DEFAULT_TIME_SLOT_PROBABILITY
+- `src/domain/SessionDomain.ts` — mergeSessionData, calculateMergedSpeed, splitRangeAroundConfirmed, MergedSessionData
 
 ## Weather (2 files)
 
