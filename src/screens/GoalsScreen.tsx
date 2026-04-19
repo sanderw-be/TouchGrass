@@ -18,6 +18,8 @@ import { makeStyles } from '../components/goals/GoalsShared';
 import { useGoalTargets, DAILY_PRESETS, WEEKLY_PRESETS } from '../hooks/useGoalTargets';
 import { useGoalIntegrations } from '../hooks/useGoalIntegrations';
 
+import { Card } from '../components/ui';
+
 export default function GoalsScreen() {
   const colors = useAppStore((state) => state.colors);
   const shadows = useAppStore((state) => state.shadows);
@@ -97,13 +99,13 @@ export default function GoalsScreen() {
           </View>
         )}
         {/* WHO recommendation note */}
-        <View style={styles.tipCard}>
+        <Card variant="tip" style={styles.tipCard}>
           <Ionicons name="bulb-outline" size={18} color={colors.grassDark} style={styles.tipIcon} />
           <Text style={styles.tipText}>{t('goals_who_tip')}</Text>
-        </View>
+        </Card>
 
         {/* Daily goal */}
-        <View style={styles.card}>
+        <Card style={styles.card}>
           <View style={styles.cardHeader}>
             <View>
               <Text style={styles.cardTitle}>{t('daily_goal')}</Text>
@@ -159,10 +161,10 @@ export default function GoalsScreen() {
               </View>
             </View>
           )}
-        </View>
+        </Card>
 
         {/* Weekly goal */}
-        <View style={styles.card}>
+        <Card style={styles.card}>
           <View style={styles.cardHeader}>
             <View>
               <Text style={styles.cardTitle}>{t('weekly_goal')}</Text>
@@ -220,7 +222,7 @@ export default function GoalsScreen() {
               </View>
             </View>
           )}
-        </View>
+        </Card>
 
         {/* Reminders */}
         <RemindersSection
