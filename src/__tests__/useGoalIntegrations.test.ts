@@ -1,10 +1,10 @@
 import { renderHook, act } from '@testing-library/react-native';
 import * as Notifications from 'expo-notifications';
 import { useGoalIntegrations } from '../hooks/useGoalIntegrations';
-import { getSettingAsync, setSettingAsync } from '../storage/database';
+import { getSettingAsync, setSettingAsync } from '../storage';
 
 // Mock dependencies
-jest.mock('../storage/database', () => ({
+jest.mock('../storage', () => ({
   getSettingAsync: jest.fn(),
   setSettingAsync: jest.fn(),
 }));

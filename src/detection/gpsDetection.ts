@@ -10,7 +10,7 @@ import {
   KnownLocation,
   initDatabaseAsync,
   insertBackgroundLogAsync,
-} from '../storage/database';
+} from '../storage';
 import { submitSession, buildSession } from './sessionMerger';
 import { t } from '../i18n';
 import { isImperialUnits, kmToMiles, kmhToMph } from '../utils/units';

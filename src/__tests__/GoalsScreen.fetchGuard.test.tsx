@@ -57,7 +57,7 @@ const mockGetSettingAsync = jest.fn<Promise<string>, [string, string]>((key: str
   Promise.resolve(def)
 );
 
-jest.mock('../storage/database', () => ({
+jest.mock('../storage', () => ({
   getSettingAsync: (key: string, def: string) => mockGetSettingAsync(key, def),
   setSettingAsync: jest.fn(() => Promise.resolve()),
   getCurrentDailyGoalAsync: () => mockGetCurrentDailyGoal(),

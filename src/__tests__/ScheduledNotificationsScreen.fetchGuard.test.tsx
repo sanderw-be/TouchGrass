@@ -49,7 +49,7 @@ const mockGetScheduledNotifications = jest.fn(
   () => new Promise<never[]>((r) => setTimeout(() => r([]), 50))
 );
 
-jest.mock('../storage/database', () => ({
+jest.mock('../storage', () => ({
   getScheduledNotificationsAsync: () => mockGetScheduledNotifications(),
   insertScheduledNotificationAsync: jest.fn(() => Promise.resolve()),
   updateScheduledNotificationAsync: jest.fn(() => Promise.resolve()),

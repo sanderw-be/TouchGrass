@@ -1,7 +1,7 @@
 import { renderHook, act } from '@testing-library/react-native';
 import { AppState, InteractionManager } from 'react-native';
 import { useForegroundSync } from '../hooks/useForegroundSync';
-import { getSettingAsync } from '../storage/database';
+import { getSettingAsync } from '../storage';
 import { NotificationService } from '../notifications/notificationManager';
 import { cleanupTouchGrassCalendars } from '../calendar/calendarService';
 import { BackgroundService } from '../background/unifiedBackgroundTask';
@@ -24,7 +24,7 @@ jest.mock('react-native', () => {
 });
 
 // Mock internal dependencies
-jest.mock('../storage/database', () => ({ getSettingAsync: jest.fn() }));
+jest.mock('../storage', () => ({ getSettingAsync: jest.fn() }));
 jest.mock('../notifications/notificationManager', () => ({
   NotificationService: {
     scheduleDayReminders: jest.fn().mockResolvedValue(undefined),

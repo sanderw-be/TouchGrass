@@ -1,12 +1,12 @@
 // Mock the database before importing
 jest.mock('expo-sqlite');
 
-import { startOfDay, startOfWeek, startOfMonth, startOfNextMonth } from '../storage/database';
+import { startOfDay, startOfWeek, startOfMonth, startOfNextMonth } from '../storage';
 
 describe('Database', () => {
   describe('Settings', () => {
     it('getSettingAsync and setSettingAsync functions exist', () => {
-      const { getSettingAsync, setSettingAsync } = require('../storage/database');
+      const { getSettingAsync, setSettingAsync } = require('../storage');
       expect(typeof getSettingAsync).toBe('function');
       expect(typeof setSettingAsync).toBe('function');
     });
@@ -14,34 +14,34 @@ describe('Database', () => {
 
   describe('Scheduled Notifications', () => {
     it('getScheduledNotificationsAsync function exists', () => {
-      const { getScheduledNotificationsAsync } = require('../storage/database');
+      const { getScheduledNotificationsAsync } = require('../storage');
       expect(typeof getScheduledNotificationsAsync).toBe('function');
     });
 
     it('insertScheduledNotificationAsync function exists', () => {
-      const { insertScheduledNotificationAsync } = require('../storage/database');
+      const { insertScheduledNotificationAsync } = require('../storage');
       expect(typeof insertScheduledNotificationAsync).toBe('function');
     });
 
     it('updateScheduledNotificationAsync function exists', () => {
-      const { updateScheduledNotificationAsync } = require('../storage/database');
+      const { updateScheduledNotificationAsync } = require('../storage');
       expect(typeof updateScheduledNotificationAsync).toBe('function');
     });
 
     it('deleteScheduledNotificationAsync function exists', () => {
-      const { deleteScheduledNotificationAsync } = require('../storage/database');
+      const { deleteScheduledNotificationAsync } = require('../storage');
       expect(typeof deleteScheduledNotificationAsync).toBe('function');
     });
 
     it('toggleScheduledNotificationAsync function exists', () => {
-      const { toggleScheduledNotificationAsync } = require('../storage/database');
+      const { toggleScheduledNotificationAsync } = require('../storage');
       expect(typeof toggleScheduledNotificationAsync).toBe('function');
     });
   });
 
   describe('Sessions', () => {
     it('updateSessionTimesAsync function exists', () => {
-      const { updateSessionTimesAsync } = require('../storage/database');
+      const { updateSessionTimesAsync } = require('../storage');
       expect(typeof updateSessionTimesAsync).toBe('function');
     });
   });
@@ -126,7 +126,7 @@ describe('Async database functions', () => {
   });
 
   it('exports all async function variants', () => {
-    const db = require('../storage/database');
+    const db = require('../storage');
     expect(typeof db.insertSessionAsync).toBe('function');
     expect(typeof db.getSessionsForDayAsync).toBe('function');
     expect(typeof db.getSessionsForRangeAsync).toBe('function');
@@ -168,7 +168,7 @@ describe('Async database functions', () => {
 
   it('getTodayMinutesAsync uses getFirstAsync', async () => {
     mockDb.getFirstAsync.mockResolvedValueOnce({ total: 42 });
-    const { getTodayMinutesAsync } = require('../storage/database');
+    const { getTodayMinutesAsync } = require('../storage');
     const result = await getTodayMinutesAsync();
     expect(result).toBe(42);
     expect(mockDb.getFirstAsync).toHaveBeenCalledWith(
@@ -180,7 +180,7 @@ describe('Async database functions', () => {
   it('getSessionsForDayAsync uses getAllAsync', async () => {
     const fakeSessions = [{ id: 1, startTime: Date.now() }];
     mockDb.getAllAsync.mockResolvedValueOnce(fakeSessions);
-    const { getSessionsForDayAsync } = require('../storage/database');
+    const { getSessionsForDayAsync } = require('../storage');
     const result = await getSessionsForDayAsync(Date.now());
     expect(result).toEqual(fakeSessions);
     expect(mockDb.getAllAsync).toHaveBeenCalled();
@@ -188,7 +188,7 @@ describe('Async database functions', () => {
 
   it('confirmSessionAsync uses runAsync', async () => {
     mockDb.runAsync.mockResolvedValueOnce({ changes: 1, lastInsertRowId: 0 });
-    const { confirmSessionAsync } = require('../storage/database');
+    const { confirmSessionAsync } = require('../storage');
     await confirmSessionAsync(1, true);
     expect(mockDb.runAsync).toHaveBeenCalledWith(
       expect.stringContaining('UPDATE outside_sessions'),
@@ -198,28 +198,28 @@ describe('Async database functions', () => {
 
   it('getTodayMinutesAsync returns 0 on error', async () => {
     mockDb.getFirstAsync.mockRejectedValueOnce(new Error('DB error'));
-    const { getTodayMinutesAsync } = require('../storage/database');
+    const { getTodayMinutesAsync } = require('../storage');
     const result = await getTodayMinutesAsync();
     expect(result).toBe(0);
   });
 
   it('getSessionsForDayAsync returns [] on error', async () => {
     mockDb.getAllAsync.mockRejectedValueOnce(new Error('DB error'));
-    const { getSessionsForDayAsync } = require('../storage/database');
+    const { getSessionsForDayAsync } = require('../storage');
     const result = await getSessionsForDayAsync(Date.now());
     expect(result).toEqual([]);
   });
 
   it('getSettingAsync uses getFirstAsync', async () => {
     mockDb.getFirstAsync.mockResolvedValueOnce({ value: 'test_value' });
-    const { getSettingAsync } = require('../storage/database');
+    const { getSettingAsync } = require('../storage');
     const result = await getSettingAsync('key', 'fallback');
     expect(result).toBe('test_value');
   });
 
   it('setSettingAsync uses runAsync', async () => {
     mockDb.runAsync.mockResolvedValueOnce({ changes: 1, lastInsertRowId: 0 });
-    const { setSettingAsync } = require('../storage/database');
+    const { setSettingAsync } = require('../storage');
     await setSettingAsync('key', 'value');
     expect(mockDb.runAsync).toHaveBeenCalledWith(expect.stringContaining('INSERT OR REPLACE'), [
       'key',
@@ -230,7 +230,7 @@ describe('Async database functions', () => {
   it('getBackgroundLogsAsync uses getAllAsync', async () => {
     const fakeLogs = [{ id: 1, timestamp: Date.now(), category: 'gps', message: 'test' }];
     mockDb.getAllAsync.mockResolvedValueOnce(fakeLogs);
-    const { getBackgroundLogsAsync } = require('../storage/database');
+    const { getBackgroundLogsAsync } = require('../storage');
     const result = await getBackgroundLogsAsync('gps');
     expect(result).toEqual(fakeLogs);
     expect(mockDb.getAllAsync).toHaveBeenCalledWith(

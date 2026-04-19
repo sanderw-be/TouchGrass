@@ -45,7 +45,7 @@ const mockGetSettingAsync = jest.fn<Promise<string>, [string, string]>(
   (key: string, fallback: string) => Promise.resolve(fallback)
 );
 const mockSetSettingAsync = jest.fn<Promise<void>, [string, string]>(() => Promise.resolve());
-jest.mock('../storage/database', () => ({
+jest.mock('../storage', () => ({
   getSettingAsync: (key: string, fallback: string) => mockGetSettingAsync(key, fallback),
   setSettingAsync: (key: string, value: string) => mockSetSettingAsync(key, value),
 }));

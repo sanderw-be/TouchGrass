@@ -75,7 +75,7 @@ const mockGetCurrentDailyGoal = jest.fn(
     new Promise<{ targetMinutes: number }>((r) => setTimeout(() => r({ targetMinutes: 30 }), 50))
 );
 
-jest.mock('../storage/database', () => ({
+jest.mock('../storage', () => ({
   startOfDay: jest.fn((ms: number) => {
     const d = new Date(ms);
     return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();

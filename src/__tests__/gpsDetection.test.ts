@@ -1,4 +1,4 @@
-jest.mock('../storage/database', () => ({
+jest.mock('../storage', () => ({
   getKnownLocationsAsync: jest.fn(),
   getSettingAsync: jest.fn(),
   setSettingAsync: jest.fn(),
@@ -9,7 +9,7 @@ jest.mock('../detection/sessionMerger');
 
 import * as TaskManager from 'expo-task-manager';
 import * as Location from 'expo-location';
-import * as Database from '../storage/database';
+import * as Database from '../storage';
 import * as SessionMerger from '../detection/sessionMerger';
 import {
   processLocationUpdate,

@@ -5,7 +5,7 @@ import {
   checkGPSPermissions,
   recheckHealthConnect,
 } from '../detection';
-import { getSettingAsync } from '../storage/database';
+import { getSettingAsync } from '../storage';
 import { hasCalendarPermissions } from '../calendar/calendarService';
 
 /**

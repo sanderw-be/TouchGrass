@@ -4,7 +4,7 @@ import { useAppStore } from '../store/useAppStore';
 import { spacing, radius, ThemeColors, Shadows } from '../utils/theme';
 import { t } from '../i18n';
 import { uses24HourClock, normalizeAmPm } from '../utils/helpers';
-import { insertReminderFeedbackAsync, getSettingAsync, setSettingAsync } from '../storage/database';
+import { insertReminderFeedbackAsync, getSettingAsync, setSettingAsync } from '../storage';
 
 export default function ReminderFeedbackModal() {
   const visible = useAppStore((state) => state.feedbackVisible);

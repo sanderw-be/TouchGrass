@@ -10,7 +10,7 @@ import {
   denyKnownLocationAsync,
   getSettingAsync,
   setSettingAsync,
-} from '../storage/database';
+} from '../storage';
 import { getDetectionStatus } from '../detection/index';
 import { spacing, radius, ThemeColors, Shadows } from '../utils/theme';
 import { useAppStore } from '../store/useAppStore';

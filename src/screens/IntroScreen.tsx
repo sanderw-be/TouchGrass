@@ -36,7 +36,7 @@ import {
 
 import { NotificationService } from '../notifications/notificationManager';
 import { requestCalendarPermissions, hasCalendarPermissions } from '../calendar/calendarService';
-import { getSettingAsync, setSettingAsync } from '../storage/database';
+import { getSettingAsync, setSettingAsync } from '../storage';
 import EditLocationSheet from '../components/EditLocationSheet';
 
 interface Props {

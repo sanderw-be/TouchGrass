@@ -18,7 +18,7 @@ import {
   getCurrentDailyGoalAsync,
   getSettingAsync,
   initDatabaseAsync,
-} from '../storage/database';
+} from '../storage';
 
 export const WIDGET_TIMER_KEY = 'widget_timer_start';
 

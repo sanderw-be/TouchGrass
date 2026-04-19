@@ -13,7 +13,7 @@ jest.mock('../i18n', () => ({
 }));
 
 // Mock database
-jest.mock('../storage/database', () => ({
+jest.mock('../storage', () => ({
   getKnownLocationsAsync: jest.fn(() => Promise.resolve([])),
   getSuggestedLocationsAsync: jest.fn(() => Promise.resolve([])),
   clearAllDataAsync: jest.fn(() => Promise.resolve()),

@@ -2,11 +2,7 @@ import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import {
-  getBackgroundLogsAsync,
-  BackgroundTaskLog,
-  BackgroundLogCategory,
-} from '../storage/database';
+import { getBackgroundLogsAsync, BackgroundTaskLog, BackgroundLogCategory } from '../storage';
 import { spacing, radius, ThemeColors, Shadows } from '../utils/theme';
 import { useAppStore } from '../store/useAppStore';
 import { t } from '../i18n';

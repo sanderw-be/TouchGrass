@@ -30,7 +30,7 @@ import {
   getSettingAsync,
   setSettingAsync,
   OutsideSession,
-} from '../storage/database';
+} from '../storage';
 import { spacing, radius, ThemeColors, Shadows } from '../utils/theme';
 import { useAppStore } from '../store/useAppStore';
 import { formatMinutes, formatTime } from '../utils/helpers';

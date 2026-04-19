@@ -2,7 +2,19 @@
 
 > **Navigation aid.** Library inventory extracted via AST. Read the source files listed here before modifying exported functions.
 
-**30 library files** across 11 modules
+**38 library files** across 11 modules
+
+## Storage (9 files)
+
+- `src/storage/repositories/SessionRepository.ts` — insertSessionAsync, getSessionsForDayAsync, getSessionsForRangeAsync, deleteSessionAsync, deleteSessionsByIdsAsync, insertSessionsBatchAsync, …
+- `src/storage/repositories/NotificationRepository.ts` — insertReminderFeedbackAsync, getReminderFeedbackAsync, getScheduledNotificationsAsync, insertScheduledNotificationAsync, updateScheduledNotificationAsync, deleteScheduledNotificationAsync, …
+- `src/storage/repositories/GoalRepository.ts` — getCurrentDailyGoalAsync, getCurrentWeeklyGoalAsync, setDailyGoalAsync, setWeeklyGoalAsync, getDailyStreakAsync, getWeeklyStreakAsync
+- `src/storage/repositories/LocationRepository.ts` — getKnownLocationsAsync, getAllKnownLocationsAsync, getSuggestedLocationsAsync, upsertKnownLocationAsync, denyKnownLocationAsync, deleteKnownLocationAsync
+- `src/storage/repositories/WeatherRepository.ts` — saveWeatherConditionsAsync, getWeatherConditionsForHourAsync, saveWeatherCacheAsync, getWeatherCacheAsync, clearExpiredWeatherDataAsync
+- `src/storage/dateHelpers.ts` — startOfDay, startOfWeek, startOfMonth, startOfNextMonth
+- `src/storage/db.ts` — initDatabaseAsync, clearAllDataAsync, db, SEVEN_DAYS_MS
+- `src/storage/repositories/LogRepository.ts` — insertBackgroundLogAsync, getBackgroundLogsAsync
+- `src/storage/repositories/SettingRepository.ts` — getSettingAsync, setSettingAsync
 
 ## Utils (9 files)
 
@@ -58,10 +70,6 @@
 ## Notifications (1 files)
 
 - `src/notifications/reminderAlgorithm.ts` — scoreReminderHours, shouldRemindNow, ScoreContributor, HourScore
-
-## Storage (1 files)
-
-- `src/storage/database.ts` — initDatabaseAsync, insertSessionAsync, getSessionsForDayAsync, getSessionsForRangeAsync, deleteSessionAsync, deleteSessionsByIdsAsync, …
 
 ## Store (1 files)
 

@@ -1,9 +1,9 @@
 jest.mock('expo-notifications');
-jest.mock('../storage/database');
+jest.mock('../storage');
 jest.mock('../i18n', () => ({ t: (key: string) => key }));
 
 import * as Notifications from 'expo-notifications';
-import * as Database from '../storage/database';
+import * as Database from '../storage';
 import { NotificationService } from '../notifications/notificationManager';
 
 describe('scheduledNotifications', () => {

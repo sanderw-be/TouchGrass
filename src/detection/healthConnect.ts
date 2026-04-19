@@ -12,7 +12,7 @@ import {
   getKnownLocationsAsync,
   insertBackgroundLogAsync,
   KnownLocation,
-} from '../storage/database';
+} from '../storage';
 import { submitSession, buildSession } from './sessionMerger';
 import {
   openHealthConnectPermissionsViaIntent,

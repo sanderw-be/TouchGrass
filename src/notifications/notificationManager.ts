@@ -10,7 +10,7 @@ import {
   getWeeklyStreakAsync,
   insertBackgroundLogAsync,
   getScheduledNotificationsAsync,
-} from '../storage/database';
+} from '../storage';
 import { shouldRemindNow, scoreReminderHours, ScoreContributor } from './reminderAlgorithm';
 import {
   fetchWeatherForecast,

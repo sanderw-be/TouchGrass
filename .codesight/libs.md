@@ -72,14 +72,54 @@
   - function shouldRemindNow: (todayMinutes, dailyTargetMinutes, lastReminderMs, isCurrentlyOutside) => Promise<
   - interface ScoreContributor
   - interface HourScore
-- `src/storage/database.ts`
+- `src/storage/dateHelpers.ts`
+  - function startOfDay: (ms) => number
+  - function startOfWeek: (ms) => number
+  - function startOfMonth: (ms) => number
+  - function startOfNextMonth: (ms) => number
+- `src/storage/db.ts`
   - function initDatabaseAsync: () => Promise<void>
+  - function clearAllDataAsync: () => Promise<void>
+  - const db
+  - const SEVEN_DAYS_MS
+- `src/storage/repositories/GoalRepository.ts`
+  - function getCurrentDailyGoalAsync: () => Promise<DailyGoal | null>
+  - function getCurrentWeeklyGoalAsync: () => Promise<WeeklyGoal | null>
+  - function setDailyGoalAsync: (minutes) => Promise<void>
+  - function setWeeklyGoalAsync: (minutes) => Promise<void>
+  - function getDailyStreakAsync: () => Promise<number>
+  - function getWeeklyStreakAsync: () => Promise<number>
+- `src/storage/repositories/LocationRepository.ts`
+  - function getKnownLocationsAsync: () => Promise<KnownLocation[]>
+  - function getAllKnownLocationsAsync: () => Promise<KnownLocation[]>
+  - function getSuggestedLocationsAsync: () => Promise<KnownLocation[]>
+  - function upsertKnownLocationAsync: (loc) => Promise<void>
+  - function denyKnownLocationAsync: (id) => Promise<void>
+  - function deleteKnownLocationAsync: (id) => Promise<void>
+- `src/storage/repositories/LogRepository.ts` — function insertBackgroundLogAsync: (category, message) => Promise<void>, function getBackgroundLogsAsync: (category?, limit) => Promise<BackgroundTaskLog[]>
+- `src/storage/repositories/NotificationRepository.ts`
+  - function insertReminderFeedbackAsync: (feedback) => Promise<void>
+  - function getReminderFeedbackAsync: () => Promise<ReminderFeedback[]>
+  - function getScheduledNotificationsAsync: () => Promise<ScheduledNotification[]>
+  - function insertScheduledNotificationAsync: (notification, 'id'>) => Promise<number>
+  - function updateScheduledNotificationAsync: (notification) => Promise<void>
+  - function deleteScheduledNotificationAsync: (id) => Promise<void>
+  - _...2 more_
+- `src/storage/repositories/SessionRepository.ts`
   - function insertSessionAsync: (session) => Promise<number>
   - function getSessionsForDayAsync: (dateMs) => Promise<OutsideSession[]>
   - function getSessionsForRangeAsync: (fromMs, toMs) => Promise<OutsideSession[]>
   - function deleteSessionAsync: (id) => Promise<void>
   - function deleteSessionsByIdsAsync: (ids) => Promise<void>
-  - _...57 more_
+  - function insertSessionsBatchAsync: (sessions) => Promise<number[]>
+  - _...14 more_
+- `src/storage/repositories/SettingRepository.ts` — function getSettingAsync: (key, fallback) => Promise<string>, function setSettingAsync: (key, value) => Promise<void>
+- `src/storage/repositories/WeatherRepository.ts`
+  - function saveWeatherConditionsAsync: (conditions) => Promise<void>
+  - function getWeatherConditionsForHourAsync: (forecastDate, startHour, endHour) => Promise<WeatherCondition[]>
+  - function saveWeatherCacheAsync: (cache) => Promise<void>
+  - function getWeatherCacheAsync: () => Promise<WeatherCache | null>
+  - function clearExpiredWeatherDataAsync: (now) => Promise<void>
 - `src/store/useAppStore.ts`
   - function triggerReminderFeedbackModal: (data) => void
   - interface FeedbackModalData

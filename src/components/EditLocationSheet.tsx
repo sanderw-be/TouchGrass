@@ -16,11 +16,7 @@ import {
 } from '@gorhom/bottom-sheet';
 import * as Location from 'expo-location';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import {
-  upsertKnownLocationAsync,
-  deleteKnownLocationAsync,
-  KnownLocation,
-} from '../storage/database';
+import { upsertKnownLocationAsync, deleteKnownLocationAsync, KnownLocation } from '../storage';
 import { spacing, radius, ThemeColors, Shadows } from '../utils/theme';
 import { useAppStore } from '../store/useAppStore';
 import { t } from '../i18n';

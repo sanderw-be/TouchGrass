@@ -5,11 +5,11 @@ import {
   getCurrentWeeklyGoalAsync,
   setDailyGoalAsync,
   setWeeklyGoalAsync,
-} from '../storage/database';
+} from '../storage';
 import { Alert } from 'react-native';
 
 // Mock the database storage functions
-jest.mock('../storage/database', () => ({
+jest.mock('../storage', () => ({
   getCurrentDailyGoalAsync: jest.fn(),
   getCurrentWeeklyGoalAsync: jest.fn(),
   setDailyGoalAsync: jest.fn(),

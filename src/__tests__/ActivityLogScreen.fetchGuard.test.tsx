@@ -55,7 +55,7 @@ const mockGetBackgroundLogs = jest.fn(
   (_category: string) => new Promise<never[]>((r) => setTimeout(() => r([]), 50))
 );
 
-jest.mock('../storage/database', () => ({
+jest.mock('../storage', () => ({
   getBackgroundLogsAsync: (category: string) => mockGetBackgroundLogs(category),
 }));
 

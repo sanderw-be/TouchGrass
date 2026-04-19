@@ -1,5 +1,5 @@
 import * as Calendar from 'expo-calendar';
-import { getSettingAsync, setSettingAsync } from '../storage/database';
+import { getSettingAsync, setSettingAsync } from '../storage';
 import { t } from '../i18n';
 
 const TOUCHGRASS_CALENDAR_SETTING = 'calendar_touchgrass_id';

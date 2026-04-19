@@ -11,7 +11,7 @@ import {
   stopLocationTracking,
   computeMinActiveRadius,
 } from './gpsDetection';
-import { getKnownLocationsAsync, getSettingAsync, setSettingAsync } from '../storage/database';
+import { getKnownLocationsAsync, getSettingAsync, setSettingAsync } from '../storage';
 
 // Setting keys for the user's explicit intent (independent of OS permission state)
 const HC_USER_KEY = 'healthconnect_user_enabled';

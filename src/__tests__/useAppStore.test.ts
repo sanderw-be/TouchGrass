@@ -3,7 +3,7 @@ import {
   performCriticalInitializationAsync,
   performDeferredInitialization,
 } from '../../appBootstrap';
-import { getSettingAsync, setSettingAsync } from '../storage/database';
+import { getSettingAsync, setSettingAsync } from '../storage';
 import i18n from '../i18n';
 
 // Mock dependencies
@@ -12,7 +12,7 @@ jest.mock('../../appBootstrap', () => ({
   performDeferredInitialization: jest.fn(),
 }));
 
-jest.mock('../storage/database', () => ({
+jest.mock('../storage', () => ({
   getSettingAsync: jest.fn(),
   setSettingAsync: jest.fn(),
 }));

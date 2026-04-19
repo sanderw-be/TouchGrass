@@ -5,12 +5,12 @@ jest.mock('../i18n', () => ({
   t: (key: string) => key,
 }));
 
-jest.mock('../storage/database', () => ({
+jest.mock('../storage', () => ({
   updateSessionNotesAsync: jest.fn().mockResolvedValue(undefined),
 }));
 
 import SessionNotesSheet from '../components/SessionNotesSheet';
-import { OutsideSession, updateSessionNotesAsync } from '../storage/database';
+import { OutsideSession, updateSessionNotesAsync } from '../storage';
 
 const mockSession: OutsideSession = {
   id: 42,
