@@ -34,7 +34,7 @@ import {
   checkWeatherLocationPermissions,
 } from '../detection/index';
 
-import { NotificationService } from '../notifications/notificationManager';
+import { notificationInfrastructureService } from '../notifications/notificationManager';
 import { requestCalendarPermissions, hasCalendarPermissions } from '../calendar/calendarService';
 import { getSettingAsync, setSettingAsync } from '../storage';
 import EditLocationSheet from '../components/EditLocationSheet';
@@ -283,7 +283,7 @@ export default function IntroScreen({ onComplete }: Props) {
   const handleRequestNotifications = async () => {
     setRequestingPermission(true);
     try {
-      const granted = await NotificationService.requestNotificationPermissions();
+      const granted = await notificationInfrastructureService.requestNotificationPermissions();
       setNotificationsGranted(granted);
     } catch (error) {
       console.error('Error requesting notifications:', error);

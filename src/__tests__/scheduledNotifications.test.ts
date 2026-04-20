@@ -4,7 +4,7 @@ jest.mock('../i18n', () => ({ t: (key: string) => key }));
 
 import * as Notifications from 'expo-notifications';
 import * as Database from '../storage';
-import { NotificationService } from '../notifications/notificationManager';
+import { scheduledNotificationManager } from '../notifications/notificationManager';
 
 describe('scheduledNotifications', () => {
   beforeEach(() => {
@@ -23,7 +23,7 @@ describe('scheduledNotifications', () => {
       (Database.getScheduledNotificationsAsync as jest.Mock).mockResolvedValue(mockSchedules);
       (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([]);
 
-      await NotificationService.scheduleAllScheduledNotifications();
+      await scheduledNotificationManager.scheduleAllScheduledNotifications();
 
       // Should schedule 3 notifications (Mon, Wed, Fri)
       expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledTimes(3);
@@ -37,7 +37,7 @@ describe('scheduledNotifications', () => {
       (Database.getScheduledNotificationsAsync as jest.Mock).mockResolvedValue(mockSchedules);
       (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([]);
 
-      await NotificationService.scheduleAllScheduledNotifications();
+      await scheduledNotificationManager.scheduleAllScheduledNotifications();
 
       expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
     });
@@ -52,7 +52,7 @@ describe('scheduledNotifications', () => {
         { identifier: 'scheduled_1_1' },
       ]);
 
-      await NotificationService.scheduleAllScheduledNotifications();
+      await scheduledNotificationManager.scheduleAllScheduledNotifications();
 
       expect(Notifications.cancelScheduledNotificationAsync).toHaveBeenCalledWith('scheduled_1_1');
     });
@@ -65,7 +65,7 @@ describe('scheduledNotifications', () => {
       (Database.getScheduledNotificationsAsync as jest.Mock).mockResolvedValue(mockSchedules);
       (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([]);
 
-      await NotificationService.scheduleAllScheduledNotifications();
+      await scheduledNotificationManager.scheduleAllScheduledNotifications();
 
       expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -94,7 +94,7 @@ describe('scheduledNotifications', () => {
       (Database.getScheduledNotificationsAsync as jest.Mock).mockResolvedValue(mockSchedules);
       (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([]);
 
-      await NotificationService.scheduleAllScheduledNotifications();
+      await scheduledNotificationManager.scheduleAllScheduledNotifications();
 
       // Should be called 3 times (Sunday, Monday, Saturday)
       expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledTimes(3);
@@ -120,7 +120,7 @@ describe('scheduledNotifications', () => {
       (Database.getScheduledNotificationsAsync as jest.Mock).mockResolvedValue(mockSchedules);
       (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([]);
 
-      await NotificationService.scheduleAllScheduledNotifications();
+      await scheduledNotificationManager.scheduleAllScheduledNotifications();
 
       expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledTimes(1);
 
@@ -146,7 +146,9 @@ describe('scheduledNotifications', () => {
         .mockResolvedValueOnce('success');
 
       // Should not throw, but log error
-      await expect(NotificationService.scheduleAllScheduledNotifications()).resolves.not.toThrow();
+      await expect(
+        scheduledNotificationManager.scheduleAllScheduledNotifications()
+      ).resolves.not.toThrow();
 
       // Should still attempt to schedule the second one
       expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledTimes(2);
@@ -156,7 +158,9 @@ describe('scheduledNotifications', () => {
       (Notifications.getPermissionsAsync as jest.Mock).mockResolvedValue({ status: 'denied' });
 
       // Should not throw, but return gracefully
-      await expect(NotificationService.scheduleAllScheduledNotifications()).resolves.not.toThrow();
+      await expect(
+        scheduledNotificationManager.scheduleAllScheduledNotifications()
+      ).resolves.not.toThrow();
 
       // Should not attempt to schedule any notifications
       expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
@@ -175,7 +179,7 @@ describe('scheduledNotifications', () => {
         mockNotifications
       );
 
-      await NotificationService.cancelAllScheduledNotifications();
+      await scheduledNotificationManager.cancelAllScheduledNotifications();
 
       expect(Notifications.cancelScheduledNotificationAsync).toHaveBeenCalledTimes(2);
       expect(Notifications.cancelScheduledNotificationAsync).toHaveBeenCalledWith('scheduled_1_1');
@@ -205,7 +209,7 @@ describe('scheduledNotifications', () => {
 
       (Database.getScheduledNotificationsAsync as jest.Mock).mockResolvedValue(mockSchedules);
 
-      const result = await NotificationService.hasScheduledNotificationNearby(60);
+      const result = await scheduledNotificationManager.hasScheduledNotificationNearby(60);
       expect(result).toBe(true);
     });
 
@@ -216,7 +220,7 @@ describe('scheduledNotifications', () => {
 
       (Database.getScheduledNotificationsAsync as jest.Mock).mockResolvedValue(mockSchedules);
 
-      const result = await NotificationService.hasScheduledNotificationNearby(60);
+      const result = await scheduledNotificationManager.hasScheduledNotificationNearby(60);
       expect(result).toBe(false);
     });
 
@@ -227,7 +231,7 @@ describe('scheduledNotifications', () => {
 
       (Database.getScheduledNotificationsAsync as jest.Mock).mockResolvedValue(mockSchedules);
 
-      const result = await NotificationService.hasScheduledNotificationNearby(60);
+      const result = await scheduledNotificationManager.hasScheduledNotificationNearby(60);
       expect(result).toBe(false);
     });
 
@@ -238,7 +242,7 @@ describe('scheduledNotifications', () => {
 
       (Database.getScheduledNotificationsAsync as jest.Mock).mockResolvedValue(mockSchedules);
 
-      const result = await NotificationService.hasScheduledNotificationNearby(60);
+      const result = await scheduledNotificationManager.hasScheduledNotificationNearby(60);
       expect(result).toBe(false);
     });
   });
@@ -260,7 +264,9 @@ describe('scheduledNotifications', () => {
       (Database.getScheduledNotificationsAsync as jest.Mock).mockResolvedValue(mockSchedules);
 
       // Slot at 12:00 with 30-minute window should match a notification at 12:00
-      expect(await NotificationService.isSlotNearScheduledNotification(12, 0, 30)).toBe(true);
+      expect(await scheduledNotificationManager.isSlotNearScheduledNotification(12, 0, 30)).toBe(
+        true
+      );
     });
 
     it('returns true when a slot is within 30 minutes of a scheduled notification', async () => {
@@ -270,7 +276,9 @@ describe('scheduledNotifications', () => {
       (Database.getScheduledNotificationsAsync as jest.Mock).mockResolvedValue(mockSchedules);
 
       // 11:30 is 30 minutes before 12:00 — within window
-      expect(await NotificationService.isSlotNearScheduledNotification(11, 30, 30)).toBe(true);
+      expect(await scheduledNotificationManager.isSlotNearScheduledNotification(11, 30, 30)).toBe(
+        true
+      );
     });
 
     it('returns false when a slot is outside the window', async () => {
@@ -280,7 +288,9 @@ describe('scheduledNotifications', () => {
       (Database.getScheduledNotificationsAsync as jest.Mock).mockResolvedValue(mockSchedules);
 
       // 10:00 is 120 minutes before 12:00 — outside 30-minute window
-      expect(await NotificationService.isSlotNearScheduledNotification(10, 0, 30)).toBe(false);
+      expect(await scheduledNotificationManager.isSlotNearScheduledNotification(10, 0, 30)).toBe(
+        false
+      );
     });
 
     it('returns false when the schedule is for a different day of week', async () => {
@@ -289,7 +299,9 @@ describe('scheduledNotifications', () => {
       ];
       (Database.getScheduledNotificationsAsync as jest.Mock).mockResolvedValue(mockSchedules);
 
-      expect(await NotificationService.isSlotNearScheduledNotification(12, 0, 30)).toBe(false);
+      expect(await scheduledNotificationManager.isSlotNearScheduledNotification(12, 0, 30)).toBe(
+        false
+      );
     });
 
     it('ignores disabled scheduled notifications', async () => {
@@ -298,7 +310,9 @@ describe('scheduledNotifications', () => {
       ];
       (Database.getScheduledNotificationsAsync as jest.Mock).mockResolvedValue(mockSchedules);
 
-      expect(await NotificationService.isSlotNearScheduledNotification(12, 0, 30)).toBe(false);
+      expect(await scheduledNotificationManager.isSlotNearScheduledNotification(12, 0, 30)).toBe(
+        false
+      );
     });
 
     it('returns true for a half-hour slot (12:30) near a 13:00 notification within 30-min window', async () => {
@@ -308,13 +322,17 @@ describe('scheduledNotifications', () => {
       (Database.getScheduledNotificationsAsync as jest.Mock).mockResolvedValue(mockSchedules);
 
       // 12:30 is exactly 30 minutes before 13:00 — on the edge of a 30-min window
-      expect(await NotificationService.isSlotNearScheduledNotification(12, 30, 30)).toBe(true);
+      expect(await scheduledNotificationManager.isSlotNearScheduledNotification(12, 30, 30)).toBe(
+        true
+      );
     });
 
     it('returns false when no scheduled notifications exist', async () => {
       (Database.getScheduledNotificationsAsync as jest.Mock).mockResolvedValue([]);
 
-      expect(await NotificationService.isSlotNearScheduledNotification(12, 0, 30)).toBe(false);
+      expect(await scheduledNotificationManager.isSlotNearScheduledNotification(12, 0, 30)).toBe(
+        false
+      );
     });
   });
 });

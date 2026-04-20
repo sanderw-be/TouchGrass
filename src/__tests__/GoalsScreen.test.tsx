@@ -60,7 +60,7 @@ jest.mock('../utils/permissionIssuesChangedEmitter', () => ({
 
 // Mock NotificationService
 jest.mock('../notifications/notificationManager', () => ({
-  NotificationService: {
+  notificationInfrastructureService: {
     requestNotificationPermissions: jest.fn(() => Promise.resolve(false)),
   },
 }));

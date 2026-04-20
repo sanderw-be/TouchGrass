@@ -6,11 +6,13 @@
  */
 
 jest.mock('../notifications/notificationManager', () => ({
-  NotificationService: {
+  reminderQueueManager: {
+    logReminderQueueSnapshot: jest.fn(),
+  },
+  smartReminderScheduler: {
     scheduleDayReminders: jest.fn(),
     maybeScheduleCatchUpReminder: jest.fn(),
     processReminderQueue: jest.fn(),
-    logReminderQueueSnapshot: jest.fn(),
     updateUpcomingReminderContent: jest.fn(),
   },
 }));
@@ -27,7 +29,7 @@ jest.mock('../storage', () => ({
 
 import * as BackgroundTask from 'expo-background-task';
 import * as TaskManager from 'expo-task-manager';
-import { NotificationService } from '../notifications/notificationManager';
+import { reminderQueueManager, smartReminderScheduler } from '../notifications/notificationManager';
 import * as WeatherService from '../weather/weatherService';
 import * as Database from '../storage';
 import { UNIFIED_BACKGROUND_TASK, BackgroundService } from '../background/unifiedBackgroundTask';
@@ -122,18 +124,22 @@ describe('unifiedBackgroundTask', () => {
         if (key === 'weather_enabled') return '0';
         return '';
       });
-      (NotificationService.scheduleDayReminders as jest.Mock).mockResolvedValue(undefined);
-      (NotificationService.maybeScheduleCatchUpReminder as jest.Mock).mockResolvedValue(undefined);
-      (NotificationService.processReminderQueue as jest.Mock).mockResolvedValue(undefined);
-      (NotificationService.updateUpcomingReminderContent as jest.Mock).mockResolvedValue(undefined);
+      (smartReminderScheduler.scheduleDayReminders as jest.Mock).mockResolvedValue(undefined);
+      (smartReminderScheduler.maybeScheduleCatchUpReminder as jest.Mock).mockResolvedValue(
+        undefined
+      );
+      (smartReminderScheduler.processReminderQueue as jest.Mock).mockResolvedValue(undefined);
+      (smartReminderScheduler.updateUpcomingReminderContent as jest.Mock).mockResolvedValue(
+        undefined
+      );
 
       const result = await taskCallback();
 
-      expect(NotificationService.logReminderQueueSnapshot).toHaveBeenCalledTimes(1);
-      expect(NotificationService.scheduleDayReminders).toHaveBeenCalledTimes(1);
-      expect(NotificationService.processReminderQueue).toHaveBeenCalledTimes(1);
-      expect(NotificationService.updateUpcomingReminderContent).toHaveBeenCalledTimes(1);
-      expect(NotificationService.maybeScheduleCatchUpReminder).toHaveBeenCalledTimes(1);
+      expect(reminderQueueManager.logReminderQueueSnapshot).toHaveBeenCalledTimes(1);
+      expect(smartReminderScheduler.scheduleDayReminders).toHaveBeenCalledTimes(1);
+      expect(smartReminderScheduler.processReminderQueue).toHaveBeenCalledTimes(1);
+      expect(smartReminderScheduler.updateUpcomingReminderContent).toHaveBeenCalledTimes(1);
+      expect(smartReminderScheduler.maybeScheduleCatchUpReminder).toHaveBeenCalledTimes(1);
       expect(result).toBe(BackgroundTask.BackgroundTaskResult.Success);
     });
 
@@ -146,11 +152,11 @@ describe('unifiedBackgroundTask', () => {
 
       await taskCallback();
 
-      expect(NotificationService.logReminderQueueSnapshot).not.toHaveBeenCalled();
-      expect(NotificationService.scheduleDayReminders).not.toHaveBeenCalled();
-      expect(NotificationService.processReminderQueue).not.toHaveBeenCalled();
-      expect(NotificationService.updateUpcomingReminderContent).not.toHaveBeenCalled();
-      expect(NotificationService.maybeScheduleCatchUpReminder).not.toHaveBeenCalled();
+      expect(reminderQueueManager.logReminderQueueSnapshot).not.toHaveBeenCalled();
+      expect(smartReminderScheduler.scheduleDayReminders).not.toHaveBeenCalled();
+      expect(smartReminderScheduler.processReminderQueue).not.toHaveBeenCalled();
+      expect(smartReminderScheduler.updateUpcomingReminderContent).not.toHaveBeenCalled();
+      expect(smartReminderScheduler.maybeScheduleCatchUpReminder).not.toHaveBeenCalled();
     });
 
     it('fetches weather when weather is enabled', async () => {
@@ -192,11 +198,13 @@ describe('unifiedBackgroundTask', () => {
         callOrder.push('weather');
         return { success: true };
       });
-      (NotificationService.scheduleDayReminders as jest.Mock).mockImplementation(async () => {
+      (smartReminderScheduler.scheduleDayReminders as jest.Mock).mockImplementation(async () => {
         callOrder.push('reminders');
       });
-      (NotificationService.processReminderQueue as jest.Mock).mockResolvedValue(undefined);
-      (NotificationService.maybeScheduleCatchUpReminder as jest.Mock).mockResolvedValue(undefined);
+      (smartReminderScheduler.processReminderQueue as jest.Mock).mockResolvedValue(undefined);
+      (smartReminderScheduler.maybeScheduleCatchUpReminder as jest.Mock).mockResolvedValue(
+        undefined
+      );
 
       await taskCallback();
 
@@ -213,13 +221,15 @@ describe('unifiedBackgroundTask', () => {
       (WeatherService.fetchWeatherForecast as jest.Mock).mockRejectedValue(
         new Error('network error')
       );
-      (NotificationService.scheduleDayReminders as jest.Mock).mockResolvedValue(undefined);
-      (NotificationService.processReminderQueue as jest.Mock).mockResolvedValue(undefined);
-      (NotificationService.maybeScheduleCatchUpReminder as jest.Mock).mockResolvedValue(undefined);
+      (smartReminderScheduler.scheduleDayReminders as jest.Mock).mockResolvedValue(undefined);
+      (smartReminderScheduler.processReminderQueue as jest.Mock).mockResolvedValue(undefined);
+      (smartReminderScheduler.maybeScheduleCatchUpReminder as jest.Mock).mockResolvedValue(
+        undefined
+      );
 
       const result = await taskCallback();
 
-      expect(NotificationService.scheduleDayReminders).toHaveBeenCalled();
+      expect(smartReminderScheduler.scheduleDayReminders).toHaveBeenCalled();
       expect(result).toBe(BackgroundTask.BackgroundTaskResult.Success);
     });
 

@@ -58,7 +58,7 @@ jest.mock('../storage', () => ({
 }));
 
 jest.mock('../notifications/notificationManager', () => ({
-  NotificationService: {
+  scheduledNotificationManager: {
     scheduleAllScheduledNotifications: jest.fn(() => Promise.resolve()),
   },
 }));

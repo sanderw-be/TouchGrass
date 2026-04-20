@@ -1,7 +1,12 @@
 import { InteractionManager } from 'react-native';
 import { initDatabaseAsync, getSettingAsync, setSettingAsync } from './src/storage';
 import i18n, { getDeviceSupportedLocale, SUPPORTED_LOCALES } from './src/i18n';
-import { NotificationService } from './src/notifications/notificationManager';
+import {
+  notificationInfrastructureService,
+  smartReminderScheduler,
+  scheduledNotificationManager,
+  notificationResponseHandler,
+} from './src/notifications/notificationManager';
 import { BackgroundService } from './src/background/unifiedBackgroundTask';
 import { initDetection } from './src/detection/index';
 import { requestWidgetRefresh } from './src/utils/widgetHelper';
@@ -64,13 +69,16 @@ export function performDeferredInitialization(): void {
       const tasks = [
         {
           name: 'Notification Infrastructure',
-          task: () => NotificationService.setupNotificationInfrastructure(),
+          task: () =>
+            notificationInfrastructureService.setupNotificationInfrastructure((response) =>
+              notificationResponseHandler.handleNotificationResponse(response)
+            ),
         },
         { name: 'Detection Initialization', task: initDetection },
-        { name: 'Day Reminders', task: () => NotificationService.scheduleDayReminders() },
+        { name: 'Day Reminders', task: () => smartReminderScheduler.scheduleDayReminders() },
         {
           name: 'Scheduled Notifications',
-          task: () => NotificationService.scheduleAllScheduledNotifications(),
+          task: () => scheduledNotificationManager.scheduleAllScheduledNotifications(),
         },
         {
           name: 'Unified Background Task',
