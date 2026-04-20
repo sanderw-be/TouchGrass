@@ -2,7 +2,7 @@
 
 > **Navigation aid.** Library inventory extracted via AST. Read the source files listed here before modifying exported functions.
 
-**49 library files** across 12 modules
+**55 library files** across 12 modules
 
 ## Detection (13 files)
 
@@ -44,6 +44,16 @@
 - `src/utils/sessionsChangedEmitter.ts` — emitSessionsChanged, onSessionsChanged
 - `src/utils/permissionIssues.ts` — countPermissionIssues
 
+## Notifications (7 files)
+
+- `src/notifications/services/NotificationInfrastructureService.ts` — NotificationInfrastructureService, ACTION_WENT_OUTSIDE, ACTION_SNOOZE, ACTION_LESS_OFTEN, CHANNEL_ID, DEFAULT_ANDROID_CHANNEL_ID, …
+- `src/notifications/reminderAlgorithm.ts` — scoreReminderHours, shouldRemindNow, ScoreContributor, HourScore
+- `src/notifications/services/ReminderQueueManager.ts` — ReminderQueueManager, ReminderQueueEntry, ReminderQueueStatus, reminderQueueManager
+- `src/notifications/services/ScheduledNotificationManager.ts` — ScheduledNotificationManager, SCHEDULED_NOTIF_PREFIX, scheduledNotificationManager
+- `src/notifications/services/SmartReminderScheduler.ts` — SmartReminderScheduler, FAILSAFE_REMINDER_PREFIX, smartReminderScheduler
+- `src/notifications/services/NotificationResponseHandler.ts` — NotificationResponseHandler, notificationResponseHandler
+- `src/notifications/services/ReminderMessageBuilder.ts` — ReminderMessageBuilder, reminderMessageBuilder
+
 ## Hooks (6 files)
 
 - `src/hooks/useOTAUpdates.ts` — useOTAUpdates, OTAUpdateStatus
@@ -80,10 +90,6 @@
 ## I18n (1 files)
 
 - `src/i18n/index.ts` — resolveSupportedLocale, getDeviceSupportedLocale, t, localeTag, formatLocalDate, formatLocalTime, …
-
-## Notifications (1 files)
-
-- `src/notifications/reminderAlgorithm.ts` — scoreReminderHours, shouldRemindNow, ScoreContributor, HourScore
 
 ## Store (1 files)
 
