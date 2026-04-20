@@ -110,6 +110,29 @@
   - function shouldRemindNow: (todayMinutes, dailyTargetMinutes, lastReminderMs, isCurrentlyOutside) => Promise<
   - interface ScoreContributor
   - interface HourScore
+- `src/notifications/services/NotificationInfrastructureService.ts`
+  - class NotificationInfrastructureService
+  - const ACTION_WENT_OUTSIDE
+  - const ACTION_SNOOZE
+  - const ACTION_LESS_OFTEN
+  - const CHANNEL_ID
+  - const DEFAULT_ANDROID_CHANNEL_ID
+  - _...3 more_
+- `src/notifications/services/NotificationResponseHandler.ts` — class NotificationResponseHandler, const notificationResponseHandler
+- `src/notifications/services/ReminderMessageBuilder.ts` — class ReminderMessageBuilder, const reminderMessageBuilder
+- `src/notifications/services/ReminderQueueManager.ts`
+  - class ReminderQueueManager
+  - interface ReminderQueueEntry
+  - type ReminderQueueStatus
+  - const reminderQueueManager
+- `src/notifications/services/ScheduledNotificationManager.ts`
+  - class ScheduledNotificationManager
+  - const SCHEDULED_NOTIF_PREFIX
+  - const scheduledNotificationManager
+- `src/notifications/services/SmartReminderScheduler.ts`
+  - class SmartReminderScheduler
+  - const FAILSAFE_REMINDER_PREFIX
+  - const smartReminderScheduler
 - `src/storage/dateHelpers.ts`
   - function startOfDay: (ms) => number
   - function startOfWeek: (ms) => number

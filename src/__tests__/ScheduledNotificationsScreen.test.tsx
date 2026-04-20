@@ -29,7 +29,7 @@ jest.mock('@react-navigation/native', () => {
 
 // Mock notificationManager
 jest.mock('../notifications/notificationManager', () => ({
-  NotificationService: {
+  scheduledNotificationManager: {
     scheduleAllScheduledNotifications: jest.fn(() => Promise.resolve()),
   },
 }));

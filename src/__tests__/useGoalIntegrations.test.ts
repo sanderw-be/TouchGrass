@@ -27,7 +27,7 @@ jest.mock('../utils/batteryOptimization', () => ({
   openBatteryOptimizationSettings: jest.fn(),
 }));
 jest.mock('../notifications/notificationManager', () => ({
-  NotificationService: {
+  notificationInfrastructureService: {
     requestNotificationPermissions: jest.fn(),
   },
 }));

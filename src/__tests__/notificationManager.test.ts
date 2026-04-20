@@ -21,8 +21,12 @@ import * as WeatherService from '../weather/weatherService';
 import * as WeatherAlgorithm from '../weather/weatherAlgorithm';
 import * as CalendarService from '../calendar/calendarService';
 import * as AppStore from '../store/useAppStore';
+import * as ScheduledNotificationManager from '../notifications/services/ScheduledNotificationManager';
 import {
-  NotificationService,
+  notificationInfrastructureService,
+  smartReminderScheduler,
+  scheduledNotificationManager,
+  notificationResponseHandler,
   FAILSAFE_REMINDER_PREFIX,
 } from '../notifications/notificationManager';
 import type { ReminderQueueEntry } from '../notifications/notificationManager';
@@ -30,7 +34,7 @@ import type { ReminderQueueEntry } from '../notifications/notificationManager';
 describe('notificationManager', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    NotificationService._resetSchedulingGuards();
+    smartReminderScheduler._resetSchedulingGuards();
 
     // Default mock implementations
     (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(0);
@@ -62,7 +66,9 @@ describe('notificationManager', () => {
       const originalOS = Platform.OS;
       (Platform as any).OS = 'android';
 
-      await NotificationService.setupNotificationInfrastructure();
+      await notificationInfrastructureService.setupNotificationInfrastructure((response) =>
+        notificationResponseHandler.handleNotificationResponse(response)
+      );
 
       expect(Notifications.setNotificationChannelAsync).toHaveBeenCalledWith(
         'touchgrass_background',
@@ -88,7 +94,9 @@ describe('notificationManager', () => {
       const originalOS = Platform.OS;
       (Platform as any).OS = 'android';
 
-      await NotificationService.setupNotificationInfrastructure();
+      await notificationInfrastructureService.setupNotificationInfrastructure((response) =>
+        notificationResponseHandler.handleNotificationResponse(response)
+      );
 
       // Silent channels must NOT show a badge dot
       expect(Notifications.setNotificationChannelAsync).toHaveBeenCalledWith(
@@ -133,7 +141,9 @@ describe('notificationManager', () => {
     });
 
     it('registers all notification action buttons with opensAppToForeground: true', async () => {
-      await NotificationService.setupNotificationInfrastructure();
+      await notificationInfrastructureService.setupNotificationInfrastructure((response) =>
+        notificationResponseHandler.handleNotificationResponse(response)
+      );
 
       expect(Notifications.setNotificationCategoryAsync).toHaveBeenCalledWith(
         'reminder',
@@ -166,7 +176,7 @@ describe('notificationManager', () => {
         { identifier: 'scheduled_1_2' },
       ]);
 
-      await NotificationService.scheduleNextReminder();
+      await smartReminderScheduler.scheduleNextReminder();
 
       // Should not schedule a new reminder
       expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
@@ -193,7 +203,7 @@ describe('notificationManager', () => {
         reason: 'currently outside',
       });
 
-      await NotificationService.scheduleNextReminder();
+      await smartReminderScheduler.scheduleNextReminder();
 
       expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
       expect(Notifications.cancelScheduledNotificationAsync).not.toHaveBeenCalled();
@@ -214,7 +224,7 @@ describe('notificationManager', () => {
         reason: 'score 0.65: baseline',
       });
 
-      await NotificationService.scheduleNextReminder();
+      await smartReminderScheduler.scheduleNextReminder();
 
       expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledTimes(1);
       expect(
@@ -236,7 +246,7 @@ describe('notificationManager', () => {
         }
       );
 
-      await NotificationService.scheduleNextReminder();
+      await smartReminderScheduler.scheduleNextReminder();
 
       expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
       expect(Notifications.cancelScheduledNotificationAsync).not.toHaveBeenCalled();
@@ -252,13 +262,15 @@ describe('notificationManager', () => {
         }
       );
       // Simulates the path that previously bypassed the goal-reached cancel
-      jest.spyOn(NotificationService, 'hasScheduledNotificationNearby').mockResolvedValue(true);
+      jest
+        .spyOn(scheduledNotificationManager, 'hasScheduledNotificationNearby')
+        .mockResolvedValue(true);
       (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([
         { identifier: 'auto_reminder_1' },
         { identifier: 'scheduled_1_2' },
       ]);
 
-      await NotificationService.scheduleNextReminder();
+      await smartReminderScheduler.scheduleNextReminder();
 
       // Must still cancel the automatic reminder despite the scheduled-notification-nearby flag
       expect(Notifications.cancelScheduledNotificationAsync).toHaveBeenCalledWith(
@@ -284,7 +296,7 @@ describe('notificationManager', () => {
         { identifier: 'auto_morning_reminder' },
       ]);
 
-      await NotificationService.scheduleNextReminder();
+      await smartReminderScheduler.scheduleNextReminder();
 
       expect(Notifications.cancelScheduledNotificationAsync).toHaveBeenCalledWith(
         'auto_morning_reminder'
@@ -307,7 +319,7 @@ describe('notificationManager', () => {
         reason: 'score 0.65: baseline',
       });
 
-      await NotificationService.scheduleNextReminder();
+      await smartReminderScheduler.scheduleNextReminder();
 
       // Must not schedule, cancel, or create calendar events when day reminders are active
       expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
@@ -327,7 +339,7 @@ describe('notificationManager', () => {
         }
       );
 
-      await NotificationService.scheduleDayReminders();
+      await smartReminderScheduler.scheduleDayReminders();
 
       expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
       expect(Database.setSettingAsync).not.toHaveBeenCalledWith(
@@ -354,7 +366,7 @@ describe('notificationManager', () => {
         { identifier: 'scheduled_1_3' },
       ]);
 
-      await NotificationService.scheduleDayReminders();
+      await smartReminderScheduler.scheduleDayReminders();
 
       // Should not schedule any new reminders
       expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
@@ -378,7 +390,7 @@ describe('notificationManager', () => {
         }
       );
 
-      await NotificationService.scheduleDayReminders();
+      await smartReminderScheduler.scheduleDayReminders();
 
       expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
     });
@@ -392,7 +404,7 @@ describe('notificationManager', () => {
         }
       );
 
-      await NotificationService.scheduleDayReminders();
+      await smartReminderScheduler.scheduleDayReminders();
 
       expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
       expect(Notifications.cancelScheduledNotificationAsync).not.toHaveBeenCalled();
@@ -419,7 +431,7 @@ describe('notificationManager', () => {
         { hour: 8, minute: 0, score: 0.3, reason: 'past' },
       ]);
 
-      await NotificationService.scheduleDayReminders();
+      await smartReminderScheduler.scheduleDayReminders();
 
       // Count only today's reminders (exclude failsafe_ pre-scheduled triggers for future days)
       const todayCalls = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls.filter(
@@ -446,7 +458,7 @@ describe('notificationManager', () => {
         { hour: 17, minute: 30, score: 0.7, reason: 'after-work' },
       ]);
 
-      await NotificationService.scheduleDayReminders();
+      await smartReminderScheduler.scheduleDayReminders();
 
       const todayCalls = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls.filter(
         ([arg]: [any]) => !arg.identifier?.startsWith(FAILSAFE_REMINDER_PREFIX)
@@ -474,7 +486,7 @@ describe('notificationManager', () => {
         { hour: 8, minute: 0, score: 0.3, reason: 'past' },
       ]);
 
-      await NotificationService.scheduleDayReminders();
+      await smartReminderScheduler.scheduleDayReminders();
 
       const todayCalls = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls.filter(
         ([arg]: [any]) => !arg.identifier?.startsWith(FAILSAFE_REMINDER_PREFIX)
@@ -506,7 +518,7 @@ describe('notificationManager', () => {
         { hour: 14, minute: 30, score: 0.75, reason: 'afternoon' },
       ]);
 
-      await NotificationService.scheduleDayReminders();
+      await smartReminderScheduler.scheduleDayReminders();
 
       jest.restoreAllMocks();
 
@@ -544,10 +556,10 @@ describe('notificationManager', () => {
       ]);
       // Mark first slot as near a scheduled notification, allow the other two
       jest
-        .spyOn(NotificationService, 'isSlotNearScheduledNotification')
+        .spyOn(scheduledNotificationManager, 'isSlotNearScheduledNotification')
         .mockImplementation((h: number) => Promise.resolve(h === 12));
 
-      await NotificationService.scheduleDayReminders();
+      await smartReminderScheduler.scheduleDayReminders();
 
       // Should skip 12:00 and schedule 17:30 and 19:00 (exclude failsafe_ calls)
       const todayCalls = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls.filter(
@@ -575,7 +587,7 @@ describe('notificationManager', () => {
         { hour: 8, minute: 0, score: 0.3, reason: 'past' },
       ]);
 
-      await NotificationService.scheduleDayReminders();
+      await smartReminderScheduler.scheduleDayReminders();
 
       // One calendar event per scheduled reminder slot today (2 slots) plus
       // failsafe events for the next 3 days (2 slots × 3 days = 6), total 8.
@@ -601,7 +613,7 @@ describe('notificationManager', () => {
         { hour: 12, minute: 0, score: 0.8, reason: 'lunch' },
       ]);
 
-      await NotificationService.scheduleDayReminders();
+      await smartReminderScheduler.scheduleDayReminders();
 
       expect(Database.setSettingAsync).toHaveBeenCalledWith(
         'reminders_last_planned_date',
@@ -619,7 +631,7 @@ describe('notificationManager', () => {
         }
       );
 
-      await NotificationService.scheduleDayReminders();
+      await smartReminderScheduler.scheduleDayReminders();
 
       expect(Database.setSettingAsync).toHaveBeenCalledWith(
         'reminders_last_planned_date',
@@ -638,7 +650,7 @@ describe('notificationManager', () => {
       );
       (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([]);
 
-      await NotificationService.scheduleDayReminders();
+      await smartReminderScheduler.scheduleDayReminders();
 
       expect(Database.setSettingAsync).toHaveBeenCalledWith(
         'reminders_last_planned_date',
@@ -662,7 +674,7 @@ describe('notificationManager', () => {
         { hour: 17, minute: 30, score: 0.7, reason: 'after-work' },
       ]);
 
-      await NotificationService.scheduleDayReminders();
+      await smartReminderScheduler.scheduleDayReminders();
 
       const slotsCall = (Database.setSettingAsync as jest.Mock).mock.calls.find(
         (call: string[]) => call[0] === 'reminders_planned_slots'
@@ -692,7 +704,7 @@ describe('notificationManager', () => {
         { hour: 12, minute: 0, score: 0.8, reason: 'lunch' },
       ]);
 
-      await NotificationService.scheduleDayReminders();
+      await smartReminderScheduler.scheduleDayReminders();
 
       expect(Database.setSettingAsync).toHaveBeenCalledWith('additional_reminders_today', '0');
 
@@ -727,8 +739,8 @@ describe('notificationManager', () => {
       ]);
 
       // Fire both calls before either has awaited anything.
-      const call1 = NotificationService.scheduleDayReminders();
-      const call2 = NotificationService.scheduleDayReminders();
+      const call1 = smartReminderScheduler.scheduleDayReminders();
+      const call2 = smartReminderScheduler.scheduleDayReminders();
       await Promise.all([call1, call2]);
 
       // Only one notification should have been scheduled for today (not two).
@@ -750,7 +762,7 @@ describe('notificationManager', () => {
         }
       );
 
-      await NotificationService.maybeScheduleCatchUpReminder();
+      await smartReminderScheduler.maybeScheduleCatchUpReminder();
 
       expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
     });
@@ -764,7 +776,7 @@ describe('notificationManager', () => {
         }
       );
 
-      await NotificationService.maybeScheduleCatchUpReminder();
+      await smartReminderScheduler.maybeScheduleCatchUpReminder();
 
       expect(Database.insertBackgroundLogAsync).toHaveBeenCalledWith(
         'reminder',
@@ -784,7 +796,7 @@ describe('notificationManager', () => {
         }
       );
 
-      await NotificationService.maybeScheduleCatchUpReminder();
+      await smartReminderScheduler.maybeScheduleCatchUpReminder();
 
       expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
       expect(Database.insertBackgroundLogAsync).toHaveBeenCalledWith(
@@ -817,7 +829,7 @@ describe('notificationManager', () => {
         { identifier: 'scheduled_1_3' },
       ]);
 
-      await NotificationService.maybeScheduleCatchUpReminder();
+      await smartReminderScheduler.maybeScheduleCatchUpReminder();
 
       // No new catch-up reminder scheduled
       expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
@@ -853,7 +865,7 @@ describe('notificationManager', () => {
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(12);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
 
-      await NotificationService.maybeScheduleCatchUpReminder();
+      await smartReminderScheduler.maybeScheduleCatchUpReminder();
 
       expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
 
@@ -884,7 +896,7 @@ describe('notificationManager', () => {
         { hour: 14, minute: 30, score: 0.7, reason: 'afternoon' },
       ]);
 
-      await NotificationService.maybeScheduleCatchUpReminder();
+      await smartReminderScheduler.maybeScheduleCatchUpReminder();
 
       expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledTimes(1);
       expect(Database.setSettingAsync).toHaveBeenCalledWith('additional_reminders_today', '1');
@@ -915,7 +927,7 @@ describe('notificationManager', () => {
         { hour: 14, minute: 30, score: 0.7, reason: 'afternoon' },
       ]);
 
-      await NotificationService.maybeScheduleCatchUpReminder();
+      await smartReminderScheduler.maybeScheduleCatchUpReminder();
 
       expect(CalendarService.maybeAddOutdoorTimeToCalendar).not.toHaveBeenCalled();
 
@@ -941,7 +953,7 @@ describe('notificationManager', () => {
         }
       );
 
-      await NotificationService.maybeScheduleCatchUpReminder();
+      await smartReminderScheduler.maybeScheduleCatchUpReminder();
 
       expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
     });
@@ -967,7 +979,7 @@ describe('notificationManager', () => {
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(12);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
 
-      await NotificationService.maybeScheduleCatchUpReminder();
+      await smartReminderScheduler.maybeScheduleCatchUpReminder();
 
       expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
 
@@ -993,7 +1005,7 @@ describe('notificationManager', () => {
         }
       );
 
-      await NotificationService.maybeScheduleCatchUpReminder();
+      await smartReminderScheduler.maybeScheduleCatchUpReminder();
 
       expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
     });
@@ -1022,10 +1034,13 @@ describe('notificationManager', () => {
         { hour: 16, minute: 0, score: 0.65, reason: 'afternoon' }, // clear
       ]);
       jest
-        .spyOn(NotificationService, 'isSlotNearScheduledNotification')
+        .spyOn(
+          ScheduledNotificationManager.scheduledNotificationManager,
+          'isSlotNearScheduledNotification'
+        )
         .mockImplementation((h: number) => Promise.resolve(h === 14));
 
-      await NotificationService.maybeScheduleCatchUpReminder();
+      await smartReminderScheduler.maybeScheduleCatchUpReminder();
 
       jest.restoreAllMocks();
 
@@ -1054,7 +1069,7 @@ describe('notificationManager', () => {
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(11);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(30);
 
-      await NotificationService.maybeScheduleCatchUpReminder();
+      await smartReminderScheduler.maybeScheduleCatchUpReminder();
 
       expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
 
@@ -1081,7 +1096,7 @@ describe('notificationManager', () => {
         { hour: 14, minute: 0, score: 0.8, reason: 'afternoon' },
       ]);
 
-      await NotificationService.maybeScheduleCatchUpReminder();
+      await smartReminderScheduler.maybeScheduleCatchUpReminder();
 
       expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledTimes(1);
 
@@ -1117,7 +1132,7 @@ describe('notificationManager', () => {
         { hour: 20, minute: 0, score: 0.6, reason: 'evening' },
       ]);
 
-      await NotificationService.maybeScheduleCatchUpReminder();
+      await smartReminderScheduler.maybeScheduleCatchUpReminder();
 
       jest.restoreAllMocks();
 
@@ -1150,7 +1165,7 @@ describe('notificationManager', () => {
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
       (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([]);
 
-      await NotificationService.maybeScheduleCatchUpReminder();
+      await smartReminderScheduler.maybeScheduleCatchUpReminder();
 
       expect(Database.setSettingAsync).toHaveBeenCalledWith('reminders_planned_slots', '[]');
       expect(Database.setSettingAsync).toHaveBeenCalledWith('catchup_reminder_slot_minutes', '');
@@ -1197,7 +1212,7 @@ describe('notificationManager', () => {
         { hour: 14, minute: 30, score: 0.8, reason: 'afternoon' },
       ]);
 
-      await NotificationService.maybeScheduleCatchUpReminder();
+      await smartReminderScheduler.maybeScheduleCatchUpReminder();
 
       // 14:30 is already in the queue — must NOT schedule a duplicate
       expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
@@ -1243,7 +1258,7 @@ describe('notificationManager', () => {
         { hour: 16, minute: 0, score: 0.7, reason: 'afternoon' }, // free — should be picked
       ]);
 
-      await NotificationService.maybeScheduleCatchUpReminder();
+      await smartReminderScheduler.maybeScheduleCatchUpReminder();
 
       jest.restoreAllMocks();
 
@@ -1287,7 +1302,7 @@ describe('notificationManager', () => {
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(14);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(30);
 
-      await NotificationService.maybeScheduleCatchUpReminder();
+      await smartReminderScheduler.maybeScheduleCatchUpReminder();
 
       // 30 minutes since last reminder — catch-up must be postponed
       expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
@@ -1331,10 +1346,10 @@ describe('notificationManager', () => {
 
       // Start the first call without awaiting — it runs synchronously until its
       // first `await` (scheduleNotificationAsync) and sets catchUpSchedulingInProgress.
-      const firstCall = NotificationService.maybeScheduleCatchUpReminder();
+      const firstCall = smartReminderScheduler.maybeScheduleCatchUpReminder();
       // The second call starts before the first has finished: the in-progress
       // flag is already true so it must return immediately without scheduling.
-      const secondCall = NotificationService.maybeScheduleCatchUpReminder();
+      const secondCall = smartReminderScheduler.maybeScheduleCatchUpReminder();
 
       await Promise.all([firstCall, secondCall]);
 
@@ -1352,7 +1367,7 @@ describe('notificationManager', () => {
       const settingsStore: Record<string, string> = {};
       setupScheduleScenario(settingsStore);
 
-      await NotificationService.maybeScheduleCatchUpReminder();
+      await smartReminderScheduler.maybeScheduleCatchUpReminder();
       // Reset mocks to simulate a fresh tick with the limit not yet reached.
       (Database.getSettingAsync as jest.Mock).mockImplementation(
         async (key: string, fallback: string) => {
@@ -1368,7 +1383,7 @@ describe('notificationManager', () => {
       (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockResolvedValue([
         { hour: 16, minute: 0, score: 0.8, reason: 'afternoon' },
       ]);
-      await NotificationService.maybeScheduleCatchUpReminder();
+      await smartReminderScheduler.maybeScheduleCatchUpReminder();
 
       jest.restoreAllMocks();
 
@@ -1406,7 +1421,7 @@ describe('notificationManager', () => {
         { hour: 14, minute: 30, score: 0.8, reason: 'afternoon' },
       ]);
 
-      await NotificationService.maybeScheduleCatchUpReminder();
+      await smartReminderScheduler.maybeScheduleCatchUpReminder();
 
       jest.restoreAllMocks();
 
@@ -1445,7 +1460,7 @@ describe('notificationManager', () => {
         { identifier: 'scheduled_daily_walk' },
       ]);
 
-      await NotificationService.cancelRemindersIfGoalReached();
+      await smartReminderScheduler.cancelRemindersIfGoalReached();
 
       // Automatic reminder cancelled; scheduled notification preserved
       expect(Notifications.cancelScheduledNotificationAsync).toHaveBeenCalledWith(
@@ -1474,7 +1489,7 @@ describe('notificationManager', () => {
       (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(10);
       (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
 
-      await NotificationService.cancelRemindersIfGoalReached();
+      await smartReminderScheduler.cancelRemindersIfGoalReached();
 
       expect(Notifications.cancelScheduledNotificationAsync).not.toHaveBeenCalled();
       expect(Notifications.getAllScheduledNotificationsAsync).not.toHaveBeenCalled();
@@ -1490,7 +1505,7 @@ describe('notificationManager', () => {
       (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(30);
       (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
 
-      await NotificationService.cancelRemindersIfGoalReached();
+      await smartReminderScheduler.cancelRemindersIfGoalReached();
 
       expect(Notifications.cancelScheduledNotificationAsync).not.toHaveBeenCalled();
     });
@@ -1519,7 +1534,7 @@ describe('notificationManager', () => {
         { identifier: 'smart_2026-03-30_14:00' },
       ]);
 
-      await NotificationService.cancelRemindersIfGoalReached();
+      await smartReminderScheduler.cancelRemindersIfGoalReached();
 
       // The consumed entry should NOT be cancelled (it already fired)
       expect(Notifications.cancelScheduledNotificationAsync).not.toHaveBeenCalledWith(
@@ -1544,7 +1559,7 @@ describe('notificationManager', () => {
       );
       (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([]);
 
-      await NotificationService.scheduleNextReminder();
+      await smartReminderScheduler.scheduleNextReminder();
 
       expect(Database.setSettingAsync).toHaveBeenCalledWith('reminders_planned_slots', '[]');
       expect(Database.setSettingAsync).toHaveBeenCalledWith('catchup_reminder_slot_minutes', '');
@@ -1567,7 +1582,7 @@ describe('notificationManager', () => {
         reason: 'score 0.65: baseline',
       });
 
-      await NotificationService.scheduleNextReminder();
+      await smartReminderScheduler.scheduleNextReminder();
 
       // scheduleNextReminder fires at arbitrary background-task wake times,
       // so it must never create calendar events (only scheduleDayReminders
@@ -1583,7 +1598,7 @@ describe('notificationManager', () => {
         }
       );
 
-      await NotificationService.scheduleNextReminder();
+      await smartReminderScheduler.scheduleNextReminder();
 
       expect(CalendarService.maybeAddOutdoorTimeToCalendar).not.toHaveBeenCalled();
     });
@@ -1600,7 +1615,9 @@ describe('notificationManager', () => {
           return { remove: jest.fn() };
         }
       );
-      await NotificationService.setupNotificationInfrastructure();
+      await notificationInfrastructureService.setupNotificationInfrastructure((response) =>
+        notificationResponseHandler.handleNotificationResponse(response)
+      );
     });
 
     it('triggers the feedback modal with went_outside action', async () => {
@@ -1762,7 +1779,7 @@ describe('notificationManager', () => {
         { hour: 12, minute: 0, score: 0.8, reason: 'lunch' },
       ]);
 
-      await NotificationService.scheduleDayReminders();
+      await smartReminderScheduler.scheduleDayReminders();
 
       expect(WeatherService.fetchWeatherForecast).toHaveBeenCalledWith({
         allowPermissionPrompt: false,
@@ -1787,7 +1804,7 @@ describe('notificationManager', () => {
         { hour: 12, minute: 0, score: 0.8, reason: 'lunch' },
       ]);
 
-      await NotificationService.scheduleDayReminders();
+      await smartReminderScheduler.scheduleDayReminders();
 
       expect(WeatherService.fetchWeatherForecast).not.toHaveBeenCalled();
 
@@ -1822,7 +1839,7 @@ describe('notificationManager', () => {
         { hour: 14, minute: 30, score: 0.7, reason: 'afternoon' },
       ]);
 
-      await NotificationService.maybeScheduleCatchUpReminder();
+      await smartReminderScheduler.maybeScheduleCatchUpReminder();
 
       expect(WeatherService.fetchWeatherForecast).toHaveBeenCalledWith({
         allowPermissionPrompt: false,
@@ -1855,7 +1872,7 @@ describe('notificationManager', () => {
         { hour: 14, minute: 30, score: 0.7, reason: 'afternoon' },
       ]);
 
-      await NotificationService.maybeScheduleCatchUpReminder();
+      await smartReminderScheduler.maybeScheduleCatchUpReminder();
 
       expect(WeatherService.fetchWeatherForecast).not.toHaveBeenCalled();
 
@@ -1897,7 +1914,7 @@ describe('notificationManager', () => {
         { hour: 12, minute: 0, score: 0.8, reason: 'lunch' },
       ]);
 
-      await NotificationService.scheduleDayReminders();
+      await smartReminderScheduler.scheduleDayReminders();
 
       const call = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls[0][0];
       // Body should include emoji and the weather context i18n key (t() is mocked to return the key)
@@ -1924,7 +1941,7 @@ describe('notificationManager', () => {
         { hour: 12, minute: 0, score: 0.8, reason: 'lunch' },
       ]);
 
-      await NotificationService.scheduleDayReminders();
+      await smartReminderScheduler.scheduleDayReminders();
 
       const call = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls[0][0];
       expect(call.content.body).not.toContain('°C');
@@ -1953,7 +1970,7 @@ describe('notificationManager', () => {
         },
       ]);
 
-      await NotificationService.scheduleDayReminders();
+      await smartReminderScheduler.scheduleDayReminders();
 
       const call = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls[0][0];
       // First contributor description has its first letter capitalized
@@ -1986,7 +2003,7 @@ describe('notificationManager', () => {
         },
       ]);
 
-      await NotificationService.scheduleDayReminders();
+      await smartReminderScheduler.scheduleDayReminders();
 
       const call = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls[0][0];
       // First contributor has its first letter capitalized; second is unchanged
@@ -2029,7 +2046,7 @@ describe('notificationManager', () => {
         { hour: 17, minute: 0, score: 0.8, reason: 'after-work' },
       ]);
 
-      await NotificationService.scheduleDayReminders();
+      await smartReminderScheduler.scheduleDayReminders();
 
       const call = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls[0][0];
       expect(call.content.body).toContain('☀️');
@@ -2044,7 +2061,9 @@ describe('notificationManager', () => {
       const originalOS = Platform.OS;
       (Platform as any).OS = 'android';
 
-      await NotificationService.setupNotificationInfrastructure();
+      await notificationInfrastructureService.setupNotificationInfrastructure((response) =>
+        notificationResponseHandler.handleNotificationResponse(response)
+      );
 
       expect(Notifications.setNotificationChannelAsync).toHaveBeenCalledWith(
         'touchgrass_daily_planner',
@@ -2063,7 +2082,9 @@ describe('notificationManager', () => {
       // Simulate the notification response listener being registered and called
       // We need to trigger handleNotificationResponse via the listener registration
       // Find the response listener registered during setupNotificationInfrastructure
-      await NotificationService.setupNotificationInfrastructure();
+      await notificationInfrastructureService.setupNotificationInfrastructure((response) =>
+        notificationResponseHandler.handleNotificationResponse(response)
+      );
       const allCalls = (Notifications.addNotificationResponseReceivedListener as jest.Mock).mock
         .calls;
       const handler = allCalls[allCalls.length - 1]?.[0];
@@ -2082,7 +2103,7 @@ describe('notificationManager', () => {
         },
       };
 
-      await handler(mockResponse);
+      await (handler as any)(mockResponse);
 
       // Notification must be dismissed
       expect(Notifications.dismissNotificationAsync).toHaveBeenCalledWith('daily_planner_4');
@@ -2110,7 +2131,7 @@ describe('notificationManager', () => {
       ]);
 
       // Trigger cancelAutomaticReminders via scheduleNextReminder goal-reached path
-      await NotificationService.scheduleNextReminder();
+      await smartReminderScheduler.scheduleNextReminder();
 
       expect(Notifications.cancelScheduledNotificationAsync).toHaveBeenCalledWith(
         'auto_reminder_1'
@@ -2152,7 +2173,7 @@ describe('notificationManager', () => {
     });
 
     it('schedules failsafe DATE triggers for the next 3 days using the chosen slots', async () => {
-      await NotificationService.scheduleDayReminders();
+      await smartReminderScheduler.scheduleDayReminders();
 
       const calls = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls;
       const failsafeCalls = calls.filter(([arg]: [any]) =>
@@ -2165,7 +2186,7 @@ describe('notificationManager', () => {
     });
 
     it('failsafe notifications use DATE trigger type', async () => {
-      await NotificationService.scheduleDayReminders();
+      await smartReminderScheduler.scheduleDayReminders();
 
       const calls = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls;
       const failsafeCalls = calls.filter(([arg]: [any]) =>
@@ -2178,7 +2199,7 @@ describe('notificationManager', () => {
     });
 
     it('failsafe notification identifiers encode the target date', async () => {
-      await NotificationService.scheduleDayReminders();
+      await smartReminderScheduler.scheduleDayReminders();
 
       const calls = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls;
       const failsafeIds = calls
@@ -2192,7 +2213,7 @@ describe('notificationManager', () => {
     });
 
     it('failsafe notifications cover days 1, 2, and 3 ahead', async () => {
-      await NotificationService.scheduleDayReminders();
+      await smartReminderScheduler.scheduleDayReminders();
 
       const calls = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls;
       const failsafeIds = calls
@@ -2206,7 +2227,7 @@ describe('notificationManager', () => {
     });
 
     it('failsafe notifications also create calendar events for future days', async () => {
-      await NotificationService.scheduleDayReminders();
+      await smartReminderScheduler.scheduleDayReminders();
 
       const calendarCalls = (CalendarService.maybeAddOutdoorTimeToCalendar as jest.Mock).mock.calls;
       // There should be calendar calls for future days (beyond today = 2026-03-14)
@@ -2218,7 +2239,7 @@ describe('notificationManager', () => {
     });
 
     it('calls deleteFutureTouchGrassEvents to clear stale failsafe calendar events before fresh planning', async () => {
-      await NotificationService.scheduleDayReminders();
+      await smartReminderScheduler.scheduleDayReminders();
 
       expect(CalendarService.deleteFutureTouchGrassEvents).toHaveBeenCalledWith(
         expect.any(Date),
@@ -2234,7 +2255,7 @@ describe('notificationManager', () => {
         }
       );
 
-      await NotificationService.scheduleDayReminders();
+      await smartReminderScheduler.scheduleDayReminders();
 
       expect(CalendarService.deleteFutureTouchGrassEvents).toHaveBeenCalled();
     });
@@ -2246,7 +2267,7 @@ describe('notificationManager', () => {
         { identifier: 'auto_reminder_existing' },
       ]);
 
-      await NotificationService.scheduleDayReminders();
+      await smartReminderScheduler.scheduleDayReminders();
 
       expect(Notifications.cancelScheduledNotificationAsync).toHaveBeenCalledWith(
         'failsafe_reminder_2026-03-10_0'
@@ -2264,7 +2285,7 @@ describe('notificationManager', () => {
         }
       );
 
-      await NotificationService.scheduleDayReminders();
+      await smartReminderScheduler.scheduleDayReminders();
 
       const calls = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls;
       const failsafeCalls = calls.filter(([arg]: [any]) =>
@@ -2298,7 +2319,7 @@ describe('notificationManager', () => {
         { hour: 17, minute: 30, score: 0.7, reason: 'after-work' },
       ]);
 
-      await NotificationService.scheduleDayReminders();
+      await smartReminderScheduler.scheduleDayReminders();
 
       const queueJson = settingsStore['smart_reminder_queue'];
       expect(queueJson).toBeDefined();
@@ -2328,7 +2349,7 @@ describe('notificationManager', () => {
         { hour: 14, minute: 0, score: 0.8, reason: 'afternoon' },
       ]);
 
-      await NotificationService.scheduleDayReminders();
+      await smartReminderScheduler.scheduleDayReminders();
 
       const todayCalls = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls.filter(
         ([arg]: [any]) => !arg.identifier?.startsWith(FAILSAFE_REMINDER_PREFIX)
@@ -2356,7 +2377,7 @@ describe('notificationManager', () => {
         { hour: 14, minute: 0, score: 0.8, reason: 'afternoon' },
       ]);
 
-      await NotificationService.scheduleDayReminders();
+      await smartReminderScheduler.scheduleDayReminders();
 
       const queueCalls = setSpy.mock.calls.filter(([k]) => k === 'smart_reminder_queue');
       // First call should clear the queue, last call should have entries
@@ -2404,7 +2425,7 @@ describe('notificationManager', () => {
         { hour: 14, minute: 30, score: 0.7, reason: 'afternoon' },
       ]);
 
-      await NotificationService.maybeScheduleCatchUpReminder();
+      await smartReminderScheduler.maybeScheduleCatchUpReminder();
 
       const queue = JSON.parse(settingsStore['smart_reminder_queue']);
       expect(queue).toHaveLength(2);
@@ -2439,7 +2460,7 @@ describe('notificationManager', () => {
         { hour: 14, minute: 30, score: 0.7, reason: 'afternoon' },
       ]);
 
-      await NotificationService.maybeScheduleCatchUpReminder();
+      await smartReminderScheduler.maybeScheduleCatchUpReminder();
 
       expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledTimes(1);
       const identifier = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls[0][0]
@@ -2481,7 +2502,7 @@ describe('notificationManager', () => {
         }
       );
 
-      await NotificationService.processReminderQueue();
+      await smartReminderScheduler.processReminderQueue();
 
       expect(Notifications.cancelScheduledNotificationAsync).not.toHaveBeenCalled();
       expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
@@ -2498,7 +2519,7 @@ describe('notificationManager', () => {
       (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(0);
       (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
 
-      await NotificationService.processReminderQueue();
+      await smartReminderScheduler.processReminderQueue();
 
       expect(Notifications.cancelScheduledNotificationAsync).not.toHaveBeenCalled();
       expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
@@ -2519,7 +2540,7 @@ describe('notificationManager', () => {
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(10);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
 
-      await NotificationService.processReminderQueue();
+      await smartReminderScheduler.processReminderQueue();
 
       // Only the date_planned entry should be cancelled (consumed entries already fired)
       expect(Notifications.cancelScheduledNotificationAsync).toHaveBeenCalledWith(
@@ -2547,7 +2568,7 @@ describe('notificationManager', () => {
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(13);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(50);
 
-      await NotificationService.processReminderQueue();
+      await smartReminderScheduler.processReminderQueue();
 
       // No cancellation — the TIME_INTERVAL trigger fires natively
       expect(Notifications.cancelScheduledNotificationAsync).not.toHaveBeenCalled();
@@ -2569,7 +2590,7 @@ describe('notificationManager', () => {
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(13);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(30);
 
-      await NotificationService.processReminderQueue();
+      await smartReminderScheduler.processReminderQueue();
 
       expect(Notifications.cancelScheduledNotificationAsync).not.toHaveBeenCalled();
       const updatedQueue: ReminderQueueEntry[] = JSON.parse(store['smart_reminder_queue']);
@@ -2589,7 +2610,7 @@ describe('notificationManager', () => {
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(14);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(10);
 
-      await NotificationService.processReminderQueue();
+      await smartReminderScheduler.processReminderQueue();
 
       expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledTimes(1);
       const call = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls[0][0];
@@ -2621,7 +2642,7 @@ describe('notificationManager', () => {
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(14);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(30);
 
-      await NotificationService.processReminderQueue();
+      await smartReminderScheduler.processReminderQueue();
 
       expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
       const updatedQueue: ReminderQueueEntry[] = JSON.parse(store['smart_reminder_queue']);
@@ -2641,7 +2662,7 @@ describe('notificationManager', () => {
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(14);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(30);
 
-      await NotificationService.processReminderQueue();
+      await smartReminderScheduler.processReminderQueue();
 
       // No cancellation — notification already fired natively
       expect(Notifications.cancelScheduledNotificationAsync).not.toHaveBeenCalled();
@@ -2665,7 +2686,7 @@ describe('notificationManager', () => {
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(15);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(5);
 
-      await NotificationService.processReminderQueue();
+      await smartReminderScheduler.processReminderQueue();
 
       expect(Notifications.cancelScheduledNotificationAsync).not.toHaveBeenCalled();
       expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
@@ -2686,7 +2707,7 @@ describe('notificationManager', () => {
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(14);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(30);
 
-      await NotificationService.processReminderQueue();
+      await smartReminderScheduler.processReminderQueue();
 
       const updatedQueue: ReminderQueueEntry[] = JSON.parse(store['smart_reminder_queue']);
       expect(updatedQueue).toHaveLength(1);
@@ -2707,7 +2728,7 @@ describe('notificationManager', () => {
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(10);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
 
-      await NotificationService.processReminderQueue();
+      await smartReminderScheduler.processReminderQueue();
 
       const updatedQueue: ReminderQueueEntry[] = JSON.parse(store['smart_reminder_queue']);
       expect(updatedQueue).toHaveLength(2);
@@ -2728,7 +2749,7 @@ describe('notificationManager', () => {
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(14);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
 
-      await NotificationService.processReminderQueue();
+      await smartReminderScheduler.processReminderQueue();
 
       expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledTimes(1);
       const updatedQueue: ReminderQueueEntry[] = JSON.parse(store['smart_reminder_queue']);
@@ -2756,7 +2777,7 @@ describe('notificationManager', () => {
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(14);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
 
-      await NotificationService.processReminderQueue();
+      await smartReminderScheduler.processReminderQueue();
 
       expect(Notifications.cancelScheduledNotificationAsync).not.toHaveBeenCalled();
       expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
@@ -2794,7 +2815,7 @@ describe('notificationManager', () => {
         }
       );
 
-      await NotificationService.updateUpcomingReminderContent();
+      await smartReminderScheduler.updateUpcomingReminderContent();
 
       expect(Notifications.getAllScheduledNotificationsAsync).not.toHaveBeenCalled();
       expect(Notifications.cancelScheduledNotificationAsync).not.toHaveBeenCalled();
@@ -2804,7 +2825,7 @@ describe('notificationManager', () => {
     it('does nothing when queue is empty', async () => {
       mockSettingsWithQueue([]);
 
-      await NotificationService.updateUpcomingReminderContent();
+      await smartReminderScheduler.updateUpcomingReminderContent();
 
       expect(Notifications.getAllScheduledNotificationsAsync).not.toHaveBeenCalled();
       expect(Notifications.cancelScheduledNotificationAsync).not.toHaveBeenCalled();
@@ -2821,7 +2842,7 @@ describe('notificationManager', () => {
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
       (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(5);
 
-      await NotificationService.updateUpcomingReminderContent();
+      await smartReminderScheduler.updateUpcomingReminderContent();
 
       expect(Notifications.cancelScheduledNotificationAsync).not.toHaveBeenCalled();
       expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
@@ -2839,7 +2860,7 @@ describe('notificationManager', () => {
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
       (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(5);
 
-      await NotificationService.updateUpcomingReminderContent();
+      await smartReminderScheduler.updateUpcomingReminderContent();
 
       expect(Notifications.cancelScheduledNotificationAsync).not.toHaveBeenCalled();
       expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
@@ -2857,7 +2878,7 @@ describe('notificationManager', () => {
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
       (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(5);
 
-      await NotificationService.updateUpcomingReminderContent();
+      await smartReminderScheduler.updateUpcomingReminderContent();
 
       expect(Notifications.cancelScheduledNotificationAsync).not.toHaveBeenCalled();
       expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
@@ -2885,7 +2906,7 @@ describe('notificationManager', () => {
         },
       ]);
 
-      await NotificationService.updateUpcomingReminderContent();
+      await smartReminderScheduler.updateUpcomingReminderContent();
 
       // Should cancel the old notification
       expect(Notifications.cancelScheduledNotificationAsync).toHaveBeenCalledWith(
@@ -2936,7 +2957,7 @@ describe('notificationManager', () => {
         },
       ]);
 
-      await NotificationService.updateUpcomingReminderContent();
+      await smartReminderScheduler.updateUpcomingReminderContent();
 
       // Content hasn't changed, so should not cancel or reschedule
       expect(Notifications.cancelScheduledNotificationAsync).not.toHaveBeenCalled();
@@ -2958,7 +2979,7 @@ describe('notificationManager', () => {
       // Notification not in scheduled list (already fired or cancelled)
       (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([]);
 
-      await NotificationService.updateUpcomingReminderContent();
+      await smartReminderScheduler.updateUpcomingReminderContent();
 
       expect(Notifications.cancelScheduledNotificationAsync).not.toHaveBeenCalled();
       expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
@@ -2992,7 +3013,7 @@ describe('notificationManager', () => {
         },
       ]);
 
-      await NotificationService.updateUpcomingReminderContent();
+      await smartReminderScheduler.updateUpcomingReminderContent();
 
       // Should update both
       expect(Notifications.cancelScheduledNotificationAsync).toHaveBeenCalledTimes(2);
@@ -3020,7 +3041,7 @@ describe('notificationManager', () => {
         },
       ]);
 
-      await NotificationService.updateUpcomingReminderContent();
+      await smartReminderScheduler.updateUpcomingReminderContent();
 
       // Should update (30 min is inclusive)
       expect(Notifications.cancelScheduledNotificationAsync).toHaveBeenCalledWith(

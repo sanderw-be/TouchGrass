@@ -1,7 +1,7 @@
 import * as BackgroundTask from 'expo-background-task';
 import * as TaskManager from 'expo-task-manager';
 import { scheduleNextPulse, cancelPulse } from 'alarm-bridge-native';
-import { NotificationService } from '../notifications/notificationManager';
+import { reminderQueueManager, smartReminderScheduler } from '../notifications/notificationManager';
 import { fetchWeatherForecast } from '../weather/weatherService';
 import { getSettingAsync, initDatabaseAsync, insertBackgroundLogAsync } from '../storage';
 
@@ -119,12 +119,12 @@ class BackgroundServiceImpl {
     );
 
     if (remindersEnabled) {
-      await NotificationService.logReminderQueueSnapshot();
+      await reminderQueueManager.logReminderQueueSnapshot();
       try {
-        await NotificationService.scheduleDayReminders();
-        await NotificationService.processReminderQueue();
-        await NotificationService.updateUpcomingReminderContent();
-        await NotificationService.maybeScheduleCatchUpReminder();
+        await smartReminderScheduler.scheduleDayReminders();
+        await smartReminderScheduler.processReminderQueue();
+        await smartReminderScheduler.updateUpcomingReminderContent();
+        await smartReminderScheduler.maybeScheduleCatchUpReminder();
       } catch (reminderError) {
         console.error('TouchGrass: [BackgroundTick] Reminder operations failed', reminderError);
         throw reminderError; // Re-throw to be caught by the isolated try/catch in orchestrator
