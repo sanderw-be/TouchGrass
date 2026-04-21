@@ -1,8 +1,7 @@
 import { renderHook, act } from '@testing-library/react-native';
 import { AppState, InteractionManager } from 'react-native';
 import { useForegroundSync } from '../hooks/useForegroundSync';
-import { getSettingAsync } from '../storage/database';
-import { NotificationService } from '../notifications/notificationManager';
+import { getSettingAsync } from '../storage';
 import { cleanupTouchGrassCalendars } from '../calendar/calendarService';
 import { BackgroundService } from '../background/unifiedBackgroundTask';
 import { refreshBatteryOptimizationSetting } from '../utils/batteryOptimization';
@@ -24,12 +23,14 @@ jest.mock('react-native', () => {
 });
 
 // Mock internal dependencies
-jest.mock('../storage/database', () => ({ getSettingAsync: jest.fn() }));
+jest.mock('../storage', () => ({ getSettingAsync: jest.fn() }));
+const mockSmartReminderScheduler = {
+  scheduleDayReminders: jest.fn().mockResolvedValue(undefined),
+  processReminderQueue: jest.fn().mockResolvedValue(undefined),
+};
+
 jest.mock('../notifications/notificationManager', () => ({
-  NotificationService: {
-    scheduleDayReminders: jest.fn().mockResolvedValue(undefined),
-    processReminderQueue: jest.fn().mockResolvedValue(undefined),
-  },
+  getSmartReminderScheduler: () => mockSmartReminderScheduler,
 }));
 jest.mock('../calendar/calendarService', () => ({
   cleanupTouchGrassCalendars: jest.fn().mockResolvedValue(undefined),
@@ -93,7 +94,7 @@ describe('useForegroundSync', () => {
 
     expect(getSettingAsync).toHaveBeenCalledWith('hasCompletedIntro', '0');
     expect(refreshBatteryOptimizationSetting).not.toHaveBeenCalled();
-    expect(NotificationService.scheduleDayReminders).not.toHaveBeenCalled();
+    expect(mockSmartReminderScheduler.scheduleDayReminders).not.toHaveBeenCalled();
   });
 
   it('should run sync functions deferred by InteractionManager when intro is completed and foregrounded', async () => {
@@ -106,8 +107,8 @@ describe('useForegroundSync', () => {
 
     expect(refreshBatteryOptimizationSetting).toHaveBeenCalled();
     expect(InteractionManager.runAfterInteractions).toHaveBeenCalled();
-    expect(NotificationService.scheduleDayReminders).toHaveBeenCalled();
-    expect(NotificationService.processReminderQueue).toHaveBeenCalled();
+    expect(mockSmartReminderScheduler.scheduleDayReminders).toHaveBeenCalled();
+    expect(mockSmartReminderScheduler.processReminderQueue).toHaveBeenCalled();
     expect(cleanupTouchGrassCalendars).toHaveBeenCalled();
     expect(BackgroundService.scheduleNextAlarmPulse).toHaveBeenCalled();
     expect(requestWidgetRefresh).toHaveBeenCalled();

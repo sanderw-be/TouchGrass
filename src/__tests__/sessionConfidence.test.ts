@@ -1,6 +1,6 @@
-jest.mock('../storage/database');
+jest.mock('../storage');
 
-import * as Database from '../storage/database';
+import * as Database from '../storage';
 import {
   DISCARD_CONFIDENCE_THRESHOLD,
   DEFAULT_TIME_SLOT_PROBABILITY,
@@ -9,7 +9,7 @@ import {
   scoreDuration,
   computeSessionScore,
 } from '../detection/sessionConfidence';
-import { OutsideSession } from '../storage/database';
+import { OutsideSession } from '../storage';
 
 const BASE_TIME = 1_700_000_000_000; // 2023-11-14T22:13:20.000Z (Tuesday, hour 22 in UTC)
 

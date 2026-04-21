@@ -26,7 +26,7 @@ jest.mock('expo-intent-launcher', () => ({
 }));
 
 const mockSetSetting = jest.fn(async (_key: string, _value: string) => {});
-jest.mock('../storage/database', () => ({
+jest.mock('../storage', () => ({
   setSettingAsync: (key: string, value: string) => mockSetSetting(key, value),
 }));
 

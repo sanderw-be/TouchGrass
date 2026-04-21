@@ -1,14 +1,10 @@
 import React, { useState, useCallback, useMemo, useRef } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import {
-  getBackgroundLogsAsync,
-  BackgroundTaskLog,
-  BackgroundLogCategory,
-} from '../storage/database';
-import { spacing, radius } from '../utils/theme';
-import { useTheme } from '../context/ThemeContext';
+import { getBackgroundLogsAsync, BackgroundTaskLog, BackgroundLogCategory } from '../storage';
+import { spacing, radius, ThemeColors, Shadows } from '../utils/theme';
+import { useAppStore } from '../store/useAppStore';
 import { t } from '../i18n';
 
 type SectionKey = BackgroundLogCategory;
@@ -46,8 +42,15 @@ function formatDayLabel(day: string): string {
 }
 
 export default function ActivityLogScreen() {
-  const { colors, shadows } = useTheme();
+  const colors = useAppStore((state) => state.colors);
+  const shadows = useAppStore((state) => state.shadows);
+  const locale = useAppStore((state) => state.locale);
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
+  const navigation = useNavigation();
+
+  React.useLayoutEffect(() => {
+    navigation.setOptions({ title: t('nav_activity_log') });
+  }, [navigation, locale]);
 
   const [hcLogs, setHcLogs] = useState<BackgroundTaskLog[]>([]);
   const [gpsLogs, setGpsLogs] = useState<BackgroundTaskLog[]>([]);
@@ -213,7 +216,7 @@ function SectionHeader({
   isOpen: boolean;
   count: number;
   onPress: () => void;
-  colors: ReturnType<typeof useTheme>['colors'];
+  colors: ThemeColors;
   styles: ReturnType<typeof makeStyles>;
 }) {
   return (
@@ -257,10 +260,7 @@ function LogRow({
 
 // ── Styles ────────────────────────────────────────────────
 
-function makeStyles(
-  colors: ReturnType<typeof useTheme>['colors'],
-  shadows: ReturnType<typeof useTheme>['shadows']
-) {
+function makeStyles(colors: ThemeColors, shadows: Shadows) {
   return StyleSheet.create({
     container: {
       flex: 1,

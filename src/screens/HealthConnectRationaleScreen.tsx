@@ -3,19 +3,21 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'rea
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { spacing, radius } from '../utils/theme';
-import { useTheme } from '../context/ThemeContext';
+import { spacing, radius, ThemeColors, Shadows } from '../utils/theme';
+import { useAppStore } from '../store/useAppStore';
 import { t } from '../i18n';
-import { requestHealthConnect } from '../detection/index';
+import { requestHealthPermissions } from '../detection/index';
 
 export default function HealthConnectRationaleScreen() {
-  const { colors, shadows } = useTheme();
+  const colors = useAppStore((state) => state.colors);
+  const shadows = useAppStore((state) => state.shadows);
+  useAppStore((state) => state.locale);
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
 
   const handleConnect = async () => {
-    const granted = await requestHealthConnect();
+    const granted = await requestHealthPermissions();
     if (granted) {
       navigation.goBack();
     }
@@ -74,10 +76,7 @@ export default function HealthConnectRationaleScreen() {
   );
 }
 
-function makeStyles(
-  colors: ReturnType<typeof useTheme>['colors'],
-  shadows: ReturnType<typeof useTheme>['shadows']
-) {
+function makeStyles(colors: ThemeColors, shadows: Shadows) {
   return StyleSheet.create({
     container: {
       flex: 1,

@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import {
   getAllSessionsIncludingDiscardedAsync,
   autoCloseOldProposedSessionsAsync,
@@ -19,9 +19,9 @@ import {
   deleteSessionAsync,
   unDiscardSessionAsync,
   OutsideSession,
-} from '../storage/database';
-import { spacing, radius } from '../utils/theme';
-import { useTheme } from '../context/ThemeContext';
+} from '../storage';
+import { spacing, radius, ThemeColors, Shadows } from '../utils/theme';
+import { useAppStore } from '../store/useAppStore';
 import { formatMinutes } from '../utils/helpers';
 import { t, formatLocalDate, formatLocalTime } from '../i18n';
 import ManualSessionSheet from '../components/ManualSessionSheet';
@@ -30,7 +30,7 @@ import SessionNotesSheet from '../components/SessionNotesSheet';
 import UndoSnackbar from '../components/UndoSnackbar';
 import { updateTimeSlotProbability } from '../detection/sessionConfidence';
 import { onSessionsChanged, emitSessionsChanged } from '../utils/sessionsChangedEmitter';
-import { NotificationService } from '../notifications/notificationManager';
+import { getSmartReminderScheduler } from '../notifications/notificationManager';
 import { requestWidgetRefresh } from '../utils/widgetHelper';
 
 const FOUR_WEEKS_AGO = () => Date.now() - 28 * 24 * 60 * 60 * 1000;
@@ -50,8 +50,16 @@ function groupByDay(sessions: OutsideSession[]): { dayMs: number; sessions: Outs
 }
 
 export default function EventsScreen() {
-  const { colors, shadows } = useTheme();
+  const colors = useAppStore((state) => state.colors);
+  const shadows = useAppStore((state) => state.shadows);
+  const locale = useAppStore((state) => state.locale);
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
+  const navigation = useNavigation();
+
+  React.useLayoutEffect(() => {
+    navigation.setOptions({ title: t('nav_events') });
+  }, [navigation, locale]);
+
   const [includeConfirmed, setIncludeConfirmed] = useState(true);
   const [includeReview, setIncludeReview] = useState(true);
   const [includeRejected, setIncludeRejected] = useState(false);
@@ -107,7 +115,7 @@ export default function EventsScreen() {
       emitSessionsChanged();
       await loadData();
       if (confirmed) {
-        await NotificationService.cancelRemindersIfGoalReached();
+        await getSmartReminderScheduler().cancelRemindersIfGoalReached();
         requestWidgetRefresh();
       } else {
         setUndoSnackbar({ visible: true, sessionId: id });
@@ -325,7 +333,8 @@ function SessionRow({
   onEditTimes: () => void;
   onNotes: () => void;
 }) {
-  const { colors, shadows } = useTheme();
+  const colors = useAppStore((state) => state.colors);
+  const shadows = useAppStore((state) => state.shadows);
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const swipeableRef = useRef<Swipeable>(null);
   const sourceIcon: Record<string, keyof typeof Ionicons.glyphMap> = {
@@ -568,10 +577,7 @@ function SessionRow({
   );
 }
 
-function makeStyles(
-  colors: ReturnType<typeof useTheme>['colors'],
-  shadows: ReturnType<typeof useTheme>['shadows']
-) {
+function makeStyles(colors: ThemeColors, shadows: Shadows) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.mist },
 

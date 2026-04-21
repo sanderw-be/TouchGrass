@@ -1,7 +1,13 @@
 import { InteractionManager } from 'react-native';
-import { initDatabaseAsync, getSettingAsync, setSettingAsync } from './src/storage/database';
+import { initDatabaseAsync, getSettingAsync, setSettingAsync, db } from './src/storage';
+import { createContainer } from './src/core/container';
 import i18n, { getDeviceSupportedLocale, SUPPORTED_LOCALES } from './src/i18n';
-import { NotificationService } from './src/notifications/notificationManager';
+import {
+  getNotificationInfrastructureService,
+  getSmartReminderScheduler,
+  getScheduledNotificationManager,
+  getNotificationResponseHandler,
+} from './src/notifications/notificationManager';
 import { BackgroundService } from './src/background/unifiedBackgroundTask';
 import { initDetection } from './src/detection/index';
 import { requestWidgetRefresh } from './src/utils/widgetHelper';
@@ -18,6 +24,9 @@ export interface CriticalAppState {
 export async function performCriticalInitializationAsync(): Promise<CriticalAppState> {
   // Database must be ready before anything else
   await initDatabaseAsync();
+
+  // Initialize IoC Container
+  createContainer(db);
 
   // Apply stored language preference if available
   const storedLanguage = await getSettingAsync('language', 'system');
@@ -64,13 +73,16 @@ export function performDeferredInitialization(): void {
       const tasks = [
         {
           name: 'Notification Infrastructure',
-          task: () => NotificationService.setupNotificationInfrastructure(),
+          task: () =>
+            getNotificationInfrastructureService().setupNotificationInfrastructure((response) =>
+              getNotificationResponseHandler().handleNotificationResponse(response)
+            ),
         },
         { name: 'Detection Initialization', task: initDetection },
-        { name: 'Day Reminders', task: () => NotificationService.scheduleDayReminders() },
+        { name: 'Day Reminders', task: () => getSmartReminderScheduler().scheduleDayReminders() },
         {
           name: 'Scheduled Notifications',
-          task: () => NotificationService.scheduleAllScheduledNotifications(),
+          task: () => getScheduledNotificationManager().scheduleAllScheduledNotifications(),
         },
         {
           name: 'Unified Background Task',

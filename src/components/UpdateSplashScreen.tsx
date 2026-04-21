@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, Image, ActivityIndicator, StyleSheet } from 'react-native';
-import { useTheme } from '../context/ThemeContext';
+import { useAppStore } from '../store/useAppStore';
 import { t } from '../i18n';
 import { spacing } from '../utils/theme';
 
@@ -11,7 +11,7 @@ interface Props {
 }
 
 export default function UpdateSplashScreen({ status }: Props) {
-  const { colors } = useTheme();
+  const colors = useAppStore((state) => state.colors);
 
   const statusText =
     status === 'downloading' ? t('update_splash_downloading') : t('update_splash_checking');

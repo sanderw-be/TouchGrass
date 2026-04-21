@@ -11,8 +11,8 @@ import {
 } from 'react-native';
 import Constants from 'expo-constants';
 import { t } from '../i18n';
-import { spacing, radius } from '../utils/theme';
-import { ThemeContext, ThemeContextType } from '../context/ThemeContext';
+import { spacing, radius, ThemeColors, Shadows } from '../utils/theme';
+import { useAppStore } from '../store/useAppStore';
 
 // Google Form URL for crash reports (same for all locales)
 const CRASH_REPORT_FORM_URL =
@@ -41,6 +41,8 @@ function buildFeedbackUrl(error: Error): string {
 
 interface Props {
   children: React.ReactNode;
+  colors: ThemeColors;
+  shadows: Shadows;
 }
 
 interface State {
@@ -50,9 +52,7 @@ interface State {
 
 // React Error Boundaries must be class components — hooks cannot be used here.
 // See: https://react.dev/reference/react/Component#catching-rendering-errors-with-an-error-boundary
-export default class ErrorBoundary extends React.Component<Props, State> {
-  static contextType = ThemeContext;
-
+class ErrorBoundaryClass extends React.Component<Props, State> {
   state: State = { hasError: false, error: null };
 
   static getDerivedStateFromError(error: Error): State {
@@ -76,7 +76,7 @@ export default class ErrorBoundary extends React.Component<Props, State> {
   };
 
   render() {
-    const { colors, shadows } = this.context as ThemeContextType;
+    const { colors, shadows } = this.props;
     const styles = makeStyles(colors, shadows);
 
     if (this.state.hasError) {
@@ -113,7 +113,17 @@ export default class ErrorBoundary extends React.Component<Props, State> {
   }
 }
 
-function makeStyles(colors: ThemeContextType['colors'], shadows: ThemeContextType['shadows']) {
+export default function ErrorBoundary({ children }: { children: React.ReactNode }) {
+  const colors = useAppStore((state) => state.colors);
+  const shadows = useAppStore((state) => state.shadows);
+  return (
+    <ErrorBoundaryClass colors={colors} shadows={shadows}>
+      {children}
+    </ErrorBoundaryClass>
+  );
+}
+
+function makeStyles(colors: ThemeColors, shadows: Shadows) {
   return StyleSheet.create({
     container: {
       flex: 1,

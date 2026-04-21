@@ -3,7 +3,7 @@ import { render, fireEvent, act, waitFor } from '@testing-library/react-native';
 import { Linking } from 'react-native';
 import IntroScreen from '../screens/IntroScreen';
 import { PRIVACY_POLICY_URL } from '../utils/constants';
-import { requestHealthConnect } from '../detection';
+import { requestHealthPermissions } from '../detection';
 
 // Mock the i18n module
 jest.mock('../i18n', () => ({
@@ -20,11 +20,12 @@ const mockToggleGPS = jest.fn<Promise<{ needsPermissions: boolean }>, [boolean]>
 jest.mock('../detection/index', () => ({
   toggleHealthConnect: (enabled: boolean) => mockToggleHealthConnect(enabled),
   toggleGPS: (enabled: boolean) => mockToggleGPS(enabled),
-  recheckHealthConnect: jest.fn(() => Promise.resolve(false)),
+  verifyHealthConnectPermissions: jest.fn(() => Promise.resolve(false)),
   requestGPSPermissions: jest.fn(() => Promise.resolve(false)),
   checkGPSPermissions: jest.fn(() => Promise.resolve(false)),
-  requestHealthConnect: jest.fn(() => Promise.resolve(true)),
+  requestHealthPermissions: jest.fn(() => Promise.resolve(true)),
   checkWeatherLocationPermissions: jest.fn(() => Promise.resolve(false)),
+  clampRadiusMeters: jest.fn((r) => r),
 }));
 
 // Mock notification manager
@@ -45,7 +46,7 @@ const mockGetSettingAsync = jest.fn<Promise<string>, [string, string]>(
   (key: string, fallback: string) => Promise.resolve(fallback)
 );
 const mockSetSettingAsync = jest.fn<Promise<void>, [string, string]>(() => Promise.resolve());
-jest.mock('../storage/database', () => ({
+jest.mock('../storage', () => ({
   getSettingAsync: (key: string, fallback: string) => mockGetSettingAsync(key, fallback),
   setSettingAsync: (key: string, value: string) => mockSetSettingAsync(key, value),
 }));
@@ -269,7 +270,7 @@ describe('IntroScreen', () => {
         fireEvent.press(getByText('intro_hc_button'));
       });
 
-      await waitFor(() => expect(requestHealthConnect).toHaveBeenCalled());
+      await waitFor(() => expect(requestHealthPermissions).toHaveBeenCalled());
     });
   });
 

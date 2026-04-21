@@ -9,6 +9,15 @@ jest.mock('../components/ReminderFeedbackModal', () => {
   return () => <Text testID="reminder-feedback-modal">ReminderFeedbackModal</Text>;
 });
 
+jest.mock('../store/useAppStore', () => ({
+  useAppStore: jest.fn((selector) =>
+    selector({
+      colors: { mist: '#f5f5f5', card: '#ffffff', grass: '#4A7C59' },
+      shadows: { soft: {} },
+    })
+  ),
+}));
+
 describe('AppProviders', () => {
   it('renders children and ReminderFeedbackModal', async () => {
     render(

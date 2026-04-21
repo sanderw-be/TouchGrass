@@ -17,7 +17,7 @@ import {
   BottomSheetView,
 } from '@gorhom/bottom-sheet';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import {
   getScheduledNotificationsAsync,
@@ -26,18 +26,27 @@ import {
   deleteScheduledNotificationAsync,
   toggleScheduledNotificationAsync,
   ScheduledNotification,
-} from '../storage/database';
-import { NotificationService } from '../notifications/notificationManager';
-import { spacing, radius } from '../utils/theme';
-import { useTheme } from '../context/ThemeContext';
+} from '../storage';
+import { getScheduledNotificationManager } from '../notifications/notificationManager';
+import { spacing, radius, ThemeColors, Shadows } from '../utils/theme';
+import { useAppStore } from '../store/useAppStore';
 import { t } from '../i18n';
 import { uses24HourClock, normalizeAmPm } from '../utils/helpers';
 
 const DAY_LABELS = ['day_sun', 'day_mon', 'day_tue', 'day_wed', 'day_thu', 'day_fri', 'day_sat'];
 
 export default function ScheduledNotificationsScreen() {
-  const { colors, shadows } = useTheme();
+  const colors = useAppStore((state) => state.colors);
+  const shadows = useAppStore((state) => state.shadows);
+  const locale = useAppStore((state) => state.locale);
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
+  const navigation = useNavigation();
+
+  // Update navigation header title reactively
+  React.useLayoutEffect(() => {
+    navigation.setOptions({ title: t('settings_scheduled_reminders') });
+  }, [navigation, locale]);
+
   const insets = useSafeAreaInsets();
   const bottomSheetRef = useRef<BottomSheetModal>(null);
   const [schedules, setSchedules] = useState<ScheduledNotification[]>([]);
@@ -142,7 +151,7 @@ export default function ScheduledNotificationsScreen() {
 
           // Schedule notifications in background (with await to catch errors)
           try {
-            await NotificationService.scheduleAllScheduledNotifications();
+            await getScheduledNotificationManager().scheduleAllScheduledNotifications();
           } catch (error) {
             console.error('Failed to reschedule notifications after delete:', error);
           }
@@ -164,7 +173,7 @@ export default function ScheduledNotificationsScreen() {
 
     // Schedule notifications in background (with await to catch errors)
     try {
-      await NotificationService.scheduleAllScheduledNotifications();
+      await getScheduledNotificationManager().scheduleAllScheduledNotifications();
     } catch (error) {
       console.error('Failed to reschedule notifications after toggle:', error);
     }
@@ -208,7 +217,7 @@ export default function ScheduledNotificationsScreen() {
 
     // Schedule notifications in background (with await to catch errors)
     try {
-      await NotificationService.scheduleAllScheduledNotifications();
+      await getScheduledNotificationManager().scheduleAllScheduledNotifications();
     } catch (error) {
       console.error('Failed to schedule notifications after save:', error);
       Alert.alert(
@@ -230,7 +239,7 @@ export default function ScheduledNotificationsScreen() {
     setSelectedDays([0, 1, 2, 3, 4, 5, 6]);
   };
 
-  const formatTime = (hour: number, minute: number): string => {
+  const formatTimeStr = (hour: number, minute: number): string => {
     const d = new Date();
     d.setHours(hour, minute, 0, 0);
     const raw = d.toLocaleTimeString([], {
@@ -272,7 +281,7 @@ export default function ScheduledNotificationsScreen() {
               <View style={styles.scheduleHeader}>
                 <View style={styles.scheduleInfo}>
                   <Text style={styles.scheduleTime}>
-                    {formatTime(schedule.hour, schedule.minute)}
+                    {formatTimeStr(schedule.hour, schedule.minute)}
                   </Text>
                   {schedule.label ? (
                     <Text style={styles.scheduleLabel}>{schedule.label}</Text>
@@ -344,7 +353,7 @@ export default function ScheduledNotificationsScreen() {
               <>
                 <TouchableOpacity style={styles.timeButton} onPress={() => setShowTimePicker(true)}>
                   <Text style={styles.timeButtonText}>
-                    {formatTime(selectedTime.getHours(), selectedTime.getMinutes())}
+                    {formatTimeStr(selectedTime.getHours(), selectedTime.getMinutes())}
                   </Text>
                 </TouchableOpacity>
                 {showTimePicker && (
@@ -418,10 +427,7 @@ export default function ScheduledNotificationsScreen() {
   );
 }
 
-function makeStyles(
-  colors: ReturnType<typeof useTheme>['colors'],
-  shadows: ReturnType<typeof useTheme>['shadows']
-) {
+function makeStyles(colors: ThemeColors, shadows: Shadows) {
   return StyleSheet.create({
     container: {
       flex: 1,

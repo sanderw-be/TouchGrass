@@ -16,8 +16,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Notifications from 'expo-notifications';
 import * as Location from 'expo-location';
-import { spacing, radius } from '../utils/theme';
-import { useTheme } from '../context/ThemeContext';
+import { spacing, radius, ThemeColors, Shadows } from '../utils/theme';
+import { useAppStore } from '../store/useAppStore';
 import { t } from '../i18n';
 import { PRIVACY_POLICY_URL } from '../utils/constants';
 import {
@@ -27,17 +27,19 @@ import {
 import {
   toggleHealthConnect,
   toggleGPS,
-  recheckHealthConnect,
+  verifyHealthConnectPermissions,
   requestGPSPermissions,
   checkGPSPermissions,
-  requestHealthConnect,
+  requestHealthPermissions,
   checkWeatherLocationPermissions,
 } from '../detection/index';
 
-import { NotificationService } from '../notifications/notificationManager';
+import { getNotificationInfrastructureService } from '../notifications/notificationManager';
 import { requestCalendarPermissions, hasCalendarPermissions } from '../calendar/calendarService';
-import { getSettingAsync, setSettingAsync } from '../storage/database';
+import { getSettingAsync, setSettingAsync } from '../storage';
 import EditLocationSheet from '../components/EditLocationSheet';
+
+import { Card } from '../components/ui';
 
 interface Props {
   onComplete: () => void;
@@ -53,7 +55,9 @@ type Step =
   | 'ready';
 
 export default function IntroScreen({ onComplete }: Props) {
-  const { colors, shadows } = useTheme();
+  const colors = useAppStore((state) => state.colors);
+  const shadows = useAppStore((state) => state.shadows);
+  useAppStore((state) => state.locale);
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const [currentStep, setCurrentStep] = useState<Step>('welcome');
   const [healthConnectGranted, setHealthConnectGranted] = useState(false);
@@ -108,7 +112,7 @@ export default function IntroScreen({ onComplete }: Props) {
   const checkPermissions = useCallback(async () => {
     // Only check permissions on relevant steps
     if (currentStep === 'health-connect' && Platform.OS === 'android') {
-      const hcGranted = await recheckHealthConnect();
+      const hcGranted = await verifyHealthConnectPermissions();
       setHealthConnectGranted(hcGranted);
     } else if (currentStep === 'location') {
       const gpsGranted = await checkGPSPermissions();
@@ -135,7 +139,7 @@ export default function IntroScreen({ onComplete }: Props) {
         hasCalendarPermissions().then(setCalendarGranted),
       ];
       if (Platform.OS === 'android') {
-        checks.push(recheckHealthConnect().then(setHealthConnectGranted));
+        checks.push(verifyHealthConnectPermissions().then(setHealthConnectGranted));
       }
       await Promise.all(checks);
     }
@@ -204,10 +208,10 @@ export default function IntroScreen({ onComplete }: Props) {
       const result = await toggleHealthConnect(true);
       if (result.needsPermissions) {
         // Request permissions inline (pops the app-scoped native dialog via expo-health-connect)
-        await requestHealthConnect();
+        await requestHealthPermissions();
 
         // Re-check immediately because the in-app dialog doesn't trigger an AppState change
-        const isGranted = await recheckHealthConnect();
+        const isGranted = await verifyHealthConnectPermissions();
         setHealthConnectGranted(isGranted);
       } else {
         setHealthConnectGranted(true);
@@ -279,7 +283,7 @@ export default function IntroScreen({ onComplete }: Props) {
   const handleRequestNotifications = async () => {
     setRequestingPermission(true);
     try {
-      const granted = await NotificationService.requestNotificationPermissions();
+      const granted = await getNotificationInfrastructureService().requestNotificationPermissions();
       setNotificationsGranted(granted);
     } catch (error) {
       console.error('Error requesting notifications:', error);
@@ -337,12 +341,14 @@ export default function IntroScreen({ onComplete }: Props) {
         </View>
 
         <ScrollView style={styles.content} contentContainerStyle={styles.contentInner}>
-          {currentStep === 'welcome' && <WelcomeStep />}
+          {currentStep === 'welcome' && <WelcomeStep styles={styles} />}
           {currentStep === 'health-connect' && (
             <HealthConnectRationaleStep
               onRequest={handleRequestHealthConnect}
               granted={healthConnectGranted}
               requesting={requestingPermission}
+              colors={colors}
+              styles={styles}
             />
           )}
           {currentStep === 'location' && (
@@ -354,6 +360,8 @@ export default function IntroScreen({ onComplete }: Props) {
               workSet={workSet}
               settingLocation={fetchingLocationType}
               onSetLocation={handleSetKnownLocation}
+              colors={colors}
+              styles={styles}
             />
           )}
           {currentStep === 'notifications' && (
@@ -361,6 +369,8 @@ export default function IntroScreen({ onComplete }: Props) {
               onRequest={handleRequestNotifications}
               granted={notificationsGranted}
               requesting={requestingPermission}
+              colors={colors}
+              styles={styles}
             />
           )}
           {currentStep === 'battery' && (
@@ -370,6 +380,7 @@ export default function IntroScreen({ onComplete }: Props) {
                 setBatteryVisited(true);
                 setSettingAsync(BATTERY_OPTIMIZATION_SETTING_KEY, '1');
               }}
+              styles={styles}
             />
           )}
           {currentStep === 'calendar' && (
@@ -381,6 +392,8 @@ export default function IntroScreen({ onComplete }: Props) {
               calendarDuration={calendarDuration}
               onCycleBuffer={handleCycleCalendarBuffer}
               onCycleDuration={handleCycleCalendarDuration}
+              colors={colors}
+              styles={styles}
             />
           )}
           {currentStep === 'ready' && (
@@ -390,6 +403,8 @@ export default function IntroScreen({ onComplete }: Props) {
               notificationsGranted={notificationsGranted}
               batteryVisited={batteryVisited}
               calendarGranted={calendarGranted}
+              colors={colors}
+              styles={styles}
             />
           )}
         </ScrollView>
@@ -412,9 +427,9 @@ export default function IntroScreen({ onComplete }: Props) {
   );
 }
 
-function WelcomeStep() {
-  const { colors, shadows } = useTheme();
-  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
+type Styles = ReturnType<typeof makeStyles>;
+
+function WelcomeStep({ styles }: { styles: Styles }) {
   return (
     <View style={styles.stepContainer}>
       <Text style={styles.emoji}>🌱</Text>
@@ -437,20 +452,22 @@ function HealthConnectRationaleStep({
   onRequest,
   granted,
   requesting,
+  colors,
+  styles,
 }: {
   onRequest: () => void;
   granted: boolean;
   requesting: boolean;
+  colors: ThemeColors;
+  styles: Styles;
 }) {
-  const { colors, shadows } = useTheme();
-  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   return (
     <View style={styles.stepContainer}>
       <Text style={styles.emoji}>👟</Text>
       <Text style={styles.title}>{t('hc_rationale_title')}</Text>
       <Text style={styles.body}>{t('hc_rationale_intro')}</Text>
 
-      <View style={styles.rationaleCard}>
+      <Card style={styles.rationaleCard}>
         <View style={styles.rationaleItem}>
           <Ionicons name="footsteps-outline" size={24} color={colors.grass} />
           <View style={styles.rationaleContent}>
@@ -465,7 +482,7 @@ function HealthConnectRationaleStep({
             <Text style={styles.rationaleBody}>{t('hc_rationale_exercise_body')}</Text>
           </View>
         </View>
-      </View>
+      </Card>
 
       <View style={styles.privacyTip}>
         <Ionicons name="lock-closed-outline" size={16} color={colors.grass} />
@@ -500,6 +517,8 @@ function LocationStep({
   workSet,
   settingLocation,
   onSetLocation,
+  colors,
+  styles,
 }: {
   onRequest: () => void;
   granted: boolean;
@@ -508,18 +527,18 @@ function LocationStep({
   workSet: boolean;
   settingLocation: 'home' | 'work' | null;
   onSetLocation: (type: 'home' | 'work') => void;
+  colors: ThemeColors;
+  styles: Styles;
 }) {
-  const { colors, shadows } = useTheme();
-  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   return (
     <View style={styles.stepContainer}>
       <Text style={styles.emoji}>📍</Text>
       <Text style={styles.title}>{t('intro_location_title')}</Text>
       <Text style={styles.body}>{t('intro_location_body')}</Text>
-      <View style={styles.permissionCard}>
+      <Card variant="tip" style={styles.permissionCard}>
         <Text style={styles.permissionTitle}>{t('intro_location_why_title')}</Text>
         <Text style={styles.permissionBody}>{t('intro_location_why_body')}</Text>
-      </View>
+      </Card>
       <TouchableOpacity
         style={[styles.permissionButton, granted && styles.permissionButtonGranted]}
         onPress={onRequest}
@@ -535,7 +554,7 @@ function LocationStep({
       </TouchableOpacity>
       <Text style={styles.hint}>{t('intro_location_hint')}</Text>
       {granted && (
-        <View style={styles.knownLocationsCard}>
+        <Card style={styles.knownLocationsCard}>
           <Text style={styles.knownLocationsTitle}>{t('intro_location_known_title')}</Text>
           <Text style={styles.knownLocationsBody}>{t('intro_location_known_body')}</Text>
           <View style={styles.knownLocationsButtons}>
@@ -581,7 +600,7 @@ function LocationStep({
             </TouchableOpacity>
           </View>
           <Text style={styles.knownLocationsHint}>{t('intro_location_known_hint')}</Text>
-        </View>
+        </Card>
       )}
     </View>
   );
@@ -591,22 +610,24 @@ function NotificationsStep({
   onRequest,
   granted,
   requesting,
+  colors,
+  styles,
 }: {
   onRequest: () => void;
   granted: boolean;
   requesting: boolean;
+  colors: ThemeColors;
+  styles: Styles;
 }) {
-  const { colors, shadows } = useTheme();
-  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   return (
     <View style={styles.stepContainer}>
       <Text style={styles.emoji}>🔔</Text>
       <Text style={styles.title}>{t('intro_notifications_title')}</Text>
       <Text style={styles.body}>{t('intro_notifications_body')}</Text>
-      <View style={styles.permissionCard}>
+      <Card variant="tip" style={styles.permissionCard}>
         <Text style={styles.permissionTitle}>{t('intro_notifications_why_title')}</Text>
         <Text style={styles.permissionBody}>{t('intro_notifications_why_body')}</Text>
-      </View>
+      </Card>
       <TouchableOpacity
         style={[styles.permissionButton, granted && styles.permissionButtonGranted]}
         onPress={onRequest}
@@ -625,10 +646,15 @@ function NotificationsStep({
   );
 }
 
-function BatteryStep({ visited, onOpen }: { visited: boolean; onOpen: () => void }) {
-  const { colors, shadows } = useTheme();
-  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
-
+function BatteryStep({
+  visited,
+  onOpen,
+  styles,
+}: {
+  visited: boolean;
+  onOpen: () => void;
+  styles: Styles;
+}) {
   const handleOpenBatterySettings = async () => {
     const opened = await openBatteryOptimizationSettings();
     if (opened) {
@@ -641,10 +667,10 @@ function BatteryStep({ visited, onOpen }: { visited: boolean; onOpen: () => void
       <Text style={styles.emoji}>🔋</Text>
       <Text style={styles.title}>{t('intro_battery_title')}</Text>
       <Text style={styles.body}>{t('intro_battery_body')}</Text>
-      <View style={styles.permissionCard}>
+      <Card variant="tip" style={styles.permissionCard}>
         <Text style={styles.permissionTitle}>{t('intro_battery_why_title')}</Text>
         <Text style={styles.permissionBody}>{t('intro_battery_why_body')}</Text>
-      </View>
+      </Card>
       <TouchableOpacity
         style={[styles.permissionButton, visited && styles.permissionButtonGranted]}
         onPress={handleOpenBatterySettings}
@@ -665,15 +691,17 @@ function ReadyStep({
   notificationsGranted,
   batteryVisited,
   calendarGranted,
+  colors,
+  styles,
 }: {
   healthConnectGranted: boolean;
   locationGranted: boolean;
   notificationsGranted: boolean;
   batteryVisited: boolean;
   calendarGranted: boolean;
+  colors: ThemeColors;
+  styles: Styles;
 }) {
-  const { colors, shadows } = useTheme();
-  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   // Determine the status symbol for each permission
   const getStatusSymbol = (granted: boolean) => (granted ? '✓' : '-');
   const getStatusColor = (granted: boolean) => (granted ? colors.grass : colors.textMuted);
@@ -683,11 +711,11 @@ function ReadyStep({
       <Text style={styles.emoji}>✨</Text>
       <Text style={styles.title}>{t('intro_ready_title')}</Text>
       <Text style={styles.body}>{t('intro_ready_body')}</Text>
-      <View style={styles.tipCard}>
+      <Card variant="tip" style={styles.tipCard}>
         <Text style={styles.tipTitle}>💡 {t('intro_ready_tip_title')}</Text>
         <Text style={styles.tipBody}>{t('intro_ready_tip_body')}</Text>
-      </View>
-      <View style={styles.checklistCard}>
+      </Card>
+      <Card style={styles.checklistCard}>
         <Text style={styles.checklistTitle}>{t('intro_ready_checklist_title')}</Text>
         <View style={styles.checklistItem}>
           <Text style={[styles.checklistBullet, { color: getStatusColor(healthConnectGranted) }]}>
@@ -721,12 +749,12 @@ function ReadyStep({
           </Text>
           <Text style={styles.checklistText}>{t('intro_ready_checklist_item_calendar')}</Text>
         </View>
-      </View>
+      </Card>
       {Platform.OS === 'android' && (
-        <View style={[styles.tipCard, { marginTop: spacing.md }]}>
+        <Card variant="tip" style={{ marginTop: spacing.md, width: '100%' }}>
           <Text style={styles.tipTitle}>📌 {t('intro_ready_widget_title')}</Text>
           <Text style={styles.tipBody}>{t('intro_ready_widget_body')}</Text>
-        </View>
+        </Card>
       )}
     </View>
   );
@@ -740,6 +768,8 @@ function CalendarStep({
   calendarDuration,
   onCycleBuffer,
   onCycleDuration,
+  colors,
+  styles,
 }: {
   onRequest: () => void;
   granted: boolean;
@@ -748,21 +778,21 @@ function CalendarStep({
   calendarDuration: number;
   onCycleBuffer: () => void;
   onCycleDuration: () => void;
+  colors: ThemeColors;
+  styles: Styles;
 }) {
-  const { colors, shadows } = useTheme();
-  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   return (
     <View style={styles.stepContainer}>
       <Text style={styles.emoji}>📆</Text>
       <Text style={styles.title}>{t('intro_calendar_title')}</Text>
       <Text style={styles.body}>{t('intro_calendar_body')}</Text>
-      <View style={styles.permissionCard}>
+      <Card variant="tip" style={styles.permissionCard}>
         <Text style={styles.permissionTitle}>{t('intro_calendar_why_title')}</Text>
         <Text style={styles.permissionBody}>{t('intro_calendar_why_body')}</Text>
         <Text style={[styles.permissionBody, styles.dataScope]}>
           {t('intro_calendar_data_scope')}
         </Text>
-      </View>
+      </Card>
       <TouchableOpacity
         style={[styles.permissionButton, granted && styles.permissionButtonGranted]}
         onPress={onRequest}
@@ -776,7 +806,7 @@ function CalendarStep({
           </Text>
         )}
       </TouchableOpacity>
-      <View style={styles.calendarSettingsCard}>
+      <Card style={styles.calendarSettingsCard}>
         <TouchableOpacity onPress={onCycleBuffer} style={styles.calendarSettingRow}>
           <View style={styles.calendarSettingContent}>
             <Text style={styles.calendarSettingLabel}>{t('intro_calendar_buffer_label')}</Text>
@@ -798,14 +828,15 @@ function CalendarStep({
               : t('settings_calendar_duration_minutes', { minutes: calendarDuration })}
           </Text>
         </TouchableOpacity>
-      </View>
+      </Card>
       <Text style={styles.hint}>{t('intro_calendar_hint')}</Text>
     </View>
   );
 }
 
 function FeatureItem({ icon, text }: { icon: string; text: string }) {
-  const { colors, shadows } = useTheme();
+  const colors = useAppStore((state) => state.colors);
+  const shadows = useAppStore((state) => state.shadows);
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   return (
     <View style={styles.featureItem}>
@@ -815,10 +846,7 @@ function FeatureItem({ icon, text }: { icon: string; text: string }) {
   );
 }
 
-function makeStyles(
-  colors: ReturnType<typeof useTheme>['colors'],
-  shadows: ReturnType<typeof useTheme>['shadows']
-) {
+function makeStyles(colors: ThemeColors, shadows: Shadows) {
   return StyleSheet.create({
     container: {
       flex: 1,
@@ -893,10 +921,7 @@ function makeStyles(
 
     permissionCard: {
       width: '100%',
-      backgroundColor: colors.grassPale,
-      borderRadius: radius.lg,
       padding: spacing.lg,
-      marginBottom: spacing.md,
     },
     permissionTitle: {
       fontSize: 16,
@@ -911,11 +936,7 @@ function makeStyles(
     },
     rationaleCard: {
       width: '100%',
-      backgroundColor: colors.card,
-      borderRadius: radius.lg,
       padding: spacing.md,
-      marginBottom: spacing.md,
-      ...shadows.soft,
     },
     rationaleItem: {
       flexDirection: 'row',
@@ -996,11 +1017,8 @@ function makeStyles(
     },
     checklistCard: {
       width: '100%',
-      backgroundColor: colors.card,
-      borderRadius: radius.lg,
       padding: spacing.lg,
       marginTop: spacing.md,
-      ...shadows.soft,
     },
     checklistTitle: {
       fontSize: 15,
@@ -1036,11 +1054,8 @@ function makeStyles(
 
     knownLocationsCard: {
       width: '100%',
-      backgroundColor: colors.card,
-      borderRadius: radius.lg,
       padding: spacing.lg,
       marginTop: spacing.lg,
-      ...shadows.soft,
     },
     knownLocationsTitle: {
       fontSize: 15,
@@ -1088,11 +1103,8 @@ function makeStyles(
 
     calendarSettingsCard: {
       width: '100%',
-      backgroundColor: colors.card,
-      borderRadius: radius.lg,
       overflow: 'hidden',
       marginBottom: spacing.sm,
-      ...shadows.soft,
     },
     calendarSettingRow: {
       flexDirection: 'row',

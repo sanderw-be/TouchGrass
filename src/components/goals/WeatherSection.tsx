@@ -1,9 +1,9 @@
 import React, { useMemo } from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { Text, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../../context/ThemeContext';
+import { useAppStore } from '../../store/useAppStore';
 import { t } from '../../i18n';
-import { PermissionToggleRow, SettingRow, Divider, makeStyles } from './GoalsShared';
+import { PermissionToggleRow, SettingRow, Divider, makeStyles, Card } from './GoalsShared';
 
 interface WeatherSectionProps {
   weatherEnabled: boolean;
@@ -20,13 +20,14 @@ export default function WeatherSection({
   onShowWeatherPermissionSheet,
   onNavigateWeatherSettings,
 }: WeatherSectionProps) {
-  const { colors, shadows } = useTheme();
+  const colors = useAppStore((state) => state.colors);
+  const shadows = useAppStore((state) => state.shadows);
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
 
   return (
     <>
       <Text style={styles.sectionHeader}>{t('settings_weather_title')}</Text>
-      <View style={styles.settingsCard}>
+      <Card style={{ padding: 0, overflow: 'hidden' }}>
         <PermissionToggleRow
           icon={<Ionicons name="partly-sunny-outline" size={20} color={colors.textSecondary} />}
           label={t('settings_weather_enabled')}
@@ -50,7 +51,7 @@ export default function WeatherSection({
             </TouchableOpacity>
           </>
         )}
-      </View>
+      </Card>
     </>
   );
 }

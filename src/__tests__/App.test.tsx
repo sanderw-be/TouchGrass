@@ -1,11 +1,11 @@
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react-native';
 import App from '../../App';
-import { useAppInitialization } from '../hooks/useAppInitialization';
+import { useAppStore } from '../store/useAppStore';
 import { useOTAUpdates } from '../hooks/useOTAUpdates';
 
 // Mock hooks
-jest.mock('../hooks/useAppInitialization');
+jest.mock('../store/useAppStore');
 jest.mock('../hooks/useOTAUpdates');
 jest.mock('expo-font');
 jest.mock('expo-battery');
@@ -36,23 +36,27 @@ jest.mock('react-native/Libraries/Components/ActivityIndicator/ActivityIndicator
   return { default: MockActivityIndicator };
 });
 
-const mockUseAppInitialization = useAppInitialization as jest.Mock;
+const mockUseAppStore = useAppStore as unknown as jest.Mock;
 const mockUseOTAUpdates = useOTAUpdates as jest.Mock;
 const mockUseFonts = require('expo-font').useFonts as jest.Mock;
 
 describe('<App />', () => {
+  const defaultStoreState = {
+    isReady: true,
+    showIntro: false,
+    locale: 'en',
+    colors: { mist: '#f5f5f5', grass: '#4A7C59', card: '#ffffff' },
+    shadows: { soft: {}, medium: {} },
+    handleIntroComplete: jest.fn(),
+    initialize: jest.fn(),
+    setSystemColorScheme: jest.fn(),
+  };
+
   beforeEach(() => {
     jest.clearAllMocks();
     mockUseFonts.mockReturnValue([true]);
     mockUseOTAUpdates.mockReturnValue({ updateStatus: 'ready' });
-    mockUseAppInitialization.mockReturnValue({
-      isReady: true,
-      showIntro: false,
-      locale: 'en',
-      setLocale: jest.fn(),
-      handleShowIntro: jest.fn(),
-      handleIntroComplete: jest.fn(),
-    });
+    mockUseAppStore.mockImplementation((selector) => selector(defaultStoreState));
   });
 
   it('renders font loading indicator if fonts are not loaded', async () => {
@@ -72,10 +76,12 @@ describe('<App />', () => {
   });
 
   it('renders loading indicator while app is not ready', async () => {
-    mockUseAppInitialization.mockReturnValue({
-      ...mockUseAppInitialization(),
-      isReady: false,
-    });
+    mockUseAppStore.mockImplementation((selector) =>
+      selector({
+        ...defaultStoreState,
+        isReady: false,
+      })
+    );
     render(<App />);
     await waitFor(() => {
       expect(screen.queryByTestId('activity-indicator')).toBeTruthy();
@@ -83,11 +89,13 @@ describe('<App />', () => {
   });
 
   it('renders IntroScreen if showIntro is true', async () => {
-    mockUseAppInitialization.mockReturnValue({
-      ...mockUseAppInitialization(),
-      isReady: true,
-      showIntro: true,
-    });
+    mockUseAppStore.mockImplementation((selector) =>
+      selector({
+        ...defaultStoreState,
+        isReady: true,
+        showIntro: true,
+      })
+    );
     render(<App />);
     await waitFor(() => {
       expect(screen.queryByTestId('intro-screen')).toBeTruthy();

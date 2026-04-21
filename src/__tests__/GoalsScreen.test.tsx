@@ -18,7 +18,7 @@ const mockGetSettingAsync = jest.fn<Promise<string>, [string, string]>((key: str
   Promise.resolve(def)
 );
 const mockSetSettingAsync = jest.fn<Promise<void>, [string, string]>(() => Promise.resolve());
-jest.mock('../storage/database', () => ({
+jest.mock('../storage', () => ({
   getSettingAsync: (key: string, def: string) => mockGetSettingAsync(key, def),
   setSettingAsync: (key: string, value: string) => mockSetSettingAsync(key, value),
   getCurrentDailyGoalAsync: jest.fn(() => Promise.resolve({ targetMinutes: 30 })),
@@ -60,7 +60,7 @@ jest.mock('../utils/permissionIssuesChangedEmitter', () => ({
 
 // Mock NotificationService
 jest.mock('../notifications/notificationManager', () => ({
-  NotificationService: {
+  notificationInfrastructureService: {
     requestNotificationPermissions: jest.fn(() => Promise.resolve(false)),
   },
 }));
@@ -79,7 +79,7 @@ jest.mock('@react-navigation/native', () => {
     useFocusEffect: (cb: () => void) => {
       React.useEffect(cb, []);
     },
-    useNavigation: () => ({ navigate: jest.fn() }),
+    useNavigation: () => ({ navigate: jest.fn(), setOptions: jest.fn() }),
   };
 });
 
@@ -787,6 +787,7 @@ describe('GoalsScreen smart reminders notification permission', () => {
     mockGetPermissions.mockResolvedValue({ status: 'denied' });
 
     const { queryByText } = render(<GoalsScreen />);
+    await act(async () => {});
     await waitFor(() => {
       const element = queryByText('settings_notification_permission_missing');
       expect(element).toBeNull();
@@ -801,6 +802,7 @@ describe('GoalsScreen smart reminders notification permission', () => {
     mockGetPermissions.mockResolvedValue({ status: 'granted' });
 
     const { queryByText } = render(<GoalsScreen />);
+    await act(async () => {});
     await waitFor(() => {
       const element = queryByText('settings_notification_permission_missing');
       expect(element).toBeNull();

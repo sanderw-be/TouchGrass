@@ -10,16 +10,18 @@ import {
   denyKnownLocationAsync,
   getSettingAsync,
   setSettingAsync,
-} from '../storage/database';
+} from '../storage';
 import { getDetectionStatus } from '../detection/index';
-import { spacing, radius } from '../utils/theme';
-import { useTheme } from '../context/ThemeContext';
+import { spacing, radius, ThemeColors, Shadows } from '../utils/theme';
+import { useAppStore } from '../store/useAppStore';
 import { t } from '../i18n';
 import EditLocationSheet from '../components/EditLocationSheet';
 import type { SettingsStackParamList } from '../navigation/AppNavigator';
 
 export default function KnownLocationsScreen() {
-  const { colors, shadows } = useTheme();
+  const colors = useAppStore((state) => state.colors);
+  const shadows = useAppStore((state) => state.shadows);
+  const locale = useAppStore((state) => state.locale);
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const navigation = useNavigation<StackNavigationProp<SettingsStackParamList>>();
   const insets = useSafeAreaInsets();
@@ -79,6 +81,7 @@ export default function KnownLocationsScreen() {
   // Add "+" button to the stack navigator header
   useLayoutEffect(() => {
     navigation.setOptions({
+      title: t('nav_known_locations'),
       headerRight: () => (
         <TouchableOpacity
           onPress={handleAddLocation}
@@ -89,7 +92,7 @@ export default function KnownLocationsScreen() {
         </TouchableOpacity>
       ),
     });
-  }, [navigation, handleAddLocation, styles.headerAddBtn, styles.headerAddBtnText]);
+  }, [navigation, handleAddLocation, styles.headerAddBtn, styles.headerAddBtnText, locale]);
 
   const closeSheet = useCallback(() => {
     setEditingLocation(null);
@@ -261,10 +264,7 @@ export default function KnownLocationsScreen() {
   );
 }
 
-function makeStyles(
-  colors: ReturnType<typeof useTheme>['colors'],
-  shadows: ReturnType<typeof useTheme>['shadows']
-) {
+function makeStyles(colors: ThemeColors, shadows: Shadows) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.mist },
     content: { padding: spacing.md },

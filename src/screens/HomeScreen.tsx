@@ -30,23 +30,28 @@ import {
   getSettingAsync,
   setSettingAsync,
   OutsideSession,
-} from '../storage/database';
-import { spacing, radius } from '../utils/theme';
-import { useTheme } from '../context/ThemeContext';
+} from '../storage';
+import { spacing, radius, ThemeColors, Shadows } from '../utils/theme';
+import { useAppStore } from '../store/useAppStore';
 import { formatMinutes, formatTime } from '../utils/helpers';
 import { t, formatLocalDate } from '../i18n';
 import { updateTimeSlotProbability } from '../detection/sessionConfidence';
 import { startManualSession, logManualSession } from '../detection/manualCheckin';
 import { onSessionsChanged, emitSessionsChanged } from '../utils/sessionsChangedEmitter';
-import { NotificationService } from '../notifications/notificationManager';
+import { getSmartReminderScheduler } from '../notifications/notificationManager';
 import {
   WIDGET_TIMER_KEY,
   isWidgetTimerRunning,
   requestWidgetRefresh,
 } from '../utils/widgetHelper';
 
+import { Card } from '../components/ui';
+
 export default function HomeScreen() {
-  const { colors, shadows, isDark } = useTheme();
+  const colors = useAppStore((state) => state.colors);
+  const shadows = useAppStore((state) => state.shadows);
+  const isDark = useAppStore((state) => state.isDark);
+  useAppStore((state) => state.locale);
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const [todayMinutes, setTodayMinutes] = useState(0);
   const [weekMinutes, setWeekMinutes] = useState(0);
@@ -216,7 +221,7 @@ export default function HomeScreen() {
       await updateTimeSlotProbability(d.getHours(), d.getDay(), confirmed);
       emitSessionsChanged();
       if (confirmed) {
-        await NotificationService.cancelRemindersIfGoalReached();
+        await getSmartReminderScheduler().cancelRemindersIfGoalReached();
         requestWidgetRefresh();
       } else {
         setUndoSnackbar({ visible: true, sessionId: id });
@@ -326,7 +331,7 @@ export default function HomeScreen() {
         </View>
 
         {/* Main progress ring */}
-        <View style={styles.ringCard}>
+        <Card style={styles.ringCard}>
           <ProgressRing
             current={todayMinutes}
             target={dailyTarget}
@@ -365,10 +370,10 @@ export default function HomeScreen() {
               )}
             </View>
           )}
-        </View>
+        </Card>
 
         {/* Weekly strip */}
-        <View style={styles.weekCard}>
+        <Card style={styles.weekCard}>
           <View style={styles.weekHeader}>
             <Text style={styles.weekTitle}>{t('this_week')}</Text>
             <Text style={styles.weekValue}>
@@ -382,7 +387,7 @@ export default function HomeScreen() {
             <View style={[styles.weekBarFill, { width: `${weeklyPercent * 100}%` }]} />
           </View>
           <WeekDots />
-        </View>
+        </Card>
 
         {/* Today's sessions */}
         {todaySessions.length > 0 && (
@@ -435,7 +440,8 @@ export default function HomeScreen() {
 }
 
 function WeekDots() {
-  const { colors, shadows } = useTheme();
+  const colors = useAppStore((state) => state.colors);
+  const shadows = useAppStore((state) => state.shadows);
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const today = new Date().getDay();
   const days = [
@@ -472,7 +478,8 @@ function SessionRow({
   onConfirm: (confirmed: boolean) => void;
   onNotes: () => void;
 }) {
-  const { colors, shadows } = useTheme();
+  const colors = useAppStore((state) => state.colors);
+  const shadows = useAppStore((state) => state.shadows);
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const swipeableRef = useRef<Swipeable>(null);
   const isPending = session.userConfirmed === null && session.discarded !== 1;
@@ -512,7 +519,7 @@ function SessionRow({
   );
 
   const rowContent = (
-    <View style={styles.sessionCard}>
+    <Card style={styles.sessionCard}>
       <View style={styles.sessionRow}>
         <View style={styles.sessionIconContainer}>
           <Ionicons
@@ -548,7 +555,7 @@ function SessionRow({
           <Ionicons name="arrow-forward-outline" size={14} color={colors.textMuted} />
         </View>
       )}
-    </View>
+    </Card>
   );
 
   if (!isPending) {
@@ -575,10 +582,7 @@ function SessionRow({
   );
 }
 
-function makeStyles(
-  colors: ReturnType<typeof useTheme>['colors'],
-  shadows: ReturnType<typeof useTheme>['shadows']
-) {
+function makeStyles(colors: ThemeColors, shadows: Shadows) {
   return StyleSheet.create({
     screenContainer: { flex: 1, backgroundColor: colors.mist },
     container: { flex: 1, backgroundColor: colors.mist },
@@ -605,12 +609,8 @@ function makeStyles(
     },
 
     ringCard: {
-      backgroundColor: colors.card,
-      borderRadius: radius.lg,
       padding: spacing.xl,
       alignItems: 'center',
-      marginBottom: spacing.md,
-      ...shadows.soft,
     },
     motivation: {
       marginTop: spacing.md,
@@ -647,11 +647,7 @@ function makeStyles(
     },
 
     weekCard: {
-      backgroundColor: colors.card,
-      borderRadius: radius.lg,
       padding: spacing.lg,
-      marginBottom: spacing.md,
-      ...shadows.soft,
     },
     weekHeader: {
       flexDirection: 'row',
@@ -691,10 +687,8 @@ function makeStyles(
     },
 
     sessionCard: {
-      backgroundColor: colors.card,
       borderRadius: radius.md,
       marginBottom: spacing.xs,
-      ...shadows.soft,
     },
     sessionRow: {
       flexDirection: 'row',

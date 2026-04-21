@@ -9,49 +9,57 @@ jest.mock('../i18n', () => ({
   getDeviceSupportedLocale: jest.fn(() => 'en'),
 }));
 
-jest.mock('../context/ThemeContext', () => ({
-  useTheme: () => ({
-    colors: {
-      grass: '#4A7C59',
-      grassLight: '#6BAF7A',
-      grassPale: '#E8F5EC',
-      grassDark: '#2D5240',
-      sky: '#7EB8D4',
-      skyLight: '#B8DFF0',
-      sun: '#F5C842',
-      mist: '#F8F9F7',
-      fog: '#E8EBE6',
-      card: '#FFFFFF',
-      textPrimary: '#1A2E1F',
-      textSecondary: '#5A7060',
-      textMuted: '#8FA892',
-      textInverse: '#FFFFFF',
-    },
-    shadows: {
-      soft: {
-        shadowColor: '#2D5240',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.08,
-        shadowRadius: 8,
-        elevation: 3,
+jest.mock('../store/useAppStore', () => ({
+  useAppStore: jest.fn((selector) =>
+    selector({
+      colors: {
+        grass: '#4A7C59',
+        grassLight: '#6BAF7A',
+        grassPale: '#E8F5EC',
+        grassDark: '#2D5240',
+        sky: '#7EB8D4',
+        skyLight: '#B8DFF0',
+        sun: '#F5C842',
+        mist: '#F8F9F7',
+        fog: '#E8EBE6',
+        card: '#FFFFFF',
+        textPrimary: '#1A2E1F',
+        textSecondary: '#5A7060',
+        textMuted: '#8FA892',
+        textInverse: '#FFFFFF',
+        error: '#ff0000',
+        inactive: '#cccccc',
       },
-      medium: {
-        shadowColor: '#2D5240',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.12,
-        shadowRadius: 16,
-        elevation: 6,
+      shadows: {
+        soft: {
+          shadowColor: '#2D5240',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.08,
+          shadowRadius: 8,
+          elevation: 3,
+        },
+        medium: {
+          shadowColor: '#2D5240',
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.12,
+          shadowRadius: 16,
+          elevation: 6,
+        },
       },
-    },
-    isDark: false,
-  }),
+      locale: 'en',
+      setLocale: jest.fn(),
+      handleShowIntro: jest.fn(),
+      themePreference: 'system',
+      setThemePreference: jest.fn(),
+    })
+  ),
 }));
 
 const mockGetKnownLocations = jest.fn(
   () => new Promise<never[]>((r) => setTimeout(() => r([]), 50))
 );
 
-jest.mock('../storage/database', () => ({
+jest.mock('../storage', () => ({
   getKnownLocationsAsync: () => mockGetKnownLocations(),
   getSuggestedLocationsAsync: jest.fn(() => Promise.resolve([])),
   clearAllDataAsync: jest.fn(() => Promise.resolve()),
@@ -77,10 +85,10 @@ jest.mock('../detection/index', () => ({
   ),
   toggleHealthConnect: jest.fn(() => Promise.resolve({ needsPermissions: false })),
   toggleGPS: jest.fn(() => Promise.resolve({ needsPermissions: false })),
-  recheckHealthConnect: jest.fn(() => Promise.resolve()),
+  verifyHealthConnectPermissions: jest.fn(() => Promise.resolve()),
   checkGPSPermissions: jest.fn(() => Promise.resolve()),
   requestGPSPermissions: jest.fn(() => Promise.resolve(false)),
-  requestHealthConnect: jest.fn(() => Promise.resolve(true)),
+  requestHealthPermissions: jest.fn(() => Promise.resolve(true)),
 }));
 
 const mockNavigate = jest.fn();
@@ -92,7 +100,7 @@ jest.mock('@react-navigation/native', () => {
         cb();
       }, []);
     },
-    useNavigation: () => ({ navigate: mockNavigate }),
+    useNavigation: () => ({ navigate: mockNavigate, setOptions: jest.fn() }),
   };
 });
 
@@ -106,18 +114,6 @@ jest.mock('expo-constants', () => ({
   __esModule: true,
   default: {
     expoConfig: { version: '1.2.0' },
-  },
-}));
-
-jest.mock('../context/IntroContext', () => ({
-  useShowIntro: () => jest.fn(),
-  IntroContext: { Provider: ({ children }: { children: React.ReactNode }) => children },
-}));
-
-jest.mock('../context/LanguageContext', () => ({
-  useLanguage: () => ({ locale: 'en', setLocale: jest.fn() }),
-  LanguageContext: {
-    Provider: ({ children }: { children: React.ReactNode }) => children,
   },
 }));
 

@@ -1,8 +1,8 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { useTheme } from '../context/ThemeContext';
+import { useAppStore } from '../store/useAppStore';
 import { t } from '../i18n';
-import { spacing, radius } from '../utils/theme';
+import { spacing, radius, ThemeColors } from '../utils/theme';
 
 interface UndoSnackbarProps {
   visible: boolean;
@@ -19,7 +19,7 @@ export default function UndoSnackbar({
   onDismiss,
   duration = 4000,
 }: UndoSnackbarProps) {
-  const { colors } = useTheme();
+  const colors = useAppStore((state) => state.colors);
   const styles = makeStyles(colors);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -59,7 +59,7 @@ export default function UndoSnackbar({
   );
 }
 
-function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
+function makeStyles(colors: ThemeColors) {
   return StyleSheet.create({
     snackbar: {
       position: 'absolute',
