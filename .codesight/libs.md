@@ -16,6 +16,10 @@
   - function getOrCreateTouchGrassCalendar: (forceCreate) => Promise<string | null>
   - function getSelectedCalendarId: () => Promise<string>
   - _...6 more_
+- `src/core/container.ts`
+  - function createContainer: (db) => IAppContainer
+  - function getContainer: () => IAppContainer
+  - interface IAppContainer
 - `src/detection/GeofenceManager.ts`
   - function isAtKnownIndoorLocation: (lat, lon, locations) => boolean
   - function wasDefinitelyAtKnownIndoorLocationSync: (startMs, endMs, allSamples, knownLocations) => boolean
@@ -49,7 +53,7 @@
   - function checkGPSPermissions: () => Promise<boolean>
   - function requestGPSPermissions: () => Promise<boolean>
   - function refreshDetectionSync: () => Promise<void>
-  - _...6 more_
+  - _...5 more_
 - `src/detection/manualCheckin.ts`
   - function logManualSession: (durationMinutes, startTime?, endTime?, notes?) => void
   - function logManualSessionAsync: (durationMinutes, startTime?, endTime?) => Promise<void>
@@ -105,6 +109,14 @@
   - function formatLocalDate: (ms, options?) => string
   - function formatLocalTime: (ms) => string
   - _...1 more_
+- `src/notifications/notificationManager.ts`
+  - function getNotificationInfrastructureService
+  - function getSmartReminderScheduler
+  - function getScheduledNotificationManager
+  - function getNotificationResponseHandler
+  - function getReminderQueueManager
+  - function getReminderMessageBuilder
+  - _...1 more_
 - `src/notifications/reminderAlgorithm.ts`
   - function scoreReminderHours: (todayMinutes, dailyTargetMinutes, currentHour, currentMinute, plannedSlots) => Promise<HourScore[]>
   - function shouldRemindNow: (todayMinutes, dailyTargetMinutes, lastReminderMs, isCurrentlyOutside) => Promise<
@@ -112,27 +124,24 @@
   - interface HourScore
 - `src/notifications/services/NotificationInfrastructureService.ts`
   - class NotificationInfrastructureService
+  - interface INotificationInfrastructureService
   - const ACTION_WENT_OUTSIDE
   - const ACTION_SNOOZE
   - const ACTION_LESS_OFTEN
   - const CHANNEL_ID
-  - const DEFAULT_ANDROID_CHANNEL_ID
   - _...3 more_
-- `src/notifications/services/NotificationResponseHandler.ts` — class NotificationResponseHandler, const notificationResponseHandler
-- `src/notifications/services/ReminderMessageBuilder.ts` — class ReminderMessageBuilder, const reminderMessageBuilder
-- `src/notifications/services/ReminderQueueManager.ts`
-  - class ReminderQueueManager
-  - interface ReminderQueueEntry
-  - type ReminderQueueStatus
-  - const reminderQueueManager
+- `src/notifications/services/NotificationResponseHandler.ts` — class NotificationResponseHandler, interface INotificationResponseHandler
+- `src/notifications/services/ReminderMessageBuilder.ts` — class ReminderMessageBuilder, interface IReminderMessageBuilder
+- `src/notifications/services/ReminderQueueManager.ts` — class ReminderQueueManager, interface IReminderQueueManager
 - `src/notifications/services/ScheduledNotificationManager.ts`
   - class ScheduledNotificationManager
+  - interface IScheduledNotificationManager
   - const SCHEDULED_NOTIF_PREFIX
-  - const scheduledNotificationManager
 - `src/notifications/services/SmartReminderScheduler.ts`
   - class SmartReminderScheduler
+  - interface ISmartReminderScheduler
   - const FAILSAFE_REMINDER_PREFIX
-  - const smartReminderScheduler
+- `src/storage/StorageService.ts` — class StorageService, interface IStorageService
 - `src/storage/dateHelpers.ts`
   - function startOfDay: (ms) => number
   - function startOfWeek: (ms) => number
@@ -181,13 +190,6 @@
   - function saveWeatherCacheAsync: (cache) => Promise<void>
   - function getWeatherCacheAsync: () => Promise<WeatherCache | null>
   - function clearExpiredWeatherDataAsync: (now) => Promise<void>
-- `src/store/useAppStore.ts`
-  - function triggerReminderFeedbackModal: (data) => void
-  - interface FeedbackModalData
-  - interface AppState
-  - type ThemePreference
-  - type FeedbackAction
-  - const useAppStore
 - `src/utils/batteryOptimization.ts`
   - function isBatteryOptimizationDisabled
   - function refreshBatteryOptimizationSetting

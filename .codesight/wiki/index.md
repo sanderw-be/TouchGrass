@@ -1,6 +1,6 @@
 # touchgrass — Wiki
 
-_Generated 2026-04-20 — re-run `npx codesight --wiki` if the codebase has changed._
+_Generated 2026-04-21 — re-run `npx codesight --wiki` if the codebase has changed._
 
 Structural map compiled from source code via AST. No LLM — deterministic, 200ms.
 
@@ -45,4 +45,4 @@ When in doubt, search the source. The wiki is a starting point, not a complete i
 
 ---
 
-_Last compiled: 2026-04-20 · 4 articles · [codesight](https://github.com/Houseofmvps/codesight)_
+_Last compiled: 2026-04-21 · 4 articles · [codesight](https://github.com/Houseofmvps/codesight)_

@@ -2,7 +2,7 @@
 
 > **Navigation aid.** Library inventory extracted via AST. Read the source files listed here before modifying exported functions.
 
-**55 library files** across 12 modules
+**57 library files** across 12 modules
 
 ## Detection (13 files)
 
@@ -20,7 +20,7 @@
 - `src/detection/LocationTracker.ts` — LocationTracker
 - `src/detection/PermissionService.ts` — PermissionService
 
-## Storage (9 files)
+## Storage (10 files)
 
 - `src/storage/repositories/SessionRepository.ts` — insertSessionAsync, getSessionsForDayAsync, getSessionsForRangeAsync, deleteSessionAsync, deleteSessionsByIdsAsync, insertSessionsBatchAsync, …
 - `src/storage/repositories/NotificationRepository.ts` — insertReminderFeedbackAsync, getReminderFeedbackAsync, getScheduledNotificationsAsync, insertScheduledNotificationAsync, updateScheduledNotificationAsync, deleteScheduledNotificationAsync, …
@@ -29,6 +29,7 @@
 - `src/storage/repositories/WeatherRepository.ts` — saveWeatherConditionsAsync, getWeatherConditionsForHourAsync, saveWeatherCacheAsync, getWeatherCacheAsync, clearExpiredWeatherDataAsync
 - `src/storage/dateHelpers.ts` — startOfDay, startOfWeek, startOfMonth, startOfNextMonth
 - `src/storage/db.ts` — initDatabaseAsync, clearAllDataAsync, db, SEVEN_DAYS_MS
+- `src/storage/StorageService.ts` — StorageService, IStorageService
 - `src/storage/repositories/LogRepository.ts` — insertBackgroundLogAsync, getBackgroundLogsAsync
 - `src/storage/repositories/SettingRepository.ts` — getSettingAsync, setSettingAsync
 
@@ -44,15 +45,16 @@
 - `src/utils/sessionsChangedEmitter.ts` — emitSessionsChanged, onSessionsChanged
 - `src/utils/permissionIssues.ts` — countPermissionIssues
 
-## Notifications (7 files)
+## Notifications (8 files)
 
-- `src/notifications/services/NotificationInfrastructureService.ts` — NotificationInfrastructureService, ACTION_WENT_OUTSIDE, ACTION_SNOOZE, ACTION_LESS_OFTEN, CHANNEL_ID, DEFAULT_ANDROID_CHANNEL_ID, …
+- `src/notifications/services/NotificationInfrastructureService.ts` — NotificationInfrastructureService, INotificationInfrastructureService, ACTION_WENT_OUTSIDE, ACTION_SNOOZE, ACTION_LESS_OFTEN, CHANNEL_ID, …
+- `src/notifications/notificationManager.ts` — getNotificationInfrastructureService, getSmartReminderScheduler, getScheduledNotificationManager, getNotificationResponseHandler, getReminderQueueManager, getReminderMessageBuilder, …
 - `src/notifications/reminderAlgorithm.ts` — scoreReminderHours, shouldRemindNow, ScoreContributor, HourScore
-- `src/notifications/services/ReminderQueueManager.ts` — ReminderQueueManager, ReminderQueueEntry, ReminderQueueStatus, reminderQueueManager
-- `src/notifications/services/ScheduledNotificationManager.ts` — ScheduledNotificationManager, SCHEDULED_NOTIF_PREFIX, scheduledNotificationManager
-- `src/notifications/services/SmartReminderScheduler.ts` — SmartReminderScheduler, FAILSAFE_REMINDER_PREFIX, smartReminderScheduler
-- `src/notifications/services/NotificationResponseHandler.ts` — NotificationResponseHandler, notificationResponseHandler
-- `src/notifications/services/ReminderMessageBuilder.ts` — ReminderMessageBuilder, reminderMessageBuilder
+- `src/notifications/services/ScheduledNotificationManager.ts` — ScheduledNotificationManager, IScheduledNotificationManager, SCHEDULED_NOTIF_PREFIX
+- `src/notifications/services/SmartReminderScheduler.ts` — SmartReminderScheduler, ISmartReminderScheduler, FAILSAFE_REMINDER_PREFIX
+- `src/notifications/services/NotificationResponseHandler.ts` — NotificationResponseHandler, INotificationResponseHandler
+- `src/notifications/services/ReminderMessageBuilder.ts` — ReminderMessageBuilder, IReminderMessageBuilder
+- `src/notifications/services/ReminderQueueManager.ts` — ReminderQueueManager, IReminderQueueManager
 
 ## Hooks (6 files)
 
@@ -87,13 +89,13 @@
 
 - `src/calendar/calendarService.ts` — cleanupTouchGrassCalendars, requestCalendarPermissions, hasCalendarPermissions, getWritableCalendars, getOrCreateTouchGrassCalendar, getSelectedCalendarId, …
 
+## Core (1 files)
+
+- `src/core/container.ts` — createContainer, getContainer, IAppContainer
+
 ## I18n (1 files)
 
 - `src/i18n/index.ts` — resolveSupportedLocale, getDeviceSupportedLocale, t, localeTag, formatLocalDate, formatLocalTime, …
-
-## Store (1 files)
-
-- `src/store/useAppStore.ts` — triggerReminderFeedbackModal, FeedbackModalData, AppState, ThemePreference, FeedbackAction, useAppStore
 
 ---
 
