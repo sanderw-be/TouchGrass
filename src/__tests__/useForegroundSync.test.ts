@@ -2,9 +2,9 @@ import { renderHook, act } from '@testing-library/react-native';
 import { AppState, InteractionManager } from 'react-native';
 import { useForegroundSync } from '../hooks/useForegroundSync';
 import { getSettingAsync } from '../storage/database';
-import { scheduleDayReminders, processReminderQueue } from '../notifications/notificationManager';
+import { NotificationService } from '../notifications/notificationManager';
 import { cleanupTouchGrassCalendars } from '../calendar/calendarService';
-import { scheduleNextAlarmPulse } from '../background/alarmTiming';
+import { BackgroundService } from '../background/unifiedBackgroundTask';
 import { refreshBatteryOptimizationSetting } from '../utils/batteryOptimization';
 import { requestWidgetRefresh } from '../utils/widgetHelper';
 
@@ -26,14 +26,18 @@ jest.mock('react-native', () => {
 // Mock internal dependencies
 jest.mock('../storage/database', () => ({ getSettingAsync: jest.fn() }));
 jest.mock('../notifications/notificationManager', () => ({
-  scheduleDayReminders: jest.fn().mockResolvedValue(undefined),
-  processReminderQueue: jest.fn().mockResolvedValue(undefined),
+  NotificationService: {
+    scheduleDayReminders: jest.fn().mockResolvedValue(undefined),
+    processReminderQueue: jest.fn().mockResolvedValue(undefined),
+  },
 }));
 jest.mock('../calendar/calendarService', () => ({
   cleanupTouchGrassCalendars: jest.fn().mockResolvedValue(undefined),
 }));
-jest.mock('../background/alarmTiming', () => ({
-  scheduleNextAlarmPulse: jest.fn().mockResolvedValue(undefined),
+jest.mock('../background/unifiedBackgroundTask', () => ({
+  BackgroundService: {
+    scheduleNextAlarmPulse: jest.fn().mockResolvedValue(undefined),
+  },
 }));
 jest.mock('../utils/batteryOptimization', () => ({
   refreshBatteryOptimizationSetting: jest.fn().mockResolvedValue(undefined),
@@ -89,7 +93,7 @@ describe('useForegroundSync', () => {
 
     expect(getSettingAsync).toHaveBeenCalledWith('hasCompletedIntro', '0');
     expect(refreshBatteryOptimizationSetting).not.toHaveBeenCalled();
-    expect(scheduleDayReminders).not.toHaveBeenCalled();
+    expect(NotificationService.scheduleDayReminders).not.toHaveBeenCalled();
   });
 
   it('should run sync functions deferred by InteractionManager when intro is completed and foregrounded', async () => {
@@ -102,10 +106,10 @@ describe('useForegroundSync', () => {
 
     expect(refreshBatteryOptimizationSetting).toHaveBeenCalled();
     expect(InteractionManager.runAfterInteractions).toHaveBeenCalled();
-    expect(scheduleDayReminders).toHaveBeenCalled();
-    expect(processReminderQueue).toHaveBeenCalled();
+    expect(NotificationService.scheduleDayReminders).toHaveBeenCalled();
+    expect(NotificationService.processReminderQueue).toHaveBeenCalled();
     expect(cleanupTouchGrassCalendars).toHaveBeenCalled();
-    expect(scheduleNextAlarmPulse).toHaveBeenCalled();
+    expect(BackgroundService.scheduleNextAlarmPulse).toHaveBeenCalled();
     expect(requestWidgetRefresh).toHaveBeenCalled();
   });
 });

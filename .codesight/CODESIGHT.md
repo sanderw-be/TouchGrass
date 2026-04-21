@@ -2,9 +2,9 @@
 
 > **Stack:** raw-http | none | react | typescript
 
-> 0 routes | 0 models | 40 components | 32 lib files | 2 env vars | 1 middleware | 0% test coverage
-> **Token savings:** this file is ~4,700 tokens. Without it, AI exploration would cost ~30,900 tokens. **Saves ~26,300 tokens per conversation.**
-> **Last scanned:** 2026-04-17 20:07 — re-run after significant changes
+> 0 routes | 0 models | 40 components | 27 lib files | 2 env vars | 1 middleware | 0% test coverage
+> **Token savings:** this file is ~4,300 tokens. Without it, AI exploration would cost ~29,600 tokens. **Saves ~25,300 tokens per conversation.**
+> **Last scanned:** 2026-04-18 15:33 — re-run after significant changes
 
 ---
 
@@ -63,16 +63,6 @@
   - function scheduleNextPulse: (delayMs) => Promise<void>
   - function cancelPulse: () => Promise<void>
   - const PULSE_TASK_NAME
-- `src/background/alarmTiming.ts`
-  - function computeNextSleepMs: (now) => void
-  - function scheduleNextAlarmPulse: (now?) => Promise<void>
-  - const PULSE_INTERVAL_DAY_MS
-  - const PULSE_INTERVAL_NIGHT_MS
-- `src/background/backgroundTick.ts` — function performBackgroundTick: () => Promise<void>
-- `src/background/unifiedBackgroundTask.ts`
-  - function registerUnifiedBackgroundTask: () => Promise<void>
-  - function unregisterUnifiedBackgroundTask: () => Promise<void>
-  - const UNIFIED_BACKGROUND_TASK
 - `src/calendar/calendarService.ts`
   - function cleanupTouchGrassCalendars: () => Promise<CalendarCleanupResult>
   - function requestCalendarPermissions: () => Promise<boolean>
@@ -127,24 +117,11 @@
   - function formatLocalDate: (ms, options?) => string
   - function formatLocalTime: (ms) => string
   - _...1 more_
-- `src/notifications/notificationManager.ts`
-  - function \_resetSchedulingGuards: () => void
-  - function logReminderQueueSnapshot: () => Promise<void>
-  - function setupNotificationInfrastructure: () => Promise<void>
-  - function requestNotificationPermissions: () => Promise<boolean>
-  - function setupNotifications: () => Promise<void>
-  - function scheduleNextReminder: () => Promise<void>
-  - _...12 more_
 - `src/notifications/reminderAlgorithm.ts`
   - function scoreReminderHours: (todayMinutes, dailyTargetMinutes, currentHour, currentMinute, plannedSlots) => Promise<HourScore[]>
   - function shouldRemindNow: (todayMinutes, dailyTargetMinutes, lastReminderMs, isCurrentlyOutside) => Promise<
   - interface ScoreContributor
   - interface HourScore
-- `src/notifications/scheduledNotifications.ts`
-  - function scheduleAllScheduledNotifications: () => Promise<void>
-  - function cancelAllScheduledNotifications: () => Promise<void>
-  - function isSlotNearScheduledNotification: (slotHour, slotMinute, windowMinutes) => Promise<boolean>
-  - function hasScheduledNotificationNearby: (windowMinutes) => Promise<boolean>
 - `src/storage/database.ts`
   - function initDatabaseAsync: () => Promise<void>
   - function insertSessionAsync: (session) => Promise<number>
@@ -233,16 +210,16 @@
 
 ## Most Imported Files (change these carefully)
 
-- `src/storage/database.ts` — imported by **63** files
-- `src/i18n/index.ts` — imported by **47** files
+- `src/storage/database.ts` — imported by **62** files
+- `src/i18n/index.ts` — imported by **46** files
 - `src/context/ThemeContext.tsx` — imported by **32** files
 - `src/utils/theme.ts` — imported by **28** files
+- `src/notifications/notificationManager.ts` — imported by **14** files
 - `src/detection/index.ts` — imported by **12** files
 - `src/utils/helpers.ts` — imported by **10** files
-- `src/notifications/notificationManager.ts` — imported by **9** files
 - `src/utils/sessionsChangedEmitter.ts` — imported by **8** files
 - `src/detection/manualCheckin.ts` — imported by **8** files
-- `src/background/alarmTiming.ts` — imported by **7** files
+- `src/background/unifiedBackgroundTask.ts` — imported by **7** files
 - `src/utils/widgetHelper.ts` — imported by **7** files
 - `src/calendar/calendarService.ts` — imported by **7** files
 - `src/weather/weatherService.ts` — imported by **7** files
@@ -256,16 +233,16 @@
 
 ## Import Map (who imports what)
 
-- `src/storage/database.ts` ← `appBootstrap.ts`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx` +58 more
-- `src/i18n/index.ts` ← `appBootstrap.ts`, `src/__tests__/ErrorBoundary.test.tsx`, `src/__tests__/FeedbackSupportScreen.test.tsx`, `src/__tests__/LanguageContext.test.tsx`, `src/__tests__/appBootstrap.test.ts` +42 more
+- `src/storage/database.ts` ← `appBootstrap.ts`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx` +57 more
+- `src/i18n/index.ts` ← `appBootstrap.ts`, `src/__tests__/ErrorBoundary.test.tsx`, `src/__tests__/FeedbackSupportScreen.test.tsx`, `src/__tests__/LanguageContext.test.tsx`, `src/__tests__/appBootstrap.test.ts` +41 more
 - `src/context/ThemeContext.tsx` ← `App.tsx`, `src/__tests__/ThemeContext.test.tsx`, `src/components/AppProviders.tsx`, `src/components/DiagnosticSheet.tsx`, `src/components/EditLocationSheet.tsx` +27 more
 - `src/utils/theme.ts` ← `src/__tests__/ThemeContext.test.tsx`, `src/components/DiagnosticSheet.tsx`, `src/components/EditLocationSheet.tsx`, `src/components/EditSessionSheet.tsx`, `src/components/ErrorBoundary.tsx` +23 more
+- `src/notifications/notificationManager.ts` ← `appBootstrap.ts`, `src/__tests__/appBootstrap.test.ts`, `src/__tests__/backgroundService.test.ts`, `src/__tests__/backgroundTick.test.ts`, `src/__tests__/notificationManager.test.ts` +9 more
 - `src/detection/index.ts` ← `appBootstrap.ts`, `src/__tests__/IntroScreen.test.tsx`, `src/__tests__/IntroScreen.test.tsx`, `src/__tests__/IntroScreen.test.tsx`, `src/__tests__/IntroScreen.test.tsx` +7 more
 - `src/utils/helpers.ts` ← `src/components/EditSessionSheet.tsx`, `src/components/ManualSessionSheet.tsx`, `src/components/ProgressRing.tsx`, `src/components/ReminderFeedbackModal.tsx`, `src/i18n/index.ts` +5 more
-- `src/notifications/notificationManager.ts` ← `src/__tests__/backgroundService.test.ts`, `src/__tests__/backgroundTick.test.ts`, `src/__tests__/notificationManager.test.ts`, `src/__tests__/useForegroundSync.test.ts`, `src/hooks/useForegroundSync.ts` +4 more
 - `src/utils/sessionsChangedEmitter.ts` ← `src/__tests__/EventsScreen.test.tsx`, `src/__tests__/HomeScreen.test.tsx`, `src/__tests__/sessionsChangedEmitter.test.ts`, `src/detection/gpsDetection.ts`, `src/detection/healthConnect.ts` +3 more
 - `src/detection/manualCheckin.ts` ← `src/__tests__/ManualSessionSheet.test.tsx`, `src/__tests__/ManualSessionSheet.test.tsx`, `src/__tests__/ManualSessionSheet.test.tsx`, `src/__tests__/ManualSessionSheet.test.tsx`, `src/__tests__/widget-task-handler.test.tsx` +3 more
-- `src/background/alarmTiming.ts` ← `appBootstrap.ts`, `index.ts`, `src/__tests__/appBootstrap.test.ts`, `src/__tests__/backgroundService.test.ts`, `src/__tests__/useForegroundSync.test.ts` +2 more
+- `src/background/unifiedBackgroundTask.ts` ← `appBootstrap.ts`, `index.ts`, `src/__tests__/appBootstrap.test.ts`, `src/__tests__/backgroundService.test.ts`, `src/__tests__/backgroundTick.test.ts` +2 more
 
 ---
 

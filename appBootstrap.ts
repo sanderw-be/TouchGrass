@@ -1,12 +1,8 @@
 import { InteractionManager } from 'react-native';
 import { initDatabaseAsync, getSettingAsync, setSettingAsync } from './src/storage/database';
 import i18n, { getDeviceSupportedLocale, SUPPORTED_LOCALES } from './src/i18n';
-import {
-  setupNotificationInfrastructure,
-  scheduleDayReminders,
-} from './src/notifications/notificationManager';
-import { registerUnifiedBackgroundTask } from './src/background/unifiedBackgroundTask';
-import { scheduleNextAlarmPulse } from './src/background/alarmTiming';
+import { NotificationService } from './src/notifications/notificationManager';
+import { BackgroundService } from './src/background/unifiedBackgroundTask';
 import { initDetection } from './src/detection/index';
 import { requestWidgetRefresh } from './src/utils/widgetHelper';
 import { refreshBatteryOptimizationSetting } from './src/utils/batteryOptimization';
@@ -66,19 +62,21 @@ export function performDeferredInitialization(): void {
 
       // Grouped async calls
       const tasks = [
-        { name: 'Notification Infrastructure', task: setupNotificationInfrastructure },
+        {
+          name: 'Notification Infrastructure',
+          task: () => NotificationService.setupNotificationInfrastructure(),
+        },
         { name: 'Detection Initialization', task: initDetection },
-        { name: 'Day Reminders', task: scheduleDayReminders },
+        { name: 'Day Reminders', task: () => NotificationService.scheduleDayReminders() },
         {
           name: 'Scheduled Notifications',
-          task: async () => {
-            const { scheduleAllScheduledNotifications } =
-              await import('./src/notifications/scheduledNotifications');
-            await scheduleAllScheduledNotifications();
-          },
+          task: () => NotificationService.scheduleAllScheduledNotifications(),
         },
-        { name: 'Unified Background Task', task: registerUnifiedBackgroundTask },
-        { name: 'Alarm Pulse Chain', task: scheduleNextAlarmPulse },
+        {
+          name: 'Unified Background Task',
+          task: () => BackgroundService.registerUnifiedBackgroundTask(),
+        },
+        { name: 'Alarm Pulse Chain', task: () => BackgroundService.scheduleNextAlarmPulse() },
         { name: 'Initial Widget Refresh', task: requestWidgetRefresh },
       ];
 
