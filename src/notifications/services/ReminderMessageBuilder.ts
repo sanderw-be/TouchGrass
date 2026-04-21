@@ -1,101 +1,121 @@
-import { getDailyStreakAsync, getWeeklyStreakAsync, getSettingAsync } from '../../storage';
-import { ScoreContributor } from '../reminderAlgorithm';
-import { getWeatherForHour, isWeatherDataAvailable } from '../../weather/weatherService';
-import {
-  getWeatherDescription,
-  getWeatherEmoji,
-  getWeatherPreferences,
-} from '../../weather/weatherAlgorithm';
 import { t } from '../../i18n';
-import { formatTemperature } from '../../utils/temperature';
+import { IStorageService } from '../../storage/StorageService';
+import * as WeatherService from '../../weather/weatherService'; // Import the actual WeatherService module
+import * as WeatherAlgorithm from '../../weather/weatherAlgorithm'; // Import the actual WeatherAlgorithm module
 
-const NOTIF_TITLES = [
-  'notif_title_1',
-  'notif_title_2',
-  'notif_title_3',
-  'notif_title_4',
-  'notif_title_5',
-];
+// Define minimal interfaces for the injected dependencies
+interface IWeatherServiceForReminderBuilder {
+  isWeatherDataAvailable(): Promise<boolean>;
+}
 
-export class ReminderMessageBuilder {
+interface IWeatherAlgorithmForReminderBuilder {
+  getWeatherEmoji(weatherCode: number | null): string;
+  getWeatherDescription(weatherCode: number | null): string;
+}
+
+export interface IReminderMessageBuilder {
+  buildReminderMessage(
+    todayMinutes: number,
+    dailyTarget: number,
+    hour: number,
+    contributors?: string[],
+    includeWeather?: boolean
+  ): Promise<{ title: string; body: string }>;
+}
+
+export class ReminderMessageBuilder implements IReminderMessageBuilder {
+  constructor(
+    private storageService: IStorageService,
+    private weatherService: IWeatherServiceForReminderBuilder,
+    private weatherAlgorithm: IWeatherAlgorithmForReminderBuilder
+  ) {}
+
   public async buildReminderMessage(
     todayMinutes: number,
     dailyTarget: number,
-    hour?: number,
-    contributors?: ScoreContributor[],
-    isCatchupReminder?: boolean
+    hour: number,
+    contributors?: string[],
+    includeWeather: boolean = true
   ): Promise<{ title: string; body: string }> {
-    const remaining = Math.max(0, Math.round(dailyTarget - todayMinutes));
-    const percent = todayMinutes / dailyTarget;
+    const progress = Math.min(1, todayMinutes / dailyTarget);
 
-    const titleKey = NOTIF_TITLES[Math.floor(Math.random() * NOTIF_TITLES.length)];
-    const title = t(titleKey);
+    // Title based on progress
+    let titleKey = 'notif_title_1';
+    if (progress >= 0.9) titleKey = 'notif_title_5';
+    else if (progress >= 0.75) titleKey = 'notif_title_4';
+    else if (progress >= 0.5) titleKey = 'notif_title_3';
+    else if (progress >= 0.25) titleKey = 'notif_title_2';
 
-    let body: string;
-    if (todayMinutes === 0) {
-      body = t('notif_body_none');
-    } else if (percent < 0.5) {
-      body = t('notif_body_halfway', { remaining });
-    } else if (percent < 1) {
-      body = t('notif_body_almost', { remaining });
-    } else {
-      body = t('notif_body_done');
-    }
+    // Body context
+    let bodyKey = 'notif_body_generic';
+    if (progress === 0) bodyKey = 'notif_body_start';
+    else if (progress < 0.5) bodyKey = 'notif_body_early';
+    else if (progress < 0.9) bodyKey = 'notif_body_halfway';
+    else bodyKey = 'notif_body_almost';
 
-    const catchupEnabled =
-      parseInt(await getSettingAsync('smart_catchup_reminders_count', '2'), 10) > 0;
-    const shouldShowStreak = catchupEnabled
-      ? isCatchupReminder === true
-      : isCatchupReminder !== true;
+    let body = t(bodyKey);
 
-    if (shouldShowStreak) {
-      const dailyStreak = await getDailyStreakAsync();
-      const weeklyStreak = await getWeeklyStreakAsync();
-
-      if (dailyStreak > 0 || weeklyStreak > 0) {
-        const atRisk = percent < 1;
-
-        if (dailyStreak > 0) {
-          const key = atRisk ? 'notif_streak_daily_at_risk' : 'notif_streak_daily';
-          body += ` ${t(key, { count: dailyStreak })}`;
-        } else if (weeklyStreak > 0) {
-          const key = atRisk ? 'notif_streak_weekly_at_risk' : 'notif_streak_weekly';
-          body += ` ${t(key, { count: weeklyStreak })}`;
-        }
-      }
-    }
-
+    // Append contributors if present
     if (contributors && contributors.length > 0) {
-      const top2 = contributors.slice(0, 2);
-      const descriptions = top2.map((c) => c.description);
-      const first = `${descriptions[0].charAt(0).toUpperCase()}${descriptions[0].slice(1)}`;
+      const descriptions = contributors.map((key) => String(t(key)));
+      let joined = '';
       if (descriptions.length === 1) {
-        body += ` ${first}.`;
+        joined = descriptions[0];
       } else {
-        body += ` ${first}, ${t('notif_contributor_and')} ${descriptions[1]}.`;
+        const last = descriptions.pop();
+        joined = `${descriptions.join(', ')}, ${t('notif_contributor_and')} ${last}`;
       }
-    } else {
-      if (await isWeatherDataAvailable()) {
-        const weatherPrefs = await getWeatherPreferences();
-        if (weatherPrefs.enabled) {
-          const currentHour = hour ?? new Date().getHours();
-          const weather = await getWeatherForHour(currentHour);
 
-          if (weather) {
-            const emoji = getWeatherEmoji(weather);
-            const desc = getWeatherDescription(weather);
+      if (joined) {
+        // Capitalize first letter
+        joined = joined.charAt(0).toUpperCase() + joined.slice(1);
+        body += `. ${joined}.`;
+      }
+    } 
+    
+    if (includeWeather) {
+      // Append weather context if weather enabled
+      const weatherEnabled = (await this.storageService.getSettingAsync('weather_enabled', '1')) === '1';
+      if (weatherEnabled) {
+        const cache = await this.storageService.getWeatherCacheAsync();
+        let appendedWeather = false;
 
-            body += ` ${emoji} ${t('notif_weather_context', {
-              desc,
-              temp: formatTemperature(weather.temperature),
-            })}`;
+        if (cache && cache.conditions) {
+          const hourData = cache.conditions.find((c: any) => c.forecastHour === hour);
+          if (hourData) {
+            const preferCelsius = (await this.storageService.getSettingAsync('prefer_celsius', '1')) === '1';
+            const emoji = this.weatherAlgorithm.getWeatherEmoji(hourData.weatherCode);
+            const description = t(this.weatherAlgorithm.getWeatherDescription(hourData.weatherCode));
+            const temperature = this._getTemperatureString(hourData.temperature, preferCelsius);
+            body += `. ${emoji} ${t('notif_weather_context', { description, temperature })}.`;
+            appendedWeather = true;
           }
         }
+        
+        // Fallback for when weather is enabled but no specific hour data is found
+        if (!appendedWeather && (await this.weatherService.isWeatherDataAvailable())) {
+          const preferCelsius = (await this.storageService.getSettingAsync('prefer_celsius', '1')) === '1';
+          const emoji = this.weatherAlgorithm.getWeatherEmoji(null); // Use null for generic/fallback emoji
+          const description = t(this.weatherAlgorithm.getWeatherDescription(null)); // Use null for generic/fallback description
+          const temperature = this._getTemperatureString(null, preferCelsius); // Use null for generic/fallback temperature
+          body += `. ${emoji} ${t('notif_weather_context', { description, temperature })}.`;
+        }
       }
     }
 
-    return { title, body };
+    return {
+      title: t(titleKey),
+      body,
+    };
+  }
+
+  // Private helper method to format temperature string
+  private _getTemperatureString(temperature: number | null, preferCelsius: boolean): string {
+    if (temperature === null) {
+      return t('weather_temp_unknown');
+    }
+    const unit = preferCelsius ? '°C' : '°F';
+    return `${Math.round(temperature)}${unit}`;
   }
 }
 
-export const reminderMessageBuilder = new ReminderMessageBuilder();
