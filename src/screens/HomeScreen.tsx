@@ -38,7 +38,7 @@ import { t, formatLocalDate } from '../i18n';
 import { updateTimeSlotProbability } from '../detection/sessionConfidence';
 import { startManualSession, logManualSession } from '../detection/manualCheckin';
 import { onSessionsChanged, emitSessionsChanged } from '../utils/sessionsChangedEmitter';
-import { smartReminderScheduler } from '../notifications/notificationManager';
+import { getSmartReminderScheduler } from '../notifications/notificationManager';
 import {
   WIDGET_TIMER_KEY,
   isWidgetTimerRunning,
@@ -221,7 +221,7 @@ export default function HomeScreen() {
       await updateTimeSlotProbability(d.getHours(), d.getDay(), confirmed);
       emitSessionsChanged();
       if (confirmed) {
-        await smartReminderScheduler.cancelRemindersIfGoalReached();
+        await getSmartReminderScheduler().cancelRemindersIfGoalReached();
         requestWidgetRefresh();
       } else {
         setUndoSnackbar({ visible: true, sessionId: id });

@@ -49,7 +49,7 @@ import { createContainer } from '../core/container';
 describe('notificationManager', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Initialize container with a fully-featured mock db
     const mockDb = {
       getFirstAsync: jest.fn(),
@@ -59,7 +59,7 @@ describe('notificationManager', () => {
       execSync: jest.fn(),
     };
     const container = createContainer(mockDb as any);
-    
+
     // Linked container storageService to Database module mocks and local state
     const settingsStore: Record<string, string> = {};
     const getSettingMock = jest.fn(async (key: string, fallback: string) => {
@@ -73,21 +73,30 @@ describe('notificationManager', () => {
     // Link module mocks to container storage service
     container.storageService.getTodayMinutesAsync = Database.getTodayMinutesAsync as any;
     container.storageService.getCurrentDailyGoalAsync = Database.getCurrentDailyGoalAsync as any;
-    container.storageService.getScheduledNotificationsAsync = Database.getScheduledNotificationsAsync as any;
+    container.storageService.getScheduledNotificationsAsync =
+      Database.getScheduledNotificationsAsync as any;
     container.storageService.insertBackgroundLogAsync = Database.insertBackgroundLogAsync as any;
 
     // Default mock implementations for Database module
     (Database.getSettingAsync as jest.Mock).mockImplementation(getSettingMock);
     (Database.setSettingAsync as jest.Mock).mockImplementation(setSettingMock);
-    
+
     // Default mocks for container (delegating to module mocks)
-    container.storageService.getSettingAsync = (Database.getSettingAsync as any);
-    container.storageService.setSettingAsync = (Database.setSettingAsync as any);
-    container.storageService.insertReminderFeedbackAsync = (Database as any).insertReminderFeedbackAsync;
+    container.storageService.getSettingAsync = Database.getSettingAsync as any;
+    container.storageService.setSettingAsync = Database.setSettingAsync as any;
+    container.storageService.insertReminderFeedbackAsync = (
+      Database as any
+    ).insertReminderFeedbackAsync;
     container.storageService.getWeatherCacheAsync = (Database as any).getWeatherCacheAsync;
-    container.storageService.getWeatherConditionsForHourAsync = (Database as any).getWeatherConditionsForHourAsync;
-    container.storageService.saveWeatherConditionsAsync = (Database as any).saveWeatherConditionsAsync;
-    container.storageService.clearExpiredWeatherDataAsync = (Database as any).clearExpiredWeatherDataAsync;
+    container.storageService.getWeatherConditionsForHourAsync = (
+      Database as any
+    ).getWeatherConditionsForHourAsync;
+    container.storageService.saveWeatherConditionsAsync = (
+      Database as any
+    ).saveWeatherConditionsAsync;
+    container.storageService.clearExpiredWeatherDataAsync = (
+      Database as any
+    ).clearExpiredWeatherDataAsync;
     container.storageService.saveWeatherCacheAsync = (Database as any).saveWeatherCacheAsync;
 
     (getSmartReminderScheduler() as any)._resetSchedulingGuards();
@@ -95,7 +104,7 @@ describe('notificationManager', () => {
     (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(0);
     (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
     // Note: getSettingAsync and setSettingAsync are already set up via getSettingMock/setSettingMock above
-    
+
     (Database.getScheduledNotificationsAsync as jest.Mock).mockResolvedValue([]);
     (Database.getWeatherConditionsForHourAsync as jest.Mock).mockResolvedValue([]);
     (WeatherService.isWeatherDataAvailable as jest.Mock).mockResolvedValue(false);
@@ -1092,8 +1101,12 @@ describe('notificationManager', () => {
         { hour: 16, minute: 0, score: 0.65, reason: 'afternoon' }, // clear
       ]);
       const schedManager = getScheduledNotificationManager();
-      const isSlotNearSpy = jest.spyOn(schedManager, 'isSlotNearScheduledNotification').mockImplementation((h) => Promise.resolve(h === 14));
-      const hasNearSpy = jest.spyOn(schedManager, 'hasScheduledNotificationNearby').mockResolvedValue(false);
+      const isSlotNearSpy = jest
+        .spyOn(schedManager, 'isSlotNearScheduledNotification')
+        .mockImplementation((h) => Promise.resolve(h === 14));
+      const hasNearSpy = jest
+        .spyOn(schedManager, 'hasScheduledNotificationNearby')
+        .mockResolvedValue(false);
 
       await getSmartReminderScheduler().maybeScheduleCatchUpReminder();
 
@@ -1119,14 +1132,17 @@ describe('notificationManager', () => {
           if (key === 'reminders_last_planned_date') return todayStr;
           if (key === 'additional_reminders_today') return '0';
           // Planned slot at 11:00; current time is 11:30 (30 min after)
-          if (key === 'smart_reminder_queue') return JSON.stringify([{ id: 'smart_1', slotMinutes: 11 * 60, status: 'date_planned' }]);
+          if (key === 'smart_reminder_queue')
+            return JSON.stringify([
+              { id: 'smart_1', slotMinutes: 11 * 60, status: 'date_planned' },
+            ]);
           return fallback;
         }
       );
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(11);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(30);
       (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockResolvedValue([
-        { hour: 12, minute: 0, score: 0.8, contributors: [] }
+        { hour: 12, minute: 0, score: 0.8, contributors: [] },
       ]);
 
       await getSmartReminderScheduler().maybeScheduleCatchUpReminder();
@@ -1146,7 +1162,10 @@ describe('notificationManager', () => {
           if (key === 'reminders_last_planned_date') return todayStr;
           if (key === 'additional_reminders_today') return '0';
           // Planned slot at 11:00; current time is 12:01 (61 min after)
-          if (key === 'smart_reminder_queue') return JSON.stringify([{ id: 'smart_1', slotMinutes: 11 * 60, status: 'date_planned' }]);
+          if (key === 'smart_reminder_queue')
+            return JSON.stringify([
+              { id: 'smart_1', slotMinutes: 11 * 60, status: 'date_planned' },
+            ]);
           return fallback;
         }
       );
@@ -1436,7 +1455,8 @@ describe('notificationManager', () => {
           if (key === 'reminders_last_planned_date') return new Date().toDateString();
           if (key === 'additional_reminders_today') return '1';
           if (key === 'smart_catchup_reminders_count') return '2';
-          if (key === 'smart_reminder_queue') return JSON.stringify([{ id: 'smart_1', slotMinutes: 540, status: 'date_planned' }]);
+          if (key === 'smart_reminder_queue')
+            return JSON.stringify([{ id: 'smart_1', slotMinutes: 540, status: 'date_planned' }]);
           return fallback;
         }
       );
@@ -1468,7 +1488,8 @@ describe('notificationManager', () => {
             // Second read (pre-schedule cross-runtime check) → 1 (at limit, bail out).
             return getSetting_callCount === 1 ? '0' : '1';
           }
-          if (key === 'smart_reminder_queue') return JSON.stringify([{ id: 'smart_1', slotMinutes: 540, status: 'date_planned' }]);
+          if (key === 'smart_reminder_queue')
+            return JSON.stringify([{ id: 'smart_1', slotMinutes: 540, status: 'date_planned' }]);
           return fallback;
         }
       );

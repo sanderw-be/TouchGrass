@@ -27,7 +27,7 @@ import {
   toggleScheduledNotificationAsync,
   ScheduledNotification,
 } from '../storage';
-import { scheduledNotificationManager } from '../notifications/notificationManager';
+import { getScheduledNotificationManager } from '../notifications/notificationManager';
 import { spacing, radius, ThemeColors, Shadows } from '../utils/theme';
 import { useAppStore } from '../store/useAppStore';
 import { t } from '../i18n';
@@ -151,7 +151,7 @@ export default function ScheduledNotificationsScreen() {
 
           // Schedule notifications in background (with await to catch errors)
           try {
-            await scheduledNotificationManager.scheduleAllScheduledNotifications();
+            await getScheduledNotificationManager().scheduleAllScheduledNotifications();
           } catch (error) {
             console.error('Failed to reschedule notifications after delete:', error);
           }
@@ -173,7 +173,7 @@ export default function ScheduledNotificationsScreen() {
 
     // Schedule notifications in background (with await to catch errors)
     try {
-      await scheduledNotificationManager.scheduleAllScheduledNotifications();
+      await getScheduledNotificationManager().scheduleAllScheduledNotifications();
     } catch (error) {
       console.error('Failed to reschedule notifications after toggle:', error);
     }
@@ -217,7 +217,7 @@ export default function ScheduledNotificationsScreen() {
 
     // Schedule notifications in background (with await to catch errors)
     try {
-      await scheduledNotificationManager.scheduleAllScheduledNotifications();
+      await getScheduledNotificationManager().scheduleAllScheduledNotifications();
     } catch (error) {
       console.error('Failed to schedule notifications after save:', error);
       Alert.alert(

@@ -8,7 +8,7 @@ import {
   getDetectionStatus,
   toggleHealthConnect,
   toggleGPS,
-  recheckHealthConnect,
+  verifyHealthConnectPermissions,
   checkGPSPermissions,
   requestGPSPermissions,
 } from '../detection/index';
@@ -52,7 +52,7 @@ export function useDetectionSettings() {
   }, []);
 
   const checkAndUpdatePermissions = useCallback(async () => {
-    await Promise.all([recheckHealthConnect(), checkGPSPermissions()]);
+    await Promise.all([verifyHealthConnectPermissions(), checkGPSPermissions()]);
     setDetectionStatus(await getDetectionStatus());
   }, []);
 

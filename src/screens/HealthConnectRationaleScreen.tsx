@@ -6,7 +6,7 @@ import { useNavigation } from '@react-navigation/native';
 import { spacing, radius, ThemeColors, Shadows } from '../utils/theme';
 import { useAppStore } from '../store/useAppStore';
 import { t } from '../i18n';
-import { requestHealthConnect } from '../detection/index';
+import { requestHealthPermissions } from '../detection/index';
 
 export default function HealthConnectRationaleScreen() {
   const colors = useAppStore((state) => state.colors);
@@ -17,7 +17,7 @@ export default function HealthConnectRationaleScreen() {
   const navigation = useNavigation();
 
   const handleConnect = async () => {
-    const granted = await requestHealthConnect();
+    const granted = await requestHealthPermissions();
     if (granted) {
       navigation.goBack();
     }

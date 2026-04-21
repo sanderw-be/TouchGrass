@@ -5,7 +5,7 @@ import * as Calendar from 'expo-calendar';
 import * as Notifications from 'expo-notifications';
 import { useFocusEffect } from '@react-navigation/native';
 import { getSettingAsync, setSettingAsync } from '../storage';
-import { notificationInfrastructureService } from '../notifications/notificationManager';
+import { getNotificationInfrastructureService } from '../notifications/notificationManager';
 import {
   hasCalendarPermissions,
   getWritableCalendars,
@@ -271,7 +271,8 @@ export function useGoalIntegrations() {
           setPermissionSheet(null);
           return;
         }
-        const granted = await notificationInfrastructureService.requestNotificationPermissions();
+        const granted =
+          await getNotificationInfrastructureService().requestNotificationPermissions();
         setNotificationPermissionGranted(granted);
         if (granted) {
           pendingSmartRemindersEnableRef.current = false;

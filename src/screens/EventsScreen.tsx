@@ -30,7 +30,7 @@ import SessionNotesSheet from '../components/SessionNotesSheet';
 import UndoSnackbar from '../components/UndoSnackbar';
 import { updateTimeSlotProbability } from '../detection/sessionConfidence';
 import { onSessionsChanged, emitSessionsChanged } from '../utils/sessionsChangedEmitter';
-import { smartReminderScheduler } from '../notifications/notificationManager';
+import { getSmartReminderScheduler } from '../notifications/notificationManager';
 import { requestWidgetRefresh } from '../utils/widgetHelper';
 
 const FOUR_WEEKS_AGO = () => Date.now() - 28 * 24 * 60 * 60 * 1000;
@@ -115,7 +115,7 @@ export default function EventsScreen() {
       emitSessionsChanged();
       await loadData();
       if (confirmed) {
-        await smartReminderScheduler.cancelRemindersIfGoalReached();
+        await getSmartReminderScheduler().cancelRemindersIfGoalReached();
         requestWidgetRefresh();
       } else {
         setUndoSnackbar({ visible: true, sessionId: id });

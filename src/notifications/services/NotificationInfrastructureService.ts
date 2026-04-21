@@ -11,7 +11,15 @@ export const DEFAULT_ANDROID_CHANNEL_ID = 'default';
 export const DAILY_PLANNER_CHANNEL_ID = 'touchgrass_daily_planner';
 export const DAILY_PLANNER_NOTIF_PREFIX = 'daily_planner_';
 
-export class NotificationInfrastructureService {
+export interface INotificationInfrastructureService {
+  setupNotificationInfrastructure(
+    handleResponse: (response: Notifications.NotificationResponse) => void
+  ): Promise<void>;
+  requestNotificationPermissions(): Promise<boolean>;
+  createReminderChannels(): Promise<void>;
+}
+
+export class NotificationInfrastructureService implements INotificationInfrastructureService {
   public async createReminderChannels(): Promise<void> {
     const reminderChannelConfig = {
       name: t('notif_channel_name'),
@@ -161,5 +169,3 @@ export class NotificationInfrastructureService {
     return true;
   }
 }
-
-export const notificationInfrastructureService = new NotificationInfrastructureService();

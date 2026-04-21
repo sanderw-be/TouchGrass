@@ -5,7 +5,6 @@ import { getContainer, IAppContainer, createContainer } from '../core/container'
 import { initDatabaseAsync, db } from '../storage';
 import * as WeatherService from '../weather/weatherService';
 
-
 export const UNIFIED_BACKGROUND_TASK = 'TOUCHGRASS_UNIFIED_TASK';
 
 /** Alarm interval during active hours (06:00 – 00:00). */
@@ -54,7 +53,10 @@ class BackgroundServiceImpl {
   public async performBackgroundTick(): Promise<void> {
     if (this.tickInProgress) {
       console.log('TouchGrass: [BackgroundTick] Already running — skipping concurrent tick');
-      await this.container.storageService.insertBackgroundLogAsync('reminder', 'Background tick skipped — already running');
+      await this.container.storageService.insertBackgroundLogAsync(
+        'reminder',
+        'Background tick skipped — already running'
+      );
       return;
     }
     this.tickInProgress = true;
@@ -62,7 +64,10 @@ class BackgroundServiceImpl {
     try {
       // Step 1: Initialize Database (Fatal if fails)
       await initDatabaseAsync();
-      await this.container.storageService.insertBackgroundLogAsync('reminder', 'Background tick start');
+      await this.container.storageService.insertBackgroundLogAsync(
+        'reminder',
+        'Background tick start'
+      );
 
       // Step 2: Sync Modules (Isolated)
       let weatherSyncSuccess = true;
@@ -72,7 +77,10 @@ class BackgroundServiceImpl {
         await this.handleWeatherSync();
       } catch (e) {
         console.error('TouchGrass: [BackgroundTick] Weather sync failed', e);
-        await this.container.storageService.insertBackgroundLogAsync('reminder', 'Weather refresh failed');
+        await this.container.storageService.insertBackgroundLogAsync(
+          'reminder',
+          'Weather refresh failed'
+        );
         weatherSyncSuccess = false;
       }
 
@@ -88,7 +96,10 @@ class BackgroundServiceImpl {
         throw new Error('All background sync modules failed');
       }
 
-      await this.container.storageService.insertBackgroundLogAsync('reminder', 'Background tick done');
+      await this.container.storageService.insertBackgroundLogAsync(
+        'reminder',
+        'Background tick done'
+      );
     } catch (fatalError) {
       console.error('TouchGrass: [BackgroundTick] Error during tick', fatalError);
       throw fatalError;
@@ -101,17 +112,24 @@ class BackgroundServiceImpl {
    * Private helper to handle weather forecast refresh.
    */
   private async handleWeatherSync(): Promise<void> {
-    const weatherEnabled = (await this.container.storageService.getSettingAsync('weather_enabled', '1')) === '1';
+    const weatherEnabled =
+      (await this.container.storageService.getSettingAsync('weather_enabled', '1')) === '1';
     if (weatherEnabled) {
       try {
         await WeatherService.fetchWeatherForecast({ allowPermissionPrompt: false });
-        await this.container.storageService.insertBackgroundLogAsync('reminder', 'Weather refresh succeeded');
+        await this.container.storageService.insertBackgroundLogAsync(
+          'reminder',
+          'Weather refresh succeeded'
+        );
       } catch (weatherError) {
         console.error('TouchGrass: [BackgroundTick] Weather fetch failed', weatherError);
-        throw weatherError; 
+        throw weatherError;
       }
     } else {
-      await this.container.storageService.insertBackgroundLogAsync('reminder', 'Weather disabled — skipping refresh');
+      await this.container.storageService.insertBackgroundLogAsync(
+        'reminder',
+        'Weather disabled — skipping refresh'
+      );
     }
   }
 
@@ -119,14 +137,14 @@ class BackgroundServiceImpl {
    * Private helper to handle reminder planning and processing.
    */
   private async handleReminderSync(): Promise<void> {
-    const remindersCountRaw = await this.container.storageService.getSettingAsync('smart_reminders_count', '0');
+    const remindersCountRaw = await this.container.storageService.getSettingAsync(
+      'smart_reminders_count',
+      '0'
+    );
     const remindersEnabled = parseInt(remindersCountRaw, 10) > 0;
 
     if (remindersEnabled) {
-      const { 
-        smartReminderScheduler, 
-        reminderQueueManager 
-      } = this.container;
+      const { smartReminderScheduler, reminderQueueManager } = this.container;
 
       await reminderQueueManager.logReminderQueueSnapshot();
       try {

@@ -27,14 +27,14 @@ import {
 import {
   toggleHealthConnect,
   toggleGPS,
-  recheckHealthConnect,
+  verifyHealthConnectPermissions,
   requestGPSPermissions,
   checkGPSPermissions,
-  requestHealthConnect,
+  requestHealthPermissions,
   checkWeatherLocationPermissions,
 } from '../detection/index';
 
-import { notificationInfrastructureService } from '../notifications/notificationManager';
+import { getNotificationInfrastructureService } from '../notifications/notificationManager';
 import { requestCalendarPermissions, hasCalendarPermissions } from '../calendar/calendarService';
 import { getSettingAsync, setSettingAsync } from '../storage';
 import EditLocationSheet from '../components/EditLocationSheet';
@@ -112,7 +112,7 @@ export default function IntroScreen({ onComplete }: Props) {
   const checkPermissions = useCallback(async () => {
     // Only check permissions on relevant steps
     if (currentStep === 'health-connect' && Platform.OS === 'android') {
-      const hcGranted = await recheckHealthConnect();
+      const hcGranted = await verifyHealthConnectPermissions();
       setHealthConnectGranted(hcGranted);
     } else if (currentStep === 'location') {
       const gpsGranted = await checkGPSPermissions();
@@ -139,7 +139,7 @@ export default function IntroScreen({ onComplete }: Props) {
         hasCalendarPermissions().then(setCalendarGranted),
       ];
       if (Platform.OS === 'android') {
-        checks.push(recheckHealthConnect().then(setHealthConnectGranted));
+        checks.push(verifyHealthConnectPermissions().then(setHealthConnectGranted));
       }
       await Promise.all(checks);
     }
@@ -208,10 +208,10 @@ export default function IntroScreen({ onComplete }: Props) {
       const result = await toggleHealthConnect(true);
       if (result.needsPermissions) {
         // Request permissions inline (pops the app-scoped native dialog via expo-health-connect)
-        await requestHealthConnect();
+        await requestHealthPermissions();
 
         // Re-check immediately because the in-app dialog doesn't trigger an AppState change
-        const isGranted = await recheckHealthConnect();
+        const isGranted = await verifyHealthConnectPermissions();
         setHealthConnectGranted(isGranted);
       } else {
         setHealthConnectGranted(true);
@@ -283,7 +283,7 @@ export default function IntroScreen({ onComplete }: Props) {
   const handleRequestNotifications = async () => {
     setRequestingPermission(true);
     try {
-      const granted = await notificationInfrastructureService.requestNotificationPermissions();
+      const granted = await getNotificationInfrastructureService().requestNotificationPermissions();
       setNotificationsGranted(granted);
     } catch (error) {
       console.error('Error requesting notifications:', error);

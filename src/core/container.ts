@@ -1,23 +1,38 @@
 import { SQLiteDatabase } from 'expo-sqlite';
 import { IStorageService, StorageService } from '../storage/StorageService';
-import { INotificationInfrastructureService, NotificationInfrastructureService } from '../notifications/services/NotificationInfrastructureService';
-import { IReminderMessageBuilder, ReminderMessageBuilder } from '../notifications/services/ReminderMessageBuilder';
-import { IReminderQueueManager, ReminderQueueManager } from '../notifications/services/ReminderQueueManager';
-import { IScheduledNotificationManager, ScheduledNotificationManager } from '../notifications/services/ScheduledNotificationManager';
-import { INotificationResponseHandler, NotificationResponseHandler } from '../notifications/services/NotificationResponseHandler';
-import { ISmartReminderScheduler, SmartReminderScheduler } from '../notifications/services/SmartReminderScheduler';
+import {
+  INotificationInfrastructureService,
+  NotificationInfrastructureService,
+} from '../notifications/services/NotificationInfrastructureService';
+import {
+  IReminderMessageBuilder,
+  ReminderMessageBuilder,
+} from '../notifications/services/ReminderMessageBuilder';
+import {
+  IReminderQueueManager,
+  ReminderQueueManager,
+} from '../notifications/services/ReminderQueueManager';
+import {
+  IScheduledNotificationManager,
+  ScheduledNotificationManager,
+} from '../notifications/services/ScheduledNotificationManager';
+import {
+  INotificationResponseHandler,
+  NotificationResponseHandler,
+} from '../notifications/services/NotificationResponseHandler';
+import {
+  ISmartReminderScheduler,
+  SmartReminderScheduler,
+} from '../notifications/services/SmartReminderScheduler';
 
 import { useAppStore } from '../store/useAppStore';
-import { 
-  hasUpcomingEvent, 
-  maybeAddOutdoorTimeToCalendar, 
-  deleteFutureTouchGrassEvents 
+import {
+  hasUpcomingEvent,
+  maybeAddOutdoorTimeToCalendar,
+  deleteFutureTouchGrassEvents,
 } from '../calendar/calendarService';
 import * as WeatherService from '../weather/weatherService';
-import { 
-  shouldRemindNow, 
-  scoreReminderHours 
-} from '../notifications/reminderAlgorithm';
+import { shouldRemindNow, scoreReminderHours } from '../notifications/reminderAlgorithm';
 import * as WeatherAlgorithm from '../weather/weatherAlgorithm';
 import { WeatherCondition } from '../weather/types';
 
@@ -46,13 +61,19 @@ export function createContainer(db: SQLiteDatabase): IAppContainer {
       isWeatherDataAvailable: WeatherService.isWeatherDataAvailable,
     },
     {
-      getWeatherEmoji: (code) => WeatherAlgorithm.getWeatherEmoji(code === null ? null : { weatherCode: code } as WeatherCondition),
-      getWeatherDescription: (code) => WeatherAlgorithm.getWeatherDescription(code === null ? null : { weatherCode: code } as WeatherCondition),
+      getWeatherEmoji: (code) =>
+        WeatherAlgorithm.getWeatherEmoji(
+          code === null ? null : ({ weatherCode: code } as WeatherCondition)
+        ),
+      getWeatherDescription: (code) =>
+        WeatherAlgorithm.getWeatherDescription(
+          code === null ? null : ({ weatherCode: code } as WeatherCondition)
+        ),
     }
   );
   const reminderQueueManager = new ReminderQueueManager(storageService);
   const scheduledNotificationManager = new ScheduledNotificationManager(storageService);
-  
+
   const notificationResponseHandler = new NotificationResponseHandler(
     storageService,
     reminderMessageBuilder,
@@ -100,7 +121,9 @@ export function createContainer(db: SQLiteDatabase): IAppContainer {
  */
 export function getContainer(): IAppContainer {
   if (!container) {
-    throw new Error('TouchGrass: AppContainer has not been initialized. Call createContainer() first.');
+    throw new Error(
+      'TouchGrass: AppContainer has not been initialized. Call createContainer() first.'
+    );
   }
   return container;
 }

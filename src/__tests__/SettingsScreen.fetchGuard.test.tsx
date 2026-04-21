@@ -85,10 +85,10 @@ jest.mock('../detection/index', () => ({
   ),
   toggleHealthConnect: jest.fn(() => Promise.resolve({ needsPermissions: false })),
   toggleGPS: jest.fn(() => Promise.resolve({ needsPermissions: false })),
-  recheckHealthConnect: jest.fn(() => Promise.resolve()),
+  verifyHealthConnectPermissions: jest.fn(() => Promise.resolve()),
   checkGPSPermissions: jest.fn(() => Promise.resolve()),
   requestGPSPermissions: jest.fn(() => Promise.resolve(false)),
-  requestHealthConnect: jest.fn(() => Promise.resolve(true)),
+  requestHealthPermissions: jest.fn(() => Promise.resolve(true)),
 }));
 
 const mockNavigate = jest.fn();

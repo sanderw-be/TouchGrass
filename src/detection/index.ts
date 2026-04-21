@@ -183,7 +183,7 @@ export async function runCatchUpDetectionAsync(): Promise<void> {
 export {
   syncHealthConnect,
   requestHealthPermissions,
-  requestHealthPermissions as requestHealthConnect,
+  verifyHealthConnectPermissions,
   isHealthConnectAvailable,
   openHealthConnectForManagement,
   startLocationTracking,
@@ -192,6 +192,3 @@ export {
   computeDwellClusters,
   autoDetectLocations,
 };
-
-/** @deprecated Use verifyHealthConnectPermissions */
-export const recheckHealthConnect = verifyHealthConnectPermissions;

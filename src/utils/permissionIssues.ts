@@ -3,7 +3,7 @@ import {
   getDetectionStatus,
   checkWeatherLocationPermissions,
   checkGPSPermissions,
-  recheckHealthConnect,
+  verifyHealthConnectPermissions,
 } from '../detection';
 import { getSettingAsync } from '../storage';
 import { hasCalendarPermissions } from '../calendar/calendarService';
@@ -25,7 +25,7 @@ export async function countPermissionIssues(): Promise<{ goals: number; settings
   // screen (e.g. via the Weather fix-flow on GoalsScreen, or vice-versa).
   const [gpsPermission, hcPermission] = await Promise.all([
     detection.gps ? checkGPSPermissions() : Promise.resolve(false),
-    detection.healthConnect ? recheckHealthConnect() : Promise.resolve(false),
+    detection.healthConnect ? verifyHealthConnectPermissions() : Promise.resolve(false),
   ]);
 
   const settingsIssues =

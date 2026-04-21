@@ -1,8 +1,6 @@
 import { t } from '../../i18n';
 import { IStorageService } from '../../storage/StorageService';
 
-
-
 // Define minimal interfaces for the injected dependencies
 interface IWeatherServiceForReminderBuilder {
   isWeatherDataAvailable(): Promise<boolean>;
@@ -71,32 +69,39 @@ export class ReminderMessageBuilder implements IReminderMessageBuilder {
         joined = joined.charAt(0).toUpperCase() + joined.slice(1);
         body += `. ${joined}.`;
       }
-    } 
-    
+    }
+
     if (includeWeather) {
       // Append weather context if weather enabled
-      const weatherEnabled = (await this.storageService.getSettingAsync('weather_enabled', '1')) === '1';
+      const weatherEnabled =
+        (await this.storageService.getSettingAsync('weather_enabled', '1')) === '1';
       if (weatherEnabled) {
         let appendedWeather = false;
 
         // Try to get weather for this specific hour
         const startOfDay = new Date();
         startOfDay.setHours(0, 0, 0, 0);
-        const hourDataList = await this.storageService.getWeatherConditionsForHourAsync(startOfDay.getTime(), hour, hour + 1);
+        const hourDataList = await this.storageService.getWeatherConditionsForHourAsync(
+          startOfDay.getTime(),
+          hour,
+          hour + 1
+        );
         const hourData = hourDataList.length > 0 ? hourDataList[0] : null;
 
         if (hourData) {
-          const preferCelsius = (await this.storageService.getSettingAsync('prefer_celsius', '1')) === '1';
+          const preferCelsius =
+            (await this.storageService.getSettingAsync('prefer_celsius', '1')) === '1';
           const emoji = this.weatherAlgorithm.getWeatherEmoji(hourData.weatherCode);
           const description = t(this.weatherAlgorithm.getWeatherDescription(hourData.weatherCode));
           const temperature = this._getTemperatureString(hourData.temperature, preferCelsius);
           body += `. ${emoji} ${t('notif_weather_context', { description, temperature })}.`;
           appendedWeather = true;
         }
-        
+
         // Fallback for when weather is enabled but no specific hour data is found
         if (!appendedWeather && (await this.weatherService.isWeatherDataAvailable())) {
-          const preferCelsius = (await this.storageService.getSettingAsync('prefer_celsius', '1')) === '1';
+          const preferCelsius =
+            (await this.storageService.getSettingAsync('prefer_celsius', '1')) === '1';
           const emoji = this.weatherAlgorithm.getWeatherEmoji(null); // Use null for generic/fallback emoji
           const description = t(this.weatherAlgorithm.getWeatherDescription(null)); // Use null for generic/fallback description
           const temperature = this._getTemperatureString(null, preferCelsius); // Use null for generic/fallback temperature
@@ -120,4 +125,3 @@ export class ReminderMessageBuilder implements IReminderMessageBuilder {
     return `${Math.round(temperature)}${unit}`;
   }
 }
-

@@ -19,19 +19,25 @@ export interface IStorageService {
     scheduledMinute: number;
     dayOfWeek: number;
   }): Promise<void>;
-  getScheduledNotificationsAsync(): Promise<{
-    id: number;
-    dayOfWeek: number;
-    hour: number;
-    minute: number;
-    enabled: number;
-    message: string | null;
-  }[]>;
+  getScheduledNotificationsAsync(): Promise<
+    {
+      id: number;
+      dayOfWeek: number;
+      hour: number;
+      minute: number;
+      enabled: number;
+      message: string | null;
+    }[]
+  >;
   insertBackgroundLogAsync(source: string, message: string): Promise<void>;
-  
+
   // Weather
   getWeatherCacheAsync(): Promise<WeatherCache | null>;
-  getWeatherConditionsForHourAsync(dateMs: number, startHour: number, endHour: number): Promise<WeatherCondition[]>;
+  getWeatherConditionsForHourAsync(
+    dateMs: number,
+    startHour: number,
+    endHour: number
+  ): Promise<WeatherCondition[]>;
   saveWeatherConditionsAsync(conditions: WeatherCondition[]): Promise<void>;
   clearExpiredWeatherDataAsync(beforeMs: number): Promise<void>;
   saveWeatherCacheAsync(cache: WeatherCache): Promise<void>;
@@ -51,7 +57,10 @@ export class StorageService implements IStorageService {
   }
 
   async setSettingAsync(key: string, value: string): Promise<void> {
-    await this.db.runAsync('INSERT OR REPLACE INTO app_settings (key, value) VALUES (?, ?)', [key, value]);
+    await this.db.runAsync('INSERT OR REPLACE INTO app_settings (key, value) VALUES (?, ?)', [
+      key,
+      value,
+    ]);
   }
 
   async insertSessionAsync(session: OutsideSession): Promise<number> {
@@ -77,14 +86,14 @@ export class StorageService implements IStorageService {
 
   async getTodayMinutesAsync(): Promise<number> {
     // Note: This logic normally uses startOfDay helper, but for initial StorageService
-    // I am keeping it simple or injecting helpers too if needed. 
+    // I am keeping it simple or injecting helpers too if needed.
     // For now, let's keep it direct.
     const now = Date.now();
     const d = new Date(now);
     d.setHours(0, 0, 0, 0);
     const start = d.getTime();
     const end = start + 86400000;
-    
+
     const row = await this.db.getFirstAsync<{ total: number }>(
       `SELECT COALESCE(SUM(durationMinutes), 0) as total
        FROM outside_sessions
@@ -100,10 +109,9 @@ export class StorageService implements IStorageService {
     d.setHours(0, 0, 0, 0);
     const start = d.getTime();
 
-    return await this.db.getFirstAsync<DailyGoal>(
-      'SELECT * FROM daily_goals WHERE dateMs = ?',
-      [start]
-    );
+    return await this.db.getFirstAsync<DailyGoal>('SELECT * FROM daily_goals WHERE dateMs = ?', [
+      start,
+    ]);
   }
 
   async getSessionsForRangeAsync(fromMs: number, toMs: number): Promise<OutsideSession[]> {
@@ -133,14 +141,16 @@ export class StorageService implements IStorageService {
     );
   }
 
-  async getScheduledNotificationsAsync(): Promise<{
-    id: number;
-    dayOfWeek: number;
-    hour: number;
-    minute: number;
-    enabled: number;
-    message: string | null;
-  }[]> {
+  async getScheduledNotificationsAsync(): Promise<
+    {
+      id: number;
+      dayOfWeek: number;
+      hour: number;
+      minute: number;
+      enabled: number;
+      message: string | null;
+    }[]
+  > {
     return await this.db.getAllAsync<{
       id: number;
       dayOfWeek: number;
@@ -152,11 +162,10 @@ export class StorageService implements IStorageService {
   }
 
   async insertBackgroundLogAsync(source: string, message: string): Promise<void> {
-    await this.db.runAsync('INSERT INTO background_logs (timestamp, source, message) VALUES (?, ?, ?)', [
-      Date.now(),
-      source,
-      message,
-    ]);
+    await this.db.runAsync(
+      'INSERT INTO background_logs (timestamp, source, message) VALUES (?, ?, ?)',
+      [Date.now(), source, message]
+    );
   }
 
   async getWeatherCacheAsync(): Promise<WeatherCache | null> {
@@ -169,7 +178,11 @@ export class StorageService implements IStorageService {
     }
   }
 
-  async getWeatherConditionsForHourAsync(dateMs: number, startHour: number, endHour: number): Promise<WeatherCondition[]> {
+  async getWeatherConditionsForHourAsync(
+    dateMs: number,
+    startHour: number,
+    endHour: number
+  ): Promise<WeatherCondition[]> {
     return await this.db.getAllAsync<WeatherCondition>(
       'SELECT * FROM weather_conditions WHERE forecastDate = ? AND forecastHour >= ? AND forecastHour < ? ORDER BY forecastHour ASC',
       [dateMs, startHour, endHour]

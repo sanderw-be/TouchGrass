@@ -16,14 +16,14 @@ interface IReminderAlgorithm {
     todayMinutes: number,
     dailyTarget: number,
     lastMs: number,
-    isCurrentlyOutside: boolean,
+    isCurrentlyOutside: boolean
   ): Promise<{ should: boolean; reason: string; contributors: ScoreContributor[] }>;
   scoreReminderHours(
     todayMinutes: number,
     dailyTarget: number,
     currentHour: number,
     currentMinute: number,
-    plannedSlots?: { hour: number; minute: number }[],
+    plannedSlots?: { hour: number; minute: number }[]
   ): Promise<HourScore[]>;
   getWeatherPreferences(): Promise<WeatherPreferences>;
 }
@@ -56,7 +56,7 @@ export class SmartReminderScheduler implements ISmartReminderScheduler {
     private weatherService: {
       fetchWeatherForecast(options: { allowPermissionPrompt: boolean }): Promise<void>;
     },
-    private reminderAlgorithm: IReminderAlgorithm,
+    private reminderAlgorithm: IReminderAlgorithm
   ) {}
 
   public _resetSchedulingGuards(): void {
@@ -67,7 +67,10 @@ export class SmartReminderScheduler implements ISmartReminderScheduler {
   public async scheduleNextReminder(): Promise<void> {
     const todayMinutes = await this.storageService.getTodayMinutesAsync();
     const dailyTarget = (await this.storageService.getCurrentDailyGoalAsync())?.targetMinutes ?? 30;
-    const remindersCount = parseInt(await this.storageService.getSettingAsync('smart_reminders_count', '2'), 10);
+    const remindersCount = parseInt(
+      await this.storageService.getSettingAsync('smart_reminders_count', '2'),
+      10
+    );
 
     if (remindersCount === 0) return;
 
@@ -83,7 +86,10 @@ export class SmartReminderScheduler implements ISmartReminderScheduler {
     }
 
     const todayStr = new Date().toDateString();
-    const lastPlannedDate = await this.storageService.getSettingAsync('reminders_last_planned_date', '');
+    const lastPlannedDate = await this.storageService.getSettingAsync(
+      'reminders_last_planned_date',
+      ''
+    );
     if (lastPlannedDate === todayStr) {
       return;
     }
@@ -149,7 +155,10 @@ export class SmartReminderScheduler implements ISmartReminderScheduler {
   }
 
   public async processReminderQueue(): Promise<void> {
-    const remindersCount = parseInt(await this.storageService.getSettingAsync('smart_reminders_count', '0'), 10);
+    const remindersCount = parseInt(
+      await this.storageService.getSettingAsync('smart_reminders_count', '0'),
+      10
+    );
     if (remindersCount === 0) return;
 
     const now = new Date();
@@ -158,7 +167,7 @@ export class SmartReminderScheduler implements ISmartReminderScheduler {
     const CONSUMED_TTL = 60;
 
     let queue = await this.queueManager.getQueue();
-    
+
     if (queue.length === 0) {
       await this.storageService.insertBackgroundLogAsync('reminder', 'Queue processed — empty');
       return;
@@ -221,8 +230,11 @@ export class SmartReminderScheduler implements ISmartReminderScheduler {
           await this.storageService.setSettingAsync('last_reminder_ms', String(Date.now()));
           entry.status = 'consumed';
           updatedQueue.push(entry);
-          
-          await this.storageService.insertBackgroundLogAsync('reminder', `Reminder fired at ${Math.floor(entry.slotMinutes / 60)}:${String(entry.slotMinutes % 60).padStart(2, '0')}`);
+
+          await this.storageService.insertBackgroundLogAsync(
+            'reminder',
+            `Reminder fired at ${Math.floor(entry.slotMinutes / 60)}:${String(entry.slotMinutes % 60).padStart(2, '0')}`
+          );
           continue;
         } else if (minutesSince > WINDOW) {
           continue;
@@ -237,7 +249,10 @@ export class SmartReminderScheduler implements ISmartReminderScheduler {
   }
 
   public async updateUpcomingReminderContent(): Promise<void> {
-    const remindersCount = parseInt(await this.storageService.getSettingAsync('smart_reminders_count', '0'), 10);
+    const remindersCount = parseInt(
+      await this.storageService.getSettingAsync('smart_reminders_count', '0'),
+      10
+    );
     if (remindersCount === 0) return;
 
     const UPDATE_WINDOW_MINUTES = 30;
@@ -279,7 +294,7 @@ export class SmartReminderScheduler implements ISmartReminderScheduler {
       await Notifications.cancelScheduledNotificationAsync(entry.id);
       const triggerDate = new Date();
       triggerDate.setHours(Math.floor(entry.slotMinutes / 60), entry.slotMinutes % 60, 0, 0);
-      
+
       await Notifications.scheduleNotificationAsync({
         identifier: entry.id,
         content: { title, body, categoryIdentifier: 'reminder', color: '#4A7C59' },
@@ -293,34 +308,52 @@ export class SmartReminderScheduler implements ISmartReminderScheduler {
     }
 
     if (updatedCount > 0) {
-      await this.storageService.insertBackgroundLogAsync('reminder', `Updated content for ${updatedCount} reminder(s) within 30 min window`);
+      await this.storageService.insertBackgroundLogAsync(
+        'reminder',
+        `Updated content for ${updatedCount} reminder(s) within 30 min window`
+      );
     }
   }
 
   public async scheduleDayReminders(): Promise<void> {
     const todayStr = new Date().toDateString();
     if (this.dayPlanLastDate === todayStr) {
-      await this.storageService.insertBackgroundLogAsync('reminder', 'Daily plan: already planned — queue empty');
+      await this.storageService.insertBackgroundLogAsync(
+        'reminder',
+        'Daily plan: already planned — queue empty'
+      );
       return;
     }
-    
+
     // Set synchronously to prevent race conditions between concurrent calls
     this.dayPlanLastDate = todayStr;
 
-    const lastPlannedDate = await this.storageService.getSettingAsync('reminders_last_planned_date', '');
+    const lastPlannedDate = await this.storageService.getSettingAsync(
+      'reminders_last_planned_date',
+      ''
+    );
     if (lastPlannedDate === todayStr) {
-      await this.storageService.insertBackgroundLogAsync('reminder', 'Daily plan: already planned — queue empty');
+      await this.storageService.insertBackgroundLogAsync(
+        'reminder',
+        'Daily plan: already planned — queue empty'
+      );
       return;
     }
 
     await this.storageService.setSettingAsync('reminders_last_planned_date', todayStr);
 
-    const remindersCount = parseInt(await this.storageService.getSettingAsync('smart_reminders_count', '2'), 10);
+    const remindersCount = parseInt(
+      await this.storageService.getSettingAsync('smart_reminders_count', '2'),
+      10
+    );
     await this.cancelFailsafeReminders();
     await this.calendarService.deleteFutureTouchGrassEvents(new Date(), FAILSAFE_DAYS_AHEAD);
 
     if (remindersCount === 0) {
-      await this.storageService.insertBackgroundLogAsync('reminder', 'Daily plan: reminders disabled (count=0)');
+      await this.storageService.insertBackgroundLogAsync(
+        'reminder',
+        'Daily plan: reminders disabled (count=0)'
+      );
       await Promise.all([
         this.storageService.setSettingAsync('reminders_planned_slots', '[]'),
         this.storageService.setSettingAsync('additional_reminders_today', '0'),
@@ -337,7 +370,10 @@ export class SmartReminderScheduler implements ISmartReminderScheduler {
 
     if (todayMinutes >= dailyTarget) {
       console.log('TouchGrass: daily goal reached — cancelling remaining smart reminders');
-      await this.storageService.insertBackgroundLogAsync('reminder', 'Daily plan: target already reached');
+      await this.storageService.insertBackgroundLogAsync(
+        'reminder',
+        'Daily plan: target already reached'
+      );
       await Promise.all([
         this.storageService.setSettingAsync('reminders_planned_slots', '[]'),
         this.storageService.setSettingAsync('additional_reminders_today', '0'),
@@ -365,16 +401,17 @@ export class SmartReminderScheduler implements ISmartReminderScheduler {
 
       let pickedInThisRound = false;
       for (const slot of scores) {
-        if (slot.score < 0.3) continue; 
+        if (slot.score < 0.3) continue;
         const slotTotalMinutes = slot.hour * 60 + slot.minute;
         const nowTotalMinutes = now.getHours() * 60 + now.getMinutes();
-        
-        if (slotTotalMinutes <= nowTotalMinutes) continue;
-        
-        // Check if already in topSlots
-        if (topSlots.some(s => s.hour === slot.hour && s.minute === slot.minute)) continue;
 
-        if (await this.scheduledManager.isSlotNearScheduledNotification(slot.hour, slot.minute, 30)) continue;
+        if (slotTotalMinutes <= nowTotalMinutes) continue;
+
+        // Check if already in topSlots
+        if (topSlots.some((s) => s.hour === slot.hour && s.minute === slot.minute)) continue;
+
+        if (await this.scheduledManager.isSlotNearScheduledNotification(slot.hour, slot.minute, 30))
+          continue;
 
         topSlots.push(slot);
         pickedInThisRound = true;
@@ -413,17 +450,20 @@ export class SmartReminderScheduler implements ISmartReminderScheduler {
       });
 
       scheduledSlots.push({ hour: slot.hour, minute: slot.minute });
-      newQueueEntries.push({ 
-        id, 
-        slotMinutes: slot.hour * 60 + slot.minute, 
-        status: 'date_planned' as ReminderQueueEntry['status'] 
+      newQueueEntries.push({
+        id,
+        slotMinutes: slot.hour * 60 + slot.minute,
+        status: 'date_planned' as ReminderQueueEntry['status'],
       });
       await this.calendarService.maybeAddOutdoorTimeToCalendar(triggerDate);
     }
 
     // Persist simple slots list for UI/logic checks (tests expect this key)
-    await this.storageService.setSettingAsync('reminders_planned_slots', JSON.stringify(scheduledSlots));
-    
+    await this.storageService.setSettingAsync(
+      'reminders_planned_slots',
+      JSON.stringify(scheduledSlots)
+    );
+
     await Promise.all([
       this.storageService.setSettingAsync('additional_reminders_today', '0'),
       this.storageService.setSettingAsync('catchup_reminder_slot_minutes', ''),
@@ -434,48 +474,82 @@ export class SmartReminderScheduler implements ISmartReminderScheduler {
 
   public async maybeScheduleCatchUpReminder(): Promise<void> {
     if (this.catchUpSchedulingInProgress) {
-      await this.storageService.insertBackgroundLogAsync('reminder', 'Catch-up skipped — concurrent call in progress');
+      await this.storageService.insertBackgroundLogAsync(
+        'reminder',
+        'Catch-up skipped — concurrent call in progress'
+      );
       return;
     }
     this.catchUpSchedulingInProgress = true;
     try {
-      const remindersCount = parseInt(await this.storageService.getSettingAsync('smart_reminders_count', '2'), 10);
+      const remindersCount = parseInt(
+        await this.storageService.getSettingAsync('smart_reminders_count', '2'),
+        10
+      );
       if (remindersCount === 0) return;
 
-      const lastPlannedDate = await this.storageService.getSettingAsync('reminders_last_planned_date', '');
+      const lastPlannedDate = await this.storageService.getSettingAsync(
+        'reminders_last_planned_date',
+        ''
+      );
       if (lastPlannedDate !== new Date().toDateString()) {
-        await this.storageService.insertBackgroundLogAsync('reminder', 'Catch-up skipped — no day plan yet');
+        await this.storageService.insertBackgroundLogAsync(
+          'reminder',
+          'Catch-up skipped — no day plan yet'
+        );
         return;
       }
 
       const currentQueue = await this.queueManager.getQueue();
       const now = new Date();
       const nowMinutes = now.getHours() * 60 + now.getMinutes();
-      const lastReminderSlot = currentQueue.reduce((max, e) => (e.slotMinutes <= nowMinutes && e.slotMinutes > max) ? e.slotMinutes : max, -1000);
-      
+      const lastReminderSlot = currentQueue.reduce(
+        (max, e) => (e.slotMinutes <= nowMinutes && e.slotMinutes > max ? e.slotMinutes : max),
+        -1000
+      );
+
       if (nowMinutes - lastReminderSlot < 60) {
-        await this.storageService.insertBackgroundLogAsync('reminder', 'Catch-up postponed: within 60 min of last reminder');
+        await this.storageService.insertBackgroundLogAsync(
+          'reminder',
+          'Catch-up postponed: within 60 min of last reminder'
+        );
         return;
       }
 
       if (currentQueue.length === 0) {
-        await this.storageService.insertBackgroundLogAsync('reminder', 'Catch-up skipped — no planned slots');
+        await this.storageService.insertBackgroundLogAsync(
+          'reminder',
+          'Catch-up skipped — no planned slots'
+        );
         return;
       }
 
-      const additionalCountRaw = await this.storageService.getSettingAsync('additional_reminders_today', '0');
+      const additionalCountRaw = await this.storageService.getSettingAsync(
+        'additional_reminders_today',
+        '0'
+      );
       const additionalCount = parseInt(additionalCountRaw, 10);
-      const catchupLimit = parseInt(await this.storageService.getSettingAsync('smart_catchup_reminders_count', '2'), 10);
+      const catchupLimit = parseInt(
+        await this.storageService.getSettingAsync('smart_catchup_reminders_count', '2'),
+        10
+      );
       if (additionalCount >= catchupLimit) {
-        await this.storageService.insertBackgroundLogAsync('reminder', 'Catch-up skipped — limit reached');
+        await this.storageService.insertBackgroundLogAsync(
+          'reminder',
+          'Catch-up skipped — limit reached'
+        );
         return;
       }
 
       const todayMinutes = await this.storageService.getTodayMinutesAsync();
-      const dailyTarget = (await this.storageService.getCurrentDailyGoalAsync())?.targetMinutes ?? 30;
+      const dailyTarget =
+        (await this.storageService.getCurrentDailyGoalAsync())?.targetMinutes ?? 30;
 
       if (todayMinutes >= dailyTarget) {
-        await this.storageService.insertBackgroundLogAsync('reminder', 'Catch-up skipped — target already reached');
+        await this.storageService.insertBackgroundLogAsync(
+          'reminder',
+          'Catch-up skipped — target already reached'
+        );
         await this.cancelAutomaticReminders();
         await Promise.all([
           this.storageService.setSettingAsync('reminders_planned_slots', '[]'),
@@ -491,32 +565,49 @@ export class SmartReminderScheduler implements ISmartReminderScheduler {
         await this.weatherService.fetchWeatherForecast({ allowPermissionPrompt: false });
       }
 
-      const additionalCountFinalRaw = await this.storageService.getSettingAsync('additional_reminders_today', '0');
+      const additionalCountFinalRaw = await this.storageService.getSettingAsync(
+        'additional_reminders_today',
+        '0'
+      );
       if (parseInt(additionalCountFinalRaw, 10) >= catchupLimit) {
-        await this.storageService.insertBackgroundLogAsync('reminder', 'Catch-up skipped — concurrent cross-runtime call already scheduled');
+        await this.storageService.insertBackgroundLogAsync(
+          'reminder',
+          'Catch-up skipped — concurrent cross-runtime call already scheduled'
+        );
         return;
       }
 
       const scores = await this.reminderAlgorithm.scoreReminderHours(
-        todayMinutes, 
-        dailyTarget, 
-        now.getHours(), 
+        todayMinutes,
+        dailyTarget,
+        now.getHours(),
         now.getMinutes(),
-        currentQueue.map(e => ({ hour: Math.floor(e.slotMinutes / 60), minute: (e.slotMinutes % 60) as 0 | 30 }))
+        currentQueue.map((e) => ({
+          hour: Math.floor(e.slotMinutes / 60),
+          minute: (e.slotMinutes % 60) as 0 | 30,
+        }))
       );
-      const queuedSlotMinutes = new Set(currentQueue.map(e => e.slotMinutes));
+      const queuedSlotMinutes = new Set(currentQueue.map((e) => e.slotMinutes));
 
       const candidates = scores
-        .filter(s => s.score >= 0.3 && !queuedSlotMinutes.has(s.hour * 60 + s.minute))
+        .filter((s) => s.score >= 0.3 && !queuedSlotMinutes.has(s.hour * 60 + s.minute))
         .slice(0, 3); // Top 3 by score
 
       // Pick earliest of the top 3 to spread them out
-      const sortedCandidates = [...candidates].sort((a, b) => (a.hour * 60 + a.minute) - (b.hour * 60 + b.minute));
+      const sortedCandidates = [...candidates].sort(
+        (a, b) => a.hour * 60 + a.minute - (b.hour * 60 + b.minute)
+      );
 
       let best = null;
       for (const candidate of sortedCandidates) {
-        if (await this.scheduledManager.isSlotNearScheduledNotification(candidate.hour, candidate.minute, 30)) {
-           continue;
+        if (
+          await this.scheduledManager.isSlotNearScheduledNotification(
+            candidate.hour,
+            candidate.minute,
+            30
+          )
+        ) {
+          continue;
         }
         best = candidate;
         break;
@@ -526,10 +617,10 @@ export class SmartReminderScheduler implements ISmartReminderScheduler {
         const triggerDate = new Date();
         triggerDate.setHours(best.hour, best.minute, 0, 0);
         const { title, body } = await this.messageBuilder.buildReminderMessage(
-          todayMinutes, 
-          dailyTarget, 
-          best.hour, 
-          best.contributors?.map((c: ScoreContributor) => c.description) || [], 
+          todayMinutes,
+          dailyTarget,
+          best.hour,
+          best.contributors?.map((c: ScoreContributor) => c.description) || [],
           true
         );
         const id = `catchup_${this.formatLocalDateKey(triggerDate)}_${best.hour}:${best.minute}_${Date.now()}`;
@@ -544,16 +635,29 @@ export class SmartReminderScheduler implements ISmartReminderScheduler {
           },
         });
 
-        currentQueue.push({ id, slotMinutes: best.hour * 60 + best.minute, status: 'date_planned' });
+        currentQueue.push({
+          id,
+          slotMinutes: best.hour * 60 + best.minute,
+          status: 'date_planned',
+        });
         await this.queueManager.saveQueue(currentQueue);
         await Promise.all([
-          this.storageService.setSettingAsync('additional_reminders_today', String(additionalCount + 1)),
-          this.storageService.setSettingAsync('catchup_reminder_slot_minutes', String(best.hour * 60 + best.minute)),
+          this.storageService.setSettingAsync(
+            'additional_reminders_today',
+            String(additionalCount + 1)
+          ),
+          this.storageService.setSettingAsync(
+            'catchup_reminder_slot_minutes',
+            String(best.hour * 60 + best.minute)
+          ),
         ]);
       } else if (sortedCandidates.length > 0) {
-        // All top candidates were near scheduled notifications. 
+        // All top candidates were near scheduled notifications.
         // We set catchup_reminder_slot_minutes to the first one for test compatibility, but don't schedule.
-        await this.storageService.setSettingAsync('catchup_reminder_slot_minutes', String(sortedCandidates[0].hour * 60 + sortedCandidates[0].minute));
+        await this.storageService.setSettingAsync(
+          'catchup_reminder_slot_minutes',
+          String(sortedCandidates[0].hour * 60 + sortedCandidates[0].minute)
+        );
       }
     } finally {
       this.catchUpSchedulingInProgress = false;
@@ -577,9 +681,11 @@ export class SmartReminderScheduler implements ISmartReminderScheduler {
   public async cancelAutomaticReminders(): Promise<void> {
     const all = await Notifications.getAllScheduledNotificationsAsync();
     for (const notif of all) {
-      if (!notif.identifier.startsWith('scheduled_') && 
-          !notif.identifier.startsWith(DAILY_PLANNER_NOTIF_PREFIX) && 
-          !notif.identifier.startsWith(FAILSAFE_REMINDER_PREFIX)) {
+      if (
+        !notif.identifier.startsWith('scheduled_') &&
+        !notif.identifier.startsWith(DAILY_PLANNER_NOTIF_PREFIX) &&
+        !notif.identifier.startsWith(FAILSAFE_REMINDER_PREFIX)
+      ) {
         await Notifications.cancelScheduledNotificationAsync(notif.identifier);
       }
     }
@@ -601,7 +707,9 @@ export class SmartReminderScheduler implements ISmartReminderScheduler {
     }
   }
 
-  private async scheduleFailsafeReminders(slots: { hour: number; minute: number }[]): Promise<void> {
+  private async scheduleFailsafeReminders(
+    slots: { hour: number; minute: number }[]
+  ): Promise<void> {
     const dailyTarget = (await this.storageService.getCurrentDailyGoalAsync())?.targetMinutes ?? 30;
     for (let daysAhead = 1; daysAhead <= FAILSAFE_DAYS_AHEAD; daysAhead++) {
       const futureDate = new Date();
@@ -610,11 +718,21 @@ export class SmartReminderScheduler implements ISmartReminderScheduler {
         const slot = slots[i];
         const triggerDate = new Date(futureDate);
         triggerDate.setHours(slot.hour, slot.minute, 0, 0);
-        const { title, body } = await this.messageBuilder.buildReminderMessage(0, dailyTarget, slot.hour, undefined, false);
+        const { title, body } = await this.messageBuilder.buildReminderMessage(
+          0,
+          dailyTarget,
+          slot.hour,
+          undefined,
+          false
+        );
         await Notifications.scheduleNotificationAsync({
           identifier: `${FAILSAFE_REMINDER_PREFIX}${this.formatLocalDateKey(futureDate)}_${i}`,
           content: { title, body, categoryIdentifier: 'reminder', color: '#4A7C59' },
-          trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: triggerDate, channelId: CHANNEL_ID },
+          trigger: {
+            type: Notifications.SchedulableTriggerInputTypes.DATE,
+            date: triggerDate,
+            channelId: CHANNEL_ID,
+          },
         });
         await this.calendarService.maybeAddOutdoorTimeToCalendar(triggerDate);
       }

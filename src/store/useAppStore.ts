@@ -167,11 +167,3 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   reset: () => set(initialState),
 }));
-
-/**
- * Called by notificationManager to trigger the in-app feedback modal.
- * Works from outside React component context.
- */
-export function triggerReminderFeedbackModal(data: FeedbackModalData): void {
-  useAppStore.getState().triggerFeedback(data);
-}

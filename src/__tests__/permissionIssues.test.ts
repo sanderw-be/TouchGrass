@@ -10,7 +10,7 @@ jest.mock('../detection', () => ({
   ),
   checkWeatherLocationPermissions: jest.fn(() => Promise.resolve(true)),
   checkGPSPermissions: jest.fn(() => Promise.resolve(true)),
-  recheckHealthConnect: jest.fn(() => Promise.resolve(true)),
+  verifyHealthConnectPermissions: jest.fn(() => Promise.resolve(true)),
 }));
 
 // Mock database
@@ -42,7 +42,7 @@ describe('countPermissionIssues', () => {
     });
     (detection.checkWeatherLocationPermissions as jest.Mock).mockResolvedValue(true);
     (detection.checkGPSPermissions as jest.Mock).mockResolvedValue(true);
-    (detection.recheckHealthConnect as jest.Mock).mockResolvedValue(true);
+    (detection.verifyHealthConnectPermissions as jest.Mock).mockResolvedValue(true);
     (CalendarService.hasCalendarPermissions as jest.Mock).mockResolvedValue(true);
     // Default: notifications denied
     const Notifications = require('expo-notifications');
@@ -105,7 +105,7 @@ describe('countPermissionIssues', () => {
       healthConnect: true,
       healthConnectPermission: false, // stale cache value
     });
-    (detection.recheckHealthConnect as jest.Mock).mockResolvedValue(true); // live OS check: granted
+    (detection.verifyHealthConnectPermissions as jest.Mock).mockResolvedValue(true); // live OS check: granted
     mockGetSetting.mockImplementation(async (key: string, def: string) => {
       if (key === 'smart_reminders_count') return '0';
       if (key === 'weather_enabled') return '0';

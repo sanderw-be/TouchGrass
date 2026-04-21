@@ -79,7 +79,7 @@ export class NotificationResponseHandler implements INotificationResponseHandler
     if (action === 'snoozed') {
       const snoozeDate = new Date(now + SNOOZE_DURATION_MINUTES * 60 * 1000);
       const snoozeHour = snoozeDate.getHours();
-      
+
       const todayMinutes = await this.storageService.getTodayMinutesAsync();
       const goal = await this.storageService.getCurrentDailyGoalAsync();
       const targetMinutes = goal?.targetMinutes ?? 30;
@@ -91,7 +91,7 @@ export class NotificationResponseHandler implements INotificationResponseHandler
         undefined,
         false
       );
-      
+
       await Notifications.scheduleNotificationAsync({
         content: { title, body, categoryIdentifier: 'reminder', color: '#4A7C59' },
         trigger: {
