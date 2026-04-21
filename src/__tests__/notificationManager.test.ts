@@ -99,6 +99,7 @@ describe('notificationManager', () => {
     // Note: getSettingAsync and setSettingAsync are already set up via getSettingMock/setSettingMock above
     
     (Database.getScheduledNotificationsAsync as jest.Mock).mockResolvedValue([]);
+    (Database.getWeatherConditionsForHourAsync as jest.Mock).mockResolvedValue([]);
     (WeatherService.isWeatherDataAvailable as jest.Mock).mockResolvedValue(false);
     (WeatherAlgorithm.getWeatherPreferences as jest.Mock).mockResolvedValue({ enabled: false });
     (WeatherAlgorithm.getWeatherEmoji as jest.Mock).mockReturnValue('🌡️');
@@ -1951,9 +1952,9 @@ describe('notificationManager', () => {
           return fallback;
         }
       );
-      (Database.getWeatherCacheAsync as jest.Mock).mockResolvedValue({
-        conditions: [{ forecastHour: 12, weatherCode: 0 }],
-      });
+      (Database.getWeatherConditionsForHourAsync as jest.Mock).mockResolvedValue([
+        { forecastHour: 12, weatherCode: 0, temperature: 20 },
+      ]);
       (WeatherAlgorithm.getWeatherPreferences as jest.Mock).mockResolvedValue({ enabled: true });
       (WeatherService.fetchWeatherForecast as jest.Mock).mockResolvedValue({
         success: true,

@@ -1,4 +1,4 @@
-import { SQLiteAnyDatabase } from 'expo-sqlite';
+import { SQLiteDatabase } from 'expo-sqlite';
 import { IStorageService, StorageService } from '../storage/StorageService';
 import { INotificationInfrastructureService, NotificationInfrastructureService } from '../notifications/services/NotificationInfrastructureService';
 import { IReminderMessageBuilder, ReminderMessageBuilder } from '../notifications/services/ReminderMessageBuilder';
@@ -36,7 +36,7 @@ let container: IAppContainer;
  * Initializes the dependency injection container.
  * Must be called after the database is ready.
  */
-export function createContainer(db: SQLiteAnyDatabase): IAppContainer {
+export function createContainer(db: SQLiteDatabase): IAppContainer {
   const storageService = new StorageService(db);
   const notificationInfrastructureService = new NotificationInfrastructureService();
   const reminderMessageBuilder = new ReminderMessageBuilder(
@@ -45,8 +45,8 @@ export function createContainer(db: SQLiteAnyDatabase): IAppContainer {
       isWeatherDataAvailable: WeatherService.isWeatherDataAvailable,
     },
     {
-      getWeatherEmoji: WeatherAlgorithm.getWeatherEmoji,
-      getWeatherDescription: WeatherAlgorithm.getWeatherDescription,
+      getWeatherEmoji: (code) => WeatherAlgorithm.getWeatherEmoji(code === null ? null : { weatherCode: code } as any),
+      getWeatherDescription: (code) => WeatherAlgorithm.getWeatherDescription(code === null ? null : { weatherCode: code } as any),
     }
   );
   const reminderQueueManager = new ReminderQueueManager(storageService);
@@ -69,7 +69,9 @@ export function createContainer(db: SQLiteAnyDatabase): IAppContainer {
       deleteFutureTouchGrassEvents,
     },
     {
-      fetchWeatherForecast: WeatherService.fetchWeatherForecast,
+      fetchWeatherForecast: async (opts) => {
+        await WeatherService.fetchWeatherForecast(opts);
+      },
     },
     {
       shouldRemindNow,

@@ -1,6 +1,7 @@
 import * as Notifications from 'expo-notifications';
 import { IStorageService } from '../../storage/StorageService';
 import { IReminderMessageBuilder } from './ReminderMessageBuilder';
+import { FeedbackModalData } from '../../store/useAppStore';
 import {
   ACTION_WENT_OUTSIDE,
   ACTION_SNOOZE,

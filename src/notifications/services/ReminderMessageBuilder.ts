@@ -1,5 +1,6 @@
 import { t } from '../../i18n';
 import { IStorageService } from '../../storage/StorageService';
+import { WeatherCondition } from '../../weather/types';
 
 
 
@@ -77,19 +78,21 @@ export class ReminderMessageBuilder implements IReminderMessageBuilder {
       // Append weather context if weather enabled
       const weatherEnabled = (await this.storageService.getSettingAsync('weather_enabled', '1')) === '1';
       if (weatherEnabled) {
-        const cache = await this.storageService.getWeatherCacheAsync();
         let appendedWeather = false;
 
-        if (cache && cache.conditions) {
-          const hourData = cache.conditions.find((c: WeatherCondition) => c.forecastHour === hour);
-          if (hourData) {
-            const preferCelsius = (await this.storageService.getSettingAsync('prefer_celsius', '1')) === '1';
-            const emoji = this.weatherAlgorithm.getWeatherEmoji(hourData.weatherCode);
-            const description = t(this.weatherAlgorithm.getWeatherDescription(hourData.weatherCode));
-            const temperature = this._getTemperatureString(hourData.temperature, preferCelsius);
-            body += `. ${emoji} ${t('notif_weather_context', { description, temperature })}.`;
-            appendedWeather = true;
-          }
+        // Try to get weather for this specific hour
+        const startOfDay = new Date();
+        startOfDay.setHours(0, 0, 0, 0);
+        const hourDataList = await this.storageService.getWeatherConditionsForHourAsync(startOfDay.getTime(), hour, hour + 1);
+        const hourData = hourDataList.length > 0 ? hourDataList[0] : null;
+
+        if (hourData) {
+          const preferCelsius = (await this.storageService.getSettingAsync('prefer_celsius', '1')) === '1';
+          const emoji = this.weatherAlgorithm.getWeatherEmoji(hourData.weatherCode);
+          const description = t(this.weatherAlgorithm.getWeatherDescription(hourData.weatherCode));
+          const temperature = this._getTemperatureString(hourData.temperature, preferCelsius);
+          body += `. ${emoji} ${t('notif_weather_context', { description, temperature })}.`;
+          appendedWeather = true;
         }
         
         // Fallback for when weather is enabled but no specific hour data is found

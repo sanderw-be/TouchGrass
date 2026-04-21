@@ -353,7 +353,7 @@ export class SmartReminderScheduler implements ISmartReminderScheduler {
     }
 
     const now = new Date();
-    const topSlots = [];
+    const topSlots: HourScore[] = [];
     while (topSlots.length < remindersCount) {
       const scores = await this.reminderAlgorithm.scoreReminderHours(
         todayMinutes,
@@ -413,7 +413,11 @@ export class SmartReminderScheduler implements ISmartReminderScheduler {
       });
 
       scheduledSlots.push({ hour: slot.hour, minute: slot.minute });
-      newQueueEntries.push({ id, slotMinutes: slot.hour * 60 + slot.minute, status: 'date_planned' });
+      newQueueEntries.push({ 
+        id, 
+        slotMinutes: slot.hour * 60 + slot.minute, 
+        status: 'date_planned' as ReminderQueueEntry['status'] 
+      });
       await this.calendarService.maybeAddOutdoorTimeToCalendar(triggerDate);
     }
 
