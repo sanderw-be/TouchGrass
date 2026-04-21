@@ -36,10 +36,6 @@ export interface IStorageService {
   clearExpiredWeatherDataAsync(beforeMs: number): Promise<void>;
   saveWeatherCacheAsync(cache: WeatherCache): Promise<void>;
 
-  // Missing methods needed by tests
-  getReminderQueueAsync?(): Promise<any>;
-  setReminderQueueAsync?(queue: any): Promise<void>;
-
   // ... (More will be added as we migrate repositories)
 }
 
@@ -196,14 +192,5 @@ export class StorageService implements IStorageService {
 
   async saveWeatherCacheAsync(cache: WeatherCache): Promise<void> {
     await this.setSettingAsync('weather_cache', JSON.stringify(cache));
-  }
-
-  // Implementation of missing methods needed by tests
-  async getReminderQueueAsync(): Promise<any> {
-    throw new Error('Method not implemented.');
-  }
-
-  async setReminderQueueAsync(queue: any): Promise<void> {
-    throw new Error('Method not implemented.');
   }
 }
