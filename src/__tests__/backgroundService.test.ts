@@ -6,11 +6,13 @@
  */
 
 jest.mock('../notifications/notificationManager', () => ({
-  scheduleDayReminders: jest.fn(),
-  maybeScheduleCatchUpReminder: jest.fn(),
-  processReminderQueue: jest.fn(),
-  logReminderQueueSnapshot: jest.fn(),
-  updateUpcomingReminderContent: jest.fn(),
+  NotificationService: {
+    scheduleDayReminders: jest.fn(),
+    maybeScheduleCatchUpReminder: jest.fn(),
+    processReminderQueue: jest.fn(),
+    logReminderQueueSnapshot: jest.fn(),
+    updateUpcomingReminderContent: jest.fn(),
+  },
 }));
 
 jest.mock('../weather/weatherService', () => ({
@@ -23,25 +25,12 @@ jest.mock('../storage/database', () => ({
   insertBackgroundLogAsync: jest.fn(),
 }));
 
-jest.mock('../background/alarmTiming', () => ({
-  scheduleNextAlarmPulse: jest.fn(() => Promise.resolve()),
-  cancelAlarmPulse: jest.fn(() => Promise.resolve()),
-  computeNextSleepMs: jest.fn(() => 15 * 60 * 1000),
-  PULSE_INTERVAL_DAY_MS: 15 * 60 * 1000,
-  PULSE_INTERVAL_NIGHT_MS: 60 * 60 * 1000,
-}));
-
 import * as BackgroundTask from 'expo-background-task';
 import * as TaskManager from 'expo-task-manager';
-import * as NotificationManager from '../notifications/notificationManager';
+import { NotificationService } from '../notifications/notificationManager';
 import * as WeatherService from '../weather/weatherService';
 import * as Database from '../storage/database';
-import * as AlarmTiming from '../background/alarmTiming';
-import {
-  UNIFIED_BACKGROUND_TASK,
-  registerUnifiedBackgroundTask,
-  unregisterUnifiedBackgroundTask,
-} from '../background/unifiedBackgroundTask';
+import { UNIFIED_BACKGROUND_TASK, BackgroundService } from '../background/unifiedBackgroundTask';
 
 describe('unifiedBackgroundTask', () => {
   // Capture the task callback registered at module load time
@@ -62,7 +51,7 @@ describe('unifiedBackgroundTask', () => {
     it('registers the task when not already registered', async () => {
       (TaskManager.isTaskRegisteredAsync as jest.Mock).mockResolvedValue(false);
 
-      await registerUnifiedBackgroundTask();
+      await BackgroundService.registerUnifiedBackgroundTask();
 
       expect(BackgroundTask.registerTaskAsync).toHaveBeenCalledWith(UNIFIED_BACKGROUND_TASK, {
         minimumInterval: 15,
@@ -72,7 +61,7 @@ describe('unifiedBackgroundTask', () => {
     it('does not register the task when already registered', async () => {
       (TaskManager.isTaskRegisteredAsync as jest.Mock).mockResolvedValue(true);
 
-      await registerUnifiedBackgroundTask();
+      await BackgroundService.registerUnifiedBackgroundTask();
 
       expect(BackgroundTask.registerTaskAsync).not.toHaveBeenCalled();
     });
@@ -83,7 +72,7 @@ describe('unifiedBackgroundTask', () => {
         new Error('Registration failed')
       );
 
-      await expect(registerUnifiedBackgroundTask()).resolves.not.toThrow();
+      await expect(BackgroundService.registerUnifiedBackgroundTask()).resolves.not.toThrow();
     });
   });
 
@@ -91,7 +80,7 @@ describe('unifiedBackgroundTask', () => {
     it('unregisters the task when registered', async () => {
       (TaskManager.isTaskRegisteredAsync as jest.Mock).mockResolvedValue(true);
 
-      await unregisterUnifiedBackgroundTask();
+      await BackgroundService.unregisterUnifiedBackgroundTask();
 
       expect(BackgroundTask.unregisterTaskAsync).toHaveBeenCalledWith(UNIFIED_BACKGROUND_TASK);
     });
@@ -99,7 +88,7 @@ describe('unifiedBackgroundTask', () => {
     it('does not unregister when task is not registered', async () => {
       (TaskManager.isTaskRegisteredAsync as jest.Mock).mockResolvedValue(false);
 
-      await unregisterUnifiedBackgroundTask();
+      await BackgroundService.unregisterUnifiedBackgroundTask();
 
       expect(BackgroundTask.unregisterTaskAsync).not.toHaveBeenCalled();
     });
@@ -110,7 +99,7 @@ describe('unifiedBackgroundTask', () => {
         new Error('Unregistration failed')
       );
 
-      await expect(unregisterUnifiedBackgroundTask()).resolves.not.toThrow();
+      await expect(BackgroundService.unregisterUnifiedBackgroundTask()).resolves.not.toThrow();
     });
   });
 
@@ -133,18 +122,18 @@ describe('unifiedBackgroundTask', () => {
         if (key === 'weather_enabled') return '0';
         return '';
       });
-      (NotificationManager.scheduleDayReminders as jest.Mock).mockResolvedValue(undefined);
-      (NotificationManager.maybeScheduleCatchUpReminder as jest.Mock).mockResolvedValue(undefined);
-      (NotificationManager.processReminderQueue as jest.Mock).mockResolvedValue(undefined);
-      (NotificationManager.updateUpcomingReminderContent as jest.Mock).mockResolvedValue(undefined);
+      (NotificationService.scheduleDayReminders as jest.Mock).mockResolvedValue(undefined);
+      (NotificationService.maybeScheduleCatchUpReminder as jest.Mock).mockResolvedValue(undefined);
+      (NotificationService.processReminderQueue as jest.Mock).mockResolvedValue(undefined);
+      (NotificationService.updateUpcomingReminderContent as jest.Mock).mockResolvedValue(undefined);
 
       const result = await taskCallback();
 
-      expect(NotificationManager.logReminderQueueSnapshot).toHaveBeenCalledTimes(1);
-      expect(NotificationManager.scheduleDayReminders).toHaveBeenCalledTimes(1);
-      expect(NotificationManager.processReminderQueue).toHaveBeenCalledTimes(1);
-      expect(NotificationManager.updateUpcomingReminderContent).toHaveBeenCalledTimes(1);
-      expect(NotificationManager.maybeScheduleCatchUpReminder).toHaveBeenCalledTimes(1);
+      expect(NotificationService.logReminderQueueSnapshot).toHaveBeenCalledTimes(1);
+      expect(NotificationService.scheduleDayReminders).toHaveBeenCalledTimes(1);
+      expect(NotificationService.processReminderQueue).toHaveBeenCalledTimes(1);
+      expect(NotificationService.updateUpcomingReminderContent).toHaveBeenCalledTimes(1);
+      expect(NotificationService.maybeScheduleCatchUpReminder).toHaveBeenCalledTimes(1);
       expect(result).toBe(BackgroundTask.BackgroundTaskResult.Success);
     });
 
@@ -157,11 +146,11 @@ describe('unifiedBackgroundTask', () => {
 
       await taskCallback();
 
-      expect(NotificationManager.logReminderQueueSnapshot).not.toHaveBeenCalled();
-      expect(NotificationManager.scheduleDayReminders).not.toHaveBeenCalled();
-      expect(NotificationManager.processReminderQueue).not.toHaveBeenCalled();
-      expect(NotificationManager.updateUpcomingReminderContent).not.toHaveBeenCalled();
-      expect(NotificationManager.maybeScheduleCatchUpReminder).not.toHaveBeenCalled();
+      expect(NotificationService.logReminderQueueSnapshot).not.toHaveBeenCalled();
+      expect(NotificationService.scheduleDayReminders).not.toHaveBeenCalled();
+      expect(NotificationService.processReminderQueue).not.toHaveBeenCalled();
+      expect(NotificationService.updateUpcomingReminderContent).not.toHaveBeenCalled();
+      expect(NotificationService.maybeScheduleCatchUpReminder).not.toHaveBeenCalled();
     });
 
     it('fetches weather when weather is enabled', async () => {
@@ -203,11 +192,11 @@ describe('unifiedBackgroundTask', () => {
         callOrder.push('weather');
         return { success: true };
       });
-      (NotificationManager.scheduleDayReminders as jest.Mock).mockImplementation(async () => {
+      (NotificationService.scheduleDayReminders as jest.Mock).mockImplementation(async () => {
         callOrder.push('reminders');
       });
-      (NotificationManager.processReminderQueue as jest.Mock).mockResolvedValue(undefined);
-      (NotificationManager.maybeScheduleCatchUpReminder as jest.Mock).mockResolvedValue(undefined);
+      (NotificationService.processReminderQueue as jest.Mock).mockResolvedValue(undefined);
+      (NotificationService.maybeScheduleCatchUpReminder as jest.Mock).mockResolvedValue(undefined);
 
       await taskCallback();
 
@@ -224,13 +213,13 @@ describe('unifiedBackgroundTask', () => {
       (WeatherService.fetchWeatherForecast as jest.Mock).mockRejectedValue(
         new Error('network error')
       );
-      (NotificationManager.scheduleDayReminders as jest.Mock).mockResolvedValue(undefined);
-      (NotificationManager.processReminderQueue as jest.Mock).mockResolvedValue(undefined);
-      (NotificationManager.maybeScheduleCatchUpReminder as jest.Mock).mockResolvedValue(undefined);
+      (NotificationService.scheduleDayReminders as jest.Mock).mockResolvedValue(undefined);
+      (NotificationService.processReminderQueue as jest.Mock).mockResolvedValue(undefined);
+      (NotificationService.maybeScheduleCatchUpReminder as jest.Mock).mockResolvedValue(undefined);
 
       const result = await taskCallback();
 
-      expect(NotificationManager.scheduleDayReminders).toHaveBeenCalled();
+      expect(NotificationService.scheduleDayReminders).toHaveBeenCalled();
       expect(result).toBe(BackgroundTask.BackgroundTaskResult.Success);
     });
 
@@ -261,20 +250,24 @@ describe('unifiedBackgroundTask', () => {
 
     it('re-arms the Pulsar alarm chain on every successful tick', async () => {
       (Database.getSettingAsync as jest.Mock).mockResolvedValue('0');
+      const scheduleSpy = jest
+        .spyOn(BackgroundService, 'scheduleNextAlarmPulse')
+        .mockResolvedValue(undefined);
 
       await taskCallback();
 
-      expect(AlarmTiming.scheduleNextAlarmPulse).toHaveBeenCalledTimes(1);
+      expect(scheduleSpy).toHaveBeenCalledTimes(1);
     });
 
     it('does not re-arm the alarm chain when a fatal error occurs', async () => {
       (Database.getSettingAsync as jest.Mock).mockImplementation(async () => {
         throw new Error('DB exploded');
       });
+      const scheduleSpy = jest.spyOn(BackgroundService, 'scheduleNextAlarmPulse');
 
       await taskCallback();
 
-      expect(AlarmTiming.scheduleNextAlarmPulse).not.toHaveBeenCalled();
+      expect(scheduleSpy).not.toHaveBeenCalled();
     });
   });
 });

@@ -26,7 +26,7 @@ import {
   getSettingAsync,
   setSettingAsync,
 } from '../storage/database';
-import { requestNotificationPermissions } from '../notifications/notificationManager';
+import { NotificationService } from '../notifications/notificationManager';
 import {
   hasCalendarPermissions,
   getWritableCalendars,
@@ -393,7 +393,7 @@ export default function GoalsScreen() {
           return;
         }
 
-        const granted = await requestNotificationPermissions();
+        const granted = await NotificationService.requestNotificationPermissions();
         setNotificationPermissionGranted(granted);
         if (granted) {
           pendingSmartRemindersEnableRef.current = false;

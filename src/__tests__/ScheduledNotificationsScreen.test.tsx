@@ -23,9 +23,11 @@ jest.mock('@react-navigation/native', () => {
   };
 });
 
-// Mock scheduledNotifications
-jest.mock('../notifications/scheduledNotifications', () => ({
-  scheduleAllScheduledNotifications: jest.fn(() => Promise.resolve()),
+// Mock notificationManager
+jest.mock('../notifications/notificationManager', () => ({
+  NotificationService: {
+    scheduleAllScheduledNotifications: jest.fn(() => Promise.resolve()),
+  },
 }));
 
 // Import component AFTER mocks

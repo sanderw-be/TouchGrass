@@ -1,9 +1,9 @@
 import { useEffect, useRef } from 'react';
 import { AppState, AppStateStatus, InteractionManager } from 'react-native';
 import { getSettingAsync } from '../storage/database';
-import { scheduleDayReminders, processReminderQueue } from '../notifications/notificationManager';
+import { NotificationService } from '../notifications/notificationManager';
 import { cleanupTouchGrassCalendars } from '../calendar/calendarService';
-import { scheduleNextAlarmPulse } from '../background/alarmTiming';
+import { BackgroundService } from '../background/unifiedBackgroundTask';
 import { refreshBatteryOptimizationSetting } from '../utils/batteryOptimization';
 import { requestWidgetRefresh } from '../utils/widgetHelper';
 
@@ -25,10 +25,10 @@ export function useForegroundSync() {
                 console.warn('Battery optimization status check error:', e)
               );
               InteractionManager.runAfterInteractions(() => {
-                scheduleDayReminders().catch((e) =>
+                NotificationService.scheduleDayReminders().catch((e) =>
                   console.warn('TouchGrass: foreground scheduleDayReminders error:', e)
                 );
-                processReminderQueue().catch((e) =>
+                NotificationService.processReminderQueue().catch((e) =>
                   console.warn('TouchGrass: foreground processReminderQueue error:', e)
                 );
                 cleanupTouchGrassCalendars().catch((e) =>
@@ -37,7 +37,7 @@ export function useForegroundSync() {
                 // Re-arm the Pulsar alarm chain on every foreground wake.
                 // This keeps the chain alive and resets the timer from "now" so
                 // the next tick fires ~15 min after the user last used the app.
-                scheduleNextAlarmPulse().catch((e) =>
+                BackgroundService.scheduleNextAlarmPulse().catch((e) =>
                   console.warn('TouchGrass: foreground alarm re-arm error:', e)
                 );
                 // Safety net: refresh the widget whenever the user opens the app so
