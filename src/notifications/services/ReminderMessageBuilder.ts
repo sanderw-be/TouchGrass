@@ -1,7 +1,7 @@
 import { t } from '../../i18n';
 import { IStorageService } from '../../storage/StorageService';
-import * as WeatherService from '../../weather/weatherService'; // Import the actual WeatherService module
-import * as WeatherAlgorithm from '../../weather/weatherAlgorithm'; // Import the actual WeatherAlgorithm module
+
+
 
 // Define minimal interfaces for the injected dependencies
 interface IWeatherServiceForReminderBuilder {
@@ -81,7 +81,7 @@ export class ReminderMessageBuilder implements IReminderMessageBuilder {
         let appendedWeather = false;
 
         if (cache && cache.conditions) {
-          const hourData = cache.conditions.find((c: any) => c.forecastHour === hour);
+          const hourData = cache.conditions.find((c: WeatherCondition) => c.forecastHour === hour);
           if (hourData) {
             const preferCelsius = (await this.storageService.getSettingAsync('prefer_celsius', '1')) === '1';
             const emoji = this.weatherAlgorithm.getWeatherEmoji(hourData.weatherCode);

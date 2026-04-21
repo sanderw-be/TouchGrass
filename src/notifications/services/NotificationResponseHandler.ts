@@ -1,11 +1,6 @@
 import * as Notifications from 'expo-notifications';
-import {
-  getTodayMinutesAsync,
-  getCurrentDailyGoalAsync,
-  insertReminderFeedbackAsync,
-} from '../../storage';
-import { triggerReminderFeedbackModal } from '../../store/useAppStore';
-import { reminderMessageBuilder } from './ReminderMessageBuilder';
+import { IStorageService } from '../../storage/StorageService';
+import { IReminderMessageBuilder } from './ReminderMessageBuilder';
 import {
   ACTION_WENT_OUTSIDE,
   ACTION_SNOOZE,
@@ -16,7 +11,17 @@ import {
 
 const SNOOZE_DURATION_MINUTES = 30;
 
-export class NotificationResponseHandler {
+export interface INotificationResponseHandler {
+  handleNotificationResponse(response: Notifications.NotificationResponse): Promise<void>;
+}
+
+export class NotificationResponseHandler implements INotificationResponseHandler {
+  constructor(
+    private storageService: IStorageService,
+    private messageBuilder: IReminderMessageBuilder,
+    private triggerFeedback: (data: FeedbackModalData) => void
+  ) {}
+
   public async handleNotificationResponse(
     response: Notifications.NotificationResponse
   ): Promise<void> {
@@ -45,7 +50,7 @@ export class NotificationResponseHandler {
             : 'dismissed';
 
     if (action !== 'less_often') {
-      await insertReminderFeedbackAsync({
+      await this.storageService.insertReminderFeedbackAsync({
         timestamp: now,
         action,
         scheduledHour: d.getHours(),
@@ -62,7 +67,7 @@ export class NotificationResponseHandler {
             ? 'notif_confirm_snoozed'
             : undefined;
 
-      triggerReminderFeedbackModal({
+      this.triggerFeedback({
         action,
         hour: d.getHours(),
         minute: d.getMinutes(),
@@ -73,13 +78,19 @@ export class NotificationResponseHandler {
     if (action === 'snoozed') {
       const snoozeDate = new Date(now + SNOOZE_DURATION_MINUTES * 60 * 1000);
       const snoozeHour = snoozeDate.getHours();
-      const { title, body } = await reminderMessageBuilder.buildReminderMessage(
-        await getTodayMinutesAsync(),
-        (await getCurrentDailyGoalAsync())?.targetMinutes ?? 30,
+      
+      const todayMinutes = await this.storageService.getTodayMinutesAsync();
+      const goal = await this.storageService.getCurrentDailyGoalAsync();
+      const targetMinutes = goal?.targetMinutes ?? 30;
+
+      const { title, body } = await this.messageBuilder.buildReminderMessage(
+        todayMinutes,
+        targetMinutes,
         snoozeHour,
         undefined,
         false
       );
+      
       await Notifications.scheduleNotificationAsync({
         content: { title, body, categoryIdentifier: 'reminder', color: '#4A7C59' },
         trigger: {
@@ -91,5 +102,3 @@ export class NotificationResponseHandler {
     }
   }
 }
-
-export const notificationResponseHandler = new NotificationResponseHandler();

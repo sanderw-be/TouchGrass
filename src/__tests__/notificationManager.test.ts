@@ -35,7 +35,7 @@ import * as ReminderAlgorithm from '../notifications/reminderAlgorithm';
 import * as WeatherService from '../weather/weatherService';
 import * as WeatherAlgorithm from '../weather/weatherAlgorithm';
 import * as CalendarService from '../calendar/calendarService';
-import * as ScheduledNotificationManager from '../notifications/services/ScheduledNotificationManager';
+
 import {
   getNotificationInfrastructureService,
   getSmartReminderScheduler,
