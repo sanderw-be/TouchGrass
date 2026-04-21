@@ -6,16 +6,18 @@ jest.mock('../i18n', () => ({
   default: { locale: 'en' },
 }));
 
-jest.mock('../context/ThemeContext', () => ({
-  useTheme: () => ({
-    colors: {
-      mist: '#F8F9F7',
-      textPrimary: '#1A1A1A',
-      textMuted: '#888888',
-      grass: '#4A7C59',
-    },
-    shadows: {},
-  }),
+jest.mock('../store/useAppStore', () => ({
+  useAppStore: jest.fn((selector) =>
+    selector({
+      colors: {
+        mist: '#F8F9F7',
+        textPrimary: '#1A1A1A',
+        textMuted: '#888888',
+        grass: '#4A7C59',
+      },
+      shadows: {},
+    })
+  ),
 }));
 
 import UpdateSplashScreen from '../components/UpdateSplashScreen';

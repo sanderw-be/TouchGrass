@@ -2,7 +2,7 @@
 
 > **Navigation aid.** Component inventory and prop signatures extracted via AST. Read the source files before adding props or modifying component logic.
 
-**40 components** (react)
+**34 components** (react)
 
 ## Components
 
@@ -11,7 +11,7 @@
 - **DiagnosticSheet** — props: visible, onClose — `src/components/DiagnosticSheet.tsx`
 - **EditLocationSheet** — props: visible, location, initialCoords, initialLabel, onClose, onSave — `src/components/EditLocationSheet.tsx`
 - **EditSessionSheet** — props: visible, session, onClose, onSessionUpdated — `src/components/EditSessionSheet.tsx`
-- **CRASH_REPORT_FORM_URL** — `src/components/ErrorBoundary.tsx`
+- **ErrorBoundary** — `src/components/ErrorBoundary.tsx`
 - **ManualSessionSheet** — props: visible, onClose, onSessionLogged — `src/components/ManualSessionSheet.tsx`
 - **PermissionExplainerSheet** — props: visible, onClose, onOpenSettings, title, body, openSettingsLabel, onDisable, disableLabel, onCancel — `src/components/PermissionExplainerSheet.tsx`
 - **ProgressRing** — props: current, target, size, strokeWidth, label, onTimerPress, timerRunning, timerSeconds — `src/components/ProgressRing.tsx`
@@ -20,16 +20,10 @@
 - **UndoSnackbar** — props: visible, message, onUndo, onDismiss, duration — `src/components/UndoSnackbar.tsx`
 - **UpdateSplashScreen** — props: status — `src/components/UpdateSplashScreen.tsx`
 - **CalendarSection** — props: calendarEnabled, calendarPermissionGranted, calendarBuffer, calendarDuration, calendarSelectedId, calendarOptions, onToggleCalendar, onCycleCalendarBuffer, onCycleCalendarDuration, onSelectCalendar — `src/components/goals/CalendarSection.tsx`
-- **SettingRow** — props: icon, label, sublabel, right — `src/components/goals/GoalsShared.tsx`
-- **Divider** — `src/components/goals/GoalsShared.tsx`
-- **PermissionToggleRow** — props: icon, label, desc, permissionMissingLabel, enabled, permissionGranted, onToggle, onPermissionFix — `src/components/goals/GoalsShared.tsx`
+- **CATCHUP_REMINDERS_OPTIONS** — `src/components/goals/GoalsShared.tsx`
 - **RemindersSection** — props: smartRemindersCount, catchupRemindersCount, notificationPermissionGranted, batteryOptimizationGranted, onCycleSmartReminders, onCycleCatchupReminders, onNavigateScheduledNotifications, onShowNotificationPermissionSheet, onShowBatteryPermissionSheet — `src/components/goals/RemindersSection.tsx`
 - **WeatherSection** — props: weatherEnabled, weatherLocationGranted, onToggleWeather, onShowWeatherPermissionSheet, onNavigateWeatherSettings — `src/components/goals/WeatherSection.tsx`
-- **IntroContext** — `src/context/IntroContext.tsx`
-- **LanguageContext** — `src/context/LanguageContext.tsx`
-- **ReminderFeedbackProvider** — `src/context/ReminderFeedbackContext.tsx`
-- **ThemeProvider** — `src/context/ThemeContext.tsx`
-- **AppNavigator** — props: initialState, onStateChange — `src/navigation/AppNavigator.tsx`
+- **WeatherSettingsScreen** — `src/navigation/AppNavigator.tsx`
 - **AboutAppScreen** — `src/screens/AboutAppScreen.tsx`
 - **ActivityLogScreen** — `src/screens/ActivityLogScreen.tsx`
 - **EventsScreen** — `src/screens/EventsScreen.tsx`

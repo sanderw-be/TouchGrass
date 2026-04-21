@@ -1,6 +1,6 @@
 import { act } from '@testing-library/react-native';
 import { InteractionManager } from 'react-native';
-import { initDatabaseAsync, getSettingAsync, setSettingAsync } from '../storage/database';
+import { initDatabaseAsync, getSettingAsync, setSettingAsync } from '../storage';
 import i18n, { getDeviceSupportedLocale } from '../i18n';
 import {
   performCriticalInitializationAsync,
@@ -8,7 +8,7 @@ import {
 } from '../../appBootstrap';
 
 // Mock dependencies
-jest.mock('../storage/database', () => ({
+jest.mock('../storage', () => ({
   initDatabaseAsync: jest.fn(),
   getSettingAsync: jest.fn(),
   setSettingAsync: jest.fn(),
@@ -52,12 +52,16 @@ jest.mock('expo-constants', () => ({
 // Mock all deferred tasks
 jest.mock('expo-battery');
 jest.mock('../utils/batteryOptimization');
+const mockNotificationInfrastructureService = { setupNotificationInfrastructure: jest.fn() };
+const mockSmartReminderScheduler = { scheduleDayReminders: jest.fn() };
+const mockScheduledNotificationManager = { scheduleAllScheduledNotifications: jest.fn() };
+const mockNotificationResponseHandler = { handleNotificationResponse: jest.fn() };
+
 jest.mock('../notifications/notificationManager', () => ({
-  NotificationService: {
-    setupNotificationInfrastructure: jest.fn(),
-    scheduleDayReminders: jest.fn(),
-    scheduleAllScheduledNotifications: jest.fn(),
-  },
+  getNotificationInfrastructureService: () => mockNotificationInfrastructureService,
+  getSmartReminderScheduler: () => mockSmartReminderScheduler,
+  getScheduledNotificationManager: () => mockScheduledNotificationManager,
+  getNotificationResponseHandler: () => mockNotificationResponseHandler,
 }));
 jest.mock('../detection/index');
 jest.mock('../background/unifiedBackgroundTask', () => ({
@@ -67,10 +71,12 @@ jest.mock('../background/unifiedBackgroundTask', () => ({
   },
 }));
 jest.mock('../utils/widgetHelper');
+jest.mock('../core/container', () => ({
+  createContainer: jest.fn(),
+}));
 
 import { refreshBatteryOptimizationSetting } from '../utils/batteryOptimization';
-import { NotificationService } from '../notifications/notificationManager';
-import { initDetection } from '../detection/index';
+import { initDetection } from '../detection';
 import { BackgroundService } from '../background/unifiedBackgroundTask';
 import { requestWidgetRefresh } from '../utils/widgetHelper';
 
@@ -138,10 +144,14 @@ describe('services/appBootstrap', () => {
 
       expect(InteractionManager.runAfterInteractions).toHaveBeenCalledTimes(1);
       expect(refreshBatteryOptimizationSetting).toHaveBeenCalledTimes(1);
-      expect(NotificationService.setupNotificationInfrastructure).toHaveBeenCalledTimes(1);
+      expect(
+        mockNotificationInfrastructureService.setupNotificationInfrastructure
+      ).toHaveBeenCalledTimes(1);
       expect(initDetection).toHaveBeenCalledTimes(1);
-      expect(NotificationService.scheduleDayReminders).toHaveBeenCalledTimes(1);
-      expect(NotificationService.scheduleAllScheduledNotifications).toHaveBeenCalledTimes(1);
+      expect(mockSmartReminderScheduler.scheduleDayReminders).toHaveBeenCalledTimes(1);
+      expect(
+        mockScheduledNotificationManager.scheduleAllScheduledNotifications
+      ).toHaveBeenCalledTimes(1);
       expect(BackgroundService.registerUnifiedBackgroundTask).toHaveBeenCalledTimes(1);
       expect(BackgroundService.scheduleNextAlarmPulse).toHaveBeenCalledTimes(1);
       expect(requestWidgetRefresh).toHaveBeenCalledTimes(1);
@@ -159,7 +169,7 @@ describe('services/appBootstrap', () => {
         "TouchGrass: Deferred init task 'Detection Initialization' failed:",
         expect.any(Error)
       );
-      expect(NotificationService.scheduleDayReminders).toHaveBeenCalledTimes(1); // A task after the failed one
+      expect(mockSmartReminderScheduler.scheduleDayReminders).toHaveBeenCalledTimes(1); // A task after the failed one
       consoleWarnSpy.mockRestore();
     });
   });

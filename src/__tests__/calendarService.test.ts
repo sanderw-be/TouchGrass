@@ -14,12 +14,12 @@ import {
 } from '../calendar/calendarService';
 
 // Mock the database module
-jest.mock('../storage/database', () => ({
+jest.mock('../storage', () => ({
   getSettingAsync: jest.fn(async (key: string, fallback: string) => fallback),
   setSettingAsync: jest.fn(async () => {}),
 }));
 
-import { getSettingAsync, setSettingAsync } from '../storage/database';
+import { getSettingAsync, setSettingAsync } from '../storage';
 
 const mockGetSetting = getSettingAsync as jest.Mock;
 const mockSetSetting = setSettingAsync as jest.Mock;

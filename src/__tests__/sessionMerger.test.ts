@@ -1,8 +1,8 @@
-jest.mock('../storage/database');
+jest.mock('../storage');
 
-import * as Database from '../storage/database';
+import * as Database from '../storage';
 import { submitSession, buildSession } from '../detection/sessionMerger';
-import { OutsideSession } from '../storage/database';
+import { OutsideSession } from '../storage';
 
 const BASE_TIME = 1_700_000_000_000;
 const FIVE_MIN = 5 * 60 * 1000;

@@ -1,5 +1,5 @@
 import { submitSession, buildSession } from './sessionMerger';
-import { insertSessionAsync } from '../storage/database';
+import { insertSessionAsync } from '../storage';
 import { t } from '../i18n';
 
 const CONFIDENCE_MANUAL = 1.0; // user always knows best

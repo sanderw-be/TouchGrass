@@ -12,7 +12,7 @@ import {
   getWeatherCacheAsync,
   saveWeatherCacheAsync,
   clearExpiredWeatherDataAsync,
-} from '../storage/database';
+} from '../storage';
 
 const OPEN_METEO_API = 'https://api.open-meteo.com/v1/forecast';
 const CACHE_DURATION_MS = 30 * 60 * 1000; // 30 minutes

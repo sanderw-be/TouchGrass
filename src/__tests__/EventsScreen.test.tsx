@@ -7,7 +7,7 @@ jest.mock('../i18n', () => ({
   formatLocalTime: () => '10:00',
 }));
 
-jest.mock('../storage/database', () => ({
+jest.mock('../storage', () => ({
   getAllSessionsIncludingDiscardedAsync: jest.fn(() => Promise.resolve([])),
   autoCloseOldProposedSessionsAsync: jest.fn(() => Promise.resolve(0)),
   confirmSessionAsync: jest.fn(() => Promise.resolve()),
@@ -54,6 +54,10 @@ jest.mock('@react-navigation/native', () => {
     useFocusEffect: (cb: () => void) => {
       React.useEffect(cb, []);
     },
+    useNavigation: () => ({
+      navigate: jest.fn(),
+      setOptions: jest.fn(),
+    }),
   };
 });
 
@@ -63,7 +67,7 @@ import {
   autoCloseOldProposedSessionsAsync,
   confirmSessionAsync,
   OutsideSession,
-} from '../storage/database';
+} from '../storage';
 import { emitSessionsChanged } from '../utils/sessionsChangedEmitter';
 import { requestWidgetRefresh } from '../utils/widgetHelper';
 

@@ -1,9 +1,9 @@
 import * as BackgroundTask from 'expo-background-task';
 import * as TaskManager from 'expo-task-manager';
 import { scheduleNextPulse, cancelPulse } from 'alarm-bridge-native';
-import { NotificationService } from '../notifications/notificationManager';
-import { fetchWeatherForecast } from '../weather/weatherService';
-import { getSettingAsync, initDatabaseAsync, insertBackgroundLogAsync } from '../storage/database';
+import { getContainer, IAppContainer, createContainer } from '../core/container';
+import { initDatabaseAsync, db } from '../storage';
+import * as WeatherService from '../weather/weatherService';
 
 export const UNIFIED_BACKGROUND_TASK = 'TOUCHGRASS_UNIFIED_TASK';
 
@@ -15,6 +15,15 @@ export const PULSE_INTERVAL_NIGHT_MS = 60 * 60 * 1000;
 
 class BackgroundServiceImpl {
   private tickInProgress = false;
+
+  private get container(): IAppContainer {
+    try {
+      return getContainer();
+    } catch {
+      // Background context might start before bootstrap
+      return createContainer(db);
+    }
+  }
 
   /**
    * Compute the delay until the next alarm pulse based on the current time.
@@ -44,7 +53,10 @@ class BackgroundServiceImpl {
   public async performBackgroundTick(): Promise<void> {
     if (this.tickInProgress) {
       console.log('TouchGrass: [BackgroundTick] Already running — skipping concurrent tick');
-      await insertBackgroundLogAsync('reminder', 'Background tick skipped — already running');
+      await this.container.storageService.insertBackgroundLogAsync(
+        'reminder',
+        'Background tick skipped — already running'
+      );
       return;
     }
     this.tickInProgress = true;
@@ -52,7 +64,10 @@ class BackgroundServiceImpl {
     try {
       // Step 1: Initialize Database (Fatal if fails)
       await initDatabaseAsync();
-      await insertBackgroundLogAsync('reminder', 'Background tick start');
+      await this.container.storageService.insertBackgroundLogAsync(
+        'reminder',
+        'Background tick start'
+      );
 
       // Step 2: Sync Modules (Isolated)
       let weatherSyncSuccess = true;
@@ -62,7 +77,10 @@ class BackgroundServiceImpl {
         await this.handleWeatherSync();
       } catch (e) {
         console.error('TouchGrass: [BackgroundTick] Weather sync failed', e);
-        await insertBackgroundLogAsync('reminder', 'Weather refresh failed');
+        await this.container.storageService.insertBackgroundLogAsync(
+          'reminder',
+          'Weather refresh failed'
+        );
         weatherSyncSuccess = false;
       }
 
@@ -75,14 +93,15 @@ class BackgroundServiceImpl {
 
       // Step 3: Final Status Check
       if (!weatherSyncSuccess && !reminderSyncSuccess) {
-        // Only throw if NO module succeeded. This fulfills the isolation requirement.
         throw new Error('All background sync modules failed');
       }
 
-      await insertBackgroundLogAsync('reminder', 'Background tick done');
+      await this.container.storageService.insertBackgroundLogAsync(
+        'reminder',
+        'Background tick done'
+      );
     } catch (fatalError) {
       console.error('TouchGrass: [BackgroundTick] Error during tick', fatalError);
-      // Propagate original fatal errors (e.g. "DB exploded") or the collective failure.
       throw fatalError;
     } finally {
       this.tickInProgress = false;
@@ -93,17 +112,24 @@ class BackgroundServiceImpl {
    * Private helper to handle weather forecast refresh.
    */
   private async handleWeatherSync(): Promise<void> {
-    const weatherEnabled = (await getSettingAsync('weather_enabled', '1')) === '1';
+    const weatherEnabled =
+      (await this.container.storageService.getSettingAsync('weather_enabled', '1')) === '1';
     if (weatherEnabled) {
       try {
-        await fetchWeatherForecast({ allowPermissionPrompt: false });
-        await insertBackgroundLogAsync('reminder', 'Weather refresh succeeded');
+        await WeatherService.fetchWeatherForecast({ allowPermissionPrompt: false });
+        await this.container.storageService.insertBackgroundLogAsync(
+          'reminder',
+          'Weather refresh succeeded'
+        );
       } catch (weatherError) {
         console.error('TouchGrass: [BackgroundTick] Weather fetch failed', weatherError);
-        throw weatherError; // Re-throw to be caught by the isolated try/catch in orchestrator
+        throw weatherError;
       }
     } else {
-      await insertBackgroundLogAsync('reminder', 'Weather disabled — skipping refresh');
+      await this.container.storageService.insertBackgroundLogAsync(
+        'reminder',
+        'Weather disabled — skipping refresh'
+      );
     }
   }
 
@@ -111,26 +137,27 @@ class BackgroundServiceImpl {
    * Private helper to handle reminder planning and processing.
    */
   private async handleReminderSync(): Promise<void> {
-    const remindersCountRaw = await getSettingAsync('smart_reminders_count', '0');
+    const remindersCountRaw = await this.container.storageService.getSettingAsync(
+      'smart_reminders_count',
+      '0'
+    );
     const remindersEnabled = parseInt(remindersCountRaw, 10) > 0;
 
-    console.log(
-      `TouchGrass: [BackgroundTick] smart_reminders_count=${remindersCountRaw} → reminders ${remindersEnabled ? 'enabled' : 'disabled'}`
-    );
-
     if (remindersEnabled) {
-      await NotificationService.logReminderQueueSnapshot();
+      const { smartReminderScheduler, reminderQueueManager } = this.container;
+
+      await reminderQueueManager.logReminderQueueSnapshot();
       try {
-        await NotificationService.scheduleDayReminders();
-        await NotificationService.processReminderQueue();
-        await NotificationService.updateUpcomingReminderContent();
-        await NotificationService.maybeScheduleCatchUpReminder();
+        await smartReminderScheduler.scheduleDayReminders();
+        await smartReminderScheduler.processReminderQueue();
+        await smartReminderScheduler.updateUpcomingReminderContent();
+        await smartReminderScheduler.maybeScheduleCatchUpReminder();
       } catch (reminderError) {
         console.error('TouchGrass: [BackgroundTick] Reminder operations failed', reminderError);
-        throw reminderError; // Re-throw to be caught by the isolated try/catch in orchestrator
+        throw reminderError;
       }
     } else {
-      await insertBackgroundLogAsync(
+      await this.container.storageService.insertBackgroundLogAsync(
         'reminder',
         'Reminders disabled — skipping background tick work'
       );
@@ -174,7 +201,6 @@ export const BackgroundService = new BackgroundServiceImpl();
 
 /**
  * Define the unified background task.
- * Must be called at module scope for registration before JS bundle fully loads.
  */
 TaskManager.defineTask(UNIFIED_BACKGROUND_TASK, async () => {
   try {

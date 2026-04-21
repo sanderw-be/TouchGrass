@@ -2,8 +2,8 @@ import React, { useEffect, useRef, useMemo } from 'react';
 import { Animated, View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
-import { progressColor } from '../utils/theme';
-import { useTheme } from '../context/ThemeContext';
+import { progressColor, ThemeColors } from '../utils/theme';
+import { useAppStore } from '../store/useAppStore';
 import { formatMinutes, formatTimer } from '../utils/helpers';
 import { t } from '../i18n';
 
@@ -31,7 +31,7 @@ export default function ProgressRing({
   timerRunning = false,
   timerSeconds = 0,
 }: Props) {
-  const { colors } = useTheme();
+  const colors = useAppStore((state) => state.colors);
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const percent = Math.min(current / Math.max(target, 1), 1);
   const radius = (size - strokeWidth) / 2;
@@ -135,7 +135,7 @@ export default function ProgressRing({
   );
 }
 
-function makeStyles(colors: ReturnType<typeof useTheme>['colors']) {
+function makeStyles(colors: ThemeColors) {
   return StyleSheet.create({
     container: {
       alignItems: 'center',

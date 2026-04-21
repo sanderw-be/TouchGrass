@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { AppState, AppStateStatus, InteractionManager } from 'react-native';
-import { getSettingAsync } from '../storage/database';
-import { NotificationService } from '../notifications/notificationManager';
+import { getSettingAsync } from '../storage';
+import { getSmartReminderScheduler } from '../notifications/notificationManager';
 import { cleanupTouchGrassCalendars } from '../calendar/calendarService';
 import { BackgroundService } from '../background/unifiedBackgroundTask';
 import { refreshBatteryOptimizationSetting } from '../utils/batteryOptimization';
@@ -25,12 +25,16 @@ export function useForegroundSync() {
                 console.warn('Battery optimization status check error:', e)
               );
               InteractionManager.runAfterInteractions(() => {
-                NotificationService.scheduleDayReminders().catch((e) =>
-                  console.warn('TouchGrass: foreground scheduleDayReminders error:', e)
-                );
-                NotificationService.processReminderQueue().catch((e) =>
-                  console.warn('TouchGrass: foreground processReminderQueue error:', e)
-                );
+                getSmartReminderScheduler()
+                  .scheduleDayReminders()
+                  .catch((e) =>
+                    console.warn('TouchGrass: foreground scheduleDayReminders error:', e)
+                  );
+                getSmartReminderScheduler()
+                  .processReminderQueue()
+                  .catch((e) =>
+                    console.warn('TouchGrass: foreground processReminderQueue error:', e)
+                  );
                 cleanupTouchGrassCalendars().catch((e) =>
                   console.warn('TouchGrass: foreground calendar cleanup error:', e)
                 );

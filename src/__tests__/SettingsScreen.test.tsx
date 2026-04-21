@@ -13,7 +13,7 @@ jest.mock('../i18n', () => ({
 }));
 
 // Mock database
-jest.mock('../storage/database', () => ({
+jest.mock('../storage', () => ({
   getKnownLocationsAsync: jest.fn(() => Promise.resolve([])),
   getSuggestedLocationsAsync: jest.fn(() => Promise.resolve([])),
   clearAllDataAsync: jest.fn(() => Promise.resolve()),
@@ -47,10 +47,10 @@ jest.mock('../detection/index', () => ({
   ),
   toggleHealthConnect: (enabled: boolean) => mockToggleHealthConnect(enabled),
   toggleGPS: (enabled: boolean) => mockToggleGPS(enabled),
-  recheckHealthConnect: jest.fn(() => Promise.resolve()),
+  verifyHealthConnectPermissions: jest.fn(() => Promise.resolve()),
   checkGPSPermissions: jest.fn(() => Promise.resolve()),
   requestGPSPermissions: jest.fn(() => Promise.resolve(false)),
-  requestHealthConnect: jest.fn(() => Promise.resolve(true)),
+  requestHealthPermissions: jest.fn(() => Promise.resolve(true)),
 }));
 
 // Mock permission issues emitter so we can verify badge refresh is triggered
@@ -71,7 +71,7 @@ jest.mock('@react-navigation/native', () => {
     useFocusEffect: (cb: () => void) => {
       React.useEffect(cb, []);
     },
-    useNavigation: () => ({ navigate: mockNavigate }),
+    useNavigation: () => ({ navigate: mockNavigate, setOptions: jest.fn() }),
   };
 });
 
@@ -90,19 +90,42 @@ jest.mock('expo-constants', () => ({
   },
 }));
 
-// Mock IntroContext so useShowIntro returns a no-op in tests
-jest.mock('../context/IntroContext', () => ({
-  useShowIntro: () => jest.fn(),
-  IntroContext: { Provider: ({ children }: { children: React.ReactNode }) => children },
-}));
-
-// Mock LanguageContext so useLanguage returns a stable locale in tests
+// Mock App Store
 const mockSetLocale = jest.fn();
-jest.mock('../context/LanguageContext', () => ({
-  useLanguage: () => ({ locale: 'en', setLocale: mockSetLocale }),
-  LanguageContext: {
-    Provider: ({ children }: { children: React.ReactNode }) => children,
-  },
+const mockHandleShowIntro = jest.fn();
+jest.mock('../store/useAppStore', () => ({
+  useAppStore: jest.fn((selector) =>
+    selector({
+      locale: 'en',
+      setLocale: mockSetLocale,
+      handleShowIntro: mockHandleShowIntro,
+      colors: {
+        grass: '#4A7C59',
+        grassLight: '#6BAF7A',
+        grassPale: '#E8F5EC',
+        grassDark: '#2D5240',
+        sky: '#7EB8D4',
+        skyLight: '#B8DFF0',
+        sun: '#F5C842',
+        mist: '#F8F9F7',
+        fog: '#E8EBE6',
+        card: '#FFFFFF',
+        textPrimary: '#1A2E1F',
+        textSecondary: '#5A7060',
+        textMuted: '#8FA892',
+        textInverse: '#FFFFFF',
+      },
+      shadows: {
+        soft: {
+          shadowColor: '#2D5240',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.08,
+          shadowRadius: 8,
+          elevation: 3,
+        },
+      },
+    })
+  ),
 }));
 
 import SettingsScreen from '../screens/SettingsScreen';
@@ -168,6 +191,42 @@ describe('SettingsScreen', () => {
     expect(mockSetLocale).toHaveBeenCalledWith('system');
     // Picker should collapse after selection
     await waitFor(() => expect(queryByText('Deutsch')).toBeNull());
+  });
+});
+
+describe('SettingsScreen initial loading', () => {
+  it('shows ActivityIndicator while initializing', async () => {
+    // Create a promise that we can control
+    let resolveDetection: (value: any) => void;
+    const detectionPromise = new Promise((resolve) => {
+      resolveDetection = resolve;
+    });
+    (DetectionModule.getDetectionStatus as jest.Mock).mockReturnValue(detectionPromise);
+
+    const { getAllByTestId, queryByTestId } = render(<SettingsScreen />);
+
+    // Loader should be visible
+    expect(getAllByTestId('switch-loader').length).toBeGreaterThan(0);
+    // Switches should not be visible yet
+    expect(queryByTestId('hc-toggle')).toBeNull();
+    expect(queryByTestId('gps-toggle')).toBeNull();
+
+    // Resolve the promise
+    await act(async () => {
+      resolveDetection!({
+        healthConnect: false,
+        healthConnectPermission: false,
+        gps: false,
+        gpsPermission: false,
+      });
+    });
+
+    // Now switches should be visible and loaders gone
+    await waitFor(() => {
+      expect(queryByTestId('switch-loader')).toBeNull();
+      expect(queryByTestId('hc-toggle')).toBeTruthy();
+      expect(queryByTestId('gps-toggle')).toBeTruthy();
+    });
   });
 });
 

@@ -7,7 +7,7 @@ jest.mock('../i18n', () => ({
 }));
 
 // Mock database
-jest.mock('../storage/database', () => ({
+jest.mock('../storage', () => ({
   getSettingAsync: jest.fn((key: string, def: string) => Promise.resolve(def)),
   setSettingAsync: jest.fn(() => Promise.resolve()),
 }));
@@ -18,6 +18,10 @@ jest.mock('@react-navigation/native', () => {
   return {
     ...actual,
     useFocusEffect: jest.fn(),
+    useNavigation: () => ({
+      navigate: jest.fn(),
+      setOptions: jest.fn(),
+    }),
   };
 });
 

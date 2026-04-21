@@ -1,9 +1,9 @@
 import { widgetTaskHandler } from '../widget/widget-task-handler';
 import type { WidgetTaskHandlerProps } from 'react-native-android-widget';
-import * as database from '../storage/database';
+import * as database from '../storage';
 import * as manualCheckin from '../detection/manualCheckin';
 
-jest.mock('../storage/database', () => ({
+jest.mock('../storage', () => ({
   initDatabaseAsync: jest.fn(() => Promise.resolve()),
   getTodayMinutesAsync: jest.fn(() => Promise.resolve(20)),
   getCurrentDailyGoalAsync: jest.fn(() => Promise.resolve({ targetMinutes: 60 })),

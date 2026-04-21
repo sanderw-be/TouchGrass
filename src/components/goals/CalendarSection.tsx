@@ -1,9 +1,9 @@
 import React, { useMemo } from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { Text, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../../context/ThemeContext';
+import { useAppStore } from '../../store/useAppStore';
 import { t } from '../../i18n';
-import { PermissionToggleRow, SettingRow, Divider, makeStyles } from './GoalsShared';
+import { PermissionToggleRow, SettingRow, Divider, makeStyles, Card } from './GoalsShared';
 
 interface CalendarSectionProps {
   calendarEnabled: boolean;
@@ -32,7 +32,8 @@ export default function CalendarSection({
   onSelectCalendar,
   onShowCalendarPermissionSheet,
 }: CalendarSectionProps) {
-  const { colors, shadows } = useTheme();
+  const colors = useAppStore((state) => state.colors);
+  const shadows = useAppStore((state) => state.shadows);
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
 
   const hasAlternativeCalendars = calendarOptions.some(
@@ -48,7 +49,7 @@ export default function CalendarSection({
   return (
     <>
       <Text style={styles.sectionHeader}>{t('settings_section_calendar')}</Text>
-      <View style={styles.settingsCard}>
+      <Card style={{ padding: 0, overflow: 'hidden' }}>
         <PermissionToggleRow
           icon={<Ionicons name="calendar-outline" size={20} color={colors.textSecondary} />}
           label={t('settings_calendar_integration')}
@@ -100,7 +101,7 @@ export default function CalendarSection({
             </TouchableOpacity>
           </>
         )}
-      </View>
+      </Card>
     </>
   );
 }
