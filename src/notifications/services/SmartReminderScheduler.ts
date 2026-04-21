@@ -108,7 +108,7 @@ export class SmartReminderScheduler implements ISmartReminderScheduler {
       return;
     }
 
-    const { should, reason, contributors } = await this.reminderAlgorithm.shouldRemindNow(
+    const { should, reason } = await this.reminderAlgorithm.shouldRemindNow(
       todayMinutes,
       dailyTarget,
       lastReminderMs,
@@ -251,7 +251,7 @@ export class SmartReminderScheduler implements ISmartReminderScheduler {
     const dailyTarget = (await this.storageService.getCurrentDailyGoalAsync())?.targetMinutes ?? 30;
 
     const allScheduled = await Notifications.getAllScheduledNotificationsAsync();
-    const scheduledMap = new Map<string, any>();
+    const scheduledMap = new Map<string, Notifications.NotificationRequest>();
     for (const notif of allScheduled) {
       scheduledMap.set(notif.identifier, notif);
     }
