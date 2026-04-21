@@ -1,6 +1,5 @@
 import { t } from '../../i18n';
 import { IStorageService } from '../../storage/StorageService';
-import { WeatherCondition } from '../../weather/types';
 
 
 

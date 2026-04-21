@@ -176,7 +176,8 @@ export async function getWeatherPreferences(): Promise<WeatherPreferences> {
 /**
  * Get a human-readable description of weather conditions
  */
-export function getWeatherDescription(condition: WeatherCondition): string {
+export function getWeatherDescription(condition: WeatherCondition | null): string {
+  if (!condition) return t('weather_unknown');
   const code = condition.weatherCode;
 
   if (code === WEATHER_CODES.CLEAR_SKY) return t('weather_clear_sky');
@@ -201,7 +202,8 @@ export function getWeatherDescription(condition: WeatherCondition): string {
 /**
  * Get a weather emoji for the condition
  */
-export function getWeatherEmoji(condition: WeatherCondition): string {
+export function getWeatherEmoji(condition: WeatherCondition | null): string {
+  if (!condition) return '🌡️';
   const code = condition.weatherCode;
 
   if (code === WEATHER_CODES.CLEAR_SKY) return condition.isDay ? '☀️' : '🌙';

@@ -19,6 +19,7 @@ import {
   scoreReminderHours 
 } from '../notifications/reminderAlgorithm';
 import * as WeatherAlgorithm from '../weather/weatherAlgorithm';
+import { WeatherCondition } from '../weather/types';
 
 export interface IAppContainer {
   storageService: IStorageService;
@@ -45,8 +46,8 @@ export function createContainer(db: SQLiteDatabase): IAppContainer {
       isWeatherDataAvailable: WeatherService.isWeatherDataAvailable,
     },
     {
-      getWeatherEmoji: (code) => WeatherAlgorithm.getWeatherEmoji(code === null ? null : { weatherCode: code } as any),
-      getWeatherDescription: (code) => WeatherAlgorithm.getWeatherDescription(code === null ? null : { weatherCode: code } as any),
+      getWeatherEmoji: (code) => WeatherAlgorithm.getWeatherEmoji(code === null ? null : { weatherCode: code } as WeatherCondition),
+      getWeatherDescription: (code) => WeatherAlgorithm.getWeatherDescription(code === null ? null : { weatherCode: code } as WeatherCondition),
     }
   );
   const reminderQueueManager = new ReminderQueueManager(storageService);
