@@ -12,8 +12,4 @@ export function haversineDistance(lat1: number, lon1: number, lat2: number, lon2
   return EARTH_RADIUS_METERS * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-/**
- * Alias for haversineDistance, kept for compatibility during refactoring
- * where both names might have been used.
- */
-export const haversineDistanceMeters = haversineDistance;
+
