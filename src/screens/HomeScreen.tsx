@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
   RefreshControl,
   StatusBar,
@@ -46,6 +45,7 @@ import {
 } from '../utils/widgetHelper';
 
 import { Card } from '../components/ui';
+import { ResponsiveGridList } from '../components/ResponsiveGridList';
 
 export default function HomeScreen() {
   const colors = useAppStore((state) => state.colors);
@@ -294,133 +294,137 @@ export default function HomeScreen() {
     return t('remaining_for_goal', { amount: formatMinutes(remaining) });
   };
 
+  const renderHeader = () => (
+    <>
+      <StatusBar
+        barStyle={isDark ? 'light-content' : 'dark-content'}
+        backgroundColor={colors.mist}
+      />
+
+      <ManualSessionSheet
+        visible={sheetVisible}
+        onClose={() => setSheetVisible(false)}
+        onSessionLogged={() => {
+          loadData();
+          requestWidgetRefresh();
+        }}
+      />
+
+      {/* Header */}
+      <View style={styles.header}>
+        <View>
+          <Text style={styles.greeting}>{greeting()}</Text>
+          <Text style={styles.date}>
+            {formatLocalDate(Date.now(), { weekday: 'long', month: 'long', day: 'numeric' })}
+          </Text>
+        </View>
+        <TouchableOpacity style={styles.addBtn} onPress={() => setSheetVisible(true)}>
+          <Ionicons name="add" size={24} color={colors.textInverse} />
+        </TouchableOpacity>
+      </View>
+
+      {/* Main progress ring */}
+      <Card style={styles.ringCard}>
+        <ProgressRing
+          current={todayMinutes}
+          target={dailyTarget}
+          size={200}
+          strokeWidth={16}
+          label={t('today')}
+          onTimerPress={handleTimerPress}
+          timerRunning={timerRunning}
+          timerSeconds={timerSeconds}
+        />
+        {!timerRunning && (
+          <View style={styles.timerInfoRow} testID="ring-timer-info">
+            <Ionicons name="information-circle-outline" size={14} color={colors.textMuted} />
+            <Text style={styles.timerInfoText}>{t('ring_timer_info')}</Text>
+          </View>
+        )}
+        <Text style={styles.motivation}>{motivationText()}</Text>
+        {(dailyStreak > 0 || weeklyStreak > 0) && (
+          <View style={styles.streakContainer}>
+            {dailyStreak > 0 && (
+              <Text style={styles.streakText}>
+                {t(dailyStreak === 1 ? 'streak_daily_singular' : 'streak_daily_plural', {
+                  count: dailyStreak,
+                })}
+              </Text>
+            )}
+            {dailyStreak > 0 && weeklyStreak > 0 && (
+              <Text style={styles.streakSeparator}>{t('streak_separator')}</Text>
+            )}
+            {weeklyStreak > 0 && (
+              <Text style={styles.streakText}>
+                {t(weeklyStreak === 1 ? 'streak_weekly_singular' : 'streak_weekly_plural', {
+                  count: weeklyStreak,
+                })}
+              </Text>
+            )}
+          </View>
+        )}
+      </Card>
+
+      {/* Weekly strip */}
+      <Card style={styles.weekCard}>
+        <View style={styles.weekHeader}>
+          <Text style={styles.weekTitle}>{t('this_week')}</Text>
+          <Text style={styles.weekValue}>
+            {formatMinutes(weekMinutes)}{' '}
+            <Text style={styles.weekOf}>
+              {t('of')} {formatMinutes(weeklyTarget)}
+            </Text>
+          </Text>
+        </View>
+        <View style={styles.weekBar}>
+          <View style={[styles.weekBarFill, { width: `${weeklyPercent * 100}%` }]} />
+        </View>
+        <WeekDots />
+      </Card>
+
+      {todaySessions.length > 0 && (
+        <Text style={styles.sectionTitle}>{t('todays_sessions')}</Text>
+      )}
+    </>
+  );
+
+  const renderEmpty = () => (
+    <View style={styles.emptyState} testID="home-empty-state">
+      <Image
+        source={require('../../assets/herb.png')}
+        style={styles.emptyIcon}
+        resizeMode="contain"
+        testID="home-empty-icon"
+      />
+      <Text style={styles.emptyText} testID="home-empty-title">
+        {t('no_sessions_title')}
+      </Text>
+      <Text style={styles.emptySubtext} testID="home-empty-sub">
+        {t('no_sessions_sub')}
+      </Text>
+    </View>
+  );
+
   return (
     <View style={styles.screenContainer}>
-      <ScrollView
+      <ResponsiveGridList
         style={styles.container}
         contentContainerStyle={styles.content}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.grass} />
         }
-      >
-        <StatusBar
-          barStyle={isDark ? 'light-content' : 'dark-content'}
-          backgroundColor={colors.mist}
-        />
-
-        <ManualSessionSheet
-          visible={sheetVisible}
-          onClose={() => setSheetVisible(false)}
-          onSessionLogged={() => {
-            loadData();
-            requestWidgetRefresh();
-          }}
-        />
-
-        {/* Header */}
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.greeting}>{greeting()}</Text>
-            <Text style={styles.date}>
-              {formatLocalDate(Date.now(), { weekday: 'long', month: 'long', day: 'numeric' })}
-            </Text>
-          </View>
-          <TouchableOpacity style={styles.addBtn} onPress={() => setSheetVisible(true)}>
-            <Ionicons name="add" size={24} color={colors.textInverse} />
-          </TouchableOpacity>
-        </View>
-
-        {/* Main progress ring */}
-        <Card style={styles.ringCard}>
-          <ProgressRing
-            current={todayMinutes}
-            target={dailyTarget}
-            size={200}
-            strokeWidth={16}
-            label={t('today')}
-            onTimerPress={handleTimerPress}
-            timerRunning={timerRunning}
-            timerSeconds={timerSeconds}
+        ListHeaderComponent={renderHeader}
+        ListEmptyComponent={renderEmpty}
+        data={todaySessions}
+        keyExtractor={(item) => String(item.id)}
+        renderItem={({ item }) => (
+          <SessionRow
+            session={item}
+            onConfirm={(confirmed) => handleConfirm(item.id!, item.startTime, confirmed)}
+            onNotes={() => setNotesSession(item)}
           />
-          {!timerRunning && (
-            <View style={styles.timerInfoRow} testID="ring-timer-info">
-              <Ionicons name="information-circle-outline" size={14} color={colors.textMuted} />
-              <Text style={styles.timerInfoText}>{t('ring_timer_info')}</Text>
-            </View>
-          )}
-          <Text style={styles.motivation}>{motivationText()}</Text>
-          {(dailyStreak > 0 || weeklyStreak > 0) && (
-            <View style={styles.streakContainer}>
-              {dailyStreak > 0 && (
-                <Text style={styles.streakText}>
-                  {t(dailyStreak === 1 ? 'streak_daily_singular' : 'streak_daily_plural', {
-                    count: dailyStreak,
-                  })}
-                </Text>
-              )}
-              {dailyStreak > 0 && weeklyStreak > 0 && (
-                <Text style={styles.streakSeparator}>{t('streak_separator')}</Text>
-              )}
-              {weeklyStreak > 0 && (
-                <Text style={styles.streakText}>
-                  {t(weeklyStreak === 1 ? 'streak_weekly_singular' : 'streak_weekly_plural', {
-                    count: weeklyStreak,
-                  })}
-                </Text>
-              )}
-            </View>
-          )}
-        </Card>
-
-        {/* Weekly strip */}
-        <Card style={styles.weekCard}>
-          <View style={styles.weekHeader}>
-            <Text style={styles.weekTitle}>{t('this_week')}</Text>
-            <Text style={styles.weekValue}>
-              {formatMinutes(weekMinutes)}{' '}
-              <Text style={styles.weekOf}>
-                {t('of')} {formatMinutes(weeklyTarget)}
-              </Text>
-            </Text>
-          </View>
-          <View style={styles.weekBar}>
-            <View style={[styles.weekBarFill, { width: `${weeklyPercent * 100}%` }]} />
-          </View>
-          <WeekDots />
-        </Card>
-
-        {/* Today's sessions */}
-        {todaySessions.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>{t('todays_sessions')}</Text>
-            {todaySessions.map((session) => (
-              <SessionRow
-                key={session.id}
-                session={session}
-                onConfirm={(confirmed) => handleConfirm(session.id!, session.startTime, confirmed)}
-                onNotes={() => setNotesSession(session)}
-              />
-            ))}
-          </View>
         )}
-
-        {todaySessions.length === 0 && (
-          <View style={styles.emptyState} testID="home-empty-state">
-            <Image
-              source={require('../../assets/herb.png')}
-              style={styles.emptyIcon}
-              resizeMode="contain"
-              testID="home-empty-icon"
-            />
-            <Text style={styles.emptyText} testID="home-empty-title">
-              {t('no_sessions_title')}
-            </Text>
-            <Text style={styles.emptySubtext} testID="home-empty-sub">
-              {t('no_sessions_sub')}
-            </Text>
-          </View>
-        )}
-      </ScrollView>
+      />
 
       <SessionNotesSheet
         visible={notesSession !== null}
