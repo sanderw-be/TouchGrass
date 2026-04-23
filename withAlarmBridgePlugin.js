@@ -131,35 +131,6 @@ class PulseAlarmReceiver : BroadcastReceiver() {
 }
 `;
 
-const PULSE_BOOT_RECEIVER_KT = `\
-package ${JAVA_PACKAGE}
-
-import android.content.BroadcastReceiver
-import android.content.Context
-import android.content.Intent
-import com.facebook.react.HeadlessJsTaskService
-
-/**
- * BroadcastReceiver that fires on device boot (and after package replacement) to
- * restore the Pulsar alarm chain. Without this, the chain would stop after every
- * device reboot.
- *
- * Rather than re-scheduling directly via AlarmManager (which would require the
- * React Native bridge), we kick off the JS headless task immediately. The task's
- * finally-block calls scheduleNextAlarmPulse() which chains the next alarm.
- */
-class PulseBootReceiver : BroadcastReceiver() {
-  override fun onReceive(context: Context, intent: Intent) {
-    val action = intent.action ?: return
-    if (action != Intent.ACTION_BOOT_COMPLETED && action != Intent.ACTION_MY_PACKAGE_REPLACED) {
-      return
-    }
-    HeadlessJsTaskService.acquireWakeLockNow(context)
-    AlarmPulseService.start(context)
-  }
-}
-`;
-
 const ALARM_PULSE_SERVICE_KT = `\
 package ${JAVA_PACKAGE}
 
@@ -179,7 +150,7 @@ import com.facebook.react.jstasks.HeadlessJsTaskConfig
 /**
  * HeadlessJsTaskService that runs the TOUCHGRASS_PULSE_TASK JS headless task.
  *
- * Started by PulseAlarmReceiver or PulseBootReceiver when the Pulsar alarm fires.
+ * Started by PulseAlarmReceiver when the Pulsar alarm fires.
  * Runs as a short foreground service (Android O+) so the OS cannot kill it before
  * the JS task finishes scheduling the next alarm.
  */
@@ -264,8 +235,8 @@ class AlarmPulseService : HeadlessJsTaskService() {
  * 1. Writes Pulsar alarm-bridge Kotlin source files into the Android app module
  *    at prebuild time via withDangerousMod.
  * 2. Registers AlarmBridgePackage in MainApplication via withMainApplication.
- * 3. Adds PulseAlarmReceiver, PulseBootReceiver, and AlarmPulseService to
- *    AndroidManifest.xml via withAndroidManifest.
+ * 3. Adds PulseAlarmReceiver and AlarmPulseService to AndroidManifest.xml via
+ *    withAndroidManifest.
  *
  * Together these replace the WorkManager-based TOUCHGRASS_UNIFIED_TASK which
  * goes stale after ~12 h because Android cancels its JS body mid-execution.
@@ -290,7 +261,6 @@ const withAlarmBridgePlugin = (config) => {
         'AlarmBridgeModule.kt': ALARM_BRIDGE_MODULE_KT,
         'AlarmBridgePackage.kt': ALARM_BRIDGE_PACKAGE_KT,
         'PulseAlarmReceiver.kt': PULSE_ALARM_RECEIVER_KT,
-        'PulseBootReceiver.kt': PULSE_BOOT_RECEIVER_KT,
         'AlarmPulseService.kt': ALARM_PULSE_SERVICE_KT,
       };
 
@@ -350,22 +320,6 @@ const withAlarmBridgePlugin = (config) => {
     if (!application.receiver.some((r) => r.$?.['android:name'] === PULSE_RECEIVER)) {
       application.receiver.push({
         $: { 'android:name': PULSE_RECEIVER, 'android:exported': 'false' },
-      });
-    }
-
-    // PulseBootReceiver — restores chain after boot / package replaced
-    const BOOT_RECEIVER = `${JAVA_PACKAGE}.PulseBootReceiver`;
-    if (!application.receiver.some((r) => r.$?.['android:name'] === BOOT_RECEIVER)) {
-      application.receiver.push({
-        $: { 'android:name': BOOT_RECEIVER, 'android:exported': 'true' },
-        'intent-filter': [
-          {
-            action: [
-              { $: { 'android:name': 'android.intent.action.BOOT_COMPLETED' } },
-              { $: { 'android:name': 'android.intent.action.MY_PACKAGE_REPLACED' } },
-            ],
-          },
-        ],
       });
     }
 

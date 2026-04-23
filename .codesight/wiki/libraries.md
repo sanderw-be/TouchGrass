@@ -12,9 +12,9 @@
 - `src/detection/sessionConfidence.ts` — loadTimeSlotProbabilities, getTimeSlotProbability, updateTimeSlotProbability, scoreDuration, computeSessionScore, computeSessionScoreFromProbs
 - `src/detection/healthConnect.ts` — isHealthConnectAvailable, requestHealthPermissions, openHealthConnectForManagement, syncHealthConnect
 - `src/detection/manualCheckin.ts` — logManualSession, logManualSessionAsync, startManualSession
-- `src/detection/utils.ts` — haversineDistance, EARTH_RADIUS_METERS, haversineDistanceMeters
 - `src/detection/healthConnectIntent.ts` — openHealthConnectPermissionsViaIntent, verifyHealthConnectPermissions
 - `src/detection/sessionMerger.ts` — submitSession, buildSession
+- `src/detection/utils.ts` — haversineDistance, EARTH_RADIUS_METERS
 - `src/detection/GpsSessionBuilder.ts` — buildGpsNotes
 - `src/detection/HealthSessionBuilder.ts` — HealthSessionBuilder
 - `src/detection/LocationTracker.ts` — LocationTracker

@@ -66,10 +66,7 @@
   - function computeSessionScore: (session) => Promise<number>
   - function computeSessionScoreFromProbs: (session, probs, number>) => number
 - `src/detection/sessionMerger.ts` — function submitSession: (candidate) => Promise<void>, function buildSession: (startTime, endTime, source, confidence, notes?, steps?, distanceMeters?, averageSpeedKmh?) => OutsideSession
-- `src/detection/utils.ts`
-  - function haversineDistance: (lat1, lon1, lat2, lon2) => number
-  - const EARTH_RADIUS_METERS
-  - const haversineDistanceMeters
+- `src/detection/utils.ts` — function haversineDistance: (lat1, lon1, lat2, lon2) => number, const EARTH_RADIUS_METERS
 - `src/domain/GoalDomain.ts`
   - function validateDailyGoal: (minutes) => boolean
   - function validateWeeklyGoal: (minutes) => boolean
