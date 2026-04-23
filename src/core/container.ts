@@ -78,6 +78,7 @@ export function createContainer(db: SQLiteDatabase): IAppContainer {
     storageService,
     reminderMessageBuilder,
     (data) => {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const { useAppStore } = require('../store/useAppStore');
       useAppStore.getState().triggerFeedback(data);
     }
