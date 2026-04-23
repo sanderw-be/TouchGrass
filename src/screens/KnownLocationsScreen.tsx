@@ -143,7 +143,7 @@ export default function KnownLocationsScreen() {
     { id: 'active_locations', type: 'active', data: active },
   ];
 
-  const renderSection = ({ item }: { item: typeof SECTIONS[0] }) => {
+  const renderSection = ({ item }: { item: (typeof SECTIONS)[0] }) => {
     if (item.type === 'toggle') {
       return (
         <View>
@@ -212,9 +212,14 @@ export default function KnownLocationsScreen() {
                           style={styles.approveBtn}
                           onPress={() => setEditingLocation(loc as KnownLocation)}
                         >
-                          <Text style={styles.approveBtnText}>{t('settings_location_approve')}</Text>
+                          <Text style={styles.approveBtnText}>
+                            {t('settings_location_approve')}
+                          </Text>
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.denyBtn} onPress={() => handleDeny(loc as KnownLocation)}>
+                        <TouchableOpacity
+                          style={styles.denyBtn}
+                          onPress={() => handleDeny(loc as KnownLocation)}
+                        >
                           <Text style={styles.denyBtnText}>{t('settings_location_deny')}</Text>
                         </TouchableOpacity>
                       </View>
@@ -268,7 +273,7 @@ export default function KnownLocationsScreen() {
         </View>
       );
     }
-    
+
     return null;
   };
 

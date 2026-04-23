@@ -382,9 +382,7 @@ export default function HomeScreen() {
         <WeekDots />
       </Card>
 
-      {todaySessions.length > 0 && (
-        <Text style={styles.sectionTitle}>{t('todays_sessions')}</Text>
-      )}
+      {todaySessions.length > 0 && <Text style={styles.sectionTitle}>{t('todays_sessions')}</Text>}
     </>
   );
 

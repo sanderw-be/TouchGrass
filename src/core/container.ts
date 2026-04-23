@@ -77,7 +77,10 @@ export function createContainer(db: SQLiteDatabase): IAppContainer {
   const notificationResponseHandler = new NotificationResponseHandler(
     storageService,
     reminderMessageBuilder,
-    (data) => useAppStore.getState().triggerFeedback(data)
+    (data) => {
+      const { useAppStore } = require('../store/useAppStore');
+      useAppStore.getState().triggerFeedback(data);
+    }
   );
 
   const smartReminderScheduler = new SmartReminderScheduler(
