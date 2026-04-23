@@ -46,6 +46,3 @@ export function _resetGPSStateForTesting(): void {
 export async function autoDetectLocations(): Promise<void> {
   await _autoDetectLocations();
 }
-
-// Re-export other things that might be needed
-export { isAtKnownIndoorLocation } from './GeofenceManager';

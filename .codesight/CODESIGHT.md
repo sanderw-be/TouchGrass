@@ -4,7 +4,7 @@
 
 > 0 routes | 0 models | 34 components | 57 lib files | 2 env vars | 1 middleware | 0% test coverage
 > **Token savings:** this file is ~6,100 tokens. Without it, AI exploration would cost ~35,500 tokens. **Saves ~29,400 tokens per conversation.**
-> **Last scanned:** 2026-04-21 06:12 — re-run after significant changes
+> **Last scanned:** 2026-04-23 19:47 — re-run after significant changes
 
 ---
 
@@ -115,10 +115,7 @@
   - function computeSessionScore: (session) => Promise<number>
   - function computeSessionScoreFromProbs: (session, probs, number>) => number
 - `src/detection/sessionMerger.ts` — function submitSession: (candidate) => Promise<void>, function buildSession: (startTime, endTime, source, confidence, notes?, steps?, distanceMeters?, averageSpeedKmh?) => OutsideSession
-- `src/detection/utils.ts`
-  - function haversineDistance: (lat1, lon1, lat2, lon2) => number
-  - const EARTH_RADIUS_METERS
-  - const haversineDistanceMeters
+- `src/detection/utils.ts` — function haversineDistance: (lat1, lon1, lat2, lon2) => number, const EARTH_RADIUS_METERS
 - `src/domain/GoalDomain.ts`
   - function validateDailyGoal: (minutes) => boolean
   - function validateWeeklyGoal: (minutes) => boolean
@@ -358,7 +355,7 @@
 # Test Coverage
 
 > **0%** of routes and models are covered by tests
-> 66 test files found
+> 64 test files found
 
 ---
 
