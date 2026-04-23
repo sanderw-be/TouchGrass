@@ -5,11 +5,7 @@ export interface ResponsiveGridListProps<T> extends Omit<FlatListProps<T>, 'numC
   data: readonly T[];
 }
 
-export function ResponsiveGridList<T>({
-  data,
-  renderItem,
-  ...props
-}: ResponsiveGridListProps<T>) {
+export function ResponsiveGridList<T>({ data, renderItem, ...props }: ResponsiveGridListProps<T>) {
   const { width } = useWindowDimensions();
 
   const getNumColumns = (screenWidth: number) => {
@@ -25,11 +21,7 @@ export function ResponsiveGridList<T>({
       {...props}
       key={`grid-${numColumns}`}
       data={data}
-      renderItem={(info) => (
-        <View style={styles.gridItemWrapper}>
-          {renderItem?.(info)}
-        </View>
-      )}
+      renderItem={(info) => <View style={styles.gridItemWrapper}>{renderItem?.(info)}</View>}
       numColumns={numColumns}
       contentContainerStyle={[styles.listContent, props.contentContainerStyle]}
     />
