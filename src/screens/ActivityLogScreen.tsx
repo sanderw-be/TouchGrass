@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useMemo, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, RefreshControl } from 'react-native';
+import { ResponsiveGridList } from '../components/ResponsiveGridList';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { getBackgroundLogsAsync, BackgroundTaskLog, BackgroundLogCategory } from '../storage';
@@ -109,94 +110,93 @@ export default function ActivityLogScreen() {
 
   const reminderDayGroups = useMemo(() => groupByDay(reminderLogs), [reminderLogs]);
 
+  const SECTIONS = [
+    { id: 'health_connect' as SectionKey, title: t('activity_log_section_hc'), icon: 'fitness-outline', data: hcLogs },
+    { id: 'gps' as SectionKey, title: t('activity_log_section_gps'), icon: 'location-outline', data: gpsLogs },
+    { id: 'reminder' as SectionKey, title: t('activity_log_section_reminders'), icon: 'notifications-outline', data: reminderLogs },
+  ];
+
+  const renderSection = ({ item }: { item: typeof SECTIONS[0] }) => {
+    if (item.id === 'reminder') {
+      return (
+        <View>
+          <SectionHeader
+            title={item.title}
+            icon={item.icon as any}
+            isOpen={openSection === item.id}
+            count={item.data.length}
+            onPress={() => toggleSection(item.id)}
+            colors={colors}
+            styles={styles}
+          />
+          {openSection === item.id && (
+            <View style={styles.logCard}>
+              {!isLoading && reminderDayGroups.length === 0 ? (
+                <Text style={styles.emptyText}>{t('activity_log_empty')}</Text>
+              ) : (
+                reminderDayGroups.map(({ day, items: reminderItems }, idx) => (
+                  <View key={day}>
+                    {idx > 0 && <View style={styles.dayDivider} />}
+                    <TouchableOpacity
+                      style={styles.dayHeader}
+                      onPress={() => toggleReminderDay(day)}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={styles.dayLabel}>{formatDayLabel(day)}</Text>
+                      <Ionicons
+                        name={openReminderDay === day ? 'chevron-up' : 'chevron-down'}
+                        size={16}
+                        color={colors.textMuted}
+                      />
+                    </TouchableOpacity>
+                    {openReminderDay === day &&
+                      reminderItems.map((entry) => (
+                        <LogRow key={entry.id} entry={entry} styles={styles} indented />
+                      ))}
+                  </View>
+                ))
+              )}
+            </View>
+          )}
+        </View>
+      );
+    }
+
+    return (
+      <View>
+        <SectionHeader
+          title={item.title}
+          icon={item.icon as any}
+          isOpen={openSection === item.id}
+          count={item.data.length}
+          onPress={() => toggleSection(item.id)}
+          colors={colors}
+          styles={styles}
+        />
+        {openSection === item.id && (
+          <View style={styles.logCard}>
+            {!isLoading && item.data.length === 0 ? (
+              <Text style={styles.emptyText}>{t('activity_log_empty')}</Text>
+            ) : (
+              item.data.map((entry) => <LogRow key={entry.id} entry={entry} styles={styles} />)
+            )}
+          </View>
+        )}
+      </View>
+    );
+  };
+
   return (
-    <ScrollView
+    <ResponsiveGridList
       style={styles.container}
       contentContainerStyle={styles.content}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.grass} />
       }
-    >
-      {/* Health Connect section */}
-      <SectionHeader
-        title={t('activity_log_section_hc')}
-        icon="fitness-outline"
-        isOpen={openSection === 'health_connect'}
-        count={hcLogs.length}
-        onPress={() => toggleSection('health_connect')}
-        colors={colors}
-        styles={styles}
-      />
-      {openSection === 'health_connect' && (
-        <View style={styles.logCard}>
-          {!isLoading && hcLogs.length === 0 ? (
-            <Text style={styles.emptyText}>{t('activity_log_empty')}</Text>
-          ) : (
-            hcLogs.map((entry) => <LogRow key={entry.id} entry={entry} styles={styles} />)
-          )}
-        </View>
-      )}
-
-      {/* GPS section */}
-      <SectionHeader
-        title={t('activity_log_section_gps')}
-        icon="location-outline"
-        isOpen={openSection === 'gps'}
-        count={gpsLogs.length}
-        onPress={() => toggleSection('gps')}
-        colors={colors}
-        styles={styles}
-      />
-      {openSection === 'gps' && (
-        <View style={styles.logCard}>
-          {!isLoading && gpsLogs.length === 0 ? (
-            <Text style={styles.emptyText}>{t('activity_log_empty')}</Text>
-          ) : (
-            gpsLogs.map((entry) => <LogRow key={entry.id} entry={entry} styles={styles} />)
-          )}
-        </View>
-      )}
-
-      {/* Smart Reminders section */}
-      <SectionHeader
-        title={t('activity_log_section_reminders')}
-        icon="notifications-outline"
-        isOpen={openSection === 'reminder'}
-        count={reminderLogs.length}
-        onPress={() => toggleSection('reminder')}
-        colors={colors}
-        styles={styles}
-      />
-      {openSection === 'reminder' && (
-        <View style={styles.logCard}>
-          {!isLoading && reminderDayGroups.length === 0 ? (
-            <Text style={styles.emptyText}>{t('activity_log_empty')}</Text>
-          ) : (
-            reminderDayGroups.map(({ day, items }, idx) => (
-              <View key={day}>
-                {idx > 0 && <View style={styles.dayDivider} />}
-                <TouchableOpacity
-                  style={styles.dayHeader}
-                  onPress={() => toggleReminderDay(day)}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.dayLabel}>{formatDayLabel(day)}</Text>
-                  <Ionicons
-                    name={openReminderDay === day ? 'chevron-up' : 'chevron-down'}
-                    size={16}
-                    color={colors.textMuted}
-                  />
-                </TouchableOpacity>
-                {openReminderDay === day &&
-                  items.map((entry) => (
-                    <LogRow key={entry.id} entry={entry} styles={styles} indented />
-                  ))}
-              </View>
-            ))
-          )}
-        </View>
-      )}
-    </ScrollView>
+      data={SECTIONS}
+      keyExtractor={(item) => item.id}
+      renderItem={renderSection}
+    />
   );
 }
 

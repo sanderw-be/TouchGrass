@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useLayoutEffect, useMemo, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Switch, Alert } from 'react-native';
+import { ResponsiveGridList } from '../components/ResponsiveGridList';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -136,6 +137,141 @@ export default function KnownLocationsScreen() {
   const sheetVisible = editingLocation !== null || isCreatingLocation;
   const sheetLocation = isCreatingLocation ? null : editingLocation;
 
+  const SECTIONS = [
+    { id: 'suggestions_toggle', type: 'toggle' },
+    { id: 'suggested_locations', type: 'suggested', data: suggested },
+    { id: 'active_locations', type: 'active', data: active },
+  ];
+
+  const renderSection = ({ item }: { item: typeof SECTIONS[0] }) => {
+    if (item.type === 'toggle') {
+      return (
+        <View>
+          <Text style={styles.sectionHeader}>{t('settings_section_detection')}</Text>
+          <View style={styles.card}>
+            <View style={styles.row}>
+              <Text style={styles.rowIcon}>📍</Text>
+              <View style={styles.rowContent}>
+                <Text style={styles.rowLabel}>{t('settings_locations_suggestions_enabled')}</Text>
+                <Text style={styles.rowSublabel}>
+                  {gpsActive
+                    ? t('settings_locations_suggestions_desc')
+                    : t('settings_gps_permission')}
+                </Text>
+              </View>
+              <Switch
+                value={suggestionsEnabled && gpsActive}
+                onValueChange={toggleSuggestions}
+                disabled={!gpsActive}
+                trackColor={{ false: colors.fog, true: colors.grassLight }}
+                thumbColor={suggestionsEnabled && gpsActive ? colors.grass : colors.inactive}
+              />
+            </View>
+          </View>
+        </View>
+      );
+    }
+
+    if (item.type === 'suggested') {
+      return (
+        <View>
+          <Text style={styles.sectionHeader}>{t('settings_locations_section_suggested')}</Text>
+          <View style={styles.card}>
+            {!isLoading && suggested.length === 0 ? (
+              <View style={styles.emptyBox}>
+                <Text style={styles.emptyTitle}>{t('settings_location_no_suggestions')}</Text>
+                <Text style={styles.emptyHint}>{t('settings_location_no_suggestions_hint')}</Text>
+              </View>
+            ) : (
+              suggested.map((loc, i) => (
+                <View key={loc.id}>
+                  {i > 0 && <View style={styles.divider} />}
+                  <TouchableOpacity onPress={() => setEditingLocation(loc as KnownLocation)}>
+                    <View style={styles.row}>
+                      <Text style={styles.rowIcon}>🔍</Text>
+                      <View style={styles.rowContent}>
+                        <Text style={styles.rowLabel}>
+                          {loc.label || t('location_suggestion_default_label')}
+                        </Text>
+                        <Text style={styles.rowSublabel}>
+                          {t('settings_location_radius', {
+                            radius: loc.radiusMeters,
+                            type: loc.isIndoor
+                              ? t('settings_location_indoor')
+                              : t('settings_location_outdoor'),
+                          })}
+                        </Text>
+                        <View style={styles.pendingBadge}>
+                          <Text style={styles.pendingBadgeText}>
+                            {t('settings_location_suggested_badge')}
+                          </Text>
+                        </View>
+                      </View>
+                      <View style={styles.actionButtons}>
+                        <TouchableOpacity
+                          style={styles.approveBtn}
+                          onPress={() => setEditingLocation(loc as KnownLocation)}
+                        >
+                          <Text style={styles.approveBtnText}>{t('settings_location_approve')}</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.denyBtn} onPress={() => handleDeny(loc as KnownLocation)}>
+                          <Text style={styles.denyBtnText}>{t('settings_location_deny')}</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+                </View>
+              ))
+            )}
+          </View>
+        </View>
+      );
+    }
+
+    if (item.type === 'active') {
+      return (
+        <View>
+          <Text style={styles.sectionHeader}>{t('settings_locations_section_active')}</Text>
+          <View style={styles.card}>
+            {!isLoading && active.length === 0 ? (
+              <View style={styles.emptyBox}>
+                <Text style={styles.emptyTitle}>{t('settings_location_no_active')}</Text>
+                <Text style={styles.emptyHint}>{t('settings_location_no_active_hint')}</Text>
+              </View>
+            ) : (
+              active.map((loc, i) => (
+                <View key={loc.id}>
+                  {i > 0 && <View style={styles.divider} />}
+                  <TouchableOpacity onPress={() => setEditingLocation(loc as KnownLocation)}>
+                    <View style={styles.row}>
+                      <Text style={styles.rowIcon}>
+                        {loc.label === 'Home' ? '🏠' : loc.label === 'Work' ? '🏢' : '📌'}
+                      </Text>
+                      <View style={styles.rowContent}>
+                        <Text style={styles.rowLabel}>{loc.label}</Text>
+                        <Text style={styles.rowSublabel}>
+                          {t('settings_location_radius', {
+                            radius: loc.radiusMeters,
+                            type: loc.isIndoor
+                              ? t('settings_location_indoor')
+                              : t('settings_location_outdoor'),
+                          })}
+                        </Text>
+                      </View>
+                      <Text style={styles.chevron}>›</Text>
+                    </View>
+                  </TouchableOpacity>
+                </View>
+              ))
+            )}
+          </View>
+        </View>
+      );
+    }
+    
+    return null;
+  };
+
   return (
     <>
       <EditLocationSheet
@@ -146,120 +282,13 @@ export default function KnownLocationsScreen() {
         onSave={afterSave}
       />
 
-      <ScrollView
+      <ResponsiveGridList
         style={styles.container}
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + spacing.xl }]}
-      >
-        {/* Suggestions toggle */}
-        <Text style={styles.sectionHeader}>{t('settings_section_detection')}</Text>
-        <View style={styles.card}>
-          <View style={styles.row}>
-            <Text style={styles.rowIcon}>📍</Text>
-            <View style={styles.rowContent}>
-              <Text style={styles.rowLabel}>{t('settings_locations_suggestions_enabled')}</Text>
-              <Text style={styles.rowSublabel}>
-                {gpsActive
-                  ? t('settings_locations_suggestions_desc')
-                  : t('settings_gps_permission')}
-              </Text>
-            </View>
-            <Switch
-              value={suggestionsEnabled && gpsActive}
-              onValueChange={toggleSuggestions}
-              disabled={!gpsActive}
-              trackColor={{ false: colors.fog, true: colors.grassLight }}
-              thumbColor={suggestionsEnabled && gpsActive ? colors.grass : colors.inactive}
-            />
-          </View>
-        </View>
-
-        {/* Suggested locations */}
-        <Text style={styles.sectionHeader}>{t('settings_locations_section_suggested')}</Text>
-        <View style={styles.card}>
-          {!isLoading && suggested.length === 0 ? (
-            <View style={styles.emptyBox}>
-              <Text style={styles.emptyTitle}>{t('settings_location_no_suggestions')}</Text>
-              <Text style={styles.emptyHint}>{t('settings_location_no_suggestions_hint')}</Text>
-            </View>
-          ) : (
-            suggested.map((loc, i) => (
-              <View key={loc.id}>
-                {i > 0 && <View style={styles.divider} />}
-                <TouchableOpacity onPress={() => setEditingLocation(loc)}>
-                  <View style={styles.row}>
-                    <Text style={styles.rowIcon}>🔍</Text>
-                    <View style={styles.rowContent}>
-                      <Text style={styles.rowLabel}>
-                        {loc.label || t('location_suggested_label')}
-                      </Text>
-                      <Text style={styles.rowSublabel}>
-                        {t('settings_location_radius', {
-                          radius: loc.radiusMeters,
-                          type: loc.isIndoor
-                            ? t('settings_location_indoor')
-                            : t('settings_location_outdoor'),
-                        })}
-                      </Text>
-                      <View style={styles.pendingBadge}>
-                        <Text style={styles.pendingBadgeText}>
-                          {t('settings_location_suggested_badge')}
-                        </Text>
-                      </View>
-                    </View>
-                    <View style={styles.actionButtons}>
-                      <TouchableOpacity
-                        style={styles.approveBtn}
-                        onPress={() => setEditingLocation(loc)}
-                      >
-                        <Text style={styles.approveBtnText}>{t('settings_location_approve')}</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity style={styles.denyBtn} onPress={() => handleDeny(loc)}>
-                        <Text style={styles.denyBtnText}>{t('settings_location_deny')}</Text>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                </TouchableOpacity>
-              </View>
-            ))
-          )}
-        </View>
-
-        {/* Active locations */}
-        <Text style={styles.sectionHeader}>{t('settings_locations_section_active')}</Text>
-        <View style={styles.card}>
-          {!isLoading && active.length === 0 ? (
-            <View style={styles.emptyBox}>
-              <Text style={styles.emptyTitle}>{t('settings_location_no_active')}</Text>
-              <Text style={styles.emptyHint}>{t('settings_location_no_active_hint')}</Text>
-            </View>
-          ) : (
-            active.map((loc, i) => (
-              <View key={loc.id}>
-                {i > 0 && <View style={styles.divider} />}
-                <TouchableOpacity onPress={() => setEditingLocation(loc)}>
-                  <View style={styles.row}>
-                    <Text style={styles.rowIcon}>
-                      {loc.label === 'Home' ? '🏠' : loc.label === 'Work' ? '🏢' : '📌'}
-                    </Text>
-                    <View style={styles.rowContent}>
-                      <Text style={styles.rowLabel}>{loc.label}</Text>
-                      <Text style={styles.rowSublabel}>
-                        {t('settings_location_radius', {
-                          radius: loc.radiusMeters,
-                          type: loc.isIndoor
-                            ? t('settings_location_indoor')
-                            : t('settings_location_outdoor'),
-                        })}
-                      </Text>
-                    </View>
-                    <Text style={styles.chevron}>›</Text>
-                  </View>
-                </TouchableOpacity>
-              </View>
-            ))
-          )}
-        </View>
-      </ScrollView>
+        data={SECTIONS}
+        keyExtractor={(item) => item.id}
+        renderItem={renderSection}
+      />
     </>
   );
 }
