@@ -22,11 +22,11 @@ export interface IStorageService {
   getScheduledNotificationsAsync(): Promise<
     {
       id: number;
-      dayOfWeek: number;
+      daysOfWeek: number[];
       hour: number;
       minute: number;
       enabled: number;
-      message: string | null;
+      label: string;
     }[]
   >;
   insertBackgroundLogAsync(source: string, message: string): Promise<void>;
@@ -104,14 +104,9 @@ export class StorageService implements IStorageService {
   }
 
   async getCurrentDailyGoalAsync(): Promise<DailyGoal | null> {
-    const now = Date.now();
-    const d = new Date(now);
-    d.setHours(0, 0, 0, 0);
-    const start = d.getTime();
-
-    return await this.db.getFirstAsync<DailyGoal>('SELECT * FROM daily_goals WHERE dateMs = ?', [
-      start,
-    ]);
+    return await this.db.getFirstAsync<DailyGoal>(
+      'SELECT * FROM daily_goals ORDER BY createdAt DESC LIMIT 1'
+    );
   }
 
   async getSessionsForRangeAsync(fromMs: number, toMs: number): Promise<OutsideSession[]> {
@@ -144,26 +139,40 @@ export class StorageService implements IStorageService {
   async getScheduledNotificationsAsync(): Promise<
     {
       id: number;
-      dayOfWeek: number;
+      daysOfWeek: number[];
       hour: number;
       minute: number;
       enabled: number;
-      message: string | null;
+      label: string;
     }[]
   > {
-    return await this.db.getAllAsync<{
+    const rows = await this.db.getAllAsync<{
       id: number;
-      dayOfWeek: number;
+      daysOfWeek: string;
       hour: number;
       minute: number;
       enabled: number;
-      message: string | null;
-    }>('SELECT * FROM scheduled_notifications ORDER BY dayOfWeek, hour, minute');
+      label: string;
+    }>('SELECT * FROM scheduled_notifications ORDER BY hour, minute');
+
+    return rows.map((row) => ({
+      id: row.id,
+      hour: row.hour,
+      minute: row.minute,
+      daysOfWeek: row.daysOfWeek
+        ? row.daysOfWeek
+            .split(',')
+            .map((d) => parseInt(d.trim(), 10))
+            .filter((d) => !isNaN(d))
+        : [],
+      enabled: row.enabled,
+      label: row.label,
+    }));
   }
 
   async insertBackgroundLogAsync(source: string, message: string): Promise<void> {
     await this.db.runAsync(
-      'INSERT INTO background_logs (timestamp, source, message) VALUES (?, ?, ?)',
+      'INSERT INTO background_task_logs (timestamp, category, message) VALUES (?, ?, ?)',
       [Date.now(), source, message]
     );
   }

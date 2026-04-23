@@ -18,10 +18,10 @@
 - `src/background/unifiedBackgroundTask.ts` — imported by **7** files
 - `src/utils/widgetHelper.ts` — imported by **7** files
 - `src/calendar/calendarService.ts` — imported by **7** files
+- `src/storage/StorageService.ts` — imported by **7** files
 - `src/utils/constants.ts` — imported by **6** files
 - `src/detection/sessionMerger.ts` — imported by **6** files
 - `src/hooks/useTheme.ts` — imported by **6** files
-- `src/storage/StorageService.ts` — imported by **6** files
 
 ## Import Map (who imports what)
 
