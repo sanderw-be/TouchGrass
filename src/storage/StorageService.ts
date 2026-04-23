@@ -104,7 +104,9 @@ export class StorageService implements IStorageService {
   }
 
   async getCurrentDailyGoalAsync(): Promise<DailyGoal | null> {
-    return await this.db.getFirstAsync<DailyGoal>('SELECT * FROM daily_goals ORDER BY createdAt DESC LIMIT 1');
+    return await this.db.getFirstAsync<DailyGoal>(
+      'SELECT * FROM daily_goals ORDER BY createdAt DESC LIMIT 1'
+    );
   }
 
   async getSessionsForRangeAsync(fromMs: number, toMs: number): Promise<OutsideSession[]> {

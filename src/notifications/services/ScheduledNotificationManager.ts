@@ -89,7 +89,10 @@ export class ScheduledNotificationManager implements IScheduledNotificationManag
               },
             });
           } catch (e) {
-            console.error(`TouchGrass: Failed to schedule notification ${notif.id} for day ${day}:`, e);
+            console.error(
+              `TouchGrass: Failed to schedule notification ${notif.id} for day ${day}:`,
+              e
+            );
           }
         }
       }
