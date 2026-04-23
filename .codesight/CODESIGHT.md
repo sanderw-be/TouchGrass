@@ -4,7 +4,7 @@
 
 > 0 routes | 0 models | 34 components | 57 lib files | 2 env vars | 1 middleware | 0% test coverage
 > **Token savings:** this file is ~6,100 tokens. Without it, AI exploration would cost ~35,500 tokens. **Saves ~29,400 tokens per conversation.**
-> **Last scanned:** 2026-04-23 19:47 — re-run after significant changes
+> **Last scanned:** 2026-04-23 20:39 — re-run after significant changes
 
 ---
 
@@ -332,10 +332,10 @@
 - `src/background/unifiedBackgroundTask.ts` — imported by **7** files
 - `src/utils/widgetHelper.ts` — imported by **7** files
 - `src/calendar/calendarService.ts` — imported by **7** files
+- `src/storage/StorageService.ts` — imported by **7** files
 - `src/utils/constants.ts` — imported by **6** files
 - `src/detection/sessionMerger.ts` — imported by **6** files
 - `src/hooks/useTheme.ts` — imported by **6** files
-- `src/storage/StorageService.ts` — imported by **6** files
 
 ## Import Map (who imports what)
 
@@ -355,7 +355,7 @@
 # Test Coverage
 
 > **0%** of routes and models are covered by tests
-> 64 test files found
+> 65 test files found
 
 ---
 
