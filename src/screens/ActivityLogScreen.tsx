@@ -187,7 +187,8 @@ export default function ActivityLogScreen() {
           onPress={() => toggleSection(item.id)}
           colors={colors}
           styles={styles}
-        />        {openSection === item.id && (
+        />{' '}
+        {openSection === item.id && (
           <View style={styles.logCard}>
             {!isLoading && item.data.length === 0 ? (
               <Text style={styles.emptyText}>{t('activity_log_empty')}</Text>
