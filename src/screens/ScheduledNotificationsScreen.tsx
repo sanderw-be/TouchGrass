@@ -297,9 +297,7 @@ export default function ScheduledNotificationsScreen() {
                 <Text style={styles.scheduleTime}>
                   {formatTimeStr(schedule.hour, schedule.minute)}
                 </Text>
-                {schedule.label ? (
-                  <Text style={styles.scheduleLabel}>{schedule.label}</Text>
-                ) : null}
+                {schedule.label ? <Text style={styles.scheduleLabel}>{schedule.label}</Text> : null}
                 <Text style={styles.scheduleDays}>{formatDays(schedule.daysOfWeek)}</Text>
               </View>
               <Switch

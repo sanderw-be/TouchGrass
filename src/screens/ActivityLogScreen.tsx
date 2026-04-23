@@ -111,18 +111,33 @@ export default function ActivityLogScreen() {
   const reminderDayGroups = useMemo(() => groupByDay(reminderLogs), [reminderLogs]);
 
   const SECTIONS = [
-    { id: 'health_connect' as SectionKey, title: t('activity_log_section_hc'), icon: 'fitness-outline', data: hcLogs },
-    { id: 'gps' as SectionKey, title: t('activity_log_section_gps'), icon: 'location-outline', data: gpsLogs },
-    { id: 'reminder' as SectionKey, title: t('activity_log_section_reminders'), icon: 'notifications-outline', data: reminderLogs },
+    {
+      id: 'health_connect' as SectionKey,
+      title: t('activity_log_section_hc'),
+      icon: 'fitness-outline',
+      data: hcLogs,
+    },
+    {
+      id: 'gps' as SectionKey,
+      title: t('activity_log_section_gps'),
+      icon: 'location-outline',
+      data: gpsLogs,
+    },
+    {
+      id: 'reminder' as SectionKey,
+      title: t('activity_log_section_reminders'),
+      icon: 'notifications-outline',
+      data: reminderLogs,
+    },
   ];
 
-  const renderSection = ({ item }: { item: typeof SECTIONS[0] }) => {
+  const renderSection = ({ item }: { item: (typeof SECTIONS)[0] }) => {
     if (item.id === 'reminder') {
       return (
         <View>
           <SectionHeader
             title={item.title}
-            icon={item.icon as any}
+            icon={item.icon}
             isOpen={openSection === item.id}
             count={item.data.length}
             onPress={() => toggleSection(item.id)}
@@ -166,14 +181,13 @@ export default function ActivityLogScreen() {
       <View>
         <SectionHeader
           title={item.title}
-          icon={item.icon as any}
+          icon={item.icon}
           isOpen={openSection === item.id}
           count={item.data.length}
           onPress={() => toggleSection(item.id)}
           colors={colors}
           styles={styles}
-        />
-        {openSection === item.id && (
+        />        {openSection === item.id && (
           <View style={styles.logCard}>
             {!isLoading && item.data.length === 0 ? (
               <Text style={styles.emptyText}>{t('activity_log_empty')}</Text>
