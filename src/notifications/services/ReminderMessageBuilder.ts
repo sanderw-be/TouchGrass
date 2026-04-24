@@ -8,7 +8,7 @@ interface IWeatherServiceForReminderBuilder {
 
 interface IWeatherAlgorithmForReminderBuilder {
   getWeatherEmoji(weatherCode: number | null): string;
-  getWeatherDescription(weatherCode: number | null): string;
+  getWeatherDescription(weatherCode: number | null): TxKey;
 }
 
 export interface IReminderMessageBuilder {
@@ -38,24 +38,22 @@ export class ReminderMessageBuilder implements IReminderMessageBuilder {
     const progress = Math.min(1, todayMinutes / dailyTarget);
 
     // Title based on progress
-    let titleKey = 'notif_title_1';
-    if (progress >= 0.9) titleKey = 'notif_title_5';
-    else if (progress >= 0.75) titleKey = 'notif_title_4';
-    else if (progress >= 0.5) titleKey = 'notif_title_3';
-    else if (progress >= 0.25) titleKey = 'notif_title_2';
+    let title = t('notif_title_1');
+    if (progress >= 0.9) title = t('notif_title_5');
+    else if (progress >= 0.75) title = t('notif_title_4');
+    else if (progress >= 0.5) title = t('notif_title_3');
+    else if (progress >= 0.25) title = t('notif_title_2');
 
     // Body context
-    let bodyKey: TxKey = 'notif_body_generic';
-    if (progress === 0) bodyKey = 'notif_body_start';
-    else if (progress < 0.5) bodyKey = 'notif_body_early';
-    else if (progress < 0.9) bodyKey = 'notif_body_progress_halfway';
-    else bodyKey = 'notif_body_progress_almost';
-
-    let body = t(bodyKey);
+    let body: string = t('notif_body_generic');
+    if (progress === 0) body = t('notif_body_start');
+    else if (progress < 0.5) body = t('notif_body_early');
+    else if (progress < 0.9) body = t('notif_body_progress_halfway');
+    else body = t('notif_body_progress_almost');
 
     // Append contributors if present
     if (contributors && contributors.length > 0) {
-      const descriptions = contributors.map((key) => String(t(key)));
+      const descriptions = contributors.map((key) => String(t(key as TxKey)));
       let joined = '';
       if (descriptions.length === 1) {
         joined = descriptions[0];
@@ -111,7 +109,7 @@ export class ReminderMessageBuilder implements IReminderMessageBuilder {
     }
 
     return {
-      title: t(titleKey),
+      title,
       body,
     };
   }

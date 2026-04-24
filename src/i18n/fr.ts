@@ -253,8 +253,8 @@ const fr: TranslationType = {
   settings_location_deny_body: 'Ignoré localement.',
   settings_location_deny_confirm: 'Retirer',
   settings_location_deny_cancel: 'Annuler',
-  location_suggestion_default_label: 'Suggéré',
   location_add_title: 'Ajouter',
+  location_suggested_label: 'Lieu suggéré',
   location_edit_address: 'Adresse',
   location_edit_address_unavailable: 'Non disponible',
   location_edit_address_search_placeholder: 'Chercher…',
@@ -445,6 +445,7 @@ const fr: TranslationType = {
   weather_snow_showers: 'Averses de neige',
   weather_thunderstorm: 'Orage',
   weather_unknown: 'Inconnu',
+  weather_temp_unknown: 'Température inconnue',
 
   // Notification channel
   notif_channel_name: 'Sorties',
@@ -453,6 +454,7 @@ const fr: TranslationType = {
   gps_tracking_notif_body: 'Balayage local en cours',
   notif_channel_scheduled_name: 'Programmés',
   notif_channel_scheduled_desc: 'Vos pauses en plein air',
+  notif_scheduled_title: 'TouchGrass',
   notif_channel_daily_planner_name: 'Réveil silencieux',
   notif_channel_daily_planner_desc: 'Calcul local. Désactivable.',
   notif_daily_planner_title: 'TouchGrass',

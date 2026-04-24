@@ -259,8 +259,8 @@ const en = {
   settings_location_deny_body: 'This location suggestion will be removed.',
   settings_location_deny_confirm: 'Remove',
   settings_location_deny_cancel: 'Cancel',
-  location_suggestion_default_label: 'Suggested place',
   location_add_title: 'Add location',
+  location_suggested_label: 'Suggested place',
   location_edit_address: 'Nearest address',
   location_edit_address_unavailable: 'Address not available',
   location_edit_address_search_placeholder: 'Search address…',
@@ -461,6 +461,7 @@ const en = {
   weather_snow_showers: 'Snow showers',
   weather_thunderstorm: 'Thunderstorm',
   weather_unknown: 'Unknown',
+  weather_temp_unknown: 'Unknown temperature',
 
   // Notification channel
   notif_channel_name: 'Outside reminders',
@@ -470,6 +471,7 @@ const en = {
   gps_tracking_notif_body: 'Tracking your outside time in the background',
   notif_channel_scheduled_name: 'Scheduled reminders',
   notif_channel_scheduled_desc: 'Your custom scheduled reminders to go outside',
+  notif_scheduled_title: 'TouchGrass',
   notif_channel_daily_planner_name: 'Daily planner',
   notif_channel_daily_planner_desc:
     'Silent wake-up to reschedule your daily reminders. Can be disabled in Android notification settings.',

@@ -80,9 +80,7 @@ i18n.defaultLocale = 'en';
 export default i18n;
 
 // Shorthand translate function
-export function t(key: TxKey, options?: Record<string, unknown>): string;
-export function t(key: string, options?: Record<string, unknown>): string; // Allow dynamic strings
-export function t(key: TxKey | string, options?: Record<string, unknown>): string {
+export function t(key: TxKey, options?: Record<string, unknown>): string {
   return i18n.t(key, options);
 }
 

@@ -253,8 +253,8 @@ const ja: TranslationType = {
   settings_location_deny_body: '無視されます。',
   settings_location_deny_confirm: '削除',
   settings_location_deny_cancel: 'キャンセル',
-  location_suggestion_default_label: '提案された場所',
-  location_add_title: '追加',
+  location_add_title: '場所を追加',
+  location_suggested_label: '提案された場所',
   location_edit_address: '住所',
   location_edit_address_unavailable: '利用不可',
   location_edit_address_search_placeholder: '検索…',
@@ -446,6 +446,7 @@ const ja: TranslationType = {
   weather_snow_showers: 'にわか雪',
   weather_thunderstorm: '雷雨',
   weather_unknown: '不明',
+  weather_temp_unknown: '不明な温度',
 
   // Notification channel
   notif_channel_name: '外出通知',
@@ -454,6 +455,7 @@ const ja: TranslationType = {
   gps_tracking_notif_body: 'バックグラウンドで外出をチェック中',
   notif_channel_scheduled_name: 'スケジュール',
   notif_channel_scheduled_desc: '設定したデトックス時間',
+  notif_scheduled_title: 'TouchGrass',
   notif_channel_daily_planner_name: 'デイリープランナー',
   notif_channel_daily_planner_desc: 'バックグラウンド処理。非表示可。',
   notif_daily_planner_title: 'TouchGrass',

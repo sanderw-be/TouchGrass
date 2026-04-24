@@ -254,8 +254,8 @@ const de: TranslationType = {
   settings_location_deny_body: 'Wird entfernt.',
   settings_location_deny_confirm: 'Entfernen',
   settings_location_deny_cancel: 'Abbrechen',
-  location_suggestion_default_label: 'Neuer Ort',
   location_add_title: 'Hinzufügen',
+  location_suggested_label: 'Vorgeschlagener Ort',
   location_edit_address: 'Nächste Adresse',
   location_edit_address_unavailable: 'Keine Adresse gefunden',
   location_edit_address_search_placeholder: 'Suchen…',
@@ -448,6 +448,7 @@ const de: TranslationType = {
   weather_snow_showers: 'Schneeschauer',
   weather_thunderstorm: 'Gewitter',
   weather_unknown: 'Unbekannt',
+  weather_temp_unknown: 'Unbekannte Temperatur',
 
   // Notification channel
   notif_channel_name: 'Draußen-Tipps',
@@ -456,6 +457,7 @@ const de: TranslationType = {
   gps_tracking_notif_body: 'Hintergrund-Tracking aktiv',
   notif_channel_scheduled_name: 'Zeitpläne',
   notif_channel_scheduled_desc: 'Deine festen Draußen-Termine',
+  notif_scheduled_title: 'TouchGrass',
   notif_channel_daily_planner_name: 'Tagesplaner',
   notif_channel_daily_planner_desc: 'Stummer Check am Morgen. In Android deaktivierbar.',
   notif_daily_planner_title: 'TouchGrass',

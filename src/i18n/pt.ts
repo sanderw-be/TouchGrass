@@ -253,8 +253,8 @@ const pt: TranslationType = {
   settings_location_deny_body: 'Será ignorado.',
   settings_location_deny_confirm: 'Remover',
   settings_location_deny_cancel: 'Cancelar',
-  location_suggestion_default_label: 'Local sugerido',
   location_add_title: 'Adicionar',
+  location_suggested_label: 'Local sugerido',
   location_edit_address: 'Morada mais próxima',
   location_edit_address_unavailable: 'Indisponível',
   location_edit_address_search_placeholder: 'Pesquisar…',
@@ -446,6 +446,7 @@ const pt: TranslationType = {
   weather_snow_showers: 'Aguaceiros de neve',
   weather_thunderstorm: 'Trovoada',
   weather_unknown: 'Desconhecido',
+  weather_temp_unknown: 'Temperatura desconhecida',
 
   // Notification channel
   notif_channel_name: 'Avisos ao ar livre',
@@ -454,6 +455,7 @@ const pt: TranslationType = {
   gps_tracking_notif_body: 'Deteção ao ar livre em andamento',
   notif_channel_scheduled_name: 'Agendados',
   notif_channel_scheduled_desc: 'Lembretes que criaste',
+  notif_scheduled_title: 'TouchGrass',
   notif_channel_daily_planner_name: 'Planeamento local',
   notif_channel_daily_planner_desc: 'Processo em segundo plano silencioso. Podes ocultar.',
   notif_daily_planner_title: 'TouchGrass',

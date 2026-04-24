@@ -253,8 +253,8 @@ const es: TranslationType = {
   settings_location_deny_body: 'Se ignorará.',
   settings_location_deny_confirm: 'Quitar',
   settings_location_deny_cancel: 'Cancelar',
-  location_suggestion_default_label: 'Lugar sugerido',
   location_add_title: 'Añadir',
+  location_suggested_label: 'Lugar sugerido',
   location_edit_address: 'Dirección cercana',
   location_edit_address_unavailable: 'No disponible',
   location_edit_address_search_placeholder: 'Buscar…',
@@ -447,6 +447,7 @@ const es: TranslationType = {
   weather_snow_showers: 'Chubascos de nieve',
   weather_thunderstorm: 'Tormenta',
   weather_unknown: 'Desconocido',
+  weather_temp_unknown: 'Temperatura desconocida',
 
   // Notification channel
   notif_channel_name: 'Avisos al aire libre',
@@ -455,6 +456,7 @@ const es: TranslationType = {
   gps_tracking_notif_body: 'Detección de salida activa en segundo plano',
   notif_channel_scheduled_name: 'Programados',
   notif_channel_scheduled_desc: 'Avisos que tú has creado',
+  notif_scheduled_title: 'TouchGrass',
   notif_channel_daily_planner_name: 'Planificador diario',
   notif_channel_daily_planner_desc: 'Cálculo silencioso de avisos.',
   notif_daily_planner_title: 'TouchGrass',

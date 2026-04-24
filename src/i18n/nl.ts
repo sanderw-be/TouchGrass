@@ -255,8 +255,8 @@ const nl: TranslationType = {
   settings_location_deny_body: 'Dit wordt verwijderd.',
   settings_location_deny_confirm: 'Verwijderen',
   settings_location_deny_cancel: 'Annuleren',
-  location_suggestion_default_label: 'Voorgestelde locatie',
   location_add_title: 'Toevoegen',
+  location_suggested_label: 'Voorgestelde locatie',
   location_edit_address: 'Dichtstbijzijnde adres',
   location_edit_address_unavailable: 'Adres onbekend',
   location_edit_address_search_placeholder: 'Zoeken…',
@@ -451,6 +451,7 @@ const nl: TranslationType = {
   weather_snow_showers: 'Sneeuwbuien',
   weather_thunderstorm: 'Onweer',
   weather_unknown: 'Onbekend',
+  weather_temp_unknown: 'Onbekende temperatuur',
 
   // Meldingskanaal
   notif_channel_name: 'Buitenherinneringen',
@@ -460,6 +461,7 @@ const nl: TranslationType = {
   gps_tracking_notif_body: 'Traceert je buitentijd op de achtergrond',
   notif_channel_scheduled_name: 'Geplande herinneringen',
   notif_channel_scheduled_desc: 'Je ingestelde momenten om af te sluiten',
+  notif_scheduled_title: 'TouchGrass',
   notif_channel_daily_planner_name: 'Dagelijkse planner',
   notif_channel_daily_planner_desc:
     'Stille controle om je herinneringen te plannen. Uitschakelbaar in Android-instellingen.',
