@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
   Alert,
   Linking,
@@ -20,6 +19,7 @@ import { clearAllDataAsync } from '../storage';
 import PermissionExplainerSheet from '../components/PermissionExplainerSheet';
 import DiagnosticSheet from '../components/DiagnosticSheet';
 import { SettingRow, Divider, DetectionSettingRow, Card } from '../components/ui';
+import { ResponsiveGridList } from '../components/ResponsiveGridList';
 
 import { spacing, radius, ThemeColors, Shadows } from '../utils/theme';
 import { t, getDeviceSupportedLocale, TxKey } from '../i18n';
@@ -159,217 +159,269 @@ export default function SettingsScreen() {
     []
   );
 
-  return (
+  const SECTIONS = [
+    { id: 'detection' },
+    { id: 'locations' },
+    { id: 'appearance' },
+    { id: 'language' },
+    { id: 'about' },
+    { id: 'activity_log' },
+  ];
+
+  const HeaderComponent = () => (
     <>
       <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
         <Text style={styles.headerTitle}>{t('nav_settings')}</Text>
       </View>
+      {settingsPermissionIssues.length > 0 && (
+        <View style={styles.permissionWarning}>
+          <Text style={styles.permissionWarningText}>
+            {t('permission_issues_banner', { features: settingsPermissionIssues.join(', ') })}
+          </Text>
+        </View>
+      )}
+    </>
+  );
 
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-        {settingsPermissionIssues.length > 0 && (
-          <View style={styles.permissionWarning}>
-            <Text style={styles.permissionWarningText}>
-              {t('permission_issues_banner', { features: settingsPermissionIssues.join(', ') })}
-            </Text>
+  const renderSection = ({ item }: { item: (typeof SECTIONS)[0] }) => {
+    switch (item.id) {
+      case 'detection':
+        return (
+          <View>
+            <Text style={styles.sectionHeader}>{t('settings_section_detection')}</Text>
+            <Card style={styles.card}>
+              <DetectionSettingRow
+                enabled={detectionStatus.healthConnect}
+                permissionGranted={detectionStatus.healthConnectPermission}
+                icon={<Ionicons name="fitness-outline" size={20} color={colors.textSecondary} />}
+                label={t('settings_health_connect')}
+                desc={t('settings_health_connect_desc')}
+                permissionMissingLabel={t('settings_hc_permission_missing')}
+                onToggle={handleToggleHC}
+                isLoading={togglingHC}
+                isInitializing={isInitializing}
+                onPermissionFix={showHCPermissionSheet}
+                testID="hc-toggle"
+              />
+              <Divider />
+              <DetectionSettingRow
+                enabled={detectionStatus.gps}
+                permissionGranted={detectionStatus.gpsPermission}
+                icon={<Ionicons name="location-outline" size={20} color={colors.textSecondary} />}
+                label={t('settings_gps')}
+                desc={t('settings_gps_desc')}
+                permissionMissingLabel={t('settings_gps_permission_missing')}
+                onToggle={handleToggleGPS}
+                isLoading={togglingGPS}
+                isInitializing={isInitializing}
+                onPermissionFix={showGPSPermissionSheet}
+                testID="gps-toggle"
+              />
+              <Divider />
+              <SettingRow
+                icon={<Ionicons name="radio-outline" size={20} color={colors.textSecondary} />}
+                label={t('settings_background_tracking_label')}
+                sublabel={t('settings_background_tracking_sublabel')}
+              />
+            </Card>
           </View>
-        )}
-        {/* Detection sources */}
-        <Text style={styles.sectionHeader}>{t('settings_section_detection')}</Text>
-        <Card style={styles.card}>
-          <DetectionSettingRow
-            enabled={detectionStatus.healthConnect}
-            permissionGranted={detectionStatus.healthConnectPermission}
-            icon={<Ionicons name="fitness-outline" size={20} color={colors.textSecondary} />}
-            label={t('settings_health_connect')}
-            desc={t('settings_health_connect_desc')}
-            permissionMissingLabel={t('settings_hc_permission_missing')}
-            onToggle={handleToggleHC}
-            isLoading={togglingHC}
-            isInitializing={isInitializing}
-            onPermissionFix={showHCPermissionSheet}
-            testID="hc-toggle"
-          />
-          <Divider />
-          <DetectionSettingRow
-            enabled={detectionStatus.gps}
-            permissionGranted={detectionStatus.gpsPermission}
-            icon={<Ionicons name="location-outline" size={20} color={colors.textSecondary} />}
-            label={t('settings_gps')}
-            desc={t('settings_gps_desc')}
-            permissionMissingLabel={t('settings_gps_permission_missing')}
-            onToggle={handleToggleGPS}
-            isLoading={togglingGPS}
-            isInitializing={isInitializing}
-            onPermissionFix={showGPSPermissionSheet}
-            testID="gps-toggle"
-          />
-          <Divider />
-          <SettingRow
-            icon={<Ionicons name="radio-outline" size={20} color={colors.textSecondary} />}
-            label={t('settings_background_tracking_label')}
-            sublabel={t('settings_background_tracking_sublabel')}
-          />
-        </Card>
-
-        {/* Known locations */}
-        <Text style={styles.sectionHeader}>{t('settings_section_locations')}</Text>
-        <Card style={styles.card}>
-          <TouchableOpacity onPress={() => navigation.navigate('KnownLocations')}>
-            <SettingRow
-              icon={<Ionicons name="location-outline" size={20} color={colors.textSecondary} />}
-              label={t('settings_locations_manage')}
-              sublabel={
-                knownLocations.length > 0
-                  ? t('settings_locations_count', { count: knownLocations.length })
-                  : t('settings_locations_manage_desc')
-              }
-              right={
-                <View style={styles.locationRight}>
-                  {suggestedCount > 0 && (
-                    <View style={styles.badge}>
-                      <Text style={styles.badgeText}>{suggestedCount}</Text>
-                    </View>
-                  )}
-                  <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
-                </View>
-              }
-            />
-          </TouchableOpacity>
-        </Card>
-
-        <Text style={styles.sectionHeader}>{t('settings_section_appearance')}</Text>
-        <Card style={styles.card}>
-          {(['system', 'light', 'dark'] as ThemePreference[]).map((pref, i) => (
-            <View key={pref}>
-              {i > 0 && <Divider />}
-              <TouchableOpacity onPress={() => setThemePreference(pref)}>
+        );
+      case 'locations':
+        return (
+          <View>
+            <Text style={styles.sectionHeader}>{t('settings_section_locations')}</Text>
+            <Card style={styles.card}>
+              <TouchableOpacity onPress={() => navigation.navigate('KnownLocations')}>
                 <SettingRow
-                  icon={
-                    <Ionicons
-                      name={
-                        pref === 'system'
-                          ? 'phone-portrait-outline'
-                          : pref === 'light'
-                            ? 'sunny-outline'
-                            : 'moon-outline'
-                      }
-                      size={20}
-                      color={colors.textSecondary}
-                    />
-                  }
-                  label={
-                    pref === 'system'
-                      ? t('settings_theme_system')
-                      : pref === 'light'
-                        ? t('settings_theme_light')
-                        : t('settings_theme_dark')
+                  icon={<Ionicons name="location-outline" size={20} color={colors.textSecondary} />}
+                  label={t('settings_locations_manage')}
+                  sublabel={
+                    knownLocations.length > 0
+                      ? t('settings_locations_count', { count: knownLocations.length })
+                      : t('settings_locations_manage_desc')
                   }
                   right={
-                    themePreference === pref && (
-                      <Ionicons name="checkmark" size={20} color={colors.grass} />
-                    )
+                    <View style={styles.locationRight}>
+                      {suggestedCount > 0 && (
+                        <View style={styles.badge}>
+                          <Text style={styles.badgeText}>{suggestedCount}</Text>
+                        </View>
+                      )}
+                      <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+                    </View>
                   }
                 />
               </TouchableOpacity>
-            </View>
-          ))}
-        </Card>
-
-        <Text style={styles.sectionHeader}>{t('settings_section_language')}</Text>
-        <Card style={styles.card}>
-          <TouchableOpacity onPress={presentLanguageSheet} testID="language-picker-toggle">
-            <SettingRow
-              icon={<Ionicons name="language-outline" size={20} color={colors.textSecondary} />}
-              label={
-                locale === 'en' || (locale === 'system' && systemLocale === 'en')
-                  ? 'Language'
-                  : `${t('settings_section_language')} / Language`
-              }
-              right={<Ionicons name="chevron-forward" size={20} color={colors.textMuted} />}
-            />
-          </TouchableOpacity>
-        </Card>
-
-        <Text style={styles.sectionHeader}>{t('settings_section_about')}</Text>
-        <Card style={styles.card}>
-          <TouchableOpacity onPress={() => navigation.navigate('AboutApp')}>
-            <SettingRow
-              icon={<Ionicons name="leaf-outline" size={20} color={colors.textSecondary} />}
-              label="TouchGrass"
-              sublabel={t('settings_app_sublabel')}
-              right={
-                <View style={styles.rowRightInline}>
-                  {Constants.expoConfig?.version ? (
-                    <TouchableOpacity
-                      onPress={() => setShowDiagnosticSheet(true)}
-                      testID="version-badge"
-                    >
-                      <Text style={styles.versionBadge}>{`v${Constants.expoConfig.version}`}</Text>
-                    </TouchableOpacity>
-                  ) : null}
-                  <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+            </Card>
+          </View>
+        );
+      case 'appearance':
+        return (
+          <View>
+            <Text style={styles.sectionHeader}>{t('settings_section_appearance')}</Text>
+            <Card style={styles.card}>
+              {(['system', 'light', 'dark'] as ThemePreference[]).map((pref, i) => (
+                <View key={pref}>
+                  {i > 0 && <Divider />}
+                  <TouchableOpacity onPress={() => setThemePreference(pref)}>
+                    <SettingRow
+                      icon={
+                        <Ionicons
+                          name={
+                            pref === 'system'
+                              ? 'phone-portrait-outline'
+                              : pref === 'light'
+                                ? 'sunny-outline'
+                                : 'moon-outline'
+                          }
+                          size={20}
+                          color={colors.textSecondary}
+                        />
+                      }
+                      label={
+                        pref === 'system'
+                          ? t('settings_theme_system')
+                          : pref === 'light'
+                            ? t('settings_theme_light')
+                            : t('settings_theme_dark')
+                      }
+                      right={
+                        themePreference === pref && (
+                          <Ionicons name="checkmark" size={20} color={colors.grass} />
+                        )
+                      }
+                    />
+                  </TouchableOpacity>
                 </View>
-              }
-            />
-          </TouchableOpacity>
-          <Divider />
-          <TouchableOpacity onPress={() => Linking.openURL(PRIVACY_POLICY_URL)}>
-            <SettingRow
-              icon={<Ionicons name="lock-closed-outline" size={20} color={colors.textSecondary} />}
-              label={t('settings_privacy')}
-              sublabel={t('settings_privacy_sublabel')}
-              hint={t('settings_privacy_hint')}
-              right={<Ionicons name="chevron-forward" size={20} color={colors.textMuted} />}
-            />
-          </TouchableOpacity>
-          <Divider />
-          <SettingRow
-            icon={<Ionicons name="school-outline" size={20} color={colors.textSecondary} />}
-            label={t('settings_rerun_tutorial')}
-            sublabel={t('settings_rerun_tutorial_sublabel')}
-            right={
-              <TouchableOpacity style={styles.editBtn} onPress={handleShowIntro}>
-                <Text style={styles.editBtnText}>{t('settings_rerun_tutorial')}</Text>
+              ))}
+            </Card>
+          </View>
+        );
+      case 'language':
+        return (
+          <View>
+            <Text style={styles.sectionHeader}>{t('settings_section_language')}</Text>
+            <Card style={styles.card}>
+              <TouchableOpacity onPress={presentLanguageSheet} testID="language-picker-toggle">
+                <SettingRow
+                  icon={<Ionicons name="language-outline" size={20} color={colors.textSecondary} />}
+                  label={
+                    locale === 'en' || (locale === 'system' && systemLocale === 'en')
+                      ? 'Language'
+                      : `${t('settings_section_language')} / Language`
+                  }
+                  right={<Ionicons name="chevron-forward" size={20} color={colors.textMuted} />}
+                />
               </TouchableOpacity>
-            }
-          />
-          <Divider />
-          <TouchableOpacity onPress={() => navigation.navigate('FeedbackSupport')}>
-            <SettingRow
-              icon={<Ionicons name="cafe-outline" size={20} color={colors.textSecondary} />}
-              label={t('settings_feedback_support')}
-              sublabel={t('settings_feedback_support_sublabel')}
-              right={<Ionicons name="chevron-forward" size={20} color={colors.textMuted} />}
-            />
-          </TouchableOpacity>
-          <Divider />
-          <SettingRow
-            icon={<Ionicons name="trash-outline" size={20} color={colors.textSecondary} />}
-            label={t('settings_clear_data')}
-            sublabel={t('settings_clear_data_sublabel')}
-            right={
-              <TouchableOpacity style={styles.dangerBtn} onPress={handleClearData}>
-                <Text style={styles.dangerBtnText}>{t('settings_clear_data')}</Text>
+            </Card>
+          </View>
+        );
+      case 'about':
+        return (
+          <View>
+            <Text style={styles.sectionHeader}>{t('settings_section_about')}</Text>
+            <Card style={styles.card}>
+              <TouchableOpacity onPress={() => navigation.navigate('AboutApp')}>
+                <SettingRow
+                  icon={<Ionicons name="leaf-outline" size={20} color={colors.textSecondary} />}
+                  label="TouchGrass"
+                  sublabel={t('settings_app_sublabel')}
+                  right={
+                    <View style={styles.rowRightInline}>
+                      {Constants.expoConfig?.version ? (
+                        <TouchableOpacity
+                          onPress={() => setShowDiagnosticSheet(true)}
+                          testID="version-badge"
+                        >
+                          <Text
+                            style={styles.versionBadge}
+                          >{`v${Constants.expoConfig.version}`}</Text>
+                        </TouchableOpacity>
+                      ) : null}
+                      <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+                    </View>
+                  }
+                />
               </TouchableOpacity>
-            }
-          />
-        </Card>
+              <Divider />
+              <TouchableOpacity onPress={() => Linking.openURL(PRIVACY_POLICY_URL)}>
+                <SettingRow
+                  icon={
+                    <Ionicons name="lock-closed-outline" size={20} color={colors.textSecondary} />
+                  }
+                  label={t('settings_privacy')}
+                  sublabel={t('settings_privacy_sublabel')}
+                  hint={t('settings_privacy_hint')}
+                  right={<Ionicons name="chevron-forward" size={20} color={colors.textMuted} />}
+                />
+              </TouchableOpacity>
+              <Divider />
+              <SettingRow
+                icon={<Ionicons name="school-outline" size={20} color={colors.textSecondary} />}
+                label={t('settings_rerun_tutorial')}
+                sublabel={t('settings_rerun_tutorial_sublabel')}
+                right={
+                  <TouchableOpacity style={styles.editBtn} onPress={handleShowIntro}>
+                    <Text style={styles.editBtnText}>{t('settings_rerun_tutorial')}</Text>
+                  </TouchableOpacity>
+                }
+              />
+              <Divider />
+              <TouchableOpacity onPress={() => navigation.navigate('FeedbackSupport')}>
+                <SettingRow
+                  icon={<Ionicons name="cafe-outline" size={20} color={colors.textSecondary} />}
+                  label={t('settings_feedback_support')}
+                  sublabel={t('settings_feedback_support_sublabel')}
+                  right={<Ionicons name="chevron-forward" size={20} color={colors.textMuted} />}
+                />
+              </TouchableOpacity>
+              <Divider />
+              <SettingRow
+                icon={<Ionicons name="trash-outline" size={20} color={colors.textSecondary} />}
+                label={t('settings_clear_data')}
+                sublabel={t('settings_clear_data_sublabel')}
+                right={
+                  <TouchableOpacity style={styles.dangerBtn} onPress={handleClearData}>
+                    <Text style={styles.dangerBtnText}>{t('settings_clear_data')}</Text>
+                  </TouchableOpacity>
+                }
+              />
+            </Card>
+          </View>
+        );
+      case 'activity_log':
+        return (
+          <View>
+            <Text style={styles.sectionHeader}>{t('settings_section_activity_log')}</Text>
+            <Card style={styles.card}>
+              <TouchableOpacity onPress={() => navigation.navigate('ActivityLog')}>
+                <SettingRow
+                  icon={
+                    <Ionicons name="document-text-outline" size={20} color={colors.textSecondary} />
+                  }
+                  label={t('settings_activity_log')}
+                  sublabel={t('settings_activity_log_sublabel')}
+                  right={<Ionicons name="chevron-forward" size={20} color={colors.textMuted} />}
+                />
+              </TouchableOpacity>
+            </Card>
+          </View>
+        );
+      default:
+        return null;
+    }
+  };
 
-        {/* Activity Log (Transparency) */}
-        <Text style={styles.sectionHeader}>{t('settings_section_activity_log')}</Text>
-        <Card style={styles.card}>
-          <TouchableOpacity onPress={() => navigation.navigate('ActivityLog')}>
-            <SettingRow
-              icon={
-                <Ionicons name="document-text-outline" size={20} color={colors.textSecondary} />
-              }
-              label={t('settings_activity_log')}
-              sublabel={t('settings_activity_log_sublabel')}
-              right={<Ionicons name="chevron-forward" size={20} color={colors.textMuted} />}
-            />
-          </TouchableOpacity>
-        </Card>
-      </ScrollView>
+  return (
+    <>
+      <ResponsiveGridList
+        style={styles.container}
+        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + spacing.xxl }]}
+        data={SECTIONS}
+        keyExtractor={(item) => item.id}
+        renderItem={renderSection}
+        ListHeaderComponent={HeaderComponent}
+      />
 
       {permissionSheet && (
         <PermissionExplainerSheet
