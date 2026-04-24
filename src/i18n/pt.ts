@@ -1,4 +1,6 @@
-export default {
+import { TranslationType } from './en';
+
+const pt: TranslationType = {
   // Greetings
   greeting_morning: 'Bom dia 🌱',
   greeting_afternoon: 'Boa tarde ☀️',
@@ -355,6 +357,11 @@ export default {
 
   // Notification bodies
   notif_body_none: 'Ainda não estiveste lá fora. Vai dar um passeio!',
+  notif_body_generic: 'Saia e registre algum tempo!',
+  notif_body_start: 'Hora de sair!',
+  notif_body_early: 'Você está progredindo, continue assim!',
+  notif_body_progress_halfway: 'Você está quase lá!',
+  notif_body_progress_almost: 'Só mais um pouco para atingir seu objetivo!',
   notif_body_halfway: 'Faltam-te {{remaining}} minutos lá fora.',
   notif_body_almost: 'Falta pouco! Mais {{remaining}} minutos.',
   notif_body_done: 'Conseguido! Queres mais um passeio livre de ecrãs? 🌿',
@@ -647,3 +654,5 @@ export default {
   update_splash_checking: 'A ver…',
   update_splash_downloading: 'A instalar…',
 };
+
+export default pt;

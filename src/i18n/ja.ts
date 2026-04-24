@@ -1,4 +1,6 @@
-export default {
+import { TranslationType } from './en';
+
+const ja: TranslationType = {
   // Greetings
   greeting_morning: 'おはようございます 🌱',
   greeting_afternoon: 'こんにちは ☀️',
@@ -354,6 +356,11 @@ export default {
 
   // Notification bodies
   notif_body_none: '今日はまだ外に出ていません。深呼吸しましょう！',
+  notif_body_generic: '外に出て時間を記録しましょう！',
+  notif_body_start: '外に出る時間です！',
+  notif_body_early: '順調に進んでいます、この調子で頑張りましょう！',
+  notif_body_progress_halfway: 'もうすぐそこです！',
+  notif_body_progress_almost: '目標達成まであと少しです！',
   notif_body_halfway: '外の時間はあと{{remaining}}分です。',
   notif_body_almost: 'あと少し！残り{{remaining}}分。',
   notif_body_done: '達成しました！もう一度スマホを置いていきますか？ 🌿',
@@ -646,3 +653,5 @@ export default {
   update_splash_checking: '確認中…',
   update_splash_downloading: 'インストール中…',
 };
+
+export default ja;

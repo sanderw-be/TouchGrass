@@ -1,4 +1,4 @@
-import { t } from '../../i18n';
+import { t, TxKey } from '../../i18n';
 import { IStorageService } from '../../storage/StorageService';
 
 // Define minimal interfaces for the injected dependencies
@@ -45,11 +45,11 @@ export class ReminderMessageBuilder implements IReminderMessageBuilder {
     else if (progress >= 0.25) titleKey = 'notif_title_2';
 
     // Body context
-    let bodyKey = 'notif_body_generic';
+    let bodyKey: TxKey = 'notif_body_generic';
     if (progress === 0) bodyKey = 'notif_body_start';
     else if (progress < 0.5) bodyKey = 'notif_body_early';
-    else if (progress < 0.9) bodyKey = 'notif_body_halfway';
-    else bodyKey = 'notif_body_almost';
+    else if (progress < 0.9) bodyKey = 'notif_body_progress_halfway';
+    else bodyKey = 'notif_body_progress_almost';
 
     let body = t(bodyKey);
 

@@ -1,4 +1,6 @@
-export default {
+import { TranslationType } from './en';
+
+const nl: TranslationType = {
   // Begroetingen
   greeting_morning: 'Goedemorgen 🌱',
   greeting_afternoon: 'Goedemiddag ☀️',
@@ -357,6 +359,11 @@ export default {
 
   // Meldingsteksten
   notif_body_none: 'Je zat vandaag alleen maar binnen. Tijd voor een pauze!',
+  notif_body_generic: 'Ga naar buiten en log wat tijd!',
+  notif_body_start: 'Tijd om naar buiten te gaan!',
+  notif_body_early: 'Je maakt vooruitgang, ga zo door!',
+  notif_body_progress_halfway: 'Je bent er bijna!',
+  notif_body_progress_almost: 'Nog even en je hebt je doel bereikt!',
   notif_body_halfway: 'Nog {{remaining}} minuten buitentijd te gaan.',
   notif_body_almost: 'Bijna! Nog {{remaining}} minuten.',
   notif_body_done: 'Doel bereikt! Nog een rondje buiten? 🌿',
@@ -660,3 +667,5 @@ export default {
   update_splash_checking: 'Zoeken…',
   update_splash_downloading: 'Installeren…',
 };
+
+export default nl;

@@ -1,4 +1,4 @@
-export default {
+const en = {
   // Greetings
   greeting_morning: 'Good morning 🌱',
   greeting_afternoon: 'Good afternoon ☀️',
@@ -370,6 +370,11 @@ export default {
 
   // Notification bodies
   notif_body_none: "You haven't been outside yet today. Time to head outside!",
+  notif_body_generic: 'Get outside and log some time!',
+  notif_body_start: 'Time to get outside!',
+  notif_body_early: 'You are making progress, keep it up!',
+  notif_body_progress_halfway: 'You are almost there!',
+  notif_body_progress_almost: 'Just a little more to reach your goal!',
   notif_body_halfway: '{{remaining}} minutes of outside time to go.',
   notif_body_almost: 'Almost there — just {{remaining}} more minutes outside.',
   notif_body_done: 'Goal reached! Feel like heading outside again? 🌿',
@@ -678,4 +683,7 @@ export default {
   // Update splash screen
   update_splash_checking: 'Checking for updates…',
   update_splash_downloading: 'Installing update…',
-};
+} as const;
+
+export type TranslationType = Record<keyof typeof en, string>;
+export default en;
