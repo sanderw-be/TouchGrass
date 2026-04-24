@@ -3,13 +3,13 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
   Switch,
   ActivityIndicator,
   Alert,
 } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getSettingAsync, setSettingAsync } from '../storage';
 import { spacing, radius, ThemeColors, Shadows } from '../utils/theme';
 import { useAppStore } from '../store/useAppStore';
@@ -22,6 +22,8 @@ import {
 } from '../weather/weatherService';
 import { getWeatherDescription, getWeatherEmoji } from '../weather/weatherAlgorithm';
 import { formatTemperature } from '../utils/temperature';
+import { ResponsiveGridList } from '../components/ResponsiveGridList';
+import { Card } from '../components/ui';
 
 const TEMP_PREF_LABELS: Record<'cold' | 'moderate' | 'hot', TxKey> = {
   cold: 'settings_temp_cold',
@@ -35,6 +37,7 @@ export default function WeatherSettingsScreen() {
   const locale = useAppStore((state) => state.locale);
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
 
   // Update navigation header title reactively
   React.useLayoutEffect(() => {
@@ -183,93 +186,122 @@ export default function WeatherSettingsScreen() {
     }
   };
 
-  return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <View style={styles.card}>
-        <View style={styles.tempRow}>
-          <View style={styles.tempRowIconContainer}>
-            <Ionicons name="thermometer-outline" size={20} color={colors.textSecondary} />
-          </View>
-          <Text style={styles.tempRowLabel}>{t('settings_temp_preference')}</Text>
-        </View>
-        <View style={styles.tempOptionsContainer}>
-          {(['cold', 'moderate', 'hot'] as const).map((pref) => (
-            <TouchableOpacity
-              key={pref}
-              style={[styles.tempOption, tempPreference === pref && styles.tempOptionActive]}
-              onPress={() => changeTempPreference(pref)}
-            >
-              <Text
-                style={[
-                  styles.tempOptionText,
-                  tempPreference === pref && styles.tempOptionTextActive,
-                ]}
-              >
-                {t(TEMP_PREF_LABELS[pref])}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-        <Divider />
-        <SettingRow
-          icon={<Ionicons name="rainy-outline" size={20} color={colors.textSecondary} />}
-          label={t('settings_weather_avoid_rain')}
-          right={
-            <Switch
-              value={avoidRain}
-              onValueChange={toggleAvoidRain}
-              trackColor={{ false: colors.fog, true: colors.grassLight }}
-              thumbColor={avoidRain ? colors.grass : colors.inactive}
-            />
-          }
-        />
-        <Divider />
-        <SettingRow
-          icon={<Ionicons name="thermometer-outline" size={20} color={colors.textSecondary} />}
-          label={t('settings_weather_avoid_heat')}
-          right={
-            <Switch
-              value={avoidHeat}
-              onValueChange={toggleAvoidHeat}
-              trackColor={{ false: colors.fog, true: colors.grassLight }}
-              thumbColor={avoidHeat ? colors.grass : colors.inactive}
-            />
-          }
-        />
-        <Divider />
-        <SettingRow
-          icon={<Ionicons name="sunny-outline" size={20} color={colors.textSecondary} />}
-          label={t('settings_weather_consider_uv')}
-          right={
-            <Switch
-              value={considerUV}
-              onValueChange={toggleConsiderUV}
-              trackColor={{ false: colors.fog, true: colors.grassLight }}
-              thumbColor={considerUV ? colors.grass : colors.inactive}
-            />
-          }
-        />
-        <Divider />
-        <SettingRow
-          icon={<Ionicons name="location-outline" size={20} color={colors.textSecondary} />}
-          label={t('settings_weather_current')}
-          sublabel={currentWeather || t('settings_weather_unavailable')}
-          right={
-            weatherLoading ? (
-              <ActivityIndicator size="small" color={colors.grass} />
-            ) : weatherSuccess ? (
-              <View style={styles.successIndicator} testID="weather-refresh-success">
-                <Ionicons name="checkmark" size={16} color={colors.grass} />
+  const SECTIONS = [
+    { id: 'temp_preference' },
+    { id: 'weather_conditions' },
+    { id: 'current_weather' },
+  ];
+
+  const renderSection = ({ item }: { item: (typeof SECTIONS)[0] }) => {
+    switch (item.id) {
+      case 'temp_preference':
+        return (
+          <Card style={styles.card}>
+            <View style={styles.tempRow}>
+              <View style={styles.tempRowIconContainer}>
+                <Ionicons name="thermometer-outline" size={20} color={colors.textSecondary} />
               </View>
-            ) : (
-              <TouchableOpacity style={styles.editBtn} onPress={handleRefreshWeather}>
-                <Text style={styles.editBtnText}>{t('settings_weather_refresh')}</Text>
-              </TouchableOpacity>
-            )
-          }
-        />
-      </View>
-    </ScrollView>
+              <Text style={styles.tempRowLabel}>{t('settings_temp_preference')}</Text>
+            </View>
+            <View style={styles.tempOptionsContainer}>
+              {(['cold', 'moderate', 'hot'] as const).map((pref) => (
+                <TouchableOpacity
+                  key={pref}
+                  style={[styles.tempOption, tempPreference === pref && styles.tempOptionActive]}
+                  onPress={() => changeTempPreference(pref)}
+                >
+                  <Text
+                    style={[
+                      styles.tempOptionText,
+                      tempPreference === pref && styles.tempOptionTextActive,
+                    ]}
+                  >
+                    {t(TEMP_PREF_LABELS[pref])}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </Card>
+        );
+      case 'weather_conditions':
+        return (
+          <Card style={styles.card}>
+            <SettingRow
+              icon={<Ionicons name="rainy-outline" size={20} color={colors.textSecondary} />}
+              label={t('settings_weather_avoid_rain')}
+              right={
+                <Switch
+                  value={avoidRain}
+                  onValueChange={toggleAvoidRain}
+                  trackColor={{ false: colors.fog, true: colors.grassLight }}
+                  thumbColor={avoidRain ? colors.grass : colors.inactive}
+                />
+              }
+            />
+            <Divider />
+            <SettingRow
+              icon={<Ionicons name="thermometer-outline" size={20} color={colors.textSecondary} />}
+              label={t('settings_weather_avoid_heat')}
+              right={
+                <Switch
+                  value={avoidHeat}
+                  onValueChange={toggleAvoidHeat}
+                  trackColor={{ false: colors.fog, true: colors.grassLight }}
+                  thumbColor={avoidHeat ? colors.grass : colors.inactive}
+                />
+              }
+            />
+            <Divider />
+            <SettingRow
+              icon={<Ionicons name="sunny-outline" size={20} color={colors.textSecondary} />}
+              label={t('settings_weather_consider_uv')}
+              right={
+                <Switch
+                  value={considerUV}
+                  onValueChange={toggleConsiderUV}
+                  trackColor={{ false: colors.fog, true: colors.grassLight }}
+                  thumbColor={considerUV ? colors.grass : colors.inactive}
+                />
+              }
+            />
+          </Card>
+        );
+      case 'current_weather':
+        return (
+          <Card style={styles.card}>
+            <SettingRow
+              icon={<Ionicons name="location-outline" size={20} color={colors.textSecondary} />}
+              label={t('settings_weather_current')}
+              sublabel={currentWeather || t('settings_weather_unavailable')}
+              right={
+                weatherLoading ? (
+                  <ActivityIndicator size="small" color={colors.grass} />
+                ) : weatherSuccess ? (
+                  <View style={styles.successIndicator} testID="weather-refresh-success">
+                    <Ionicons name="checkmark" size={16} color={colors.grass} />
+                  </View>
+                ) : (
+                  <TouchableOpacity style={styles.editBtn} onPress={handleRefreshWeather}>
+                    <Text style={styles.editBtnText}>{t('settings_weather_refresh')}</Text>
+                  </TouchableOpacity>
+                )
+              }
+            />
+          </Card>
+        );
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <ResponsiveGridList
+      style={styles.container}
+      contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + spacing.xxl }]}
+      data={SECTIONS}
+      keyExtractor={(item) => item.id}
+      renderItem={renderSection}
+    />
   );
 }
 
@@ -316,6 +348,7 @@ function makeStyles(colors: ThemeColors, shadows: Shadows) {
       borderRadius: radius.lg,
       overflow: 'hidden',
       ...shadows.soft,
+      padding: 0,
     },
 
     row: {
