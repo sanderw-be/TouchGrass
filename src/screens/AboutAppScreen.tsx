@@ -1,10 +1,11 @@
 import React, { useMemo } from 'react';
-import { View, Text, ScrollView } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { spacing, radius, ThemeColors, Shadows } from '../utils/theme';
 import { useAppStore } from '../store/useAppStore';
 import { Ionicons } from '@expo/vector-icons';
 import { t, TxKey } from '../i18n';
+import { ResponsiveGridList } from '../components/ResponsiveGridList';
 
 type Section = {
   icon: keyof typeof Ionicons.glyphMap;
@@ -42,22 +43,26 @@ export default function AboutAppScreen() {
   }, [navigation, locale]);
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {SECTIONS.map((section, index) => (
-        <View key={section.titleKey} style={[styles.card, index > 0 && styles.cardSpacing]}>
+    <ResponsiveGridList
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      data={SECTIONS}
+      keyExtractor={(item) => item.titleKey}
+      renderItem={({ item: section }) => (
+        <View style={styles.card}>
           <View style={styles.cardHeader}>
             <Ionicons name={section.icon} size={20} color={colors.grass} style={styles.cardIcon} />
             <Text style={styles.cardTitle}>{t(section.titleKey)}</Text>
           </View>
           <Text style={styles.cardBody}>{t(section.bodyKey)}</Text>
         </View>
-      ))}
-    </ScrollView>
+      )}
+    />
   );
 }
 
 function makeStyles(colors: ThemeColors, shadows: Shadows) {
-  return {
+  return StyleSheet.create({
     container: {
       flex: 1,
       backgroundColor: colors.mist,
@@ -71,14 +76,11 @@ function makeStyles(colors: ThemeColors, shadows: Shadows) {
       borderRadius: radius.lg,
       ...shadows.soft,
       padding: spacing.md,
-      overflow: 'hidden' as const,
-    },
-    cardSpacing: {
-      marginTop: spacing.md,
+      overflow: 'hidden',
     },
     cardHeader: {
-      flexDirection: 'row' as const,
-      alignItems: 'center' as const,
+      flexDirection: 'row',
+      alignItems: 'center',
       marginBottom: spacing.sm,
     },
     cardIcon: {
@@ -86,7 +88,7 @@ function makeStyles(colors: ThemeColors, shadows: Shadows) {
     },
     cardTitle: {
       fontSize: 15,
-      fontWeight: '600' as const,
+      fontWeight: '600',
       color: colors.textPrimary,
       flex: 1,
     },
@@ -95,5 +97,5 @@ function makeStyles(colors: ThemeColors, shadows: Shadows) {
       color: colors.textSecondary,
       lineHeight: 20,
     },
-  };
+  });
 }
