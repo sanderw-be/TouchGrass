@@ -4,7 +4,7 @@
 
 > 0 routes | 0 models | 34 components | 57 lib files | 2 env vars | 1 middleware | 0% test coverage
 > **Token savings:** this file is ~6,100 tokens. Without it, AI exploration would cost ~35,500 tokens. **Saves ~29,400 tokens per conversation.**
-> **Last scanned:** 2026-04-23 20:39 — re-run after significant changes
+> **Last scanned:** 2026-04-24 13:21 — re-run after significant changes
 
 ---
 
@@ -150,11 +150,11 @@
 - `src/i18n/index.ts`
   - function resolveSupportedLocale: (localeCode?) => SupportedLocale
   - function getDeviceSupportedLocale: () => SupportedLocale
+  - function t: (key, options?, unknown>) => string;
+  - function t: (key, options?, unknown>) => string; // Allow dynamic strings
   - function t: (key, options?, unknown>) => string
   - function localeTag: () => string
-  - function formatLocalDate: (ms, options?) => string
-  - function formatLocalTime: (ms) => string
-  - _...1 more_
+  - _...4 more_
 - `src/notifications/notificationManager.ts`
   - function getNotificationInfrastructureService
   - function getSmartReminderScheduler
@@ -327,6 +327,7 @@
 - `src/utils/sessionsChangedEmitter.ts` — imported by **8** files
 - `src/detection/manualCheckin.ts` — imported by **8** files
 - `src/weather/weatherService.ts` — imported by **8** files
+- `src/i18n/en.ts` — imported by **8** files
 - `src/storage/db.ts` — imported by **8** files
 - `src/core/container.ts` — imported by **7** files
 - `src/background/unifiedBackgroundTask.ts` — imported by **7** files
@@ -335,7 +336,6 @@
 - `src/storage/StorageService.ts` — imported by **7** files
 - `src/utils/constants.ts` — imported by **6** files
 - `src/detection/sessionMerger.ts` — imported by **6** files
-- `src/hooks/useTheme.ts` — imported by **6** files
 
 ## Import Map (who imports what)
 

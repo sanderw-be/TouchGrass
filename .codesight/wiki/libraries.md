@@ -95,7 +95,7 @@
 
 ## I18n (1 files)
 
-- `src/i18n/index.ts` — resolveSupportedLocale, getDeviceSupportedLocale, t, localeTag, formatLocalDate, formatLocalTime, …
+- `src/i18n/index.ts` — resolveSupportedLocale, getDeviceSupportedLocale, t, t, t, localeTag, …
 
 ---
 

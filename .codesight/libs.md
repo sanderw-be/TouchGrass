@@ -101,11 +101,11 @@
 - `src/i18n/index.ts`
   - function resolveSupportedLocale: (localeCode?) => SupportedLocale
   - function getDeviceSupportedLocale: () => SupportedLocale
+  - function t: (key, options?, unknown>) => string;
+  - function t: (key, options?, unknown>) => string; // Allow dynamic strings
   - function t: (key, options?, unknown>) => string
   - function localeTag: () => string
-  - function formatLocalDate: (ms, options?) => string
-  - function formatLocalTime: (ms) => string
-  - _...1 more_
+  - _...4 more_
 - `src/notifications/notificationManager.ts`
   - function getNotificationInfrastructureService
   - function getSmartReminderScheduler
