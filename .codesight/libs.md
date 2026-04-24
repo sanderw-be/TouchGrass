@@ -101,11 +101,11 @@
 - `src/i18n/index.ts`
   - function resolveSupportedLocale: (localeCode?) => SupportedLocale
   - function getDeviceSupportedLocale: () => SupportedLocale
-  - function t: (key, options?, unknown>) => string;
-  - function t: (key, options?, unknown>) => string; // Allow dynamic strings
   - function t: (key, options?, unknown>) => string
   - function localeTag: () => string
-  - _...4 more_
+  - function formatLocalDate: (ms, options?) => string
+  - function formatLocalTime: (ms) => string
+  - _...2 more_
 - `src/notifications/notificationManager.ts`
   - function getNotificationInfrastructureService
   - function getSmartReminderScheduler
@@ -227,7 +227,7 @@
 - `src/weather/weatherAlgorithm.ts`
   - function scoreWeatherCondition: (condition, preferences) => number
   - function getWeatherPreferences: () => Promise<WeatherPreferences>
-  - function getWeatherDescription: (condition) => string
+  - function getWeatherDescription: (condition) => TxKey
   - function getWeatherEmoji: (condition) => string
 - `src/weather/weatherService.ts`
   - function fetchWeatherForecast: (options) => Promise<WeatherFetchResult>
