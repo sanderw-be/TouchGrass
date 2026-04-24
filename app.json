@@ -6,7 +6,7 @@
     // in app.config.js from the `version` field in package.json.
     "version": "1.0.1",
     "scheme": "touchgrass",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "splash": {
@@ -33,7 +33,9 @@
         "android.permission.health.READ_EXERCISE",
         "android.permission.health.READ_STEPS",
         "android.permission.READ_CALENDAR",
-        "android.permission.WRITE_CALENDAR"
+        "android.permission.WRITE_CALENDAR",
+        "android.permission.ACTIVITY_RECOGNITION",
+        "android.permission.POST_NOTIFICATIONS"
       ]
     },
     "plugins": [
@@ -100,6 +102,7 @@
       "expo-system-ui",
       "expo-font",
       "./withAlarmBridgePlugin",
+      "./withBackgroundFeaturesPlugin",
       [
         "react-native-android-widget",
         {
