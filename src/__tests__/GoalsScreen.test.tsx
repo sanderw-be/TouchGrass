@@ -489,9 +489,12 @@ describe('GoalsScreen weather location permission', () => {
     mockCheckWeatherLocation.mockResolvedValue(false);
 
     const { queryByText } = render(<GoalsScreen />);
-    await waitFor(() => {
-      expect(queryByText('settings_weather_permission_missing')).toBeNull();
-    }, { timeout: 5000 });
+    await waitFor(
+      () => {
+        expect(queryByText('settings_weather_permission_missing')).toBeNull();
+      },
+      { timeout: 5000 }
+    );
   });
 
   it('shows permission sheet when weather toggle is turned on without location permission', async () => {
