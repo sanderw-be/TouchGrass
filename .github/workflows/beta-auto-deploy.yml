@@ -8,6 +8,7 @@ on:
   push:
     branches:
       - beta
+  workflow_dispatch:
 
 jobs:
   # 1. Determine if native files changed
