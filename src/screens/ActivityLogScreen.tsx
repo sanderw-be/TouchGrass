@@ -114,19 +114,19 @@ export default function ActivityLogScreen() {
     {
       id: 'health_connect' as SectionKey,
       title: t('activity_log_section_hc'),
-      icon: 'fitness-outline',
+      icon: 'fitness-outline' as const,
       data: hcLogs,
     },
     {
       id: 'gps' as SectionKey,
       title: t('activity_log_section_gps'),
-      icon: 'location-outline',
+      icon: 'location-outline' as const,
       data: gpsLogs,
     },
     {
       id: 'reminder' as SectionKey,
       title: t('activity_log_section_reminders'),
-      icon: 'notifications-outline',
+      icon: 'notifications-outline' as const,
       data: reminderLogs,
     },
   ];
