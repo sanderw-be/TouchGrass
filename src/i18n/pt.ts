@@ -357,11 +357,11 @@ const pt: TranslationType = {
 
   // Notification bodies
   notif_body_none: 'Ainda não estiveste lá fora. Vai dar um passeio!',
-  notif_body_generic: 'Saia e registre algum tempo!',
+  notif_body_generic: 'Sai e regista algum tempo!',
   notif_body_start: 'Hora de sair!',
-  notif_body_early: 'Você está progredindo, continue assim!',
-  notif_body_progress_halfway: 'Você está quase lá!',
-  notif_body_progress_almost: 'Só mais um pouco para atingir seu objetivo!',
+  notif_body_early: 'Estás a progredir, continua assim!',
+  notif_body_progress_halfway: 'Estás quase lá!',
+  notif_body_progress_almost: 'Só mais um pouco para atingires o teu objetivo!',
   notif_body_halfway: 'Faltam-te {{remaining}} minutos lá fora.',
   notif_body_almost: 'Falta pouco! Mais {{remaining}} minutos.',
   notif_body_done: 'Conseguido! Queres mais um passeio livre de ecrãs? 🌿',
