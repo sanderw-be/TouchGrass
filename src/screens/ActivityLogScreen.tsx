@@ -99,40 +99,90 @@ export default function ActivityLogScreen() {
     setRefreshing(false);
   }, [loadLogs]);
 
-  const toggleSection = (key: SectionKey) => {
+  const toggleSection = useCallback((key: SectionKey) => {
     setOpenSection((prev) => (prev === key ? null : key));
     setOpenReminderDay(null);
-  };
+  }, []);
 
-  const toggleReminderDay = (day: string) => {
+  const toggleReminderDay = useCallback((day: string) => {
     setOpenReminderDay((prev) => (prev === day ? null : day));
-  };
+  }, []);
 
   const reminderDayGroups = useMemo(() => groupByDay(reminderLogs), [reminderLogs]);
 
-  const SECTIONS = [
-    {
-      id: 'health_connect' as SectionKey,
-      title: t('activity_log_section_hc'),
-      icon: 'fitness-outline' as const,
-      data: hcLogs,
-    },
-    {
-      id: 'gps' as SectionKey,
-      title: t('activity_log_section_gps'),
-      icon: 'location-outline' as const,
-      data: gpsLogs,
-    },
-    {
-      id: 'reminder' as SectionKey,
-      title: t('activity_log_section_reminders'),
-      icon: 'notifications-outline' as const,
-      data: reminderLogs,
-    },
-  ];
+  const SECTIONS = useMemo(
+    () => [
+      {
+        id: 'health_connect' as SectionKey,
+        title: t('activity_log_section_hc'),
+        icon: 'fitness-outline' as const,
+        data: hcLogs,
+      },
+      {
+        id: 'gps' as SectionKey,
+        title: t('activity_log_section_gps'),
+        icon: 'location-outline' as const,
+        data: gpsLogs,
+      },
+      {
+        id: 'reminder' as SectionKey,
+        title: t('activity_log_section_reminders'),
+        icon: 'notifications-outline' as const,
+        data: reminderLogs,
+      },
+    ],
+    // locale is included to ensure titles refresh when language changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [hcLogs, gpsLogs, reminderLogs, locale]
+  );
 
-  const renderSection = ({ item }: { item: (typeof SECTIONS)[0] }) => {
-    if (item.id === 'reminder') {
+  const renderSection = useCallback(
+    ({ item }: { item: (typeof SECTIONS)[0] }) => {
+      if (item.id === 'reminder') {
+        return (
+          <View>
+            <SectionHeader
+              title={item.title}
+              icon={item.icon}
+              isOpen={openSection === item.id}
+              count={item.data.length}
+              onPress={() => toggleSection(item.id)}
+              colors={colors}
+              styles={styles}
+            />
+            {openSection === item.id && (
+              <View style={styles.logCard}>
+                {!isLoading && reminderDayGroups.length === 0 ? (
+                  <Text style={styles.emptyText}>{t('activity_log_empty')}</Text>
+                ) : (
+                  reminderDayGroups.map(({ day, items: reminderItems }, idx) => (
+                    <View key={day}>
+                      {idx > 0 && <View style={styles.dayDivider} />}
+                      <TouchableOpacity
+                        style={styles.dayHeader}
+                        onPress={() => toggleReminderDay(day)}
+                        activeOpacity={0.7}
+                      >
+                        <Text style={styles.dayLabel}>{formatDayLabel(day)}</Text>
+                        <Ionicons
+                          name={openReminderDay === day ? 'chevron-up' : 'chevron-down'}
+                          size={16}
+                          color={colors.textMuted}
+                        />
+                      </TouchableOpacity>
+                      {openReminderDay === day &&
+                        reminderItems.map((entry) => (
+                          <LogRow key={entry.id} entry={entry} styles={styles} indented />
+                        ))}
+                    </View>
+                  ))
+                )}
+              </View>
+            )}
+          </View>
+        );
+      }
+
       return (
         <View>
           <SectionHeader
@@ -143,63 +193,30 @@ export default function ActivityLogScreen() {
             onPress={() => toggleSection(item.id)}
             colors={colors}
             styles={styles}
-          />
+          />{' '}
           {openSection === item.id && (
             <View style={styles.logCard}>
-              {!isLoading && reminderDayGroups.length === 0 ? (
+              {!isLoading && item.data.length === 0 ? (
                 <Text style={styles.emptyText}>{t('activity_log_empty')}</Text>
               ) : (
-                reminderDayGroups.map(({ day, items: reminderItems }, idx) => (
-                  <View key={day}>
-                    {idx > 0 && <View style={styles.dayDivider} />}
-                    <TouchableOpacity
-                      style={styles.dayHeader}
-                      onPress={() => toggleReminderDay(day)}
-                      activeOpacity={0.7}
-                    >
-                      <Text style={styles.dayLabel}>{formatDayLabel(day)}</Text>
-                      <Ionicons
-                        name={openReminderDay === day ? 'chevron-up' : 'chevron-down'}
-                        size={16}
-                        color={colors.textMuted}
-                      />
-                    </TouchableOpacity>
-                    {openReminderDay === day &&
-                      reminderItems.map((entry) => (
-                        <LogRow key={entry.id} entry={entry} styles={styles} indented />
-                      ))}
-                  </View>
-                ))
+                item.data.map((entry) => <LogRow key={entry.id} entry={entry} styles={styles} />)
               )}
             </View>
           )}
         </View>
       );
-    }
-
-    return (
-      <View>
-        <SectionHeader
-          title={item.title}
-          icon={item.icon}
-          isOpen={openSection === item.id}
-          count={item.data.length}
-          onPress={() => toggleSection(item.id)}
-          colors={colors}
-          styles={styles}
-        />
-        {openSection === item.id && (
-          <View style={styles.logCard}>
-            {!isLoading && item.data.length === 0 ? (
-              <Text style={styles.emptyText}>{t('activity_log_empty')}</Text>
-            ) : (
-              item.data.map((entry) => <LogRow key={entry.id} entry={entry} styles={styles} />)
-            )}
-          </View>
-        )}
-      </View>
-    );
-  };
+    },
+    [
+      openSection,
+      openReminderDay,
+      colors,
+      styles,
+      isLoading,
+      reminderDayGroups,
+      toggleSection,
+      toggleReminderDay,
+    ]
+  );
 
   return (
     <ResponsiveGridList
