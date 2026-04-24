@@ -165,7 +165,14 @@ const withBackgroundFeaturesPlugin = (config) => {
     'android',
     async (config) => {
       const platformRoot = config.modRequest.platformProjectRoot;
-      const javaDir = path.join(platformRoot, 'app', 'src', 'main', 'java', ...JAVA_SUBPATH.split('/'));
+      const javaDir = path.join(
+        platformRoot,
+        'app',
+        'src',
+        'main',
+        'java',
+        ...JAVA_SUBPATH.split('/')
+      );
       fs.mkdirSync(javaDir, { recursive: true });
 
       const files = {
@@ -191,7 +198,10 @@ const withBackgroundFeaturesPlugin = (config) => {
 
     // Add import
     const lines = contents.split('\n');
-    const lastImportIdx = lines.reduce((max, line, i) => (line.trimStart().startsWith('import ') ? i : max), -1);
+    const lastImportIdx = lines.reduce(
+      (max, line, i) => (line.trimStart().startsWith('import ') ? i : max),
+      -1
+    );
     if (lastImportIdx >= 0) {
       lines.splice(lastImportIdx + 1, 0, `import ${JAVA_PACKAGE}.BackgroundFeaturesPackage`);
     }
