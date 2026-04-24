@@ -77,7 +77,7 @@ export class ScheduledNotificationManager implements IScheduledNotificationManag
               identifier: `${SCHEDULED_NOTIF_PREFIX}${notif.id}_${day}`,
               content: {
                 title: t('notif_scheduled_title'),
-                body: notif.label || t('notif_scheduled_body'),
+                body: notif.label || t('scheduled_notif_body'),
                 categoryIdentifier: 'reminder',
                 color: '#4A7C59',
               },

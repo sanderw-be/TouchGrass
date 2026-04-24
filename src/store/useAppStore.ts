@@ -8,7 +8,7 @@ import {
   ThemeColors,
 } from '../utils/theme';
 import { getSettingAsync, setSettingAsync } from '../storage';
-import i18n, { getDeviceSupportedLocale } from '../i18n';
+import i18n, { getDeviceSupportedLocale, TxKey } from '../i18n';
 import {
   performCriticalInitializationAsync,
   performDeferredInitialization,
@@ -22,7 +22,7 @@ export interface FeedbackModalData {
   hour: number;
   minute: number;
   /** Not required for 'less_often' — that action shows a two-choice picker instead of a confirmation. */
-  confirmBodyKey?: 'notif_confirm_went_outside' | 'notif_confirm_snoozed';
+  confirmBodyKey?: TxKey;
 }
 
 export interface AppState {

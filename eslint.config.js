@@ -24,6 +24,23 @@ module.exports = defineConfig([
     },
     rules: {
       '@typescript-eslint/no-explicit-any': 'error',
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: 'i18n-js',
+              message: "Please import from 'src/i18n' instead to ensure type safety.",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/i18n/index.ts'],
+    rules: {
+      'no-restricted-imports': 'off',
     },
   },
   {

@@ -14,7 +14,7 @@ import { getSettingAsync, setSettingAsync } from '../storage';
 import { spacing, radius, ThemeColors, Shadows } from '../utils/theme';
 import { useAppStore } from '../store/useAppStore';
 import { Ionicons } from '@expo/vector-icons';
-import { t } from '../i18n';
+import { t, TxKey } from '../i18n';
 import {
   fetchWeatherForecast,
   isWeatherDataAvailable,
@@ -22,6 +22,12 @@ import {
 } from '../weather/weatherService';
 import { getWeatherDescription, getWeatherEmoji } from '../weather/weatherAlgorithm';
 import { formatTemperature } from '../utils/temperature';
+
+const TEMP_PREF_LABELS: Record<'cold' | 'moderate' | 'hot', TxKey> = {
+  cold: 'settings_temp_cold',
+  moderate: 'settings_temp_moderate',
+  hot: 'settings_temp_hot',
+};
 
 export default function WeatherSettingsScreen() {
   const colors = useAppStore((state) => state.colors);
@@ -199,7 +205,7 @@ export default function WeatherSettingsScreen() {
                   tempPreference === pref && styles.tempOptionTextActive,
                 ]}
               >
-                {t(`settings_temp_${pref}`)}
+                {t(TEMP_PREF_LABELS[pref])}
               </Text>
             </TouchableOpacity>
           ))}

@@ -30,10 +30,18 @@ import {
 import { getScheduledNotificationManager } from '../notifications/notificationManager';
 import { spacing, radius, ThemeColors, Shadows } from '../utils/theme';
 import { useAppStore } from '../store/useAppStore';
-import { t } from '../i18n';
+import { t, TxKey } from '../i18n';
 import { uses24HourClock, normalizeAmPm } from '../utils/helpers';
 
-const DAY_LABELS = ['day_sun', 'day_mon', 'day_tue', 'day_wed', 'day_thu', 'day_fri', 'day_sat'];
+const DAY_LABELS: TxKey[] = [
+  'day_sun',
+  'day_mon',
+  'day_tue',
+  'day_wed',
+  'day_thu',
+  'day_fri',
+  'day_sat',
+];
 
 export default function ScheduledNotificationsScreen() {
   const colors = useAppStore((state) => state.colors);

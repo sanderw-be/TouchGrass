@@ -87,7 +87,10 @@ export class HealthSessionBuilder {
             end,
             'health_connect',
             confidence,
-            this.buildHCExerciseNotes(this.exerciseTypeName(record.exerciseType), duration)
+            this.buildHCExerciseNotes(
+              HealthSessionBuilder.getExerciseTypeName(record.exerciseType),
+              duration
+            )
           )
         );
         exerciseCount++;
@@ -168,46 +171,46 @@ export class HealthSessionBuilder {
     return outdoorTypes.includes(type);
   }
 
-  private static exerciseTypeName(type: number): string {
+  private static getExerciseTypeName(type: number): string {
     const keyMap: Record<number, string> = {
-      2: 'exercise_badminton',
-      4: 'exercise_baseball',
-      5: 'exercise_basketball',
-      8: 'exercise_biking',
-      14: 'exercise_cricket',
-      28: 'exercise_american_football',
-      29: 'exercise_australian_football',
-      31: 'exercise_frisbee',
-      32: 'exercise_golf',
-      35: 'exercise_handball',
-      37: 'exercise_hiking',
-      38: 'exercise_ice_hockey',
-      39: 'exercise_ice_skating',
-      46: 'exercise_paddling',
-      47: 'exercise_paragliding',
-      51: 'exercise_rock_climbing',
-      52: 'exercise_roller_hockey',
-      53: 'exercise_rowing',
-      55: 'exercise_rugby',
-      56: 'exercise_running',
-      58: 'exercise_sailing',
-      59: 'exercise_scuba_diving',
-      60: 'exercise_skating',
-      61: 'exercise_skiing',
-      62: 'exercise_snowboarding',
-      63: 'exercise_snowshoeing',
-      64: 'exercise_soccer',
-      65: 'exercise_softball',
-      72: 'exercise_surfing',
-      73: 'exercise_open_water_swimming',
-      76: 'exercise_tennis',
-      78: 'exercise_volleyball',
-      79: 'exercise_walking',
-      80: 'exercise_water_polo',
-      82: 'exercise_wheelchair',
+      2: t('exercise_badminton'),
+      4: t('exercise_baseball'),
+      5: t('exercise_basketball'),
+      8: t('exercise_biking'),
+      14: t('exercise_cricket'),
+      28: t('exercise_american_football'),
+      29: t('exercise_australian_football'),
+      31: t('exercise_frisbee'),
+      32: t('exercise_golf'),
+      35: t('exercise_handball'),
+      37: t('exercise_hiking'),
+      38: t('exercise_ice_hockey'),
+      39: t('exercise_ice_skating'),
+      46: t('exercise_paddling'),
+      47: t('exercise_paragliding'),
+      51: t('exercise_rock_climbing'),
+      52: t('exercise_roller_hockey'),
+      53: t('exercise_rowing'),
+      55: t('exercise_rugby'),
+      56: t('exercise_running'),
+      58: t('exercise_sailing'),
+      59: t('exercise_scuba_diving'),
+      60: t('exercise_skating'),
+      61: t('exercise_skiing'),
+      62: t('exercise_snowboarding'),
+      63: t('exercise_snowshoeing'),
+      64: t('exercise_soccer'),
+      65: t('exercise_softball'),
+      72: t('exercise_surfing'),
+      73: t('exercise_open_water_swimming'),
+      76: t('exercise_tennis'),
+      78: t('exercise_volleyball'),
+      79: t('exercise_walking'),
+      80: t('exercise_water_polo'),
+      82: t('exercise_wheelchair'),
     };
     const key = keyMap[type];
-    return key ? t(key) : t('exercise_unknown', { type });
+    return key ? key : t('exercise_unknown', { type });
   }
 
   private static buildHCStepsNotes(steps: number, speedKmh: number): string {

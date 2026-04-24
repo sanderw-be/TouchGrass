@@ -22,7 +22,7 @@ import DiagnosticSheet from '../components/DiagnosticSheet';
 import { SettingRow, Divider, DetectionSettingRow, Card } from '../components/ui';
 
 import { spacing, radius, ThemeColors, Shadows } from '../utils/theme';
-import { t, getDeviceSupportedLocale } from '../i18n';
+import { t, getDeviceSupportedLocale, TxKey } from '../i18n';
 import { PRIVACY_POLICY_URL } from '../utils/constants';
 import type { SettingsStackParamList } from '../navigation/AppNavigator';
 import { useAppStore, ThemePreference } from '../store/useAppStore';
@@ -110,11 +110,15 @@ export default function SettingsScreen() {
     languageSheetRef.current?.present();
   };
 
-  const getLanguageOptionLabel = (code: string, label: string, isTranslationKey: boolean) => {
+  const getLanguageOptionLabel = (
+    code: string,
+    label: TxKey | string,
+    isTranslationKey: boolean
+  ) => {
     if (code === 'system') {
-      return `${t(label)} (${LANGUAGE_LABELS[systemLocale] ?? LANGUAGE_LABELS.en})`;
+      return `${t(label as TxKey)} (${LANGUAGE_LABELS[systemLocale] ?? LANGUAGE_LABELS.en})`;
     }
-    return isTranslationKey ? t(label) : label;
+    return isTranslationKey ? t(label as TxKey) : label;
   };
 
   const handleClearData = () => {

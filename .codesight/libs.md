@@ -105,7 +105,7 @@
   - function localeTag: () => string
   - function formatLocalDate: (ms, options?) => string
   - function formatLocalTime: (ms) => string
-  - _...1 more_
+  - _...2 more_
 - `src/notifications/notificationManager.ts`
   - function getNotificationInfrastructureService
   - function getSmartReminderScheduler
@@ -227,7 +227,7 @@
 - `src/weather/weatherAlgorithm.ts`
   - function scoreWeatherCondition: (condition, preferences) => number
   - function getWeatherPreferences: () => Promise<WeatherPreferences>
-  - function getWeatherDescription: (condition) => string
+  - function getWeatherDescription: (condition) => TxKey
   - function getWeatherEmoji: (condition) => string
 - `src/weather/weatherService.ts`
   - function fetchWeatherForecast: (options) => Promise<WeatherFetchResult>

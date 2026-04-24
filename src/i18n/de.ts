@@ -1,4 +1,6 @@
-export default {
+import { TranslationType } from './en';
+
+const de: TranslationType = {
   // Greetings
   greeting_morning: 'Guten Morgen 🌱',
   greeting_afternoon: 'Guten Tag ☀️',
@@ -252,8 +254,8 @@ export default {
   settings_location_deny_body: 'Wird entfernt.',
   settings_location_deny_confirm: 'Entfernen',
   settings_location_deny_cancel: 'Abbrechen',
-  location_suggestion_default_label: 'Neuer Ort',
   location_add_title: 'Hinzufügen',
+  location_suggested_label: 'Vorgeschlagener Ort',
   location_edit_address: 'Nächste Adresse',
   location_edit_address_unavailable: 'Keine Adresse gefunden',
   location_edit_address_search_placeholder: 'Suchen…',
@@ -355,6 +357,11 @@ export default {
 
   // Notification bodies
   notif_body_none: 'Du warst heute noch nicht draußen. Zeit für eine Pause!',
+  notif_body_generic: 'Geh raus und logge etwas Zeit!',
+  notif_body_start: 'Zeit rauszugehen!',
+  notif_body_early: 'Du machst Fortschritte, weiter so!',
+  notif_body_progress_halfway: 'Du bist fast da!',
+  notif_body_progress_almost: 'Nur noch ein wenig, um dein Ziel zu erreichen!',
   notif_body_halfway: 'Noch {{remaining}} Minuten Draußenzeit.',
   notif_body_almost: 'Fast geschafft! Noch {{remaining}} Minuten.',
   notif_body_done: 'Ziel erreicht! Möchtest du noch draußen bleiben? 🌿',
@@ -441,6 +448,7 @@ export default {
   weather_snow_showers: 'Schneeschauer',
   weather_thunderstorm: 'Gewitter',
   weather_unknown: 'Unbekannt',
+  weather_temp_unknown: 'Unbekannte Temperatur',
 
   // Notification channel
   notif_channel_name: 'Draußen-Tipps',
@@ -449,6 +457,7 @@ export default {
   gps_tracking_notif_body: 'Hintergrund-Tracking aktiv',
   notif_channel_scheduled_name: 'Zeitpläne',
   notif_channel_scheduled_desc: 'Deine festen Draußen-Termine',
+  notif_scheduled_title: 'TouchGrass',
   notif_channel_daily_planner_name: 'Tagesplaner',
   notif_channel_daily_planner_desc: 'Stummer Check am Morgen. In Android deaktivierbar.',
   notif_daily_planner_title: 'TouchGrass',
@@ -653,3 +662,5 @@ export default {
   update_splash_checking: 'Prüfen…',
   update_splash_downloading: 'Laden…',
 };
+
+export default de;
