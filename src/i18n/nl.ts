@@ -1,4 +1,6 @@
-export default {
+import { TranslationType } from './en';
+
+const nl: TranslationType = {
   // Begroetingen
   greeting_morning: 'Goedemorgen 🌱',
   greeting_afternoon: 'Goedemiddag ☀️',
@@ -253,8 +255,8 @@ export default {
   settings_location_deny_body: 'Dit wordt verwijderd.',
   settings_location_deny_confirm: 'Verwijderen',
   settings_location_deny_cancel: 'Annuleren',
-  location_suggestion_default_label: 'Voorgestelde locatie',
   location_add_title: 'Toevoegen',
+  location_suggested_label: 'Voorgestelde locatie',
   location_edit_address: 'Dichtstbijzijnde adres',
   location_edit_address_unavailable: 'Adres onbekend',
   location_edit_address_search_placeholder: 'Zoeken…',
@@ -357,6 +359,11 @@ export default {
 
   // Meldingsteksten
   notif_body_none: 'Je zat vandaag alleen maar binnen. Tijd voor een pauze!',
+  notif_body_generic: 'Ga naar buiten en log wat tijd!',
+  notif_body_start: 'Tijd om naar buiten te gaan!',
+  notif_body_early: 'Je maakt vooruitgang, ga zo door!',
+  notif_body_progress_halfway: 'Je bent er bijna!',
+  notif_body_progress_almost: 'Nog even en je hebt je doel bereikt!',
   notif_body_halfway: 'Nog {{remaining}} minuten buitentijd te gaan.',
   notif_body_almost: 'Bijna! Nog {{remaining}} minuten.',
   notif_body_done: 'Doel bereikt! Nog een rondje buiten? 🌿',
@@ -444,6 +451,7 @@ export default {
   weather_snow_showers: 'Sneeuwbuien',
   weather_thunderstorm: 'Onweer',
   weather_unknown: 'Onbekend',
+  weather_temp_unknown: 'Onbekende temperatuur',
 
   // Meldingskanaal
   notif_channel_name: 'Buitenherinneringen',
@@ -453,6 +461,7 @@ export default {
   gps_tracking_notif_body: 'Traceert je buitentijd op de achtergrond',
   notif_channel_scheduled_name: 'Geplande herinneringen',
   notif_channel_scheduled_desc: 'Je ingestelde momenten om af te sluiten',
+  notif_scheduled_title: 'TouchGrass',
   notif_channel_daily_planner_name: 'Dagelijkse planner',
   notif_channel_daily_planner_desc:
     'Stille controle om je herinneringen te plannen. Uitschakelbaar in Android-instellingen.',
@@ -660,3 +669,5 @@ export default {
   update_splash_checking: 'Zoeken…',
   update_splash_downloading: 'Installeren…',
 };
+
+export default nl;

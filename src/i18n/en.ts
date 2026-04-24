@@ -1,4 +1,4 @@
-export default {
+const en = {
   // Greetings
   greeting_morning: 'Good morning 🌱',
   greeting_afternoon: 'Good afternoon ☀️',
@@ -259,8 +259,8 @@ export default {
   settings_location_deny_body: 'This location suggestion will be removed.',
   settings_location_deny_confirm: 'Remove',
   settings_location_deny_cancel: 'Cancel',
-  location_suggestion_default_label: 'Suggested place',
   location_add_title: 'Add location',
+  location_suggested_label: 'Suggested place',
   location_edit_address: 'Nearest address',
   location_edit_address_unavailable: 'Address not available',
   location_edit_address_search_placeholder: 'Search address…',
@@ -370,6 +370,11 @@ export default {
 
   // Notification bodies
   notif_body_none: "You haven't been outside yet today. Time to head outside!",
+  notif_body_generic: 'Get outside and log some time!',
+  notif_body_start: 'Time to get outside!',
+  notif_body_early: 'You are making progress, keep it up!',
+  notif_body_progress_halfway: 'You are almost there!',
+  notif_body_progress_almost: 'Just a little more to reach your goal!',
   notif_body_halfway: '{{remaining}} minutes of outside time to go.',
   notif_body_almost: 'Almost there — just {{remaining}} more minutes outside.',
   notif_body_done: 'Goal reached! Feel like heading outside again? 🌿',
@@ -456,6 +461,7 @@ export default {
   weather_snow_showers: 'Snow showers',
   weather_thunderstorm: 'Thunderstorm',
   weather_unknown: 'Unknown',
+  weather_temp_unknown: 'Unknown temperature',
 
   // Notification channel
   notif_channel_name: 'Outside reminders',
@@ -465,6 +471,7 @@ export default {
   gps_tracking_notif_body: 'Tracking your outside time in the background',
   notif_channel_scheduled_name: 'Scheduled reminders',
   notif_channel_scheduled_desc: 'Your custom scheduled reminders to go outside',
+  notif_scheduled_title: 'TouchGrass',
   notif_channel_daily_planner_name: 'Daily planner',
   notif_channel_daily_planner_desc:
     'Silent wake-up to reschedule your daily reminders. Can be disabled in Android notification settings.',
@@ -678,4 +685,7 @@ export default {
   // Update splash screen
   update_splash_checking: 'Checking for updates…',
   update_splash_downloading: 'Installing update…',
-};
+} as const;
+
+export type TranslationType = Record<keyof typeof en, string>;
+export default en;

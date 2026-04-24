@@ -1,4 +1,6 @@
-export default {
+import { TranslationType } from './en';
+
+const ptBR: TranslationType = {
   // Greetings
   greeting_morning: 'Bom dia 🌱',
   greeting_afternoon: 'Boa tarde ☀️',
@@ -251,8 +253,8 @@ export default {
   settings_location_deny_body: 'Será ignorado.',
   settings_location_deny_confirm: 'Remover',
   settings_location_deny_cancel: 'Cancelar',
-  location_suggestion_default_label: 'Local sugerido',
   location_add_title: 'Adicionar',
+  location_suggested_label: 'Local sugerido',
   location_edit_address: 'Endereço mais próximo',
   location_edit_address_unavailable: 'Indisponível',
   location_edit_address_search_placeholder: 'Pesquisar…',
@@ -355,6 +357,11 @@ export default {
 
   // Notification bodies
   notif_body_none: 'Ainda não esteve lá fora hoje. Vá dar um passeio!',
+  notif_body_generic: 'Saia e registre algum tempo!',
+  notif_body_start: 'Hora de sair!',
+  notif_body_early: 'Você está progredindo, continue assim!',
+  notif_body_progress_halfway: 'Você está quase lá!',
+  notif_body_progress_almost: 'Só mais um pouco para atingir seu objetivo!',
   notif_body_halfway: 'Faltam {{remaining}} minutos lá fora.',
   notif_body_almost: 'Falta pouco! Mais {{remaining}} minutos.',
   notif_body_done: 'Conseguido! Quer mais um passeio livre de telas? 🌿',
@@ -434,6 +441,7 @@ export default {
   weather_snow_showers: 'Pancadas de neve',
   weather_thunderstorm: 'Tempestade',
   weather_unknown: 'Desconhecido',
+  weather_temp_unknown: 'Temperatura desconhecida',
 
   // Notification channel
   notif_channel_name: 'Avisos ao ar livre',
@@ -442,6 +450,7 @@ export default {
   gps_tracking_notif_body: 'Detecção ao ar livre em andamento',
   notif_channel_scheduled_name: 'Agendados',
   notif_channel_scheduled_desc: 'Lembretes que você criou',
+  notif_scheduled_title: 'TouchGrass',
   notif_channel_daily_planner_name: 'Planejamento local',
   notif_channel_daily_planner_desc: 'Checagem silenciosa. Você pode ocultar.',
   notif_daily_planner_title: 'TouchGrass',
@@ -638,3 +647,5 @@ export default {
   update_splash_checking: 'Verificando…',
   update_splash_downloading: 'Instalando…',
 };
+
+export default ptBR;

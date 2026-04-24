@@ -1,4 +1,6 @@
-export default {
+import { TranslationType } from './en';
+
+const fr: TranslationType = {
   // Greetings
   greeting_morning: 'Bonjour 🌱',
   greeting_afternoon: 'Bon après-midi ☀️',
@@ -251,8 +253,8 @@ export default {
   settings_location_deny_body: 'Ignoré localement.',
   settings_location_deny_confirm: 'Retirer',
   settings_location_deny_cancel: 'Annuler',
-  location_suggestion_default_label: 'Suggéré',
   location_add_title: 'Ajouter',
+  location_suggested_label: 'Lieu suggéré',
   location_edit_address: 'Adresse',
   location_edit_address_unavailable: 'Non disponible',
   location_edit_address_search_placeholder: 'Chercher…',
@@ -355,6 +357,11 @@ export default {
 
   // Notification bodies
   notif_body_none: "Pas encore sorti aujourd'hui. Allez respirer !",
+  notif_body_generic: 'Sortez et enregistrez du temps!',
+  notif_body_start: 'Il est temps de sortir!',
+  notif_body_early: 'Vous faites des progrès, continuez comme ça!',
+  notif_body_progress_halfway: 'Vous y êtes presque!',
+  notif_body_progress_almost: 'Encore un petit effort pour atteindre votre objectif!',
   notif_body_halfway: 'Encore {{remaining}} minutes dehors.',
   notif_body_almost: 'Presque ! Plus que {{remaining}} minutes.',
   notif_body_done: 'Terminé ! Prêt pour un bonus de verdure ? 🌿',
@@ -438,6 +445,7 @@ export default {
   weather_snow_showers: 'Averses de neige',
   weather_thunderstorm: 'Orage',
   weather_unknown: 'Inconnu',
+  weather_temp_unknown: 'Température inconnue',
 
   // Notification channel
   notif_channel_name: 'Sorties',
@@ -446,6 +454,7 @@ export default {
   gps_tracking_notif_body: 'Balayage local en cours',
   notif_channel_scheduled_name: 'Programmés',
   notif_channel_scheduled_desc: 'Vos pauses en plein air',
+  notif_scheduled_title: 'TouchGrass',
   notif_channel_daily_planner_name: 'Réveil silencieux',
   notif_channel_daily_planner_desc: 'Calcul local. Désactivable.',
   notif_daily_planner_title: 'TouchGrass',
@@ -647,3 +656,5 @@ export default {
   update_splash_checking: '...',
   update_splash_downloading: '...',
 };
+
+export default fr;

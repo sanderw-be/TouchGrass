@@ -1,7 +1,7 @@
 import { I18n } from 'i18n-js';
 import * as ExpoLocalization from 'expo-localization';
 import { uses24HourClock, normalizeAmPm } from '../utils/helpers';
-import en from './en';
+import en, { TranslationType } from './en';
 import nl from './nl';
 import de from './de';
 import es from './es';
@@ -9,6 +9,18 @@ import pt from './pt';
 import ptBR from './pt-BR';
 import fr from './fr';
 import ja from './ja';
+
+/**
+ * Extract all nested paths from a translation object.
+ * e.g. { home: { title: 'Home' } } -> 'home.title'
+ */
+type RecursiveKeyOf<TObj extends object> = {
+  [TKey in keyof TObj & string]: TObj[TKey] extends object
+    ? `${TKey}` | `${TKey}.${RecursiveKeyOf<TObj[TKey]>}`
+    : `${TKey}`;
+}[keyof TObj & string];
+
+export type TxKey = RecursiveKeyOf<TranslationType>;
 
 export const SUPPORTED_LOCALES = ['en', 'nl', 'de', 'es', 'pt', 'pt-BR', 'fr', 'ja'] as const;
 type SupportedLocale = (typeof SUPPORTED_LOCALES)[number];
@@ -68,7 +80,7 @@ i18n.defaultLocale = 'en';
 export default i18n;
 
 // Shorthand translate function
-export function t(key: string, options?: Record<string, unknown>): string {
+export function t(key: TxKey, options?: Record<string, unknown>): string {
   return i18n.t(key, options);
 }
 

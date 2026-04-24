@@ -1,4 +1,6 @@
-export default {
+import { TranslationType } from './en';
+
+const pt: TranslationType = {
   // Greetings
   greeting_morning: 'Bom dia 🌱',
   greeting_afternoon: 'Boa tarde ☀️',
@@ -251,8 +253,8 @@ export default {
   settings_location_deny_body: 'Será ignorado.',
   settings_location_deny_confirm: 'Remover',
   settings_location_deny_cancel: 'Cancelar',
-  location_suggestion_default_label: 'Local sugerido',
   location_add_title: 'Adicionar',
+  location_suggested_label: 'Local sugerido',
   location_edit_address: 'Morada mais próxima',
   location_edit_address_unavailable: 'Indisponível',
   location_edit_address_search_placeholder: 'Pesquisar…',
@@ -355,6 +357,11 @@ export default {
 
   // Notification bodies
   notif_body_none: 'Ainda não estiveste lá fora. Vai dar um passeio!',
+  notif_body_generic: 'Sai e regista algum tempo!',
+  notif_body_start: 'Hora de sair!',
+  notif_body_early: 'Estás a progredir, continua assim!',
+  notif_body_progress_halfway: 'Estás quase lá!',
+  notif_body_progress_almost: 'Só mais um pouco para atingires o teu objetivo!',
   notif_body_halfway: 'Faltam-te {{remaining}} minutos lá fora.',
   notif_body_almost: 'Falta pouco! Mais {{remaining}} minutos.',
   notif_body_done: 'Conseguido! Queres mais um passeio livre de ecrãs? 🌿',
@@ -439,6 +446,7 @@ export default {
   weather_snow_showers: 'Aguaceiros de neve',
   weather_thunderstorm: 'Trovoada',
   weather_unknown: 'Desconhecido',
+  weather_temp_unknown: 'Temperatura desconhecida',
 
   // Notification channel
   notif_channel_name: 'Avisos ao ar livre',
@@ -447,6 +455,7 @@ export default {
   gps_tracking_notif_body: 'Deteção ao ar livre em andamento',
   notif_channel_scheduled_name: 'Agendados',
   notif_channel_scheduled_desc: 'Lembretes que criaste',
+  notif_scheduled_title: 'TouchGrass',
   notif_channel_daily_planner_name: 'Planeamento local',
   notif_channel_daily_planner_desc: 'Processo em segundo plano silencioso. Podes ocultar.',
   notif_daily_planner_title: 'TouchGrass',
@@ -647,3 +656,5 @@ export default {
   update_splash_checking: 'A ver…',
   update_splash_downloading: 'A instalar…',
 };
+
+export default pt;

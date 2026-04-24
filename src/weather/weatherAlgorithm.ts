@@ -5,7 +5,7 @@
 
 import { WeatherCondition, WEATHER_CODES, WeatherPreferences } from './types';
 import { getSettingAsync } from '../storage';
-import { t } from '../i18n';
+import { TxKey } from '../i18n';
 
 /**
  * Score a weather condition for outdoor activity suitability
@@ -176,27 +176,25 @@ export async function getWeatherPreferences(): Promise<WeatherPreferences> {
 /**
  * Get a human-readable description of weather conditions
  */
-export function getWeatherDescription(condition: WeatherCondition | null): string {
-  if (!condition) return t('weather_unknown');
+export function getWeatherDescription(condition: WeatherCondition | null): TxKey {
+  if (!condition) return 'weather_unknown';
   const code = condition.weatherCode;
 
-  if (code === WEATHER_CODES.CLEAR_SKY) return t('weather_clear_sky');
-  if (code === WEATHER_CODES.MAINLY_CLEAR) return t('weather_mainly_clear');
-  if (code === WEATHER_CODES.PARTLY_CLOUDY) return t('weather_partly_cloudy');
-  if (code === WEATHER_CODES.OVERCAST) return t('weather_overcast');
-  if (code === WEATHER_CODES.FOG) return t('weather_foggy');
+  if (code === WEATHER_CODES.CLEAR_SKY) return 'weather_clear_sky';
+  if (code === WEATHER_CODES.MAINLY_CLEAR) return 'weather_mainly_clear';
+  if (code === WEATHER_CODES.PARTLY_CLOUDY) return 'weather_partly_cloudy';
+  if (code === WEATHER_CODES.OVERCAST) return 'weather_overcast';
+  if (code === WEATHER_CODES.FOG) return 'weather_foggy';
   if (code >= WEATHER_CODES.DRIZZLE_LIGHT && code <= WEATHER_CODES.DRIZZLE_DENSE)
-    return t('weather_drizzle');
-  if (code >= WEATHER_CODES.RAIN_LIGHT && code <= WEATHER_CODES.RAIN_HEAVY)
-    return t('weather_rain');
-  if (code >= WEATHER_CODES.SNOW_LIGHT && code <= WEATHER_CODES.SNOW_HEAVY)
-    return t('weather_snow');
+    return 'weather_drizzle';
+  if (code >= WEATHER_CODES.RAIN_LIGHT && code <= WEATHER_CODES.RAIN_HEAVY) return 'weather_rain';
+  if (code >= WEATHER_CODES.SNOW_LIGHT && code <= WEATHER_CODES.SNOW_HEAVY) return 'weather_snow';
   if (code >= WEATHER_CODES.RAIN_SHOWERS_LIGHT && code <= WEATHER_CODES.RAIN_SHOWERS_HEAVY)
-    return t('weather_rain_showers');
-  if (code === WEATHER_CODES.SNOW_SHOWERS) return t('weather_snow_showers');
-  if (code === WEATHER_CODES.THUNDERSTORM) return t('weather_thunderstorm');
+    return 'weather_rain_showers';
+  if (code === WEATHER_CODES.SNOW_SHOWERS) return 'weather_snow_showers';
+  if (code === WEATHER_CODES.THUNDERSTORM) return 'weather_thunderstorm';
 
-  return t('weather_unknown');
+  return 'weather_unknown';
 }
 
 /**

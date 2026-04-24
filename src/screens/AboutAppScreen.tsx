@@ -4,12 +4,12 @@ import { useNavigation } from '@react-navigation/native';
 import { spacing, radius, ThemeColors, Shadows } from '../utils/theme';
 import { useAppStore } from '../store/useAppStore';
 import { Ionicons } from '@expo/vector-icons';
-import { t } from '../i18n';
+import { t, TxKey } from '../i18n';
 
 type Section = {
   icon: keyof typeof Ionicons.glyphMap;
-  titleKey: string;
-  bodyKey: string;
+  titleKey: TxKey;
+  bodyKey: TxKey;
 };
 
 const SECTIONS: Section[] = [

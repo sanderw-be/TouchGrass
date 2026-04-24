@@ -1,4 +1,6 @@
-export default {
+import { TranslationType } from './en';
+
+const ja: TranslationType = {
   // Greetings
   greeting_morning: 'おはようございます 🌱',
   greeting_afternoon: 'こんにちは ☀️',
@@ -251,8 +253,8 @@ export default {
   settings_location_deny_body: '無視されます。',
   settings_location_deny_confirm: '削除',
   settings_location_deny_cancel: 'キャンセル',
-  location_suggestion_default_label: '提案された場所',
-  location_add_title: '追加',
+  location_add_title: '場所を追加',
+  location_suggested_label: '提案された場所',
   location_edit_address: '住所',
   location_edit_address_unavailable: '利用不可',
   location_edit_address_search_placeholder: '検索…',
@@ -354,6 +356,11 @@ export default {
 
   // Notification bodies
   notif_body_none: '今日はまだ外に出ていません。深呼吸しましょう！',
+  notif_body_generic: '外に出て時間を記録しましょう！',
+  notif_body_start: '外に出る時間です！',
+  notif_body_early: '順調に進んでいます、この調子で頑張りましょう！',
+  notif_body_progress_halfway: 'もうすぐそこです！',
+  notif_body_progress_almost: '目標達成まであと少しです！',
   notif_body_halfway: '外の時間はあと{{remaining}}分です。',
   notif_body_almost: 'あと少し！残り{{remaining}}分。',
   notif_body_done: '達成しました！もう一度スマホを置いていきますか？ 🌿',
@@ -439,6 +446,7 @@ export default {
   weather_snow_showers: 'にわか雪',
   weather_thunderstorm: '雷雨',
   weather_unknown: '不明',
+  weather_temp_unknown: '不明な温度',
 
   // Notification channel
   notif_channel_name: '外出通知',
@@ -447,6 +455,7 @@ export default {
   gps_tracking_notif_body: 'バックグラウンドで外出をチェック中',
   notif_channel_scheduled_name: 'スケジュール',
   notif_channel_scheduled_desc: '設定したデトックス時間',
+  notif_scheduled_title: 'TouchGrass',
   notif_channel_daily_planner_name: 'デイリープランナー',
   notif_channel_daily_planner_desc: 'バックグラウンド処理。非表示可。',
   notif_daily_planner_title: 'TouchGrass',
@@ -646,3 +655,5 @@ export default {
   update_splash_checking: '確認中…',
   update_splash_downloading: 'インストール中…',
 };
+
+export default ja;
