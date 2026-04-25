@@ -58,7 +58,7 @@ jobs:
         run: npm test -- --coverage --passWithNoTests
 
       - name: Run integration tests
-        run: jest -c jest.integration.config.js
+        run: npx jest -c jest.integration.config.js
 
       - name: Regenerate AI Context
         run: |
