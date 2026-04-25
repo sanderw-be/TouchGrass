@@ -2,7 +2,7 @@
 
 **Stack:** raw-http | none | typescript
 
-0 routes | 0 models | 2 env vars | 516 import links
+0 routes | 0 models | 2 env vars | 518 import links
 
 
 **High-impact files** (change carefully):

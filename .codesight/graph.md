@@ -11,16 +11,16 @@
 - `src/notifications/notificationManager.ts` — imported by **10** files
 - `src/utils/helpers.ts` — imported by **10** files
 - `src/storage/types.ts` — imported by **9** files
+- `src/storage/db.ts` — imported by **9** files
 - `src/utils/sessionsChangedEmitter.ts` — imported by **8** files
 - `src/detection/manualCheckin.ts` — imported by **8** files
+- `src/storage/StorageService.ts` — imported by **8** files
 - `src/weather/weatherService.ts` — imported by **8** files
 - `src/i18n/en.ts` — imported by **8** files
-- `src/storage/db.ts` — imported by **8** files
 - `src/core/container.ts` — imported by **7** files
 - `src/background/unifiedBackgroundTask.ts` — imported by **7** files
 - `src/utils/widgetHelper.ts` — imported by **7** files
 - `src/calendar/calendarService.ts` — imported by **7** files
-- `src/storage/StorageService.ts` — imported by **7** files
 - `src/components/ui/index.ts` — imported by **7** files
 
 ## Import Map (who imports what)
@@ -34,4 +34,4 @@
 - `src/notifications/notificationManager.ts` ← `src/__tests__/notificationManager.test.ts`, `src/__tests__/scheduledNotifications.test.ts`, `src/hooks/useForegroundSync.ts`, `src/hooks/useGoalIntegrations.ts`, `src/notifications/services/ReminderQueueManager.ts` +5 more
 - `src/utils/helpers.ts` ← `src/components/EditSessionSheet.tsx`, `src/components/ManualSessionSheet.tsx`, `src/components/ProgressRing.tsx`, `src/components/ReminderFeedbackModal.tsx`, `src/i18n/index.ts` +5 more
 - `src/storage/types.ts` ← `src/__tests__/domain.test.ts`, `src/domain/SessionDomain.ts`, `src/storage/StorageService.ts`, `src/storage/index.ts`, `src/storage/repositories/GoalRepository.ts` +4 more
-- `src/utils/sessionsChangedEmitter.ts` ← `src/__tests__/EventsScreen.test.tsx`, `src/__tests__/HomeScreen.test.tsx`, `src/__tests__/sessionsChangedEmitter.test.ts`, `src/detection/HealthSessionBuilder.ts`, `src/detection/LocationTracker.ts` +3 more
+- `src/storage/db.ts` ← `src/__tests__/integration/database.integration.test.ts`, `src/storage/index.ts`, `src/storage/repositories/GoalRepository.ts`, `src/storage/repositories/LocationRepository.ts`, `src/storage/repositories/LogRepository.ts` +4 more
