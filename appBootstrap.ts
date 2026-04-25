@@ -8,7 +8,6 @@ import {
   getScheduledNotificationManager,
   getNotificationResponseHandler,
 } from './src/notifications/notificationManager';
-import { BackgroundService } from './src/background/unifiedBackgroundTask';
 import { initDetection } from './src/detection/index';
 import { requestWidgetRefresh } from './src/utils/widgetHelper';
 import { refreshBatteryOptimizationSetting } from './src/utils/batteryOptimization';
@@ -84,11 +83,6 @@ export function performDeferredInitialization(): void {
           name: 'Scheduled Notifications',
           task: () => getScheduledNotificationManager().scheduleAllScheduledNotifications(),
         },
-        {
-          name: 'Unified Background Task',
-          task: () => BackgroundService.registerUnifiedBackgroundTask(),
-        },
-        { name: 'Alarm Pulse Chain', task: () => BackgroundService.scheduleNextAlarmPulse() },
         { name: 'Initial Widget Refresh', task: requestWidgetRefresh },
       ];
 

@@ -5,8 +5,8 @@ import { registerWidgetTaskHandler } from 'react-native-android-widget';
 
 import App from './App';
 import { PULSE_TASK_NAME } from 'alarm-bridge-native';
-import { BackgroundService } from './src/background/unifiedBackgroundTask';
 import { widgetTaskHandler } from './src/widget/widget-task-handler';
+import { smartReminderHeadlessTask } from './src/background/smartReminderHeadlessTask';
 
 // Register the Android widget task handler as the very first executable
 // statement — before registerRootComponent so the headless JS boot path is
@@ -15,26 +15,15 @@ import { widgetTaskHandler } from './src/widget/widget-task-handler';
 // execution time-limit.
 registerWidgetTaskHandler(widgetTaskHandler);
 
+AppRegistry.registerHeadlessTask('SmartReminderHeadlessTask', () => smartReminderHeadlessTask);
+
 // ---------------------------------------------------------------------------
-// Pulsar headless task
+// Pulsar headless task (Legacy)
 //
-// Runs when PulseAlarmReceiver → AlarmPulseService wakes the device via a
-// setExactAndAllowWhileIdle alarm. This is the primary background execution
-// path — it bypasses WorkManager's quota so it cannot go stale after ~12 h.
+// No longer performs work; just logs that a legacy alarm fired.
 // ---------------------------------------------------------------------------
 AppRegistry.registerHeadlessTask(PULSE_TASK_NAME, () => async () => {
-  console.log('TouchGrass: [PulseTask] Tick');
-  try {
-    await BackgroundService.performBackgroundTick();
-  } catch (e) {
-    console.error('TouchGrass: [PulseTask] Fatal error', e);
-  } finally {
-    // Always re-arm the chain — even if the tick threw an error.
-    await BackgroundService.scheduleNextAlarmPulse().catch((e) =>
-      console.error('TouchGrass: [PulseTask] Failed to re-arm alarm', e)
-    );
-  }
-  console.log('TouchGrass: [PulseTask] Done');
+  console.log('TouchGrass: [PulseTask] Legacy tick (ignored)');
 });
 
 // registerRootComponent calls AppRegistry.registerComponent('main', () => App);
