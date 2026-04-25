@@ -8,6 +8,7 @@
   - function scheduleNextPulse: (delayMs) => Promise<void>
   - function cancelPulse: () => Promise<void>
   - const PULSE_TASK_NAME
+- `src/background/smartReminderHeadlessTask.ts` — function smartReminderHeadlessTask
 - `src/calendar/calendarService.ts`
   - function cleanupTouchGrassCalendars: () => Promise<CalendarCleanupResult>
   - function requestCalendarPermissions: () => Promise<boolean>
