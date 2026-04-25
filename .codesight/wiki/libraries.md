@@ -2,7 +2,7 @@
 
 > **Navigation aid.** Library inventory extracted via AST. Read the source files listed here before modifying exported functions.
 
-**57 library files** across 12 modules
+**58 library files** across 13 modules
 
 ## Detection (13 files)
 
@@ -84,6 +84,10 @@
 ## AppBootstrap.ts (1 files)
 
 - `appBootstrap.ts` — performCriticalInitializationAsync, performDeferredInitialization, CriticalAppState
+
+## Background (1 files)
+
+- `src/background/smartReminderHeadlessTask.ts` — smartReminderHeadlessTask
 
 ## Calendar (1 files)
 

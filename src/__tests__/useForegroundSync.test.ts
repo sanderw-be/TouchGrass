@@ -3,7 +3,6 @@ import { AppState, InteractionManager } from 'react-native';
 import { useForegroundSync } from '../hooks/useForegroundSync';
 import { getSettingAsync } from '../storage';
 import { cleanupTouchGrassCalendars } from '../calendar/calendarService';
-import { BackgroundService } from '../background/unifiedBackgroundTask';
 import { refreshBatteryOptimizationSetting } from '../utils/batteryOptimization';
 import { requestWidgetRefresh } from '../utils/widgetHelper';
 
@@ -110,7 +109,6 @@ describe('useForegroundSync', () => {
     expect(mockSmartReminderScheduler.scheduleDayReminders).toHaveBeenCalled();
     expect(mockSmartReminderScheduler.processReminderQueue).toHaveBeenCalled();
     expect(cleanupTouchGrassCalendars).toHaveBeenCalled();
-    expect(BackgroundService.scheduleNextAlarmPulse).toHaveBeenCalled();
     expect(requestWidgetRefresh).toHaveBeenCalled();
   });
 });

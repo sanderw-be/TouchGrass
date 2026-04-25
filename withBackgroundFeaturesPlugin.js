@@ -19,45 +19,97 @@ const JAVA_SUBPATH = JAVA_PACKAGE.split('.').join('/');
 const BG_FEATURES_MODULE_KT = `\
 package ${JAVA_PACKAGE}
 
+import android.app.AlarmManager
+import android.app.PendingIntent
+import android.content.Context
+import android.content.Intent
+import android.os.Build
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReadableArray
+import org.json.JSONArray
 
-/**
- * Native module for Activity Recognition and Smart Reminders coordination.
- */
 class BackgroundFeaturesModule(private val reactContext: ReactApplicationContext) :
     ReactContextBaseJavaModule(reactContext) {
 
   override fun getName(): String = "BackgroundFeaturesNative"
 
-  // --- SMART REMINDERS ---
   @ReactMethod
   fun scheduleReminders(scheduleArray: ReadableArray, promise: Promise) {
-    // TODO: Save schedule to native storage (SharedPreferences/MMKV)
-    // TODO: Set Exact Alarms via AlarmManager
-    promise.resolve(null)
+    try {
+      val prefs = reactContext.getSharedPreferences("TouchGrassPrefs", Context.MODE_PRIVATE)
+      val jsonArray = JSONArray()
+      for (i in 0 until scheduleArray.size()) {
+          val item = scheduleArray.getMap(i)
+          if (item != null) {
+              val obj = org.json.JSONObject()
+              obj.put("timestamp", item.getDouble("timestamp"))
+              obj.put("type", item.getString("type"))
+              obj.put("goalThreshold", item.getDouble("goalThreshold"))
+              jsonArray.put(obj)
+          }
+      }
+      prefs.edit().putString("reminder_schedule", jsonArray.toString()).apply()
+
+      val alarmManager = reactContext.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+      for (i in 0 until jsonArray.length()) {
+          val item = jsonArray.getJSONObject(i)
+          val timestamp = item.getLong("timestamp")
+          
+          val intent = Intent(reactContext, SmartReminderReceiver::class.java).apply {
+              action = "com.jollyheron.touchgrass.ACTION_SMART_REMINDER"
+              putExtra("type", item.getString("type"))
+          }
+          val pendingIntent = PendingIntent.getBroadcast(
+              reactContext,
+              i,
+              intent,
+              PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+          )
+          
+          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+              if (alarmManager.canScheduleExactAlarms()) {
+                  alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, timestamp, pendingIntent)
+              } else {
+                  alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, timestamp, pendingIntent)
+              }
+          } else {
+              alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, timestamp, pendingIntent)
+          }
+      }
+      promise.resolve(null)
+    } catch (e: Exception) {
+      promise.reject("SCHEDULING_ERROR", e)
+    }
   }
 
   @ReactMethod
   fun cancelAllReminders(promise: Promise) {
-    // TODO: Cancel all scheduled PendingIntents
-    promise.resolve(null)
-  }
-
-  // --- ACTIVITY RECOGNITION ---
-  @ReactMethod
-  fun startActivityRecognition(promise: Promise) {
-    // TODO: Register ActivityTransitionRequest
-    promise.resolve(null)
-  }
-
-  @ReactMethod
-  fun stopActivityRecognition(promise: Promise) {
-    // TODO: Unregister transitions
-    promise.resolve(null)
+    try {
+      val alarmManager = reactContext.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+      val intent = Intent(reactContext, SmartReminderReceiver::class.java).apply {
+          action = "com.jollyheron.touchgrass.ACTION_SMART_REMINDER"
+      }
+      for (i in 0 until 50) {
+          val pendingIntent = PendingIntent.getBroadcast(
+              reactContext,
+              i,
+              intent,
+              PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+          )
+          if (pendingIntent != null) {
+              alarmManager.cancel(pendingIntent)
+              pendingIntent.cancel()
+          }
+      }
+      val prefs = reactContext.getSharedPreferences("TouchGrassPrefs", Context.MODE_PRIVATE)
+      prefs.edit().remove("reminder_schedule").apply()
+      promise.resolve(null)
+    } catch (e: Exception) {
+      promise.reject("CANCEL_ERROR", e)
+    }
   }
 }
 `;
@@ -82,29 +134,100 @@ class BackgroundFeaturesPackage : ReactPackage {
 const SMART_REMINDER_RECEIVER_KT = `\
 package ${JAVA_PACKAGE}
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.os.Build
+import android.util.Log
+import androidx.core.app.NotificationCompat
 
 class SmartReminderReceiver : BroadcastReceiver() {
   override fun onReceive(context: Context, intent: Intent) {
     val pendingResult = goAsync()
     try {
-      // TODO: Evaluate weather/goals and conditionally fire notification
-      // TODO: Chain next alarm via Headless JS
+      Log.d("TouchGrass", "[SR_JIT_WAKE] SmartReminderReceiver woken up")
+      
+      val prefs = context.getSharedPreferences("TouchGrassPrefs", Context.MODE_PRIVATE)
+      val goalMet = prefs.getBoolean("goal_met_today", false)
+      
+      if (goalMet) {
+          Log.d("TouchGrass", "[SR_JIT_EVAL] Goal met. Aborting reminder.")
+      } else {
+          Log.d("TouchGrass", "[SR_JIT_EVAL] Criteria passed. Firing notification.")
+          showNotification(context, intent.getStringExtra("type") ?: "Reminder")
+      }
+      
+      val headlessIntent = Intent(context, SmartReminderHeadlessService::class.java)
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+          context.startForegroundService(headlessIntent)
+      } else {
+          context.startService(headlessIntent)
+      }
+
     } finally {
       pendingResult.finish()
     }
   }
+
+  private fun showNotification(context: Context, type: String) {
+      val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+      val channelId = "touchgrass_reminders"
+      
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+          val channel = NotificationChannel(channelId, "Smart Reminders", NotificationManager.IMPORTANCE_DEFAULT)
+          notificationManager.createNotificationChannel(channel)
+      }
+
+      val launchIntent = context.packageManager.getLaunchIntentForPackage(context.packageName)
+      val pendingLaunchIntent = PendingIntent.getActivity(context, 0, launchIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+
+      val notification = NotificationCompat.Builder(context, channelId)
+          .setSmallIcon(context.resources.getIdentifier("ic_notification", "drawable", context.packageName))
+          .setContentTitle("Time to get outside!")
+          .setContentText("Your scheduled reminder is here.")
+          .setContentIntent(pendingLaunchIntent)
+          .setAutoCancel(true)
+          .build()
+
+      notificationManager.notify(System.currentTimeMillis().toInt(), notification)
+  }
+}
+`;
+
+const SMART_REMINDER_HEADLESS_SERVICE_KT = `\
+package ${JAVA_PACKAGE}
+
+import android.content.Intent
+import com.facebook.react.HeadlessJsTaskService
+import com.facebook.react.jstasks.HeadlessJsTaskConfig
+import com.facebook.react.bridge.Arguments
+
+class SmartReminderHeadlessService : HeadlessJsTaskService() {
+    override fun getTaskConfig(intent: Intent): HeadlessJsTaskConfig? {
+        return HeadlessJsTaskConfig(
+            "SmartReminderHeadlessTask",
+            Arguments.createMap(),
+            10000,
+            true
+        )
+    }
 }
 `;
 
 const BOOT_RESTORE_RECEIVER_KT = `\
 package ${JAVA_PACKAGE}
 
+import android.app.AlarmManager
+import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.os.Build
+import android.util.Log
+import org.json.JSONArray
 
 class BootRestoreReceiver : BroadcastReceiver() {
   override fun onReceive(context: Context, intent: Intent) {
@@ -113,7 +236,38 @@ class BootRestoreReceiver : BroadcastReceiver() {
     
     val pendingResult = goAsync()
     try {
-      // TODO: Restore Exact Alarms from storage
+      Log.d("TouchGrass", "[SR_BOOT_RESTORE] Restoring exact alarms")
+      val prefs = context.getSharedPreferences("TouchGrassPrefs", Context.MODE_PRIVATE)
+      val scheduleStr = prefs.getString("reminder_schedule", null) ?: return
+      
+      val jsonArray = JSONArray(scheduleStr)
+      val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+      
+      for (i in 0 until jsonArray.length()) {
+          val item = jsonArray.getJSONObject(i)
+          val timestamp = item.getLong("timestamp")
+          if (timestamp > System.currentTimeMillis()) {
+              val alarmIntent = Intent(context, SmartReminderReceiver::class.java).apply {
+                  this.action = "com.jollyheron.touchgrass.ACTION_SMART_REMINDER"
+                  putExtra("type", item.getString("type"))
+              }
+              val pendingIntent = PendingIntent.getBroadcast(
+                  context, i, alarmIntent,
+                  PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+              )
+              if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                  if (alarmManager.canScheduleExactAlarms()) {
+                      alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, timestamp, pendingIntent)
+                  } else {
+                      alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, timestamp, pendingIntent)
+                  }
+              } else {
+                  alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, timestamp, pendingIntent)
+              }
+          }
+      }
+    } catch (e: Exception) {
+        Log.e("TouchGrass", "Error restoring alarms on boot", e)
     } finally {
       pendingResult.finish()
     }
@@ -179,6 +333,7 @@ const withBackgroundFeaturesPlugin = (config) => {
         'BackgroundFeaturesModule.kt': BG_FEATURES_MODULE_KT,
         'BackgroundFeaturesPackage.kt': BG_FEATURES_PACKAGE_KT,
         'SmartReminderReceiver.kt': SMART_REMINDER_RECEIVER_KT,
+        'SmartReminderHeadlessService.kt': SMART_REMINDER_HEADLESS_SERVICE_KT,
         'BootRestoreReceiver.kt': BOOT_RESTORE_RECEIVER_KT,
         'ActivityTransitionReceiver.kt': ACTIVITY_TRANSITION_RECEIVER_KT,
         'ScheduleFailsafeWorker.kt': SCHEDULE_FAILSAFE_WORKER_KT,
@@ -234,6 +389,14 @@ const withBackgroundFeaturesPlugin = (config) => {
       }
     };
 
+    const addService = (name, exported) => {
+      const fullName = `${JAVA_PACKAGE}.${name}`;
+      application.service = application.service ?? [];
+      if (!application.service.some((s) => s.$?.['android:name'] === fullName)) {
+        application.service.push({ $: { 'android:name': fullName, 'android:exported': exported } });
+      }
+    };
+
     addReceiver('SmartReminderReceiver', 'false');
     addReceiver('ActivityTransitionReceiver', 'false');
     addReceiver('BootRestoreReceiver', 'true', [
@@ -244,6 +407,8 @@ const withBackgroundFeaturesPlugin = (config) => {
         ],
       },
     ]);
+
+    addService('SmartReminderHeadlessService', 'false');
 
     return config;
   });
