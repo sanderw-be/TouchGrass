@@ -295,6 +295,7 @@ package ${JAVA_PACKAGE}
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 
 class ActivityTransitionReceiver : BroadcastReceiver() {
   override fun onReceive(context: Context, intent: Intent) {
