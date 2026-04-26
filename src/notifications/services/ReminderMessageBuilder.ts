@@ -53,7 +53,7 @@ export class ReminderMessageBuilder implements IReminderMessageBuilder {
 
     // Append contributors if present
     if (contributors && contributors.length > 0) {
-      const descriptions = contributors.map((key) => String(t(key as TxKey)));
+      const descriptions = contributors.map((desc) => String(desc));
       let joined = '';
       if (descriptions.length === 1) {
         joined = descriptions[0];
@@ -92,7 +92,7 @@ export class ReminderMessageBuilder implements IReminderMessageBuilder {
           const emoji = this.weatherAlgorithm.getWeatherEmoji(hourData.weatherCode);
           const description = t(this.weatherAlgorithm.getWeatherDescription(hourData.weatherCode));
           const temperature = this._getTemperatureString(hourData.temperature, preferCelsius);
-          body += `. ${emoji} ${t('notif_weather_context', { description, temperature })}.`;
+          body += `. ${emoji} ${t('notif_weather_context', { desc: description, temp: temperature })}.`;
           appendedWeather = true;
         }
 
@@ -103,7 +103,7 @@ export class ReminderMessageBuilder implements IReminderMessageBuilder {
           const emoji = this.weatherAlgorithm.getWeatherEmoji(null); // Use null for generic/fallback emoji
           const description = t(this.weatherAlgorithm.getWeatherDescription(null)); // Use null for generic/fallback description
           const temperature = this._getTemperatureString(null, preferCelsius); // Use null for generic/fallback temperature
-          body += `. ${emoji} ${t('notif_weather_context', { description, temperature })}.`;
+          body += `. ${emoji} ${t('notif_weather_context', { desc: description, temp: temperature })}.`;
         }
       }
     }
