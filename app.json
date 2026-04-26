@@ -4,7 +4,7 @@
     "slug": "touchgrass",
     // This version is a placeholder. The actual version is set dynamically
     // in app.config.js from the `version` field in package.json.
-    "version": "1.0.1",
+    "version": "1.0.0",
     "scheme": "touchgrass",
     "orientation": "default",
     "icon": "./assets/icon.png",

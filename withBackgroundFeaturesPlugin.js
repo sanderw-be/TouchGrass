@@ -24,6 +24,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.util.Log
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReactMethod
@@ -48,8 +49,8 @@ class BackgroundFeaturesModule(private val reactContext: ReactApplicationContext
               obj.put("timestamp", item.getDouble("timestamp"))
               obj.put("type", item.getString("type"))
               obj.put("goalThreshold", item.getDouble("goalThreshold"))
-              obj.put("title", item.getString("title"))
-              obj.put("body", item.getString("body"))
+              if (item.hasKey("title")) obj.put("title", item.getString("title"))
+              if (item.hasKey("body")) obj.put("body", item.getString("body"))
               jsonArray.put(obj)
           }
       }
@@ -67,8 +68,8 @@ class BackgroundFeaturesModule(private val reactContext: ReactApplicationContext
           val intent = Intent(reactContext, SmartReminderReceiver::class.java).apply {
               action = "com.jollyheron.touchgrass.ACTION_SMART_REMINDER"
               putExtra("type", item.getString("type"))
-              putExtra("title", item.getString("title"))
-              putExtra("body", item.getString("body"))
+              if (item.has("title")) putExtra("title", item.getString("title"))
+              if (item.has("body")) putExtra("body", item.getString("body"))
           }
           val pendingIntent = PendingIntent.getBroadcast(
               reactContext,
@@ -214,18 +215,17 @@ package ${JAVA_PACKAGE}
 
 import android.content.Intent
 import com.facebook.react.HeadlessJsTaskService
-import com.facebook.react.jstasks.HeadlessJsTaskConfig
 import com.facebook.react.bridge.Arguments
+import com.facebook.react.jstasks.HeadlessJsTaskConfig
 
 class SmartReminderHeadlessService : HeadlessJsTaskService() {
-    override fun getTaskConfig(intent: Intent): HeadlessJsTaskConfig? {
-        return HeadlessJsTaskConfig(
+    protected override fun getTaskConfig(intent: Intent?): HeadlessJsTaskConfig? =
+        HeadlessJsTaskConfig(
             "SmartReminderHeadlessTask",
             Arguments.createMap(),
-            10000,
+            10000L,
             true
         )
-    }
 }
 `;
 
@@ -266,8 +266,8 @@ class BootRestoreReceiver : BroadcastReceiver() {
               val alarmIntent = Intent(context, SmartReminderReceiver::class.java).apply {
                   this.action = "com.jollyheron.touchgrass.ACTION_SMART_REMINDER"
                   putExtra("type", item.getString("type"))
-                  putExtra("title", item.getString("title"))
-                  putExtra("body", item.getString("body"))
+                  if (item.has("title")) putExtra("title", item.getString("title"))
+                  if (item.has("body")) putExtra("body", item.getString("body"))
               }
               val pendingIntent = PendingIntent.getBroadcast(
                   context, i, alarmIntent,
