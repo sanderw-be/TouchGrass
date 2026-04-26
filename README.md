@@ -4,6 +4,12 @@ A React Native mobile app that encourages users to spend more time outdoors by t
 
 [![CI](https://github.com/sanderw-be/TouchGrass/actions/workflows/ci.yml/badge.svg)](https://github.com/sanderw-be/TouchGrass/actions/workflows/ci.yml)
 
+## License
+
+This repository is publicly visible for transparency and community learning. However, it is licensed under the PolyForm Noncommercial License 1.0.0.
+
+You are free to view, download, modify, and use this code for personal, non-commercial purposes. You may not use this software, or any modified version of it, for commercial purposes. See the LICENSE file for full details.
+
 ## Features
 
 - 📍 **Automatic Outdoor Detection** - Uses GPS and Health Connect to track outdoor time

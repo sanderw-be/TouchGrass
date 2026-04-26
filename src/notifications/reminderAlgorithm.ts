@@ -1,3 +1,10 @@
+/*
+ * Copyright (C) 2026 Jolly Heron
+ * This file is part of TouchGrass.
+ * It may not be used for commercial purposes.
+ * Licensed under the PolyForm Noncommercial License 1.0.0.
+ */
+
 import { getReminderFeedbackAsync, getSessionsForRangeAsync, startOfWeek } from '../storage';
 import { getWeatherForHour } from '../weather/weatherService';
 import {
