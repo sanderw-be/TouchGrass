@@ -1,3 +1,9 @@
+## [1.7.4-beta.1](https://github.com/sanderw-be/TouchGrass/compare/v1.7.3...v1.7.4-beta.1) (2026-04-26)
+
+### Bug Fixes
+
+- Implement PolyForm Noncommercial Licence 1.0.0 ([38b9270](https://github.com/sanderw-be/TouchGrass/commit/38b9270f7558ba762b426f0676c80b632bd67364))
+
 ## [1.7.3](https://github.com/sanderw-be/TouchGrass/compare/v1.7.2...v1.7.3) (2026-04-26)
 
 ### Bug Fixes
