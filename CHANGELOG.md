@@ -1,4 +1,4 @@
-## [1.7.3-beta.1](https://github.com/sanderw-be/TouchGrass/compare/v1.7.2...v1.7.3-beta.1) (2026-04-26)
+## [1.7.3](https://github.com/sanderw-be/TouchGrass/compare/v1.7.2...v1.7.3) (2026-04-26)
 
 ### Bug Fixes
 
