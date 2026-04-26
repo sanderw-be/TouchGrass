@@ -19,6 +19,10 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#4A7C59"
       },
+      "notification": {
+        "icon": "./assets/adaptive-icon.png",
+        "color": "#00FF00"
+      },
       "package": "com.jollyheron.touchgrass",
       "permissions": [
         "android.permission.ACCESS_COARSE_LOCATION",
