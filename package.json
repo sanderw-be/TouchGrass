@@ -1,6 +1,7 @@
 {
   "name": "touchgrass",
   "version": "1.7.2",
+  "license": "SEE LICENSE IN LICENSE",
   "main": "index.ts",
   "scripts": {
     "start": "expo start",

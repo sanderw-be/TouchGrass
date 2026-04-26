@@ -1,3 +1,10 @@
+/*
+ * Copyright (C) 2026 Jolly Heron
+ * This file is part of TouchGrass.
+ * It may not be used for commercial purposes.
+ * Licensed under the PolyForm Noncommercial License 1.0.0.
+ */
+
 export const SMART_REMINDERS_OPTIONS = [0, 1, 2, 3];
 export const CALENDAR_BUFFER_OPTIONS = [10, 20, 30, 45, 60];
 export const CALENDAR_DURATION_OPTIONS = [0, 5, 10, 15, 20, 30];
