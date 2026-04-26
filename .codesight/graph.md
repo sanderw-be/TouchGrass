@@ -7,8 +7,8 @@
 - `src/store/useAppStore.ts` — imported by **34** files
 - `src/utils/theme.ts` — imported by **31** files
 - `src/detection/index.ts` — imported by **14** files
+- `src/notifications/notificationManager.ts` — imported by **11** files
 - `src/components/ResponsiveGridList.tsx` — imported by **11** files
-- `src/notifications/notificationManager.ts` — imported by **10** files
 - `src/utils/helpers.ts` — imported by **10** files
 - `src/storage/types.ts` — imported by **9** files
 - `src/storage/db.ts` — imported by **9** files
@@ -30,8 +30,8 @@
 - `src/store/useAppStore.ts` ← `App.tsx`, `src/__tests__/App.test.tsx`, `src/__tests__/useAppStore.test.ts`, `src/components/DiagnosticSheet.tsx`, `src/components/EditLocationSheet.tsx` +29 more
 - `src/utils/theme.ts` ← `src/components/DiagnosticSheet.tsx`, `src/components/EditLocationSheet.tsx`, `src/components/EditSessionSheet.tsx`, `src/components/ErrorBoundary.tsx`, `src/components/ManualSessionSheet.tsx` +26 more
 - `src/detection/index.ts` ← `appBootstrap.ts`, `src/__tests__/IntroScreen.test.tsx`, `src/__tests__/IntroScreen.test.tsx`, `src/__tests__/IntroScreen.test.tsx`, `src/__tests__/IntroScreen.test.tsx` +9 more
+- `src/notifications/notificationManager.ts` ← `src/__tests__/notificationManager.test.ts`, `src/__tests__/scheduledNotifications.test.ts`, `src/hooks/useForegroundSync.ts`, `src/hooks/useGoalIntegrations.ts`, `src/notifications/services/ReminderQueueManager.ts` +6 more
 - `src/components/ResponsiveGridList.tsx` ← `src/screens/AboutAppScreen.tsx`, `src/screens/ActivityLogScreen.tsx`, `src/screens/EventsScreen.tsx`, `src/screens/FeedbackSupportScreen.tsx`, `src/screens/GoalsScreen.tsx` +6 more
-- `src/notifications/notificationManager.ts` ← `src/__tests__/notificationManager.test.ts`, `src/__tests__/scheduledNotifications.test.ts`, `src/hooks/useForegroundSync.ts`, `src/hooks/useGoalIntegrations.ts`, `src/notifications/services/ReminderQueueManager.ts` +5 more
 - `src/utils/helpers.ts` ← `src/components/EditSessionSheet.tsx`, `src/components/ManualSessionSheet.tsx`, `src/components/ProgressRing.tsx`, `src/components/ReminderFeedbackModal.tsx`, `src/i18n/index.ts` +5 more
 - `src/storage/types.ts` ← `src/__tests__/domain.test.ts`, `src/domain/SessionDomain.ts`, `src/storage/StorageService.ts`, `src/storage/index.ts`, `src/storage/repositories/GoalRepository.ts` +4 more
 - `src/storage/db.ts` ← `src/__tests__/integration/database.integration.test.ts`, `src/storage/index.ts`, `src/storage/repositories/GoalRepository.ts`, `src/storage/repositories/LocationRepository.ts`, `src/storage/repositories/LogRepository.ts` +4 more
