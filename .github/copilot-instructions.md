@@ -2,7 +2,7 @@
 
 **Stack:** raw-http | none | typescript
 
-0 routes | 0 models | 2 env vars | 509 import links
+0 routes | 0 models | 3 env vars | 509 import links
 
 
 **High-impact files** (change carefully):
@@ -12,7 +12,7 @@
 - src/utils/theme.ts (imported by 31 files)
 - src/detection/index.ts (imported by 14 files)
 
-**Required env vars:** EAS_BUILD_PROFILE, NODE_ENV
+**Required env vars:** EAS_BUILD_PROFILE, EXPO_PUBLIC_SHOW_DEV_MENU, NODE_ENV
 
 ---
 

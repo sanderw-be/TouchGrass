@@ -93,7 +93,7 @@ export default function SettingsScreen() {
 
   // Load dev settings
   useEffect(() => {
-    if (__DEV__) {
+    if (process.env.EXPO_PUBLIC_SHOW_DEV_MENU === 'true') {
       getSettingAsync('dev_force_half_hour_reminders', 'false').then((val) => {
         setDevForceHalfHour(val === 'true');
       });
@@ -207,7 +207,7 @@ export default function SettingsScreen() {
       { id: 'activity_log' },
     ];
     // Show dev menu if in local development OR running a build from the development channel
-    if (__DEV__ || Updates.channel === 'development') {
+    if (process.env.EXPO_PUBLIC_SHOW_DEV_MENU === 'true') {
       sections.push({ id: 'dev_menu' });
     }
     return sections;
