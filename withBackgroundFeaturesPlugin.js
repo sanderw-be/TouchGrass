@@ -54,9 +54,13 @@ class BackgroundFeaturesModule(private val reactContext: ReactApplicationContext
       prefs.edit().putString("reminder_schedule", jsonArray.toString()).apply()
 
       val alarmManager = reactContext.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+      val sdf = java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.getDefault())
+      
       for (i in 0 until jsonArray.length()) {
           val item = jsonArray.getJSONObject(i)
           val timestamp = item.getLong("timestamp")
+          val formattedTime = sdf.format(java.util.Date(timestamp))
+          Log.d("TouchGrass", "[SR_SCHEDULING] next notification planned at " + formattedTime + " (type=" + item.getString("type") + ")")
           
           val intent = Intent(reactContext, SmartReminderReceiver::class.java).apply {
               action = "com.jollyheron.touchgrass.ACTION_SMART_REMINDER"
@@ -148,16 +152,17 @@ class SmartReminderReceiver : BroadcastReceiver() {
   override fun onReceive(context: Context, intent: Intent) {
     val pendingResult = goAsync()
     try {
-      Log.d("TouchGrass", "[SR_JIT_WAKE] SmartReminderReceiver woken up")
+      val type = intent.getStringExtra("type") ?: "Reminder"
+      Log.d("TouchGrass", "[SR_RECEIVER] broadcastreceiver for notification called (type=$type)")
       
       val prefs = context.getSharedPreferences("TouchGrassPrefs", Context.MODE_PRIVATE)
       val goalMet = prefs.getBoolean("goal_met_today", false)
       
       if (goalMet) {
-          Log.d("TouchGrass", "[SR_JIT_EVAL] Goal met. Aborting reminder.")
+          Log.d("TouchGrass", "[SR_RECEIVER] Goal met. Aborting reminder.")
       } else {
-          Log.d("TouchGrass", "[SR_JIT_EVAL] Criteria passed. Firing notification.")
-          showNotification(context, intent.getStringExtra("type") ?: "Reminder")
+          Log.d("TouchGrass", "[SR_RECEIVER] Criteria passed. Firing notification.")
+          showNotification(context, type)
       }
       
       val headlessIntent = Intent(context, SmartReminderHeadlessService::class.java)
@@ -173,6 +178,7 @@ class SmartReminderReceiver : BroadcastReceiver() {
   }
 
   private fun showNotification(context: Context, type: String) {
+      Log.d("TouchGrass", "[SR_RECEIVER] broadcast receiver action [showing notification] type=$type")
       val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
       val channelId = "touchgrass_reminders"
       
@@ -236,17 +242,21 @@ class BootRestoreReceiver : BroadcastReceiver() {
     
     val pendingResult = goAsync()
     try {
-      Log.d("TouchGrass", "[SR_BOOT_RESTORE] Restoring exact alarms")
+      Log.d("TouchGrass", "[SR_BOOT_RESTORE] broadcast receiver action [restoring alarms]")
       val prefs = context.getSharedPreferences("TouchGrassPrefs", Context.MODE_PRIVATE)
       val scheduleStr = prefs.getString("reminder_schedule", null) ?: return
       
       val jsonArray = JSONArray(scheduleStr)
       val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+      val sdf = java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.getDefault())
       
       for (i in 0 until jsonArray.length()) {
           val item = jsonArray.getJSONObject(i)
           val timestamp = item.getLong("timestamp")
           if (timestamp > System.currentTimeMillis()) {
+              val formattedTime = sdf.format(java.util.Date(timestamp))
+              Log.d("TouchGrass", "[SR_BOOT_RESTORE] restoring alarm for " + formattedTime)
+              
               val alarmIntent = Intent(context, SmartReminderReceiver::class.java).apply {
                   this.action = "com.jollyheron.touchgrass.ACTION_SMART_REMINDER"
                   putExtra("type", item.getString("type"))

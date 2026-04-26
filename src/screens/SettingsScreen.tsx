@@ -15,7 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet';
 import Constants from 'expo-constants';
 
-import { clearAllDataAsync } from '../storage';
+import { clearAllDataAsync, getSettingAsync, setSettingAsync } from '../storage';
 import PermissionExplainerSheet from '../components/PermissionExplainerSheet';
 import DiagnosticSheet from '../components/DiagnosticSheet';
 import { SettingRow, Divider, DetectionSettingRow, Card } from '../components/ui';
@@ -27,6 +27,7 @@ import { PRIVACY_POLICY_URL } from '../utils/constants';
 import type { SettingsStackParamList } from '../navigation/AppNavigator';
 import { useAppStore, ThemePreference } from '../store/useAppStore';
 import { useDetectionSettings } from '../hooks/useDetectionSettings';
+import { getSmartReminderScheduler } from '../notifications/notificationManager';
 
 const LANGUAGE_LABELS: Record<string, string> = {
   en: 'English',
@@ -82,10 +83,20 @@ export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const [showDiagnosticSheet, setShowDiagnosticSheet] = React.useState(false);
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
+  const [devForceHalfHour, setDevForceHalfHour] = React.useState(false);
   const languageSheetRef = useRef<BottomSheetModal>(null);
   const systemLocale = getDeviceSupportedLocale();
 
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
+
+  // Load dev settings
+  useEffect(() => {
+    if (__DEV__) {
+      getSettingAsync('dev_force_half_hour_reminders', 'false').then((val) => {
+        setDevForceHalfHour(val === 'true');
+      });
+    }
+  }, []);
 
   // Hardware back press to close language sheet
   useEffect(() => {
@@ -144,6 +155,18 @@ export default function SettingsScreen() {
     ]);
   };
 
+  const handleClearDayPlan = async () => {
+    getSmartReminderScheduler()._resetSchedulingGuards();
+    await setSettingAsync('reminders_last_planned_date', '');
+    Alert.alert('Dev Menu', 'dayPlanLastDate cleared. Reminders will re-plan on next trigger.');
+  };
+
+  const handleToggleDevForceHalfHour = async () => {
+    const newValue = !devForceHalfHour;
+    setDevForceHalfHour(newValue);
+    await setSettingAsync('dev_force_half_hour_reminders', newValue ? 'true' : 'false');
+  }; // Comment to test
+
   const settingsPermissionIssues: string[] = [];
   if (detectionStatus.gps && !detectionStatus.gpsPermission) {
     settingsPermissionIssues.push(t('settings_gps'));
@@ -167,6 +190,10 @@ export default function SettingsScreen() {
     { id: 'about' },
     { id: 'activity_log' },
   ];
+
+  if (__DEV__) {
+    SECTIONS.push({ id: 'dev_menu' });
+  }
 
   const HeaderComponent = () => (
     <>
@@ -404,6 +431,42 @@ export default function SettingsScreen() {
                   right={<Ionicons name="chevron-forward" size={20} color={colors.textMuted} />}
                 />
               </TouchableOpacity>
+            </Card>
+          </View>
+        );
+      case 'dev_menu':
+        return (
+          <View>
+            <Text style={styles.sectionHeader}>Developer Menu</Text>
+            <Card style={styles.card}>
+              <TouchableOpacity onPress={handleClearDayPlan}>
+                <SettingRow
+                  icon={<Ionicons name="bug-outline" size={20} color={colors.textSecondary} />}
+                  label="Clear dayPlanLastDate"
+                  sublabel="Force re-planning of today's reminders"
+                />
+              </TouchableOpacity>
+              <Divider />
+              <SettingRow
+                icon={<Ionicons name="time-outline" size={20} color={colors.textSecondary} />}
+                label="Force half-hour reminders"
+                sublabel="Ignores user count and sends every 30 mins"
+                right={
+                  <TouchableOpacity
+                    style={[styles.editBtn, devForceHalfHour && { backgroundColor: colors.grass }]}
+                    onPress={handleToggleDevForceHalfHour}
+                  >
+                    <Text
+                      style={[
+                        styles.editBtnText,
+                        devForceHalfHour && { color: colors.textInverse },
+                      ]}
+                    >
+                      {devForceHalfHour ? 'ENABLED' : 'DISABLED'}
+                    </Text>
+                  </TouchableOpacity>
+                }
+              />
             </Card>
           </View>
         );
