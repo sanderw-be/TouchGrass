@@ -15,6 +15,11 @@ on:
         required: false
         type: boolean
         default: false
+      force_native_build:
+        description: 'Force Native Build?'
+        required: false
+        type: boolean
+        default: false
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -82,6 +87,12 @@ jobs:
       - name: Check for Native Changes
         id: native_check
         run: |
+          if [ "${{ inputs.force_native_build }}" == "true" ]; then
+            echo "native=true" >> $GITHUB_OUTPUT
+            echo "🚨 Force Native Build selected via workflow_dispatch!"
+            exit 0
+          fi
+
           # 1. Determine what we are comparing against
           if [ "${{ github.event.action }}" == "synchronize" ]; then
             BASE="${{ github.event.before }}"
@@ -89,9 +100,9 @@ jobs:
             BASE="${{ github.event.pull_request.base.sha }}"
           fi
           
-          # 2. Safety check: if BASE is all zeros (e.g. a force push), fallback to PR base
-          if [[ "$BASE" =~ ^0+$ ]]; then
-            BASE="${{ github.event.pull_request.base.sha }}"
+          # 2. Safety check: if BASE is all zeros (e.g. a force push) or empty (e.g. workflow_dispatch without PR), fallback gracefully
+          if [[ "$BASE" =~ ^0+$ ]] || [ -z "$BASE" ]; then
+            BASE="${{ github.event.pull_request.base.sha || github.event.before || github.sha }}"
           fi
           
           echo "Comparing $BASE to HEAD..."
