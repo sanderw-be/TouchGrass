@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet';
 import Constants from 'expo-constants';
+import * as Updates from 'expo-updates';
 
 import { clearAllDataAsync, getSettingAsync, setSettingAsync } from '../storage';
 import PermissionExplainerSheet from '../components/PermissionExplainerSheet';
@@ -205,7 +206,8 @@ export default function SettingsScreen() {
       { id: 'about' },
       { id: 'activity_log' },
     ];
-    if (__DEV__) {
+    // Show dev menu if in local development OR running a build from the development channel
+    if (__DEV__ || Updates.channel === 'development') {
       sections.push({ id: 'dev_menu' });
     }
     return sections;
