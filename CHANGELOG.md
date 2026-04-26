@@ -1,3 +1,12 @@
+## [1.7.3-beta.1](https://github.com/sanderw-be/TouchGrass/compare/v1.7.2...v1.7.3-beta.1) (2026-04-26)
+
+### Bug Fixes
+
+- **background:** tie up refactor ends and remove boot receiver ([244ac26](https://github.com/sanderw-be/TouchGrass/commit/244ac26bc94caa9b3d7e24ffc3b5ecb7e608c8b7))
+- **db:** Fix database refactoring loose ends ([#422](https://github.com/sanderw-be/TouchGrass/issues/422)) ([6fb71f8](https://github.com/sanderw-be/TouchGrass/commit/6fb71f83a86b2b1fce2e5e8d3ed8121f9f8a27fd))
+- Implement PolyForm Noncommercial Licence 1.0.0 ([38b9270](https://github.com/sanderw-be/TouchGrass/commit/38b9270f7558ba762b426f0676c80b632bd67364))
+- Include testing for language strings and fix notification strings ([#427](https://github.com/sanderw-be/TouchGrass/issues/427)) ([69283c2](https://github.com/sanderw-be/TouchGrass/commit/69283c2f51cf09f7a959536e6a558e302f3ece4f))
+
 ## [1.7.2](https://github.com/sanderw-be/TouchGrass/compare/v1.7.1...v1.7.2) (2026-04-21)
 
 ### Bug Fixes
