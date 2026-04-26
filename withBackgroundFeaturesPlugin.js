@@ -215,18 +215,17 @@ package ${JAVA_PACKAGE}
 
 import android.content.Intent
 import com.facebook.react.HeadlessJsTaskService
-import com.facebook.react.jstasks.HeadlessJsTaskConfig
 import com.facebook.react.bridge.Arguments
+import com.facebook.react.jstasks.HeadlessJsTaskConfig
 
 class SmartReminderHeadlessService : HeadlessJsTaskService() {
-    override fun getTaskConfig(intent: Intent): HeadlessJsTaskConfig? {
-        return HeadlessJsTaskConfig(
+    protected override fun getTaskConfig(intent: Intent?): HeadlessJsTaskConfig? =
+        HeadlessJsTaskConfig(
             "SmartReminderHeadlessTask",
             Arguments.createMap(),
-            10000,
+            10000L,
             true
         )
-    }
 }
 `;
 
