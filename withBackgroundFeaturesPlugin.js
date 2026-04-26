@@ -196,8 +196,15 @@ class SmartReminderReceiver : BroadcastReceiver() {
       val launchIntent = context.packageManager.getLaunchIntentForPackage(context.packageName)
       val pendingLaunchIntent = PendingIntent.getActivity(context, 0, launchIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
 
+      // Safely resolve the icon
+      var iconResId = context.resources.getIdentifier("ic_stat_ic_notification", "drawable", context.packageName)
+      if (iconResId == 0) {
+          // Fallback to the app's default launcher icon
+          iconResId = context.applicationInfo.icon
+      }
+
       val notification = NotificationCompat.Builder(context, channelId)
-          .setSmallIcon(context.resources.getIdentifier("ic_notification", "drawable", context.packageName))
+          .setSmallIcon(iconResId)
           .setContentTitle(title)
           .setContentText(body)
           .setContentIntent(pendingLaunchIntent)
