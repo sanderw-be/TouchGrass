@@ -84,6 +84,8 @@ export default function SettingsScreen() {
   const [showDiagnosticSheet, setShowDiagnosticSheet] = React.useState(false);
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
   const [devForceHalfHour, setDevForceHalfHour] = React.useState(false);
+  const [devMenuTaps, setDevMenuTaps] = React.useState(0);
+  const [forceShowDevMenu, setForceShowDevMenu] = React.useState(false);
   const languageSheetRef = useRef<BottomSheetModal>(null);
   const systemLocale = getDeviceSupportedLocale();
 
@@ -91,11 +93,12 @@ export default function SettingsScreen() {
 
   // Load dev settings
   useEffect(() => {
-    if (__DEV__) {
-      getSettingAsync('dev_force_half_hour_reminders', 'false').then((val) => {
-        setDevForceHalfHour(val === 'true');
-      });
-    }
+    getSettingAsync('dev_force_half_hour_reminders', 'false').then((val) => {
+      setDevForceHalfHour(val === 'true');
+    });
+    getSettingAsync('dev_menu_unlocked', 'false').then((val) => {
+      setForceShowDevMenu(val === 'true');
+    });
   }, []);
 
   // Hardware back press to close language sheet
@@ -165,7 +168,19 @@ export default function SettingsScreen() {
     const newValue = !devForceHalfHour;
     setDevForceHalfHour(newValue);
     await setSettingAsync('dev_force_half_hour_reminders', newValue ? 'true' : 'false');
-  }; // Comment to test
+  };
+
+  const handleVersionPress = async () => {
+    const newTaps = devMenuTaps + 1;
+    if (newTaps >= 5 && !forceShowDevMenu) {
+      setForceShowDevMenu(true);
+      await setSettingAsync('dev_menu_unlocked', 'true');
+      Alert.alert('Developer Mode', 'Developer menu has been unlocked.');
+    } else {
+      setDevMenuTaps(newTaps);
+      setShowDiagnosticSheet(true);
+    }
+  };
 
   const settingsPermissionIssues: string[] = [];
   if (detectionStatus.gps && !detectionStatus.gpsPermission) {
@@ -182,18 +197,20 @@ export default function SettingsScreen() {
     []
   );
 
-  const SECTIONS = [
-    { id: 'detection' },
-    { id: 'locations' },
-    { id: 'appearance' },
-    { id: 'language' },
-    { id: 'about' },
-    { id: 'activity_log' },
-  ];
-
-  if (__DEV__) {
-    SECTIONS.push({ id: 'dev_menu' });
-  }
+  const SECTIONS = useMemo(() => {
+    const sections = [
+      { id: 'detection' },
+      { id: 'locations' },
+      { id: 'appearance' },
+      { id: 'language' },
+      { id: 'about' },
+      { id: 'activity_log' },
+    ];
+    if (__DEV__ || forceShowDevMenu) {
+      sections.push({ id: 'dev_menu' });
+    }
+    return sections;
+  }, [forceShowDevMenu]);
 
   const HeaderComponent = () => (
     <>
@@ -210,270 +227,296 @@ export default function SettingsScreen() {
     </>
   );
 
-  const renderSection = ({ item }: { item: (typeof SECTIONS)[0] }) => {
-    switch (item.id) {
-      case 'detection':
-        return (
-          <View>
-            <Text style={styles.sectionHeader}>{t('settings_section_detection')}</Text>
-            <Card style={styles.card}>
-              <DetectionSettingRow
-                enabled={detectionStatus.healthConnect}
-                permissionGranted={detectionStatus.healthConnectPermission}
-                icon={<Ionicons name="fitness-outline" size={20} color={colors.textSecondary} />}
-                label={t('settings_health_connect')}
-                desc={t('settings_health_connect_desc')}
-                permissionMissingLabel={t('settings_hc_permission_missing')}
-                onToggle={handleToggleHC}
-                isLoading={togglingHC}
-                isInitializing={isInitializing}
-                onPermissionFix={showHCPermissionSheet}
-                testID="hc-toggle"
-              />
-              <Divider />
-              <DetectionSettingRow
-                enabled={detectionStatus.gps}
-                permissionGranted={detectionStatus.gpsPermission}
-                icon={<Ionicons name="location-outline" size={20} color={colors.textSecondary} />}
-                label={t('settings_gps')}
-                desc={t('settings_gps_desc')}
-                permissionMissingLabel={t('settings_gps_permission_missing')}
-                onToggle={handleToggleGPS}
-                isLoading={togglingGPS}
-                isInitializing={isInitializing}
-                onPermissionFix={showGPSPermissionSheet}
-                testID="gps-toggle"
-              />
-              <Divider />
-              <SettingRow
-                icon={<Ionicons name="radio-outline" size={20} color={colors.textSecondary} />}
-                label={t('settings_background_tracking_label')}
-                sublabel={t('settings_background_tracking_sublabel')}
-              />
-            </Card>
-          </View>
-        );
-      case 'locations':
-        return (
-          <View>
-            <Text style={styles.sectionHeader}>{t('settings_section_locations')}</Text>
-            <Card style={styles.card}>
-              <TouchableOpacity onPress={() => navigation.navigate('KnownLocations')}>
-                <SettingRow
+  const renderSection = useCallback(
+    ({ item }: { item: (typeof SECTIONS)[0] }) => {
+      switch (item.id) {
+        case 'detection':
+          return (
+            <View>
+              <Text style={styles.sectionHeader}>{t('settings_section_detection')}</Text>
+              <Card style={styles.card}>
+                <DetectionSettingRow
+                  enabled={detectionStatus.healthConnect}
+                  permissionGranted={detectionStatus.healthConnectPermission}
+                  icon={<Ionicons name="fitness-outline" size={20} color={colors.textSecondary} />}
+                  label={t('settings_health_connect')}
+                  desc={t('settings_health_connect_desc')}
+                  permissionMissingLabel={t('settings_hc_permission_missing')}
+                  onToggle={handleToggleHC}
+                  isLoading={togglingHC}
+                  isInitializing={isInitializing}
+                  onPermissionFix={showHCPermissionSheet}
+                  testID="hc-toggle"
+                />
+                <Divider />
+                <DetectionSettingRow
+                  enabled={detectionStatus.gps}
+                  permissionGranted={detectionStatus.gpsPermission}
                   icon={<Ionicons name="location-outline" size={20} color={colors.textSecondary} />}
-                  label={t('settings_locations_manage')}
-                  sublabel={
-                    knownLocations.length > 0
-                      ? t('settings_locations_count', { count: knownLocations.length })
-                      : t('settings_locations_manage_desc')
-                  }
+                  label={t('settings_gps')}
+                  desc={t('settings_gps_desc')}
+                  permissionMissingLabel={t('settings_gps_permission_missing')}
+                  onToggle={handleToggleGPS}
+                  isLoading={togglingGPS}
+                  isInitializing={isInitializing}
+                  onPermissionFix={showGPSPermissionSheet}
+                  testID="gps-toggle"
+                />
+                <Divider />
+                <SettingRow
+                  icon={<Ionicons name="radio-outline" size={20} color={colors.textSecondary} />}
+                  label={t('settings_background_tracking_label')}
+                  sublabel={t('settings_background_tracking_sublabel')}
+                />
+              </Card>
+            </View>
+          );
+        case 'locations':
+          return (
+            <View>
+              <Text style={styles.sectionHeader}>{t('settings_section_locations')}</Text>
+              <Card style={styles.card}>
+                <TouchableOpacity onPress={() => navigation.navigate('KnownLocations')}>
+                  <SettingRow
+                    icon={
+                      <Ionicons name="location-outline" size={20} color={colors.textSecondary} />
+                    }
+                    label={t('settings_locations_manage')}
+                    sublabel={
+                      knownLocations.length > 0
+                        ? t('settings_locations_count', { count: knownLocations.length })
+                        : t('settings_locations_manage_desc')
+                    }
+                    right={
+                      <View style={styles.locationRight}>
+                        {suggestedCount > 0 && (
+                          <View style={styles.badge}>
+                            <Text style={styles.badgeText}>{suggestedCount}</Text>
+                          </View>
+                        )}
+                        <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+                      </View>
+                    }
+                  />
+                </TouchableOpacity>
+              </Card>
+            </View>
+          );
+        case 'appearance':
+          return (
+            <View>
+              <Text style={styles.sectionHeader}>{t('settings_section_appearance')}</Text>
+              <Card style={styles.card}>
+                {(['system', 'light', 'dark'] as ThemePreference[]).map((pref, i) => (
+                  <View key={pref}>
+                    {i > 0 && <Divider />}
+                    <TouchableOpacity onPress={() => setThemePreference(pref)}>
+                      <SettingRow
+                        icon={
+                          <Ionicons
+                            name={
+                              pref === 'system'
+                                ? 'phone-portrait-outline'
+                                : pref === 'light'
+                                  ? 'sunny-outline'
+                                  : 'moon-outline'
+                            }
+                            size={20}
+                            color={colors.textSecondary}
+                          />
+                        }
+                        label={
+                          pref === 'system'
+                            ? t('settings_theme_system')
+                            : pref === 'light'
+                              ? t('settings_theme_light')
+                              : t('settings_theme_dark')
+                        }
+                        right={
+                          themePreference === pref && (
+                            <Ionicons name="checkmark" size={20} color={colors.grass} />
+                          )
+                        }
+                      />
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </Card>
+            </View>
+          );
+        case 'language':
+          return (
+            <View>
+              <Text style={styles.sectionHeader}>{t('settings_section_language')}</Text>
+              <Card style={styles.card}>
+                <TouchableOpacity onPress={presentLanguageSheet} testID="language-picker-toggle">
+                  <SettingRow
+                    icon={
+                      <Ionicons name="language-outline" size={20} color={colors.textSecondary} />
+                    }
+                    label={
+                      locale === 'en' || (locale === 'system' && systemLocale === 'en')
+                        ? 'Language'
+                        : `${t('settings_section_language')} / Language`
+                    }
+                    right={<Ionicons name="chevron-forward" size={20} color={colors.textMuted} />}
+                  />
+                </TouchableOpacity>
+              </Card>
+            </View>
+          );
+        case 'about':
+          return (
+            <View>
+              <Text style={styles.sectionHeader}>{t('settings_section_about')}</Text>
+              <Card style={styles.card}>
+                <TouchableOpacity onPress={() => navigation.navigate('AboutApp')}>
+                  <SettingRow
+                    icon={<Ionicons name="leaf-outline" size={20} color={colors.textSecondary} />}
+                    label="TouchGrass"
+                    sublabel={t('settings_app_sublabel')}
+                    right={
+                      <View style={styles.rowRightInline}>
+                        {Constants.expoConfig?.version ? (
+                          <TouchableOpacity onPress={handleVersionPress} testID="version-badge">
+                            <Text
+                              style={styles.versionBadge}
+                            >{`v${Constants.expoConfig.version}`}</Text>
+                          </TouchableOpacity>
+                        ) : null}                        <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+                      </View>
+                    }
+                  />
+                </TouchableOpacity>
+                <Divider />
+                <TouchableOpacity onPress={() => Linking.openURL(PRIVACY_POLICY_URL)}>
+                  <SettingRow
+                    icon={
+                      <Ionicons name="lock-closed-outline" size={20} color={colors.textSecondary} />
+                    }
+                    label={t('settings_privacy')}
+                    sublabel={t('settings_privacy_sublabel')}
+                    hint={t('settings_privacy_hint')}
+                    right={<Ionicons name="chevron-forward" size={20} color={colors.textMuted} />}
+                  />
+                </TouchableOpacity>
+                <Divider />
+                <SettingRow
+                  icon={<Ionicons name="school-outline" size={20} color={colors.textSecondary} />}
+                  label={t('settings_rerun_tutorial')}
+                  sublabel={t('settings_rerun_tutorial_sublabel')}
                   right={
-                    <View style={styles.locationRight}>
-                      {suggestedCount > 0 && (
-                        <View style={styles.badge}>
-                          <Text style={styles.badgeText}>{suggestedCount}</Text>
-                        </View>
-                      )}
-                      <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
-                    </View>
+                    <TouchableOpacity style={styles.editBtn} onPress={handleShowIntro}>
+                      <Text style={styles.editBtnText}>{t('settings_rerun_tutorial')}</Text>
+                    </TouchableOpacity>
                   }
                 />
-              </TouchableOpacity>
-            </Card>
-          </View>
-        );
-      case 'appearance':
-        return (
-          <View>
-            <Text style={styles.sectionHeader}>{t('settings_section_appearance')}</Text>
-            <Card style={styles.card}>
-              {(['system', 'light', 'dark'] as ThemePreference[]).map((pref, i) => (
-                <View key={pref}>
-                  {i > 0 && <Divider />}
-                  <TouchableOpacity onPress={() => setThemePreference(pref)}>
-                    <SettingRow
-                      icon={
-                        <Ionicons
-                          name={
-                            pref === 'system'
-                              ? 'phone-portrait-outline'
-                              : pref === 'light'
-                                ? 'sunny-outline'
-                                : 'moon-outline'
-                          }
-                          size={20}
-                          color={colors.textSecondary}
-                        />
-                      }
-                      label={
-                        pref === 'system'
-                          ? t('settings_theme_system')
-                          : pref === 'light'
-                            ? t('settings_theme_light')
-                            : t('settings_theme_dark')
-                      }
-                      right={
-                        themePreference === pref && (
-                          <Ionicons name="checkmark" size={20} color={colors.grass} />
-                        )
-                      }
-                    />
-                  </TouchableOpacity>
-                </View>
-              ))}
-            </Card>
-          </View>
-        );
-      case 'language':
-        return (
-          <View>
-            <Text style={styles.sectionHeader}>{t('settings_section_language')}</Text>
-            <Card style={styles.card}>
-              <TouchableOpacity onPress={presentLanguageSheet} testID="language-picker-toggle">
+                <Divider />
+                <TouchableOpacity onPress={() => navigation.navigate('FeedbackSupport')}>
+                  <SettingRow
+                    icon={<Ionicons name="cafe-outline" size={20} color={colors.textSecondary} />}
+                    label={t('settings_feedback_support')}
+                    sublabel={t('settings_feedback_support_sublabel')}
+                    right={<Ionicons name="chevron-forward" size={20} color={colors.textMuted} />}
+                  />
+                </TouchableOpacity>
+                <Divider />
                 <SettingRow
-                  icon={<Ionicons name="language-outline" size={20} color={colors.textSecondary} />}
-                  label={
-                    locale === 'en' || (locale === 'system' && systemLocale === 'en')
-                      ? 'Language'
-                      : `${t('settings_section_language')} / Language`
-                  }
-                  right={<Ionicons name="chevron-forward" size={20} color={colors.textMuted} />}
-                />
-              </TouchableOpacity>
-            </Card>
-          </View>
-        );
-      case 'about':
-        return (
-          <View>
-            <Text style={styles.sectionHeader}>{t('settings_section_about')}</Text>
-            <Card style={styles.card}>
-              <TouchableOpacity onPress={() => navigation.navigate('AboutApp')}>
-                <SettingRow
-                  icon={<Ionicons name="leaf-outline" size={20} color={colors.textSecondary} />}
-                  label="TouchGrass"
-                  sublabel={t('settings_app_sublabel')}
+                  icon={<Ionicons name="trash-outline" size={20} color={colors.textSecondary} />}
+                  label={t('settings_clear_data')}
+                  sublabel={t('settings_clear_data_sublabel')}
                   right={
-                    <View style={styles.rowRightInline}>
-                      {Constants.expoConfig?.version ? (
-                        <TouchableOpacity
-                          onPress={() => setShowDiagnosticSheet(true)}
-                          testID="version-badge"
-                        >
-                          <Text
-                            style={styles.versionBadge}
-                          >{`v${Constants.expoConfig.version}`}</Text>
-                        </TouchableOpacity>
-                      ) : null}
-                      <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
-                    </View>
+                    <TouchableOpacity style={styles.dangerBtn} onPress={handleClearData}>
+                      <Text style={styles.dangerBtnText}>{t('settings_clear_data')}</Text>
+                    </TouchableOpacity>
                   }
                 />
-              </TouchableOpacity>
-              <Divider />
-              <TouchableOpacity onPress={() => Linking.openURL(PRIVACY_POLICY_URL)}>
+              </Card>
+            </View>
+          );
+        case 'activity_log':
+          return (
+            <View>
+              <Text style={styles.sectionHeader}>{t('settings_section_activity_log')}</Text>
+              <Card style={styles.card}>
+                <TouchableOpacity onPress={() => navigation.navigate('ActivityLog')}>
+                  <SettingRow
+                    icon={
+                      <Ionicons
+                        name="document-text-outline"
+                        size={20}
+                        color={colors.textSecondary}
+                      />
+                    }
+                    label={t('settings_activity_log')}
+                    sublabel={t('settings_activity_log_sublabel')}
+                    right={<Ionicons name="chevron-forward" size={20} color={colors.textMuted} />}
+                  />
+                </TouchableOpacity>
+              </Card>
+            </View>
+          );
+        case 'dev_menu':
+          return (
+            <View>
+              <Text style={styles.sectionHeader}>Developer Menu</Text>
+              <Card style={styles.card}>
+                <TouchableOpacity onPress={handleClearDayPlan}>
+                  <SettingRow
+                    icon={<Ionicons name="bug-outline" size={20} color={colors.textSecondary} />}
+                    label="Clear dayPlanLastDate"
+                    sublabel="Force re-planning of today's reminders"
+                  />
+                </TouchableOpacity>
+                <Divider />
                 <SettingRow
-                  icon={
-                    <Ionicons name="lock-closed-outline" size={20} color={colors.textSecondary} />
-                  }
-                  label={t('settings_privacy')}
-                  sublabel={t('settings_privacy_sublabel')}
-                  hint={t('settings_privacy_hint')}
-                  right={<Ionicons name="chevron-forward" size={20} color={colors.textMuted} />}
-                />
-              </TouchableOpacity>
-              <Divider />
-              <SettingRow
-                icon={<Ionicons name="school-outline" size={20} color={colors.textSecondary} />}
-                label={t('settings_rerun_tutorial')}
-                sublabel={t('settings_rerun_tutorial_sublabel')}
-                right={
-                  <TouchableOpacity style={styles.editBtn} onPress={handleShowIntro}>
-                    <Text style={styles.editBtnText}>{t('settings_rerun_tutorial')}</Text>
-                  </TouchableOpacity>
-                }
-              />
-              <Divider />
-              <TouchableOpacity onPress={() => navigation.navigate('FeedbackSupport')}>
-                <SettingRow
-                  icon={<Ionicons name="cafe-outline" size={20} color={colors.textSecondary} />}
-                  label={t('settings_feedback_support')}
-                  sublabel={t('settings_feedback_support_sublabel')}
-                  right={<Ionicons name="chevron-forward" size={20} color={colors.textMuted} />}
-                />
-              </TouchableOpacity>
-              <Divider />
-              <SettingRow
-                icon={<Ionicons name="trash-outline" size={20} color={colors.textSecondary} />}
-                label={t('settings_clear_data')}
-                sublabel={t('settings_clear_data_sublabel')}
-                right={
-                  <TouchableOpacity style={styles.dangerBtn} onPress={handleClearData}>
-                    <Text style={styles.dangerBtnText}>{t('settings_clear_data')}</Text>
-                  </TouchableOpacity>
-                }
-              />
-            </Card>
-          </View>
-        );
-      case 'activity_log':
-        return (
-          <View>
-            <Text style={styles.sectionHeader}>{t('settings_section_activity_log')}</Text>
-            <Card style={styles.card}>
-              <TouchableOpacity onPress={() => navigation.navigate('ActivityLog')}>
-                <SettingRow
-                  icon={
-                    <Ionicons name="document-text-outline" size={20} color={colors.textSecondary} />
-                  }
-                  label={t('settings_activity_log')}
-                  sublabel={t('settings_activity_log_sublabel')}
-                  right={<Ionicons name="chevron-forward" size={20} color={colors.textMuted} />}
-                />
-              </TouchableOpacity>
-            </Card>
-          </View>
-        );
-      case 'dev_menu':
-        return (
-          <View>
-            <Text style={styles.sectionHeader}>Developer Menu</Text>
-            <Card style={styles.card}>
-              <TouchableOpacity onPress={handleClearDayPlan}>
-                <SettingRow
-                  icon={<Ionicons name="bug-outline" size={20} color={colors.textSecondary} />}
-                  label="Clear dayPlanLastDate"
-                  sublabel="Force re-planning of today's reminders"
-                />
-              </TouchableOpacity>
-              <Divider />
-              <SettingRow
-                icon={<Ionicons name="time-outline" size={20} color={colors.textSecondary} />}
-                label="Force half-hour reminders"
-                sublabel="Ignores user count and sends every 30 mins"
-                right={
-                  <TouchableOpacity
-                    style={[styles.editBtn, devForceHalfHour && { backgroundColor: colors.grass }]}
-                    onPress={handleToggleDevForceHalfHour}
-                  >
-                    <Text
-                      style={[
-                        styles.editBtnText,
-                        devForceHalfHour && { color: colors.textInverse },
-                      ]}
+                  icon={<Ionicons name="time-outline" size={20} color={colors.textSecondary} />}
+                  label="Force half-hour reminders"
+                  sublabel="Ignores user count and sends every 30 mins"
+                  right={
+                    <TouchableOpacity
+                      style={[styles.editBtn, devForceHalfHour && { backgroundColor: colors.grass }]}
+                      onPress={handleToggleDevForceHalfHour}
                     >
-                      {devForceHalfHour ? 'ENABLED' : 'DISABLED'}
-                    </Text>
-                  </TouchableOpacity>
-                }
-              />
-            </Card>
-          </View>
-        );
-      default:
-        return null;
-    }
-  };
+                      <Text
+                        style={[
+                          styles.editBtnText,
+                          devForceHalfHour && { color: colors.textInverse },
+                        ]}
+                      >
+                        {devForceHalfHour ? 'ENABLED' : 'DISABLED'}
+                      </Text>
+                    </TouchableOpacity>
+                  }
+                />
+              </Card>
+            </View>
+          );
+        default:
+          return null;
+      }
+    },
+    [
+      colors,
+      detectionStatus,
+      devForceHalfHour,
+      handleClearDayPlan,
+      handleToggleDevForceHalfHour,
+      handleToggleGPS,
+      handleToggleHC,
+      isInitializing,
+      knownLocations.length,
+      locale,
+      navigation,
+      showGPSPermissionSheet,
+      showHCPermissionSheet,
+      suggestedCount,
+      systemLocale,
+      togglingGPS,
+      togglingHC,
+      styles,
+    ]
+  );
 
   return (
     <>
