@@ -155,7 +155,6 @@ import androidx.core.app.NotificationCompat
 
 class SmartReminderReceiver : BroadcastReceiver() {
   override fun onReceive(context: Context, intent: Intent) {
-    val pendingResult = goAsync()
     try {
       val type = intent.getStringExtra("type") ?: "Reminder"
       val title = intent.getStringExtra("title") ?: "Time to get outside!"
@@ -179,8 +178,8 @@ class SmartReminderReceiver : BroadcastReceiver() {
           context.startService(headlessIntent)
       }
 
-    } finally {
-      pendingResult.finish()
+    } catch (e: Exception) {
+      Log.e("TouchGrass", "[SR_RECEIVER] Error in onReceive", e)
     }
   }
 
@@ -246,7 +245,6 @@ class BootRestoreReceiver : BroadcastReceiver() {
     val action = intent.action ?: return
     if (action != Intent.ACTION_BOOT_COMPLETED && action != Intent.ACTION_MY_PACKAGE_REPLACED) return
     
-    val pendingResult = goAsync()
     try {
       Log.d("TouchGrass", "[SR_BOOT_RESTORE] broadcast receiver action [restoring alarms]")
       val prefs = context.getSharedPreferences("TouchGrassPrefs", Context.MODE_PRIVATE)
@@ -286,8 +284,6 @@ class BootRestoreReceiver : BroadcastReceiver() {
       }
     } catch (e: Exception) {
         Log.e("TouchGrass", "Error restoring alarms on boot", e)
-    } finally {
-      pendingResult.finish()
     }
   }
 }
@@ -302,11 +298,10 @@ import android.content.Intent
 
 class ActivityTransitionReceiver : BroadcastReceiver() {
   override fun onReceive(context: Context, intent: Intent) {
-    val pendingResult = goAsync()
     try {
       // TODO: Handle ActivityTransitionResult (Wake up location tracking or filter IN_VEHICLE)
-    } finally {
-      pendingResult.finish()
+    } catch (e: Exception) {
+      Log.e("TouchGrass", "[SR_TRANSITION] Error in onReceive", e)
     }
   }
 }
