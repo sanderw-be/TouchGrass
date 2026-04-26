@@ -1,6 +1,6 @@
 {
   "name": "touchgrass",
-  "version": "1.7.2",
+  "version": "1.7.3",
   "main": "index.ts",
   "scripts": {
     "start": "expo start",
