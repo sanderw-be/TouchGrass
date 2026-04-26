@@ -6,7 +6,7 @@
 
 ## Scale
 
-35 UI components · 58 library files · 1 middleware layers · 2 environment variables
+35 UI components · 58 library files · 1 middleware layers · 3 environment variables
 
 **UI:** 35 components (react) — see [ui.md](./ui.md)
 
@@ -26,6 +26,7 @@ Changes to these files have the widest blast radius across the codebase:
 ## Required Environment Variables
 
 - `EAS_BUILD_PROFILE` — `app.config.js`
+- `EXPO_PUBLIC_SHOW_DEV_MENU` — `src/screens/SettingsScreen.tsx`
 - `NODE_ENV` — `metro.config.js`
 
 ---
