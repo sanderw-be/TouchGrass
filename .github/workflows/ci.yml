@@ -134,7 +134,8 @@ jobs:
           BRANCH_NAME: ${{ github.event.pull_request.number && format('pr-{0}', github.event.pull_request.number) || github.ref_name }}
         run: |
           # FIX: Appended `--json > update.json` so jq has a file to parse
-          NODE_ENV=development npx --yes eas-cli update --branch "$BRANCH_NAME" --platform android --message "$COMMIT_MESSAGE" --json > update.json
+          cp .env.development .env
+          npx --yes eas-cli update --branch "$BRANCH_NAME" --platform android --message "$COMMIT_MESSAGE" --json > update.json
           
           # 2. Extract the manifestPermalink from the first item in the array
           RAW_URL=$(jq -r '.[0].manifestPermalink' update.json)
