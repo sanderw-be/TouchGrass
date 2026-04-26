@@ -121,7 +121,6 @@ export class NotificationInfrastructureService implements INotificationInfrastru
           DAILY_PLANNER_NOTIF_PREFIX
         );
         return {
-          shouldShowAlert: !isDailyPlanner,
           shouldPlaySound: !isDailyPlanner,
           shouldSetBadge: false,
           shouldShowBanner: !isDailyPlanner,

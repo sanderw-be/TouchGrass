@@ -5,8 +5,9 @@ import { IReminderQueueManager } from './ReminderQueueManager';
 import { IScheduledNotificationManager } from './ScheduledNotificationManager';
 import { CHANNEL_ID, DAILY_PLANNER_NOTIF_PREFIX } from './NotificationInfrastructureService';
 import { ReminderQueueEntry } from '../notificationManager';
-import { ScoreContributor, HourScore } from '../reminderAlgorithm'; // From src/notifications/reminderAlgorithm.ts
-import { WeatherPreferences } from '../../weather/types'; // From src/weather/types.ts
+import { ScoreContributor, HourScore } from '../reminderAlgorithm';
+import { WeatherPreferences } from '../../weather/types';
+import { SmartReminderModule, ReminderScheduleItem } from '../../modules/SmartReminderModule';
 
 export const FAILSAFE_REMINDER_PREFIX = 'failsafe_reminder_';
 const FAILSAFE_DAYS_AHEAD = 3;
@@ -460,6 +461,7 @@ export class SmartReminderScheduler implements ISmartReminderScheduler {
 
     const scheduledSlots = [];
     const newQueueEntries = [];
+    const scheduleItems: ReminderScheduleItem[] = [];
 
     // Clear queue before rebuild (important for tests that check intermediate state)
     await this.queueManager.clearQueue();
@@ -477,14 +479,13 @@ export class SmartReminderScheduler implements ISmartReminderScheduler {
       );
 
       const id = `smart_${this.formatLocalDateKey(triggerDate)}_${slot.hour}:${String(slot.minute).padStart(2, '0')}`;
-      await Notifications.scheduleNotificationAsync({
-        identifier: id,
-        content: { title, body, categoryIdentifier: 'reminder', color: '#4A7C59' },
-        trigger: {
-          type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-          seconds: Math.max(1, Math.floor((triggerDate.getTime() - Date.now()) / 1000)),
-          channelId: CHANNEL_ID,
-        },
+
+      scheduleItems.push({
+        timestamp: triggerDate.getTime(),
+        type: 'smart_reminder',
+        goalThreshold: dailyTarget,
+        title,
+        body,
       });
 
       scheduledSlots.push({ hour: slot.hour, minute: slot.minute });
@@ -494,6 +495,12 @@ export class SmartReminderScheduler implements ISmartReminderScheduler {
         status: 'date_planned' as ReminderQueueEntry['status'],
       });
       await this.calendarService.maybeAddOutdoorTimeToCalendar(triggerDate);
+    }
+
+    // Cancel old native reminders and set new ones
+    await SmartReminderModule.cancelAllReminders();
+    if (scheduleItems.length > 0) {
+      await SmartReminderModule.scheduleReminders(scheduleItems);
     }
 
     // Persist simple slots list for UI/logic checks (tests expect this key)

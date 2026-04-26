@@ -21,6 +21,8 @@ export const smartReminderHeadlessTask = async () => {
           timestamp: alarmTime.getTime(),
           type: 'smart_reminder',
           goalThreshold: 30,
+          title: 'Time to get outside!',
+          body: 'Your scheduled reminder is here.',
         };
       });
 

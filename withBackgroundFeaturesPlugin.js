@@ -48,6 +48,8 @@ class BackgroundFeaturesModule(private val reactContext: ReactApplicationContext
               obj.put("timestamp", item.getDouble("timestamp"))
               obj.put("type", item.getString("type"))
               obj.put("goalThreshold", item.getDouble("goalThreshold"))
+              obj.put("title", item.getString("title"))
+              obj.put("body", item.getString("body"))
               jsonArray.put(obj)
           }
       }
@@ -65,6 +67,8 @@ class BackgroundFeaturesModule(private val reactContext: ReactApplicationContext
           val intent = Intent(reactContext, SmartReminderReceiver::class.java).apply {
               action = "com.jollyheron.touchgrass.ACTION_SMART_REMINDER"
               putExtra("type", item.getString("type"))
+              putExtra("title", item.getString("title"))
+              putExtra("body", item.getString("body"))
           }
           val pendingIntent = PendingIntent.getBroadcast(
               reactContext,
@@ -153,6 +157,8 @@ class SmartReminderReceiver : BroadcastReceiver() {
     val pendingResult = goAsync()
     try {
       val type = intent.getStringExtra("type") ?: "Reminder"
+      val title = intent.getStringExtra("title") ?: "Time to get outside!"
+      val body = intent.getStringExtra("body") ?: "Your scheduled reminder is here."
       Log.d("TouchGrass", "[SR_RECEIVER] broadcastreceiver for notification called (type=$type)")
       
       val prefs = context.getSharedPreferences("TouchGrassPrefs", Context.MODE_PRIVATE)
@@ -162,7 +168,7 @@ class SmartReminderReceiver : BroadcastReceiver() {
           Log.d("TouchGrass", "[SR_RECEIVER] Goal met. Aborting reminder.")
       } else {
           Log.d("TouchGrass", "[SR_RECEIVER] Criteria passed. Firing notification.")
-          showNotification(context, type)
+          showNotification(context, type, title, body)
       }
       
       val headlessIntent = Intent(context, SmartReminderHeadlessService::class.java)
@@ -177,7 +183,7 @@ class SmartReminderReceiver : BroadcastReceiver() {
     }
   }
 
-  private fun showNotification(context: Context, type: String) {
+  private fun showNotification(context: Context, type: String, title: String, body: String) {
       Log.d("TouchGrass", "[SR_RECEIVER] broadcast receiver action [showing notification] type=$type")
       val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
       val channelId = "touchgrass_reminders"
@@ -192,8 +198,8 @@ class SmartReminderReceiver : BroadcastReceiver() {
 
       val notification = NotificationCompat.Builder(context, channelId)
           .setSmallIcon(context.resources.getIdentifier("ic_notification", "drawable", context.packageName))
-          .setContentTitle("Time to get outside!")
-          .setContentText("Your scheduled reminder is here.")
+          .setContentTitle(title)
+          .setContentText(body)
           .setContentIntent(pendingLaunchIntent)
           .setAutoCancel(true)
           .build()
@@ -260,6 +266,8 @@ class BootRestoreReceiver : BroadcastReceiver() {
               val alarmIntent = Intent(context, SmartReminderReceiver::class.java).apply {
                   this.action = "com.jollyheron.touchgrass.ACTION_SMART_REMINDER"
                   putExtra("type", item.getString("type"))
+                  putExtra("title", item.getString("title"))
+                  putExtra("body", item.getString("body"))
               }
               val pendingIntent = PendingIntent.getBroadcast(
                   context, i, alarmIntent,

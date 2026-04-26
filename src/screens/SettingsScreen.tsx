@@ -28,6 +28,7 @@ import type { SettingsStackParamList } from '../navigation/AppNavigator';
 import { useAppStore, ThemePreference } from '../store/useAppStore';
 import { useDetectionSettings } from '../hooks/useDetectionSettings';
 import { getSmartReminderScheduler } from '../notifications/notificationManager';
+import { SmartReminderModule } from '../modules/SmartReminderModule';
 
 const LANGUAGE_LABELS: Record<string, string> = {
   en: 'English',
@@ -84,8 +85,6 @@ export default function SettingsScreen() {
   const [showDiagnosticSheet, setShowDiagnosticSheet] = React.useState(false);
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
   const [devForceHalfHour, setDevForceHalfHour] = React.useState(false);
-  const [devMenuTaps, setDevMenuTaps] = React.useState(0);
-  const [forceShowDevMenu, setForceShowDevMenu] = React.useState(false);
   const languageSheetRef = useRef<BottomSheetModal>(null);
   const systemLocale = getDeviceSupportedLocale();
 
@@ -93,12 +92,11 @@ export default function SettingsScreen() {
 
   // Load dev settings
   useEffect(() => {
-    getSettingAsync('dev_force_half_hour_reminders', 'false').then((val) => {
-      setDevForceHalfHour(val === 'true');
-    });
-    getSettingAsync('dev_menu_unlocked', 'false').then((val) => {
-      setForceShowDevMenu(val === 'true');
-    });
+    if (__DEV__) {
+      getSettingAsync('dev_force_half_hour_reminders', 'false').then((val) => {
+        setDevForceHalfHour(val === 'true');
+      });
+    }
   }, []);
 
   // Hardware back press to close language sheet
@@ -135,7 +133,7 @@ export default function SettingsScreen() {
     return isTranslationKey ? t(label as TxKey) : label;
   };
 
-  const handleClearData = () => {
+  const handleClearData = useCallback(() => {
     Alert.alert(t('settings_clear_data_confirm_title'), t('settings_clear_data_confirm_body'), [
       { text: t('settings_clear_cancel'), style: 'cancel' },
       {
@@ -156,31 +154,32 @@ export default function SettingsScreen() {
         },
       },
     ]);
-  };
+  }, [handleShowIntro]);
 
-  const handleClearDayPlan = async () => {
+  const handleClearDayPlan = useCallback(async () => {
     getSmartReminderScheduler()._resetSchedulingGuards();
     await setSettingAsync('reminders_last_planned_date', '');
     Alert.alert('Dev Menu', 'dayPlanLastDate cleared. Reminders will re-plan on next trigger.');
-  };
+  }, []);
 
-  const handleToggleDevForceHalfHour = async () => {
+  const handleToggleDevForceHalfHour = useCallback(async () => {
     const newValue = !devForceHalfHour;
     setDevForceHalfHour(newValue);
     await setSettingAsync('dev_force_half_hour_reminders', newValue ? 'true' : 'false');
-  };
+  }, [devForceHalfHour]);
 
-  const handleVersionPress = async () => {
-    const newTaps = devMenuTaps + 1;
-    if (newTaps >= 5 && !forceShowDevMenu) {
-      setForceShowDevMenu(true);
-      await setSettingAsync('dev_menu_unlocked', 'true');
-      Alert.alert('Developer Mode', 'Developer menu has been unlocked.');
-    } else {
-      setDevMenuTaps(newTaps);
-      setShowDiagnosticSheet(true);
-    }
-  };
+  const handleTest10sAlarm = useCallback(async () => {
+    await SmartReminderModule.scheduleReminders([
+      {
+        timestamp: Date.now() + 10000,
+        type: 'smart_reminder',
+        goalThreshold: 0,
+        title: 'QA Test Alarm',
+        body: 'This is your 10-second test reminder.',
+      },
+    ]);
+    Alert.alert('Developer Mode', 'Test alarm scheduled for 10 seconds from now.');
+  }, []);
 
   const settingsPermissionIssues: string[] = [];
   if (detectionStatus.gps && !detectionStatus.gpsPermission) {
@@ -206,11 +205,11 @@ export default function SettingsScreen() {
       { id: 'about' },
       { id: 'activity_log' },
     ];
-    if (__DEV__ || forceShowDevMenu) {
+    if (__DEV__) {
       sections.push({ id: 'dev_menu' });
     }
     return sections;
-  }, [forceShowDevMenu]);
+  }, []);
 
   const HeaderComponent = () => (
     <>
@@ -378,12 +377,16 @@ export default function SettingsScreen() {
                     right={
                       <View style={styles.rowRightInline}>
                         {Constants.expoConfig?.version ? (
-                          <TouchableOpacity onPress={handleVersionPress} testID="version-badge">
+                          <TouchableOpacity
+                            onPress={() => setShowDiagnosticSheet(true)}
+                            testID="version-badge"
+                          >
                             <Text
                               style={styles.versionBadge}
                             >{`v${Constants.expoConfig.version}`}</Text>
                           </TouchableOpacity>
-                        ) : null}                        <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+                        ) : null}
+                        <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
                       </View>
                     }
                   />
@@ -461,6 +464,14 @@ export default function SettingsScreen() {
             <View>
               <Text style={styles.sectionHeader}>Developer Menu</Text>
               <Card style={styles.card}>
+                <TouchableOpacity onPress={handleTest10sAlarm}>
+                  <SettingRow
+                    icon={<Ionicons name="alarm-outline" size={20} color={colors.textSecondary} />}
+                    label="Test 10s Alarm"
+                    sublabel="Schedule a smart reminder 10s from now"
+                  />
+                </TouchableOpacity>
+                <Divider />
                 <TouchableOpacity onPress={handleClearDayPlan}>
                   <SettingRow
                     icon={<Ionicons name="bug-outline" size={20} color={colors.textSecondary} />}
@@ -475,7 +486,10 @@ export default function SettingsScreen() {
                   sublabel="Ignores user count and sends every 30 mins"
                   right={
                     <TouchableOpacity
-                      style={[styles.editBtn, devForceHalfHour && { backgroundColor: colors.grass }]}
+                      style={[
+                        styles.editBtn,
+                        devForceHalfHour && { backgroundColor: colors.grass },
+                      ]}
                       onPress={handleToggleDevForceHalfHour}
                     >
                       <Text
@@ -501,6 +515,7 @@ export default function SettingsScreen() {
       detectionStatus,
       devForceHalfHour,
       handleClearDayPlan,
+      handleTest10sAlarm,
       handleToggleDevForceHalfHour,
       handleToggleGPS,
       handleToggleHC,
@@ -515,6 +530,10 @@ export default function SettingsScreen() {
       togglingGPS,
       togglingHC,
       styles,
+      handleClearData,
+      handleShowIntro,
+      setThemePreference,
+      themePreference,
     ]
   );
 
