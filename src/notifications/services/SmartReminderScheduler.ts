@@ -388,36 +388,74 @@ export class SmartReminderScheduler implements ISmartReminderScheduler {
       await this.weatherService.fetchWeatherForecast({ allowPermissionPrompt: false });
     }
 
+    const isDevForceHalfHour =
+      (await this.storageService.getSettingAsync('dev_force_half_hour_reminders', 'false')) ===
+      'true';
+
     const now = new Date();
     const topSlots: HourScore[] = [];
-    while (topSlots.length < remindersCount) {
-      const scores = await this.reminderAlgorithm.scoreReminderHours(
-        todayMinutes,
-        dailyTarget,
-        now.getHours(),
-        now.getMinutes(),
-        topSlots
-      );
 
-      let pickedInThisRound = false;
-      for (const slot of scores) {
-        if (slot.score < 0.3) continue;
-        const slotTotalMinutes = slot.hour * 60 + slot.minute;
-        const nowTotalMinutes = now.getHours() * 60 + now.getMinutes();
+    if (isDevForceHalfHour) {
+      let currentHour = now.getHours();
+      let currentMinute = now.getMinutes();
 
-        if (slotTotalMinutes <= nowTotalMinutes) continue;
-
-        // Check if already in topSlots
-        if (topSlots.some((s) => s.hour === slot.hour && s.minute === slot.minute)) continue;
-
-        if (await this.scheduledManager.isSlotNearScheduledNotification(slot.hour, slot.minute, 30))
-          continue;
-
-        topSlots.push(slot);
-        pickedInThisRound = true;
-        break; // Found the best available for this slot position
+      // Align to next half-hour slot
+      if (currentMinute < 30) {
+        currentMinute = 30;
+      } else {
+        currentMinute = 0;
+        currentHour += 1;
       }
-      if (!pickedInThisRound) break; // No more suitable slots found
+
+      while (currentHour < 24) {
+        topSlots.push({
+          hour: currentHour,
+          minute: currentMinute as 0 | 30,
+          score: 1.0,
+          reason: 'Dev override',
+          contributors: [
+            { reason: 'dev_override', description: 'Dev override: every 30 min', score: 1.0 },
+          ],
+        });
+
+        currentMinute += 30;
+        if (currentMinute >= 60) {
+          currentMinute = 0;
+          currentHour += 1;
+        }
+      }
+    } else {
+      while (topSlots.length < remindersCount) {
+        const scores = await this.reminderAlgorithm.scoreReminderHours(
+          todayMinutes,
+          dailyTarget,
+          now.getHours(),
+          now.getMinutes(),
+          topSlots
+        );
+
+        let pickedInThisRound = false;
+        for (const slot of scores) {
+          if (slot.score < 0.3) continue;
+          const slotTotalMinutes = slot.hour * 60 + slot.minute;
+          const nowTotalMinutes = now.getHours() * 60 + now.getMinutes();
+
+          if (slotTotalMinutes <= nowTotalMinutes) continue;
+
+          // Check if already in topSlots
+          if (topSlots.some((s) => s.hour === slot.hour && s.minute === slot.minute)) continue;
+
+          if (
+            await this.scheduledManager.isSlotNearScheduledNotification(slot.hour, slot.minute, 30)
+          )
+            continue;
+
+          topSlots.push(slot);
+          pickedInThisRound = true;
+          break; // Found the best available for this slot position
+        }
+        if (!pickedInThisRound) break; // No more suitable slots found
+      }
     }
 
     const scheduledSlots = [];
