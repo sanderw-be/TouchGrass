@@ -481,7 +481,7 @@ export class SmartReminderScheduler implements ISmartReminderScheduler {
       const id = `smart_${this.formatLocalDateKey(triggerDate)}_${slot.hour}:${String(slot.minute).padStart(2, '0')}`;
 
       const contributors =
-        slot.contributors?.map((c: any) => c.description) || [];
+        slot.contributors?.map((c: ScoreContributor) => c.description) || [];
 
       scheduleItems.push({
         timestamp: triggerDate.getTime(),
