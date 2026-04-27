@@ -113,19 +113,36 @@ class BackgroundFeaturesModule(private val reactContext: ReactApplicationContext
       val intent = Intent(reactContext, SmartReminderReceiver::class.java).apply {
           action = "com.jollyheron.touchgrass.ACTION_SMART_REMINDER"
       }
-      for (i in 0 until 50) {
+      
+      val prefs = reactContext.getSharedPreferences("TouchGrassPrefs", Context.MODE_PRIVATE)
+      val scheduleStr = prefs.getString("reminder_schedule", null)
+      var sweepLimit = 100 // "Safe Sweep" ceiling for legacy intents
+      
+      if (scheduleStr != null) {
+          try {
+              val jsonArray = JSONArray(scheduleStr)
+              if (jsonArray.length() > sweepLimit) {
+                  sweepLimit = jsonArray.length()
+              }
+          } catch (e: Exception) {
+              Log.e("TouchGrass", "[SR_CANCEL] Error parsing schedule for count", e)
+          }
+      }
+
+      for (i in 0 until sweepLimit) {
+          // FLAG_NO_CREATE: Returns null if it doesn't exist. Contiguous indices not required.
           val pendingIntent = PendingIntent.getBroadcast(
               reactContext,
               i,
               intent,
-              PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+              PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
           )
           if (pendingIntent != null) {
               alarmManager.cancel(pendingIntent)
               pendingIntent.cancel()
           }
       }
-      val prefs = reactContext.getSharedPreferences("TouchGrassPrefs", Context.MODE_PRIVATE)
+      
       prefs.edit().remove("reminder_schedule").apply()
       promise.resolve(null)
     } catch (e: Exception) {
