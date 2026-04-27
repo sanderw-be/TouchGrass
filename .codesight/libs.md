@@ -1,7 +1,7 @@
 # Libraries
 
 - `appBootstrap.ts`
-  - function performCriticalInitializationAsync: () => Promise<CriticalAppState>
+  - function performCriticalInitializationAsync: (onFeedbackTriggered) => void
   - function performDeferredInitialization: () => void
   - interface CriticalAppState
 - `modules/alarm-bridge-native/src/index.ts`
@@ -19,7 +19,7 @@
   - function getSelectedCalendarId: () => Promise<string>
   - _...6 more_
 - `src/core/container.ts`
-  - function createContainer: (db) => IAppContainer
+  - function createContainer: (db, onFeedbackTriggered) => void
   - function getContainer: () => IAppContainer
   - interface IAppContainer
 - `src/detection/GeofenceManager.ts`
