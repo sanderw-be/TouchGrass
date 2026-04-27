@@ -453,6 +453,19 @@ const withBackgroundFeaturesPlugin = (config) => {
   // 3. Update AndroidManifest.xml for Receivers
   config = withAndroidManifest(config, (config) => {
     const manifest = config.modResults.manifest;
+
+    // Add permissions
+    manifest['uses-permission'] = manifest['uses-permission'] ?? [];
+    const permissions = [
+      'android.permission.FOREGROUND_SERVICE',
+      'android.permission.FOREGROUND_SERVICE_SHORT_SERVICE',
+    ];
+    for (const permission of permissions) {
+      if (!manifest['uses-permission'].some((p) => p.$?.['android:name'] === permission)) {
+        manifest['uses-permission'].push({ $: { 'android:name': permission } });
+      }
+    }
+
     const application = manifest.application?.[0];
     if (!application) return config;
 
