@@ -9,6 +9,7 @@ import { WeatherCondition } from '../weather/types';
 
 interface HeadlessData {
   type: string;
+  contributors?: string;
 }
 
 export const handleSmartReminder = async (data: HeadlessData) => {
@@ -48,11 +49,20 @@ export const handleSmartReminder = async (data: HeadlessData) => {
         ),
     });
 
+    let contributors: string[] = [];
+    if (data.contributors) {
+      try {
+        contributors = JSON.parse(data.contributors);
+      } catch (e) {
+        console.warn('[SR_HEADLESS] Failed to parse contributors:', e);
+      }
+    }
+
     const { title, body } = await messageBuilder.buildReminderMessage(
       todayMinutes,
       dailyGoal?.targetMinutes ?? 30,
       new Date().getHours(),
-      [],
+      contributors,
       weatherAvailable
     );
 
