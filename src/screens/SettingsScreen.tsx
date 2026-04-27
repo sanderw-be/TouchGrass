@@ -174,13 +174,14 @@ export default function SettingsScreen() {
   const handleTest10sAlarm = useCallback(async () => {
     const builder = getReminderMessageBuilder();
     const hour = new Date().getHours();
+    const contributorsArr = [t('notif_reason_pattern')];
 
     // Build a realistic reminder message
     const { title, body } = await builder.buildReminderMessage(
       0, // todayMinutes
       30, // dailyTarget
       hour, // hour
-      [t('notif_reason_pattern')], // contributors
+      contributorsArr, // contributors
       true // includeWeather
     );
 
@@ -191,6 +192,7 @@ export default function SettingsScreen() {
         goalThreshold: 0,
         title,
         body,
+        contributors: contributorsArr,
       },
     ]);
     Alert.alert('Developer Mode', 'Test alarm scheduled for 10 seconds from now.');
