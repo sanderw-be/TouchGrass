@@ -197,11 +197,12 @@ class SmartReminderReceiver : BroadcastReceiver() {
       val pendingLaunchIntent = PendingIntent.getActivity(context, 0, launchIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
 
       // Safely resolve the icon
-      var iconResId = context.resources.getIdentifier("ic_stat_ic_notification", "drawable", context.packageName)
-      if (iconResId == 0) {
-          // Fallback to the app's default launcher icon
-          iconResId = context.applicationInfo.icon
-      }
+      val iconResId = listOf(
+          context.resources.getIdentifier("notification_icon", "drawable", context.packageName),
+          context.resources.getIdentifier("ic_stat_ic_notification", "drawable", context.packageName),
+          context.resources.getIdentifier("shell_notification_icon", "drawable", context.packageName),
+          android.R.drawable.ic_dialog_info // Final system fallback
+      ).firstOrNull { it != 0 } ?: android.R.drawable.ic_dialog_info
 
       val notification = NotificationCompat.Builder(context, channelId)
           .setSmallIcon(iconResId)
@@ -219,12 +220,57 @@ class SmartReminderReceiver : BroadcastReceiver() {
 const SMART_REMINDER_HEADLESS_SERVICE_KT = `\
 package ${JAVA_PACKAGE}
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.Context
 import android.content.Intent
+import android.os.Build
+import androidx.core.app.NotificationCompat
 import com.facebook.react.HeadlessJsTaskService
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.jstasks.HeadlessJsTaskConfig
 
 class SmartReminderHeadlessService : HeadlessJsTaskService() {
+    override fun onCreate() {
+        super.onCreate()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            ensureNotificationChannel()
+            val notification = buildSilentNotification()
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                startForeground(
+                    NOTIFICATION_ID,
+                    notification,
+                    android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_SHORT_SERVICE
+                )
+            } else {
+                startForeground(NOTIFICATION_ID, notification)
+            }
+        }
+    }
+
+    private fun ensureNotificationChannel() {
+        val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            if (nm.getNotificationChannel(CHANNEL_ID) == null) {
+                val channel = NotificationChannel(
+                    CHANNEL_ID,
+                    "Background tasks",
+                    NotificationManager.IMPORTANCE_MIN
+                ).apply { setShowBadge(false) }
+                nm.createNotificationChannel(channel)
+            }
+        }
+    }
+
+    private fun buildSilentNotification(): android.app.Notification {
+        return NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle("TouchGrass background task")
+            .setSmallIcon(android.R.drawable.ic_popup_sync)
+            .setPriority(NotificationCompat.PRIORITY_MIN)
+            .setShowWhen(false)
+            .build()
+    }
+
     protected override fun getTaskConfig(intent: Intent?): HeadlessJsTaskConfig? =
         HeadlessJsTaskConfig(
             "SmartReminderHeadlessTask",
@@ -232,6 +278,17 @@ class SmartReminderHeadlessService : HeadlessJsTaskService() {
             10000L,
             true
         )
+
+    override fun onHeadlessJsTaskFinish(taskId: Int) {
+        super.onHeadlessJsTaskFinish(taskId)
+        stopForeground(STOP_FOREGROUND_REMOVE)
+        stopSelf()
+    }
+
+    companion object {
+        private const val NOTIFICATION_ID = 0x1001
+        private const val CHANNEL_ID = "touchgrass_headless_bg"
+    }
 }
 `;
 
@@ -410,11 +467,16 @@ const withBackgroundFeaturesPlugin = (config) => {
       }
     };
 
-    const addService = (name, exported) => {
+    const addService = (name, exported, foregroundServiceType = null) => {
       const fullName = `${JAVA_PACKAGE}.${name}`;
       application.service = application.service ?? [];
-      if (!application.service.some((s) => s.$?.['android:name'] === fullName)) {
-        application.service.push({ $: { 'android:name': fullName, 'android:exported': exported } });
+      let service = application.service.find((s) => s.$?.['android:name'] === fullName);
+      if (!service) {
+        service = { $: { 'android:name': fullName, 'android:exported': exported } };
+        application.service.push(service);
+      }
+      if (foregroundServiceType) {
+        service.$['android:foregroundServiceType'] = foregroundServiceType;
       }
     };
 
@@ -429,7 +491,7 @@ const withBackgroundFeaturesPlugin = (config) => {
       },
     ]);
 
-    addService('SmartReminderHeadlessService', 'false');
+    addService('SmartReminderHeadlessService', 'false', 'shortService');
 
     return config;
   });
