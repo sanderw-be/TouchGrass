@@ -60,7 +60,7 @@ jobs:
         run: npm run type-check
 
       - name: Run unit tests
-        run: npm test -- --coverage --passWithNoTests
+        run: npm test -- --coverage --passWithNoTests --bail
 
       - name: Run integration tests
         run: npx jest -c jest.integration.config.js
