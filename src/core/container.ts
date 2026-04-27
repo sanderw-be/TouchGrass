@@ -25,7 +25,7 @@ import {
   SmartReminderScheduler,
 } from '../notifications/services/SmartReminderScheduler';
 
-import { useAppStore } from '../store/useAppStore';
+import type { FeedbackModalData } from '../store/useAppStore';
 import {
   hasUpcomingEvent,
   maybeAddOutdoorTimeToCalendar,
@@ -52,7 +52,10 @@ let container: IAppContainer;
  * Initializes the dependency injection container.
  * Must be called after the database is ready.
  */
-export function createContainer(db: SQLiteDatabase): IAppContainer {
+export function createContainer(
+  db: SQLiteDatabase,
+  onFeedbackTriggered: (data: FeedbackModalData) => void
+): IAppContainer {
   const storageService = new StorageService(db);
   const notificationInfrastructureService = new NotificationInfrastructureService();
   const reminderMessageBuilder = new ReminderMessageBuilder(
@@ -78,7 +81,7 @@ export function createContainer(db: SQLiteDatabase): IAppContainer {
     storageService,
     reminderMessageBuilder,
     (data) => {
-      useAppStore.getState().triggerFeedback(data);
+      onFeedbackTriggered(data);
     }
   );
 
