@@ -9,6 +9,7 @@
   - function cancelPulse: () => Promise<void>
   - const PULSE_TASK_NAME
 - `src/background/smartReminderHeadlessTask.ts` — function smartReminderHeadlessTask
+- `src/background/smartReminderTask.ts` — function handleSmartReminder
 - `src/calendar/calendarService.ts`
   - function cleanupTouchGrassCalendars: () => Promise<CalendarCleanupResult>
   - function requestCalendarPermissions: () => Promise<boolean>
