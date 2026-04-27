@@ -202,7 +202,7 @@ export async function scoreReminderHours(
         }
         if (weatherScore > 0) {
           const emoji = getWeatherEmoji(weather);
-          const desc = getWeatherDescription(weather);
+          const desc = t(getWeatherDescription(weather));
           contributors.push({
             reason: 'weather',
             score: weatherScore,
