@@ -8,6 +8,7 @@ export interface ReminderScheduleItem {
   goalThreshold: number;
   title: string;
   body: string;
+  contributors?: string[];
 }
 
 export const SmartReminderModule = {
