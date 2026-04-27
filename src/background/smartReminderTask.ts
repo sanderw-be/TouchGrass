@@ -62,6 +62,8 @@ export const handleSmartReminder = async (data: HeadlessData) => {
         title,
         body,
         data: { type: data.type },
+        categoryIdentifier: 'reminder',
+        color: '#4A7C59',
       },
       trigger: null, // immediate
     });
