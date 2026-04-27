@@ -27,7 +27,7 @@ import { PRIVACY_POLICY_URL } from '../utils/constants';
 import type { SettingsStackParamList } from '../navigation/AppNavigator';
 import { useAppStore, ThemePreference } from '../store/useAppStore';
 import { useDetectionSettings } from '../hooks/useDetectionSettings';
-import { getSmartReminderScheduler } from '../notifications/notificationManager';
+import { getSmartReminderScheduler, getReminderMessageBuilder } from '../notifications/notificationManager';
 import { SmartReminderModule } from '../modules/SmartReminderModule';
 
 const LANGUAGE_LABELS: Record<string, string> = {
@@ -169,17 +169,29 @@ export default function SettingsScreen() {
   }, [devForceHalfHour]);
 
   const handleTest10sAlarm = useCallback(async () => {
+    const builder = getReminderMessageBuilder();
+    const hour = new Date().getHours();
+    
+    // Build a realistic reminder message
+    const { title, body } = await builder.buildReminderMessage(
+      0, // todayMinutes
+      30, // dailyTarget
+      hour, // hour
+      [t('notif_reason_pattern')], // contributors
+      true // includeWeather
+    );
+
     await SmartReminderModule.scheduleReminders([
       {
         timestamp: Date.now() + 10000,
         type: 'smart_reminder',
         goalThreshold: 0,
-        title: 'QA Test Alarm',
-        body: 'This is your 10-second test reminder.',
+        title,
+        body,
       },
     ]);
     Alert.alert('Developer Mode', 'Test alarm scheduled for 10 seconds from now.');
-  }, []);
+  }, [t]);
 
   const settingsPermissionIssues: string[] = [];
   if (detectionStatus.gps && !detectionStatus.gpsPermission) {
