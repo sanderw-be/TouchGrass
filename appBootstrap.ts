@@ -11,6 +11,7 @@ import {
 import { initDetection } from './src/detection/index';
 import { requestWidgetRefresh } from './src/utils/widgetHelper';
 import { refreshBatteryOptimizationSetting } from './src/utils/batteryOptimization';
+import type { FeedbackModalData } from './src/store/useAppStore';
 
 export interface CriticalAppState {
   showIntro: boolean;
@@ -20,12 +21,14 @@ export interface CriticalAppState {
 /**
  * Performs critical-path initialization asynchronously: database and language settings.
  */
-export async function performCriticalInitializationAsync(): Promise<CriticalAppState> {
+export async function performCriticalInitializationAsync(
+  onFeedbackTriggered: (data: FeedbackModalData) => void
+): Promise<CriticalAppState> {
   // Database must be ready before anything else
   await initDatabaseAsync();
 
   // Initialize IoC Container
-  createContainer(db);
+  createContainer(db, onFeedbackTriggered);
 
   // Apply stored language preference if available
   const storedLanguage = await getSettingAsync('language', 'system');

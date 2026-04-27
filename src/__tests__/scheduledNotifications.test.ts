@@ -16,7 +16,7 @@ describe('scheduledNotifications', () => {
       getAllAsync: jest.fn(),
       runAsync: jest.fn(),
     };
-    const container = createContainer(mockDb as any);
+    const container = createContainer(mockDb as any, jest.fn());
     // Link container storageService to Database mocks
     container.storageService.getScheduledNotificationsAsync =
       Database.getScheduledNotificationsAsync as any;

@@ -66,7 +66,7 @@ describe('notificationManager', () => {
       execAsync: jest.fn(),
       execSync: jest.fn(),
     };
-    const container = createContainer(mockDb as any);
+    const container = createContainer(mockDb as any, mockTriggerFeedback);
 
     // Linked container storageService to Database module mocks and local state
     const settingsStore: Record<string, string> = {};

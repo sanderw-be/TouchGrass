@@ -86,7 +86,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   initialize: async (systemScheme: ColorSchemeName) => {
     try {
       const { showIntro: initialShowIntro, initialLocale } =
-        await performCriticalInitializationAsync();
+        await performCriticalInitializationAsync((data) => get().triggerFeedback(data));
 
       const storedTheme = await getSettingAsync('theme_preference', 'system');
       const themePref =
