@@ -5,6 +5,7 @@ import { ReminderMessageBuilder } from '../notifications/services/ReminderMessag
 import { StorageService } from '../storage/StorageService';
 import { db } from '../storage/db';
 import * as weatherAlgorithm from '../weather/weatherAlgorithm';
+import { WeatherCondition } from '../weather/types';
 
 interface HeadlessData {
   type: string;
@@ -12,12 +13,12 @@ interface HeadlessData {
 
 export const handleSmartReminder = async (data: HeadlessData) => {
   console.log('[SR_HEADLESS] Task started', data);
-  
+
   try {
     // 1. Check goal status
     const todayMinutes = await getTodayMinutesAsync();
     const dailyGoal = await getCurrentDailyGoalAsync();
-    
+
     if (dailyGoal && todayMinutes >= dailyGoal.targetMinutes) {
       console.log('[SR_HEADLESS] Goal already met. Skipping notification.');
       return;
@@ -26,7 +27,7 @@ export const handleSmartReminder = async (data: HeadlessData) => {
     // 2. Weather Fetch with 1s timeout
     const weatherTimeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), 1000));
     const weatherFetch = fetchWeatherForecast({ allowPermissionPrompt: false });
-    
+
     await Promise.race([weatherFetch, weatherTimeout]);
     const weatherAvailable = await isWeatherDataAvailable();
 
@@ -35,19 +36,23 @@ export const handleSmartReminder = async (data: HeadlessData) => {
     const weatherServiceWrapper = {
         isWeatherDataAvailable: () => isWeatherDataAvailable()
     };
-    
-    const messageBuilder = new ReminderMessageBuilder(
-        storageService,
-        weatherServiceWrapper,
-        weatherAlgorithm
-    );
 
-    const { title, body } = await messageBuilder.buildReminderMessage(
-        todayMinutes,
-        dailyGoal?.targetMinutes ?? 30,
-        new Date().getHours(),
-        [], 
-        weatherAvailable
+    const messageBuilder = new ReminderMessageBuilder(
+      storageService,
+      weatherServiceWrapper,
+      {
+        getWeatherEmoji: (code: number | null) =>
+          weatherAlgorithm.getWeatherEmoji(
+            code === null ? null : ({ weatherCode: code, isDay: true } as unknown as WeatherCondition)
+          ),
+        getWeatherDescription: (code: number | null) =>
+          weatherAlgorithm.getWeatherDescription(
+            code === null ? null : ({ weatherCode: code } as unknown as WeatherCondition)
+          ),
+      }
+    );
+      [],
+      weatherAvailable
     );
 
     // 4. Schedule Notification
