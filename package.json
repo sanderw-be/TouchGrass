@@ -9,6 +9,7 @@
     "android:dev": "npx expo run:android --variant debug",
     "android:device": "npx expo run:android --variant debug",
     "android:release": "npx expo run:android --variant release",
+    "android:kotlin-check": "npx expo prebuild --platform android && cd android && gradlew.bat :app:compileDebugKotlin",
     "ios": "npx expo run:ios",
     "web": "npx expo start --web",
     "postinstall": "patch-package",

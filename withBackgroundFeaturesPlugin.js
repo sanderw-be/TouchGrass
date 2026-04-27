@@ -170,7 +170,7 @@ class BackgroundFeaturesPackage : ReactPackage {
 `;
 
 const SMART_REMINDER_RECEIVER_KT = `\
-package \${JAVA_PACKAGE}
+package ${JAVA_PACKAGE}
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
