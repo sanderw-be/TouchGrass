@@ -6,7 +6,7 @@ import { registerWidgetTaskHandler } from 'react-native-android-widget';
 import App from './App';
 import { PULSE_TASK_NAME } from 'alarm-bridge-native';
 import { widgetTaskHandler } from './src/widget/widget-task-handler';
-import { smartReminderHeadlessTask } from './src/background/smartReminderHeadlessTask';
+import { handleSmartReminder } from './src/background/smartReminderTask';
 
 // Register the Android widget task handler as the very first executable
 // statement — before registerRootComponent so the headless JS boot path is
@@ -15,7 +15,7 @@ import { smartReminderHeadlessTask } from './src/background/smartReminderHeadles
 // execution time-limit.
 registerWidgetTaskHandler(widgetTaskHandler);
 
-AppRegistry.registerHeadlessTask('SmartReminderHeadlessTask', () => smartReminderHeadlessTask);
+AppRegistry.registerHeadlessTask('SmartReminderHeadlessTask', () => handleSmartReminder);
 
 // ---------------------------------------------------------------------------
 // Pulsar headless task (Legacy)
