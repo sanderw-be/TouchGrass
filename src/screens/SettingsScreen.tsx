@@ -27,7 +27,10 @@ import { PRIVACY_POLICY_URL } from '../utils/constants';
 import type { SettingsStackParamList } from '../navigation/AppNavigator';
 import { useAppStore, ThemePreference } from '../store/useAppStore';
 import { useDetectionSettings } from '../hooks/useDetectionSettings';
-import { getSmartReminderScheduler, getReminderMessageBuilder } from '../notifications/notificationManager';
+import {
+  getSmartReminderScheduler,
+  getReminderMessageBuilder,
+} from '../notifications/notificationManager';
 import { SmartReminderModule } from '../modules/SmartReminderModule';
 
 const LANGUAGE_LABELS: Record<string, string> = {
@@ -171,7 +174,7 @@ export default function SettingsScreen() {
   const handleTest10sAlarm = useCallback(async () => {
     const builder = getReminderMessageBuilder();
     const hour = new Date().getHours();
-    
+
     // Build a realistic reminder message
     const { title, body } = await builder.buildReminderMessage(
       0, // todayMinutes
@@ -191,7 +194,7 @@ export default function SettingsScreen() {
       },
     ]);
     Alert.alert('Developer Mode', 'Test alarm scheduled for 10 seconds from now.');
-  }, [t]);
+  }, []);
 
   const settingsPermissionIssues: string[] = [];
   if (detectionStatus.gps && !detectionStatus.gpsPermission) {
