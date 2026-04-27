@@ -65,7 +65,7 @@ export class ReminderMessageBuilder implements IReminderMessageBuilder {
       if (joined) {
         // Capitalize first letter
         joined = joined.charAt(0).toUpperCase() + joined.slice(1);
-        body += `. ${joined}.`;
+        body += ` ${joined}.`;
       }
     }
 
@@ -92,7 +92,7 @@ export class ReminderMessageBuilder implements IReminderMessageBuilder {
           const emoji = this.weatherAlgorithm.getWeatherEmoji(hourData.weatherCode);
           const description = t(this.weatherAlgorithm.getWeatherDescription(hourData.weatherCode));
           const temperature = this._getTemperatureString(hourData.temperature, preferCelsius);
-          body += `. ${emoji} ${t('notif_weather_context', { desc: description, temp: temperature })}.`;
+          body += ` ${emoji} ${t('notif_weather_context', { desc: description, temp: temperature })}`;
           appendedWeather = true;
         }
 
@@ -103,7 +103,7 @@ export class ReminderMessageBuilder implements IReminderMessageBuilder {
           const emoji = this.weatherAlgorithm.getWeatherEmoji(null); // Use null for generic/fallback emoji
           const description = t(this.weatherAlgorithm.getWeatherDescription(null)); // Use null for generic/fallback description
           const temperature = this._getTemperatureString(null, preferCelsius); // Use null for generic/fallback temperature
-          body += `. ${emoji} ${t('notif_weather_context', { desc: description, temp: temperature })}.`;
+          body += ` ${emoji} ${t('notif_weather_context', { desc: description, temp: temperature })}`;
         }
       }
     }
