@@ -51,6 +51,17 @@ class BackgroundFeaturesModule(private val reactContext: ReactApplicationContext
               obj.put("goalThreshold", item.getDouble("goalThreshold"))
               if (item.hasKey("title")) obj.put("title", item.getString("title"))
               if (item.hasKey("body")) obj.put("body", item.getString("body"))
+              
+              if (item.hasKey("contributors")) {
+                  val contributorsArr = item.getArray("contributors")
+                  if (contributorsArr != null) {
+                      val contributorsJson = JSONArray()
+                      for (j in 0 until contributorsArr.size()) {
+                          contributorsJson.put(contributorsArr.getString(j))
+                      }
+                      obj.put("contributors", contributorsJson.toString())
+                  }
+              }
               jsonArray.put(obj)
           }
       }
@@ -70,6 +81,7 @@ class BackgroundFeaturesModule(private val reactContext: ReactApplicationContext
               putExtra("type", item.getString("type"))
               if (item.has("title")) putExtra("title", item.getString("title"))
               if (item.has("body")) putExtra("body", item.getString("body"))
+              if (item.has("contributors")) putExtra("contributors", item.getString("contributors"))
           }
           val pendingIntent = PendingIntent.getBroadcast(
               reactContext,
@@ -141,7 +153,7 @@ class BackgroundFeaturesPackage : ReactPackage {
 `;
 
 const SMART_REMINDER_RECEIVER_KT = `\
-package ${JAVA_PACKAGE}
+package \${JAVA_PACKAGE}
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -157,8 +169,6 @@ class SmartReminderReceiver : BroadcastReceiver() {
   override fun onReceive(context: Context, intent: Intent) {
     try {
       val type = intent.getStringExtra("type") ?: "Reminder"
-      val title = intent.getStringExtra("title") ?: "Time to get outside!"
-      val body = intent.getStringExtra("body") ?: "Your scheduled reminder is here."
       Log.d("TouchGrass", "[SR_RECEIVER] broadcastreceiver for notification called (type=$type)")
       
       val prefs = context.getSharedPreferences("TouchGrassPrefs", Context.MODE_PRIVATE)
@@ -167,52 +177,20 @@ class SmartReminderReceiver : BroadcastReceiver() {
       if (goalMet) {
           Log.d("TouchGrass", "[SR_RECEIVER] Goal met. Aborting reminder.")
       } else {
-          Log.d("TouchGrass", "[SR_RECEIVER] Criteria passed. Firing notification.")
-          showNotification(context, type, title, body)
-      }
-      
-      val headlessIntent = Intent(context, SmartReminderHeadlessService::class.java)
-      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-          context.startForegroundService(headlessIntent)
-      } else {
-          context.startService(headlessIntent)
+          Log.d("TouchGrass", "[SR_RECEIVER] Criteria passed. Starting headless service.")
+          val headlessIntent = Intent(context, SmartReminderHeadlessService::class.java).apply {
+              intent.extras?.let { putExtras(it) }
+          }
+          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+              context.startForegroundService(headlessIntent)
+          } else {
+              context.startService(headlessIntent)
+          }
       }
 
     } catch (e: Exception) {
       Log.e("TouchGrass", "[SR_RECEIVER] Error in onReceive", e)
     }
-  }
-
-  private fun showNotification(context: Context, type: String, title: String, body: String) {
-      Log.d("TouchGrass", "[SR_RECEIVER] broadcast receiver action [showing notification] type=$type")
-      val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-      val channelId = "touchgrass_reminders"
-      
-      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-          val channel = NotificationChannel(channelId, "Smart Reminders", NotificationManager.IMPORTANCE_DEFAULT)
-          notificationManager.createNotificationChannel(channel)
-      }
-
-      val launchIntent = context.packageManager.getLaunchIntentForPackage(context.packageName)
-      val pendingLaunchIntent = PendingIntent.getActivity(context, 0, launchIntent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-
-      // Safely resolve the icon
-      val iconResId = listOf(
-          context.resources.getIdentifier("notification_icon", "drawable", context.packageName),
-          context.resources.getIdentifier("ic_stat_ic_notification", "drawable", context.packageName),
-          context.resources.getIdentifier("shell_notification_icon", "drawable", context.packageName),
-          android.R.drawable.ic_dialog_info // Final system fallback
-      ).firstOrNull { it != 0 } ?: android.R.drawable.ic_dialog_info
-
-      val notification = NotificationCompat.Builder(context, channelId)
-          .setSmallIcon(iconResId)
-          .setContentTitle(title)
-          .setContentText(body)
-          .setContentIntent(pendingLaunchIntent)
-          .setAutoCancel(true)
-          .build()
-
-      notificationManager.notify(System.currentTimeMillis().toInt(), notification)
   }
 }
 `;
@@ -271,13 +249,24 @@ class SmartReminderHeadlessService : HeadlessJsTaskService() {
             .build()
     }
 
-    protected override fun getTaskConfig(intent: Intent?): HeadlessJsTaskConfig? =
-        HeadlessJsTaskConfig(
+    protected override fun getTaskConfig(intent: Intent?): HeadlessJsTaskConfig? {
+        val data = Arguments.createMap()
+        intent?.extras?.let { extras ->
+            for (key in extras.keySet()) {
+                val value = extras.get(key)
+                if (value is String) data.putString(key, value)
+                else if (value is Int) data.putInt(key, value)
+                else if (value is Double) data.putDouble(key, value)
+                else if (value is Boolean) data.putBoolean(key, value)
+            }
+        }
+        return HeadlessJsTaskConfig(
             "SmartReminderHeadlessTask",
-            Arguments.createMap(),
+            data,
             10000L,
             true
         )
+    }
 
     override fun onHeadlessJsTaskFinish(taskId: Int) {
         super.onHeadlessJsTaskFinish(taskId)
@@ -330,6 +319,7 @@ class BootRestoreReceiver : BroadcastReceiver() {
                   putExtra("type", item.getString("type"))
                   if (item.has("title")) putExtra("title", item.getString("title"))
                   if (item.has("body")) putExtra("body", item.getString("body"))
+                  if (item.has("contributors")) putExtra("contributors", item.getString("contributors"))
               }
               val pendingIntent = PendingIntent.getBroadcast(
                   context, i, alarmIntent,
