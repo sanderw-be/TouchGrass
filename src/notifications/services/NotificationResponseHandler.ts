@@ -88,8 +88,7 @@ export class NotificationResponseHandler implements INotificationResponseHandler
         todayMinutes,
         targetMinutes,
         snoozeHour,
-        undefined,
-        false
+        undefined
       );
 
       await Notifications.scheduleNotificationAsync({

@@ -1960,7 +1960,7 @@ describe('notificationManager', () => {
       jest.restoreAllMocks();
     });
 
-    it('includes weather description and temperature in notification body when weather is enabled and available', async () => {
+    it('does not automatically append weather to notification body when weather is enabled but not a contributor', async () => {
       (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(0);
       (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
       (Database.getSettingAsync as jest.Mock).mockImplementation(
@@ -1986,10 +1986,10 @@ describe('notificationManager', () => {
 
       await getSmartReminderScheduler().scheduleDayReminders();
 
-      const call = (SmartReminderModule.scheduleReminders as jest.Mock).mock.calls[0][0][0];
-      // Body should include emoji and the weather context i18n key
-      expect(call.body).toContain('🌡️');
-      expect(call.body).toContain('notif_weather_context');
+      const call = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls[0][0];
+      // Body should NOT include emoji and the weather context automatically
+      expect(call.content.body).not.toContain('🌡️');
+      expect(call.content.body).not.toContain('notif_weather_context');
 
       jest.restoreAllMocks();
     });
@@ -2080,47 +2080,6 @@ describe('notificationManager', () => {
       expect(call.body).toMatch(/notif_reason_after_work/i);
       expect(call.body).toContain('notif_reason_pattern');
       expect(call.body).toContain(', notif_contributor_and ');
-
-      jest.restoreAllMocks();
-    });
-
-    it('uses weather fallback when no contributors are provided', async () => {
-      (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(0);
-      (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
-      (Database.getSettingAsync as jest.Mock).mockImplementation(
-        async (key: string, fallback: string) => {
-          if (key === 'smart_reminders_count') return '1';
-          return fallback;
-        }
-      );
-      (WeatherService.isWeatherDataAvailable as jest.Mock).mockResolvedValue(true);
-      (WeatherAlgorithm.getWeatherPreferences as jest.Mock).mockResolvedValue({ enabled: true });
-      (WeatherService.getWeatherForHour as jest.Mock).mockResolvedValue({
-        temperature: 22,
-        weatherCode: 0,
-        precipitationProbability: 0,
-        cloudCover: 5,
-        uvIndex: 3,
-        windSpeed: 5,
-        isDay: true,
-        forecastHour: 17,
-        forecastDate: 0,
-        timestamp: 0,
-      });
-      (WeatherAlgorithm.getWeatherEmoji as jest.Mock).mockReturnValue('☀️');
-      (WeatherAlgorithm.getWeatherDescription as jest.Mock).mockReturnValue('weather_clear_sky');
-      jest.spyOn(Date.prototype, 'getHours').mockReturnValue(9);
-      jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
-      // No contributors field in mock → falls back to weather context block
-      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockResolvedValue([
-        { hour: 17, minute: 0, score: 0.8, reason: 'after-work' },
-      ]);
-
-      await getSmartReminderScheduler().scheduleDayReminders();
-
-      const call = (SmartReminderModule.scheduleReminders as jest.Mock).mock.calls[0][0][0];
-      expect(call.body).toContain('☀️');
-      expect(call.body).toContain('notif_weather_context');
 
       jest.restoreAllMocks();
     });

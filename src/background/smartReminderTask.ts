@@ -34,20 +34,7 @@ export const handleSmartReminder = async (data: HeadlessData) => {
 
     // 3. Build Message
     const storageService = new StorageService(db);
-    const weatherServiceWrapper = {
-      isWeatherDataAvailable: () => isWeatherDataAvailable(),
-    };
-
-    const messageBuilder = new ReminderMessageBuilder(storageService, weatherServiceWrapper, {
-      getWeatherEmoji: (code: number | null) =>
-        weatherAlgorithm.getWeatherEmoji(
-          code === null ? null : ({ weatherCode: code, isDay: true } as unknown as WeatherCondition)
-        ),
-      getWeatherDescription: (code: number | null) =>
-        weatherAlgorithm.getWeatherDescription(
-          code === null ? null : ({ weatherCode: code } as unknown as WeatherCondition)
-        ),
-    });
+    const messageBuilder = new ReminderMessageBuilder(storageService);
 
     let contributors: string[] = [];
     if (data.contributors) {
@@ -62,8 +49,7 @@ export const handleSmartReminder = async (data: HeadlessData) => {
       todayMinutes,
       dailyGoal?.targetMinutes ?? 30,
       new Date().getHours(),
-      contributors,
-      weatherAvailable
+      contributors
     );
 
     // 4. Schedule Notification
