@@ -133,8 +133,7 @@ export class SmartReminderScheduler implements ISmartReminderScheduler {
       todayMinutes,
       dailyTarget,
       new Date().getHours(),
-      undefined,
-      false
+      undefined
     );
 
     await Notifications.scheduleNotificationAsync({
@@ -217,8 +216,7 @@ export class SmartReminderScheduler implements ISmartReminderScheduler {
             todayMinutes,
             dailyTarget,
             Math.floor(entry.slotMinutes / 60),
-            undefined,
-            false
+            undefined
           );
           await Notifications.scheduleNotificationAsync({
             content: { title, body, categoryIdentifier: 'reminder', color: '#4A7C59' },
@@ -286,8 +284,7 @@ export class SmartReminderScheduler implements ISmartReminderScheduler {
         todayMinutes,
         dailyTarget,
         Math.floor(entry.slotMinutes / 60),
-        undefined,
-        false
+        undefined
       );
 
       if (scheduledNotif.content.body === body) continue;
@@ -474,8 +471,7 @@ export class SmartReminderScheduler implements ISmartReminderScheduler {
         todayMinutes,
         dailyTarget,
         slot.hour,
-        slot.contributors?.map((c: ScoreContributor) => c.description) || [],
-        true
+        slot.contributors?.map((c: ScoreContributor) => c.description) || []
       );
 
       const id = `smart_${this.formatLocalDateKey(triggerDate)}_${slot.hour}:${String(slot.minute).padStart(2, '0')}`;
@@ -668,8 +664,7 @@ export class SmartReminderScheduler implements ISmartReminderScheduler {
           todayMinutes,
           dailyTarget,
           best.hour,
-          best.contributors?.map((c: ScoreContributor) => c.description) || [],
-          true
+          best.contributors?.map((c: ScoreContributor) => c.description) || []
         );
         const id = `catchup_${this.formatLocalDateKey(triggerDate)}_${best.hour}:${best.minute}_${Date.now()}`;
 
@@ -770,8 +765,7 @@ export class SmartReminderScheduler implements ISmartReminderScheduler {
           0,
           dailyTarget,
           slot.hour,
-          undefined,
-          false
+          undefined
         );
         await Notifications.scheduleNotificationAsync({
           identifier: `${FAILSAFE_REMINDER_PREFIX}${this.formatLocalDateKey(futureDate)}_${i}`,

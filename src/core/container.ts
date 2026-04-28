@@ -58,22 +58,7 @@ export function createContainer(
 ): IAppContainer {
   const storageService = new StorageService(db);
   const notificationInfrastructureService = new NotificationInfrastructureService();
-  const reminderMessageBuilder = new ReminderMessageBuilder(
-    storageService,
-    {
-      isWeatherDataAvailable: WeatherService.isWeatherDataAvailable,
-    },
-    {
-      getWeatherEmoji: (code) =>
-        WeatherAlgorithm.getWeatherEmoji(
-          code === null ? null : ({ weatherCode: code } as WeatherCondition)
-        ),
-      getWeatherDescription: (code) =>
-        WeatherAlgorithm.getWeatherDescription(
-          code === null ? null : ({ weatherCode: code } as WeatherCondition)
-        ),
-    }
-  );
+  const reminderMessageBuilder = new ReminderMessageBuilder(storageService);
   const reminderQueueManager = new ReminderQueueManager(storageService);
   const scheduledNotificationManager = new ScheduledNotificationManager(storageService);
 

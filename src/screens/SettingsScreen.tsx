@@ -181,8 +181,7 @@ export default function SettingsScreen() {
       0, // todayMinutes
       30, // dailyTarget
       hour, // hour
-      contributorsArr, // contributors
-      true // includeWeather
+      contributorsArr // contributors
     );
 
     await SmartReminderModule.scheduleReminders([
