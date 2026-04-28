@@ -12,15 +12,50 @@ interface HeadlessData {
 
 export const handleSmartReminder = async (data: HeadlessData) => {
   console.log('[SR_HEADLESS] Task started', data);
+  const storageService = new StorageService(db);
 
   try {
-    // 1. Check goal status
     const todayMinutes = await getTodayMinutesAsync();
     const dailyGoal = await getCurrentDailyGoalAsync();
+    const targetMinutes = dailyGoal?.targetMinutes ?? 30;
 
-    if (dailyGoal && todayMinutes >= dailyGoal.targetMinutes) {
-      console.log('[SR_HEADLESS] Goal already met. Skipping notification.');
-      return;
+    // Load state
+    const todayDateStr = new Date().toDateString();
+    const lastTrackedDate = await storageService.getSettingAsync('sent_smart_reminders_date', '');
+    let sentSmartReminders =
+      parseInt(await storageService.getSettingAsync('sent_smart_reminders_count', '0'), 10) || 0;
+
+    if (lastTrackedDate !== todayDateStr) {
+      sentSmartReminders = 0;
+    }
+
+    const smartRemindersCount =
+      parseInt(await storageService.getSettingAsync('smart_reminders_count', '2'), 10) || 2;
+
+    if (data.type === 'smart_reminder') {
+      if (todayMinutes >= targetMinutes) {
+        console.log('[SR_HEADLESS] Goal already met. Skipping smart reminder.');
+        return;
+      }
+
+      // We will send it, so increment the counter
+      sentSmartReminders += 1;
+      await storageService.setSettingAsync('sent_smart_reminders_date', todayDateStr);
+      await storageService.setSettingAsync(
+        'sent_smart_reminders_count',
+        sentSmartReminders.toString()
+      );
+    } else if (data.type === 'catchup_reminder') {
+      // Catchup reminder logic: skip if ahead of schedule
+      const progressRatio = todayMinutes / targetMinutes;
+      const expectedRatio = sentSmartReminders / Math.max(1, smartRemindersCount); // Avoid div by 0
+
+      if (progressRatio > expectedRatio || todayMinutes >= targetMinutes) {
+        console.log(
+          `[SR_HEADLESS] Ahead of schedule (progress: ${progressRatio.toFixed(2)}, expected: ${expectedRatio.toFixed(2)}). Skipping catchup.`
+        );
+        return;
+      }
     }
 
     // 2. Weather Fetch with 1s timeout
@@ -30,7 +65,6 @@ export const handleSmartReminder = async (data: HeadlessData) => {
     await Promise.race([weatherFetch, weatherTimeout]);
 
     // 3. Build Message
-    const storageService = new StorageService(db);
     const messageBuilder = new ReminderMessageBuilder(storageService);
 
     let contributors: string[] = [];

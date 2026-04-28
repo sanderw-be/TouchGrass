@@ -6,8 +6,8 @@ export interface ReminderScheduleItem {
   timestamp: number;
   type: string;
   goalThreshold: number;
-  title: string;
-  body: string;
+  title?: string;
+  body?: string;
   contributors?: string[];
 }
 

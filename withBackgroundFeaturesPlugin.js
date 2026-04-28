@@ -188,21 +188,14 @@ class SmartReminderReceiver : BroadcastReceiver() {
       val type = intent.getStringExtra("type") ?: "Reminder"
       Log.d("TouchGrass", "[SR_RECEIVER] broadcastreceiver for notification called (type=$type)")
       
-      val prefs = context.getSharedPreferences("TouchGrassPrefs", Context.MODE_PRIVATE)
-      val goalMet = prefs.getBoolean("goal_met_today", false)
-      
-      if (goalMet) {
-          Log.d("TouchGrass", "[SR_RECEIVER] Goal met. Aborting reminder.")
+      Log.d("TouchGrass", "[SR_RECEIVER] Starting headless service.")
+      val headlessIntent = Intent(context, SmartReminderHeadlessService::class.java).apply {
+          intent.extras?.let { putExtras(it) }
+      }
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+          context.startForegroundService(headlessIntent)
       } else {
-          Log.d("TouchGrass", "[SR_RECEIVER] Criteria passed. Starting headless service.")
-          val headlessIntent = Intent(context, SmartReminderHeadlessService::class.java).apply {
-              intent.extras?.let { putExtras(it) }
-          }
-          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-              context.startForegroundService(headlessIntent)
-          } else {
-              context.startService(headlessIntent)
-          }
+          context.startService(headlessIntent)
       }
 
     } catch (e: Exception) {
