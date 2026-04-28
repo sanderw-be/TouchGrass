@@ -1,11 +1,9 @@
 import * as Notifications from 'expo-notifications';
 import { getTodayMinutesAsync, getCurrentDailyGoalAsync } from '../storage';
-import { fetchWeatherForecast, isWeatherDataAvailable } from '../weather/weatherService';
+import { fetchWeatherForecast } from '../weather/weatherService';
 import { ReminderMessageBuilder } from '../notifications/services/ReminderMessageBuilder';
 import { StorageService } from '../storage/StorageService';
 import { db } from '../storage/db';
-import * as weatherAlgorithm from '../weather/weatherAlgorithm';
-import { WeatherCondition } from '../weather/types';
 
 interface HeadlessData {
   type: string;
@@ -30,7 +28,6 @@ export const handleSmartReminder = async (data: HeadlessData) => {
     const weatherFetch = fetchWeatherForecast({ allowPermissionPrompt: false });
 
     await Promise.race([weatherFetch, weatherTimeout]);
-    const weatherAvailable = await isWeatherDataAvailable();
 
     // 3. Build Message
     const storageService = new StorageService(db);

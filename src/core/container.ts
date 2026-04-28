@@ -34,7 +34,6 @@ import {
 import * as WeatherService from '../weather/weatherService';
 import { shouldRemindNow, scoreReminderHours } from '../notifications/reminderAlgorithm';
 import * as WeatherAlgorithm from '../weather/weatherAlgorithm';
-import { WeatherCondition } from '../weather/types';
 
 export interface IAppContainer {
   storageService: IStorageService;
