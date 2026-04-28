@@ -4,7 +4,7 @@
 
 > 0 routes | 0 models | 35 components | 59 lib files | 3 env vars | 1 middleware | 0% test coverage
 > **Token savings:** this file is ~6,200 tokens. Without it, AI exploration would cost ~36,500 tokens. **Saves ~30,300 tokens per conversation.**
-> **Last scanned:** 2026-04-27 20:05 — re-run after significant changes
+> **Last scanned:** 2026-04-28 13:02 — re-run after significant changes
 
 ---
 
@@ -336,10 +336,10 @@
 - `src/i18n/en.ts` — imported by **8** files
 - `src/utils/widgetHelper.ts` — imported by **7** files
 - `src/calendar/calendarService.ts` — imported by **7** files
-- `src/weather/types.ts` — imported by **7** files
 - `src/components/ui/index.ts` — imported by **7** files
 - `src/utils/constants.ts` — imported by **6** files
 - `src/detection/sessionMerger.ts` — imported by **6** files
+- `src/weather/weatherService.ts` — imported by **6** files
 
 ## Import Map (who imports what)
 
