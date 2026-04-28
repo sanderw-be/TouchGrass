@@ -3,13 +3,13 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
   Switch,
   Platform,
   Alert,
   BackHandler,
 } from 'react-native';
+import { ResponsiveGridList } from '../components/ResponsiveGridList';
 import {
   BottomSheetBackdrop,
   BottomSheetModal,
@@ -277,49 +277,52 @@ export default function ScheduledNotificationsScreen() {
 
   return (
     <View style={styles.container}>
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
-        {!isLoading && schedules.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyText}>{t('scheduled_empty')}</Text>
-            <Text style={styles.emptyHint}>{t('scheduled_empty_hint')}</Text>
-          </View>
-        ) : (
-          schedules.map((schedule) => (
-            <View key={schedule.id} style={styles.scheduleCard}>
-              <View style={styles.scheduleHeader}>
-                <View style={styles.scheduleInfo}>
-                  <Text style={styles.scheduleTime}>
-                    {formatTimeStr(schedule.hour, schedule.minute)}
-                  </Text>
-                  {schedule.label ? (
-                    <Text style={styles.scheduleLabel}>{schedule.label}</Text>
-                  ) : null}
-                  <Text style={styles.scheduleDays}>{formatDays(schedule.daysOfWeek)}</Text>
-                </View>
-                <Switch
-                  value={schedule.enabled === 1}
-                  onValueChange={(value) => handleToggle(schedule, value)}
-                  trackColor={{ false: colors.fog, true: colors.grassLight }}
-                  thumbColor={schedule.enabled === 1 ? colors.grass : colors.inactive}
-                />
-              </View>
-              <View style={styles.scheduleActions}>
-                <TouchableOpacity style={styles.actionButton} onPress={() => handleEdit(schedule)}>
-                  <Text style={styles.actionButtonText}>{t('scheduled_edit')}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.actionButton, styles.deleteButton]}
-                  onPress={() => handleDelete(schedule)}
-                >
-                  <Text style={[styles.actionButtonText, styles.deleteButtonText]}>
-                    {t('scheduled_delete')}
-                  </Text>
-                </TouchableOpacity>
-              </View>
+      <ResponsiveGridList
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        data={schedules}
+        keyExtractor={(item) => String(item.id)}
+        ListEmptyComponent={
+          !isLoading && schedules.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyText}>{t('scheduled_empty')}</Text>
+              <Text style={styles.emptyHint}>{t('scheduled_empty_hint')}</Text>
             </View>
-          ))
+          ) : null
+        }
+        renderItem={({ item: schedule }) => (
+          <View style={styles.scheduleCard}>
+            <View style={styles.scheduleHeader}>
+              <View style={styles.scheduleInfo}>
+                <Text style={styles.scheduleTime}>
+                  {formatTimeStr(schedule.hour, schedule.minute)}
+                </Text>
+                {schedule.label ? <Text style={styles.scheduleLabel}>{schedule.label}</Text> : null}
+                <Text style={styles.scheduleDays}>{formatDays(schedule.daysOfWeek)}</Text>
+              </View>
+              <Switch
+                value={schedule.enabled === 1}
+                onValueChange={(value) => handleToggle(schedule, value)}
+                trackColor={{ false: colors.fog, true: colors.grassLight }}
+                thumbColor={schedule.enabled === 1 ? colors.grass : colors.inactive}
+              />
+            </View>
+            <View style={styles.scheduleActions}>
+              <TouchableOpacity style={styles.actionButton} onPress={() => handleEdit(schedule)}>
+                <Text style={styles.actionButtonText}>{t('scheduled_edit')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.actionButton, styles.deleteButton]}
+                onPress={() => handleDelete(schedule)}
+              >
+                <Text style={[styles.actionButtonText, styles.deleteButtonText]}>
+                  {t('scheduled_delete')}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         )}
-      </ScrollView>
+      />
 
       <TouchableOpacity style={styles.addButton} onPress={handleAdd}>
         <Text style={styles.addButtonText}>+ {t('scheduled_add')}</Text>

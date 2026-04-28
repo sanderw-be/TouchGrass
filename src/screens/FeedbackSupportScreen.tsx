@@ -1,11 +1,13 @@
 import React, { useMemo } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Linking, Alert } from 'react-native';
+import { Text, TouchableOpacity, Linking, Alert, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { spacing, radius, ThemeColors, Shadows } from '../utils/theme';
 import { useAppStore } from '../store/useAppStore';
 import { Ionicons } from '@expo/vector-icons';
 import i18n, { t } from '../i18n';
 import { PRIVACY_POLICY_URL } from '../utils/constants';
+import { ResponsiveGridList } from '../components/ResponsiveGridList';
+import { Card, Divider, SettingRow } from '../components/ui';
 
 const FEEDBACK_URLS: Record<string, string> = {
   nl: 'https://forms.gle/SSavqQgWFqYmiJaZA',
@@ -44,69 +46,56 @@ export default function FeedbackSupportScreen() {
     navigation.setOptions({ title: t('nav_feedback_support') });
   }, [navigation, locale]);
 
-  return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <View style={styles.card}>
-        <TouchableOpacity onPress={() => openUrl(getFeedbackUrl())}>
-          <SettingRow
-            icon={<Ionicons name="chatbubble-outline" size={20} color={colors.textSecondary} />}
-            label={t('feedback_send_feedback')}
-            sublabel={t('feedback_send_feedback_sublabel')}
-            right={<Ionicons name="chevron-forward" size={20} color={colors.textMuted} />}
-          />
-        </TouchableOpacity>
-        <Divider />
-        <TouchableOpacity onPress={() => openUrl(KOFI_URL)}>
-          <SettingRow
-            icon={<Ionicons name="cafe-outline" size={20} color={colors.textSecondary} />}
-            label={t('feedback_support_kofi')}
-            sublabel={t('feedback_support_kofi_sublabel')}
-            right={<Ionicons name="chevron-forward" size={20} color={colors.textMuted} />}
-          />
-        </TouchableOpacity>
-      </View>
-      <TouchableOpacity onPress={() => openUrl(PRIVACY_POLICY_URL)}>
-        <Text style={styles.disclosure}>{t('feedback_google_disclosure')}</Text>
-      </TouchableOpacity>
-    </ScrollView>
-  );
-}
+  const SECTIONS = [{ id: 'feedback_support' }, { id: 'disclosure' }];
 
-function SettingRow({
-  icon,
-  label,
-  sublabel,
-  right,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  sublabel?: string;
-  right?: React.ReactNode;
-}) {
-  const colors = useAppStore((state) => state.colors);
-  const shadows = useAppStore((state) => state.shadows);
-  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
-  return (
-    <View style={styles.row}>
-      <View style={styles.rowIconContainer}>{icon}</View>
-      <View style={styles.rowContent}>
-        <Text style={styles.rowLabel}>{label}</Text>
-        {sublabel && <Text style={styles.rowSublabel}>{sublabel}</Text>}
-      </View>
-      {right && <View style={styles.rowRight}>{right}</View>}
-    </View>
-  );
-}
+  const renderSection = ({ item }: { item: (typeof SECTIONS)[0] }) => {
+    switch (item.id) {
+      case 'feedback_support':
+        return (
+          <Card style={styles.card}>
+            <TouchableOpacity onPress={() => openUrl(getFeedbackUrl())}>
+              <SettingRow
+                icon={<Ionicons name="chatbubble-outline" size={20} color={colors.textSecondary} />}
+                label={t('feedback_send_feedback')}
+                sublabel={t('feedback_send_feedback_sublabel')}
+                right={<Ionicons name="chevron-forward" size={20} color={colors.textMuted} />}
+              />
+            </TouchableOpacity>
+            <Divider />
+            <TouchableOpacity onPress={() => openUrl(KOFI_URL)}>
+              <SettingRow
+                icon={<Ionicons name="cafe-outline" size={20} color={colors.textSecondary} />}
+                label={t('feedback_support_kofi')}
+                sublabel={t('feedback_support_kofi_sublabel')}
+                right={<Ionicons name="chevron-forward" size={20} color={colors.textMuted} />}
+              />
+            </TouchableOpacity>
+          </Card>
+        );
+      case 'disclosure':
+        return (
+          <TouchableOpacity onPress={() => openUrl(PRIVACY_POLICY_URL)}>
+            <Text style={styles.disclosure}>{t('feedback_google_disclosure')}</Text>
+          </TouchableOpacity>
+        );
+      default:
+        return null;
+    }
+  };
 
-function Divider() {
-  const colors = useAppStore((state) => state.colors);
-  const shadows = useAppStore((state) => state.shadows);
-  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
-  return <View style={styles.divider} />;
+  return (
+    <ResponsiveGridList
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      data={SECTIONS}
+      keyExtractor={(item) => item.id}
+      renderItem={renderSection}
+    />
+  );
 }
 
 function makeStyles(colors: ThemeColors, shadows: Shadows) {
-  return {
+  return StyleSheet.create({
     container: {
       flex: 1,
       backgroundColor: colors.mist,
@@ -119,49 +108,16 @@ function makeStyles(colors: ThemeColors, shadows: Shadows) {
       backgroundColor: colors.card,
       borderRadius: radius.lg,
       ...shadows.soft,
-      marginBottom: spacing.md,
-      overflow: 'hidden' as const,
-    },
-    row: {
-      flexDirection: 'row' as const,
-      alignItems: 'center' as const,
-      paddingHorizontal: spacing.md,
-      paddingVertical: spacing.md,
-      minHeight: 56,
-    },
-    rowIconContainer: {
-      width: 28,
-      marginRight: spacing.md,
-      alignItems: 'center' as const,
-      justifyContent: 'center' as const,
-    },
-    rowContent: {
-      flex: 1,
-    },
-    rowLabel: {
-      fontSize: 15,
-      color: colors.textPrimary,
-      fontWeight: '500' as const,
-    },
-    rowSublabel: {
-      fontSize: 12,
-      color: colors.textMuted,
-      marginTop: 2,
-    },
-    rowRight: {
-      marginLeft: spacing.sm,
-    },
-    divider: {
-      height: 1,
-      backgroundColor: colors.fog,
-      marginLeft: spacing.md + 28 + spacing.md,
+      overflow: 'hidden',
+      padding: 0,
     },
     disclosure: {
       fontSize: 12,
       color: colors.textMuted,
-      textAlign: 'center' as const,
+      textAlign: 'center',
       paddingHorizontal: spacing.md,
-      textDecorationLine: 'underline' as const,
+      textDecorationLine: 'underline',
+      marginTop: spacing.md,
     },
-  };
+  });
 }

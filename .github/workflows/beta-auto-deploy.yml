@@ -47,6 +47,7 @@ jobs:
     outputs:
       new_release_published: ${{ steps.semantic.outputs.new_release_published }}
       new_release_git_tag: ${{ steps.semantic.outputs.new_release_git_tag }}
+      new_release_version: ${{ steps.semantic.outputs.new_release_version }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -68,7 +69,6 @@ jobs:
           extra_plugins: |
             @semantic-release/changelog
             @semantic-release/exec
-            @semantic-release/git
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -76,8 +76,11 @@ jobs:
   deploy-preview:
     name: Deploy to Preview
     needs: [check-native-changes, version-bump]
-    # always() ensures this runs even if version-bump was skipped
-    if: always() && needs.check-native-changes.result == 'success'
+    if: |
+      always() && 
+      needs.check-native-changes.result == 'success' && 
+      needs.version-bump.result != 'failure' && 
+      needs.version-bump.result != 'cancelled'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -118,6 +121,11 @@ jobs:
           org.gradle.jvmargs=-Xmx3072m -XX:+HeapDumpOnOutOfMemoryError
           org.gradle.logging.stacktrace=full
           EOF
+
+      - name: Apply Native Version
+        if: needs.check-native-changes.outputs.native == 'true' && needs.version-bump.outputs.new_release_published == 'true'
+        run: |
+          npm version ${{ needs.version-bump.outputs.new_release_version }} --no-git-tag-version
 
       - name: Build Preview AAB
         if: needs.check-native-changes.outputs.native == 'true'
