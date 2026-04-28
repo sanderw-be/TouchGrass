@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
   RefreshControl,
   StatusBar,
@@ -46,6 +45,7 @@ import {
 } from '../utils/widgetHelper';
 
 import { Card } from '../components/ui';
+import { ResponsiveGridList } from '../components/ResponsiveGridList';
 
 export default function HomeScreen() {
   const colors = useAppStore((state) => state.colors);
@@ -214,23 +214,26 @@ export default function HomeScreen() {
     setRefreshing(false);
   };
 
-  const handleConfirm = async (id: number, startTime: number, confirmed: boolean) => {
-    try {
-      await confirmSessionAsync(id, confirmed);
-      const d = new Date(startTime);
-      await updateTimeSlotProbability(d.getHours(), d.getDay(), confirmed);
-      emitSessionsChanged();
-      if (confirmed) {
-        await getSmartReminderScheduler().cancelRemindersIfGoalReached();
-        requestWidgetRefresh();
-      } else {
-        setUndoSnackbar({ visible: true, sessionId: id });
+  const handleConfirm = useCallback(
+    async (id: number, startTime: number, confirmed: boolean) => {
+      try {
+        await confirmSessionAsync(id, confirmed);
+        const d = new Date(startTime);
+        await updateTimeSlotProbability(d.getHours(), d.getDay(), confirmed);
+        emitSessionsChanged();
+        if (confirmed) {
+          await getSmartReminderScheduler().cancelRemindersIfGoalReached();
+          requestWidgetRefresh();
+        } else {
+          setUndoSnackbar({ visible: true, sessionId: id });
+        }
+        loadData();
+      } catch (error) {
+        console.error('[HomeScreen.handleConfirm] Error:', error);
       }
-      loadData();
-    } catch (error) {
-      console.error('[HomeScreen.handleConfirm] Error:', error);
-    }
-  };
+    },
+    [loadData]
+  );
 
   const handleUndoReject = async () => {
     try {
@@ -245,7 +248,7 @@ export default function HomeScreen() {
     setUndoSnackbar({ visible: false, sessionId: null });
   };
 
-  const handleTimerPress = async () => {
+  const handleTimerPress = useCallback(async () => {
     try {
       if (timerRunning) {
         // Stop timer — auto-save and refresh
@@ -275,34 +278,28 @@ export default function HomeScreen() {
     } catch (error) {
       console.error('[HomeScreen.handleTimerPress] Error:', error);
     }
-  };
+  }, [timerRunning, loadData]);
 
   const dailyPercent = Math.min(todayMinutes / dailyTarget, 1);
   const weeklyPercent = Math.min(weekMinutes / weeklyTarget, 1);
 
-  const greeting = () => {
+  const greeting = useCallback(() => {
     const h = new Date().getHours();
     if (h < 12) return t('greeting_morning');
     if (h < 17) return t('greeting_afternoon');
     return t('greeting_evening');
-  };
+  }, []);
 
-  const motivationText = () => {
+  const motivationText = useCallback(() => {
     if (dailyPercent >= 1) return t('goal_reached');
     const remaining = dailyTarget - todayMinutes;
     if (dailyPercent === 0) return t('outside_time_awaits', { amount: formatMinutes(dailyTarget) });
     return t('remaining_for_goal', { amount: formatMinutes(remaining) });
-  };
+  }, [dailyPercent, dailyTarget, todayMinutes]);
 
-  return (
-    <View style={styles.screenContainer}>
-      <ScrollView
-        style={styles.container}
-        contentContainerStyle={styles.content}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.grass} />
-        }
-      >
+  const renderHeader = useCallback(
+    () => (
+      <>
         <StatusBar
           barStyle={isDark ? 'light-content' : 'dark-content'}
           backgroundColor={colors.mist}
@@ -389,38 +386,78 @@ export default function HomeScreen() {
           <WeekDots />
         </Card>
 
-        {/* Today's sessions */}
         {todaySessions.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>{t('todays_sessions')}</Text>
-            {todaySessions.map((session) => (
-              <SessionRow
-                key={session.id}
-                session={session}
-                onConfirm={(confirmed) => handleConfirm(session.id!, session.startTime, confirmed)}
-                onNotes={() => setNotesSession(session)}
-              />
-            ))}
-          </View>
+          <Text style={styles.sectionTitle}>{t('todays_sessions')}</Text>
         )}
+      </>
+    ),
+    [
+      isDark,
+      colors,
+      sheetVisible,
+      loadData,
+      styles,
+      greeting,
+      todayMinutes,
+      dailyTarget,
+      handleTimerPress,
+      timerRunning,
+      timerSeconds,
+      motivationText,
+      dailyStreak,
+      weeklyStreak,
+      weekMinutes,
+      weeklyTarget,
+      weeklyPercent,
+      todaySessions.length,
+    ]
+  );
 
-        {todaySessions.length === 0 && (
-          <View style={styles.emptyState} testID="home-empty-state">
-            <Image
-              source={require('../../assets/herb.png')}
-              style={styles.emptyIcon}
-              resizeMode="contain"
-              testID="home-empty-icon"
-            />
-            <Text style={styles.emptyText} testID="home-empty-title">
-              {t('no_sessions_title')}
-            </Text>
-            <Text style={styles.emptySubtext} testID="home-empty-sub">
-              {t('no_sessions_sub')}
-            </Text>
-          </View>
-        )}
-      </ScrollView>
+  const renderEmpty = useCallback(
+    () => (
+      <View style={styles.emptyState} testID="home-empty-state">
+        <Image
+          source={require('../../assets/herb.png')}
+          style={styles.emptyIcon}
+          resizeMode="contain"
+          testID="home-empty-icon"
+        />
+        <Text style={styles.emptyText} testID="home-empty-title">
+          {t('no_sessions_title')}
+        </Text>
+        <Text style={styles.emptySubtext} testID="home-empty-sub">
+          {t('no_sessions_sub')}
+        </Text>
+      </View>
+    ),
+    [styles]
+  );
+
+  const renderItem = useCallback(
+    ({ item }: { item: OutsideSession }) => (
+      <SessionRow
+        session={item}
+        onConfirm={(confirmed) => handleConfirm(item.id!, item.startTime, confirmed)}
+        onNotes={() => setNotesSession(item)}
+      />
+    ),
+    [handleConfirm]
+  );
+
+  return (
+    <View style={styles.screenContainer}>
+      <ResponsiveGridList
+        style={styles.container}
+        contentContainerStyle={styles.content}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.grass} />
+        }
+        ListHeaderComponent={renderHeader}
+        ListEmptyComponent={renderEmpty}
+        data={todaySessions}
+        keyExtractor={(item) => String(item.id)}
+        renderItem={renderItem}
+      />
 
       <SessionNotesSheet
         visible={notesSession !== null}

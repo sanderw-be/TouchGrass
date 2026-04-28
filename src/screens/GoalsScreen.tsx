@@ -1,6 +1,12 @@
 import React, { useMemo, useCallback } from 'react';
-import { View, Text, TouchableOpacity, TextInput } from 'react-native';
-import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -19,6 +25,7 @@ import { useGoalTargets, DAILY_PRESETS, WEEKLY_PRESETS } from '../hooks/useGoalT
 import { useGoalIntegrations } from '../hooks/useGoalIntegrations';
 
 import { Card } from '../components/ui';
+import { ResponsiveGridList } from '../components/ResponsiveGridList';
 
 import { useTheme } from '../hooks/useTheme';
 
@@ -85,183 +92,227 @@ export default function GoalsScreen() {
     }, [loadGoals])
   );
 
-  return (
+  const SECTIONS = [
+    { id: 'who_tip' },
+    { id: 'daily_goal' },
+    { id: 'weekly_goal' },
+    { id: 'reminders' },
+    { id: 'weather' },
+    { id: 'calendar' },
+  ];
+
+  const HeaderComponent = () => (
     <>
       <View style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
         <Text style={styles.headerTitle}>{t('nav_goals')}</Text>
       </View>
+      {goalsPermissionIssues.length > 0 && (
+        <View style={styles.permissionWarning}>
+          <Text style={styles.permissionWarningText}>
+            {t('permission_issues_banner', { features: goalsPermissionIssues.join(', ') })}
+          </Text>
+        </View>
+      )}
+    </>
+  );
 
-      <KeyboardAwareScrollView style={styles.container} contentContainerStyle={styles.content}>
-        {goalsPermissionIssues.length > 0 && (
-          <View style={styles.permissionWarning}>
-            <Text style={styles.permissionWarningText}>
-              {t('permission_issues_banner', { features: goalsPermissionIssues.join(', ') })}
-            </Text>
-          </View>
-        )}
-        {/* WHO recommendation note */}
-        <Card variant="tip" style={styles.tipCard}>
-          <Ionicons name="bulb-outline" size={18} color={colors.grassDark} style={styles.tipIcon} />
-          <Text style={styles.tipText}>{t('goals_who_tip')}</Text>
-        </Card>
-
-        {/* Daily goal */}
-        <Card style={styles.card}>
-          <View style={styles.cardHeader}>
-            <View>
-              <Text style={styles.cardTitle}>{t('daily_goal')}</Text>
-              <Text style={styles.cardValue}>{formatMinutes(dailyTarget)}</Text>
-            </View>
-            <TouchableOpacity
-              style={styles.editButton}
-              onPress={() => {
-                setEditingDaily(!editingDaily);
-                setEditingWeekly(false);
-                setCustomDaily(String(dailyTarget));
-              }}
-            >
-              <Text style={styles.editButtonText}>
-                {editingDaily ? t('goals_cancel') : t('goals_edit')}
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          {editingDaily && (
-            <View style={styles.editor}>
-              <Text style={styles.editorLabel}>{t('goals_quick_select')}</Text>
-              <View style={styles.presets}>
-                {DAILY_PRESETS.map((p) => (
-                  <TouchableOpacity
-                    key={p}
-                    style={[styles.preset, dailyTarget === p && styles.presetActive]}
-                    onPress={() => saveDaily(p)}
-                  >
-                    <Text style={[styles.presetText, dailyTarget === p && styles.presetTextActive]}>
-                      {formatMinutes(p)}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
+  const renderSection = ({ item }: { item: (typeof SECTIONS)[0] }) => {
+    switch (item.id) {
+      case 'who_tip':
+        return (
+          <Card variant="tip" style={styles.tipCard}>
+            <Ionicons
+              name="bulb-outline"
+              size={18}
+              color={colors.grassDark}
+              style={styles.tipIcon}
+            />
+            <Text style={styles.tipText}>{t('goals_who_tip')}</Text>
+          </Card>
+        );
+      case 'daily_goal':
+        return (
+          <Card style={styles.card}>
+            <View style={styles.cardHeader}>
+              <View>
+                <Text style={styles.cardTitle}>{t('daily_goal')}</Text>
+                <Text style={styles.cardValue}>{formatMinutes(dailyTarget)}</Text>
               </View>
-              <Text style={styles.editorLabel}>{t('goals_custom_minutes')}</Text>
-              <View style={styles.customRow}>
-                <TextInput
-                  style={styles.input}
-                  value={customDaily}
-                  onChangeText={setCustomDaily}
-                  keyboardType="number-pad"
-                  placeholder={t('goals_placeholder_daily')}
-                  placeholderTextColor={colors.textMuted}
-                  maxLength={4}
-                />
-                <TouchableOpacity
-                  style={styles.saveButton}
-                  onPress={() => saveDaily(parseInt(customDaily, 10))}
-                >
-                  <Text style={styles.saveButtonText}>{t('goals_save')}</Text>
-                </TouchableOpacity>
-              </View>
+              <TouchableOpacity
+                style={styles.editButton}
+                onPress={() => {
+                  setEditingDaily(!editingDaily);
+                  setEditingWeekly(false);
+                  setCustomDaily(String(dailyTarget));
+                }}
+              >
+                <Text style={styles.editButtonText}>
+                  {editingDaily ? t('goals_cancel') : t('goals_edit')}
+                </Text>
+              </TouchableOpacity>
             </View>
-          )}
-        </Card>
 
-        {/* Weekly goal */}
-        <Card style={styles.card}>
-          <View style={styles.cardHeader}>
-            <View>
-              <Text style={styles.cardTitle}>{t('weekly_goal')}</Text>
-              <Text style={styles.cardValue}>{formatMinutes(weeklyTarget)}</Text>
-            </View>
-            <TouchableOpacity
-              style={styles.editButton}
-              onPress={() => {
-                setEditingWeekly(!editingWeekly);
-                setEditingDaily(false);
-                setCustomWeekly(String(weeklyTarget));
-              }}
-            >
-              <Text style={styles.editButtonText}>
-                {editingWeekly ? t('goals_cancel') : t('goals_edit')}
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          {editingWeekly && (
-            <View style={styles.editor}>
-              <Text style={styles.editorLabel}>{t('goals_quick_select')}</Text>
-              <View style={styles.presets}>
-                {WEEKLY_PRESETS.map((p) => (
-                  <TouchableOpacity
-                    key={p}
-                    style={[styles.preset, weeklyTarget === p && styles.presetActive]}
-                    onPress={() => saveWeekly(p)}
-                  >
-                    <Text
-                      style={[styles.presetText, weeklyTarget === p && styles.presetTextActive]}
+            {editingDaily && (
+              <View style={styles.editor}>
+                <Text style={styles.editorLabel}>{t('goals_quick_select')}</Text>
+                <View style={styles.presets}>
+                  {DAILY_PRESETS.map((p) => (
+                    <TouchableOpacity
+                      key={p}
+                      style={[styles.preset, dailyTarget === p && styles.presetActive]}
+                      onPress={() => saveDaily(p)}
                     >
-                      {formatMinutes(p)}
-                    </Text>
+                      <Text
+                        style={[styles.presetText, dailyTarget === p && styles.presetTextActive]}
+                      >
+                        {formatMinutes(p)}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+                <Text style={styles.editorLabel}>{t('goals_custom_minutes')}</Text>
+                <View style={styles.customRow}>
+                  <TextInput
+                    style={styles.input}
+                    value={customDaily}
+                    onChangeText={setCustomDaily}
+                    keyboardType="number-pad"
+                    placeholder={t('goals_placeholder_daily')}
+                    placeholderTextColor={colors.textMuted}
+                    maxLength={4}
+                  />
+                  <TouchableOpacity
+                    style={styles.saveButton}
+                    onPress={() => saveDaily(parseInt(customDaily, 10))}
+                  >
+                    <Text style={styles.saveButtonText}>{t('goals_save')}</Text>
                   </TouchableOpacity>
-                ))}
+                </View>
               </View>
-              <Text style={styles.editorLabel}>{t('goals_custom_minutes')}</Text>
-              <View style={styles.customRow}>
-                <TextInput
-                  style={styles.input}
-                  value={customWeekly}
-                  onChangeText={setCustomWeekly}
-                  keyboardType="number-pad"
-                  placeholder={t('goals_placeholder_weekly')}
-                  placeholderTextColor={colors.textMuted}
-                  maxLength={5}
-                />
-                <TouchableOpacity
-                  style={styles.saveButton}
-                  onPress={() => saveWeekly(parseInt(customWeekly, 10))}
-                >
-                  <Text style={styles.saveButtonText}>{t('goals_save')}</Text>
-                </TouchableOpacity>
+            )}
+          </Card>
+        );
+      case 'weekly_goal':
+        return (
+          <Card style={styles.card}>
+            <View style={styles.cardHeader}>
+              <View>
+                <Text style={styles.cardTitle}>{t('weekly_goal')}</Text>
+                <Text style={styles.cardValue}>{formatMinutes(weeklyTarget)}</Text>
               </View>
+              <TouchableOpacity
+                style={styles.editButton}
+                onPress={() => {
+                  setEditingWeekly(!editingWeekly);
+                  setEditingDaily(false);
+                  setCustomWeekly(String(weeklyTarget));
+                }}
+              >
+                <Text style={styles.editButtonText}>
+                  {editingWeekly ? t('goals_cancel') : t('goals_edit')}
+                </Text>
+              </TouchableOpacity>
             </View>
-          )}
-        </Card>
 
-        {/* Reminders */}
-        <RemindersSection
-          smartRemindersCount={smartRemindersCount}
-          catchupRemindersCount={catchupRemindersCount}
-          notificationPermissionGranted={notificationPermissionGranted}
-          batteryOptimizationGranted={batteryOptimizationGranted}
-          onCycleSmartReminders={cycleSmartRemindersCount}
-          onCycleCatchupReminders={cycleCatchupRemindersCount}
-          onNavigateScheduledNotifications={() => navigation.navigate('ScheduledNotifications')}
-          onShowNotificationPermissionSheet={showNotificationPermissionSheet}
-          onShowBatteryPermissionSheet={showBatteryPermissionSheet}
-        />
+            {editingWeekly && (
+              <View style={styles.editor}>
+                <Text style={styles.editorLabel}>{t('goals_quick_select')}</Text>
+                <View style={styles.presets}>
+                  {WEEKLY_PRESETS.map((p) => (
+                    <TouchableOpacity
+                      key={p}
+                      style={[styles.preset, weeklyTarget === p && styles.presetActive]}
+                      onPress={() => saveWeekly(p)}
+                    >
+                      <Text
+                        style={[styles.presetText, weeklyTarget === p && styles.presetTextActive]}
+                      >
+                        {formatMinutes(p)}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+                <Text style={styles.editorLabel}>{t('goals_custom_minutes')}</Text>
+                <View style={styles.customRow}>
+                  <TextInput
+                    style={styles.input}
+                    value={customWeekly}
+                    onChangeText={setCustomWeekly}
+                    keyboardType="number-pad"
+                    placeholder={t('goals_placeholder_weekly')}
+                    placeholderTextColor={colors.textMuted}
+                    maxLength={5}
+                  />
+                  <TouchableOpacity
+                    style={styles.saveButton}
+                    onPress={() => saveWeekly(parseInt(customWeekly, 10))}
+                  >
+                    <Text style={styles.saveButtonText}>{t('goals_save')}</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+          </Card>
+        );
+      case 'reminders':
+        return (
+          <RemindersSection
+            smartRemindersCount={smartRemindersCount}
+            catchupRemindersCount={catchupRemindersCount}
+            notificationPermissionGranted={notificationPermissionGranted}
+            batteryOptimizationGranted={batteryOptimizationGranted}
+            onCycleSmartReminders={cycleSmartRemindersCount}
+            onCycleCatchupReminders={cycleCatchupRemindersCount}
+            onNavigateScheduledNotifications={() => navigation.navigate('ScheduledNotifications')}
+            onShowNotificationPermissionSheet={showNotificationPermissionSheet}
+            onShowBatteryPermissionSheet={showBatteryPermissionSheet}
+          />
+        );
+      case 'weather':
+        return (
+          <WeatherSection
+            weatherEnabled={weatherEnabled}
+            weatherLocationGranted={weatherLocationGranted}
+            onToggleWeather={toggleWeatherEnabled}
+            onShowWeatherPermissionSheet={showWeatherPermissionSheet}
+            onNavigateWeatherSettings={() => navigation.navigate('WeatherSettings')}
+          />
+        );
+      case 'calendar':
+        return (
+          <CalendarSection
+            calendarEnabled={calendarEnabled}
+            calendarPermissionGranted={calendarPermissionGranted}
+            calendarBuffer={calendarBuffer}
+            calendarDuration={calendarDuration}
+            calendarSelectedId={calendarSelectedId}
+            calendarOptions={calendarOptions}
+            onToggleCalendar={toggleCalendarIntegration}
+            onCycleCalendarBuffer={cycleCalendarBuffer}
+            onCycleCalendarDuration={cycleCalendarDuration}
+            onSelectCalendar={handleSelectCalendar}
+            onShowCalendarPermissionSheet={showCalendarPermissionSheet}
+          />
+        );
+      default:
+        return null;
+    }
+  };
 
-        {/* Weather */}
-        <WeatherSection
-          weatherEnabled={weatherEnabled}
-          weatherLocationGranted={weatherLocationGranted}
-          onToggleWeather={toggleWeatherEnabled}
-          onShowWeatherPermissionSheet={showWeatherPermissionSheet}
-          onNavigateWeatherSettings={() => navigation.navigate('WeatherSettings')}
-        />
-
-        {/* Calendar integration */}
-        <CalendarSection
-          calendarEnabled={calendarEnabled}
-          calendarPermissionGranted={calendarPermissionGranted}
-          calendarBuffer={calendarBuffer}
-          calendarDuration={calendarDuration}
-          calendarSelectedId={calendarSelectedId}
-          calendarOptions={calendarOptions}
-          onToggleCalendar={toggleCalendarIntegration}
-          onCycleCalendarBuffer={cycleCalendarBuffer}
-          onCycleCalendarDuration={cycleCalendarDuration}
-          onSelectCalendar={handleSelectCalendar}
-          onShowCalendarPermissionSheet={showCalendarPermissionSheet}
-        />
-      </KeyboardAwareScrollView>
+  return (
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
+    >
+      <ResponsiveGridList
+        style={styles.container}
+        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + spacing.xl }]}
+        data={SECTIONS}
+        keyExtractor={(item) => item.id}
+        renderItem={renderSection}
+        ListHeaderComponent={HeaderComponent}
+      />
 
       {permissionSheet && (
         <PermissionExplainerSheet
@@ -276,6 +327,6 @@ export default function GoalsScreen() {
           onClose={() => setPermissionSheet(null)}
         />
       )}
-    </>
+    </KeyboardAvoidingView>
   );
 }

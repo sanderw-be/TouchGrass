@@ -54,8 +54,11 @@ jobs:
       - name: Run TypeScript type checking
         run: npm run type-check
 
-      - name: Run tests
+      - name: Run unit tests
         run: npm test -- --coverage --passWithNoTests
+
+      - name: Run integration tests
+        run: npx jest -c jest.integration.config.js
 
       - name: Regenerate AI Context
         run: |

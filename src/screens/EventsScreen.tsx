@@ -3,12 +3,12 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
   RefreshControl,
   Alert,
   Image,
 } from 'react-native';
+import { ResponsiveGridList } from '../components/ResponsiveGridList';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
@@ -261,26 +261,28 @@ export default function EventsScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView
+      <ResponsiveGridList
         style={styles.scroll}
         contentContainerStyle={styles.content}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.grass} />
         }
-      >
-        {!isLoading && sessions.length === 0 && (
-          <View style={styles.empty}>
-            <Image
-              source={require('../../assets/herb.png')}
-              style={styles.emptyIcon}
-              resizeMode="contain"
-            />
-            <Text style={styles.emptyText}>{t('events_none_recorded')}</Text>
-          </View>
-        )}
-
-        {grouped.map(({ dayMs, sessions: daySessions }) => (
-          <View key={dayMs}>
+        data={grouped}
+        keyExtractor={(item) => String(item.dayMs)}
+        ListEmptyComponent={
+          !isLoading && sessions.length === 0 ? (
+            <View style={styles.empty}>
+              <Image
+                source={require('../../assets/herb.png')}
+                style={styles.emptyIcon}
+                resizeMode="contain"
+              />
+              <Text style={styles.emptyText}>{t('events_none_recorded')}</Text>
+            </View>
+          ) : null
+        }
+        renderItem={({ item: { dayMs, sessions: daySessions } }) => (
+          <View>
             <Text style={styles.dayHeader}>
               {formatLocalDate(dayMs, { weekday: 'long', day: 'numeric', month: 'long' })}
             </Text>
@@ -299,8 +301,8 @@ export default function EventsScreen() {
               />
             ))}
           </View>
-        ))}
-      </ScrollView>
+        )}
+      />
 
       <UndoSnackbar
         visible={undoSnackbar.visible}

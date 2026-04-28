@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useMemo, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
+import { ResponsiveGridList } from '../components/ResponsiveGridList';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import {
   getDailyTotalsForMonthAsync,
@@ -100,8 +101,8 @@ export default function HistoryScreen() {
   const daysGoalMet = dailyData.filter((d) => d.minutes >= dailyTarget).length;
   const maxMinutes = Math.max(...dailyData.map((d) => d.minutes), dailyTarget, 1);
 
-  return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+  const renderHeader = () => (
+    <>
       {/* Period tabs */}
       <View style={styles.tabs}>
         {(['week', 'month'] as Period[]).map((p) => (
@@ -149,7 +150,17 @@ export default function HistoryScreen() {
           isLoading={isLoading}
         />
       </View>
-    </ScrollView>
+    </>
+  );
+
+  return (
+    <ResponsiveGridList
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      data={[]}
+      ListHeaderComponent={renderHeader}
+      renderItem={() => null}
+    />
   );
 }
 
