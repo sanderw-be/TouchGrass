@@ -2044,7 +2044,7 @@ describe('notificationManager', () => {
 
       const call = (SmartReminderModule.scheduleReminders as jest.Mock).mock.calls[0][0][0];
       // First contributor description has its first letter capitalized
-      expect(call.body).toMatch(/notif_reason_lunch/i);
+      expect(call.body).toMatch(/notif_body_start Notif_reason_lunch/);
 
       jest.restoreAllMocks();
     });
@@ -2077,7 +2077,7 @@ describe('notificationManager', () => {
 
       const call = (SmartReminderModule.scheduleReminders as jest.Mock).mock.calls[0][0][0];
       // First contributor has its first letter capitalized; second is unchanged
-      expect(call.body).toMatch(/notif_reason_after_work/i);
+      expect(call.body).toMatch(/notif_body_start Notif_reason_after_work/);
       expect(call.body).toContain('notif_reason_pattern');
       expect(call.body).toContain(', notif_contributor_and ');
 

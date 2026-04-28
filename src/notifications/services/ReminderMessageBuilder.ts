@@ -50,7 +50,7 @@ export class ReminderMessageBuilder implements IReminderMessageBuilder {
       if (joined) {
         // Capitalize first letter
         joined = joined.charAt(0).toUpperCase() + joined.slice(1);
-        body += `. ${joined}.`;
+        body += ` ${joined}.`;
       }
     }
 
