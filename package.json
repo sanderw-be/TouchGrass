@@ -1,6 +1,6 @@
 {
   "name": "touchgrass",
-  "version": "1.7.4",
+  "version": "0.0.0-development",
   "license": "SEE LICENSE IN LICENSE",
   "main": "index.ts",
   "scripts": {
