@@ -81,7 +81,10 @@ export function performDeferredInitialization(): void {
             ),
         },
         { name: 'Detection Initialization', task: initDetection },
-        { name: 'Day Reminders', task: () => getSmartReminderScheduler().scheduleDayReminders() },
+        {
+          name: 'Day Reminders',
+          task: () => getSmartReminderScheduler().scheduleUpcomingReminders(),
+        },
         {
           name: 'Scheduled Notifications',
           task: () => getScheduledNotificationManager().scheduleAllScheduledNotifications(),

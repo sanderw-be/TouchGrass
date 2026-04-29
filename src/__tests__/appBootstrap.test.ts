@@ -53,7 +53,7 @@ jest.mock('expo-constants', () => ({
 jest.mock('expo-battery');
 jest.mock('../utils/batteryOptimization');
 const mockNotificationInfrastructureService = { setupNotificationInfrastructure: jest.fn() };
-const mockSmartReminderScheduler = { scheduleDayReminders: jest.fn() };
+const mockSmartReminderScheduler = { scheduleUpcomingReminders: jest.fn() };
 const mockScheduledNotificationManager = { scheduleAllScheduledNotifications: jest.fn() };
 const mockNotificationResponseHandler = { handleNotificationResponse: jest.fn() };
 
@@ -147,7 +147,7 @@ describe('services/appBootstrap', () => {
         mockNotificationInfrastructureService.setupNotificationInfrastructure
       ).toHaveBeenCalledTimes(1);
       expect(initDetection).toHaveBeenCalledTimes(1);
-      expect(mockSmartReminderScheduler.scheduleDayReminders).toHaveBeenCalledTimes(1);
+      expect(mockSmartReminderScheduler.scheduleUpcomingReminders).toHaveBeenCalledTimes(1);
       expect(
         mockScheduledNotificationManager.scheduleAllScheduledNotifications
       ).toHaveBeenCalledTimes(1);
@@ -166,7 +166,7 @@ describe('services/appBootstrap', () => {
         "TouchGrass: Deferred init task 'Detection Initialization' failed:",
         expect.any(Error)
       );
-      expect(mockSmartReminderScheduler.scheduleDayReminders).toHaveBeenCalledTimes(1); // A task after the failed one
+      expect(mockSmartReminderScheduler.scheduleUpcomingReminders).toHaveBeenCalledTimes(1); // A task after the failed one
       consoleWarnSpy.mockRestore();
     });
   });

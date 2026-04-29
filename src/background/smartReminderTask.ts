@@ -1,9 +1,10 @@
 import * as Notifications from 'expo-notifications';
-import { getTodayMinutesAsync, getCurrentDailyGoalAsync } from '../storage';
+import { getTodayMinutesAsync, getCurrentDailyGoalAsync, initDatabaseAsync, db } from '../storage';
 import { fetchWeatherForecast } from '../weather/weatherService';
 import { ReminderMessageBuilder } from '../notifications/services/ReminderMessageBuilder';
 import { StorageService } from '../storage/StorageService';
-import { db } from '../storage/db';
+import { createContainer } from '../core/container';
+import { getSmartReminderScheduler } from '../notifications/notificationManager';
 
 interface HeadlessData {
   type: string;
@@ -12,14 +13,18 @@ interface HeadlessData {
 
 export const handleSmartReminder = async (data: HeadlessData) => {
   console.log('[SR_HEADLESS] Task started', data);
-  const storageService = new StorageService(db);
 
   try {
+    // 0. Initialize Infrastructure (Database + DI Container)
+    await initDatabaseAsync();
+    createContainer(db, () => {}); // No-op for feedback in headless mode
+
+    const storageService = new StorageService(db);
     const todayMinutes = await getTodayMinutesAsync();
     const dailyGoal = await getCurrentDailyGoalAsync();
     const targetMinutes = dailyGoal?.targetMinutes ?? 30;
 
-    // Load state
+    // 1. Logic Guards
     const todayDateStr = new Date().toDateString();
     const lastTrackedDate = await storageService.getSettingAsync('sent_smart_reminders_date', '');
     let sentSmartReminders =
@@ -48,7 +53,7 @@ export const handleSmartReminder = async (data: HeadlessData) => {
     } else if (data.type === 'catchup_reminder') {
       // Catchup reminder logic: skip if ahead of schedule
       const progressRatio = todayMinutes / targetMinutes;
-      const expectedRatio = sentSmartReminders / Math.max(1, smartRemindersCount); // Avoid div by 0
+      const expectedRatio = sentSmartReminders / Math.max(1, smartRemindersCount);
 
       if (progressRatio > expectedRatio || todayMinutes >= targetMinutes) {
         console.log(
@@ -58,15 +63,13 @@ export const handleSmartReminder = async (data: HeadlessData) => {
       }
     }
 
-    // 2. Weather Fetch with 1s timeout
-    const weatherTimeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), 1000));
+    // 2. Weather Fetch (best effort)
+    const weatherTimeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), 1500));
     const weatherFetch = fetchWeatherForecast({ allowPermissionPrompt: false });
-
     await Promise.race([weatherFetch, weatherTimeout]);
 
-    // 3. Build Message
+    // 3. Build & Fire Notification
     const messageBuilder = new ReminderMessageBuilder(storageService);
-
     let contributors: string[] = [];
     if (data.contributors) {
       try {
@@ -78,12 +81,11 @@ export const handleSmartReminder = async (data: HeadlessData) => {
 
     const { title, body } = await messageBuilder.buildReminderMessage(
       todayMinutes,
-      dailyGoal?.targetMinutes ?? 30,
+      targetMinutes,
       new Date().getHours(),
       contributors
     );
 
-    // 4. Schedule Notification
     await Notifications.scheduleNotificationAsync({
       content: {
         title,
@@ -96,6 +98,14 @@ export const handleSmartReminder = async (data: HeadlessData) => {
     });
 
     console.log('[SR_HEADLESS] Notification triggered successfully');
+
+    // 4. Proactive Re-plan (Keeping the Chain Going)
+    // This is the most critical part: after a notification fires, we re-calculate
+    // the rolling 48h schedule to account for the latest progress and weather.
+    console.log('[SR_HEADLESS] Triggering proactive re-plan...');
+    const scheduler = getSmartReminderScheduler();
+    await scheduler.scheduleUpcomingReminders();
+    console.log('[SR_HEADLESS] Re-plan complete.');
   } catch (error) {
     console.error('[SR_HEADLESS] Error in headless task:', error);
   }

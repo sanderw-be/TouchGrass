@@ -25,9 +25,9 @@ export function useForegroundSync() {
               );
               InteractionManager.runAfterInteractions(() => {
                 getSmartReminderScheduler()
-                  .scheduleDayReminders()
+                  .scheduleUpcomingReminders()
                   .catch((e) =>
-                    console.warn('TouchGrass: foreground scheduleDayReminders error:', e)
+                    console.warn('TouchGrass: foreground scheduleUpcomingReminders error:', e)
                   );
                 getSmartReminderScheduler()
                   .processReminderQueue()
