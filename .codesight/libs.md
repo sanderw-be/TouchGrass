@@ -8,7 +8,6 @@
   - function scheduleNextPulse: (delayMs) => Promise<void>
   - function cancelPulse: () => Promise<void>
   - const PULSE_TASK_NAME
-- `src/background/smartReminderHeadlessTask.ts` — function smartReminderHeadlessTask
 - `src/background/smartReminderTask.ts` — function handleSmartReminder
 - `src/calendar/calendarService.ts`
   - function cleanupTouchGrassCalendars: () => Promise<CalendarCleanupResult>
@@ -117,7 +116,7 @@
   - function getReminderMessageBuilder
   - _...1 more_
 - `src/notifications/reminderAlgorithm.ts`
-  - function scoreReminderHours: (todayMinutes, dailyTargetMinutes, currentHour, currentMinute, plannedSlots) => Promise<HourScore[]>
+  - function scoreReminderHours: (todayMinutes, dailyTargetMinutes, currentHour, currentMinute, plannedSlots, baseDateMs) => void
   - function shouldRemindNow: (todayMinutes, dailyTargetMinutes, lastReminderMs, isCurrentlyOutside) => Promise<
   - interface ScoreContributor
   - interface HourScore
@@ -233,7 +232,7 @@
   - function getWeatherEmoji: (condition) => string
 - `src/weather/weatherService.ts`
   - function fetchWeatherForecast: (options) => Promise<WeatherFetchResult>
-  - function getWeatherForHour: (hour) => Promise<WeatherCondition | null>
+  - function getWeatherForHour: (hour, dateMs) => void
   - function isWeatherDataAvailable: () => Promise<boolean>
   - interface WeatherFetchResult
   - interface FetchWeatherForecastOptions

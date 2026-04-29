@@ -2,7 +2,7 @@
 
 > **Navigation aid.** Library inventory extracted via AST. Read the source files listed here before modifying exported functions.
 
-**59 library files** across 13 modules
+**58 library files** across 13 modules
 
 ## Detection (13 files)
 
@@ -72,11 +72,6 @@
 - `src/domain/ScoringDomain.ts` — calculateUpdatedProbability, scoreDuration, calculateSessionScore, DISCARD_CONFIDENCE_THRESHOLD, DEFAULT_TIME_SLOT_PROBABILITY
 - `src/domain/SessionDomain.ts` — mergeSessionData, calculateMergedSpeed, splitRangeAroundConfirmed, MergedSessionData
 
-## Background (2 files)
-
-- `src/background/smartReminderHeadlessTask.ts` — smartReminderHeadlessTask
-- `src/background/smartReminderTask.ts` — handleSmartReminder
-
 ## Weather (2 files)
 
 - `src/weather/weatherService.ts` — fetchWeatherForecast, getWeatherForHour, isWeatherDataAvailable, WeatherFetchResult, FetchWeatherForecastOptions
@@ -89,6 +84,10 @@
 ## AppBootstrap.ts (1 files)
 
 - `appBootstrap.ts` — performCriticalInitializationAsync, performDeferredInitialization, CriticalAppState
+
+## Background (1 files)
+
+- `src/background/smartReminderTask.ts` — handleSmartReminder
 
 ## Calendar (1 files)
 

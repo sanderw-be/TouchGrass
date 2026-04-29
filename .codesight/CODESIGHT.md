@@ -2,9 +2,9 @@
 
 > **Stack:** raw-http | none | react | typescript
 
-> 0 routes | 0 models | 35 components | 59 lib files | 3 env vars | 1 middleware | 0% test coverage
-> **Token savings:** this file is ~6,200 tokens. Without it, AI exploration would cost ~36,500 tokens. **Saves ~30,300 tokens per conversation.**
-> **Last scanned:** 2026-04-28 19:21 — re-run after significant changes
+> 0 routes | 0 models | 35 components | 58 lib files | 3 env vars | 1 middleware | 0% test coverage
+> **Token savings:** this file is ~6,100 tokens. Without it, AI exploration would cost ~36,200 tokens. **Saves ~30,100 tokens per conversation.**
+> **Last scanned:** 2026-04-29 21:21 — re-run after significant changes
 
 ---
 
@@ -58,7 +58,6 @@
   - function scheduleNextPulse: (delayMs) => Promise<void>
   - function cancelPulse: () => Promise<void>
   - const PULSE_TASK_NAME
-- `src/background/smartReminderHeadlessTask.ts` — function smartReminderHeadlessTask
 - `src/background/smartReminderTask.ts` — function handleSmartReminder
 - `src/calendar/calendarService.ts`
   - function cleanupTouchGrassCalendars: () => Promise<CalendarCleanupResult>
@@ -167,7 +166,7 @@
   - function getReminderMessageBuilder
   - _...1 more_
 - `src/notifications/reminderAlgorithm.ts`
-  - function scoreReminderHours: (todayMinutes, dailyTargetMinutes, currentHour, currentMinute, plannedSlots) => Promise<HourScore[]>
+  - function scoreReminderHours: (todayMinutes, dailyTargetMinutes, currentHour, currentMinute, plannedSlots, baseDateMs) => void
   - function shouldRemindNow: (todayMinutes, dailyTargetMinutes, lastReminderMs, isCurrentlyOutside) => Promise<
   - interface ScoreContributor
   - interface HourScore
@@ -283,7 +282,7 @@
   - function getWeatherEmoji: (condition) => string
 - `src/weather/weatherService.ts`
   - function fetchWeatherForecast: (options) => Promise<WeatherFetchResult>
-  - function getWeatherForHour: (hour) => Promise<WeatherCondition | null>
+  - function getWeatherForHour: (hour, dateMs) => void
   - function isWeatherDataAvailable: () => Promise<boolean>
   - interface WeatherFetchResult
   - interface FetchWeatherForecastOptions
@@ -320,17 +319,17 @@
 
 ## Most Imported Files (change these carefully)
 
-- `src/storage/index.ts` — imported by **68** files
+- `src/storage/index.ts` — imported by **67** files
 - `src/i18n/index.ts` — imported by **53** files
 - `src/store/useAppStore.ts` — imported by **35** files
 - `src/utils/theme.ts` — imported by **31** files
 - `src/detection/index.ts` — imported by **14** files
-- `src/storage/db.ts` — imported by **11** files
+- `src/notifications/notificationManager.ts` — imported by **11** files
 - `src/components/ResponsiveGridList.tsx` — imported by **11** files
-- `src/storage/StorageService.ts` — imported by **10** files
-- `src/notifications/notificationManager.ts` — imported by **10** files
 - `src/utils/helpers.ts` — imported by **10** files
+- `src/storage/StorageService.ts` — imported by **9** files
 - `src/storage/types.ts` — imported by **9** files
+- `src/storage/db.ts` — imported by **9** files
 - `src/utils/sessionsChangedEmitter.ts` — imported by **8** files
 - `src/detection/manualCheckin.ts` — imported by **8** files
 - `src/i18n/en.ts` — imported by **8** files
@@ -343,16 +342,16 @@
 
 ## Import Map (who imports what)
 
-- `src/storage/index.ts` ← `appBootstrap.ts`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx` +63 more
+- `src/storage/index.ts` ← `appBootstrap.ts`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx` +62 more
 - `src/i18n/index.ts` ← `appBootstrap.ts`, `src/__tests__/ErrorBoundary.test.tsx`, `src/__tests__/FeedbackSupportScreen.test.tsx`, `src/__tests__/appBootstrap.test.ts`, `src/__tests__/i18n.test.ts` +48 more
 - `src/store/useAppStore.ts` ← `App.tsx`, `appBootstrap.ts`, `src/__tests__/App.test.tsx`, `src/__tests__/useAppStore.test.ts`, `src/components/DiagnosticSheet.tsx` +30 more
 - `src/utils/theme.ts` ← `src/components/DiagnosticSheet.tsx`, `src/components/EditLocationSheet.tsx`, `src/components/EditSessionSheet.tsx`, `src/components/ErrorBoundary.tsx`, `src/components/ManualSessionSheet.tsx` +26 more
 - `src/detection/index.ts` ← `appBootstrap.ts`, `src/__tests__/IntroScreen.test.tsx`, `src/__tests__/IntroScreen.test.tsx`, `src/__tests__/IntroScreen.test.tsx`, `src/__tests__/IntroScreen.test.tsx` +9 more
-- `src/storage/db.ts` ← `src/__tests__/integration/database.integration.test.ts`, `src/background/smartReminderHeadlessTask.ts`, `src/background/smartReminderTask.ts`, `src/storage/index.ts`, `src/storage/repositories/GoalRepository.ts` +6 more
+- `src/notifications/notificationManager.ts` ← `src/__tests__/notificationManager.test.ts`, `src/__tests__/scheduledNotifications.test.ts`, `src/background/smartReminderTask.ts`, `src/hooks/useForegroundSync.ts`, `src/hooks/useGoalIntegrations.ts` +6 more
 - `src/components/ResponsiveGridList.tsx` ← `src/screens/AboutAppScreen.tsx`, `src/screens/ActivityLogScreen.tsx`, `src/screens/EventsScreen.tsx`, `src/screens/FeedbackSupportScreen.tsx`, `src/screens/GoalsScreen.tsx` +6 more
-- `src/storage/StorageService.ts` ← `src/__tests__/StorageService.test.ts`, `src/__tests__/integration/database.integration.test.ts`, `src/background/smartReminderHeadlessTask.ts`, `src/background/smartReminderTask.ts`, `src/core/container.ts` +5 more
-- `src/notifications/notificationManager.ts` ← `src/__tests__/notificationManager.test.ts`, `src/__tests__/scheduledNotifications.test.ts`, `src/hooks/useForegroundSync.ts`, `src/hooks/useGoalIntegrations.ts`, `src/notifications/services/ReminderQueueManager.ts` +5 more
 - `src/utils/helpers.ts` ← `src/components/EditSessionSheet.tsx`, `src/components/ManualSessionSheet.tsx`, `src/components/ProgressRing.tsx`, `src/components/ReminderFeedbackModal.tsx`, `src/i18n/index.ts` +5 more
+- `src/storage/StorageService.ts` ← `src/__tests__/StorageService.test.ts`, `src/__tests__/integration/database.integration.test.ts`, `src/background/smartReminderTask.ts`, `src/core/container.ts`, `src/notifications/services/NotificationResponseHandler.ts` +4 more
+- `src/storage/types.ts` ← `src/__tests__/domain.test.ts`, `src/domain/SessionDomain.ts`, `src/storage/StorageService.ts`, `src/storage/index.ts`, `src/storage/repositories/GoalRepository.ts` +4 more
 
 ---
 
