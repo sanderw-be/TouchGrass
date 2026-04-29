@@ -317,10 +317,13 @@ class BootRestoreReceiver : BroadcastReceiver() {
       val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
       val sdf = java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.getDefault())
       
+      var futureAlarmsRestored = 0
+      
       for (i in 0 until jsonArray.length()) {
           val item = jsonArray.getJSONObject(i)
           val timestamp = item.getLong("timestamp")
           if (timestamp > System.currentTimeMillis()) {
+              futureAlarmsRestored++
               val formattedTime = sdf.format(java.util.Date(timestamp))
               Log.d("TouchGrass", "[SR_BOOT_RESTORE] restoring alarm for " + formattedTime)
               
@@ -344,6 +347,32 @@ class BootRestoreReceiver : BroadcastReceiver() {
               } else {
                   alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, timestamp, pendingIntent)
               }
+          }
+      }
+
+      // Native Activity Log Injection
+      try {
+          val dbPath = context.getDatabasePath("touchgrass.db")
+          if (dbPath.exists()) {
+              val db = android.database.sqlite.SQLiteDatabase.openDatabase(dbPath.absolutePath, null, android.database.sqlite.SQLiteDatabase.OPEN_READWRITE)
+              val logMsg = "Boot receiver restored $futureAlarmsRestored future alarms"
+              db.execSQL("INSERT INTO background_task_logs (timestamp, category, message) VALUES (?, ?, ?)", arrayOf(System.currentTimeMillis(), "reminder", logMsg))
+              db.close()
+          }
+      } catch (dbE: Exception) {
+          Log.e("TouchGrass", "Error writing native activity log", dbE)
+      }
+
+      // Conditional Wake
+      if (futureAlarmsRestored == 0) {
+          Log.d("TouchGrass", "[SR_BOOT_RESTORE] Chain broken. Waking JS for replan.")
+          val headlessIntent = Intent(context, SmartReminderHeadlessService::class.java).apply {
+              putExtra("type", "boot_replan")
+          }
+          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+              context.startForegroundService(headlessIntent)
+          } else {
+              context.startService(headlessIntent)
           }
       }
     } catch (e: Exception) {
