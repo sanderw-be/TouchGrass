@@ -108,7 +108,7 @@ jobs:
           echo "Comparing $BASE to HEAD..."
           
           # 3. Use git diff to list changed files and grep for our native paths
-          if git diff --name-only $BASE ${{ github.sha }} | grep -qE '^package\.json$|^app\.json$|^app\.config\.js$|^ios/|^android/|^eas\.json$'; then
+          if git diff --name-only $BASE ${{ github.sha }} | grep -qE '^package\.json$|^app\.json$|^app\.config\.js$|^ios/|^android/|^eas\.json$|^withBackgroundFeaturesPlugin\.js$|^withAlarmBridgePlugin\.js$'; then
             echo "native=true" >> $GITHUB_OUTPUT
             echo "🚨 Native changes detected in this push!"
           else

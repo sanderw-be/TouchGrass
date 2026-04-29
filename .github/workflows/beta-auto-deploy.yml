@@ -32,6 +32,8 @@ jobs:
               - 'ios/**'
               - 'android/**'
               - 'eas.json'
+              - 'withBackgroundFeaturesPlugin.js'
+              - 'withAlarmBridgePlugin.js'
 
   # 2. Run Semantic Versioning ONLY if native changes exist
   version-bump:
