@@ -1,4 +1,5 @@
 import * as Location from 'expo-location';
+import { PermissionsAndroid, Platform } from 'react-native';
 import { initialize, requestPermission } from 'react-native-health-connect';
 import { setSettingAsync } from '../storage';
 import {
@@ -82,6 +83,23 @@ export class PermissionService {
       return status === 'granted';
     } catch (e) {
       console.warn('Weather location permission request error:', e);
+      return false;
+    }
+  }
+
+  public static async requestActivityRecognition(): Promise<boolean> {
+    if (Platform.OS !== 'android' || Platform.Version < 29) return true;
+    try {
+      const granted = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.ACTIVITY_RECOGNITION,
+        {
+          title: 'Smart Battery Optimization',
+          message: 'TouchGrass uses activity recognition to save battery by pausing location checks when you are driving.',
+          buttonPositive: 'OK'
+        }
+      );
+      return granted === PermissionsAndroid.RESULTS.GRANTED;
+    } catch (err) {
       return false;
     }
   }

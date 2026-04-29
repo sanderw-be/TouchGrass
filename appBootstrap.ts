@@ -1,4 +1,4 @@
-import { InteractionManager } from 'react-native';
+import { InteractionManager, AppRegistry } from 'react-native';
 import { initDatabaseAsync, getSettingAsync, setSettingAsync, db } from './src/storage';
 import { createContainer } from './src/core/container';
 import i18n, { getDeviceSupportedLocale, SUPPORTED_LOCALES } from './src/i18n';
@@ -8,10 +8,13 @@ import {
   getScheduledNotificationManager,
   getNotificationResponseHandler,
 } from './src/notifications/notificationManager';
-import { BackgroundService } from './src/background/unifiedBackgroundTask';
 import { initDetection } from './src/detection/index';
 import { requestWidgetRefresh } from './src/utils/widgetHelper';
 import { refreshBatteryOptimizationSetting } from './src/utils/batteryOptimization';
+import type { FeedbackModalData } from './src/store/useAppStore';
+import { activityTransitionTask } from './src/background/activityTransitionTask';
+
+AppRegistry.registerHeadlessTask('ActivityTransitionTask', () => activityTransitionTask);
 
 export interface CriticalAppState {
   showIntro: boolean;
@@ -21,12 +24,14 @@ export interface CriticalAppState {
 /**
  * Performs critical-path initialization asynchronously: database and language settings.
  */
-export async function performCriticalInitializationAsync(): Promise<CriticalAppState> {
+export async function performCriticalInitializationAsync(
+  onFeedbackTriggered: (data: FeedbackModalData) => void
+): Promise<CriticalAppState> {
   // Database must be ready before anything else
   await initDatabaseAsync();
 
   // Initialize IoC Container
-  createContainer(db);
+  createContainer(db, onFeedbackTriggered);
 
   // Apply stored language preference if available
   const storedLanguage = await getSettingAsync('language', 'system');
@@ -79,16 +84,14 @@ export function performDeferredInitialization(): void {
             ),
         },
         { name: 'Detection Initialization', task: initDetection },
-        { name: 'Day Reminders', task: () => getSmartReminderScheduler().scheduleDayReminders() },
+        {
+          name: 'Day Reminders',
+          task: () => getSmartReminderScheduler().scheduleUpcomingReminders(),
+        },
         {
           name: 'Scheduled Notifications',
           task: () => getScheduledNotificationManager().scheduleAllScheduledNotifications(),
         },
-        {
-          name: 'Unified Background Task',
-          task: () => BackgroundService.registerUnifiedBackgroundTask(),
-        },
-        { name: 'Alarm Pulse Chain', task: () => BackgroundService.scheduleNextAlarmPulse() },
         { name: 'Initial Widget Refresh', task: requestWidgetRefresh },
       ];
 
