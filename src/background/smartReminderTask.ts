@@ -37,6 +37,17 @@ export const handleSmartReminder = async (data: HeadlessData) => {
     const smartRemindersCount =
       parseInt(await storageService.getSettingAsync('smart_reminders_count', '2'), 10) || 2;
 
+    if (data.type === 'boot_replan') {
+      console.log('[SR_HEADLESS] Chain broken detected on boot. Replanning.');
+      await storageService.insertBackgroundLogAsync(
+        'reminder',
+        'Chain broken: Triggering full 48h replan'
+      );
+      const scheduler = getSmartReminderScheduler();
+      await scheduler.scheduleUpcomingReminders();
+      return; // Exit early to avoid sending an immediate notification
+    }
+
     if (data.type === 'smart_reminder') {
       if (todayMinutes >= targetMinutes) {
         console.log('[SR_HEADLESS] Goal already met. Skipping smart reminder.');
