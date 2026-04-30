@@ -9,4 +9,4 @@ npx --yes codesight --profile copilot
 
 echo "Updating Codesight Wiki..."
 npx --yes codesight --wiki
-git add .codesight/
+git add .codesight/ .github/copilot-instructions.md
