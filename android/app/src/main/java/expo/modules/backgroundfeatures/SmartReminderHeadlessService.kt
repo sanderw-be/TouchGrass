@@ -16,8 +16,6 @@ class SmartReminderHeadlessService : HeadlessJsTaskService() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             ensureNotificationChannel()
             val notification = buildSilentNotification()
-            
-            // Handle Android 14 (API 34) shortService requirement
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
                 startForeground(
                     NOTIFICATION_ID,
@@ -54,17 +52,21 @@ class SmartReminderHeadlessService : HeadlessJsTaskService() {
     }
 
     protected override fun getTaskConfig(intent: Intent?): HeadlessJsTaskConfig? {
-        val extras = intent?.extras
         val data = Arguments.createMap()
-        if (extras != null) {
-            data.putString("type", extras.getString("type", "smart_reminder"))
+        intent?.extras?.let { extras ->
+            for (key in extras.keySet()) {
+                val value = extras.get(key)
+                if (value is String) data.putString(key, value)
+                else if (value is Int) data.putInt(key, value)
+                else if (value is Double) data.putDouble(key, value)
+                else if (value is Boolean) data.putBoolean(key, value)
+            }
         }
-        
         return HeadlessJsTaskConfig(
             "SmartReminderHeadlessTask",
             data,
-            15000L, // 15s timeout for cold boots
-            true    // allowedInForeground
+            10000L,
+            true
         )
     }
 

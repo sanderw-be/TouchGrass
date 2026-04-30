@@ -355,9 +355,12 @@ class BootRestoreReceiver : BroadcastReceiver() {
           val dbPath = context.getDatabasePath("touchgrass.db")
           if (dbPath.exists()) {
               val db = android.database.sqlite.SQLiteDatabase.openDatabase(dbPath.absolutePath, null, android.database.sqlite.SQLiteDatabase.OPEN_READWRITE)
-              val logMsg = "Boot receiver restored $futureAlarmsRestored future alarms"
-              db.execSQL("INSERT INTO background_task_logs (timestamp, category, message) VALUES (?, ?, ?)", arrayOf(System.currentTimeMillis(), "reminder", logMsg))
-              db.close()
+              try {
+                  val logMsg = "Boot receiver restored $futureAlarmsRestored future alarms"
+                  db.execSQL("INSERT INTO background_task_logs (timestamp, category, message) VALUES (?, ?, ?)", arrayOf(System.currentTimeMillis(), "reminder", logMsg))
+              } finally {
+                  db.close()
+              }
           }
       } catch (dbE: Exception) {
           Log.e("TouchGrass", "Error writing native activity log", dbE)

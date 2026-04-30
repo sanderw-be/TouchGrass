@@ -42,6 +42,7 @@ export interface WeatherFetchResult {
 
 export interface FetchWeatherForecastOptions {
   allowPermissionPrompt?: boolean;
+  isHeadless?: boolean;
 }
 
 /**
@@ -78,7 +79,7 @@ export async function fetchWeatherForecast(
     const foregroundPermissions = await Location.getForegroundPermissionsAsync();
     let permissionGranted = foregroundPermissions.status === 'granted';
 
-    if (!permissionGranted && allowPermissionPrompt) {
+    if (!permissionGranted && allowPermissionPrompt && !options.isHeadless) {
       const requestedPermissions = await Location.requestForegroundPermissionsAsync();
       permissionGranted = requestedPermissions.status === 'granted';
     }
@@ -87,23 +88,33 @@ export async function fetchWeatherForecast(
       const servicesEnabled = await Location.hasServicesEnabledAsync();
 
       if (servicesEnabled) {
-        try {
-          const location = await Location.getCurrentPositionAsync({
-            accuracy: Location.Accuracy.Balanced,
-          });
-          latitude = location.coords.latitude;
-          longitude = location.coords.longitude;
-          locationSource = 'current';
-        } catch {
-          const lastKnownLocation = await Location.getLastKnownPositionAsync({
-            maxAge: 6 * 60 * 60 * 1000,
-            requiredAccuracy: 5000,
-          });
+        if (!options.isHeadless) {
+          try {
+            const location = await Location.getCurrentPositionAsync({
+              accuracy: Location.Accuracy.Balanced,
+            });
+            latitude = location.coords.latitude;
+            longitude = location.coords.longitude;
+            locationSource = 'current';
+          } catch (e) {
+            console.warn('[Weather] getCurrentPositionAsync failed, falling back', e);
+          }
+        }
 
-          if (lastKnownLocation) {
-            latitude = lastKnownLocation.coords.latitude;
-            longitude = lastKnownLocation.coords.longitude;
-            locationSource = 'lastKnown';
+        if (latitude === null || longitude === null) {
+          try {
+            const lastKnownLocation = await Location.getLastKnownPositionAsync({
+              maxAge: 6 * 60 * 60 * 1000,
+              requiredAccuracy: 5000,
+            });
+
+            if (lastKnownLocation) {
+              latitude = lastKnownLocation.coords.latitude;
+              longitude = lastKnownLocation.coords.longitude;
+              locationSource = 'lastKnown';
+            }
+          } catch (e) {
+            console.warn('[Weather] getLastKnownPositionAsync failed', e);
           }
         }
       }

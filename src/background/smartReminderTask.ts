@@ -43,24 +43,25 @@ export const handleSmartReminder = async (data: HeadlessData) => {
         'reminder',
         'Chain broken: Triggering full 48h replan'
       );
-      const scheduler = getSmartReminderScheduler();
-      await scheduler.scheduleUpcomingReminders();
-      return; // Exit early to avoid sending an immediate notification
+      // Exit early but the finally block will still run the replan
+      return;
     }
+
+    let shouldSend = true;
 
     if (data.type === 'smart_reminder') {
       if (todayMinutes >= targetMinutes) {
         console.log('[SR_HEADLESS] Goal already met. Skipping smart reminder.');
-        return;
+        shouldSend = false;
+      } else {
+        // We will send it, so increment the counter
+        sentSmartReminders += 1;
+        await storageService.setSettingAsync('sent_smart_reminders_date', todayDateStr);
+        await storageService.setSettingAsync(
+          'sent_smart_reminders_count',
+          sentSmartReminders.toString()
+        );
       }
-
-      // We will send it, so increment the counter
-      sentSmartReminders += 1;
-      await storageService.setSettingAsync('sent_smart_reminders_date', todayDateStr);
-      await storageService.setSettingAsync(
-        'sent_smart_reminders_count',
-        sentSmartReminders.toString()
-      );
     } else if (data.type === 'catchup_reminder') {
       // Catchup reminder logic: skip if ahead of schedule
       const progressRatio = todayMinutes / targetMinutes;
@@ -70,54 +71,62 @@ export const handleSmartReminder = async (data: HeadlessData) => {
         console.log(
           `[SR_HEADLESS] Ahead of schedule (progress: ${progressRatio.toFixed(2)}, expected: ${expectedRatio.toFixed(2)}). Skipping catchup.`
         );
-        return;
+        shouldSend = false;
       }
     }
 
-    // 2. Weather Fetch (best effort)
-    const weatherTimeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), 1500));
-    const weatherFetch = fetchWeatherForecast({ allowPermissionPrompt: false });
-    await Promise.race([weatherFetch, weatherTimeout]);
+    if (shouldSend) {
+      // 2. Weather Fetch (best effort)
+      const weatherTimeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), 1500));
+      const weatherFetch = fetchWeatherForecast({ allowPermissionPrompt: false, isHeadless: true });
+      await Promise.race([weatherFetch, weatherTimeout]);
 
-    // 3. Build & Fire Notification
-    const messageBuilder = new ReminderMessageBuilder(storageService);
-    let contributors: string[] = [];
-    if (data.contributors) {
-      try {
-        contributors = JSON.parse(data.contributors);
-      } catch (e) {
-        console.warn('[SR_HEADLESS] Failed to parse contributors:', e);
+      // 3. Build & Fire Notification
+      const messageBuilder = new ReminderMessageBuilder(storageService);
+      let contributors: string[] = [];
+      if (data.contributors) {
+        try {
+          contributors = JSON.parse(data.contributors);
+        } catch (e) {
+          console.warn('[SR_HEADLESS] Failed to parse contributors:', e);
+        }
       }
+
+      const { title, body } = await messageBuilder.buildReminderMessage(
+        todayMinutes,
+        targetMinutes,
+        new Date().getHours(),
+        contributors
+      );
+
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title,
+          body,
+          data: { type: data.type },
+          categoryIdentifier: 'reminder',
+          color: '#4A7C59',
+        },
+        trigger: null, // immediate
+      });
+
+      console.log('[SR_HEADLESS] Notification triggered successfully');
     }
-
-    const { title, body } = await messageBuilder.buildReminderMessage(
-      todayMinutes,
-      targetMinutes,
-      new Date().getHours(),
-      contributors
-    );
-
-    await Notifications.scheduleNotificationAsync({
-      content: {
-        title,
-        body,
-        data: { type: data.type },
-        categoryIdentifier: 'reminder',
-        color: '#4A7C59',
-      },
-      trigger: null, // immediate
-    });
-
-    console.log('[SR_HEADLESS] Notification triggered successfully');
-
-    // 4. Proactive Re-plan (Keeping the Chain Going)
-    // This is the most critical part: after a notification fires, we re-calculate
-    // the rolling 48h schedule to account for the latest progress and weather.
-    console.log('[SR_HEADLESS] Triggering proactive re-plan...');
-    const scheduler = getSmartReminderScheduler();
-    await scheduler.scheduleUpcomingReminders();
-    console.log('[SR_HEADLESS] Re-plan complete.');
   } catch (error) {
     console.error('[SR_HEADLESS] Error in headless task:', error);
+  } finally {
+    // 4. Proactive Re-plan (Keeping the Chain Going)
+    try {
+      console.log('[SR_HEADLESS] Triggering proactive re-plan...');
+      const scheduler = getSmartReminderScheduler();
+      if (scheduler) {
+        await scheduler.scheduleUpcomingReminders();
+        console.log('[SR_HEADLESS] Re-plan complete.');
+      } else {
+        console.warn('[SR_HEADLESS] getSmartReminderScheduler returned null or undefined');
+      }
+    } catch (replanError) {
+      console.error('[SR_HEADLESS] Failed to execute proactive re-plan:', replanError);
+    }
   }
 };
