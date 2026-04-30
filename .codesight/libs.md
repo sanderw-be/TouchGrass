@@ -133,6 +133,7 @@
   - const SCHEDULED_NOTIF_PREFIX
 - `src/notifications/services/SmartReminderScheduler.ts`
   - class SmartReminderScheduler
+  - interface ReplanOptions
   - interface ISmartReminderScheduler
   - const FAILSAFE_REMINDER_PREFIX
 - `src/storage/StorageService.ts` — class StorageService, interface IStorageService

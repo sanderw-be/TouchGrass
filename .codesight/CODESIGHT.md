@@ -4,7 +4,7 @@
 
 > 0 routes | 0 models | 35 components | 57 lib files | 3 env vars | 1 middleware | 0% test coverage
 > **Token savings:** this file is ~6,100 tokens. Without it, AI exploration would cost ~35,900 tokens. **Saves ~29,900 tokens per conversation.**
-> **Last scanned:** 2026-04-30 08:09 — re-run after significant changes
+> **Last scanned:** 2026-04-30 08:24 — re-run after significant changes
 
 ---
 
@@ -183,6 +183,7 @@
   - const SCHEDULED_NOTIF_PREFIX
 - `src/notifications/services/SmartReminderScheduler.ts`
   - class SmartReminderScheduler
+  - interface ReplanOptions
   - interface ISmartReminderScheduler
   - const FAILSAFE_REMINDER_PREFIX
 - `src/storage/StorageService.ts` — class StorageService, interface IStorageService

@@ -50,8 +50,8 @@
 - `src/notifications/services/NotificationInfrastructureService.ts` — NotificationInfrastructureService, INotificationInfrastructureService, ACTION_WENT_OUTSIDE, ACTION_SNOOZE, ACTION_LESS_OFTEN, CHANNEL_ID, …
 - `src/notifications/notificationManager.ts` — getNotificationInfrastructureService, getSmartReminderScheduler, getScheduledNotificationManager, getNotificationResponseHandler, getReminderQueueManager, getReminderMessageBuilder, …
 - `src/notifications/reminderAlgorithm.ts` — scoreReminderHours, shouldRemindNow, ScoreContributor, HourScore
+- `src/notifications/services/SmartReminderScheduler.ts` — SmartReminderScheduler, ReplanOptions, ISmartReminderScheduler, FAILSAFE_REMINDER_PREFIX
 - `src/notifications/services/ScheduledNotificationManager.ts` — ScheduledNotificationManager, IScheduledNotificationManager, SCHEDULED_NOTIF_PREFIX
-- `src/notifications/services/SmartReminderScheduler.ts` — SmartReminderScheduler, ISmartReminderScheduler, FAILSAFE_REMINDER_PREFIX
 - `src/notifications/services/NotificationResponseHandler.ts` — NotificationResponseHandler, INotificationResponseHandler
 - `src/notifications/services/ReminderMessageBuilder.ts` — ReminderMessageBuilder, IReminderMessageBuilder
 - `src/notifications/services/ReminderQueueManager.ts` — ReminderQueueManager, IReminderQueueManager
