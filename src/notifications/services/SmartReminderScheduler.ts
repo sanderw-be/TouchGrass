@@ -350,7 +350,8 @@ export class SmartReminderScheduler implements ISmartReminderScheduler {
               slot.hour,
               slot.contributors?.map((c) => c.description) || []
             );
-            const id = `smart_${this.formatLocalDateKey(now)}_${slot.hour}:${slot.minute}`;
+            const prefix = slot.isCatchup ? 'catchup' : 'smart';
+            const id = `${prefix}_${this.formatLocalDateKey(now)}_${slot.hour}:${slot.minute}`;
 
             allPlannedItems.push({
               timestamp: trigger.getTime(),

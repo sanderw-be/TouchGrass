@@ -905,7 +905,7 @@ describe('notificationManager', () => {
           smart_reminder_queue: JSON.stringify([
             { id: 'smart_2026-03-14_10:00', slotMinutes: 600, status: 'date_planned' },
             { id: 'smart_2026-03-14_12:00', slotMinutes: 720, status: 'date_planned' },
-            { id: 'smart_2026-03-14_14:00', slotMinutes: 840, status: 'date_planned' },
+            { id: 'catchup_2026-03-14_14:00_123', slotMinutes: 840, status: 'date_planned' },
           ]),
         };
         (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(10);
@@ -943,9 +943,10 @@ describe('notificationManager', () => {
         );
         expect(todayItems).toHaveLength(2);
         expect(todayItems[0].timestamp).toBe(new Date('2026-03-14T12:00:00').getTime());
-        expect(todayItems[1].timestamp).toBe(new Date('2026-03-14T14:00:00').getTime());
-
-        // The 10:00 slot (just fired) should NOT be carried forward
+        expect(todayItems[1].timestamp).toBe(
+          new Date('2026-03-14T14:00:00').getTime()
+        );
+        expect(todayItems[1].type).toBe('catchup_reminder'); 
         const has10am = scheduledItems.some(
           (item: any) => new Date(item.timestamp).getHours() === 10
         );
