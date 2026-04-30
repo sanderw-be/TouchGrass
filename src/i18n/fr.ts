@@ -174,7 +174,12 @@ const fr: TranslationType = {
   settings_gps: 'Traçage GPS Local',
   settings_gps_desc: 'Détection de sortie via geofence',
   settings_gps_permission: 'Requis',
-  settings_gps_permission_missing: 'Permission absente',
+  settings_gps_permission_missing: 'Permissions manquantes — appuyez pour corriger',
+  settings_activity_recognition: "Reconnaissance d'activité",
+  settings_activity_recognition_desc:
+    'Économisez la batterie en suivant les mouvements plutôt que la position',
+  settings_activity_recognition_permission_missing:
+    'Permissions manquantes — appuyez pour corriger',
   settings_location_radius: 'Rayon {{radius}}m · {{type}}',
   settings_location_indoor: 'Dedans',
   settings_location_outdoor: 'Dehors',
@@ -302,6 +307,14 @@ const fr: TranslationType = {
   intro_hc_hint: 'Réglable plus tard.',
   intro_hc_button: 'Connecter',
   intro_hc_button_granted: 'Connecté ✓',
+  intro_ar_title: 'Économiseur de batterie',
+  intro_ar_body:
+    'Pour économiser votre batterie, TouchGrass ne vérifie votre position que lorsque vous vous déplacez réellement.',
+  intro_ar_why_title: 'Pourquoi est-ce nécessaire ?',
+  intro_ar_why_body:
+    "La reconnaissance d'activité ne réveille l'application que lorsque vous commencez ou arrêtez de bouger (marche, course, conduite).",
+  intro_ar_button: "Activer l'économiseur",
+  intro_ar_button_granted: 'Activé ✓',
   intro_location_title: 'Localisation',
   intro_location_body: 'Geofencing privé.',
   intro_location_why_title: 'Pourquoi ?',
@@ -341,7 +354,8 @@ const fr: TranslationType = {
   intro_ready_tip_title: 'Astuce',
   intro_ready_tip_body: 'Laissez votre téléphone chez vous et saisissez manuellement au retour.',
   intro_ready_checklist_title: 'Checklist',
-  intro_ready_checklist_item_hc: 'Health Connect.',
+  intro_ready_checklist_item_hc: 'Connecter Health Connect.',
+  intro_ready_checklist_item_ar: "Activer la reconnaissance d'activité.",
   intro_ready_checklist_item_gps: 'GPS.',
   intro_ready_checklist_item_notifications: 'Rappels.',
   intro_ready_checklist_item_calendar: 'Agenda.',

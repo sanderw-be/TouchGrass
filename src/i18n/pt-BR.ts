@@ -175,7 +175,11 @@ const ptBR: TranslationType = {
   settings_gps: 'Rastreio GPS',
   settings_gps_desc: 'Detectar quando você sai via geofencing',
   settings_gps_permission: 'Permissão necessária',
-  settings_gps_permission_missing: 'Faltam permissões',
+  settings_gps_permission_missing: 'Permissões ausentes — toque para corrigir',
+  settings_activity_recognition: 'Reconhecimento de Atividade',
+  settings_activity_recognition_desc:
+    'Economize bateria rastreando o movimento em vez da localização',
+  settings_activity_recognition_permission_missing: 'Permissões ausentes — toque para corrigir',
   settings_location_radius: 'Raio de {{radius}}m · {{type}}',
   settings_location_indoor: 'Interior',
   settings_location_outdoor: 'Exterior',
@@ -299,9 +303,17 @@ const ptBR: TranslationType = {
   intro_hc_why_title: 'Por quê?',
   intro_hc_why_body:
     'Muitos passos em um lugar geralmente significa que você estava caminhando ao ar livre. Atividades como corrida ou ciclismo também contam como tempo no exterior. Com o GPS ativado, sessões de bicicleta ergométrica podem ser excluídas.',
-  intro_hc_hint: 'Você pode ativar isso depois nas Configurações.',
+  intro_hc_hint: 'Você pode configurar isso depois nas Configurações.',
   intro_hc_button: 'Conectar',
   intro_hc_button_granted: 'Conectado ✓',
+  intro_ar_title: 'Economia de Bateria',
+  intro_ar_body:
+    'Para economizar bateria, o TouchGrass só verifica sua localização quando você está realmente se movendo.',
+  intro_ar_why_title: 'Por que precisamos disso?',
+  intro_ar_why_body:
+    'O reconhecimento de atividade acorda o app apenas quando você começa ou para de se mover (caminhar, correr, dirigir).',
+  intro_ar_button: 'Ativar Economia de Bateria',
+  intro_ar_button_granted: 'Ativado ✓',
   intro_location_title: 'Localização',
   intro_location_body: 'Geofencing estritamente privado.',
   intro_location_why_title: 'Por quê?',
@@ -341,7 +353,8 @@ const ptBR: TranslationType = {
   intro_ready_tip_title: 'Dica',
   intro_ready_tip_body: 'Registre manualmente se preferir sair de casa sem o celular.',
   intro_ready_checklist_title: 'Checklist',
-  intro_ready_checklist_item_hc: 'Health Connect.',
+  intro_ready_checklist_item_hc: 'Conectar ao Health Connect.',
+  intro_ready_checklist_item_ar: 'Ativar Reconhecimento de Atividade.',
   intro_ready_checklist_item_gps: 'GPS.',
   intro_ready_checklist_item_notifications: 'Avisos.',
   intro_ready_checklist_item_calendar: 'Calendário.',
@@ -388,7 +401,7 @@ const ptBR: TranslationType = {
   notif_action_less_often: '🔕 Menos',
 
   notif_confirm_title: 'TouchGrass',
-  notif_confirm_went_outside: '✅ Boa! Aproveite.',
+  notif_confirm_went_outside: '✅ Boa! Aproveita.',
   notif_confirm_snoozed: '⏰ Aviso de novo em 30 min.',
   notif_confirm_less_often: '🔕 Tudo bem, vou avisar menos.',
 

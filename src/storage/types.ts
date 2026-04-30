@@ -53,7 +53,7 @@ export interface ScheduledNotification {
   label: string; // optional label like "Morning walk"
 }
 
-export type BackgroundLogCategory = 'gps' | 'health_connect' | 'reminder';
+export type BackgroundLogCategory = 'gps' | 'health_connect' | 'reminder' | 'activity_recognition';
 
 export interface BackgroundTaskLog {
   id?: number;

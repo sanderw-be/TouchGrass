@@ -15,7 +15,7 @@ jest.mock('../calendar/calendarService', () => ({
   getWritableCalendars: jest.fn().mockResolvedValue([]),
   getSelectedCalendarId: jest.fn().mockResolvedValue(''),
   setSelectedCalendarId: jest.fn(),
-  requestCalendarPermissions: jest.fn(),
+  requestCalendarPermissions: jest.fn(() => Promise.resolve({ granted: false, canAskAgain: true })),
 }));
 jest.mock('../detection', () => ({
   checkWeatherLocationPermissions: jest.fn(),
@@ -28,7 +28,9 @@ jest.mock('../utils/batteryOptimization', () => ({
 }));
 jest.mock('../notifications/notificationManager', () => ({
   notificationInfrastructureService: {
-    requestNotificationPermissions: jest.fn(),
+    requestNotificationPermissions: jest.fn(() =>
+      Promise.resolve({ granted: false, canAskAgain: true })
+    ),
   },
 }));
 jest.mock('expo-notifications', () => ({

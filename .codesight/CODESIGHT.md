@@ -3,8 +3,8 @@
 > **Stack:** raw-http | none | react | typescript
 
 > 0 routes | 0 models | 39 components | 57 lib files | 3 env vars | 1 middleware | 0% test coverage
-> **Token savings:** this file is ~6.300 tokens. Without it, AI exploration would cost ~37.200 tokens. **Saves ~30.900 tokens per conversation.**
-> **Last scanned:** 2026-04-30 12:07 — re-run after significant changes
+> **Token savings:** this file is ~6.300 tokens. Without it, AI exploration would cost ~37.200 tokens. **Saves ~31.000 tokens per conversation.**
+> **Last scanned:** 2026-04-30 21:35 — re-run after significant changes
 
 ---
 
@@ -61,7 +61,7 @@
 - `src\background\smartReminderTask.ts` — function handleSmartReminder
 - `src\calendar\calendarService.ts`
   - function cleanupTouchGrassCalendars: () => Promise<CalendarCleanupResult>
-  - function requestCalendarPermissions: () => Promise<boolean>
+  - function requestCalendarPermissions: () => Promise<
   - function hasCalendarPermissions: () => Promise<boolean>
   - function getWritableCalendars: () => Promise<Calendar.Calendar[]>
   - function getOrCreateTouchGrassCalendar: (forceCreate) => Promise<string | null>
@@ -81,7 +81,7 @@
   - _...4 more_
 - `src\detection\gpsDetection.ts`
   - function loadGPSState: () => Promise<void>
-  - function requestLocationPermissions: () => Promise<boolean>
+  - function requestLocationPermissions: () => Promise<
   - function computeMinActiveRadius: (locations) => number
   - function startLocationTracking: (profile, minRadiusMeters) => Promise<void>
   - function stopLocationTracking: () => Promise<void>
@@ -100,7 +100,7 @@
   - function checkWeatherLocationPermissions: () => Promise<boolean>
   - function requestWeatherLocationPermissions: () => Promise<boolean>
   - function checkGPSPermissions: () => Promise<boolean>
-  - function requestGPSPermissions: () => Promise<boolean>
+  - function requestGPSPermissions: () => Promise<
   - function refreshDetectionSync: () => Promise<void>
   - _...5 more_
 - `src\detection\LocationTracker.ts` — class LocationTracker
@@ -334,12 +334,12 @@
 - `src\i18n\en.ts` — imported by **8** files
 - `src\utils\widgetHelper.ts` — imported by **7** files
 - `src\weather\weatherService.ts` — imported by **7** files
-- `src\calendar\calendarService.ts` — imported by **7** files
 - `src\hooks\useTheme.ts` — imported by **6** files
+- `src\detection\PermissionService.ts` — imported by **6** files
 - `src\detection\sessionMerger.ts` — imported by **6** files
+- `src\calendar\calendarService.ts` — imported by **6** files
 - `src\utils\constants.ts` — imported by **6** files
 - `src\navigation\AppNavigator.tsx` — imported by **5** files
-- `src\core\container.ts` — imported by **5** files
 
 ## Import Map (who imports what)
 

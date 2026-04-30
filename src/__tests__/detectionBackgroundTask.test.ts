@@ -88,7 +88,7 @@ describe('initDetection', () => {
     expect(syncResolved).toBe(true);
   });
 
-  it('sets healthconnect_enabled to 0 when permissions are not granted', async () => {
+  it('does not auto-disable healthconnect_enabled when permissions are not granted', async () => {
     (HealthConnect.isHealthConnectAvailable as jest.Mock).mockResolvedValue(true);
     (HealthConnectIntent.verifyHealthConnectPermissions as jest.Mock).mockResolvedValue(false);
     (Database.getSettingAsync as jest.Mock).mockImplementation((key: string, fallback: string) => {
@@ -98,7 +98,7 @@ describe('initDetection', () => {
 
     const status = await Detection.initDetection();
 
-    expect(Database.setSettingAsync).toHaveBeenCalledWith('healthconnect_enabled', '0');
+    expect(Database.setSettingAsync).not.toHaveBeenCalledWith('healthconnect_enabled', '0');
     expect(status.healthConnectPermission).toBe(false);
     expect(HealthConnect.syncHealthConnect).not.toHaveBeenCalled();
   });

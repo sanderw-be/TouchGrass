@@ -7,6 +7,7 @@ import {
   Alert,
   Linking,
   BackHandler,
+  Platform,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -75,8 +76,10 @@ export default function SettingsScreen() {
     setPermissionSheet,
     handleToggleHC,
     handleToggleGPS,
+    handleToggleAR,
     showHCPermissionSheet,
     showGPSPermissionSheet,
+    showARPermissionSheet,
   } = useDetectionSettings();
 
   // Update navigation header title reactively
@@ -204,6 +207,9 @@ export default function SettingsScreen() {
   if (detectionStatus.healthConnect && !detectionStatus.healthConnectPermission) {
     settingsPermissionIssues.push(t('settings_health_connect'));
   }
+  if (detectionStatus.activityRecognition && !detectionStatus.activityRecognitionPermission) {
+    settingsPermissionIssues.push(t('settings_activity_recognition'));
+  }
 
   const renderBackdrop = useCallback(
     (props: React.ComponentProps<typeof BottomSheetBackdrop>) => (
@@ -279,6 +285,30 @@ export default function SettingsScreen() {
                   testID="gps-toggle"
                 />
                 <Divider />
+                {Platform.OS === 'android' && (
+                  <>
+                    <DetectionSettingRow
+                      enabled={detectionStatus.activityRecognition}
+                      permissionGranted={detectionStatus.activityRecognitionPermission}
+                      icon={
+                        <Ionicons
+                          name="battery-charging-outline"
+                          size={20}
+                          color={colors.textSecondary}
+                        />
+                      }
+                      label={t('settings_activity_recognition')}
+                      desc={t('settings_activity_recognition_desc')}
+                      permissionMissingLabel={t('settings_activity_recognition_permission_missing')}
+                      onToggle={handleToggleAR}
+                      isLoading={false}
+                      isInitializing={isInitializing}
+                      onPermissionFix={showARPermissionSheet}
+                      testID="ar-toggle"
+                    />
+                    <Divider />
+                  </>
+                )}
                 <SettingRow
                   icon={<Ionicons name="radio-outline" size={20} color={colors.textSecondary} />}
                   label={t('settings_background_tracking_label')}
@@ -536,12 +566,14 @@ export default function SettingsScreen() {
       handleToggleDevForceHalfHour,
       handleToggleGPS,
       handleToggleHC,
+      handleToggleAR,
       isInitializing,
       knownLocations.length,
       locale,
       navigation,
       showGPSPermissionSheet,
       showHCPermissionSheet,
+      showARPermissionSheet,
       suggestedCount,
       systemLocale,
       togglingGPS,

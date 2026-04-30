@@ -30,7 +30,7 @@ jest.mock('../storage', () => ({
 
 // Mock calendar service
 jest.mock('../calendar/calendarService', () => ({
-  requestCalendarPermissions: jest.fn(() => Promise.resolve(false)),
+  requestCalendarPermissions: jest.fn(() => Promise.resolve({ granted: false, canAskAgain: true })),
   hasCalendarPermissions: jest.fn(() => Promise.resolve(false)),
   getSelectedCalendarId: jest.fn(() => ''),
   setSelectedCalendarId: jest.fn(),
@@ -61,7 +61,9 @@ jest.mock('../utils/permissionIssuesChangedEmitter', () => ({
 // Mock NotificationService
 jest.mock('../notifications/notificationManager', () => ({
   notificationInfrastructureService: {
-    requestNotificationPermissions: jest.fn(() => Promise.resolve(false)),
+    requestNotificationPermissions: jest.fn(() =>
+      Promise.resolve({ granted: false, canAskAgain: true })
+    ),
   },
 }));
 

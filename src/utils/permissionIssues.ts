@@ -4,6 +4,7 @@ import {
   checkWeatherLocationPermissions,
   checkGPSPermissions,
   verifyHealthConnectPermissions,
+  PermissionService,
 } from '../detection';
 import { getSettingAsync } from '../storage';
 import { hasCalendarPermissions } from '../calendar/calendarService';
@@ -23,13 +24,18 @@ export async function countPermissionIssues(): Promise<{ goals: number; settings
   // Perform live OS permission checks so that badge counts reflect the real
   // permission state even when permissions are changed outside the Settings
   // screen (e.g. via the Weather fix-flow on GoalsScreen, or vice-versa).
-  const [gpsPermission, hcPermission] = await Promise.all([
+  const [gpsPermission, hcPermission, arPermission] = await Promise.all([
     detection.gps ? checkGPSPermissions() : Promise.resolve(false),
     detection.healthConnect ? verifyHealthConnectPermissions() : Promise.resolve(false),
+    detection.activityRecognition
+      ? PermissionService.checkActivityRecognitionPermissions()
+      : Promise.resolve(false),
   ]);
 
   const settingsIssues =
-    (detection.gps && !gpsPermission ? 1 : 0) + (detection.healthConnect && !hcPermission ? 1 : 0);
+    (detection.gps && !gpsPermission ? 1 : 0) +
+    (detection.healthConnect && !hcPermission ? 1 : 0) +
+    (detection.activityRecognition && !arPermission ? 1 : 0);
 
   let goalsIssues = 0;
 

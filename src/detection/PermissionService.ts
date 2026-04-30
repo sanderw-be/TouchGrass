@@ -1,5 +1,6 @@
 import * as Location from 'expo-location';
 import { initialize, requestPermission } from 'react-native-health-connect';
+import { PermissionsAndroid } from 'react-native';
 import { setSettingAsync } from '../storage';
 import {
   openHealthConnectPermissionsViaIntent,
@@ -12,11 +13,16 @@ export class PermissionService {
   /**
    * Request location permissions (foreground + background).
    */
-  public static async requestLocationPermissions(): Promise<boolean> {
-    const { status: fg } = await Location.requestForegroundPermissionsAsync();
-    if (fg !== 'granted') return false;
-    const { status: bg } = await Location.requestBackgroundPermissionsAsync();
-    return bg === 'granted';
+  public static async requestLocationPermissions(): Promise<{
+    granted: boolean;
+    canAskAgain: boolean;
+  }> {
+    const { status: fg, canAskAgain: fgCanAsk } =
+      await Location.requestForegroundPermissionsAsync();
+    if (fg !== 'granted') return { granted: false, canAskAgain: fgCanAsk };
+    const { status: bg, canAskAgain: bgCanAsk } =
+      await Location.requestBackgroundPermissionsAsync();
+    return { granted: bg === 'granted', canAskAgain: bgCanAsk };
   }
 
   /**
@@ -92,5 +98,31 @@ export class PermissionService {
 
   public static async openHealthConnectSettings(): Promise<boolean> {
     return openHealthConnectPermissionsViaIntent();
+  }
+
+  public static async checkActivityRecognitionPermissions(): Promise<boolean> {
+    try {
+      return await PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.ACTIVITY_RECOGNITION);
+    } catch (e) {
+      console.warn('Activity Recognition permission check error:', e);
+      return false;
+    }
+  }
+
+  public static async requestActivityRecognitionPermissions(): Promise<{
+    granted: boolean;
+    canAskAgain: boolean;
+  }> {
+    try {
+      const result = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.ACTIVITY_RECOGNITION
+      );
+      const granted = result === PermissionsAndroid.RESULTS.GRANTED;
+      const canAskAgain = result !== PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN;
+      return { granted, canAskAgain };
+    } catch (e) {
+      console.warn('Activity Recognition permission request error:', e);
+      return { granted: false, canAskAgain: true };
+    }
   }
 }

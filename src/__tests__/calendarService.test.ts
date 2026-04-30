@@ -42,22 +42,25 @@ describe('calendarService', () => {
   });
 
   describe('requestCalendarPermissions', () => {
-    it('returns true when permission is granted', async () => {
-      mockRequestCalendarPermissions.mockResolvedValueOnce({ status: 'granted' });
+    it('returns granted status when permission is granted', async () => {
+      mockRequestCalendarPermissions.mockResolvedValueOnce({
+        status: 'granted',
+        canAskAgain: true,
+      });
       const result = await requestCalendarPermissions();
-      expect(result).toBe(true);
+      expect(result).toEqual({ granted: true, canAskAgain: true });
     });
 
-    it('returns false when permission is denied', async () => {
-      mockRequestCalendarPermissions.mockResolvedValueOnce({ status: 'denied' });
+    it('returns denied status when permission is denied', async () => {
+      mockRequestCalendarPermissions.mockResolvedValueOnce({ status: 'denied', canAskAgain: true });
       const result = await requestCalendarPermissions();
-      expect(result).toBe(false);
+      expect(result).toEqual({ granted: false, canAskAgain: true });
     });
 
-    it('returns false when an error is thrown', async () => {
+    it('returns denied status when an error is thrown', async () => {
       mockRequestCalendarPermissions.mockRejectedValueOnce(new Error('Permission error'));
       const result = await requestCalendarPermissions();
-      expect(result).toBe(false);
+      expect(result).toEqual({ granted: false, canAskAgain: true });
     });
   });
 
@@ -489,12 +492,12 @@ describe('calendarService', () => {
       // No writable calendars (only read-only ones); no saved TouchGrass ID so
       // getOrCreateTouchGrassCalendar skips the second getCalendarsAsync call.
       mockGetCalendars.mockResolvedValueOnce([{ id: 'ro', allowsModifications: false }]);
-      mockCreateCalendar.mockResolvedValueOnce('local-tg-id');
+      mockCreateCalendar.mockResolvedValueOnce('touchgrass-cal-id');
 
       const result = await addOutdoorTimeToCalendar(new Date(), 15);
       expect(result).toBe(true);
       expect(mockCreateCalendar).toHaveBeenCalled();
-      expect(mockCreateEvent).toHaveBeenCalledWith('local-tg-id', expect.anything());
+      expect(mockCreateEvent).toHaveBeenCalledWith('touchgrass-cal-id', expect.anything());
     });
 
     it('does not create duplicate event when matching slot already exists', async () => {

@@ -51,8 +51,9 @@ jest.mock('../detection/index', () => ({
   toggleGPS: (enabled: boolean) => mockToggleGPS(enabled),
   verifyHealthConnectPermissions: jest.fn(() => Promise.resolve()),
   checkGPSPermissions: jest.fn(() => Promise.resolve()),
-  requestGPSPermissions: jest.fn(() => Promise.resolve(false)),
+  requestGPSPermissions: jest.fn(() => Promise.resolve({ granted: false, canAskAgain: true })),
   requestHealthPermissions: jest.fn(() => Promise.resolve(true)),
+  refreshDetectionSync: jest.fn(() => Promise.resolve()),
 }));
 
 // Mock permission issues emitter so we can verify badge refresh is triggered

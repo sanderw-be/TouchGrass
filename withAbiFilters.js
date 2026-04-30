@@ -8,14 +8,13 @@ const withAbiFilters = (config, { abiFilters = ['arm64-v8a'] } = {}) => {
       const abiFiltersString = abiFilters.map((abi) => `"${abi}"`).join(', ');
 
       // Add ndk abiFilters to defaultConfig
-      if (config.modResults.contents.includes('defaultConfig {')) {
+      if (
+        config.modResults.contents.includes('defaultConfig {') &&
+        !config.modResults.contents.includes('abiFilters')
+      ) {
         config.modResults.contents = config.modResults.contents.replace(
-          /(defaultConfig\s*\{[^}]*versionName\s+[^}]*)/,
-          `$1
-        
-        ndk {
-            abiFilters ${abiFiltersString}
-        }`
+          /defaultConfig\s*\{/,
+          `defaultConfig {\n        ndk {\n            abiFilters ${abiFiltersString}\n        }`
         );
       }
 
