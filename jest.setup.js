@@ -84,13 +84,6 @@ jest.mock('react-native-keyboard-controller', () => {
   };
 });
 
-// Mock alarm-bridge-native (Android-only local native module)
-jest.mock('alarm-bridge-native', () => ({
-  scheduleNextPulse: jest.fn(() => Promise.resolve()),
-  cancelPulse: jest.fn(() => Promise.resolve()),
-  PULSE_TASK_NAME: 'TOUCHGRASS_PULSE_TASK',
-}));
-
 // Mock react-native-android-widget
 jest.mock('react-native-android-widget', () => ({
   registerWidgetTaskHandler: jest.fn(),
@@ -214,16 +207,6 @@ jest.mock('react-native-health-connect', () => ({
     SDK_UNAVAILABLE: 1,
     SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED: 2,
   },
-}));
-
-// Mock expo-background-task
-jest.mock('expo-background-task', () => ({
-  BackgroundTaskResult: {
-    Success: 'success',
-    Failed: 'failed',
-  },
-  registerTaskAsync: jest.fn(),
-  unregisterTaskAsync: jest.fn(),
 }));
 
 // Mock @react-native-community/datetimepicker

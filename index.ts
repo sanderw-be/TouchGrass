@@ -4,7 +4,6 @@ import { registerRootComponent } from 'expo';
 import { registerWidgetTaskHandler } from 'react-native-android-widget';
 
 import App from './App';
-import { PULSE_TASK_NAME } from 'alarm-bridge-native';
 import { widgetTaskHandler } from './src/widget/widget-task-handler';
 import { handleSmartReminder } from './src/background/smartReminderTask';
 
@@ -16,15 +15,6 @@ import { handleSmartReminder } from './src/background/smartReminderTask';
 registerWidgetTaskHandler(widgetTaskHandler);
 
 AppRegistry.registerHeadlessTask('SmartReminderHeadlessTask', () => handleSmartReminder);
-
-// ---------------------------------------------------------------------------
-// Pulsar headless task (Legacy)
-//
-// No longer performs work; just logs that a legacy alarm fired.
-// ---------------------------------------------------------------------------
-AppRegistry.registerHeadlessTask(PULSE_TASK_NAME, () => async () => {
-  console.log('TouchGrass: [PulseTask] Legacy tick (ignored)');
-});
 
 // registerRootComponent calls AppRegistry.registerComponent('main', () => App);
 // It also ensures that whether you load the app in Expo Go or in a native build,
