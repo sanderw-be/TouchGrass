@@ -7,7 +7,7 @@
 - `src\background\smartReminderTask.ts` — function handleSmartReminder
 - `src\calendar\calendarService.ts`
   - function cleanupTouchGrassCalendars: () => Promise<CalendarCleanupResult>
-  - function requestCalendarPermissions: () => Promise<boolean>
+  - function requestCalendarPermissions: () => Promise<
   - function hasCalendarPermissions: () => Promise<boolean>
   - function getWritableCalendars: () => Promise<Calendar.Calendar[]>
   - function getOrCreateTouchGrassCalendar: (forceCreate) => Promise<string | null>
@@ -27,7 +27,7 @@
   - _...4 more_
 - `src\detection\gpsDetection.ts`
   - function loadGPSState: () => Promise<void>
-  - function requestLocationPermissions: () => Promise<boolean>
+  - function requestLocationPermissions: () => Promise<
   - function computeMinActiveRadius: (locations) => number
   - function startLocationTracking: (profile, minRadiusMeters) => Promise<void>
   - function stopLocationTracking: () => Promise<void>
@@ -46,7 +46,7 @@
   - function checkWeatherLocationPermissions: () => Promise<boolean>
   - function requestWeatherLocationPermissions: () => Promise<boolean>
   - function checkGPSPermissions: () => Promise<boolean>
-  - function requestGPSPermissions: () => Promise<boolean>
+  - function requestGPSPermissions: () => Promise<
   - function refreshDetectionSync: () => Promise<void>
   - _...5 more_
 - `src\detection\LocationTracker.ts` — class LocationTracker

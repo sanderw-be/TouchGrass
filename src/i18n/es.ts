@@ -115,7 +115,7 @@ const es: TranslationType = {
 
   // History screen
   history_period_week: 'Semana',
-  history_period_month: 'Mes',
+  history_period_month: 'Mois',
   history_stat_total: 'Total',
   history_stat_avg: 'Media diaria',
   history_stat_goals_met: 'Metas logradas',
@@ -175,7 +175,10 @@ const es: TranslationType = {
   settings_gps: 'Rastreo GPS',
   settings_gps_desc: 'Detectar cuando sales de casa (geofencing)',
   settings_gps_permission: 'Permiso necesario',
-  settings_gps_permission_missing: 'Faltan permisos',
+  settings_gps_permission_missing: 'Faltan permisos — toca para corregir',
+  settings_activity_recognition: 'Detección de actividad',
+  settings_activity_recognition_desc: 'Ahorra batería detectando movimiento en lugar de ubicación',
+  settings_activity_recognition_permission_missing: 'Faltan permisos — toca para corregir',
   settings_location_radius: 'Radio de {{radius}}m · {{type}}',
   settings_location_indoor: 'Dentro',
   settings_location_outdoor: 'Fuera',
@@ -302,6 +305,14 @@ const es: TranslationType = {
   intro_hc_hint: 'Lo puedes activar luego.',
   intro_hc_button: 'Conectar',
   intro_hc_button_granted: 'Conectado ✓',
+  intro_ar_title: 'Ahorro de batería',
+  intro_ar_body:
+    'Para ahorrar batería, TouchGrass solo comprueba tu ubicación cuando realmente te estás moviendo.',
+  intro_ar_why_title: '¿Por qué lo necesitamos?',
+  intro_ar_why_body:
+    'La detección de actividad despierta la app solo cuando empiezas o dejas de moverte (caminar, correr, conducir).',
+  intro_ar_button: 'Activar ahorro de batería',
+  intro_ar_button_granted: 'Activado ✓',
   intro_location_title: 'Ubicación',
   intro_location_body: 'Geofencing estricto.',
   intro_location_why_title: '¿Para qué?',
@@ -341,7 +352,8 @@ const es: TranslationType = {
   intro_ready_tip_title: 'Consejo',
   intro_ready_tip_body: 'Registra a mano si dejas el móvil en casa.',
   intro_ready_checklist_title: 'Checklist',
-  intro_ready_checklist_item_hc: 'Health Connect.',
+  intro_ready_checklist_item_hc: 'Conectar Health Connect.',
+  intro_ready_checklist_item_ar: 'Activar detección de actividad.',
   intro_ready_checklist_item_gps: 'GPS.',
   intro_ready_checklist_item_notifications: 'Avisos.',
   intro_ready_checklist_item_calendar: 'Calendario.',
@@ -520,7 +532,7 @@ const es: TranslationType = {
     'Tu refugio privado para salir al aire libre. Medimos tu tiempo fuera y te animamos a salir.',
   about_detection_title: 'Cómo se rastrea el tiempo al aire libre',
   about_detection_body:
-    'TouchGrass utiliza métodos de detección local para ayudarte a concentrarte en estar fuera:\n\n• Health Connect — Detecta automáticamente la actividad al aire libre leyendo tu conteo de pasos y sesiones de ejercicio. Un conteo de pasos alto suele indicar una caminata al aire libre, mientras que las actividades como correr o andar en bicicleta se acreditan directamente como tiempo al aire libre. Este método prioriza la privacidad y es eficiente con la batería.\n• GPS — Detecta cuando sales de una ubicación conocida (como casa o el trabajo) mediante geovallas locales.\n\nPuedes gestionar esto en Ajustes → Detección.',
+    'TouchGrass utiliza métodos de detección local para ayudarte a concentrarte en estar fuera :\n\n• Health Connect — Detecta automáticamente la actividad al aire libre leyendo tu conteo de pasos y sesiones de ejercicio. Un conteo de pasos alto suele indicar una caminata al aire libre, mientras que las actividades como correr o andar en bicicleta se acreditan directamente como tiempo al aire libre. Este método prioriza la privacidad y es eficiente con la batería.\n• GPS — Detecta cuando sales de una ubicación conocida (como casa o el trabajo) mediante geovallas locales.\n\nPuedes gestionar esto en Ajustes → Detección.',
   about_goals_title: 'Metas',
   about_goals_body: 'Crea tu racha y síguela en tu propio teléfono.',
   about_reminders_title: 'Avisos inteligentes',
@@ -554,7 +566,7 @@ const es: TranslationType = {
 
   // Activity Log screen
   nav_activity_log: 'Registro',
-  settings_section_activity_log: 'Transparencia',
+  settings_section_activity_log: 'Transparence',
   settings_activity_log: 'Log de actividad',
   settings_activity_log_sublabel: 'Lo que pasa a nivel interno',
   activity_log_empty: 'Vacío.',

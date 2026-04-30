@@ -226,9 +226,9 @@ export function useGoalIntegrations() {
           setPermissionSheet(null);
           return;
         }
-        const granted = await requestCalendarPermissions();
-        setCalendarPermissionGranted(granted);
-        if (granted) {
+        const result = await requestCalendarPermissions();
+        setCalendarPermissionGranted(result.granted);
+        if (result.granted) {
           const cals = await getWritableCalendars();
           setCalendarOptions(cals.map((c) => ({ id: c.id, title: c.title })));
           pendingCalendarEnableRef.current = false;
@@ -271,10 +271,10 @@ export function useGoalIntegrations() {
           setPermissionSheet(null);
           return;
         }
-        const granted =
+        const result =
           await getNotificationInfrastructureService().requestNotificationPermissions();
-        setNotificationPermissionGranted(granted);
-        if (granted) {
+        setNotificationPermissionGranted(result.granted);
+        if (result.granted) {
           pendingSmartRemindersEnableRef.current = false;
           await setSettingAsync('smart_reminders_count', '1');
           setSmartRemindersCount(1);

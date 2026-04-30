@@ -83,13 +83,13 @@ describe('ActivityLogScreen fetch guard', () => {
     jest.clearAllMocks();
   });
 
-  it('calls database fetch functions exactly 3 times on initial mount', async () => {
+  it('calls database fetch functions exactly 4 times on initial mount', async () => {
     render(<ActivityLogScreen />);
     await act(async () => {
       await delay(150);
     });
-    // loadLogs calls getBackgroundLogsAsync 3 times in a Promise.all
-    // ('health_connect', 'gps', 'reminder')
-    expect(mockGetBackgroundLogs).toHaveBeenCalledTimes(3);
+    // loadLogs calls getBackgroundLogsAsync 4 times in a Promise.all
+    // ('health_connect', 'gps', 'activity_recognition', 'reminder')
+    expect(mockGetBackgroundLogs).toHaveBeenCalledTimes(4);
   });
 });

@@ -12,6 +12,8 @@ interface HeadlessData {
   contributors?: string;
   title?: string;
   body?: string;
+  activityType?: string;
+  transitionType?: string;
 }
 
 export const handleSmartReminder = async (data: HeadlessData) => {
@@ -47,6 +49,23 @@ export const handleSmartReminder = async (data: HeadlessData) => {
         'Chain broken: Triggering full 48h replan'
       );
       // Exit early but the finally block will still run the replan
+      return;
+    }
+
+    if (data.type === 'activity_transition') {
+      const activity = data.activityType || 'UNKNOWN';
+      const transition = data.transitionType || 'UNKNOWN';
+      console.log(`[SR_HEADLESS] Activity Transition: ${activity} (${transition})`);
+
+      await storageService.insertBackgroundLogAsync(
+        'activity_recognition',
+        `Motion: ${activity} | State: ${transition}`
+      );
+
+      // Simple logic: If WALKING/RUNNING/BICYCLE, we might want to ensure GPS is active
+      // If STILL or IN_VEHICLE, we might want to pause GPS to save battery.
+      // However, for this first iteration, we just log it for transparency as requested.
+      // We will also use this to trigger a foreground catch-up if needed.
       return;
     }
 

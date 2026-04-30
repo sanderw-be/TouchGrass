@@ -8,10 +8,11 @@ import {
   getDetectionStatus,
   toggleHealthConnect,
   toggleGPS,
-  verifyHealthConnectPermissions,
-  checkGPSPermissions,
   requestGPSPermissions,
+  toggleAR,
+  refreshDetectionSync,
 } from '../detection/index';
+import { PermissionService } from '../detection/PermissionService';
 import { getKnownLocationsAsync, getSuggestedLocationsAsync, KnownLocation } from '../storage';
 import { PermissionSheetConfig } from '../components/PermissionExplainerSheet';
 import { emitPermissionIssuesChanged } from '../utils/permissionIssuesChangedEmitter';
@@ -24,6 +25,8 @@ export function useDetectionSettings() {
   const [detectionStatus, setDetectionStatus] = useState({
     healthConnect: false,
     healthConnectPermission: false,
+    activityRecognition: false,
+    activityRecognitionPermission: false,
     gps: false,
     gpsPermission: false,
   });
@@ -31,6 +34,7 @@ export function useDetectionSettings() {
   const [suggestedCount, setSuggestedCount] = useState(0);
   const [togglingHC, setTogglingHC] = useState(false);
   const [togglingGPS, setTogglingGPS] = useState(false);
+  const [togglingAR, setTogglingAR] = useState(false);
   const [permissionSheet, setPermissionSheet] = useState<PermissionSheetConfig | null>(null);
   const [isInitializing, setIsInitializing] = useState(true);
 
@@ -52,8 +56,12 @@ export function useDetectionSettings() {
   }, []);
 
   const checkAndUpdatePermissions = useCallback(async () => {
-    await Promise.all([verifyHealthConnectPermissions(), checkGPSPermissions()]);
-    setDetectionStatus(await getDetectionStatus());
+    try {
+      await refreshDetectionSync();
+      setDetectionStatus(await getDetectionStatus());
+    } catch (e) {
+      console.error('[useDetectionSettings.checkAndUpdatePermissions] Error:', e);
+    }
   }, []);
 
   useFocusEffect(
@@ -135,7 +143,7 @@ export function useDetectionSettings() {
           return;
         }
 
-        const granted = await requestGPSPermissions();
+        const { granted } = await requestGPSPermissions();
         if (granted) {
           setDetectionStatus(await getDetectionStatus());
           emitPermissionIssuesChanged();
@@ -146,6 +154,36 @@ export function useDetectionSettings() {
       },
       onCancel: disableGPS,
       onDisable: disableGPS,
+    });
+  }, []);
+
+  const showARPermissionSheet = useCallback(() => {
+    const disableAR = async () => {
+      try {
+        await toggleAR(false);
+        setDetectionStatus(await getDetectionStatus());
+        emitPermissionIssuesChanged();
+      } catch (error) {
+        console.error('[useDetectionSettings.showARPermissionSheet.disable] Error:', error);
+      }
+    };
+    setPermissionSheet({
+      title: t('intro_ar_title'),
+      body: t('intro_ar_why_body'),
+      openLabel: t('intro_ar_button'),
+      onOpen: async () => {
+        const { granted, canAskAgain } =
+          await PermissionService.requestActivityRecognitionPermissions();
+        if (granted) {
+          setDetectionStatus(await getDetectionStatus());
+          emitPermissionIssuesChanged();
+        } else if (!canAskAgain) {
+          await handleOpenAppSettings();
+        }
+        setPermissionSheet(null);
+      },
+      onCancel: disableAR,
+      onDisable: disableAR,
     });
   }, []);
 
@@ -186,19 +224,40 @@ export function useDetectionSettings() {
     }
   };
 
+  const handleToggleAR = async (value: boolean) => {
+    if (togglingAR) return;
+    setTogglingAR(true);
+    try {
+      const result = await toggleAR(value);
+      setDetectionStatus(await getDetectionStatus());
+      emitPermissionIssuesChanged();
+
+      if (value && result.needsPermissions) {
+        showARPermissionSheet();
+      }
+    } catch (error) {
+      console.error('Error toggling AR:', error);
+    } finally {
+      setTogglingAR(false);
+    }
+  };
+
   return {
     detectionStatus,
     knownLocations,
     suggestedCount,
     togglingHC,
     togglingGPS,
+    togglingAR,
     permissionSheet,
     isInitializing,
     setPermissionSheet,
     handleToggleHC,
     handleToggleGPS,
+    handleToggleAR,
     showHCPermissionSheet,
     showGPSPermissionSheet,
+    showARPermissionSheet,
     handleOpenAppSettings,
     loadStatus,
     checkAndUpdatePermissions,

@@ -11,15 +11,23 @@ import {
   AppStateStatus,
   Alert,
   Linking,
+  PermissionsAndroid,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Notifications from 'expo-notifications';
 import * as Location from 'expo-location';
+import * as Calendar from 'expo-calendar';
 import { spacing, radius, ThemeColors, Shadows } from '../utils/theme';
 import { useAppStore } from '../store/useAppStore';
-import { t } from '../i18n';
+import { t, TxKey } from '../i18n';
 import { PRIVACY_POLICY_URL } from '../utils/constants';
+import {
+  requestCalendarPermissions,
+  getOrCreateTouchGrassCalendar,
+  setSelectedCalendarId,
+  hasCalendarPermissions,
+} from '../calendar/calendarService';
 import {
   BATTERY_OPTIMIZATION_SETTING_KEY,
   openBatteryOptimizationSettings,
@@ -27,6 +35,7 @@ import {
 import {
   toggleHealthConnect,
   toggleGPS,
+  toggleAR,
   verifyHealthConnectPermissions,
   requestGPSPermissions,
   checkGPSPermissions,
@@ -34,8 +43,9 @@ import {
   checkWeatherLocationPermissions,
 } from '../detection/index';
 
+import { PermissionService } from '../detection/PermissionService';
+import { ActivityTransitionModule } from '../modules/ActivityTransitionModule';
 import { getNotificationInfrastructureService } from '../notifications/notificationManager';
-import { requestCalendarPermissions, hasCalendarPermissions } from '../calendar/calendarService';
 import { getSettingAsync, setSettingAsync } from '../storage';
 import EditLocationSheet from '../components/EditLocationSheet';
 
@@ -48,6 +58,7 @@ interface Props {
 type Step =
   | 'welcome'
   | 'health-connect'
+  | 'activity-recognition'
   | 'location'
   | 'notifications'
   | 'battery'
@@ -61,6 +72,7 @@ export default function IntroScreen({ onComplete }: Props) {
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const [currentStep, setCurrentStep] = useState<Step>('welcome');
   const [healthConnectGranted, setHealthConnectGranted] = useState(false);
+  const [activityRecognitionGranted, setActivityRecognitionGranted] = useState(false);
   const [locationGranted, setLocationGranted] = useState(false);
   const [notificationsGranted, setNotificationsGranted] = useState(false);
   const [batteryVisited, setBatteryVisited] = useState(false);
@@ -80,7 +92,16 @@ export default function IntroScreen({ onComplete }: Props) {
 
   const steps: Step[] =
     Platform.OS === 'android'
-      ? ['welcome', 'health-connect', 'location', 'notifications', 'battery', 'calendar', 'ready']
+      ? [
+          'welcome',
+          'health-connect',
+          'activity-recognition',
+          'location',
+          'notifications',
+          'battery',
+          'calendar',
+          'ready',
+        ]
       : ['welcome', 'health-connect', 'location', 'notifications', 'calendar', 'ready'];
   const currentIndex = steps.indexOf(currentStep);
   const progress = ((currentIndex + 1) / steps.length) * 100;
@@ -114,6 +135,9 @@ export default function IntroScreen({ onComplete }: Props) {
     if (currentStep === 'health-connect' && Platform.OS === 'android') {
       const hcGranted = await verifyHealthConnectPermissions();
       setHealthConnectGranted(hcGranted);
+    } else if (currentStep === 'activity-recognition' && Platform.OS === 'android') {
+      const arGranted = await PermissionService.checkActivityRecognitionPermissions();
+      setActivityRecognitionGranted(arGranted);
     } else if (currentStep === 'location') {
       const gpsGranted = await checkGPSPermissions();
       setLocationGranted(gpsGranted);
@@ -140,6 +164,11 @@ export default function IntroScreen({ onComplete }: Props) {
       ];
       if (Platform.OS === 'android') {
         checks.push(verifyHealthConnectPermissions().then(setHealthConnectGranted));
+        checks.push(
+          PermissionService.checkActivityRecognitionPermissions().then(
+            setActivityRecognitionGranted
+          )
+        );
       }
       await Promise.all(checks);
     }
@@ -159,6 +188,7 @@ export default function IntroScreen({ onComplete }: Props) {
   useEffect(() => {
     if (
       currentStep === 'health-connect' ||
+      currentStep === 'activity-recognition' ||
       currentStep === 'location' ||
       currentStep === 'notifications' ||
       currentStep === 'battery' ||
@@ -177,12 +207,28 @@ export default function IntroScreen({ onComplete }: Props) {
    * Smart reminders and weather are set here based on current permission state.
    */
   const saveOnboardingSettings = async () => {
+    // Notifications
     if (notificationsGranted) {
       await setSettingAsync('smart_reminders_count', '2');
     }
+
+    // Weather
     const weatherGranted = await checkWeatherLocationPermissions();
     if (weatherGranted && notificationsGranted) {
       await setSettingAsync('weather_enabled', '1');
+    }
+
+    // Sync sensors if they were granted during the tutorial
+    // This ensures that even if the user didn't click the "Enable" button on the step
+    // (but the permission was already present or granted), the feature is enabled.
+    if (activityRecognitionGranted) {
+      await setSettingAsync('ar_enabled', '1');
+    }
+    if (healthConnectGranted) {
+      await setSettingAsync('healthconnect_enabled', '1');
+    }
+    if (locationGranted) {
+      await setSettingAsync('gps_enabled', '1');
     }
   };
 
@@ -223,6 +269,29 @@ export default function IntroScreen({ onComplete }: Props) {
     }
   };
 
+  const handleRequestActivityRecognition = async () => {
+    setRequestingPermission(true);
+    try {
+      const result = await toggleAR(true);
+      if (result.needsPermissions) {
+        const { granted, canAskAgain } =
+          await PermissionService.requestActivityRecognitionPermissions();
+        setActivityRecognitionGranted(granted);
+        if (granted) {
+          await ActivityTransitionModule.startTracking();
+        } else if (!canAskAgain) {
+          showPermissionSettingsAlert('intro_ar_title', 'intro_ar_why_body');
+        }
+      } else {
+        setActivityRecognitionGranted(true);
+      }
+    } catch (error) {
+      console.error('Error requesting Activity Recognition:', error);
+    } finally {
+      setRequestingPermission(false);
+    }
+  };
+
   const handleRequestLocation = async () => {
     setRequestingPermission(true);
     try {
@@ -230,8 +299,14 @@ export default function IntroScreen({ onComplete }: Props) {
       const result = await toggleGPS(true);
       if (result.needsPermissions) {
         // Permissions not yet granted — request them inline via the OS dialog.
-        const granted = await requestGPSPermissions();
+        const { granted, canAskAgain } = await requestGPSPermissions();
         setLocationGranted(granted);
+        if (!granted && !canAskAgain) {
+          showPermissionSettingsAlert(
+            'settings_gps_permission_required_title',
+            'settings_gps_permission_required_body'
+          );
+        }
       } else {
         setLocationGranted(true);
       }
@@ -240,6 +315,13 @@ export default function IntroScreen({ onComplete }: Props) {
     } finally {
       setRequestingPermission(false);
     }
+  };
+
+  const showPermissionSettingsAlert = (titleKey: TxKey, bodyKey: TxKey) => {
+    Alert.alert(t(titleKey), t(bodyKey), [
+      { text: t('settings_permission_cancel'), style: 'cancel' },
+      { text: t('settings_permission_open'), onPress: () => Linking.openSettings() },
+    ]);
   };
 
   const handleSetKnownLocation = async (type: 'home' | 'work') => {
@@ -283,8 +365,12 @@ export default function IntroScreen({ onComplete }: Props) {
   const handleRequestNotifications = async () => {
     setRequestingPermission(true);
     try {
-      const granted = await getNotificationInfrastructureService().requestNotificationPermissions();
+      const { granted, canAskAgain } =
+        await getNotificationInfrastructureService().requestNotificationPermissions();
       setNotificationsGranted(granted);
+      if (!granted && !canAskAgain) {
+        showPermissionSettingsAlert('settings_error_title', 'intro_notifications_body');
+      }
     } catch (error) {
       console.error('Error requesting notifications:', error);
     } finally {
@@ -298,10 +384,23 @@ export default function IntroScreen({ onComplete }: Props) {
   const handleRequestCalendar = async () => {
     setRequestingPermission(true);
     try {
-      const granted = await requestCalendarPermissions();
-      setCalendarGranted(granted);
-      if (granted) {
-        await setSettingAsync('calendar_integration_enabled', '1');
+      const { status, canAskAgain } = await Calendar.getCalendarPermissionsAsync();
+      if (status !== 'granted' && canAskAgain === false) {
+        showPermissionSettingsAlert(
+          'settings_calendar_permission_title',
+          'settings_calendar_permission_body'
+        );
+        return;
+      }
+
+      const result = await requestCalendarPermissions();
+      setCalendarGranted(result.granted);
+      if (result.granted) {
+        const id = await getOrCreateTouchGrassCalendar();
+        if (id) {
+          await setSelectedCalendarId(id);
+          await setSettingAsync('calendar_integration_enabled', '1');
+        }
       }
     } catch (error) {
       console.error('Error requesting calendar:', error);
@@ -346,6 +445,15 @@ export default function IntroScreen({ onComplete }: Props) {
             <HealthConnectRationaleStep
               onRequest={handleRequestHealthConnect}
               granted={healthConnectGranted}
+              requesting={requestingPermission}
+              colors={colors}
+              styles={styles}
+            />
+          )}
+          {currentStep === 'activity-recognition' && (
+            <ActivityRecognitionStep
+              onRequest={handleRequestActivityRecognition}
+              granted={activityRecognitionGranted}
               requesting={requestingPermission}
               colors={colors}
               styles={styles}
@@ -399,6 +507,7 @@ export default function IntroScreen({ onComplete }: Props) {
           {currentStep === 'ready' && (
             <ReadyStep
               healthConnectGranted={healthConnectGranted}
+              activityRecognitionGranted={activityRecognitionGranted}
               locationGranted={locationGranted}
               notificationsGranted={notificationsGranted}
               batteryVisited={batteryVisited}
@@ -505,6 +614,47 @@ function HealthConnectRationaleStep({
         </TouchableOpacity>
       )}
       <Text style={styles.hint}>{t('intro_hc_hint')}</Text>
+    </View>
+  );
+}
+
+function ActivityRecognitionStep({
+  onRequest,
+  granted,
+  requesting,
+  colors,
+  styles,
+}: {
+  onRequest: () => void;
+  granted: boolean;
+  requesting: boolean;
+  colors: ThemeColors;
+  styles: Styles;
+}) {
+  return (
+    <View style={styles.stepContainer}>
+      <Text style={styles.emoji}>🔋</Text>
+      <Text style={styles.title}>{t('intro_ar_title')}</Text>
+      <Text style={styles.body}>{t('intro_ar_body')}</Text>
+
+      <Card variant="tip" style={styles.permissionCard}>
+        <Text style={styles.permissionTitle}>{t('intro_ar_why_title')}</Text>
+        <Text style={styles.permissionBody}>{t('intro_ar_why_body')}</Text>
+      </Card>
+
+      <TouchableOpacity
+        style={[styles.permissionButton, granted && styles.permissionButtonGranted]}
+        onPress={onRequest}
+        disabled={granted || requesting}
+      >
+        {requesting ? (
+          <ActivityIndicator size="small" color={colors.textInverse} />
+        ) : (
+          <Text style={styles.permissionButtonText}>
+            {granted ? t('intro_ar_button_granted') : t('intro_ar_button')}
+          </Text>
+        )}
+      </TouchableOpacity>
     </View>
   );
 }
@@ -687,6 +837,7 @@ function BatteryStep({
 
 function ReadyStep({
   healthConnectGranted,
+  activityRecognitionGranted,
   locationGranted,
   notificationsGranted,
   batteryVisited,
@@ -695,6 +846,7 @@ function ReadyStep({
   styles,
 }: {
   healthConnectGranted: boolean;
+  activityRecognitionGranted: boolean;
   locationGranted: boolean;
   notificationsGranted: boolean;
   batteryVisited: boolean;
@@ -723,6 +875,19 @@ function ReadyStep({
           </Text>
           <Text style={styles.checklistText}>{t('intro_ready_checklist_item_hc')}</Text>
         </View>
+        {Platform.OS === 'android' && (
+          <View style={styles.checklistItem}>
+            <Text
+              style={[
+                styles.checklistBullet,
+                { color: getStatusColor(activityRecognitionGranted) },
+              ]}
+            >
+              {getStatusSymbol(activityRecognitionGranted)}
+            </Text>
+            <Text style={styles.checklistText}>{t('intro_ready_checklist_item_ar')}</Text>
+          </View>
+        )}
         <View style={styles.checklistItem}>
           <Text style={[styles.checklistBullet, { color: getStatusColor(locationGranted) }]}>
             {getStatusSymbol(locationGranted)}

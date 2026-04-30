@@ -31,6 +31,10 @@ import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReadableArray
 import org.json.JSONArray
+import com.google.android.gms.location.ActivityRecognition
+import com.google.android.gms.location.ActivityTransition
+import com.google.android.gms.location.ActivityTransitionRequest
+import com.google.android.gms.location.DetectedActivity
 
 class BackgroundFeaturesModule(private val reactContext: ReactApplicationContext) :
     ReactContextBaseJavaModule(reactContext) {
@@ -148,6 +152,42 @@ class BackgroundFeaturesModule(private val reactContext: ReactApplicationContext
     } catch (e: Exception) {
       promise.reject("CANCEL_ERROR", e)
     }
+  }
+
+  @ReactMethod
+  fun startActivityTransitionTracking(promise: Promise) {
+    try {
+      val transitions = mutableListOf<ActivityTransition>()
+      transitions.add(ActivityTransition.Builder().setActivityType(DetectedActivity.STILL).setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_ENTER).build())
+      transitions.add(ActivityTransition.Builder().setActivityType(DetectedActivity.WALKING).setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_ENTER).build())
+      transitions.add(ActivityTransition.Builder().setActivityType(DetectedActivity.RUNNING).setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_ENTER).build())
+      transitions.add(ActivityTransition.Builder().setActivityType(DetectedActivity.ON_BICYCLE).setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_ENTER).build())
+      transitions.add(ActivityTransition.Builder().setActivityType(DetectedActivity.IN_VEHICLE).setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_ENTER).build())
+      transitions.add(ActivityTransition.Builder().setActivityType(DetectedActivity.IN_VEHICLE).setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_EXIT).build())
+
+      val request = ActivityTransitionRequest(transitions)
+      val intent = Intent(reactContext, ActivityTransitionReceiver::class.java).apply { action = "com.jollyheron.touchgrass.ACTION_ACTIVITY_TRANSITION" }
+      val pendingIntent = PendingIntent.getBroadcast(reactContext, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE)
+
+      ActivityRecognition.getClient(reactContext).requestActivityTransitionUpdates(request, pendingIntent)
+          .addOnSuccessListener { promise.resolve(null) }
+          .addOnFailureListener { e -> promise.reject("TRANSITION_REQUEST_ERROR", e) }
+    } catch (e: Exception) {
+      promise.reject("TRANSITION_ERROR", e)
+    }
+  }
+
+  @ReactMethod
+  fun stopActivityTransitionTracking(promise: Promise) {
+     try {
+       val intent = Intent(reactContext, ActivityTransitionReceiver::class.java).apply { action = "com.jollyheron.touchgrass.ACTION_ACTIVITY_TRANSITION" }
+       val pendingIntent = PendingIntent.getBroadcast(reactContext, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE)
+       ActivityRecognition.getClient(reactContext).removeActivityTransitionUpdates(pendingIntent)
+          .addOnSuccessListener { promise.resolve(null) }
+          .addOnFailureListener { e -> promise.reject("TRANSITION_REMOVE_ERROR", e) }
+     } catch (e: Exception) {
+         promise.reject("TRANSITION_ERROR", e)
+     }
   }
 }
 `;
@@ -391,14 +431,64 @@ package ${JAVA_PACKAGE}
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.util.Log
+import com.google.android.gms.location.ActivityTransitionResult
 
 class ActivityTransitionReceiver : BroadcastReceiver() {
   override fun onReceive(context: Context, intent: Intent) {
     try {
-      // TODO: Handle ActivityTransitionResult (Wake up location tracking or filter IN_VEHICLE)
+      if (ActivityTransitionResult.hasResult(intent)) {
+        val result = ActivityTransitionResult.extractResult(intent)
+        result?.transitionEvents?.forEach { event ->
+          processEvent(context, getMotionString(event.activityType), getTransitionString(event.transitionType))
+        }
+      } else if (intent.action == "com.jollyheron.touchgrass.ACTION_ACTIVITY_TRANSITION" && intent.hasExtra("activity")) {
+        // Test/Mock broadcast support
+        val activity = intent.getStringExtra("activity") ?: "STILL"
+        val transition = intent.getStringExtra("transition") ?: "ENTER"
+        processEvent(context, activity, transition)
+      }
     } catch (e: Exception) {
       Log.e("TouchGrass", "[SR_TRANSITION] Error in onReceive", e)
+    }
+  }
+
+  private fun processEvent(context: Context, activity: String, transition: String) {
+    Log.d("TouchGrass", "[SR_TRANSITION] Processing Event: $activity ($transition)")
+    
+    // Trigger headless task to process the state machine
+    val headlessIntent = Intent(context, SmartReminderHeadlessService::class.java).apply {
+        putExtra("type", "activity_transition")
+        putExtra("activityType", activity)
+        putExtra("transitionType", transition)
+    }
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        context.startForegroundService(headlessIntent)
+    } else {
+        context.startService(headlessIntent)
+    }
+  }
+
+  private fun getMotionString(type: Int): String {
+    return when (type) {
+        0 -> "IN_VEHICLE"
+        1 -> "ON_BICYCLE"
+        2 -> "ON_FOOT"
+        3 -> "STILL"
+        4 -> "UNKNOWN"
+        5 -> "TILTING"
+        7 -> "WALKING"
+        8 -> "RUNNING"
+        else -> "UNKNOWN(\$type)"
+    }
+  }
+
+  private fun getTransitionString(type: Int): String {
+    return when (type) {
+        0 -> "ENTER"
+        1 -> "EXIT"
+        else -> "UNKNOWN(\$type)"
     }
   }
 }
@@ -527,7 +617,11 @@ const withBackgroundFeaturesPlugin = (config) => {
     };
 
     addReceiver('SmartReminderReceiver', 'false');
-    addReceiver('ActivityTransitionReceiver', 'false');
+    addReceiver('ActivityTransitionReceiver', 'false', [
+      {
+        action: [{ $: { 'android:name': 'com.jollyheron.touchgrass.ACTION_ACTIVITY_TRANSITION' } }],
+      },
+    ]);
     addReceiver('BootRestoreReceiver', 'true', [
       {
         action: [
