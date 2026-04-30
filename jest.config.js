@@ -11,4 +11,7 @@ module.exports = {
     '**/*.(test|spec).(ts|tsx|js)',
     '!**/__tests__/integration/**',
   ],
+  verbose: false,
+  silent: true,
+  reporters: ['default'],
 };

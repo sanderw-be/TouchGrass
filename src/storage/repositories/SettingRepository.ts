@@ -1,6 +1,7 @@
-import { db } from '../db';
+import { db, initDatabaseAsync } from '../db';
 
 export async function getSettingAsync(key: string, fallback: string): Promise<string> {
+  await initDatabaseAsync();
   try {
     const row = await db.getFirstAsync<{ value: string }>(
       'SELECT value FROM app_settings WHERE key = ?',
@@ -14,5 +15,6 @@ export async function getSettingAsync(key: string, fallback: string): Promise<st
 }
 
 export async function setSettingAsync(key: string, value: string): Promise<void> {
+  await initDatabaseAsync();
   await db.runAsync('INSERT OR REPLACE INTO app_settings (key, value) VALUES (?, ?)', [key, value]);
 }

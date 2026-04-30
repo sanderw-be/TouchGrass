@@ -50,17 +50,21 @@ export interface HourScore {
  * @param currentHour - Current hour of day (used to skip past slots)
  * @param currentMinute - Current minute of day (default 0); combined with currentHour to skip past slots
  * @param plannedSlots - Already-selected reminder slots for today; nearby slots are penalised
+ * @param baseDateMs - The reference date to score for (defaults to today)
  */
 export async function scoreReminderHours(
   todayMinutes: number,
   dailyTargetMinutes: number,
   currentHour: number,
   currentMinute: number = 0,
-  plannedSlots: { hour: number; minute: 0 | 30 }[] = []
+  plannedSlots: { hour: number; minute: 0 | 30 }[] = [],
+  baseDateMs: number = Date.now()
 ): Promise<HourScore[]> {
   const feedback = await getReminderFeedbackAsync();
   const scores: HourScore[] = [];
+  const now = Date.now();
   const currentSlotMinutes = currentHour * 60 + currentMinute;
+  const isToday = new Date(baseDateMs).toDateString() === new Date(now).toDateString();
 
   // How urgent is the reminder? Grows as day progresses without hitting goal
   const progressRatio = Math.min(todayMinutes / dailyTargetMinutes, 1);
@@ -78,8 +82,8 @@ export async function scoreReminderHours(
     const hour = Math.floor(slotMinutes / 60);
     const minute = (slotMinutes % 60) as 0 | 30;
 
-    // Skip past slots (strictly less than: current slot itself is included)
-    if (slotMinutes < currentSlotMinutes) {
+    // Skip past slots ONLY if scoring for today
+    if (isToday && slotMinutes < currentSlotMinutes) {
       scores.push({ hour, minute, score: 0, reason: 'already passed', contributors: [] });
       continue;
     }
@@ -193,7 +197,7 @@ export async function scoreReminderHours(
     // ── Weather score ─────────────────────────────────────
     // Add weather-based scoring if weather data is available
     if (weatherPrefs.enabled) {
-      const weather = await getWeatherForHour(hour);
+      const weather = await getWeatherForHour(hour, baseDateMs);
       if (weather) {
         const weatherScore = scoreWeatherCondition(weather, weatherPrefs);
         if (weatherScore !== 0) {
@@ -202,7 +206,7 @@ export async function scoreReminderHours(
         }
         if (weatherScore > 0) {
           const emoji = getWeatherEmoji(weather);
-          const desc = getWeatherDescription(weather);
+          const desc = t(getWeatherDescription(weather));
           contributors.push({
             reason: 'weather',
             score: weatherScore,
@@ -291,8 +295,8 @@ export async function shouldRemindNow(
     return { should: false, reason: 'reminded recently', contributors: [] };
   }
 
-  // Score slots starting from the current slot
-  const scores = await scoreReminderHours(todayMinutes, dailyTargetMinutes, hour, minute);
+  // Score slots starting from the current slot for TODAY
+  const scores = await scoreReminderHours(todayMinutes, dailyTargetMinutes, hour, minute, [], now);
   // The current half-hour slot (either :00 or :30)
   const currentSlotMinute = (minute >= 30 ? 30 : 0) as 0 | 30;
   const currentHourScore = scores.find((s) => s.hour === hour && s.minute === currentSlotMinute);

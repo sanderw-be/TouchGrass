@@ -31,6 +31,8 @@ jobs:
               - 'ios/**'
               - 'android/**'
               - 'eas.json'
+              - 'withBackgroundFeaturesPlugin.js'
+              - 'withAlarmBridgePlugin.js'
 
   # 2. Run Semantic Versioning ONLY if native changes exist
   version-bump:
@@ -104,6 +106,11 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-npx-eas-
 
+      - name: Apply Native Version
+        if: needs.check-native-changes.outputs.native == 'true' && needs.version-bump.outputs.new_release_published == 'true'
+        run: |
+          npm version ${{ needs.version-bump.outputs.new_release_version }} --no-git-tag-version
+
       - name: Publish Production OTA Update
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
@@ -120,11 +127,6 @@ jobs:
           org.gradle.jvmargs=-Xmx3072m -XX:+HeapDumpOnOutOfMemoryError
           org.gradle.logging.stacktrace=full
           EOF
-
-      - name: Apply Native Version
-        if: needs.check-native-changes.outputs.native == 'true' && needs.version-bump.outputs.new_release_published == 'true'
-        run: |
-          npm version ${{ needs.version-bump.outputs.new_release_version }} --no-git-tag-version
 
       - name: Build AAB
         if: needs.check-native-changes.outputs.native == 'true'

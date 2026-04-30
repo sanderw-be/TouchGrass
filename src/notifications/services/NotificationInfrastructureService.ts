@@ -1,6 +1,7 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import { t } from '../../i18n';
+import { colors } from '../../utils/theme';
 
 export const ACTION_WENT_OUTSIDE = 'went_outside';
 export const ACTION_SNOOZE = 'snoozed';
@@ -25,7 +26,7 @@ export class NotificationInfrastructureService implements INotificationInfrastru
       name: t('notif_channel_name'),
       importance: Notifications.AndroidImportance.DEFAULT,
       vibrationPattern: [0, 250, 250, 250],
-      lightColor: '#4A7C59',
+      lightColor: colors.grass,
       showBadge: true,
     };
 
@@ -64,7 +65,7 @@ export class NotificationInfrastructureService implements INotificationInfrastru
           description: t('notif_channel_scheduled_desc'),
           importance: Notifications.AndroidImportance.DEFAULT,
           vibrationPattern: [0, 250, 250, 250],
-          lightColor: '#4A7C59',
+          lightColor: colors.grass,
           showBadge: true,
         });
         console.log('TouchGrass: Scheduled notification channel created');
@@ -121,7 +122,6 @@ export class NotificationInfrastructureService implements INotificationInfrastru
           DAILY_PLANNER_NOTIF_PREFIX
         );
         return {
-          shouldShowAlert: !isDailyPlanner,
           shouldPlaySound: !isDailyPlanner,
           shouldSetBadge: false,
           shouldShowBanner: !isDailyPlanner,
@@ -131,6 +131,17 @@ export class NotificationInfrastructureService implements INotificationInfrastru
     });
 
     Notifications.addNotificationResponseReceivedListener(handleResponse);
+
+    // Check if the app was launched by a notification click (cold start)
+    try {
+      const lastResponse = await Notifications.getLastNotificationResponseAsync();
+      if (lastResponse) {
+        console.log('[NOTIF_INFRA] Handling last notification response (cold start)');
+        handleResponse(lastResponse);
+      }
+    } catch (e) {
+      console.warn('[NOTIF_INFRA] Failed to check for last notification response:', e);
+    }
   }
 
   /**

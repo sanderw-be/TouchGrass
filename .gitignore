@@ -40,7 +40,7 @@ yarn-error.*
 /ios
 /android
 .gradle/
-credentials.jsondocs/
 
 .idea/
 credentials.json
+google-service-account.json

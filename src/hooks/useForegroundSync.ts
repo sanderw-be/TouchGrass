@@ -3,7 +3,6 @@ import { AppState, AppStateStatus, InteractionManager } from 'react-native';
 import { getSettingAsync } from '../storage';
 import { getSmartReminderScheduler } from '../notifications/notificationManager';
 import { cleanupTouchGrassCalendars } from '../calendar/calendarService';
-import { BackgroundService } from '../background/unifiedBackgroundTask';
 import { refreshBatteryOptimizationSetting } from '../utils/batteryOptimization';
 import { requestWidgetRefresh } from '../utils/widgetHelper';
 
@@ -26,9 +25,9 @@ export function useForegroundSync() {
               );
               InteractionManager.runAfterInteractions(() => {
                 getSmartReminderScheduler()
-                  .scheduleDayReminders()
+                  .scheduleUpcomingReminders()
                   .catch((e) =>
-                    console.warn('TouchGrass: foreground scheduleDayReminders error:', e)
+                    console.warn('TouchGrass: foreground scheduleUpcomingReminders error:', e)
                   );
                 getSmartReminderScheduler()
                   .processReminderQueue()
@@ -37,12 +36,6 @@ export function useForegroundSync() {
                   );
                 cleanupTouchGrassCalendars().catch((e) =>
                   console.warn('TouchGrass: foreground calendar cleanup error:', e)
-                );
-                // Re-arm the Pulsar alarm chain on every foreground wake.
-                // This keeps the chain alive and resets the timer from "now" so
-                // the next tick fires ~15 min after the user last used the app.
-                BackgroundService.scheduleNextAlarmPulse().catch((e) =>
-                  console.warn('TouchGrass: foreground alarm re-arm error:', e)
                 );
                 // Safety net: refresh the widget whenever the user opens the app so
                 // it always shows up-to-date data (covers the post-update blank case).

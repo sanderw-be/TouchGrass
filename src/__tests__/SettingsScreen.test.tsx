@@ -17,6 +17,8 @@ jest.mock('../storage', () => ({
   getKnownLocationsAsync: jest.fn(() => Promise.resolve([])),
   getSuggestedLocationsAsync: jest.fn(() => Promise.resolve([])),
   clearAllDataAsync: jest.fn(() => Promise.resolve()),
+  getSettingAsync: jest.fn((key, def) => Promise.resolve(def)),
+  setSettingAsync: jest.fn(() => Promise.resolve()),
 }));
 
 // Mock expo-location

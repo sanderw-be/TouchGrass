@@ -1,0 +1,5 @@
+echo "Verifying types..."
+npm run type-check
+
+echo "Running tests..."
+npm run test
