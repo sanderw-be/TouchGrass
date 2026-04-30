@@ -25,7 +25,6 @@ import {
   SmartReminderScheduler,
 } from '../notifications/services/SmartReminderScheduler';
 
-import { useAppStore } from '../store/useAppStore';
 import {
   hasUpcomingEvent,
   maybeAddOutdoorTimeToCalendar,
@@ -34,7 +33,6 @@ import {
 import * as WeatherService from '../weather/weatherService';
 import { shouldRemindNow, scoreReminderHours } from '../notifications/reminderAlgorithm';
 import * as WeatherAlgorithm from '../weather/weatherAlgorithm';
-import { WeatherCondition } from '../weather/types';
 
 export interface IAppContainer {
   storageService: IStorageService;
@@ -55,31 +53,13 @@ let container: IAppContainer;
 export function createContainer(db: SQLiteDatabase): IAppContainer {
   const storageService = new StorageService(db);
   const notificationInfrastructureService = new NotificationInfrastructureService();
-  const reminderMessageBuilder = new ReminderMessageBuilder(
-    storageService,
-    {
-      isWeatherDataAvailable: WeatherService.isWeatherDataAvailable,
-    },
-    {
-      getWeatherEmoji: (code) =>
-        WeatherAlgorithm.getWeatherEmoji(
-          code === null ? null : ({ weatherCode: code } as WeatherCondition)
-        ),
-      getWeatherDescription: (code) =>
-        WeatherAlgorithm.getWeatherDescription(
-          code === null ? null : ({ weatherCode: code } as WeatherCondition)
-        ),
-    }
-  );
+  const reminderMessageBuilder = new ReminderMessageBuilder(storageService);
   const reminderQueueManager = new ReminderQueueManager(storageService);
   const scheduledNotificationManager = new ScheduledNotificationManager(storageService);
 
   const notificationResponseHandler = new NotificationResponseHandler(
     storageService,
-    reminderMessageBuilder,
-    (data) => {
-      useAppStore.getState().triggerFeedback(data);
-    }
+    reminderMessageBuilder
   );
 
   const smartReminderScheduler = new SmartReminderScheduler(

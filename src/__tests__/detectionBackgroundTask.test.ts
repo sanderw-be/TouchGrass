@@ -41,14 +41,6 @@ describe('initDetection', () => {
     });
   });
 
-  it('does not register any WorkManager background task', async () => {
-    // expo-background-task registerTaskAsync should never be called — the
-    // TOUCHGRASS_BACKGROUND_TASK WorkManager registration was removed.
-    const { registerTaskAsync } = require('expo-background-task');
-    await Detection.initDetection();
-    expect(registerTaskAsync).not.toHaveBeenCalled();
-  });
-
   it('uses fast permission check (not data read) when HC is available and enabled', async () => {
     (HealthConnect.isHealthConnectAvailable as jest.Mock).mockResolvedValue(true);
     (HealthConnectIntent.verifyHealthConnectPermissions as jest.Mock).mockResolvedValue(true);

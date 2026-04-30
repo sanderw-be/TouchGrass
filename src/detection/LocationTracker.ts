@@ -27,6 +27,7 @@ import {
 } from './GeofenceManager';
 import { buildGpsNotes } from './GpsSessionBuilder';
 import { t } from '../i18n';
+import { colors } from '../utils/theme';
 
 // Persistence keys
 const GPS_SESSION_START_KEY = 'gps_session_start';
@@ -131,7 +132,7 @@ export class LocationTracker {
     const foregroundService = {
       notificationTitle: 'TouchGrass',
       notificationBody: t('gps_tracking_notif_body'),
-      notificationColor: '#4A7C59',
+      notificationColor: colors.grass,
     };
 
     if (profile === 'high') {

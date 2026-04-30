@@ -1,8 +1,9 @@
-import { db } from '../db';
+import { db, initDatabaseAsync } from '../db';
 import { DailyGoal, WeeklyGoal } from '../types';
 import { startOfDay, startOfWeek } from '../dateHelpers';
 
 export async function getCurrentDailyGoalAsync(): Promise<DailyGoal | null> {
+  await initDatabaseAsync();
   try {
     return await db.getFirstAsync<DailyGoal>(
       'SELECT * FROM daily_goals ORDER BY createdAt DESC LIMIT 1'
@@ -14,6 +15,7 @@ export async function getCurrentDailyGoalAsync(): Promise<DailyGoal | null> {
 }
 
 export async function getCurrentWeeklyGoalAsync(): Promise<WeeklyGoal | null> {
+  await initDatabaseAsync();
   try {
     return await db.getFirstAsync<WeeklyGoal>(
       'SELECT * FROM weekly_goals ORDER BY createdAt DESC LIMIT 1'
@@ -25,6 +27,7 @@ export async function getCurrentWeeklyGoalAsync(): Promise<WeeklyGoal | null> {
 }
 
 export async function setDailyGoalAsync(minutes: number): Promise<void> {
+  await initDatabaseAsync();
   await db.runAsync('INSERT INTO daily_goals (targetMinutes, createdAt) VALUES (?, ?)', [
     minutes,
     Date.now(),
@@ -32,6 +35,7 @@ export async function setDailyGoalAsync(minutes: number): Promise<void> {
 }
 
 export async function setWeeklyGoalAsync(minutes: number): Promise<void> {
+  await initDatabaseAsync();
   await db.runAsync('INSERT INTO weekly_goals (targetMinutes, createdAt) VALUES (?, ?)', [
     minutes,
     Date.now(),
@@ -39,6 +43,7 @@ export async function setWeeklyGoalAsync(minutes: number): Promise<void> {
 }
 
 export async function getDailyStreakAsync(): Promise<number> {
+  await initDatabaseAsync();
   try {
     const dailyGoal = await getCurrentDailyGoalAsync();
     if (!dailyGoal) return 0;
@@ -83,6 +88,7 @@ export async function getDailyStreakAsync(): Promise<number> {
 }
 
 export async function getWeeklyStreakAsync(): Promise<number> {
+  await initDatabaseAsync();
   try {
     const weeklyGoal = await getCurrentWeeklyGoalAsync();
     if (!weeklyGoal) return 0;

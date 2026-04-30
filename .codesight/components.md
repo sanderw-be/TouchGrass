@@ -1,37 +1,41 @@
 # Components
 
 - **App** — `App.tsx`
-- **AppProviders** — `src/components/AppProviders.tsx`
-- **DiagnosticSheet** — props: visible, onClose — `src/components/DiagnosticSheet.tsx`
-- **EditLocationSheet** — props: visible, location, initialCoords, initialLabel, onClose, onSave — `src/components/EditLocationSheet.tsx`
-- **EditSessionSheet** — props: visible, session, onClose, onSessionUpdated — `src/components/EditSessionSheet.tsx`
-- **ErrorBoundary** — `src/components/ErrorBoundary.tsx`
-- **ManualSessionSheet** — props: visible, onClose, onSessionLogged — `src/components/ManualSessionSheet.tsx`
-- **PermissionExplainerSheet** — props: visible, onClose, onOpenSettings, title, body, openSettingsLabel, onDisable, disableLabel, onCancel — `src/components/PermissionExplainerSheet.tsx`
-- **ProgressRing** — props: current, target, size, strokeWidth, label, onTimerPress, timerRunning, timerSeconds — `src/components/ProgressRing.tsx`
-- **ReminderFeedbackModal** — `src/components/ReminderFeedbackModal.tsx`
-- **ResponsiveGridList** — props: data, renderItem — `src/components/ResponsiveGridList.tsx`
-- **SessionNotesSheet** — props: visible, session, onClose, onNoteSaved — `src/components/SessionNotesSheet.tsx`
-- **UndoSnackbar** — props: visible, message, onUndo, onDismiss, duration — `src/components/UndoSnackbar.tsx`
-- **UpdateSplashScreen** — props: status — `src/components/UpdateSplashScreen.tsx`
-- **CalendarSection** — props: calendarEnabled, calendarPermissionGranted, calendarBuffer, calendarDuration, calendarSelectedId, calendarOptions, onToggleCalendar, onCycleCalendarBuffer, onCycleCalendarDuration, onSelectCalendar — `src/components/goals/CalendarSection.tsx`
-- **CATCHUP_REMINDERS_OPTIONS** — `src/components/goals/GoalsShared.tsx`
-- **RemindersSection** — props: smartRemindersCount, catchupRemindersCount, notificationPermissionGranted, batteryOptimizationGranted, onCycleSmartReminders, onCycleCatchupReminders, onNavigateScheduledNotifications, onShowNotificationPermissionSheet, onShowBatteryPermissionSheet — `src/components/goals/RemindersSection.tsx`
-- **WeatherSection** — props: weatherEnabled, weatherLocationGranted, onToggleWeather, onShowWeatherPermissionSheet, onNavigateWeatherSettings — `src/components/goals/WeatherSection.tsx`
-- **WeatherSettingsScreen** — `src/navigation/AppNavigator.tsx`
-- **AboutAppScreen** — `src/screens/AboutAppScreen.tsx`
-- **ActivityLogScreen** — `src/screens/ActivityLogScreen.tsx`
-- **EventsScreen** — `src/screens/EventsScreen.tsx`
-- **FeedbackSupportScreen** — `src/screens/FeedbackSupportScreen.tsx`
-- **GoalsScreen** — `src/screens/GoalsScreen.tsx`
-- **HealthConnectRationaleScreen** — `src/screens/HealthConnectRationaleScreen.tsx`
-- **HistoryScreen** — `src/screens/HistoryScreen.tsx`
-- **BarChart** — props: data, target, maxValue, period, isLoading — `src/screens/HistoryScreen.tsx`
-- **HomeScreen** — `src/screens/HomeScreen.tsx`
-- **IntroScreen** — props: onComplete — `src/screens/IntroScreen.tsx`
-- **KnownLocationsScreen** — `src/screens/KnownLocationsScreen.tsx`
-- **ScheduledNotificationsScreen** — `src/screens/ScheduledNotificationsScreen.tsx`
-- **SettingsScreen** — `src/screens/SettingsScreen.tsx`
-- **WeatherSettingsScreen** — `src/screens/WeatherSettingsScreen.tsx`
-- **SkeletonWidget** — props: widgetWidth, widgetHeight — `src/widget/ProgressWidget.tsx`
-- **ProgressWidget** — props: current, target, timerRunning, timerStartMs, widgetWidth, widgetHeight — `src/widget/ProgressWidget.tsx`
+- **AppProviders** — `src\components\AppProviders.tsx`
+- **DiagnosticSheet** — props: visible, onClose — `src\components\DiagnosticSheet.tsx`
+- **EditLocationSheet** — props: visible, location, initialCoords, initialLabel, onClose, onSave — `src\components\EditLocationSheet.tsx`
+- **EditSessionSheet** — props: visible, session, onClose, onSessionUpdated — `src\components\EditSessionSheet.tsx`
+- **ErrorBoundary** — `src\components\ErrorBoundary.tsx`
+- **CalendarSection** — props: calendarEnabled, calendarPermissionGranted, calendarBuffer, calendarDuration, calendarSelectedId, calendarOptions, onToggleCalendar, onCycleCalendarBuffer, onCycleCalendarDuration, onSelectCalendar — `src\components\goals\CalendarSection.tsx`
+- **CATCHUP_REMINDERS_OPTIONS** — `src\components\goals\GoalsShared.tsx`
+- **RemindersSection** — props: smartRemindersCount, catchupRemindersCount, notificationPermissionGranted, batteryOptimizationGranted, onCycleSmartReminders, onCycleCatchupReminders, onNavigateScheduledNotifications, onShowNotificationPermissionSheet, onShowBatteryPermissionSheet — `src\components\goals\RemindersSection.tsx`
+- **WeatherSection** — props: weatherEnabled, weatherLocationGranted, onToggleWeather, onShowWeatherPermissionSheet, onNavigateWeatherSettings — `src\components\goals\WeatherSection.tsx`
+- **ManualSessionSheet** — props: visible, onClose, onSessionLogged — `src\components\ManualSessionSheet.tsx`
+- **PermissionExplainerSheet** — props: visible, onClose, onOpenSettings, title, body, openSettingsLabel, onDisable, disableLabel, onCancel — `src\components\PermissionExplainerSheet.tsx`
+- **ProgressRing** — props: current, target, size, strokeWidth, label, onTimerPress, timerRunning, timerSeconds — `src\components\ProgressRing.tsx`
+- **ReminderFeedbackModal** — `src\components\ReminderFeedbackModal.tsx`
+- **ResponsiveGridList** — props: data, renderItem — `src\components\ResponsiveGridList.tsx`
+- **SessionNotesSheet** — props: visible, session, onClose, onNoteSaved — `src\components\SessionNotesSheet.tsx`
+- **Divider** — props: style, inset — `src\components\ui\atoms\Divider.tsx`
+- **DetectionSettingRow** — props: enabled, permissionGranted, icon, label, desc, permissionMissingLabel, onToggle, isLoading, isInitializing, onPermissionFix — `src\components\ui\molecules\DetectionSettingRow.tsx`
+- **PermissionToggleRow** — props: icon, label, desc, permissionMissingLabel, enabled, permissionGranted, onToggle, onPermissionFix, style — `src\components\ui\molecules\PermissionToggleRow.tsx`
+- **SettingRow** — props: icon, label, sublabel, hint, right, style, disabled — `src\components\ui\molecules\SettingRow.tsx`
+- **UndoSnackbar** — props: visible, message, onUndo, onDismiss, duration — `src\components\UndoSnackbar.tsx`
+- **UpdateSplashScreen** — props: status — `src\components\UpdateSplashScreen.tsx`
+- **WeatherSettingsScreen** — `src\navigation\AppNavigator.tsx`
+- **AboutAppScreen** — `src\screens\AboutAppScreen.tsx`
+- **ActivityLogScreen** — `src\screens\ActivityLogScreen.tsx`
+- **EventsScreen** — `src\screens\EventsScreen.tsx`
+- **FeedbackSupportScreen** — `src\screens\FeedbackSupportScreen.tsx`
+- **GoalsScreen** — `src\screens\GoalsScreen.tsx`
+- **HealthConnectRationaleScreen** — `src\screens\HealthConnectRationaleScreen.tsx`
+- **HistoryScreen** — `src\screens\HistoryScreen.tsx`
+- **BarChart** — props: data, target, maxValue, period, isLoading — `src\screens\HistoryScreen.tsx`
+- **HomeScreen** — `src\screens\HomeScreen.tsx`
+- **IntroScreen** — props: onComplete — `src\screens\IntroScreen.tsx`
+- **KnownLocationsScreen** — `src\screens\KnownLocationsScreen.tsx`
+- **ScheduledNotificationsScreen** — `src\screens\ScheduledNotificationsScreen.tsx`
+- **SettingsScreen** — `src\screens\SettingsScreen.tsx`
+- **WeatherSettingsScreen** — `src\screens\WeatherSettingsScreen.tsx`
+- **SkeletonWidget** — props: widgetWidth, widgetHeight — `src\widget\ProgressWidget.tsx`
+- **ProgressWidget** — props: current, target, timerRunning, timerStartMs, widgetWidth, widgetHeight — `src\widget\ProgressWidget.tsx`

@@ -1,4 +1,4 @@
-import { db } from '../db';
+import { db, initDatabaseAsync } from '../db';
 import { WeatherCondition, WeatherCache } from '../../weather/types';
 
 interface WeatherConditionRow {
@@ -16,7 +16,8 @@ interface WeatherConditionRow {
 }
 
 export async function saveWeatherConditionsAsync(conditions: WeatherCondition[]): Promise<void> {
-  await db.withTransactionAsync(async () => {
+  await initDatabaseAsync();
+  await db.withExclusiveTransactionAsync(async () => {
     for (const condition of conditions) {
       await db.runAsync(
         `INSERT INTO weather_conditions 
@@ -45,6 +46,7 @@ export async function getWeatherConditionsForHourAsync(
   startHour: number,
   endHour: number
 ): Promise<WeatherCondition[]> {
+  await initDatabaseAsync();
   const rows = await db.getAllAsync<WeatherConditionRow>(
     `SELECT * FROM weather_conditions 
      WHERE forecastDate = ? AND forecastHour >= ? AND forecastHour < ?
@@ -68,6 +70,7 @@ export async function getWeatherConditionsForHourAsync(
 }
 
 export async function saveWeatherCacheAsync(cache: WeatherCache): Promise<void> {
+  await initDatabaseAsync();
   await db.runAsync(
     `INSERT OR REPLACE INTO weather_cache (id, fetchedAt, latitude, longitude, expiresAt)
      VALUES (1, ?, ?, ?, ?)`,
@@ -76,10 +79,12 @@ export async function saveWeatherCacheAsync(cache: WeatherCache): Promise<void> 
 }
 
 export async function getWeatherCacheAsync(): Promise<WeatherCache | null> {
+  await initDatabaseAsync();
   return await db.getFirstAsync<WeatherCache>('SELECT * FROM weather_cache WHERE id = 1');
 }
 
 export async function clearExpiredWeatherDataAsync(now: number): Promise<void> {
+  await initDatabaseAsync();
   const cutoff = now - 24 * 60 * 60 * 1000;
   await db.runAsync('DELETE FROM weather_conditions WHERE timestamp < ?', [cutoff]);
 }

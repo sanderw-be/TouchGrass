@@ -163,7 +163,10 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   dismissFeedback: () => set({ feedbackVisible: false }),
 
-  triggerFeedback: (data: FeedbackModalData) => set({ feedbackVisible: true, feedbackData: data }),
+  triggerFeedback: (data: FeedbackModalData) => {
+    console.log('[AppStore] Triggering feedback modal:', data.action);
+    set({ feedbackVisible: true, feedbackData: data });
+  },
 
   reset: () => set(initialState),
 }));

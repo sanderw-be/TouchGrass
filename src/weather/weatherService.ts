@@ -13,6 +13,7 @@ import {
   saveWeatherCacheAsync,
   clearExpiredWeatherDataAsync,
 } from '../storage';
+import { startOfDay } from '../storage/dateHelpers';
 
 const OPEN_METEO_API = 'https://api.open-meteo.com/v1/forecast';
 const CACHE_DURATION_MS = 30 * 60 * 1000; // 30 minutes
@@ -41,11 +42,12 @@ export interface WeatherFetchResult {
 
 export interface FetchWeatherForecastOptions {
   allowPermissionPrompt?: boolean;
+  isHeadless?: boolean;
 }
 
 /**
  * Fetch weather forecast for the current location
- * Returns hourly forecast for the next 24 hours
+ * Returns hourly forecast for the next 48 hours (Today + Tomorrow)
  */
 export async function fetchWeatherForecast(
   options: FetchWeatherForecastOptions = {}
@@ -59,10 +61,10 @@ export async function fetchWeatherForecast(
 
     if (cache && cache.expiresAt > now) {
       // Cache is still valid, return cached data
-      const todayStart = getStartOfDay(now);
-      const conditions = await getWeatherConditionsForHourAsync(todayStart, 0, 24);
+      const todayStart = startOfDay(now);
+      const conditions = await getWeatherConditionsForHourAsync(todayStart, 0, 48);
 
-      if (conditions.length > 0) {
+      if (conditions.length >= 24) {
         console.log('Weather forecast source: cache-fresh');
         return { success: true, conditions };
       }
@@ -77,7 +79,7 @@ export async function fetchWeatherForecast(
     const foregroundPermissions = await Location.getForegroundPermissionsAsync();
     let permissionGranted = foregroundPermissions.status === 'granted';
 
-    if (!permissionGranted && allowPermissionPrompt) {
+    if (!permissionGranted && allowPermissionPrompt && !options.isHeadless) {
       const requestedPermissions = await Location.requestForegroundPermissionsAsync();
       permissionGranted = requestedPermissions.status === 'granted';
     }
@@ -86,23 +88,33 @@ export async function fetchWeatherForecast(
       const servicesEnabled = await Location.hasServicesEnabledAsync();
 
       if (servicesEnabled) {
-        try {
-          const location = await Location.getCurrentPositionAsync({
-            accuracy: Location.Accuracy.Balanced,
-          });
-          latitude = location.coords.latitude;
-          longitude = location.coords.longitude;
-          locationSource = 'current';
-        } catch {
-          const lastKnownLocation = await Location.getLastKnownPositionAsync({
-            maxAge: 6 * 60 * 60 * 1000,
-            requiredAccuracy: 5000,
-          });
+        if (!options.isHeadless) {
+          try {
+            const location = await Location.getCurrentPositionAsync({
+              accuracy: Location.Accuracy.Balanced,
+            });
+            latitude = location.coords.latitude;
+            longitude = location.coords.longitude;
+            locationSource = 'current';
+          } catch (e) {
+            console.warn('[Weather] getCurrentPositionAsync failed, falling back', e);
+          }
+        }
 
-          if (lastKnownLocation) {
-            latitude = lastKnownLocation.coords.latitude;
-            longitude = lastKnownLocation.coords.longitude;
-            locationSource = 'lastKnown';
+        if (latitude === null || longitude === null) {
+          try {
+            const lastKnownLocation = await Location.getLastKnownPositionAsync({
+              maxAge: 6 * 60 * 60 * 1000,
+              requiredAccuracy: 5000,
+            });
+
+            if (lastKnownLocation) {
+              latitude = lastKnownLocation.coords.latitude;
+              longitude = lastKnownLocation.coords.longitude;
+              locationSource = 'lastKnown';
+            }
+          } catch (e) {
+            console.warn('[Weather] getLastKnownPositionAsync failed', e);
           }
         }
       }
@@ -140,7 +152,7 @@ export async function fetchWeatherForecast(
         'weather_code',
         'is_day',
       ].join(','),
-      forecast_days: '1',
+      forecast_days: '2',
       timezone: 'auto',
     });
 
@@ -183,13 +195,15 @@ export async function fetchWeatherForecast(
 }
 
 /**
- * Get weather condition for a specific hour
- * Returns cached data if available, otherwise returns null
+ * Get weather condition for a specific hour on a specific date.
+ * Returns cached data if available, otherwise returns null.
  */
-export async function getWeatherForHour(hour: number): Promise<WeatherCondition | null> {
-  const now = Date.now();
-  const todayStart = getStartOfDay(now);
-  const conditions = await getWeatherConditionsForHourAsync(todayStart, hour, hour + 1);
+export async function getWeatherForHour(
+  hour: number,
+  dateMs: number = Date.now()
+): Promise<WeatherCondition | null> {
+  const targetDayStart = startOfDay(dateMs);
+  const conditions = await getWeatherConditionsForHourAsync(targetDayStart, hour, hour + 1);
 
   return conditions.length > 0 ? conditions[0] : null;
 }
@@ -206,7 +220,7 @@ export async function isWeatherDataAvailable(): Promise<boolean> {
   }
 
   // Check if we have any conditions for today
-  const todayStart = getStartOfDay(now);
+  const todayStart = startOfDay(now);
   const conditions = await getWeatherConditionsForHourAsync(todayStart, 0, 24);
 
   return conditions.length > 0;
@@ -226,7 +240,7 @@ function parseWeatherData(data: OpenMeteoResponse, fetchTime: number): WeatherCo
 
   for (let i = 0; i < length; i++) {
     const forecastTime = new Date(hourly.time[i]);
-    const forecastDate = getStartOfDay(forecastTime.getTime());
+    const forecastDate = startOfDay(forecastTime.getTime());
     const forecastHour = forecastTime.getHours();
 
     conditions.push({
@@ -244,10 +258,4 @@ function parseWeatherData(data: OpenMeteoResponse, fetchTime: number): WeatherCo
   }
 
   return conditions;
-}
-
-function getStartOfDay(timestamp: number): number {
-  const date = new Date(timestamp);
-  date.setHours(0, 0, 0, 0);
-  return date.getTime();
 }

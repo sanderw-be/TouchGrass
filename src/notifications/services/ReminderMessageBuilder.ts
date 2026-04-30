@@ -1,39 +1,23 @@
-import { t, TxKey } from '../../i18n';
+import { t } from '../../i18n';
 import { IStorageService } from '../../storage/StorageService';
-
-// Define minimal interfaces for the injected dependencies
-interface IWeatherServiceForReminderBuilder {
-  isWeatherDataAvailable(): Promise<boolean>;
-}
-
-interface IWeatherAlgorithmForReminderBuilder {
-  getWeatherEmoji(weatherCode: number | null): string;
-  getWeatherDescription(weatherCode: number | null): TxKey;
-}
 
 export interface IReminderMessageBuilder {
   buildReminderMessage(
     todayMinutes: number,
     dailyTarget: number,
     hour: number,
-    contributors?: string[],
-    includeWeather?: boolean
+    contributors?: string[]
   ): Promise<{ title: string; body: string }>;
 }
 
 export class ReminderMessageBuilder implements IReminderMessageBuilder {
-  constructor(
-    private storageService: IStorageService,
-    private weatherService: IWeatherServiceForReminderBuilder,
-    private weatherAlgorithm: IWeatherAlgorithmForReminderBuilder
-  ) {}
+  constructor(private storageService: IStorageService) {}
 
   public async buildReminderMessage(
     todayMinutes: number,
     dailyTarget: number,
     hour: number,
-    contributors?: string[],
-    includeWeather: boolean = true
+    contributors?: string[]
   ): Promise<{ title: string; body: string }> {
     const progress = Math.min(1, todayMinutes / dailyTarget);
 
@@ -53,7 +37,8 @@ export class ReminderMessageBuilder implements IReminderMessageBuilder {
 
     // Append contributors if present
     if (contributors && contributors.length > 0) {
-      const descriptions = contributors.map((key) => String(t(key as TxKey)));
+      // The contributors are already fully formatted strings from the reminderAlgorithm
+      const descriptions = [...contributors];
       let joined = '';
       if (descriptions.length === 1) {
         joined = descriptions[0];
@@ -65,46 +50,7 @@ export class ReminderMessageBuilder implements IReminderMessageBuilder {
       if (joined) {
         // Capitalize first letter
         joined = joined.charAt(0).toUpperCase() + joined.slice(1);
-        body += `. ${joined}.`;
-      }
-    }
-
-    if (includeWeather) {
-      // Append weather context if weather enabled
-      const weatherEnabled =
-        (await this.storageService.getSettingAsync('weather_enabled', '1')) === '1';
-      if (weatherEnabled) {
-        let appendedWeather = false;
-
-        // Try to get weather for this specific hour
-        const startOfDay = new Date();
-        startOfDay.setHours(0, 0, 0, 0);
-        const hourDataList = await this.storageService.getWeatherConditionsForHourAsync(
-          startOfDay.getTime(),
-          hour,
-          hour + 1
-        );
-        const hourData = hourDataList.length > 0 ? hourDataList[0] : null;
-
-        if (hourData) {
-          const preferCelsius =
-            (await this.storageService.getSettingAsync('prefer_celsius', '1')) === '1';
-          const emoji = this.weatherAlgorithm.getWeatherEmoji(hourData.weatherCode);
-          const description = t(this.weatherAlgorithm.getWeatherDescription(hourData.weatherCode));
-          const temperature = this._getTemperatureString(hourData.temperature, preferCelsius);
-          body += `. ${emoji} ${t('notif_weather_context', { description, temperature })}.`;
-          appendedWeather = true;
-        }
-
-        // Fallback for when weather is enabled but no specific hour data is found
-        if (!appendedWeather && (await this.weatherService.isWeatherDataAvailable())) {
-          const preferCelsius =
-            (await this.storageService.getSettingAsync('prefer_celsius', '1')) === '1';
-          const emoji = this.weatherAlgorithm.getWeatherEmoji(null); // Use null for generic/fallback emoji
-          const description = t(this.weatherAlgorithm.getWeatherDescription(null)); // Use null for generic/fallback description
-          const temperature = this._getTemperatureString(null, preferCelsius); // Use null for generic/fallback temperature
-          body += `. ${emoji} ${t('notif_weather_context', { description, temperature })}.`;
-        }
+        body += ` ${joined}.`;
       }
     }
 
@@ -112,14 +58,5 @@ export class ReminderMessageBuilder implements IReminderMessageBuilder {
       title,
       body,
     };
-  }
-
-  // Private helper method to format temperature string
-  private _getTemperatureString(temperature: number | null, preferCelsius: boolean): string {
-    if (temperature === null) {
-      return t('weather_temp_unknown');
-    }
-    const unit = preferCelsius ? '°C' : '°F';
-    return `${Math.round(temperature)}${unit}`;
   }
 }

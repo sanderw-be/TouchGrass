@@ -1,5 +1,9 @@
 // Mock the database before importing
 jest.mock('expo-sqlite');
+jest.mock('../storage/db', () => ({
+  ...jest.requireActual('../storage/db'),
+  initDatabaseAsync: jest.fn(() => Promise.resolve()),
+}));
 
 import { startOfDay, startOfWeek, startOfMonth, startOfNextMonth } from '../storage';
 

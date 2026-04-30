@@ -3,12 +3,12 @@ stages:
   - build
 
 variables:
-  NODE_VERSION: '20'
+  NODE_VERSION: '22'
   JAVA_VERSION: '17'
   GRADLE_OPTS: '-Xmx3072m'
 
 # Use Docker image with Node, Java, and Android SDK pre-installed
-image: node:20
+image: node:22
 
 test:
   stage: test

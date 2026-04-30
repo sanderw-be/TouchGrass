@@ -6,9 +6,9 @@
 
 ## Scale
 
-35 UI components · 57 library files · 1 middleware layers · 2 environment variables
+39 UI components · 57 library files · 1 middleware layers · 3 environment variables
 
-**UI:** 35 components (react) — see [ui.md](./ui.md)
+**UI:** 39 components (react) — see [ui.md](./ui.md)
 
 **Libraries:** 57 files — see [libraries.md](./libraries.md)
 
@@ -16,18 +16,19 @@
 
 Changes to these files have the widest blast radius across the codebase:
 
-- `src/storage/index.ts` — imported by **69** files
-- `src/i18n/index.ts` — imported by **53** files
-- `src/store/useAppStore.ts` — imported by **34** files
-- `src/utils/theme.ts` — imported by **31** files
-- `src/detection/index.ts` — imported by **14** files
-- `src/components/ResponsiveGridList.tsx` — imported by **11** files
+- `src\utils\theme.ts` — imported by **37** files
+- `src\store\useAppStore.ts` — imported by **33** files
+- `src\notifications\notificationManager.ts` — imported by **12** files
+- `src\components\ResponsiveGridList.tsx` — imported by **11** files
+- `src\storage\StorageService.ts` — imported by **10** files
+- `src\utils\helpers.ts` — imported by **10** files
 
 ## Required Environment Variables
 
 - `EAS_BUILD_PROFILE` — `app.config.js`
+- `EXPO_PUBLIC_SHOW_DEV_MENU` — `src\screens\SettingsScreen.tsx`
 - `NODE_ENV` — `metro.config.js`
 
 ---
 
-_Back to [index.md](./index.md) · Generated 2026-04-25_
+_Back to [index.md](./index.md) · Generated 2026-04-30_

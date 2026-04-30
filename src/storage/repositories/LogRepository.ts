@@ -1,4 +1,4 @@
-import { db } from '../db';
+import { db, initDatabaseAsync } from '../db';
 import { BackgroundLogCategory, BackgroundTaskLog } from '../types';
 
 /** Maximum number of log entries to keep per category (oldest are pruned). */
@@ -8,6 +8,7 @@ export async function insertBackgroundLogAsync(
   category: BackgroundLogCategory,
   message: string
 ): Promise<void> {
+  await initDatabaseAsync();
   try {
     const now = Date.now();
     await db.runAsync(
@@ -38,6 +39,7 @@ export async function getBackgroundLogsAsync(
   category?: BackgroundLogCategory,
   limit = 200
 ): Promise<BackgroundTaskLog[]> {
+  await initDatabaseAsync();
   try {
     if (category) {
       return await db.getAllAsync<BackgroundTaskLog>(

@@ -1,6 +1,7 @@
 import * as Notifications from 'expo-notifications';
 import { IStorageService } from '../../storage/StorageService';
 import { t } from '../../i18n';
+import { colors } from '../../utils/theme';
 
 export const SCHEDULED_NOTIF_PREFIX = 'scheduled_';
 
@@ -79,7 +80,7 @@ export class ScheduledNotificationManager implements IScheduledNotificationManag
                 title: t('notif_scheduled_title'),
                 body: notif.label || t('scheduled_notif_body'),
                 categoryIdentifier: 'reminder',
-                color: '#4A7C59',
+                color: colors.grass,
               },
               trigger: {
                 type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
