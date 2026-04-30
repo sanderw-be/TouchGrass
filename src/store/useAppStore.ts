@@ -86,7 +86,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   initialize: async (systemScheme: ColorSchemeName) => {
     try {
       const { showIntro: initialShowIntro, initialLocale } =
-        await performCriticalInitializationAsync((data) => get().triggerFeedback(data));
+        await performCriticalInitializationAsync();
 
       const storedTheme = await getSettingAsync('theme_preference', 'system');
       const themePref =
@@ -163,7 +163,10 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   dismissFeedback: () => set({ feedbackVisible: false }),
 
-  triggerFeedback: (data: FeedbackModalData) => set({ feedbackVisible: true, feedbackData: data }),
+  triggerFeedback: (data: FeedbackModalData) => {
+    console.log('[AppStore] Triggering feedback modal:', data.action);
+    set({ feedbackVisible: true, feedbackData: data });
+  },
 
   reset: () => set(initialState),
 }));

@@ -1,7 +1,7 @@
 import * as Notifications from 'expo-notifications';
 import { IStorageService } from '../../storage/StorageService';
 import { IReminderMessageBuilder } from './ReminderMessageBuilder';
-import { FeedbackModalData } from '../../store/useAppStore';
+import { useAppStore } from '../../store/useAppStore';
 import {
   ACTION_WENT_OUTSIDE,
   ACTION_SNOOZE,
@@ -19,8 +19,7 @@ export interface INotificationResponseHandler {
 export class NotificationResponseHandler implements INotificationResponseHandler {
   constructor(
     private storageService: IStorageService,
-    private messageBuilder: IReminderMessageBuilder,
-    private triggerFeedback: (data: FeedbackModalData) => void
+    private messageBuilder: IReminderMessageBuilder
   ) {}
 
   public async handleNotificationResponse(
@@ -28,6 +27,7 @@ export class NotificationResponseHandler implements INotificationResponseHandler
   ): Promise<void> {
     const actionId = response.actionIdentifier;
     const notificationId = response.notification.request.identifier;
+    console.log(`[NOTIF_RESPONSE] Action: ${actionId}, NotifID: ${notificationId}`);
     const now = Date.now();
     const d = new Date(now);
 
@@ -68,7 +68,8 @@ export class NotificationResponseHandler implements INotificationResponseHandler
             ? 'notif_confirm_snoozed'
             : undefined;
 
-      this.triggerFeedback({
+      console.log(`[NOTIF_RESPONSE] Triggering UI feedback for action: ${action}`);
+      useAppStore.getState().triggerFeedback({
         action,
         hour: d.getHours(),
         minute: d.getMinutes(),

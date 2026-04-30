@@ -52,8 +52,7 @@ let container: IAppContainer;
  * Must be called after the database is ready.
  */
 export function createContainer(
-  db: SQLiteDatabase,
-  onFeedbackTriggered: (data: FeedbackModalData) => void
+  db: SQLiteDatabase
 ): IAppContainer {
   const storageService = new StorageService(db);
   const notificationInfrastructureService = new NotificationInfrastructureService();
@@ -63,10 +62,7 @@ export function createContainer(
 
   const notificationResponseHandler = new NotificationResponseHandler(
     storageService,
-    reminderMessageBuilder,
-    (data) => {
-      onFeedbackTriggered(data);
-    }
+    reminderMessageBuilder
   );
 
   const smartReminderScheduler = new SmartReminderScheduler(

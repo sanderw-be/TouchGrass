@@ -130,6 +130,17 @@ export class NotificationInfrastructureService implements INotificationInfrastru
     });
 
     Notifications.addNotificationResponseReceivedListener(handleResponse);
+
+    // Check if the app was launched by a notification click (cold start)
+    try {
+      const lastResponse = await Notifications.getLastNotificationResponseAsync();
+      if (lastResponse) {
+        console.log('[NOTIF_INFRA] Handling last notification response (cold start)');
+        handleResponse(lastResponse);
+      }
+    } catch (e) {
+      console.warn('[NOTIF_INFRA] Failed to check for last notification response:', e);
+    }
   }
 
   /**

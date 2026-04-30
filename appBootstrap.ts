@@ -21,14 +21,12 @@ export interface CriticalAppState {
 /**
  * Performs critical-path initialization asynchronously: database and language settings.
  */
-export async function performCriticalInitializationAsync(
-  onFeedbackTriggered: (data: FeedbackModalData) => void
-): Promise<CriticalAppState> {
+export async function performCriticalInitializationAsync(): Promise<CriticalAppState> {
   // Database must be ready before anything else
   await initDatabaseAsync();
 
   // Initialize IoC Container
-  createContainer(db, onFeedbackTriggered);
+  createContainer(db);
 
   // Apply stored language preference if available
   const storedLanguage = await getSettingAsync('language', 'system');

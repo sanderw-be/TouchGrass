@@ -95,6 +95,44 @@ describe('handleSmartReminder', () => {
     expect(mockScheduler.scheduleUpcomingReminders).toHaveBeenCalled();
   });
 
+  it('should bypass guards and use provided message for test_reminder', async () => {
+    (getTodayMinutesAsync as jest.Mock).mockResolvedValue(100); // Over goal
+    await handleSmartReminder({
+      type: 'test_reminder',
+      title: 'Test Title',
+      body: 'Test Body',
+    });
+
+    expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledWith(
+      expect.objectContaining({
+        content: expect.objectContaining({
+          title: 'Test Title',
+          body: 'Test Body',
+        }),
+      })
+    );
+    expect(mockMessageBuilder.buildReminderMessage).not.toHaveBeenCalled();
+  });
+
+  it('should ALWAYS rebuild message for smart_reminder even if title is provided', async () => {
+    (getTodayMinutesAsync as jest.Mock).mockResolvedValue(10); // Under goal
+    await handleSmartReminder({
+      type: 'smart_reminder',
+      title: 'Planned Title',
+      body: 'Planned Body',
+    });
+
+    // Should NOT use 'Planned Title' but call the builder
+    expect(mockMessageBuilder.buildReminderMessage).toHaveBeenCalled();
+    expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledWith(
+      expect.objectContaining({
+        content: expect.objectContaining({
+          title: 'Test', // from mockMessageBuilder default
+        }),
+      })
+    );
+  });
+
   it('should NOT send a catchup reminder if ahead of schedule but STILL replan', async () => {
     (getTodayMinutesAsync as jest.Mock).mockResolvedValue(10);
     (getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });

@@ -187,7 +187,7 @@ export default function SettingsScreen() {
     await SmartReminderModule.scheduleReminders([
       {
         timestamp: Date.now() + 10000,
-        type: 'smart_reminder',
+        type: 'test_reminder',
         goalThreshold: 0,
         title,
         body,

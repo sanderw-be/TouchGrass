@@ -1,8 +1,9 @@
-import { db, SEVEN_DAYS_MS } from '../db';
+import { db, initDatabaseAsync, SEVEN_DAYS_MS } from '../db';
 import { OutsideSession } from '../types';
 import { startOfDay, startOfWeek, startOfMonth, startOfNextMonth } from '../dateHelpers';
 
 export async function insertSessionAsync(session: OutsideSession): Promise<number> {
+  await initDatabaseAsync();
   const result = await db.runAsync(
     `INSERT INTO outside_sessions (startTime, endTime, durationMinutes, source, confidence, userConfirmed, notes, steps, distanceMeters, averageSpeedKmh, discarded)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -24,6 +25,7 @@ export async function insertSessionAsync(session: OutsideSession): Promise<numbe
 }
 
 export async function getSessionsForDayAsync(dateMs: number): Promise<OutsideSession[]> {
+  await initDatabaseAsync();
   try {
     const start = startOfDay(dateMs);
     const end = start + 86400000;
@@ -41,6 +43,7 @@ export async function getSessionsForRangeAsync(
   fromMs: number,
   toMs: number
 ): Promise<OutsideSession[]> {
+  await initDatabaseAsync();
   try {
     return await db.getAllAsync<OutsideSession>(
       'SELECT * FROM outside_sessions WHERE startTime < ? AND endTime > ? ORDER BY startTime ASC',
@@ -53,11 +56,13 @@ export async function getSessionsForRangeAsync(
 }
 
 export async function deleteSessionAsync(id: number): Promise<void> {
+  await initDatabaseAsync();
   await db.runAsync('DELETE FROM outside_sessions WHERE id = ?', [id]);
 }
 
 export async function deleteSessionsByIdsAsync(ids: number[]): Promise<void> {
   if (ids.length === 0) return;
+  await initDatabaseAsync();
   await db.withExclusiveTransactionAsync(async () => {
     for (const id of ids) {
       await db.runAsync('DELETE FROM outside_sessions WHERE id = ?', [id]);
@@ -67,6 +72,7 @@ export async function deleteSessionsByIdsAsync(ids: number[]): Promise<void> {
 
 export async function insertSessionsBatchAsync(sessions: OutsideSession[]): Promise<number[]> {
   if (sessions.length === 0) return [];
+  await initDatabaseAsync();
   const ids: number[] = [];
   await db.withExclusiveTransactionAsync(async () => {
     for (const session of sessions) {
@@ -94,6 +100,7 @@ export async function insertSessionsBatchAsync(sessions: OutsideSession[]): Prom
 }
 
 export async function getTodayMinutesAsync(): Promise<number> {
+  await initDatabaseAsync();
   try {
     const start = startOfDay(Date.now());
     const end = start + 86400000;
@@ -111,6 +118,7 @@ export async function getTodayMinutesAsync(): Promise<number> {
 }
 
 export async function getWeekMinutesAsync(): Promise<number> {
+  await initDatabaseAsync();
   try {
     const start = startOfWeek(Date.now());
     const end = Date.now();
@@ -130,6 +138,7 @@ export async function getWeekMinutesAsync(): Promise<number> {
 export async function getDailyTotalsForMonthAsync(
   dateMs: number
 ): Promise<{ date: number; minutes: number }[]> {
+  await initDatabaseAsync();
   const start = startOfMonth(dateMs);
   const end = startOfNextMonth(dateMs);
   const rows = await db.getAllAsync<{ day: number; minutes: number }>(
@@ -145,6 +154,7 @@ export async function getDailyTotalsForMonthAsync(
 }
 
 export async function confirmSessionAsync(id: number, confirmed: boolean | null): Promise<void> {
+  await initDatabaseAsync();
   await db.runAsync('UPDATE outside_sessions SET userConfirmed = ? WHERE id = ?', [
     confirmed === null ? null : confirmed ? 1 : 0,
     id,
@@ -152,6 +162,7 @@ export async function confirmSessionAsync(id: number, confirmed: boolean | null)
 }
 
 export async function getUnreviewedSessionsAsync(): Promise<OutsideSession[]> {
+  await initDatabaseAsync();
   return await db.getAllAsync<OutsideSession>(
     'SELECT * FROM outside_sessions WHERE userConfirmed IS NULL ORDER BY startTime DESC LIMIT 20'
   );
@@ -161,6 +172,7 @@ export async function getApprovedSessionsAsync(
   fromMs: number,
   toMs: number
 ): Promise<OutsideSession[]> {
+  await initDatabaseAsync();
   return await db.getAllAsync<OutsideSession>(
     `SELECT * FROM outside_sessions
      WHERE startTime < ? AND endTime > ? AND userConfirmed = 1
@@ -173,6 +185,7 @@ export async function getStandardSessionsAsync(
   fromMs: number,
   toMs: number
 ): Promise<OutsideSession[]> {
+  await initDatabaseAsync();
   return await db.getAllAsync<OutsideSession>(
     `SELECT * FROM outside_sessions
      WHERE startTime < ? AND endTime > ? AND (discarded IS NULL OR discarded = 0)
@@ -185,6 +198,7 @@ export async function getAllSessionsIncludingDiscardedAsync(
   fromMs: number,
   toMs: number
 ): Promise<OutsideSession[]> {
+  await initDatabaseAsync();
   return await db.getAllAsync<OutsideSession>(
     `SELECT * FROM outside_sessions
      WHERE startTime < ? AND endTime > ?
@@ -194,6 +208,7 @@ export async function getAllSessionsIncludingDiscardedAsync(
 }
 
 export async function countProposedSessionsAsync(): Promise<number> {
+  await initDatabaseAsync();
   try {
     const row = await db.getFirstAsync<{ cnt: number }>(
       'SELECT COUNT(*) AS cnt FROM outside_sessions WHERE userConfirmed IS NULL AND (discarded IS NULL OR discarded = 0)'
@@ -208,6 +223,7 @@ export async function countProposedSessionsAsync(): Promise<number> {
 export async function autoCloseOldProposedSessionsAsync(
   maxAgeMs: number = SEVEN_DAYS_MS
 ): Promise<number> {
+  await initDatabaseAsync();
   const cutoff = Date.now() - maxAgeMs;
   const result = await db.runAsync(
     `UPDATE outside_sessions
@@ -219,6 +235,7 @@ export async function autoCloseOldProposedSessionsAsync(
 }
 
 export async function unDiscardSessionAsync(id: number): Promise<void> {
+  await initDatabaseAsync();
   await db.runAsync(
     'UPDATE outside_sessions SET discarded = 0, userConfirmed = NULL WHERE id = ?',
     [id]
@@ -226,6 +243,7 @@ export async function unDiscardSessionAsync(id: number): Promise<void> {
 }
 
 export async function updateSessionNotesAsync(id: number, notes: string | null): Promise<void> {
+  await initDatabaseAsync();
   await db.runAsync(`UPDATE outside_sessions SET notes = ? WHERE id = ?`, [notes || null, id]);
 }
 
@@ -234,6 +252,7 @@ export async function updateSessionTimesAsync(
   startTime: number,
   endTime: number
 ): Promise<void> {
+  await initDatabaseAsync();
   const durationMinutes = (endTime - startTime) / 60000;
   await db.runAsync(
     `UPDATE outside_sessions
@@ -247,6 +266,7 @@ export async function pruneShortDiscardedHealthConnectSessionsAsync(
   beforeMs: number,
   minStepsPerMinute: number
 ): Promise<number> {
+  await initDatabaseAsync();
   const result = await db.runAsync(
     `DELETE FROM outside_sessions
      WHERE source = 'health_connect'

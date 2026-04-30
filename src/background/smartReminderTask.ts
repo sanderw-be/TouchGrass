@@ -4,7 +4,7 @@ import { fetchWeatherForecast } from '../weather/weatherService';
 import { ReminderMessageBuilder } from '../notifications/services/ReminderMessageBuilder';
 import { StorageService } from '../storage/StorageService';
 import { createContainer } from '../core/container';
-import { getSmartReminderScheduler } from '../notifications/notificationManager';
+import { getSmartReminderScheduler, CHANNEL_ID } from '../notifications/notificationManager';
 
 interface HeadlessData {
   type: string;
@@ -17,7 +17,7 @@ export const handleSmartReminder = async (data: HeadlessData) => {
   try {
     // 0. Initialize Infrastructure (Database + DI Container)
     await initDatabaseAsync();
-    createContainer(db, () => {}); // No-op for feedback in headless mode
+    createContainer(db, () => { }); // No-op for feedback in headless mode
 
     const storageService = new StorageService(db);
     const todayMinutes = await getTodayMinutesAsync();
@@ -49,9 +49,13 @@ export const handleSmartReminder = async (data: HeadlessData) => {
 
     let shouldSend = true;
 
-    if (data.type === 'smart_reminder') {
+    // 1. Logic Guards
+    if (data.type === 'test_reminder') {
+      console.log('[SR_HEADLESS] Test reminder detected. Bypassing guards.');
+      shouldSend = true;
+    } else if (data.type === 'smart_reminder') {
       if (todayMinutes >= targetMinutes) {
-        console.log('[SR_HEADLESS] Goal already met. Skipping smart reminder.');
+        console.log(`[SR_HEADLESS] Goal already met (${todayMinutes}/${targetMinutes}). Skipping smart reminder.`);
         shouldSend = false;
       } else {
         // We will send it, so increment the counter
@@ -82,30 +86,46 @@ export const handleSmartReminder = async (data: HeadlessData) => {
       await Promise.race([weatherFetch, weatherTimeout]);
 
       // 3. Build & Fire Notification
-      const messageBuilder = new ReminderMessageBuilder(storageService);
-      let contributors: string[] = [];
-      if (data.contributors) {
-        try {
-          contributors = JSON.parse(data.contributors);
-        } catch (e) {
-          console.warn('[SR_HEADLESS] Failed to parse contributors:', e);
-        }
-      }
+      let finalTitle = data.title;
+      let finalBody = data.body;
 
-      const { title, body } = await messageBuilder.buildReminderMessage(
-        todayMinutes,
-        targetMinutes,
-        new Date().getHours(),
-        contributors
-      );
+      // FOR PRODUCTION TYPES: Always rebuild for freshness
+      // FOR TEST TYPE: Use provided title/body if available
+      const isTest = data.type === 'test_reminder';
+      const needsRebuild = !isTest || !finalTitle || !finalBody;
+
+      if (needsRebuild) {
+        console.log('[SR_HEADLESS] Building fresh message...');
+        const messageBuilder = new ReminderMessageBuilder(storageService);
+        let contributors: string[] = [];
+        if (data.contributors) {
+          try {
+            contributors = JSON.parse(data.contributors);
+          } catch (e) {
+            console.warn('[SR_HEADLESS] Failed to parse contributors:', e);
+          }
+        }
+
+        const { title, body } = await messageBuilder.buildReminderMessage(
+          todayMinutes,
+          targetMinutes,
+          new Date().getHours(),
+          contributors
+        );
+        finalTitle = title;
+        finalBody = body;
+      } else {
+        console.log('[SR_HEADLESS] Using provided test message.');
+      }
 
       await Notifications.scheduleNotificationAsync({
         content: {
-          title,
-          body,
+          title: finalTitle,
+          body: finalBody,
           data: { type: data.type },
           categoryIdentifier: 'reminder',
           color: '#4A7C59',
+          channelId: CHANNEL_ID,
         },
         trigger: null, // immediate
       });

@@ -1,4 +1,5 @@
 import { SQLiteDatabase } from 'expo-sqlite';
+import { initDatabaseAsync } from './db';
 import { OutsideSession, DailyGoal } from './types';
 import { WeatherCondition, WeatherCache } from '../weather/types';
 
@@ -49,6 +50,7 @@ export class StorageService implements IStorageService {
   constructor(private db: SQLiteDatabase) {}
 
   async getSettingAsync(key: string, fallback: string): Promise<string> {
+    await initDatabaseAsync();
     const row = await this.db.getFirstAsync<{ value: string }>(
       'SELECT value FROM app_settings WHERE key = ?',
       [key]
@@ -57,6 +59,7 @@ export class StorageService implements IStorageService {
   }
 
   async setSettingAsync(key: string, value: string): Promise<void> {
+    await initDatabaseAsync();
     await this.db.runAsync('INSERT OR REPLACE INTO app_settings (key, value) VALUES (?, ?)', [
       key,
       value,
@@ -64,6 +67,7 @@ export class StorageService implements IStorageService {
   }
 
   async insertSessionAsync(session: OutsideSession): Promise<number> {
+    await initDatabaseAsync();
     const result = await this.db.runAsync(
       `INSERT INTO outside_sessions (startTime, endTime, durationMinutes, source, confidence, userConfirmed, notes, steps, distanceMeters, averageSpeedKmh, discarded)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,

@@ -1,4 +1,4 @@
-import { db } from '../db';
+import { db, initDatabaseAsync } from '../db';
 import { ReminderFeedback, ScheduledNotification } from '../types';
 
 interface ScheduledNotificationRow {
@@ -11,6 +11,7 @@ interface ScheduledNotificationRow {
 }
 
 export async function insertReminderFeedbackAsync(feedback: ReminderFeedback): Promise<void> {
+  await initDatabaseAsync();
   const d = new Date(feedback.timestamp);
   const minute = d.getMinutes();
   const slotMinute = minute >= 30 ? 30 : 0;
@@ -22,12 +23,14 @@ export async function insertReminderFeedbackAsync(feedback: ReminderFeedback): P
 }
 
 export async function getReminderFeedbackAsync(): Promise<ReminderFeedback[]> {
+  await initDatabaseAsync();
   return await db.getAllAsync<ReminderFeedback>(
     'SELECT * FROM reminder_feedback ORDER BY timestamp DESC LIMIT 200'
   );
 }
 
 export async function getScheduledNotificationsAsync(): Promise<ScheduledNotification[]> {
+  await initDatabaseAsync();
   const rows = await db.getAllAsync<ScheduledNotificationRow>(
     'SELECT * FROM scheduled_notifications ORDER BY hour, minute'
   );
@@ -49,6 +52,7 @@ export async function getScheduledNotificationsAsync(): Promise<ScheduledNotific
 export async function insertScheduledNotificationAsync(
   notification: Omit<ScheduledNotification, 'id'>
 ): Promise<number> {
+  await initDatabaseAsync();
   // Validate daysOfWeek is not empty
   if (!notification.daysOfWeek || notification.daysOfWeek.length === 0) {
     throw new Error('Cannot insert scheduled notification without any days selected');
@@ -70,6 +74,7 @@ export async function insertScheduledNotificationAsync(
 export async function updateScheduledNotificationAsync(
   notification: ScheduledNotification
 ): Promise<void> {
+  await initDatabaseAsync();
   if (!notification.id) throw new Error('Cannot update notification without id');
 
   // Validate daysOfWeek is not empty
@@ -91,6 +96,7 @@ export async function updateScheduledNotificationAsync(
 }
 
 export async function deleteScheduledNotificationAsync(id: number): Promise<void> {
+  await initDatabaseAsync();
   await db.runAsync('DELETE FROM scheduled_notifications WHERE id = ?', [id]);
 }
 
@@ -98,6 +104,7 @@ export async function toggleScheduledNotificationAsync(
   id: number,
   enabled: boolean
 ): Promise<void> {
+  await initDatabaseAsync();
   await db.runAsync('UPDATE scheduled_notifications SET enabled = ? WHERE id = ?', [
     enabled ? 1 : 0,
     id,
@@ -105,6 +112,7 @@ export async function toggleScheduledNotificationAsync(
 }
 
 export async function cleanupInvalidScheduledNotificationsAsync(): Promise<number> {
+  await initDatabaseAsync();
   const result = await db.runAsync(
     `DELETE FROM scheduled_notifications 
      WHERE daysOfWeek = '' 
