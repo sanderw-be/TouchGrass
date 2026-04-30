@@ -4,7 +4,7 @@
 
 > 0 routes | 0 models | 39 components | 57 lib files | 3 env vars | 1 middleware | 0% test coverage
 > **Token savings:** this file is ~6.300 tokens. Without it, AI exploration would cost ~37.200 tokens. **Saves ~30.900 tokens per conversation.**
-> **Last scanned:** 2026-04-30 12:07 — re-run after significant changes
+> **Last scanned:** 2026-04-30 17:09 — re-run after significant changes
 
 ---
 
@@ -102,7 +102,7 @@
   - function checkGPSPermissions: () => Promise<boolean>
   - function requestGPSPermissions: () => Promise<boolean>
   - function refreshDetectionSync: () => Promise<void>
-  - _...5 more_
+  - _...6 more_
 - `src\detection\LocationTracker.ts` — class LocationTracker
 - `src\detection\manualCheckin.ts`
   - function logManualSession: (durationMinutes, startTime?, endTime?, notes?) => void
@@ -336,10 +336,10 @@
 - `src\weather\weatherService.ts` — imported by **7** files
 - `src\calendar\calendarService.ts` — imported by **7** files
 - `src\hooks\useTheme.ts` — imported by **6** files
+- `src\detection\PermissionService.ts` — imported by **6** files
 - `src\detection\sessionMerger.ts` — imported by **6** files
 - `src\utils\constants.ts` — imported by **6** files
 - `src\navigation\AppNavigator.tsx` — imported by **5** files
-- `src\core\container.ts` — imported by **5** files
 
 ## Import Map (who imports what)
 

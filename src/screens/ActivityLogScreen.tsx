@@ -55,6 +55,7 @@ export default function ActivityLogScreen() {
 
   const [hcLogs, setHcLogs] = useState<BackgroundTaskLog[]>([]);
   const [gpsLogs, setGpsLogs] = useState<BackgroundTaskLog[]>([]);
+  const [arLogs, setArLogs] = useState<BackgroundTaskLog[]>([]);
   const [reminderLogs, setReminderLogs] = useState<BackgroundTaskLog[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -70,13 +71,15 @@ export default function ActivityLogScreen() {
     if (isFetchingRef.current) return;
     isFetchingRef.current = true;
     try {
-      const [hc, gps, reminder] = await Promise.all([
+      const [hc, gps, ar, reminder] = await Promise.all([
         getBackgroundLogsAsync('health_connect'),
         getBackgroundLogsAsync('gps'),
+        getBackgroundLogsAsync('activity_recognition'),
         getBackgroundLogsAsync('reminder'),
       ]);
       setHcLogs(hc);
       setGpsLogs(gps);
+      setArLogs(ar);
       setReminderLogs(reminder);
     } catch (error) {
       console.error('[ActivityLogScreen.loadLogs] Error:', error);
@@ -125,6 +128,12 @@ export default function ActivityLogScreen() {
         data: gpsLogs,
       },
       {
+        id: 'activity_recognition' as SectionKey,
+        title: 'Activity Recognition', // Hardcoded as requested or just use a generic name
+        icon: 'battery-charging-outline' as const,
+        data: arLogs,
+      },
+      {
         id: 'reminder' as SectionKey,
         title: t('activity_log_section_reminders'),
         icon: 'notifications-outline' as const,
@@ -133,7 +142,7 @@ export default function ActivityLogScreen() {
     ],
     // locale is included to ensure titles refresh when language changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [hcLogs, gpsLogs, reminderLogs, locale]
+    [hcLogs, gpsLogs, arLogs, reminderLogs, locale]
   );
 
   const renderSection = useCallback(

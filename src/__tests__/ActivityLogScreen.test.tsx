@@ -243,6 +243,7 @@ describe('ActivityLogScreen', () => {
     await waitFor(() => {
       expect(mockGetBackgroundLogs).toHaveBeenCalledWith('health_connect');
       expect(mockGetBackgroundLogs).toHaveBeenCalledWith('gps');
+      expect(mockGetBackgroundLogs).toHaveBeenCalledWith('activity_recognition');
       expect(mockGetBackgroundLogs).toHaveBeenCalledWith('reminder');
     });
   });
@@ -250,7 +251,7 @@ describe('ActivityLogScreen', () => {
   it('reloads logs when pull-to-refresh is triggered', async () => {
     jest.useFakeTimers();
     const { UNSAFE_getByType } = render(<ActivityLogScreen />);
-    await waitFor(() => expect(mockGetBackgroundLogs).toHaveBeenCalledTimes(3));
+    await waitFor(() => expect(mockGetBackgroundLogs).toHaveBeenCalledTimes(4));
 
     mockGetBackgroundLogs.mockClear();
 
@@ -267,7 +268,7 @@ describe('ActivityLogScreen', () => {
     });
 
     // After the timer fires, logs should be reloaded
-    await waitFor(() => expect(mockGetBackgroundLogs).toHaveBeenCalledTimes(3));
+    await waitFor(() => expect(mockGetBackgroundLogs).toHaveBeenCalledTimes(4));
     jest.useRealTimers();
   });
 });

@@ -2,11 +2,13 @@ jest.mock('../storage');
 jest.mock('../detection/sessionMerger');
 jest.mock('react-native-health-connect');
 jest.mock('../detection/healthConnectIntent');
+jest.mock('../detection/PermissionService');
 
 import * as HealthConnect from 'react-native-health-connect';
 import * as Database from '../storage';
 import * as SessionMerger from '../detection/sessionMerger';
 import * as HealthConnectIntent from '../detection/healthConnectIntent';
+import { PermissionService } from '../detection/PermissionService';
 import { syncHealthConnect, requestHealthPermissions } from '../detection/healthConnect';
 import {
   STEPS_PER_MINUTE_AT_5KMH,
@@ -302,6 +304,17 @@ describe('requestHealthPermissions', () => {
     (HealthConnectIntent.openHealthConnectPermissionsViaIntent as jest.Mock).mockResolvedValue(
       true
     );
+    (PermissionService.requestHealthPermissions as jest.Mock).mockImplementation(async () => {
+      const alreadyGranted = await HealthConnectIntent.verifyHealthConnectPermissions();
+      if (alreadyGranted) return true;
+
+      try {
+        const granted = await HealthConnect.requestPermission([]);
+        if (granted && granted.length > 0) return true;
+      } catch (e) {}
+
+      return await HealthConnectIntent.openHealthConnectPermissionsViaIntent();
+    });
   });
 
   it('returns true immediately when permissions are already granted', async () => {

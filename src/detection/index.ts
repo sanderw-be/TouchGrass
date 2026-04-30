@@ -9,6 +9,7 @@ import { verifyHealthConnectPermissions } from './healthConnectIntent';
 import { startLocationTracking, stopLocationTracking } from './gpsDetection';
 import { getKnownLocationsAsync, getSettingAsync, setSettingAsync } from '../storage';
 import { PermissionService } from './PermissionService';
+import { ActivityTransitionModule } from '../modules/ActivityTransitionModule';
 import {
   computeMinActiveRadius,
   clampRadiusMeters,
@@ -19,6 +20,7 @@ import {
 // Setting keys for the user's explicit intent (independent of OS permission state)
 const HC_USER_KEY = 'healthconnect_enabled';
 const GPS_USER_KEY = 'gps_enabled';
+const AR_USER_KEY = 'ar_enabled';
 
 /**
  * Initial detection setup.
@@ -106,29 +108,35 @@ export async function refreshDetectionSync(): Promise<void> {
  * Get a high-level summary of the current detection state.
  */
 export async function getDetectionStatus(): Promise<DetectionStatus> {
-  const [gpsUser, hcUser, gpsPerm, hcPerm, hcAvailable] = await Promise.all([
+  const [gpsUser, hcUser, arUser, gpsPerm, hcPerm, hcAvailable, arPerm] = await Promise.all([
     getSettingAsync(GPS_USER_KEY, '0'),
     getSettingAsync(HC_USER_KEY, '0'),
+    getSettingAsync(AR_USER_KEY, '0'),
     checkGPSPermissions(),
     verifyHealthConnectPermissions(),
     isHealthConnectAvailable(),
+    PermissionService.checkActivityRecognitionPermissions(),
   ]);
 
   return {
     gps: gpsUser === '1',
     healthConnect: hcUser === '1',
+    activityRecognition: arUser === '1',
     healthConnectAvailable: hcAvailable,
     healthConnectPermission: hcPerm,
     gpsPermission: gpsPerm,
+    activityRecognitionPermission: arPerm,
   };
 }
 
 export interface DetectionStatus {
   gps: boolean;
   healthConnect: boolean;
+  activityRecognition: boolean;
   healthConnectAvailable: boolean;
   healthConnectPermission: boolean;
   gpsPermission: boolean;
+  activityRecognitionPermission: boolean;
 }
 
 /**
@@ -167,6 +175,25 @@ export async function toggleHealthConnect(
     return { needsPermissions: true };
   }
   return { needsPermissions: false };
+}
+
+/**
+ * Toggle Activity Recognition detection and start/stop the Native Module.
+ */
+export async function toggleAR(enabled: boolean): Promise<{ needsPermissions: boolean }> {
+  await setSettingAsync(AR_USER_KEY, enabled ? '1' : '0');
+
+  if (enabled) {
+    const hasPerm = await PermissionService.checkActivityRecognitionPermissions();
+    if (hasPerm) {
+      await ActivityTransitionModule.startTracking();
+      return { needsPermissions: false };
+    }
+    return { needsPermissions: true };
+  } else {
+    await ActivityTransitionModule.stopTracking();
+    return { needsPermissions: false };
+  }
 }
 
 /**

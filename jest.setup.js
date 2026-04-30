@@ -331,3 +331,25 @@ jest.mock('expo-application', () => ({
   applicationName: 'TouchGrass',
   applicationId: 'be.sanderw.touchgrass',
 }));
+
+// Mock PermissionService (Activity Recognition uses PermissionsAndroid which is unavailable in Jest)
+jest.mock('./src/detection/PermissionService', () => ({
+  PermissionService: {
+    requestLocationPermissions: jest.fn(() => Promise.resolve(false)),
+    requestHealthPermissions: jest.fn(() => Promise.resolve(false)),
+    checkWeatherLocationPermissions: jest.fn(() => Promise.resolve(false)),
+    requestWeatherLocationPermissions: jest.fn(() => Promise.resolve(false)),
+    verifyHealthConnectPermissions: jest.fn(() => Promise.resolve(false)),
+    openHealthConnectSettings: jest.fn(() => Promise.resolve(false)),
+    checkActivityRecognitionPermissions: jest.fn(() => Promise.resolve(false)),
+    requestActivityRecognitionPermissions: jest.fn(() => Promise.resolve(false)),
+  },
+}));
+
+// Mock ActivityTransitionModule (NativeModules not available in Jest)
+jest.mock('./src/modules/ActivityTransitionModule', () => ({
+  ActivityTransitionModule: {
+    startTracking: jest.fn(() => Promise.resolve()),
+    stopTracking: jest.fn(() => Promise.resolve()),
+  },
+}));
