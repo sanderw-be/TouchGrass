@@ -2,9 +2,9 @@
 
 > **Navigation aid.** Library inventory extracted via AST. Read the source files listed here before modifying exported functions.
 
-**57 library files** across 12 modules
+**59 library files** across 13 modules
 
-## Detection (13 files)
+## Detection (14 files)
 
 - `src/detection/index.ts` — initDetection, checkWeatherLocationPermissions, requestWeatherLocationPermissions, checkGPSPermissions, requestGPSPermissions, refreshDetectionSync, …
 - `src/detection/GeofenceManager.ts` — isAtKnownIndoorLocation, wasDefinitelyAtKnownIndoorLocationSync, shouldTriggerBurst, computeMinActiveRadius, clampRadiusMeters, createClusterObject, …
@@ -12,6 +12,7 @@
 - `src/detection/sessionConfidence.ts` — loadTimeSlotProbabilities, getTimeSlotProbability, updateTimeSlotProbability, scoreDuration, computeSessionScore, computeSessionScoreFromProbs
 - `src/detection/healthConnect.ts` — isHealthConnectAvailable, requestHealthPermissions, openHealthConnectForManagement, syncHealthConnect
 - `src/detection/manualCheckin.ts` — logManualSession, logManualSessionAsync, startManualSession
+- `src/detection/ActivityStateManager.ts` — ActivityStateManager, ActivityType
 - `src/detection/healthConnectIntent.ts` — openHealthConnectPermissionsViaIntent, verifyHealthConnectPermissions
 - `src/detection/sessionMerger.ts` — submitSession, buildSession
 - `src/detection/utils.ts` — haversineDistance, EARTH_RADIUS_METERS
@@ -84,6 +85,10 @@
 ## AppBootstrap.ts (1 files)
 
 - `appBootstrap.ts` — performCriticalInitializationAsync, performDeferredInitialization, CriticalAppState
+
+## Background (1 files)
+
+- `src/background/activityTransitionTask.ts` — activityTransitionTask
 
 ## Calendar (1 files)
 

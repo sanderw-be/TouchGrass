@@ -8,6 +8,7 @@
   - function scheduleNextPulse: (delayMs) => Promise<void>
   - function cancelPulse: () => Promise<void>
   - const PULSE_TASK_NAME
+- `src/background/activityTransitionTask.ts` — function activityTransitionTask
 - `src/calendar/calendarService.ts`
   - function cleanupTouchGrassCalendars: () => Promise<CalendarCleanupResult>
   - function requestCalendarPermissions: () => Promise<boolean>
@@ -20,6 +21,7 @@
   - function createContainer: (db) => IAppContainer
   - function getContainer: () => IAppContainer
   - interface IAppContainer
+- `src/detection/ActivityStateManager.ts` — class ActivityStateManager, enum ActivityType
 - `src/detection/GeofenceManager.ts`
   - function isAtKnownIndoorLocation: (lat, lon, locations) => boolean
   - function wasDefinitelyAtKnownIndoorLocationSync: (startMs, endMs, allSamples, knownLocations) => boolean

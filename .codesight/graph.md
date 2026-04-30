@@ -2,7 +2,7 @@
 
 ## Most Imported Files (change these carefully)
 
-- `src/storage/index.ts` — imported by **69** files
+- `src/storage/index.ts` — imported by **71** files
 - `src/i18n/index.ts` — imported by **53** files
 - `src/store/useAppStore.ts` — imported by **34** files
 - `src/utils/theme.ts` — imported by **31** files
@@ -18,14 +18,14 @@
 - `src/weather/weatherService.ts` — imported by **8** files
 - `src/i18n/en.ts` — imported by **8** files
 - `src/core/container.ts` — imported by **7** files
-- `src/background/unifiedBackgroundTask.ts` — imported by **7** files
 - `src/utils/widgetHelper.ts` — imported by **7** files
 - `src/calendar/calendarService.ts` — imported by **7** files
 - `src/components/ui/index.ts` — imported by **7** files
+- `src/utils/constants.ts` — imported by **6** files
 
 ## Import Map (who imports what)
 
-- `src/storage/index.ts` ← `appBootstrap.ts`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx` +64 more
+- `src/storage/index.ts` ← `appBootstrap.ts`, `src/__tests__/ActivityStateManager.test.ts`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx`, `src/__tests__/EditSessionSheet.test.tsx` +66 more
 - `src/i18n/index.ts` ← `appBootstrap.ts`, `src/__tests__/ErrorBoundary.test.tsx`, `src/__tests__/FeedbackSupportScreen.test.tsx`, `src/__tests__/appBootstrap.test.ts`, `src/__tests__/i18n.test.ts` +48 more
 - `src/store/useAppStore.ts` ← `App.tsx`, `src/__tests__/App.test.tsx`, `src/__tests__/useAppStore.test.ts`, `src/components/DiagnosticSheet.tsx`, `src/components/EditLocationSheet.tsx` +29 more
 - `src/utils/theme.ts` ← `src/components/DiagnosticSheet.tsx`, `src/components/EditLocationSheet.tsx`, `src/components/EditSessionSheet.tsx`, `src/components/ErrorBoundary.tsx`, `src/components/ManualSessionSheet.tsx` +26 more
