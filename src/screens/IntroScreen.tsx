@@ -27,6 +27,7 @@ import {
 import {
   toggleHealthConnect,
   toggleGPS,
+  toggleAR,
   verifyHealthConnectPermissions,
   requestGPSPermissions,
   checkGPSPermissions,
@@ -248,10 +249,15 @@ export default function IntroScreen({ onComplete }: Props) {
   const handleRequestActivityRecognition = async () => {
     setRequestingPermission(true);
     try {
-      const granted = await PermissionService.requestActivityRecognitionPermissions();
-      setActivityRecognitionGranted(granted);
-      if (granted) {
-        await ActivityTransitionModule.startTracking();
+      const result = await toggleAR(true);
+      if (result.needsPermissions) {
+        const granted = await PermissionService.requestActivityRecognitionPermissions();
+        setActivityRecognitionGranted(granted);
+        if (granted) {
+          await ActivityTransitionModule.startTracking();
+        }
+      } else {
+        setActivityRecognitionGranted(true);
       }
     } catch (error) {
       console.error('Error requesting Activity Recognition:', error);

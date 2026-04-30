@@ -35,8 +35,19 @@ export async function initDetection(): Promise<DetectionStatus> {
     status.healthConnect = false;
   }
 
+  if (status.activityRecognition && !status.activityRecognitionPermission) {
+    await setSettingAsync(AR_USER_KEY, '0');
+    status.activityRecognition = false;
+  }
+
   if (status.healthConnect && status.healthConnectPermission) {
     syncHealthConnect().catch((err) => console.error('Health Connect init sync failed:', err));
+  }
+
+  if (status.activityRecognition && status.activityRecognitionPermission) {
+    ActivityTransitionModule.startTracking().catch((err) =>
+      console.error('AR init tracking failed:', err)
+    );
   }
   return status;
 }
@@ -101,6 +112,18 @@ export async function refreshDetectionSync(): Promise<void> {
     if (available) {
       await syncHealthConnect();
     }
+  }
+
+  const arUserEnabled = (await getSettingAsync(AR_USER_KEY, '0')) === '1';
+  if (arUserEnabled) {
+    const perm = await PermissionService.checkActivityRecognitionPermissions();
+    if (perm) {
+      await ActivityTransitionModule.startTracking();
+    } else {
+      await ActivityTransitionModule.stopTracking();
+    }
+  } else {
+    await ActivityTransitionModule.stopTracking();
   }
 }
 
@@ -204,6 +227,9 @@ export async function runCatchUpDetectionAsync(): Promise<void> {
   const status = await getDetectionStatus();
   if (status.healthConnect && status.healthConnectPermission) {
     await syncHealthConnect();
+  }
+  if (status.activityRecognition && status.activityRecognitionPermission) {
+    await ActivityTransitionModule.startTracking();
   }
 }
 

@@ -311,7 +311,7 @@ describe('requestHealthPermissions', () => {
       try {
         const granted = await HealthConnect.requestPermission([]);
         if (granted && granted.length > 0) return true;
-      } catch (e) {}
+      } catch {}
 
       return await HealthConnectIntent.openHealthConnectPermissionsViaIntent();
     });
