@@ -2,9 +2,9 @@
 
 > **Stack:** raw-http | none | react | typescript
 
-> 0 routes | 0 models | 35 components | 58 lib files | 3 env vars | 1 middleware | 0% test coverage
-> **Token savings:** this file is ~6,100 tokens. Without it, AI exploration would cost ~36,200 tokens. **Saves ~30,100 tokens per conversation.**
-> **Last scanned:** 2026-04-30 08:02 — re-run after significant changes
+> 0 routes | 0 models | 35 components | 57 lib files | 3 env vars | 1 middleware | 0% test coverage
+> **Token savings:** this file is ~6,100 tokens. Without it, AI exploration would cost ~35,900 tokens. **Saves ~29,900 tokens per conversation.**
+> **Last scanned:** 2026-04-30 08:09 — re-run after significant changes
 
 ---
 
@@ -54,10 +54,6 @@
   - function performCriticalInitializationAsync: (onFeedbackTriggered) => void
   - function performDeferredInitialization: () => void
   - interface CriticalAppState
-- `modules/alarm-bridge-native/src/index.ts`
-  - function scheduleNextPulse: (delayMs) => Promise<void>
-  - function cancelPulse: () => Promise<void>
-  - const PULSE_TASK_NAME
 - `src/background/smartReminderTask.ts` — function handleSmartReminder
 - `src/calendar/calendarService.ts`
   - function cleanupTouchGrassCalendars: () => Promise<CalendarCleanupResult>

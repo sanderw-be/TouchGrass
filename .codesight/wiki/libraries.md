@@ -2,7 +2,7 @@
 
 > **Navigation aid.** Library inventory extracted via AST. Read the source files listed here before modifying exported functions.
 
-**58 library files** across 13 modules
+**57 library files** across 12 modules
 
 ## Detection (13 files)
 
@@ -76,10 +76,6 @@
 
 - `src/weather/weatherService.ts` — fetchWeatherForecast, getWeatherForHour, isWeatherDataAvailable, WeatherFetchResult, FetchWeatherForecastOptions
 - `src/weather/weatherAlgorithm.ts` — scoreWeatherCondition, getWeatherPreferences, getWeatherDescription, getWeatherEmoji
-
-## Alarm-bridge-native (1 files)
-
-- `modules/alarm-bridge-native/src/index.ts` — scheduleNextPulse, cancelPulse, PULSE_TASK_NAME
 
 ## AppBootstrap.ts (1 files)
 
