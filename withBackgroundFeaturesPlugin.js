@@ -610,7 +610,7 @@ const withBackgroundFeaturesPlugin = (config) => {
     const permissions = [
       'android.permission.FOREGROUND_SERVICE',
       'android.permission.FOREGROUND_SERVICE_SHORT_SERVICE',
-      'android.permission.ACTIVITY_RECOGNITION'
+      'android.permission.ACTIVITY_RECOGNITION',
     ];
     for (const permission of permissions) {
       if (!manifest['uses-permission'].some((p) => p.$?.['android:name'] === permission)) {

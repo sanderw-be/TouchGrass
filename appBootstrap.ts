@@ -11,7 +11,6 @@ import {
 import { initDetection } from './src/detection/index';
 import { requestWidgetRefresh } from './src/utils/widgetHelper';
 import { refreshBatteryOptimizationSetting } from './src/utils/batteryOptimization';
-import type { FeedbackModalData } from './src/store/useAppStore';
 import { activityTransitionTask } from './src/background/activityTransitionTask';
 
 AppRegistry.registerHeadlessTask('ActivityTransitionTask', () => activityTransitionTask);
@@ -24,14 +23,12 @@ export interface CriticalAppState {
 /**
  * Performs critical-path initialization asynchronously: database and language settings.
  */
-export async function performCriticalInitializationAsync(
-  onFeedbackTriggered: (data: FeedbackModalData) => void
-): Promise<CriticalAppState> {
+export async function performCriticalInitializationAsync(): Promise<CriticalAppState> {
   // Database must be ready before anything else
   await initDatabaseAsync();
 
   // Initialize IoC Container
-  createContainer(db, onFeedbackTriggered);
+  createContainer(db);
 
   // Apply stored language preference if available
   const storedLanguage = await getSettingAsync('language', 'system');
@@ -86,7 +83,7 @@ export function performDeferredInitialization(): void {
         { name: 'Detection Initialization', task: initDetection },
         {
           name: 'Day Reminders',
-          task: () => getSmartReminderScheduler().scheduleUpcomingReminders(),
+          task: () => getSmartReminderScheduler().scheduleDayReminders(),
         },
         {
           name: 'Scheduled Notifications',

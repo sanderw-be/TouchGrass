@@ -5,7 +5,10 @@ const IN_VEHICLE = 0;
 const ENTER = 0;
 const EXIT = 1;
 
-export const activityTransitionTask = async (taskData: any) => {
+export const activityTransitionTask = async (taskData: {
+  activityType: number;
+  transitionType: number;
+}) => {
   const { activityType, transitionType } = taskData;
   const stateManager = ActivityStateManager.getInstance();
   await stateManager.loadState();
@@ -14,14 +17,14 @@ export const activityTransitionTask = async (taskData: any) => {
 
   if (transitionType === ENTER) {
     await stateManager.setCurrentActivity(activityType);
-    
+
     if (activityType === IN_VEHICLE) {
       // Pause aggressive tracking or flag invalid
       await tracker.stopTracking();
     } else {
       // e.g., WALKING or STILL
       // Wake up tracker if it was stopped
-      await tracker.startTracking('high', 100); 
+      await tracker.startTracking('high', 100);
     }
   } else if (transitionType === EXIT) {
     if (activityType === IN_VEHICLE) {

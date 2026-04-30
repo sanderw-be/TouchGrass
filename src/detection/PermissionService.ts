@@ -94,12 +94,13 @@ export class PermissionService {
         PermissionsAndroid.PERMISSIONS.ACTIVITY_RECOGNITION,
         {
           title: 'Smart Battery Optimization',
-          message: 'TouchGrass uses activity recognition to save battery by pausing location checks when you are driving.',
-          buttonPositive: 'OK'
+          message:
+            'TouchGrass uses activity recognition to save battery by pausing location checks when you are driving.',
+          buttonPositive: 'OK',
         }
       );
       return granted === PermissionsAndroid.RESULTS.GRANTED;
-    } catch (err) {
+    } catch {
       return false;
     }
   }

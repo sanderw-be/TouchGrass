@@ -19,7 +19,8 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "android:kotlin-check": "npx expo prebuild --platform android && cd android && gradlew.bat :app:compileDebugKotlin"
   },
   "dependencies": {
     "@expo-google-fonts/nunito": "^0.4.2",

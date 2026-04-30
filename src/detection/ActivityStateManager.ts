@@ -31,13 +31,13 @@ export class ActivityStateManager {
     try {
       const actRaw = await getSettingAsync(CURRENT_ACTIVITY_KEY, String(ActivityType.UNKNOWN));
       const parsed = parseInt(actRaw, 10);
-      
+
       if (!isNaN(parsed) && Object.values(ActivityType).includes(parsed)) {
         this.currentActivity = parsed as ActivityType;
       } else {
         this.currentActivity = ActivityType.UNKNOWN;
       }
-    } catch (e) {
+    } catch {
       this.currentActivity = ActivityType.UNKNOWN;
     }
   }
