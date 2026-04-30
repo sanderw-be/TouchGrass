@@ -11,7 +11,16 @@ export const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
  */
 const DB_VERSION = 6;
 
-export async function initDatabaseAsync(): Promise<void> {
+let initPromise: Promise<void> | null = null;
+
+export function initDatabaseAsync(): Promise<void> {
+  if (!initPromise) {
+    initPromise = performInitialization();
+  }
+  return initPromise;
+}
+
+async function performInitialization(): Promise<void> {
   const currentVersion =
     (await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version'))?.user_version ?? 0;
   const tableAlreadyExists =

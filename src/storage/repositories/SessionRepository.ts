@@ -58,7 +58,7 @@ export async function deleteSessionAsync(id: number): Promise<void> {
 
 export async function deleteSessionsByIdsAsync(ids: number[]): Promise<void> {
   if (ids.length === 0) return;
-  await db.withTransactionAsync(async () => {
+  await db.withExclusiveTransactionAsync(async () => {
     for (const id of ids) {
       await db.runAsync('DELETE FROM outside_sessions WHERE id = ?', [id]);
     }
@@ -68,7 +68,7 @@ export async function deleteSessionsByIdsAsync(ids: number[]): Promise<void> {
 export async function insertSessionsBatchAsync(sessions: OutsideSession[]): Promise<number[]> {
   if (sessions.length === 0) return [];
   const ids: number[] = [];
-  await db.withTransactionAsync(async () => {
+  await db.withExclusiveTransactionAsync(async () => {
     for (const session of sessions) {
       const result = await db.runAsync(
         `INSERT INTO outside_sessions (startTime, endTime, durationMinutes, source, confidence, userConfirmed, notes, steps, distanceMeters, averageSpeedKmh, discarded)

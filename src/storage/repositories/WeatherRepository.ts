@@ -16,7 +16,7 @@ interface WeatherConditionRow {
 }
 
 export async function saveWeatherConditionsAsync(conditions: WeatherCondition[]): Promise<void> {
-  await db.withTransactionAsync(async () => {
+  await db.withExclusiveTransactionAsync(async () => {
     for (const condition of conditions) {
       await db.runAsync(
         `INSERT INTO weather_conditions 
