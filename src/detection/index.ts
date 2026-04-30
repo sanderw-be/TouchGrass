@@ -24,31 +24,15 @@ const AR_USER_KEY = 'ar_enabled';
 
 /**
  * Initial detection setup.
+ * Reconciles user intent with actual OS permissions and starts/stops
+ * background services accordingly.
  */
 export async function initDetection(): Promise<DetectionStatus> {
   const status = await getDetectionStatus();
 
-  // Auto-disable if the user intended to use HC but permissions were revoked/missing.
-  // This ensures the UI reflects the actual functional state.
-  if (status.healthConnect && !status.healthConnectPermission) {
-    await setSettingAsync(HC_USER_KEY, '0');
-    status.healthConnect = false;
-  }
+  // Reconcile background tasks with current settings and permissions
+  await refreshDetectionSync();
 
-  if (status.activityRecognition && !status.activityRecognitionPermission) {
-    await setSettingAsync(AR_USER_KEY, '0');
-    status.activityRecognition = false;
-  }
-
-  if (status.healthConnect && status.healthConnectPermission) {
-    syncHealthConnect().catch((err) => console.error('Health Connect init sync failed:', err));
-  }
-
-  if (status.activityRecognition && status.activityRecognitionPermission) {
-    ActivityTransitionModule.startTracking().catch((err) =>
-      console.error('AR init tracking failed:', err)
-    );
-  }
   return status;
 }
 
@@ -86,13 +70,7 @@ export async function requestGPSPermissions(): Promise<{
   granted: boolean;
   canAskAgain: boolean;
 }> {
-  const { status, canAskAgain } = await Location.requestForegroundPermissionsAsync();
-  if (status !== 'granted') {
-    return { granted: false, canAskAgain };
-  }
-  const { status: bgStatus, canAskAgain: bgCanAskAgain } =
-    await Location.requestBackgroundPermissionsAsync();
-  return { granted: bgStatus === 'granted', canAskAgain: bgCanAskAgain };
+  return PermissionService.requestLocationPermissions();
 }
 
 /**
@@ -119,7 +97,11 @@ export async function refreshDetectionSync(): Promise<void> {
   if (hcUserEnabled) {
     const available = await isHealthConnectAvailable();
     if (available) {
-      await syncHealthConnect();
+      const perm = await verifyHealthConnectPermissions();
+      if (perm) {
+        // Kick off sync in background to avoid blocking app init
+        syncHealthConnect();
+      }
     }
   }
 
@@ -253,4 +235,5 @@ export {
   clampRadiusMeters,
   computeDwellClusters,
   autoDetectLocations,
+  PermissionService,
 };

@@ -306,7 +306,7 @@ const fr: TranslationType = {
     "Beaucoup de pas au même endroit signifie généralement que vous étiez dehors. Des activités comme la course ou le vélo sont aussi comptées comme du temps extérieur. Si le GPS est activé, les séances de vélo d'appartement peuvent être ignorées.",
   intro_hc_hint: 'Réglable plus tard.',
   intro_hc_button: 'Connecter',
-  intro_hc_button_granted: 'Connected ✓',
+  intro_hc_button_granted: 'Connecté ✓',
   intro_ar_title: 'Économiseur de batterie',
   intro_ar_body:
     'Pour économiser votre batterie, TouchGrass ne vérifie votre position que lorsque vous vous déplacez réellement.',

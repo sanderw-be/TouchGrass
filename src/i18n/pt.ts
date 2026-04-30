@@ -148,7 +148,7 @@ const pt: TranslationType = {
   hc_rationale_steps_title: 'Passos (Acesso de leitura)',
   hc_rationale_steps_body:
     'Ao ler a sua contagem de passos, o TouchGrass pode identificar automaticamente caminhadas ao ar livre sem que tenha de iniciar manualmente um temporizador. Isto garante que todo o seu movimento é captado com precisão, mantendo a sua privacidade.',
-  hc_rationale_exercise_title: 'Sessões de exercício (Acesso de leitura)',
+  hc_rationale_exercise_title: 'Sesiones de ejercicio (Acceso de lectura)',
   hc_rationale_exercise_body:
     'Atividades ao ar livre, como corrida, ciclismo ou caminhada de outras aplicações, são sincronizadas diretamente como "tempo de relva". Isto proporciona uma visão completa e precisa da sua atividade ao ar livre sem qualquer esforço manual.',
   hc_rationale_privacy:
@@ -171,7 +171,7 @@ const pt: TranslationType = {
     'O geofencing precisa da localização em segundo plano. Os teus dados de localização nunca vão para a nuvem.',
   settings_permission_cancel: 'Cancelar',
   settings_permission_open: 'Abrir Definições',
-  settings_permission_disable: 'Desativar',
+  settings_permission_disable: 'Desactivar',
   settings_gps: 'Rastreio GPS',
   settings_gps_desc: 'Detetar quando sais por geofencing',
   settings_gps_permission: 'Permissão necessária',
@@ -443,7 +443,7 @@ const pt: TranslationType = {
   settings_weather_current: 'Atual',
   settings_weather_unavailable: 'Indisponível',
   settings_weather_error: 'Falha ao carregar',
-  settings_weather_refresh: 'Atualizar',
+  settings_weather_refresh: 'Actualizar',
 
   // Weather conditions
   weather_clear_sky: 'Céu limpo',
@@ -463,7 +463,7 @@ const pt: TranslationType = {
   // Notification channel
   notif_channel_name: 'Avisos ao ar livre',
   notif_channel_background_name: 'Atividade de fundo',
-  notif_channel_background_desc: 'Aparece se a deteção geofence estiver ativa.',
+  notif_channel_background_desc: 'Aparece se a deteção geofence estiver activa.',
   gps_tracking_notif_body: 'Deteção ao ar livre em andamento',
   notif_channel_scheduled_name: 'Agendados',
   notif_channel_scheduled_desc: 'Lembretes que criaste',
@@ -573,7 +573,7 @@ const pt: TranslationType = {
   activity_log_section_reminders: 'Avisos',
 
   // Battery optimization (Android intro)
-  intro_battery_title: 'Bateria',
+  intro_battery_title: 'Batería',
   intro_battery_body: 'Para não perderes avisos, o sistema não deve bloquear a app.',
   intro_battery_why_title: 'Porquê?',
   intro_battery_why_body: 'O Android pode encerrar apps em segundo plano.',
@@ -582,7 +582,7 @@ const pt: TranslationType = {
   intro_battery_hint: 'Põe Sem Restrições.',
 
   // Settings battery optimization
-  settings_battery_optimization: 'Bateria',
+  settings_battery_optimization: 'Batería',
   settings_battery_optimization_sublabel: 'Garante Sem Restrições.',
 
   // Intro checklist

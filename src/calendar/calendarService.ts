@@ -1,4 +1,5 @@
 import * as Calendar from 'expo-calendar';
+import { AppState } from 'react-native';
 import { getSettingAsync, setSettingAsync } from '../storage';
 import { t } from '../i18n';
 
@@ -217,15 +218,18 @@ async function logCalendarWriteDebug(
  * Request calendar read/write permissions from the user.
  * Returns true if permissions were granted.
  */
-export async function requestCalendarPermissions(): Promise<boolean> {
+export async function requestCalendarPermissions(): Promise<{
+  granted: boolean;
+  canAskAgain: boolean;
+}> {
   try {
-    const { status } = await Calendar.requestCalendarPermissionsAsync();
+    const { status, canAskAgain } = await Calendar.requestCalendarPermissionsAsync();
     const granted = status === 'granted';
     await setSettingAsync('calendar_permission_granted', granted ? '1' : '0');
-    return granted;
+    return { granted, canAskAgain };
   } catch (e) {
     console.warn('TouchGrass: Failed to request calendar permissions:', e);
-    return false;
+    return { granted: false, canAskAgain: true };
   }
 }
 
@@ -457,10 +461,9 @@ export async function addOutdoorTimeToCalendar(
   durationMinutes: number,
   title?: string
 ): Promise<boolean> {
-  const permissionGranted = await hasCalendarPermissions();
-  if (!permissionGranted) {
-    const granted = await requestCalendarPermissions();
-    if (!granted) return false;
+  const { granted } = await requestCalendarPermissions();
+  if (!granted) {
+    return false;
   }
 
   try {

@@ -16,10 +16,10 @@
 - `src\i18n\en.ts` — imported by **8** files
 - `src\utils\widgetHelper.ts` — imported by **7** files
 - `src\weather\weatherService.ts` — imported by **7** files
-- `src\calendar\calendarService.ts` — imported by **7** files
 - `src\hooks\useTheme.ts` — imported by **6** files
 - `src\detection\PermissionService.ts` — imported by **6** files
 - `src\detection\sessionMerger.ts` — imported by **6** files
+- `src\calendar\calendarService.ts` — imported by **6** files
 - `src\utils\constants.ts` — imported by **6** files
 - `src\navigation\AppNavigator.tsx` — imported by **5** files
 

@@ -304,7 +304,7 @@ const ja: TranslationType = {
     'ある場所での多くの歩数は、屋外での歩きを示します。ランニングやサイクリングなどの運動も屋外時間としてカウントされます。GPSが有効な場合、ホームトレーニングセッションを除外できます。',
   intro_hc_hint: '後からでも設定できます。',
   intro_hc_button: '接続',
-  intro_hc_button_granted: 'Connected ✓',
+  intro_hc_button_granted: '接続済み ✓',
   intro_ar_title: 'バッテリーセーバー',
   intro_ar_body: 'バッテリーを節約するため、実際に移動しているときのみ場所を確認します。',
   intro_ar_why_title: 'なぜこれが必要なのですか？',

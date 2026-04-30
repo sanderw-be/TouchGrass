@@ -196,7 +196,7 @@ describe('syncHealthConnect', () => {
     expect(session.endTime - session.startTime).toBeCloseTo(expectedDurationMs, -2);
   });
 
-  it('disables Health Connect when a SecurityException error occurs', async () => {
+  it('does not auto-disable Health Connect when a SecurityException error occurs', async () => {
     (HealthConnect.readRecords as jest.Mock).mockRejectedValue(
       new Error('SecurityException: Missing READ_EXERCISE permission')
     );
@@ -204,7 +204,7 @@ describe('syncHealthConnect', () => {
     const result = await syncHealthConnect();
 
     expect(result).toBe(false);
-    expect(Database.setSettingAsync).toHaveBeenCalledWith('healthconnect_enabled', '0');
+    expect(Database.setSettingAsync).not.toHaveBeenCalledWith('healthconnect_enabled', '0');
   });
 
   it('prunes settled short/slow discarded sessions after a successful sync', async () => {

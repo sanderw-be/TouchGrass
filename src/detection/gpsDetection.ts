@@ -13,7 +13,10 @@ export async function loadGPSState(): Promise<void> {
   await LocationTracker.getInstance().loadState();
 }
 
-export async function requestLocationPermissions(): Promise<boolean> {
+export async function requestLocationPermissions(): Promise<{
+  granted: boolean;
+  canAskAgain: boolean;
+}> {
   return PermissionService.requestLocationPermissions();
 }
 

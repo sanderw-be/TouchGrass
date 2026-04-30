@@ -31,7 +31,9 @@ jest.mock('../detection/index', () => ({
 // Mock PermissionService
 jest.mock('../detection/PermissionService', () => ({
   PermissionService: {
-    requestActivityRecognitionPermissions: jest.fn(() => Promise.resolve('granted')),
+    requestActivityRecognitionPermissions: jest.fn(() =>
+      Promise.resolve({ granted: true, canAskAgain: true })
+    ),
     checkActivityRecognitionPermissions: jest.fn(() => Promise.resolve(true)),
   },
 }));
@@ -46,11 +48,15 @@ jest.mock('../notifications/notificationManager', () => ({
 }));
 
 // Mock calendar service
-const mockRequestCalendarPermissions = jest.fn(() => Promise.resolve(false));
+const mockRequestCalendarPermissions = jest.fn(() =>
+  Promise.resolve({ granted: false, canAskAgain: true })
+);
 const mockHasCalendarPermissions = jest.fn(() => Promise.resolve(false));
 jest.mock('../calendar/calendarService', () => ({
   requestCalendarPermissions: () => mockRequestCalendarPermissions(),
   hasCalendarPermissions: () => mockHasCalendarPermissions(),
+  getOrCreateTouchGrassCalendar: jest.fn(() => Promise.resolve('local-tg-id')),
+  setSelectedCalendarId: jest.fn(),
 }));
 
 // Mock database
@@ -70,7 +76,7 @@ describe('IntroScreen', () => {
       Promise.resolve(fallback)
     );
     mockHasCalendarPermissions.mockResolvedValue(false);
-    mockRequestCalendarPermissions.mockResolvedValue(false);
+    mockRequestCalendarPermissions.mockResolvedValue({ granted: false, canAskAgain: true });
     mockToggleHealthConnect.mockResolvedValue({ needsPermissions: false });
     mockToggleGPS.mockResolvedValue({ needsPermissions: false });
   });

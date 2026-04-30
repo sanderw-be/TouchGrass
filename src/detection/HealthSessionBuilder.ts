@@ -154,10 +154,9 @@ export class HealthSessionBuilder {
     } catch (e: unknown) {
       console.warn('Health Connect sync error:', e);
       if (e instanceof Error && e.message.includes('SecurityException')) {
-        await setSettingAsync('healthconnect_enabled', '0');
         await insertBackgroundLogAsync(
           'health_connect',
-          'Permission error - Health Connect disabled'
+          'Permission error - Health Connect sync blocked'
         );
       }
       return false;

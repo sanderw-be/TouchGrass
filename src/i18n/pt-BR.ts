@@ -303,9 +303,9 @@ const ptBR: TranslationType = {
   intro_hc_why_title: 'Por quê?',
   intro_hc_why_body:
     'Muitos passos em um lugar geralmente significa que você estava caminhando ao ar livre. Atividades como corrida ou ciclismo também contam como tempo no exterior. Com o GPS ativado, sessões de bicicleta ergométrica podem ser excluídas.',
-  intro_hc_hint: 'Você pode ativar isso depois nas Configurações.',
+  intro_hc_hint: 'Você pode configurar isso depois nas Configurações.',
   intro_hc_button: 'Conectar',
-  intro_hc_button_granted: 'Connected ✓',
+  intro_hc_button_granted: 'Conectado ✓',
   intro_ar_title: 'Economia de Bateria',
   intro_ar_body:
     'Para economizar bateria, o TouchGrass só verifica sua localização quando você está realmente se movendo.',
@@ -401,7 +401,7 @@ const ptBR: TranslationType = {
   notif_action_less_often: '🔕 Menos',
 
   notif_confirm_title: 'TouchGrass',
-  notif_confirm_went_outside: '✅ Boa! Aproveite.',
+  notif_confirm_went_outside: '✅ Boa! Aproveita.',
   notif_confirm_snoozed: '⏰ Aviso de novo em 30 min.',
   notif_confirm_less_often: '🔕 Tudo bem, vou avisar menos.',
 

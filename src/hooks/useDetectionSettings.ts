@@ -12,6 +12,7 @@ import {
   checkGPSPermissions,
   requestGPSPermissions,
   toggleAR,
+  refreshDetectionSync,
 } from '../detection/index';
 import { PermissionService } from '../detection/PermissionService';
 import { getKnownLocationsAsync, getSuggestedLocationsAsync, KnownLocation } from '../storage';
@@ -57,11 +58,7 @@ export function useDetectionSettings() {
   }, []);
 
   const checkAndUpdatePermissions = useCallback(async () => {
-    await Promise.all([
-      verifyHealthConnectPermissions(),
-      checkGPSPermissions(),
-      PermissionService.checkActivityRecognitionPermissions(),
-    ]);
+    await refreshDetectionSync();
     setDetectionStatus(await getDetectionStatus());
   }, []);
 
@@ -173,11 +170,12 @@ export function useDetectionSettings() {
       body: t('intro_ar_why_body'),
       openLabel: t('intro_ar_button'),
       onOpen: async () => {
-        const granted = await PermissionService.requestActivityRecognitionPermissions();
+        const { granted, canAskAgain } =
+          await PermissionService.requestActivityRecognitionPermissions();
         if (granted) {
           setDetectionStatus(await getDetectionStatus());
           emitPermissionIssuesChanged();
-        } else {
+        } else if (!canAskAgain) {
           await handleOpenAppSettings();
         }
         setPermissionSheet(null);

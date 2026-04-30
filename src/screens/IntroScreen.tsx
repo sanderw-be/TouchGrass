@@ -11,6 +11,7 @@ import {
   AppStateStatus,
   Alert,
   Linking,
+  PermissionsAndroid,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -19,8 +20,14 @@ import * as Location from 'expo-location';
 import * as Calendar from 'expo-calendar';
 import { spacing, radius, ThemeColors, Shadows } from '../utils/theme';
 import { useAppStore } from '../store/useAppStore';
-import { t } from '../i18n';
+import { t, TxKey } from '../i18n';
 import { PRIVACY_POLICY_URL } from '../utils/constants';
+import {
+  requestCalendarPermissions,
+  getOrCreateTouchGrassCalendar,
+  setSelectedCalendarId,
+  hasCalendarPermissions,
+} from '../calendar/calendarService';
 import {
   BATTERY_OPTIMIZATION_SETTING_KEY,
   openBatteryOptimizationSettings,
@@ -39,7 +46,6 @@ import {
 import { PermissionService } from '../detection/PermissionService';
 import { ActivityTransitionModule } from '../modules/ActivityTransitionModule';
 import { getNotificationInfrastructureService } from '../notifications/notificationManager';
-import { requestCalendarPermissions, hasCalendarPermissions } from '../calendar/calendarService';
 import { getSettingAsync, setSettingAsync } from '../storage';
 import EditLocationSheet from '../components/EditLocationSheet';
 
@@ -201,12 +207,28 @@ export default function IntroScreen({ onComplete }: Props) {
    * Smart reminders and weather are set here based on current permission state.
    */
   const saveOnboardingSettings = async () => {
+    // Notifications
     if (notificationsGranted) {
       await setSettingAsync('smart_reminders_count', '2');
     }
+
+    // Weather
     const weatherGranted = await checkWeatherLocationPermissions();
     if (weatherGranted && notificationsGranted) {
       await setSettingAsync('weather_enabled', '1');
+    }
+
+    // Sync sensors if they were granted during the tutorial
+    // This ensures that even if the user didn't click the "Enable" button on the step
+    // (but the permission was already present or granted), the feature is enabled.
+    if (activityRecognitionGranted) {
+      await setSettingAsync('ar_enabled', '1');
+    }
+    if (healthConnectGranted) {
+      await setSettingAsync('healthconnect_enabled', '1');
+    }
+    if (locationGranted) {
+      await setSettingAsync('gps_enabled', '1');
     }
   };
 
@@ -252,12 +274,12 @@ export default function IntroScreen({ onComplete }: Props) {
     try {
       const result = await toggleAR(true);
       if (result.needsPermissions) {
-        const status = await PermissionService.requestActivityRecognitionPermissions();
-        const granted = status === PermissionsAndroid.RESULTS.GRANTED;
+        const { granted, canAskAgain } =
+          await PermissionService.requestActivityRecognitionPermissions();
         setActivityRecognitionGranted(granted);
         if (granted) {
           await ActivityTransitionModule.startTracking();
-        } else if (status === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN) {
+        } else if (!canAskAgain) {
           showPermissionSettingsAlert('intro_ar_title', 'intro_ar_why_body');
         }
       } else {
@@ -362,13 +384,23 @@ export default function IntroScreen({ onComplete }: Props) {
   const handleRequestCalendar = async () => {
     setRequestingPermission(true);
     try {
-      const { status, canAskAgain } = await Calendar.requestCalendarPermissionsAsync();
-      const granted = status === 'granted';
-      setCalendarGranted(granted);
-      if (granted) {
-        await setSettingAsync('calendar_integration_enabled', '1');
-      } else if (!canAskAgain) {
-        showPermissionSettingsAlert('settings_error_title', 'settings_calendar_permission_body');
+      const { status, canAskAgain } = await Calendar.getCalendarPermissionsAsync();
+      if (status !== 'granted' && canAskAgain === false) {
+        showPermissionSettingsAlert(
+          'settings_calendar_permission_title',
+          'settings_calendar_permission_body'
+        );
+        return;
+      }
+
+      const result = await requestCalendarPermissions();
+      setCalendarGranted(result.granted);
+      if (result.granted) {
+        const id = await getOrCreateTouchGrassCalendar();
+        if (id) {
+          await setSelectedCalendarId(id);
+          await setSettingAsync('calendar_integration_enabled', '1');
+        }
       }
     } catch (error) {
       console.error('Error requesting calendar:', error);

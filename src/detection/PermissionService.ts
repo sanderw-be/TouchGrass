@@ -13,11 +13,16 @@ export class PermissionService {
   /**
    * Request location permissions (foreground + background).
    */
-  public static async requestLocationPermissions(): Promise<boolean> {
-    const { status: fg } = await Location.requestForegroundPermissionsAsync();
-    if (fg !== 'granted') return false;
-    const { status: bg } = await Location.requestBackgroundPermissionsAsync();
-    return bg === 'granted';
+  public static async requestLocationPermissions(): Promise<{
+    granted: boolean;
+    canAskAgain: boolean;
+  }> {
+    const { status: fg, canAskAgain: fgCanAsk } =
+      await Location.requestForegroundPermissionsAsync();
+    if (fg !== 'granted') return { granted: false, canAskAgain: fgCanAsk };
+    const { status: bg, canAskAgain: bgCanAsk } =
+      await Location.requestBackgroundPermissionsAsync();
+    return { granted: bg === 'granted', canAskAgain: bgCanAsk };
   }
 
   /**
@@ -104,12 +109,20 @@ export class PermissionService {
     }
   }
 
-  public static async requestActivityRecognitionPermissions(): Promise<string> {
+  public static async requestActivityRecognitionPermissions(): Promise<{
+    granted: boolean;
+    canAskAgain: boolean;
+  }> {
     try {
-      return await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.ACTIVITY_RECOGNITION);
+      const result = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.ACTIVITY_RECOGNITION
+      );
+      const granted = result === PermissionsAndroid.RESULTS.GRANTED;
+      const canAskAgain = result !== PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN;
+      return { granted, canAskAgain };
     } catch (e) {
       console.warn('Activity Recognition permission request error:', e);
-      return PermissionsAndroid.RESULTS.DENIED;
+      return { granted: false, canAskAgain: true };
     }
   }
 }
