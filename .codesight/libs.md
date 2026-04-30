@@ -46,7 +46,7 @@
   - function checkWeatherLocationPermissions: () => Promise<boolean>
   - function requestWeatherLocationPermissions: () => Promise<boolean>
   - function checkGPSPermissions: () => Promise<boolean>
-  - function requestGPSPermissions: () => Promise<boolean>
+  - function requestGPSPermissions: () => Promise<
   - function refreshDetectionSync: () => Promise<void>
   - _...6 more_
 - `src\detection\LocationTracker.ts` — class LocationTracker

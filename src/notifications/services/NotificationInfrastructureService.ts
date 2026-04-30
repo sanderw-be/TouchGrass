@@ -16,7 +16,7 @@ export interface INotificationInfrastructureService {
   setupNotificationInfrastructure(
     handleResponse: (response: Notifications.NotificationResponse) => void
   ): Promise<void>;
-  requestNotificationPermissions(): Promise<boolean>;
+  requestNotificationPermissions(): Promise<{ granted: boolean; canAskAgain: boolean }>;
   createReminderChannels(): Promise<void>;
 }
 
@@ -148,11 +148,14 @@ export class NotificationInfrastructureService implements INotificationInfrastru
    * Request notification permissions and complete setup.
    * Returns true if permissions were granted.
    */
-  public async requestNotificationPermissions(): Promise<boolean> {
-    const { status } = await Notifications.requestPermissionsAsync();
+  public async requestNotificationPermissions(): Promise<{
+    granted: boolean;
+    canAskAgain: boolean;
+  }> {
+    const { status, canAskAgain } = await Notifications.requestPermissionsAsync();
     if (status !== 'granted') {
       console.log('TouchGrass: Notification permissions not granted');
-      return false;
+      return { granted: false, canAskAgain };
     }
 
     if (Platform.OS === 'android') {
@@ -177,6 +180,6 @@ export class NotificationInfrastructureService implements INotificationInfrastru
       },
     ]);
 
-    return true;
+    return { granted: true, canAskAgain };
   }
 }

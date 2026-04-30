@@ -82,8 +82,17 @@ export async function checkGPSPermissions(): Promise<boolean> {
 /**
  * Request GPS OS permissions.
  */
-export async function requestGPSPermissions(): Promise<boolean> {
-  return PermissionService.requestLocationPermissions();
+export async function requestGPSPermissions(): Promise<{
+  granted: boolean;
+  canAskAgain: boolean;
+}> {
+  const { status, canAskAgain } = await Location.requestForegroundPermissionsAsync();
+  if (status !== 'granted') {
+    return { granted: false, canAskAgain };
+  }
+  const { status: bgStatus, canAskAgain: bgCanAskAgain } =
+    await Location.requestBackgroundPermissionsAsync();
+  return { granted: bgStatus === 'granted', canAskAgain: bgCanAskAgain };
 }
 
 /**

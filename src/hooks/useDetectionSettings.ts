@@ -144,7 +144,7 @@ export function useDetectionSettings() {
           return;
         }
 
-        const granted = await requestGPSPermissions();
+        const { granted } = await requestGPSPermissions();
         if (granted) {
           setDetectionStatus(await getDetectionStatus());
           emitPermissionIssuesChanged();

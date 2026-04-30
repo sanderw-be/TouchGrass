@@ -16,6 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Notifications from 'expo-notifications';
 import * as Location from 'expo-location';
+import * as Calendar from 'expo-calendar';
 import { spacing, radius, ThemeColors, Shadows } from '../utils/theme';
 import { useAppStore } from '../store/useAppStore';
 import { t } from '../i18n';
@@ -251,10 +252,13 @@ export default function IntroScreen({ onComplete }: Props) {
     try {
       const result = await toggleAR(true);
       if (result.needsPermissions) {
-        const granted = await PermissionService.requestActivityRecognitionPermissions();
+        const status = await PermissionService.requestActivityRecognitionPermissions();
+        const granted = status === PermissionsAndroid.RESULTS.GRANTED;
         setActivityRecognitionGranted(granted);
         if (granted) {
           await ActivityTransitionModule.startTracking();
+        } else if (status === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN) {
+          showPermissionSettingsAlert('intro_ar_title', 'intro_ar_why_body');
         }
       } else {
         setActivityRecognitionGranted(true);
@@ -273,8 +277,14 @@ export default function IntroScreen({ onComplete }: Props) {
       const result = await toggleGPS(true);
       if (result.needsPermissions) {
         // Permissions not yet granted — request them inline via the OS dialog.
-        const granted = await requestGPSPermissions();
+        const { granted, canAskAgain } = await requestGPSPermissions();
         setLocationGranted(granted);
+        if (!granted && !canAskAgain) {
+          showPermissionSettingsAlert(
+            'settings_gps_permission_required_title',
+            'settings_gps_permission_required_body'
+          );
+        }
       } else {
         setLocationGranted(true);
       }
@@ -283,6 +293,13 @@ export default function IntroScreen({ onComplete }: Props) {
     } finally {
       setRequestingPermission(false);
     }
+  };
+
+  const showPermissionSettingsAlert = (titleKey: TxKey, bodyKey: TxKey) => {
+    Alert.alert(t(titleKey), t(bodyKey), [
+      { text: t('settings_permission_cancel'), style: 'cancel' },
+      { text: t('settings_permission_open'), onPress: () => Linking.openSettings() },
+    ]);
   };
 
   const handleSetKnownLocation = async (type: 'home' | 'work') => {
@@ -326,8 +343,12 @@ export default function IntroScreen({ onComplete }: Props) {
   const handleRequestNotifications = async () => {
     setRequestingPermission(true);
     try {
-      const granted = await getNotificationInfrastructureService().requestNotificationPermissions();
+      const { granted, canAskAgain } =
+        await getNotificationInfrastructureService().requestNotificationPermissions();
       setNotificationsGranted(granted);
+      if (!granted && !canAskAgain) {
+        showPermissionSettingsAlert('settings_error_title', 'intro_notifications_body');
+      }
     } catch (error) {
       console.error('Error requesting notifications:', error);
     } finally {
@@ -341,10 +362,13 @@ export default function IntroScreen({ onComplete }: Props) {
   const handleRequestCalendar = async () => {
     setRequestingPermission(true);
     try {
-      const granted = await requestCalendarPermissions();
+      const { status, canAskAgain } = await Calendar.requestCalendarPermissionsAsync();
+      const granted = status === 'granted';
       setCalendarGranted(granted);
       if (granted) {
         await setSettingAsync('calendar_integration_enabled', '1');
+      } else if (!canAskAgain) {
+        showPermissionSettingsAlert('settings_error_title', 'settings_calendar_permission_body');
       }
     } catch (error) {
       console.error('Error requesting calendar:', error);

@@ -104,15 +104,12 @@ export class PermissionService {
     }
   }
 
-  public static async requestActivityRecognitionPermissions(): Promise<boolean> {
+  public static async requestActivityRecognitionPermissions(): Promise<string> {
     try {
-      const status = await PermissionsAndroid.request(
-        PermissionsAndroid.PERMISSIONS.ACTIVITY_RECOGNITION
-      );
-      return status === PermissionsAndroid.RESULTS.GRANTED;
+      return await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.ACTIVITY_RECOGNITION);
     } catch (e) {
       console.warn('Activity Recognition permission request error:', e);
-      return false;
+      return PermissionsAndroid.RESULTS.DENIED;
     }
   }
 }
