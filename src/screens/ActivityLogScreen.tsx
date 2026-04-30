@@ -129,7 +129,7 @@ export default function ActivityLogScreen() {
       },
       {
         id: 'activity_recognition' as SectionKey,
-        title: 'Activity Recognition', // Hardcoded as requested or just use a generic name
+        title: t('settings_activity_recognition'),
         icon: 'battery-charging-outline' as const,
         data: arLogs,
       },

@@ -472,13 +472,13 @@ class ActivityTransitionReceiver : BroadcastReceiver() {
 
   private fun getMotionString(type: Int): String {
     return when (type) {
-        0 -> "STILL"
-        1 -> "ON_FOOT"
-        2 -> "WALKING"
-        3 -> "RUNNING"
-        4 -> "ON_BICYCLE"
-        5 -> "IN_VEHICLE"
-        7 -> "TILTING"
+        0 -> "IN_VEHICLE"
+        1 -> "ON_BICYCLE"
+        2 -> "ON_FOOT"
+        3 -> "STILL"
+        4 -> "UNKNOWN"
+        5 -> "TILTING"
+        7 -> "WALKING"
         8 -> "RUNNING"
         else -> "UNKNOWN(\$type)"
     }
