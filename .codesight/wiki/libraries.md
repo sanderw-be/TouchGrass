@@ -98,4 +98,5 @@
 - `src\i18n\index.ts` — resolveSupportedLocale, getDeviceSupportedLocale, t, localeTag, formatLocalDate, formatLocalTime, …
 
 ---
+
 _Back to [overview.md](./overview.md)_

@@ -47,4 +47,5 @@
 - **ProgressWidget** — props: current, target, timerRunning, timerStartMs, widgetWidth, widgetHeight — `src\widget\ProgressWidget.tsx`
 
 ---
+
 _Back to [overview.md](./overview.md)_

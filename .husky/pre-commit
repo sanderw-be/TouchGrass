@@ -3,6 +3,10 @@ npx --yes codesight --profile copilot
 
 echo "Updating Codesight Wiki..."
 npx --yes codesight --wiki
+
+echo "Formatting and committing Codesight files..."
+prettier --write .codesight/
+
 git add .codesight/ .github/copilot-instructions.md
 
 echo "Formatting staged files..."
