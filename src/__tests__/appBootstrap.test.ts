@@ -93,7 +93,7 @@ describe('services/appBootstrap', () => {
         return '';
       });
 
-      const result = await performCriticalInitializationAsync(jest.fn());
+      const result = await performCriticalInitializationAsync();
 
       expect(initDatabaseAsync).toHaveBeenCalledTimes(1);
       expect(i18n.locale).toBe('nl');
@@ -112,7 +112,7 @@ describe('services/appBootstrap', () => {
       });
       (getDeviceSupportedLocale as jest.Mock).mockReturnValue('nl');
 
-      const result = await performCriticalInitializationAsync(jest.fn());
+      const result = await performCriticalInitializationAsync();
 
       expect(i18n.locale).toBe('nl');
       expect(result.initialLocale).toBe('system');
@@ -127,7 +127,7 @@ describe('services/appBootstrap', () => {
       });
       (setSettingAsync as jest.Mock).mockResolvedValue(undefined);
 
-      const result = await performCriticalInitializationAsync(jest.fn());
+      const result = await performCriticalInitializationAsync();
 
       expect(i18n.locale).toBe('en');
       expect(setSettingAsync).toHaveBeenCalledWith('language', 'en');

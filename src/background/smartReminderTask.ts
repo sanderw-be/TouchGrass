@@ -9,6 +9,8 @@ import { getSmartReminderScheduler, CHANNEL_ID } from '../notifications/notifica
 interface HeadlessData {
   type: string;
   contributors?: string;
+  title?: string;
+  body?: string;
 }
 
 export const handleSmartReminder = async (data: HeadlessData) => {
@@ -17,7 +19,7 @@ export const handleSmartReminder = async (data: HeadlessData) => {
   try {
     // 0. Initialize Infrastructure (Database + DI Container)
     await initDatabaseAsync();
-    createContainer(db, () => { }); // No-op for feedback in headless mode
+    createContainer(db);
 
     const storageService = new StorageService(db);
     const todayMinutes = await getTodayMinutesAsync();
@@ -55,7 +57,9 @@ export const handleSmartReminder = async (data: HeadlessData) => {
       shouldSend = true;
     } else if (data.type === 'smart_reminder') {
       if (todayMinutes >= targetMinutes) {
-        console.log(`[SR_HEADLESS] Goal already met (${todayMinutes}/${targetMinutes}). Skipping smart reminder.`);
+        console.log(
+          `[SR_HEADLESS] Goal already met (${todayMinutes}/${targetMinutes}). Skipping smart reminder.`
+        );
         shouldSend = false;
       } else {
         // We will send it, so increment the counter
@@ -125,9 +129,8 @@ export const handleSmartReminder = async (data: HeadlessData) => {
           data: { type: data.type },
           categoryIdentifier: 'reminder',
           color: '#4A7C59',
-          channelId: CHANNEL_ID,
         },
-        trigger: null, // immediate
+        trigger: { channelId: CHANNEL_ID } as Notifications.NotificationTriggerInput, // Immediate with channel
       });
 
       console.log('[SR_HEADLESS] Notification triggered successfully');

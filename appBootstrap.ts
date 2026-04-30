@@ -11,7 +11,6 @@ import {
 import { initDetection } from './src/detection/index';
 import { requestWidgetRefresh } from './src/utils/widgetHelper';
 import { refreshBatteryOptimizationSetting } from './src/utils/batteryOptimization';
-import type { FeedbackModalData } from './src/store/useAppStore';
 
 export interface CriticalAppState {
   showIntro: boolean;
@@ -74,8 +73,9 @@ export function performDeferredInitialization(): void {
         {
           name: 'Notification Infrastructure',
           task: () =>
-            getNotificationInfrastructureService().setupNotificationInfrastructure((response) =>
-              getNotificationResponseHandler().handleNotificationResponse(response)
+            getNotificationInfrastructureService().setupNotificationInfrastructure(
+              (response: unknown) =>
+                getNotificationResponseHandler().handleNotificationResponse(response)
             ),
         },
         { name: 'Detection Initialization', task: initDetection },

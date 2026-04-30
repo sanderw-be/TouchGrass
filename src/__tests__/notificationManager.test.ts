@@ -66,7 +66,7 @@ describe('notificationManager', () => {
       execAsync: jest.fn(),
       execSync: jest.fn(),
     };
-    const container = createContainer(mockDb as any, mockTriggerFeedback);
+    const container = createContainer(mockDb as any);
 
     // Linked container storageService to Database module mocks and local state
     const settingsStore: Record<string, string> = {};
@@ -943,10 +943,8 @@ describe('notificationManager', () => {
         );
         expect(todayItems).toHaveLength(2);
         expect(todayItems[0].timestamp).toBe(new Date('2026-03-14T12:00:00').getTime());
-        expect(todayItems[1].timestamp).toBe(
-          new Date('2026-03-14T14:00:00').getTime()
-        );
-        expect(todayItems[1].type).toBe('catchup_reminder'); 
+        expect(todayItems[1].timestamp).toBe(new Date('2026-03-14T14:00:00').getTime());
+        expect(todayItems[1].type).toBe('catchup_reminder');
         const has10am = scheduledItems.some(
           (item: any) => new Date(item.timestamp).getHours() === 10
         );
