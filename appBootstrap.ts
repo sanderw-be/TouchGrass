@@ -73,9 +73,8 @@ export function performDeferredInitialization(): void {
         {
           name: 'Notification Infrastructure',
           task: () =>
-            getNotificationInfrastructureService().setupNotificationInfrastructure(
-              (response: unknown) =>
-                getNotificationResponseHandler().handleNotificationResponse(response)
+            getNotificationInfrastructureService().setupNotificationInfrastructure((response) =>
+              getNotificationResponseHandler().handleNotificationResponse(response)
             ),
         },
         { name: 'Detection Initialization', task: initDetection },

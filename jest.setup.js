@@ -119,6 +119,7 @@ jest.mock('expo-sqlite', () => ({
     runAsync: jest.fn(() => Promise.resolve({ lastInsertRowId: 1, changes: 0 })),
     getAllAsync: jest.fn(() => Promise.resolve([])),
     getFirstAsync: jest.fn(() => Promise.resolve(null)),
+    execAsync: jest.fn(() => Promise.resolve()),
   })),
 }));
 
