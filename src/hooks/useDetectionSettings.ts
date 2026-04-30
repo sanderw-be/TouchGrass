@@ -8,8 +8,6 @@ import {
   getDetectionStatus,
   toggleHealthConnect,
   toggleGPS,
-  verifyHealthConnectPermissions,
-  checkGPSPermissions,
   requestGPSPermissions,
   toggleAR,
   refreshDetectionSync,
@@ -58,8 +56,12 @@ export function useDetectionSettings() {
   }, []);
 
   const checkAndUpdatePermissions = useCallback(async () => {
-    await refreshDetectionSync();
-    setDetectionStatus(await getDetectionStatus());
+    try {
+      await refreshDetectionSync();
+      setDetectionStatus(await getDetectionStatus());
+    } catch (e) {
+      console.error('[useDetectionSettings.checkAndUpdatePermissions] Error:', e);
+    }
   }, []);
 
   useFocusEffect(

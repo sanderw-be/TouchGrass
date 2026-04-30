@@ -48,7 +48,7 @@
   - function checkGPSPermissions: () => Promise<boolean>
   - function requestGPSPermissions: () => Promise<
   - function refreshDetectionSync: () => Promise<void>
-  - _...6 more_
+  - _...5 more_
 - `src\detection\LocationTracker.ts` — class LocationTracker
 - `src\detection\manualCheckin.ts`
   - function logManualSession: (durationMinutes, startTime?, endTime?, notes?) => void

@@ -84,14 +84,26 @@ export async function refreshDetectionSync(): Promise<void> {
   if (gpsUserEnabled) {
     const perm = await checkGPSPermissions();
     if (perm) {
-      const locations = await getKnownLocationsAsync();
-      const minRadius = computeMinActiveRadius(locations);
-      await startLocationTracking('low', minRadius);
+      try {
+        const locations = await getKnownLocationsAsync();
+        const minRadius = computeMinActiveRadius(locations);
+        await startLocationTracking('low', minRadius);
+      } catch (e) {
+        console.error('Failed to start GPS tracking during sync:', e);
+      }
     } else {
-      await stopLocationTracking();
+      try {
+        await stopLocationTracking();
+      } catch (e) {
+        console.error('Failed to stop GPS tracking during sync:', e);
+      }
     }
   } else {
-    await stopLocationTracking();
+    try {
+      await stopLocationTracking();
+    } catch (e) {
+      console.error('Failed to stop GPS tracking during sync:', e);
+    }
   }
 
   if (hcUserEnabled) {
@@ -109,12 +121,24 @@ export async function refreshDetectionSync(): Promise<void> {
   if (arUserEnabled) {
     const perm = await PermissionService.checkActivityRecognitionPermissions();
     if (perm) {
-      await ActivityTransitionModule.startTracking();
+      try {
+        await ActivityTransitionModule.startTracking();
+      } catch (e) {
+        console.error('Failed to start AR tracking during sync:', e);
+      }
     } else {
-      await ActivityTransitionModule.stopTracking();
+      try {
+        await ActivityTransitionModule.stopTracking();
+      } catch (e) {
+        console.error('Failed to stop AR tracking during sync:', e);
+      }
     }
   } else {
-    await ActivityTransitionModule.stopTracking();
+    try {
+      await ActivityTransitionModule.stopTracking();
+    } catch (e) {
+      console.error('Failed to stop AR tracking during sync:', e);
+    }
   }
 }
 
@@ -161,14 +185,30 @@ export async function toggleGPS(enabled: boolean): Promise<{ needsPermissions: b
   if (enabled) {
     const hasPerm = await checkGPSPermissions();
     if (hasPerm) {
-      const locations = await getKnownLocationsAsync();
-      const minRadius = computeMinActiveRadius(locations);
-      await startLocationTracking('low', minRadius);
-      return { needsPermissions: false };
+      try {
+        const locations = await getKnownLocationsAsync();
+        const minRadius = computeMinActiveRadius(locations);
+        await startLocationTracking('low', minRadius);
+        return { needsPermissions: false };
+      } catch (e: unknown) {
+        if (
+          e instanceof Error &&
+          (e.message.includes('SecurityException') || e.message.includes('permission'))
+        ) {
+          console.warn('GPS tracking start failed due to permission issue:', e.message);
+        } else {
+          console.error('Failed to start GPS tracking in toggleGPS:', e);
+        }
+        return { needsPermissions: false };
+      }
     }
     return { needsPermissions: true };
   } else {
-    await stopLocationTracking();
+    try {
+      await stopLocationTracking();
+    } catch (e) {
+      console.error('Failed to stop GPS tracking in toggleGPS:', e);
+    }
     return { needsPermissions: false };
   }
 }
@@ -183,47 +223,57 @@ export async function toggleHealthConnect(
   if (enabled) {
     const hasPerm = await verifyHealthConnectPermissions();
     if (hasPerm) {
-      await syncHealthConnect();
-      return { needsPermissions: false };
+      try {
+        await syncHealthConnect();
+        return { needsPermissions: false };
+      } catch (e: unknown) {
+        if (
+          e instanceof Error &&
+          (e.message.includes('SecurityException') || e.message.includes('permission'))
+        ) {
+          console.warn('Health Connect sync failed due to permission issue:', e.message);
+        } else {
+          console.error('Failed to sync Health Connect in toggleHealthConnect:', e);
+        }
+        return { needsPermissions: false };
+      }
     }
     return { needsPermissions: true };
   }
   return { needsPermissions: false };
 }
 
-/**
- * Toggle Activity Recognition detection and start/stop the Native Module.
- */
 export async function toggleAR(enabled: boolean): Promise<{ needsPermissions: boolean }> {
   await setSettingAsync(AR_USER_KEY, enabled ? '1' : '0');
 
   if (enabled) {
     const hasPerm = await PermissionService.checkActivityRecognitionPermissions();
     if (hasPerm) {
-      await ActivityTransitionModule.startTracking();
-      return { needsPermissions: false };
+      try {
+        await ActivityTransitionModule.startTracking();
+        return { needsPermissions: false };
+      } catch (e: unknown) {
+        if (
+          e instanceof Error &&
+          (e.message.includes('SecurityException') || e.message.includes('permission'))
+        ) {
+          console.warn('AR tracking start failed due to permission issue:', e.message);
+        } else {
+          console.error('Failed to start AR tracking in toggleAR:', e);
+        }
+        return { needsPermissions: false }; // Still return false as intent was recorded
+      }
     }
     return { needsPermissions: true };
   } else {
-    await ActivityTransitionModule.stopTracking();
+    try {
+      await ActivityTransitionModule.stopTracking();
+    } catch (e) {
+      console.error('Failed to stop AR tracking in toggleAR:', e);
+    }
     return { needsPermissions: false };
   }
 }
-
-/**
- * Perform a full catch-up on all enabled detection modules.
- * Called when the app is opened (foreground sync).
- */
-export async function runCatchUpDetectionAsync(): Promise<void> {
-  const status = await getDetectionStatus();
-  if (status.healthConnect && status.healthConnectPermission) {
-    await syncHealthConnect();
-  }
-  if (status.activityRecognition && status.activityRecognitionPermission) {
-    await ActivityTransitionModule.startTracking();
-  }
-}
-
 export {
   syncHealthConnect,
   requestHealthPermissions,
