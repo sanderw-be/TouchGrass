@@ -9,6 +9,7 @@ import {
   CHANNEL_ID,
   DAILY_PLANNER_NOTIF_PREFIX,
 } from './NotificationInfrastructureService';
+import { colors } from '../../utils/theme';
 
 const SNOOZE_DURATION_MINUTES = 30;
 
@@ -93,7 +94,7 @@ export class NotificationResponseHandler implements INotificationResponseHandler
       );
 
       await Notifications.scheduleNotificationAsync({
-        content: { title, body, categoryIdentifier: 'reminder', color: '#4A7C59' },
+        content: { title, body, categoryIdentifier: 'reminder', color: colors.grass },
         trigger: {
           type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
           seconds: SNOOZE_DURATION_MINUTES * 60,

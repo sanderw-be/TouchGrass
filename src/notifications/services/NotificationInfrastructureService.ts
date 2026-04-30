@@ -1,6 +1,7 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import { t } from '../../i18n';
+import { colors } from '../../utils/theme';
 
 export const ACTION_WENT_OUTSIDE = 'went_outside';
 export const ACTION_SNOOZE = 'snoozed';
@@ -25,7 +26,7 @@ export class NotificationInfrastructureService implements INotificationInfrastru
       name: t('notif_channel_name'),
       importance: Notifications.AndroidImportance.DEFAULT,
       vibrationPattern: [0, 250, 250, 250],
-      lightColor: '#4A7C59',
+      lightColor: colors.grass,
       showBadge: true,
     };
 
@@ -64,7 +65,7 @@ export class NotificationInfrastructureService implements INotificationInfrastru
           description: t('notif_channel_scheduled_desc'),
           importance: Notifications.AndroidImportance.DEFAULT,
           vibrationPattern: [0, 250, 250, 250],
-          lightColor: '#4A7C59',
+          lightColor: colors.grass,
           showBadge: true,
         });
         console.log('TouchGrass: Scheduled notification channel created');

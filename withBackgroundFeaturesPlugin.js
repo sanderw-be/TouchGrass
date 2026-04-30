@@ -491,6 +491,7 @@ const withBackgroundFeaturesPlugin = (config) => {
     const permissions = [
       'android.permission.FOREGROUND_SERVICE',
       'android.permission.FOREGROUND_SERVICE_SHORT_SERVICE',
+      'android.permission.SCHEDULE_EXACT_ALARM',
     ];
     for (const permission of permissions) {
       if (!manifest['uses-permission'].some((p) => p.$?.['android:name'] === permission)) {

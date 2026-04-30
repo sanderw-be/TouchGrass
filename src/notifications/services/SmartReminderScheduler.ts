@@ -8,6 +8,7 @@ import { ReminderQueueEntry } from '../notificationManager';
 import { ScoreContributor, HourScore } from '../reminderAlgorithm';
 import { WeatherPreferences } from '../../weather/types';
 import { SmartReminderModule, ReminderScheduleItem } from '../../modules/SmartReminderModule';
+import { colors } from '../../utils/theme';
 
 export const FAILSAFE_REMINDER_PREFIX = 'failsafe_reminder_';
 const FAILSAFE_DAYS_AHEAD = 3;
@@ -121,7 +122,7 @@ export class SmartReminderScheduler implements ISmartReminderScheduler {
     );
 
     await Notifications.scheduleNotificationAsync({
-      content: { title, body, categoryIdentifier: 'reminder', color: '#4A7C59' },
+      content: { title, body, categoryIdentifier: 'reminder', color: colors.grass },
       trigger: {
         type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
         seconds: 1,
@@ -189,7 +190,7 @@ export class SmartReminderScheduler implements ISmartReminderScheduler {
             undefined
           );
           await Notifications.scheduleNotificationAsync({
-            content: { title, body, categoryIdentifier: 'reminder', color: '#4A7C59' },
+            content: { title, body, categoryIdentifier: 'reminder', color: colors.grass },
             trigger: null, // immediate fire since we missed the exact start
           });
           await this.storageService.setSettingAsync('last_reminder_ms', String(Date.now()));
@@ -254,7 +255,7 @@ export class SmartReminderScheduler implements ISmartReminderScheduler {
 
       await Notifications.scheduleNotificationAsync({
         identifier: entry.id,
-        content: { title, body, categoryIdentifier: 'reminder', color: '#4A7C59' },
+        content: { title, body, categoryIdentifier: 'reminder', color: colors.grass },
         trigger: {
           type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
           seconds: Math.max(1, Math.floor((triggerDate.getTime() - Date.now()) / 1000)),
@@ -632,7 +633,7 @@ export class SmartReminderScheduler implements ISmartReminderScheduler {
         );
         await Notifications.scheduleNotificationAsync({
           identifier: `${FAILSAFE_REMINDER_PREFIX}${this.formatLocalDateKey(futureDate)}_${i}`,
-          content: { title, body, categoryIdentifier: 'reminder', color: '#4A7C59' },
+          content: { title, body, categoryIdentifier: 'reminder', color: colors.grass },
           trigger: {
             type: Notifications.SchedulableTriggerInputTypes.DATE,
             date: triggerDate,

@@ -5,6 +5,7 @@ import { ReminderMessageBuilder } from '../notifications/services/ReminderMessag
 import { StorageService } from '../storage/StorageService';
 import { createContainer } from '../core/container';
 import { getSmartReminderScheduler, CHANNEL_ID } from '../notifications/notificationManager';
+import { colors } from '../utils/theme';
 
 interface HeadlessData {
   type: string;
@@ -128,7 +129,7 @@ export const handleSmartReminder = async (data: HeadlessData) => {
           body: finalBody,
           data: { type: data.type },
           categoryIdentifier: 'reminder',
-          color: '#4A7C59',
+          color: colors.grass,
         },
         trigger: { channelId: CHANNEL_ID } as Notifications.NotificationTriggerInput, // Immediate with channel
       });
