@@ -12,6 +12,15 @@ import { SmartReminderModule, ReminderScheduleItem } from '../../modules/SmartRe
 export const FAILSAFE_REMINDER_PREFIX = 'failsafe_reminder_';
 const FAILSAFE_DAYS_AHEAD = 3;
 
+/** Grace window (ms) added to "now" when scoring today's slots so that the
+ *  just-fired slot can never be re-picked during a headless re-plan. */
+const REPLAN_GRACE_MS = 2 * 60 * 1000;
+
+export interface ReplanOptions {
+  /** True when called from the headless task after an alarm fires. */
+  isHeadlessReplan?: boolean;
+}
+
 interface IReminderAlgorithm {
   shouldRemindNow(
     todayMinutes: number,
@@ -34,7 +43,7 @@ export interface ISmartReminderScheduler {
   scheduleNextReminder(): Promise<void>;
   processReminderQueue(): Promise<void>;
   updateUpcomingReminderContent(): Promise<void>;
-  scheduleUpcomingReminders(): Promise<void>;
+  scheduleUpcomingReminders(options?: ReplanOptions): Promise<void>;
   cancelRemindersIfGoalReached(): Promise<void>;
   cancelAutomaticReminders(): Promise<void>;
   _resetSchedulingGuards(): void;
@@ -258,10 +267,17 @@ export class SmartReminderScheduler implements ISmartReminderScheduler {
   /**
    * The core planning loop. Calculates and schedules reminders for Today and Tomorrow.
    * Ensures the "chain" is never broken by always looking 48 hours ahead.
+   *
+   * When `isHeadlessReplan` is true (called from the headless task after an alarm
+   * fires), today's remaining slots are carried forward unchanged from the existing
+   * queue — no re-scoring, no shuffling.  Tomorrow is always fully re-planned.
+   * Expensive calendar / weather / failsafe operations are skipped.
    */
-  public async scheduleUpcomingReminders(): Promise<void> {
+  public async scheduleUpcomingReminders(options?: ReplanOptions): Promise<void> {
     if (this.schedulingInProgress) return;
     this.schedulingInProgress = true;
+
+    const isHeadless = options?.isHeadlessReplan === true;
 
     try {
       const now = new Date();
@@ -270,9 +286,11 @@ export class SmartReminderScheduler implements ISmartReminderScheduler {
         10
       );
 
-      // 1. Cleanup old failsafe reminders and future events
-      await this.cancelFailsafeReminders();
-      await this.calendarService.deleteFutureTouchGrassEvents(now, FAILSAFE_DAYS_AHEAD);
+      // 1. Cleanup old failsafe reminders and future events (skip during headless)
+      if (!isHeadless) {
+        await this.cancelFailsafeReminders();
+        await this.calendarService.deleteFutureTouchGrassEvents(now, FAILSAFE_DAYS_AHEAD);
+      }
 
       if (remindersCount === 0) {
         await this.cancelAutomaticReminders();
@@ -285,10 +303,12 @@ export class SmartReminderScheduler implements ISmartReminderScheduler {
         return;
       }
 
-      // 2. Fetch fresh weather for the next 48 hours
-      const weatherPrefs = await this.reminderAlgorithm.getWeatherPreferences();
-      if (weatherPrefs.enabled) {
-        await this.weatherService.fetchWeatherForecast({ allowPermissionPrompt: false });
+      // 2. Fetch fresh weather for the next 48 hours (skip during headless)
+      if (!isHeadless) {
+        const weatherPrefs = await this.reminderAlgorithm.getWeatherPreferences();
+        if (weatherPrefs.enabled) {
+          await this.weatherService.fetchWeatherForecast({ allowPermissionPrompt: false });
+        }
       }
 
       const todayMinutes = await this.storageService.getTodayMinutesAsync();
@@ -297,46 +317,61 @@ export class SmartReminderScheduler implements ISmartReminderScheduler {
 
       const allPlannedItems: ReminderScheduleItem[] = [];
       const newQueueEntries: ReminderQueueEntry[] = [];
-      const uiSlots = []; // For the legacy 'reminders_planned_slots' setting used by UI
+      const uiSlots: { hour: number; minute: number }[] = [];
 
-      // 3. Plan for Today (Remainder)
+      // 3. Plan for Today
       if (todayMinutes < dailyTarget) {
-        const todaySlots = await this.planDaySlots(
-          now,
-          todayMinutes,
-          dailyTarget,
-          remindersCount,
-          true // Include catchup for today
-        );
-        for (const slot of todaySlots) {
-          const trigger = this.slotToDate(now, slot);
-          const { title, body } = await this.messageBuilder.buildReminderMessage(
+        if (isHeadless) {
+          // ── Headless replan: lock today's plan ──────────────────────
+          // Carry forward remaining future slots from the existing queue
+          // instead of re-scoring. This keeps today's schedule stable.
+          await this.carryForwardTodaySlots(
+            now,
             todayMinutes,
             dailyTarget,
-            slot.hour,
-            slot.contributors?.map((c) => c.description) || []
+            allPlannedItems,
+            newQueueEntries,
+            uiSlots
           );
-          const id = `smart_${this.formatLocalDateKey(now)}_${slot.hour}:${slot.minute}`;
+        } else {
+          // ── Full plan: score and pick best slots for today ─────────
+          const todaySlots = await this.planDaySlots(
+            now,
+            todayMinutes,
+            dailyTarget,
+            remindersCount,
+            true // Include catchup for today
+          );
+          for (const slot of todaySlots) {
+            const trigger = this.slotToDate(now, slot);
+            const { title, body } = await this.messageBuilder.buildReminderMessage(
+              todayMinutes,
+              dailyTarget,
+              slot.hour,
+              slot.contributors?.map((c) => c.description) || []
+            );
+            const id = `smart_${this.formatLocalDateKey(now)}_${slot.hour}:${slot.minute}`;
 
-          allPlannedItems.push({
-            timestamp: trigger.getTime(),
-            type: slot.isCatchup ? 'catchup_reminder' : 'smart_reminder',
-            goalThreshold: dailyTarget,
-            title,
-            body,
-            contributors: slot.contributors?.map((c) => c.description) || [],
-          });
-          newQueueEntries.push({
-            id,
-            slotMinutes: slot.hour * 60 + slot.minute,
-            status: 'date_planned',
-          });
-          uiSlots.push({ hour: slot.hour, minute: slot.minute });
-          await this.calendarService.maybeAddOutdoorTimeToCalendar(trigger);
+            allPlannedItems.push({
+              timestamp: trigger.getTime(),
+              type: slot.isCatchup ? 'catchup_reminder' : 'smart_reminder',
+              goalThreshold: dailyTarget,
+              title,
+              body,
+              contributors: slot.contributors?.map((c) => c.description) || [],
+            });
+            newQueueEntries.push({
+              id,
+              slotMinutes: slot.hour * 60 + slot.minute,
+              status: 'date_planned',
+            });
+            uiSlots.push({ hour: slot.hour, minute: slot.minute });
+            await this.calendarService.maybeAddOutdoorTimeToCalendar(trigger);
+          }
         }
       }
 
-      // 4. Plan for Tomorrow (Full Day)
+      // 4. Plan for Tomorrow (Full Day — always re-plan to find better slots)
       const tomorrow = new Date(now);
       tomorrow.setDate(now.getDate() + 1);
       const tomorrowSlots = await this.planDaySlots(
@@ -369,7 +404,9 @@ export class SmartReminderScheduler implements ISmartReminderScheduler {
           slotMinutes: slot.hour * 60 + slot.minute,
           status: 'date_planned',
         });
-        await this.calendarService.maybeAddOutdoorTimeToCalendar(trigger);
+        if (!isHeadless) {
+          await this.calendarService.maybeAddOutdoorTimeToCalendar(trigger);
+        }
       }
 
       // 5. Sync with Native Module
@@ -383,15 +420,70 @@ export class SmartReminderScheduler implements ISmartReminderScheduler {
       await this.storageService.setSettingAsync('reminders_planned_slots', JSON.stringify(uiSlots));
       await this.storageService.setSettingAsync('reminders_last_planned_date', now.toDateString());
 
-      // 7. Schedule Failsafe fallbacks for Day 2+
-      await this.scheduleFailsafeReminders(tomorrowSlots); // Use tomorrow's logic for future days
+      // 7. Schedule Failsafe fallbacks for Day 2+ (skip during headless)
+      if (!isHeadless) {
+        await this.scheduleFailsafeReminders(tomorrowSlots);
+      }
 
       await this.storageService.insertBackgroundLogAsync(
         'reminder',
-        `Rolling plan: ${allPlannedItems.length} reminders scheduled for next 48h`
+        `${isHeadless ? 'Headless' : 'Rolling'} plan: ${allPlannedItems.length} reminders scheduled for next 48h`
       );
     } finally {
       this.schedulingInProgress = false;
+    }
+  }
+
+  /**
+   * Carry forward today's remaining future slots from the existing queue.
+   * Used during headless re-plans so that today's schedule is stable.
+   */
+  private async carryForwardTodaySlots(
+    now: Date,
+    todayMinutes: number,
+    dailyTarget: number,
+    allPlannedItems: ReminderScheduleItem[],
+    newQueueEntries: ReminderQueueEntry[],
+    uiSlots: { hour: number; minute: number }[]
+  ): Promise<void> {
+    const existingQueue = await this.queueManager.getQueue();
+    const todayKey = this.formatLocalDateKey(now);
+    const nowMinutes = now.getHours() * 60 + now.getMinutes();
+    const graceMinutes = Math.ceil(REPLAN_GRACE_MS / 60000);
+
+    for (const entry of existingQueue) {
+      if (!entry.id.includes(todayKey)) continue;
+      if (entry.status !== 'date_planned') continue;
+      if (entry.slotMinutes <= nowMinutes + graceMinutes) continue;
+
+      // Carry this slot forward — rebuild message content for freshness
+      const slotHour = Math.floor(entry.slotMinutes / 60);
+      const slotMinute = entry.slotMinutes % 60;
+      const trigger = this.slotToDate(now, { hour: slotHour, minute: slotMinute });
+      const { title, body } = await this.messageBuilder.buildReminderMessage(
+        todayMinutes,
+        dailyTarget,
+        slotHour,
+        []
+      );
+
+      // Detect type from the existing queue entry ID
+      const type = entry.id.startsWith('catchup_') ? 'catchup_reminder' : 'smart_reminder';
+
+      allPlannedItems.push({
+        timestamp: trigger.getTime(),
+        type,
+        goalThreshold: dailyTarget,
+        title,
+        body,
+        contributors: [],
+      });
+      newQueueEntries.push({
+        id: entry.id,
+        slotMinutes: entry.slotMinutes,
+        status: 'date_planned',
+      });
+      uiSlots.push({ hour: slotHour, minute: slotMinute });
     }
   }
 
@@ -403,8 +495,12 @@ export class SmartReminderScheduler implements ISmartReminderScheduler {
     includeCatchup: boolean
   ): Promise<(HourScore & { isCatchup?: boolean })[]> {
     const isToday = date.toDateString() === new Date().toDateString();
-    const startHour = isToday ? date.getHours() : 0;
-    const startMin = isToday ? date.getMinutes() : 0;
+    // Add a grace window so the just-fired slot cannot be re-picked.
+    // Without this, a re-plan at 10:00:30 would still consider :00 as valid.
+    const graceMs = isToday ? REPLAN_GRACE_MS : 0;
+    const adjustedNow = new Date(date.getTime() + graceMs);
+    const startHour = isToday ? adjustedNow.getHours() : 0;
+    const startMin = isToday ? adjustedNow.getMinutes() : 0;
 
     const picked: (HourScore & { isCatchup?: boolean })[] = [];
 

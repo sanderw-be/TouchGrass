@@ -120,7 +120,7 @@ export const handleSmartReminder = async (data: HeadlessData) => {
       console.log('[SR_HEADLESS] Triggering proactive re-plan...');
       const scheduler = getSmartReminderScheduler();
       if (scheduler) {
-        await scheduler.scheduleUpcomingReminders();
+        await scheduler.scheduleUpcomingReminders({ isHeadlessReplan: true });
         console.log('[SR_HEADLESS] Re-plan complete.');
       } else {
         console.warn('[SR_HEADLESS] getSmartReminderScheduler returned null or undefined');

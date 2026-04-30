@@ -78,8 +78,10 @@ describe('handleSmartReminder', () => {
     expect(mockMessageBuilder.buildReminderMessage).toHaveBeenCalled();
     expect(Notifications.scheduleNotificationAsync).toHaveBeenCalled();
 
-    // Crucial part: ensure replan is still called
-    expect(mockScheduler.scheduleUpcomingReminders).toHaveBeenCalled();
+    // Crucial part: ensure replan is still called with isHeadlessReplan flag
+    expect(mockScheduler.scheduleUpcomingReminders).toHaveBeenCalledWith({
+      isHeadlessReplan: true,
+    });
     expect(mockStorage.setSettingAsync).toHaveBeenCalledWith('sent_smart_reminders_count', '1');
   });
 
