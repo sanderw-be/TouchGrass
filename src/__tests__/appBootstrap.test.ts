@@ -30,6 +30,9 @@ jest.mock('react-native', () => ({
       return { cancel: () => {} };
     }),
   },
+  AppRegistry: {
+    registerHeadlessTask: jest.fn(),
+  },
   Platform: {
     OS: 'android',
     select: jest.fn((specs) => specs.android ?? specs.default),
@@ -77,7 +80,6 @@ jest.mock('../core/container', () => ({
 
 import { refreshBatteryOptimizationSetting } from '../utils/batteryOptimization';
 import { initDetection } from '../detection';
-import { BackgroundService } from '../background/unifiedBackgroundTask';
 import { requestWidgetRefresh } from '../utils/widgetHelper';
 
 describe('services/appBootstrap', () => {
@@ -152,8 +154,6 @@ describe('services/appBootstrap', () => {
       expect(
         mockScheduledNotificationManager.scheduleAllScheduledNotifications
       ).toHaveBeenCalledTimes(1);
-      expect(BackgroundService.registerUnifiedBackgroundTask).toHaveBeenCalledTimes(1);
-      expect(BackgroundService.scheduleNextAlarmPulse).toHaveBeenCalledTimes(1);
       expect(requestWidgetRefresh).toHaveBeenCalledTimes(1);
     });
 
