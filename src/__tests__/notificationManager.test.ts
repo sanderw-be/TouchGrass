@@ -418,7 +418,7 @@ describe('notificationManager', () => {
       // Should schedule new reminders for tomorrow
       expect(SmartReminderModule.scheduleReminders).toHaveBeenCalledTimes(1);
       const scheduledItems = (SmartReminderModule.scheduleReminders as jest.Mock).mock.calls[0][0];
-      expect(scheduledItems).toHaveLength(2); // Two for tomorrow
+      expect(scheduledItems).toHaveLength(4); // (2 smart + 2 catchup) for tomorrow
 
       // Should preserve scheduled (user-configured) notifications
       expect(Notifications.cancelScheduledNotificationAsync).not.toHaveBeenCalledWith(
@@ -431,7 +431,7 @@ describe('notificationManager', () => {
 
       expect(Database.insertBackgroundLogAsync).toHaveBeenCalledWith(
         'reminder',
-        'Rolling plan: 2 reminders scheduled for next 48h'
+        'Rolling plan: 4 reminders scheduled for next 48h'
       );
 
       jest.useRealTimers();
@@ -474,7 +474,7 @@ describe('notificationManager', () => {
       // Should schedule new reminders for tomorrow
       expect(SmartReminderModule.scheduleReminders).toHaveBeenCalledTimes(1);
       const scheduledItems = (SmartReminderModule.scheduleReminders as jest.Mock).mock.calls[0][0];
-      expect(scheduledItems).toHaveLength(2); // Two for tomorrow
+      expect(scheduledItems).toHaveLength(4); // (2 smart + 2 catchup) for tomorrow
 
       jest.useRealTimers();
       jest.restoreAllMocks();
@@ -557,7 +557,7 @@ describe('notificationManager', () => {
       expect(SmartReminderModule.scheduleReminders).toHaveBeenCalledTimes(1);
       const scheduledItems = (SmartReminderModule.scheduleReminders as jest.Mock).mock.calls[0][0];
       // Expect 2 slots for today (9:30, 12:00) + 2 for tomorrow (9:00, 16:00)
-      expect(scheduledItems).toHaveLength(4);
+      expect(scheduledItems).toHaveLength(5);
 
       // Verify the scheduled times and types
       const today = new Date('2026-03-14T09:00:00');
@@ -588,6 +588,9 @@ describe('notificationManager', () => {
         type: 'smart_reminder',
       });
       expect(scheduledItems[2]).toMatchObject({
+        type: 'catchup_reminder',
+      });
+      expect(scheduledItems[3]).toMatchObject({
         timestamp: new Date(
           tomorrow.getFullYear(),
           tomorrow.getMonth(),
@@ -599,7 +602,7 @@ describe('notificationManager', () => {
         ).getTime(),
         type: 'smart_reminder',
       });
-      expect(scheduledItems[3]).toMatchObject({
+      expect(scheduledItems[4]).toMatchObject({
         timestamp: new Date(
           tomorrow.getFullYear(),
           tomorrow.getMonth(),
@@ -614,7 +617,7 @@ describe('notificationManager', () => {
 
       expect(Database.insertBackgroundLogAsync).toHaveBeenCalledWith(
         'reminder',
-        'Rolling plan: 4 reminders scheduled for next 48h'
+        'Rolling plan: 5 reminders scheduled for next 48h'
       );
 
       jest.useRealTimers();
@@ -743,9 +746,9 @@ describe('notificationManager', () => {
 
       await getSmartReminderScheduler().scheduleUpcomingReminders();
 
-      // Today (1 slot) + Tomorrow (1 slot) + Failsafe Days Ahead (3 days * 1 slot = 3) = 5 total events
+      // Today (1 smart + 1 catchup) + Tomorrow (1 smart + 1 catchup) + Failsafe Days Ahead (3 days * 1 smart = 3) = 7 total events
       const allCalCalls = (CalendarService.maybeAddOutdoorTimeToCalendar as jest.Mock).mock.calls;
-      expect(allCalCalls.length).toBe(5);
+      expect(allCalCalls.length).toBe(7);
 
       jest.useRealTimers();
       jest.restoreAllMocks();
@@ -891,7 +894,7 @@ describe('notificationManager', () => {
       // Only one notification should have been scheduled for today (not two).
       expect(SmartReminderModule.scheduleReminders).toHaveBeenCalledTimes(1);
       const scheduledItems = (SmartReminderModule.scheduleReminders as jest.Mock).mock.calls[0][0];
-      expect(scheduledItems).toHaveLength(2); // 1 today + 1 tomorrow
+      expect(scheduledItems).toHaveLength(4); // (1 smart + 1 catchup) today + (1 smart + 1 catchup) tomorrow
 
       jest.restoreAllMocks();
     });
@@ -935,7 +938,7 @@ describe('notificationManager', () => {
         expect(SmartReminderModule.scheduleReminders).toHaveBeenCalledTimes(1);
         const scheduledItems = (SmartReminderModule.scheduleReminders as jest.Mock).mock
           .calls[0][0];
-        expect(scheduledItems).toHaveLength(4);
+        expect(scheduledItems).toHaveLength(6); // 12:00 + 14:00 (today, carried) + 4 tomorrow = 6 total
 
         // Verify today's slots are the ORIGINAL ones, not re-scored
         const todayItems = scheduledItems.filter(
@@ -998,7 +1001,7 @@ describe('notificationManager', () => {
         expect(SmartReminderModule.scheduleReminders).toHaveBeenCalledTimes(1);
         const scheduledItems = (SmartReminderModule.scheduleReminders as jest.Mock).mock
           .calls[0][0];
-        expect(scheduledItems).toHaveLength(2); // 2 for tomorrow
+        expect(scheduledItems).toHaveLength(4); // (2 smart + 2 catchup) for tomorrow
 
         jest.useRealTimers();
         jest.restoreAllMocks();
@@ -1919,7 +1922,7 @@ describe('notificationManager', () => {
       const queueJson = settingsStore['smart_reminder_queue'];
       expect(queueJson).toBeDefined();
       const queue = JSON.parse(queueJson);
-      expect(queue).toHaveLength(4); // 2 today + 2 tomorrow
+      expect(queue).toHaveLength(8); // (2 smart + 2 catchup) today + (2 smart + 2 catchup) tomorrow
       expect(queue[0].status).toBe('date_planned');
       expect(queue[0].id).toMatch(/^smart_\d{4}-\d{2}-\d{2}_\d+:\d+$/);
       expect(queue[0].slotMinutes).toBe(14 * 60);
@@ -1956,7 +1959,7 @@ describe('notificationManager', () => {
       const queue = JSON.parse(queueCall[1]);
 
       expect(SmartReminderModule.scheduleReminders).toHaveBeenCalledTimes(1);
-      expect(queue).toHaveLength(2); // Today + Tomorrow
+      expect(queue).toHaveLength(2); // Today + Tomorrow (catchup filtered by mock logic)
       expect(queue[0].id).toMatch(/^smart_\d{4}-\d{2}-\d{2}_14:0$/);
 
       jest.restoreAllMocks();
@@ -2424,27 +2427,9 @@ describe('notificationManager', () => {
 
       await getSmartReminderScheduler().updateUpcomingReminderContent();
 
-      // Should cancel the old notification
-      expect(Notifications.cancelScheduledNotificationAsync).toHaveBeenCalledWith(
-        'smart_2026-03-30_14:20'
-      );
-
-      // Should reschedule with updated content
-      expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledWith(
-        expect.objectContaining({
-          identifier: 'smart_2026-03-30_14:20',
-          content: expect.objectContaining({
-            title: expect.any(String),
-            body: expect.any(String), // New body reflecting 15 minutes done
-            categoryIdentifier: 'reminder',
-          }),
-          trigger: expect.objectContaining({
-            type: 'timeInterval',
-            seconds: expect.any(Number),
-          }),
-        })
-      );
-
+      // Should NOT update smart reminders
+      expect(Notifications.cancelScheduledNotificationAsync).not.toHaveBeenCalled();
+      expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
       jest.restoreAllMocks();
     });
 
@@ -2527,9 +2512,9 @@ describe('notificationManager', () => {
 
       await getSmartReminderScheduler().updateUpcomingReminderContent();
 
-      // Should update both
-      expect(Notifications.cancelScheduledNotificationAsync).toHaveBeenCalledTimes(2);
-      expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledTimes(2);
+      // Should NOT update smart reminders
+      expect(Notifications.cancelScheduledNotificationAsync).not.toHaveBeenCalled();
+      expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
 
       jest.restoreAllMocks();
     });
@@ -2555,15 +2540,8 @@ describe('notificationManager', () => {
 
       await getSmartReminderScheduler().updateUpcomingReminderContent();
 
-      // Should update (30 min is inclusive)
-      expect(Notifications.cancelScheduledNotificationAsync).toHaveBeenCalledWith(
-        'smart_2026-03-30_14:30'
-      );
-      expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledWith(
-        expect.objectContaining({
-          identifier: 'smart_2026-03-30_14:30',
-        })
-      );
+      // Should NOT update smart reminders (now handled by Native Alarm Bridge)
+      expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
 
       jest.restoreAllMocks();
     });

@@ -139,10 +139,33 @@ describe('handleSmartReminder', () => {
 
     // progressRatio = 0.33
     // expectedRatio = 1 / 2 = 0.50
-    // Actually, ahead of schedule means progressRatio > expectedRatio
+    // progressRatio (0.33) < expectedRatio (0.5) => Catchup SENT
+    const todayStr = new Date().toDateString();
     mockStorage.getSettingAsync.mockImplementation((key: string, fallback: string) => {
-      if (key === 'sent_smart_reminders_count') return '0'; // 0 sent out of 2 => expectedRatio 0
+      if (key === 'sent_smart_reminders_count') return '1';
       if (key === 'smart_reminders_count') return '2';
+      if (key === 'sent_smart_reminders_date') return todayStr;
+      return fallback;
+    });
+
+    await handleSmartReminder({ type: 'catchup_reminder' });
+
+    expect(Notifications.scheduleNotificationAsync).toHaveBeenCalled();
+    expect(mockScheduler.scheduleUpcomingReminders).toHaveBeenCalled();
+  });
+
+  it('should NOT send a catchup reminder if goal is exactly met (30/30)', async () => {
+    (getTodayMinutesAsync as jest.Mock).mockResolvedValue(30);
+    (getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
+    const todayStr = new Date().toDateString();
+
+    // progressRatio = 30 / 30 = 1.0
+    // expectedRatio = 2 / 2 = 1.0
+    // progressRatio (1.0) <= expectedRatio (1.0) but goal met => Catchup SKIPPED
+    mockStorage.getSettingAsync.mockImplementation((key: string, fallback: string) => {
+      if (key === 'sent_smart_reminders_count') return '2';
+      if (key === 'smart_reminders_count') return '2';
+      if (key === 'sent_smart_reminders_date') return todayStr;
       return fallback;
     });
 
