@@ -21,13 +21,31 @@ export const handleSmartReminder = async (data: HeadlessData) => {
 
   try {
     // 0. Initialize Infrastructure (Database + DI Container)
-    await initDatabaseAsync();
-    createContainer(db);
+    try {
+      await initDatabaseAsync();
+      createContainer(db);
+    } catch (dbError: unknown) {
+      const error = dbError as Error;
+      console.error('[SR_HEADLESS] Critical database initialization error:', error);
+      // We'll log to console but can't log to DB if init failed
+    }
 
     const storageService = new StorageService(db);
-    const todayMinutes = await getTodayMinutesAsync();
-    const dailyGoal = await getCurrentDailyGoalAsync();
-    const targetMinutes = dailyGoal?.targetMinutes ?? 30;
+
+    let todayMinutes = 0;
+    let targetMinutes = 30;
+
+    try {
+      todayMinutes = await getTodayMinutesAsync();
+      const dailyGoal = await getCurrentDailyGoalAsync();
+      targetMinutes = dailyGoal?.targetMinutes ?? 30;
+    } catch (queryError: unknown) {
+      console.error('[SR_HEADLESS] Error fetching initial goal/minutes:', queryError);
+
+      // Fallback to safe defaults if DB fails
+      todayMinutes = 0;
+      targetMinutes = 30;
+    }
 
     // 1. Logic Guards
     const todayDateStr = new Date().toDateString();
@@ -91,13 +109,19 @@ export const handleSmartReminder = async (data: HeadlessData) => {
         );
       }
     } else if (data.type === 'catchup_reminder') {
-      // Catchup reminder logic: skip if ahead of schedule
-      const progressRatio = todayMinutes / targetMinutes;
+      // Catchup reminder logic: send only if activity progress is behind or equal to notification progress
+      // Formula: [outside time today] / [daily goal] <= [smart notifications sent] / [total smart reminders]
+      const progressRatio = todayMinutes / Math.max(1, targetMinutes);
       const expectedRatio = sentSmartReminders / Math.max(1, smartRemindersCount);
 
-      if (progressRatio > expectedRatio || todayMinutes >= targetMinutes) {
+      if (progressRatio <= expectedRatio && todayMinutes < targetMinutes) {
         console.log(
-          `[SR_HEADLESS] Ahead of schedule (progress: ${progressRatio.toFixed(2)}, expected: ${expectedRatio.toFixed(2)}). Skipping catchup.`
+          `[SR_HEADLESS] Catchup triggered: activity progress (${progressRatio.toFixed(2)}) <= notification progress (${expectedRatio.toFixed(2)})`
+        );
+        shouldSend = true;
+      } else {
+        console.log(
+          `[SR_HEADLESS] Catchup skipped: activity progress (${progressRatio.toFixed(2)}) > notification progress (${expectedRatio.toFixed(2)}) or goal met.`
         );
         shouldSend = false;
       }
