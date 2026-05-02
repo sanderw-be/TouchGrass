@@ -80,10 +80,38 @@ export const handleSmartReminder = async (data: HeadlessData) => {
         `Motion: ${activity} | State: ${transition}`
       );
 
-      // Simple logic: If WALKING/RUNNING/BICYCLE, we might want to ensure GPS is active
-      // If STILL or IN_VEHICLE, we might want to pause GPS to save battery.
-      // However, for this first iteration, we just log it for transparency as requested.
-      // We will also use this to trigger a foreground catch-up if needed.
+      // --- DWELL TIME LOGIC ---
+      // We only care about ENTER transitions (becoming STILL, becoming WALKING, etc.)
+      if (transition === 'ENTER') {
+        if (activity === 'STILL') {
+          console.log('[SR_HEADLESS] User is STILL. Scheduling dwell-time prompt for 2 hours.');
+          await Notifications.scheduleNotificationAsync({
+            identifier: 'dwell-time-reminder',
+            content: {
+              title: "You've been here a while",
+              body: 'Want to save this location?',
+              data: { type: 'dwell_prompt' },
+              color: colors.grass,
+            },
+            trigger: {
+              seconds: 2 * 60 * 60, // 2 hours
+              channelId: CHANNEL_ID,
+            } as Notifications.NotificationTriggerInput,
+          });
+        } else if (
+          activity === 'WALKING' ||
+          activity === 'RUNNING' ||
+          activity === 'ON_BICYCLE' ||
+          activity === 'IN_VEHICLE'
+        ) {
+          console.log(`[SR_HEADLESS] User is moving (${activity}). Canceling dwell-time prompt.`);
+          await Notifications.cancelScheduledNotificationAsync('dwell-time-reminder');
+        }
+      } else if (transition === 'EXIT' && activity === 'STILL') {
+        // If they stop being STILL, cancel the timer
+        await Notifications.cancelScheduledNotificationAsync('dwell-time-reminder');
+      }
+
       return;
     }
 

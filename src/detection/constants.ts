@@ -1,6 +1,8 @@
 import * as Location from 'expo-location';
 
 export const LOCATION_TRACK_TASK = 'TOUCHGRASS_LOCATION_TRACK';
+export const GEOFENCE_TASK = 'TOUCHGRASS_GEOFENCE';
+export const DWELL_NOTIFICATION_ID = 'dwell-time-reminder';
 
 export const CONFIDENCE_GPS_ONLY = 0.8;
 export const MIN_OUTSIDE_DURATION_MS = 5 * 60 * 1000;

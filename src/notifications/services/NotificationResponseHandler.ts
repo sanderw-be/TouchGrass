@@ -42,6 +42,15 @@ export class NotificationResponseHandler implements INotificationResponseHandler
       return;
     }
 
+    // --- DWELL PROMPT HANDLING ---
+    const notifData = response.notification?.request?.content?.data;
+    if (notifData?.type === 'dwell_prompt') {
+      const { navigate } = await import('../../navigation/navigationRef');
+      // Navigate to Settings tab -> KnownLocations screen
+      navigate('Settings', { screen: 'KnownLocations' });
+      return;
+    }
+
     const action =
       actionId === ACTION_WENT_OUTSIDE
         ? 'went_outside'

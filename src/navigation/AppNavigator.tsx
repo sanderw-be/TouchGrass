@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback, Suspense, lazy, useMemo } from 'react';
 import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
+import { navigationRef } from './navigationRef';
 import type { InitialState } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
@@ -353,6 +354,7 @@ const AppNavigator = React.memo(function AppNavigator({
 
   return (
     <NavigationContainer
+      ref={navigationRef}
       initialState={initialState}
       onStateChange={onStateChange}
       theme={navigationTheme}

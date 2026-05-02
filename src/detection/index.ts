@@ -6,16 +6,10 @@ import {
   openHealthConnectForManagement,
 } from './healthConnect';
 import { verifyHealthConnectPermissions } from './healthConnectIntent';
-import { startLocationTracking, stopLocationTracking } from './gpsDetection';
-import { getKnownLocationsAsync, getSettingAsync, setSettingAsync } from '../storage';
+import { startGeofenceTracking, stopGeofenceTracking } from './gpsDetection';
+import { getSettingAsync, setSettingAsync } from '../storage';
 import { PermissionService } from './PermissionService';
-import { ActivityTransitionModule } from '../modules/ActivityTransitionModule';
-import {
-  computeMinActiveRadius,
-  clampRadiusMeters,
-  computeDwellClusters,
-  autoDetectLocations,
-} from './GeofenceManager';
+import { clampRadiusMeters, computeDwellClusters, autoDetectLocations } from './GeofenceManager';
 
 // Setting keys for the user's explicit intent (independent of OS permission state)
 const HC_USER_KEY = 'healthconnect_enabled';
@@ -85,24 +79,22 @@ export async function refreshDetectionSync(): Promise<void> {
     const perm = await checkGPSPermissions();
     if (perm) {
       try {
-        const locations = await getKnownLocationsAsync();
-        const minRadius = computeMinActiveRadius(locations);
-        await startLocationTracking('low', minRadius);
+        await startGeofenceTracking();
       } catch (e) {
-        console.error('Failed to start GPS tracking during sync:', e);
+        console.error('Failed to start Geofencing during sync:', e);
       }
     } else {
       try {
-        await stopLocationTracking();
+        await stopGeofenceTracking();
       } catch (e) {
-        console.error('Failed to stop GPS tracking during sync:', e);
+        console.error('Failed to stop Geofencing during sync:', e);
       }
     }
   } else {
     try {
-      await stopLocationTracking();
+      await stopGeofenceTracking();
     } catch (e) {
-      console.error('Failed to stop GPS tracking during sync:', e);
+      console.error('Failed to stop Geofencing during sync:', e);
     }
   }
 
@@ -186,28 +178,19 @@ export async function toggleGPS(enabled: boolean): Promise<{ needsPermissions: b
     const hasPerm = await checkGPSPermissions();
     if (hasPerm) {
       try {
-        const locations = await getKnownLocationsAsync();
-        const minRadius = computeMinActiveRadius(locations);
-        await startLocationTracking('low', minRadius);
+        await startGeofenceTracking();
         return { needsPermissions: false };
       } catch (e: unknown) {
-        if (
-          e instanceof Error &&
-          (e.message.includes('SecurityException') || e.message.includes('permission'))
-        ) {
-          console.warn('GPS tracking start failed due to permission issue:', e.message);
-        } else {
-          console.error('Failed to start GPS tracking in toggleGPS:', e);
-        }
+        console.error('Failed to start Geofencing in toggleGPS:', e);
         return { needsPermissions: false };
       }
     }
     return { needsPermissions: true };
   } else {
     try {
-      await stopLocationTracking();
+      await stopGeofenceTracking();
     } catch (e) {
-      console.error('Failed to stop GPS tracking in toggleGPS:', e);
+      console.error('Failed to stop Geofencing in toggleGPS:', e);
     }
     return { needsPermissions: false };
   }
@@ -280,8 +263,8 @@ export {
   verifyHealthConnectPermissions,
   isHealthConnectAvailable,
   openHealthConnectForManagement,
-  startLocationTracking,
-  stopLocationTracking,
+  startGeofenceTracking,
+  stopGeofenceTracking,
   clampRadiusMeters,
   computeDwellClusters,
   autoDetectLocations,

@@ -12,7 +12,7 @@ import {
   getSettingAsync,
   setSettingAsync,
 } from '../storage';
-import { getDetectionStatus } from '../detection/index';
+import { getDetectionStatus, refreshDetectionSync } from '../detection/index';
 import { spacing, radius, ThemeColors, Shadows } from '../utils/theme';
 import { useAppStore } from '../store/useAppStore';
 import { t } from '../i18n';
@@ -104,6 +104,8 @@ export default function KnownLocationsScreen() {
   const afterSave = useCallback(() => {
     loadData();
     closeSheet();
+    // Refresh geofencing so the new/updated location is registered with the OS
+    refreshDetectionSync();
   }, [loadData, closeSheet]);
 
   const toggleSuggestions = async (value: boolean) => {
