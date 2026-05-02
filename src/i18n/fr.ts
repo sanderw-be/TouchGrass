@@ -604,7 +604,13 @@ const fr: TranslationType = {
     'Local : Départ {{start}}, {{dist}} {{distUnit}} ({{speed}} {{speedUnit}}).',
   session_notes_gps_returned:
     'Local : Arrivée {{end}}, {{dist}} {{distUnit}} ({{speed}} {{speedUnit}}).',
-  session_notes_gps_no_location: 'Local : {{dist}} {{distUnit}} ({{speed}} {{speedUnit}}).',
+  session_notes_gps_no_location: 'Détection GPS, {{dist}} {{distUnit}} à {{speed}} {{speedUnit}}.',
+  location_unknown: 'Lieu inconnu',
+  location_somewhere: 'quelque part',
+  gps_session_notes_template:
+    'Session en extérieur : Départ de {{startLabel}} et retour à {{regionName}}.',
+  dwell_prompt_title: 'Toujours dehors ? 🌿',
+  dwell_prompt_body: 'Appuyez pour enregistrer votre position actuelle en tant que session.',
   // Health Connect descriptions — {{steps}} = formatted number, {{speed}} = numeric speed, {{speedUnit}} = "km/h" or "mph"
   session_notes_hc_steps: 'Santé : {{steps}} pas ({{speed}} {{speedUnit}}).',
   session_notes_hc_exercise: 'Santé : {{exerciseName}}.',

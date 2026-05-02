@@ -1,7 +1,12 @@
 import * as TaskManager from 'expo-task-manager';
 import * as Location from 'expo-location';
 import * as Notifications from 'expo-notifications';
-import { GEOFENCE_TASK, DWELL_NOTIFICATION_ID } from '../detection/constants';
+import {
+  GEOFENCE_TASK,
+  DWELL_NOTIFICATION_ID,
+  MIN_OUTSIDE_DURATION_MS,
+  CONFIDENCE_GPS_ONLY,
+} from '../detection/constants';
 import { ActivityTransitionModule } from '../modules/ActivityTransitionModule';
 import {
   initDatabaseAsync,
@@ -11,6 +16,8 @@ import {
 } from '../storage';
 import { submitSession, buildSession } from '../detection/sessionMerger';
 import { emitSessionsChanged } from '../utils/sessionsChangedEmitter';
+import { colors } from '../utils/theme';
+import { t } from '../i18n';
 
 /**
  * Task handler for Geofence events.
@@ -34,7 +41,7 @@ TaskManager.defineTask(
     }
 
     const { eventType, region } = data;
-    const regionName = region.identifier || 'Unknown Location';
+    const regionName = region.identifier || t('location_unknown');
 
     await initDatabaseAsync();
 
@@ -70,18 +77,21 @@ TaskManager.defineTask(
       const now = Date.now();
       const duration = now - startTime;
 
-      if (startTime > 0 && duration >= 5 * 60 * 1000) {
+      if (startTime > 0 && duration >= MIN_OUTSIDE_DURATION_MS) {
         // 5 min minimum
         const startLabel = await getSettingAsync('gps_session_start_label', '');
 
-        const notes = `Outdoor session: Left ${startLabel || 'somewhere'} and returned to ${regionName}.`;
+        const notes = t('gps_session_notes_template', {
+          startLabel: startLabel || t('location_somewhere'),
+          regionName,
+        });
 
         await submitSession(
           buildSession(
             startTime,
             now,
             'gps',
-            0.8, // Geofence confidence
+            CONFIDENCE_GPS_ONLY, // Geofence confidence
             notes
           )
         );

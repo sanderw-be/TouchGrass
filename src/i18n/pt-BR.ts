@@ -596,7 +596,13 @@ const ptBR: TranslationType = {
   session_notes_gps_left: 'GPS: Saiu {{start}}, {{dist}} {{distUnit}} ({{speed}} {{speedUnit}}).',
   session_notes_gps_returned:
     'GPS: Chegou {{end}}, {{dist}} {{distUnit}} ({{speed}} {{speedUnit}}).',
-  session_notes_gps_no_location: 'GPS: {{dist}} {{distUnit}} ({{speed}} {{speedUnit}}).',
+  session_notes_gps_no_location: 'Detecção GPS, {{dist}} {{distUnit}} a {{speed}} {{speedUnit}}.',
+  location_unknown: 'Localização desconhecida',
+  location_somewhere: 'algum lugar',
+  gps_session_notes_template:
+    'Sessão ao ar livre: Saiu de {{startLabel}} e voltou para {{regionName}}.',
+  dwell_prompt_title: 'Ainda na rua? 🌿',
+  dwell_prompt_body: 'Toque para salvar sua localização atual como uma sessão.',
   session_notes_hc_steps: 'Health: {{steps}} passos ({{speed}} {{speedUnit}}).',
   session_notes_hc_exercise: 'Health: {{exerciseName}}.',
   unit_speed_metric: 'km/h',

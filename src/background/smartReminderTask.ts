@@ -6,6 +6,8 @@ import { StorageService } from '../storage/StorageService';
 import { createContainer } from '../core/container';
 import { getSmartReminderScheduler, CHANNEL_ID } from '../notifications/notificationManager';
 import { colors } from '../utils/theme';
+import { DWELL_NOTIFICATION_ID, DWELL_NOTIFICATION_DELAY_SECONDS } from '../detection/constants';
+import { t } from '../i18n';
 
 interface HeadlessData {
   type: string;
@@ -86,15 +88,15 @@ export const handleSmartReminder = async (data: HeadlessData) => {
         if (activity === 'STILL') {
           console.log('[SR_HEADLESS] User is STILL. Scheduling dwell-time prompt for 2 hours.');
           await Notifications.scheduleNotificationAsync({
-            identifier: 'dwell-time-reminder',
+            identifier: DWELL_NOTIFICATION_ID,
             content: {
-              title: "You've been here a while",
-              body: 'Want to save this location?',
+              title: t('dwell_prompt_title'),
+              body: t('dwell_prompt_body'),
               data: { type: 'dwell_prompt' },
               color: colors.grass,
             },
             trigger: {
-              seconds: 2 * 60 * 60, // 2 hours
+              seconds: DWELL_NOTIFICATION_DELAY_SECONDS,
               channelId: CHANNEL_ID,
             } as Notifications.NotificationTriggerInput,
           });
@@ -105,11 +107,11 @@ export const handleSmartReminder = async (data: HeadlessData) => {
           activity === 'IN_VEHICLE'
         ) {
           console.log(`[SR_HEADLESS] User is moving (${activity}). Canceling dwell-time prompt.`);
-          await Notifications.cancelScheduledNotificationAsync('dwell-time-reminder');
+          await Notifications.cancelScheduledNotificationAsync(DWELL_NOTIFICATION_ID);
         }
       } else if (transition === 'EXIT' && activity === 'STILL') {
         // If they stop being STILL, cancel the timer
-        await Notifications.cancelScheduledNotificationAsync('dwell-time-reminder');
+        await Notifications.cancelScheduledNotificationAsync(DWELL_NOTIFICATION_ID);
       }
 
       return;

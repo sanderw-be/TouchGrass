@@ -608,7 +608,14 @@ const de: TranslationType = {
   session_notes_gps_left: 'GPS: Los {{start}}, {{dist}} {{distUnit}} ({{speed}} {{speedUnit}}).',
   session_notes_gps_returned:
     'GPS: Zurück {{end}}, {{dist}} {{distUnit}} ({{speed}} {{speedUnit}}).',
-  session_notes_gps_no_location: 'GPS: {{dist}} {{distUnit}} ({{speed}} {{speedUnit}}).',
+  session_notes_gps_no_location:
+    'Lokale GPS-Ortung: {{dist}} {{distUnit}} ({{speed}} {{speedUnit}}).',
+  location_unknown: 'Unbekannter Ort',
+  location_somewhere: 'irgendwo',
+  gps_session_notes_template:
+    'Outdoor-Sitzung: Verlassen von {{startLabel}} und Rückkehr nach {{regionName}}.',
+  dwell_prompt_title: 'Noch draußen? 🌿',
+  dwell_prompt_body: 'Tippen Sie hier, um Ihren aktuellen Standort als Sitzung zu speichern.',
   // Health Connect descriptions — {{steps}} = formatted number, {{speed}} = numeric speed, {{speedUnit}} = "km/h" or "mph"
   session_notes_hc_steps: 'Health: {{steps}} Schritte ({{speed}} {{speedUnit}}).',
   session_notes_hc_exercise: 'Health: {{exerciseName}}.',
