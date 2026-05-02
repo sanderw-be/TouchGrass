@@ -69,7 +69,9 @@ describe('notificationManager', () => {
     const container = createContainer(mockDb as any);
 
     // Linked container storageService to Database module mocks and local state
-    const settingsStore: Record<string, string> = {};
+    const settingsStore: Record<string, string> = {
+      smart_catchup_reminders_count: '0',
+    };
     const getSettingMock = jest.fn(async (key: string, fallback: string) => {
       const val = settingsStore[key];
       return val !== undefined ? String(val) : fallback;
@@ -418,7 +420,7 @@ describe('notificationManager', () => {
       // Should schedule new reminders for tomorrow
       expect(SmartReminderModule.scheduleReminders).toHaveBeenCalledTimes(1);
       const scheduledItems = (SmartReminderModule.scheduleReminders as jest.Mock).mock.calls[0][0];
-      expect(scheduledItems).toHaveLength(4); // (2 smart + 2 catchup) for tomorrow
+      expect(scheduledItems).toHaveLength(2); // 2 smart (default catchup is 0)
 
       // Should preserve scheduled (user-configured) notifications
       expect(Notifications.cancelScheduledNotificationAsync).not.toHaveBeenCalledWith(
@@ -431,7 +433,7 @@ describe('notificationManager', () => {
 
       expect(Database.insertBackgroundLogAsync).toHaveBeenCalledWith(
         'reminder',
-        'Rolling plan: 4 reminders scheduled for next 48h'
+        'Rolling plan: 2 reminders scheduled for next 48h'
       );
 
       jest.useRealTimers();
@@ -447,6 +449,7 @@ describe('notificationManager', () => {
       (Database.getSettingAsync as jest.Mock).mockImplementation(
         async (key: string, fallback: string) => {
           if (key === 'smart_reminders_count') return '2';
+          if (key === 'smart_catchup_reminders_count') return '2';
           return fallback;
         }
       );
@@ -455,15 +458,21 @@ describe('notificationManager', () => {
       (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockImplementation(
         async (todayMins, dailyTarget, currentHour, currentMinute, plannedSlots, baseDateMs) => {
           const baseDate = new Date(baseDateMs);
+          const filterPlanned = (slots: any[]) =>
+            slots.filter(
+              (s) => !plannedSlots.some((p: any) => p.hour === s.hour && p.minute === s.minute)
+            );
           if (baseDate.getDate() === 14) {
             // Today, should be skipped because goal exceeded
             return [];
           } else if (baseDate.getDate() === 15) {
             // Tomorrow
-            return [
+            return filterPlanned([
               { hour: 9, minute: 0, score: 0.8, reason: 'tomorrow morning' },
+              { hour: 11, minute: 0, score: 0.7, reason: 'tomorrow noon' },
+              { hour: 14, minute: 0, score: 0.7, reason: 'tomorrow afternoon' },
               { hour: 17, minute: 0, score: 0.7, reason: 'tomorrow afternoon' },
-            ];
+            ]);
           }
           return [];
         }
@@ -537,14 +546,17 @@ describe('notificationManager', () => {
           if (baseDate.getDate() === 14) {
             // Scores for today (from 9:00 AM onwards)
             return filterPlanned([
-              { hour: 9, minute: 30, score: 0.6, reason: 'morning' }, // Earliest available today
+              { hour: 9, minute: 30, score: 0.6, reason: 'morning' },
               { hour: 12, minute: 0, score: 0.8, reason: 'lunch' },
+              { hour: 14, minute: 0, score: 0.7, reason: 'afternoon' },
               { hour: 17, minute: 30, score: 0.7, reason: 'after-work' },
             ]);
           } else if (baseDate.getDate() === 15) {
             // Scores for tomorrow
             return filterPlanned([
               { hour: 9, minute: 0, score: 0.85, reason: 'tomorrow morning' },
+              { hour: 11, minute: 0, score: 0.7, reason: 'tomorrow mid' },
+              { hour: 13, minute: 0, score: 0.7, reason: 'tomorrow mid' },
               { hour: 16, minute: 0, score: 0.75, reason: 'tomorrow afternoon' },
             ]);
           }
@@ -556,8 +568,8 @@ describe('notificationManager', () => {
 
       expect(SmartReminderModule.scheduleReminders).toHaveBeenCalledTimes(1);
       const scheduledItems = (SmartReminderModule.scheduleReminders as jest.Mock).mock.calls[0][0];
-      // Expect 2 slots for today (9:30, 12:00) + 2 for tomorrow (9:00, 16:00)
-      expect(scheduledItems).toHaveLength(5);
+      // 2 smart today + 2 catchup today + 2 smart tomorrow + 2 catchup tomorrow = 8 total
+      expect(scheduledItems).toHaveLength(8);
 
       // Verify the scheduled times and types
       const today = new Date('2026-03-14T09:00:00');
@@ -587,10 +599,10 @@ describe('notificationManager', () => {
         ).getTime(),
         type: 'smart_reminder',
       });
-      expect(scheduledItems[2]).toMatchObject({
+      expect(scheduledItems[3]).toMatchObject({
         type: 'catchup_reminder',
       });
-      expect(scheduledItems[3]).toMatchObject({
+      expect(scheduledItems[4]).toMatchObject({
         timestamp: new Date(
           tomorrow.getFullYear(),
           tomorrow.getMonth(),
@@ -602,7 +614,31 @@ describe('notificationManager', () => {
         ).getTime(),
         type: 'smart_reminder',
       });
-      expect(scheduledItems[4]).toMatchObject({
+      expect(scheduledItems[5]).toMatchObject({
+        timestamp: new Date(
+          tomorrow.getFullYear(),
+          tomorrow.getMonth(),
+          tomorrow.getDate(),
+          11,
+          0,
+          0,
+          0
+        ).getTime(),
+        type: 'smart_reminder',
+      });
+      expect(scheduledItems[6]).toMatchObject({
+        timestamp: new Date(
+          tomorrow.getFullYear(),
+          tomorrow.getMonth(),
+          tomorrow.getDate(),
+          13,
+          0,
+          0,
+          0
+        ).getTime(),
+        type: 'catchup_reminder',
+      });
+      expect(scheduledItems[7]).toMatchObject({
         timestamp: new Date(
           tomorrow.getFullYear(),
           tomorrow.getMonth(),
@@ -612,12 +648,12 @@ describe('notificationManager', () => {
           0,
           0
         ).getTime(),
-        type: 'smart_reminder',
+        type: 'catchup_reminder',
       });
 
       expect(Database.insertBackgroundLogAsync).toHaveBeenCalledWith(
         'reminder',
-        'Rolling plan: 5 reminders scheduled for next 48h'
+        'Rolling plan: 8 reminders scheduled for next 48h'
       );
 
       jest.useRealTimers();
@@ -729,16 +765,28 @@ describe('notificationManager', () => {
       (Database.getSettingAsync as jest.Mock).mockImplementation(
         async (key: string, fallback: string) => {
           if (key === 'smart_reminders_count') return '1';
+          if (key === 'smart_catchup_reminders_count') return '1';
           return fallback;
         }
       );
       (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockImplementation(
         async (todayMins, dailyTarget, currentHour, currentMinute, plannedSlots, baseDateMs) => {
           const baseDate = new Date(baseDateMs);
+          const filterPlanned = (slots: any[]) =>
+            slots.filter(
+              (s) => !plannedSlots.some((p: any) => p.hour === s.hour && p.minute === s.minute)
+            );
+
           if (baseDate.getDate() === 14) {
-            return [{ hour: 12, minute: 0, score: 0.8, reason: 'lunch' }];
+            return filterPlanned([
+              { hour: 12, minute: 0, score: 0.8, reason: 'lunch' },
+              { hour: 14, minute: 0, score: 0.7, reason: 'catchup' },
+            ]);
           } else if (baseDate.getDate() === 15) {
-            return [{ hour: 9, minute: 0, score: 0.85, reason: 'tomorrow morning' }];
+            return filterPlanned([
+              { hour: 9, minute: 0, score: 0.85, reason: 'morning' },
+              { hour: 11, minute: 0, score: 0.7, reason: 'catchup' },
+            ]);
           }
           return [];
         }
@@ -869,6 +917,7 @@ describe('notificationManager', () => {
         async (key: string, fallback: string) => {
           if (key in settingsStore) return settingsStore[key];
           if (key === 'smart_reminders_count') return '1';
+          if (key === 'smart_catchup_reminders_count') return '1';
           return fallback;
         }
       );
@@ -886,6 +935,13 @@ describe('notificationManager', () => {
         { hour: 12, minute: 0, score: 0.8, reason: 'lunch' },
       ]);
 
+      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockResolvedValue([
+        { hour: 10, minute: 0, score: 0.9, reason: 'morning' },
+        { hour: 12, minute: 0, score: 0.8, reason: 'noon' },
+        { hour: 14, minute: 0, score: 0.7, reason: 'afternoon' },
+        { hour: 16, minute: 0, score: 0.75, reason: 'afternoon' },
+      ]);
+
       // Fire both calls before either has awaited anything.
       const call1 = getSmartReminderScheduler().scheduleUpcomingReminders();
       const call2 = getSmartReminderScheduler().scheduleUpcomingReminders();
@@ -894,7 +950,8 @@ describe('notificationManager', () => {
       // Only one notification should have been scheduled for today (not two).
       expect(SmartReminderModule.scheduleReminders).toHaveBeenCalledTimes(1);
       const scheduledItems = (SmartReminderModule.scheduleReminders as jest.Mock).mock.calls[0][0];
-      expect(scheduledItems).toHaveLength(4); // (1 smart + 1 catchup) today + (1 smart + 1 catchup) tomorrow
+      // 1 smart + 1 catchup today, 1 smart + 1 catchup tomorrow. Mock has 4 slots.
+      expect(scheduledItems).toHaveLength(4);
 
       jest.restoreAllMocks();
     });
@@ -910,6 +967,7 @@ describe('notificationManager', () => {
             { id: 'smart_2026-03-14_12:00', slotMinutes: 720, status: 'date_planned' },
             { id: 'catchup_2026-03-14_14:00_123', slotMinutes: 840, status: 'date_planned' },
           ]),
+          smart_catchup_reminders_count: '2',
         };
         (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(10);
         (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
@@ -929,25 +987,31 @@ describe('notificationManager', () => {
         // Tomorrow slots
         (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockResolvedValue([
           { hour: 9, minute: 0, score: 0.85, reason: 'tomorrow morning' },
+          { hour: 11, minute: 0, score: 0.8, reason: 'tomorrow noon' },
+          { hour: 14, minute: 0, score: 0.7, reason: 'tomorrow afternoon' },
           { hour: 16, minute: 0, score: 0.75, reason: 'tomorrow afternoon' },
         ]);
 
         await getSmartReminderScheduler().scheduleUpcomingReminders({ isHeadlessReplan: true });
 
-        // Should have scheduled: 12:00 + 14:00 (today, carried) + 2 tomorrow = 4 total
+        // Should have scheduled: 12:00 + 14:00 (today, carried) + 2 added today to fill gap + 4 tomorrow = 8 total
         expect(SmartReminderModule.scheduleReminders).toHaveBeenCalledTimes(1);
         const scheduledItems = (SmartReminderModule.scheduleReminders as jest.Mock).mock
           .calls[0][0];
-        expect(scheduledItems).toHaveLength(6); // 12:00 + 14:00 (today, carried) + 4 tomorrow = 6 total
+        expect(scheduledItems).toHaveLength(8);
 
         // Verify today's slots are the ORIGINAL ones, not re-scored
         const todayItems = scheduledItems.filter(
           (item: any) => new Date(item.timestamp).getDate() === 14
         );
-        expect(todayItems).toHaveLength(2);
-        expect(todayItems[0].timestamp).toBe(new Date('2026-03-14T12:00:00').getTime());
-        expect(todayItems[1].timestamp).toBe(new Date('2026-03-14T14:00:00').getTime());
+        expect(todayItems).toHaveLength(4);
+        expect(todayItems[0].timestamp).toBe(new Date('2026-03-14T09:00:00').getTime());
+        expect(todayItems[1].timestamp).toBe(new Date('2026-03-14T11:00:00').getTime());
+        expect(todayItems[2].timestamp).toBe(new Date('2026-03-14T12:00:00').getTime());
+        expect(todayItems[3].timestamp).toBe(new Date('2026-03-14T14:00:00').getTime());
         expect(todayItems[1].type).toBe('catchup_reminder');
+        expect(todayItems[3].type).toBe('catchup_reminder');
+
         const has10am = scheduledItems.some(
           (item: any) => new Date(item.timestamp).getHours() === 10
         );
@@ -959,7 +1023,7 @@ describe('notificationManager', () => {
           const baseDateMs = call[5];
           if (baseDateMs !== undefined) {
             const baseDate = new Date(baseDateMs);
-            expect(baseDate.getDate()).not.toBe(14); // Not called for today
+            // We now ALLOW calling for today (14) to fill gaps
           }
         }
 
@@ -980,6 +1044,7 @@ describe('notificationManager', () => {
           async (key: string, fallback: string) => {
             if (key in settingsStore) return settingsStore[key];
             if (key === 'smart_reminders_count') return '2';
+            if (key === 'smart_catchup_reminders_count') return '2';
             return fallback;
           }
         );
@@ -991,6 +1056,8 @@ describe('notificationManager', () => {
         (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([]);
         (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockResolvedValue([
           { hour: 9, minute: 0, score: 0.85, reason: 'tomorrow morning' },
+          { hour: 11, minute: 0, score: 0.8, reason: 'tomorrow noon' },
+          { hour: 14, minute: 0, score: 0.7, reason: 'tomorrow afternoon' },
           { hour: 16, minute: 0, score: 0.75, reason: 'tomorrow afternoon' },
         ]);
 
@@ -1900,6 +1967,7 @@ describe('notificationManager', () => {
         async (key: string, fallback: string) => {
           if (key in settingsStore) return settingsStore[key];
           if (key === 'smart_reminders_count') return '2';
+          if (key === 'smart_catchup_reminders_count') return '2';
           return fallback;
         }
       );
@@ -1913,8 +1981,10 @@ describe('notificationManager', () => {
       jest.spyOn(Date.prototype, 'getHours').mockReturnValue(9);
       jest.spyOn(Date.prototype, 'getMinutes').mockReturnValue(0);
       (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockResolvedValue([
+        { hour: 10, minute: 0, score: 0.9, reason: 'morning' },
         { hour: 14, minute: 0, score: 0.8, reason: 'afternoon' },
         { hour: 17, minute: 30, score: 0.7, reason: 'after-work' },
+        { hour: 20, minute: 0, score: 0.6, reason: 'evening' },
       ]);
 
       await getSmartReminderScheduler().scheduleUpcomingReminders();
@@ -1925,7 +1995,7 @@ describe('notificationManager', () => {
       expect(queue).toHaveLength(8); // (2 smart + 2 catchup) today + (2 smart + 2 catchup) tomorrow
       expect(queue[0].status).toBe('date_planned');
       expect(queue[0].id).toMatch(/^smart_\d{4}-\d{2}-\d{2}_\d+:\d+$/);
-      expect(queue[0].slotMinutes).toBe(14 * 60);
+      expect(queue[0].slotMinutes).toBe(10 * 60);
 
       jest.restoreAllMocks();
     });

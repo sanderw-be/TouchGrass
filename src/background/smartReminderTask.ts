@@ -21,21 +21,16 @@ export const handleSmartReminder = async (data: HeadlessData) => {
 
   try {
     // 0. Initialize Infrastructure (Database + DI Container)
-    const storageService = new StorageService(db);
     try {
       await initDatabaseAsync();
       createContainer(db);
     } catch (dbError: unknown) {
       const error = dbError as Error;
       console.error('[SR_HEADLESS] Critical database initialization error:', error);
-      // If it's the specific "released shared object" error, we might be in a broken state.
-      // We'll log it and try to proceed, but expect subsequent failures.
-      try {
-        await storageService.insertBackgroundLogAsync('error', `DB Init Error: ${error?.message}`);
-      } catch (logError) {
-        console.error('[SR_HEADLESS] Failed to log DB error to DB (meta!):', logError);
-      }
+      // We'll log to console but can't log to DB if init failed
     }
+
+    const storageService = new StorageService(db);
 
     let todayMinutes = 0;
     let targetMinutes = 30;

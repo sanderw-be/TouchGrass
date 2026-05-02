@@ -17,6 +17,9 @@ const FAILSAFE_DAYS_AHEAD = 3;
  *  just-fired slot can never be re-picked during a headless re-plan. */
 const REPLAN_GRACE_MS = 2 * 60 * 1000;
 
+const MIN_SMART_SCORE_THRESHOLD = 0.3;
+const MIN_CATCHUP_SCORE_THRESHOLD = 0.2;
+
 export interface ReplanOptions {
   /** True when called from the headless task after an alarm fires. */
   isHeadlessReplan?: boolean;
@@ -348,15 +351,28 @@ export class SmartReminderScheduler implements ISmartReminderScheduler {
           uiSlots
         );
 
-        // If NO slots were carried forward (e.g. first time planning today),
-        // then we perform a full scoring plan.
-        if (newQueueEntries.length === 0) {
+        const carriedSlots = newQueueEntries.map((e) => ({
+          hour: Math.floor(e.slotMinutes / 60),
+          minute: e.slotMinutes % 60,
+          isCatchup: e.id.startsWith('catchup_'),
+        }));
+
+        const carriedSmartCount = carriedSlots.filter((s) => !s.isCatchup).length;
+        const carriedCatchupCount = carriedSlots.filter((s) => s.isCatchup).length;
+
+        const catchupLimit = parseInt(
+          await this.storageService.getSettingAsync('smart_catchup_reminders_count', '2'),
+          10
+        );
+
+        if (carriedSmartCount < remindersCount || carriedCatchupCount < catchupLimit) {
           const todaySlots = await this.planDaySlots(
             now,
             todayMinutes,
             dailyTarget,
             remindersCount,
-            true // Include catchup for today
+            catchupLimit,
+            carriedSlots
           );
           for (const slot of todaySlots) {
             const trigger = this.slotToDate(now, slot);
@@ -383,7 +399,9 @@ export class SmartReminderScheduler implements ISmartReminderScheduler {
               status: 'date_planned',
             });
             uiSlots.push({ hour: slot.hour, minute: slot.minute });
-            await this.calendarService.maybeAddOutdoorTimeToCalendar(trigger);
+            if (!isHeadless) {
+              await this.calendarService.maybeAddOutdoorTimeToCalendar(trigger);
+            }
           }
         }
       }
@@ -391,12 +409,17 @@ export class SmartReminderScheduler implements ISmartReminderScheduler {
       // 4. Plan for Tomorrow (Full Day — always re-plan to find better slots)
       const tomorrow = new Date(now);
       tomorrow.setDate(now.getDate() + 1);
+
+      const catchupLimit = parseInt(
+        await this.storageService.getSettingAsync('smart_catchup_reminders_count', '2'),
+        10
+      );
       const tomorrowSlots = await this.planDaySlots(
         tomorrow,
         0, // Assume 0 minutes for tomorrow start
         dailyTarget,
         remindersCount,
-        true // Now ALWAYS include catchup for tomorrow so they are scheduled in the chain
+        catchupLimit
       );
       for (const slot of tomorrowSlots) {
         const trigger = this.slotToDate(tomorrow, slot);
@@ -515,7 +538,8 @@ export class SmartReminderScheduler implements ISmartReminderScheduler {
     minutesSoFar: number,
     target: number,
     count: number,
-    includeCatchup: boolean
+    catchupLimit: number,
+    initialSlots: { hour: number; minute: number; isCatchup?: boolean }[] = []
   ): Promise<(HourScore & { isCatchup?: boolean })[]> {
     const isToday = date.toDateString() === new Date().toDateString();
     // Add a grace window so the just-fired slot cannot be re-picked.
@@ -525,10 +549,19 @@ export class SmartReminderScheduler implements ISmartReminderScheduler {
     const startHour = isToday ? adjustedNow.getHours() : 0;
     const startMin = isToday ? adjustedNow.getMinutes() : 0;
 
-    const picked: (HourScore & { isCatchup?: boolean })[] = [];
+    // Map initialSlots (simple objects) to full HourScore-like objects
+    // so they are assignable to picked and can be used by the algorithm.
+    const picked: (HourScore & { isCatchup?: boolean })[] = initialSlots.map((s) => ({
+      hour: s.hour,
+      minute: s.minute as 0 | 30,
+      score: 1.0, // placeholder
+      reason: 'carried_forward',
+      contributors: [],
+      isCatchup: s.isCatchup,
+    }));
 
     // Plan standard smart reminders
-    while (picked.length < count) {
+    while (picked.filter((p) => !p.isCatchup).length < count) {
       const scores = await this.reminderAlgorithm.scoreReminderHours(
         minutesSoFar,
         target,
@@ -540,7 +573,9 @@ export class SmartReminderScheduler implements ISmartReminderScheduler {
 
       let found = false;
       for (const slot of scores) {
-        if (slot.score < 0.3) continue;
+        if (slot.score < MIN_SMART_SCORE_THRESHOLD) continue;
+        // Local duplicate guard (extra safety in case algorithm doesn't zero out proximity)
+        if (picked.some((p) => p.hour === slot.hour && p.minute === slot.minute)) continue;
         if (await this.scheduledManager.isSlotNearScheduledNotification(slot.hour, slot.minute, 30))
           continue;
 
@@ -551,42 +586,54 @@ export class SmartReminderScheduler implements ISmartReminderScheduler {
       if (!found) break;
     }
 
+    const smartAdded =
+      picked.filter((p) => !p.isCatchup).length - initialSlots.filter((s) => !s.isCatchup).length;
+    if (smartAdded < count - initialSlots.filter((s) => !s.isCatchup).length && count > 0) {
+      await this.storageService.insertBackgroundLogAsync(
+        'reminder',
+        `Limited slots: Only planned ${smartAdded} additional smart reminders for ${date.toDateString()} (scores too low or no time left)`
+      );
+    }
+
     // Integrated Catch-up planning
-    // We plan catchup slots regardless of whether we are currently "behind"
-    // because the actual decision to fire them happens at execution time
-    // in the headless task (based on real-time progress).
-    if (includeCatchup) {
-      const catchupLimit = parseInt(
-        await this.storageService.getSettingAsync('smart_catchup_reminders_count', '2'),
-        10
+    if (catchupLimit > 0) {
+      const scores = await this.reminderAlgorithm.scoreReminderHours(
+        minutesSoFar,
+        target,
+        startHour,
+        startMin,
+        picked,
+        date.getTime()
       );
 
-      if (catchupLimit > 0) {
-        const scores = await this.reminderAlgorithm.scoreReminderHours(
-          minutesSoFar,
-          target,
-          startHour,
-          startMin,
-          picked,
-          date.getTime()
+      let catchupAddedCount = 0;
+      const initialCatchup = initialSlots.filter((s) => s.isCatchup).length;
+      for (const slot of scores) {
+        if (picked.filter((p) => p.isCatchup).length >= catchupLimit) break;
+        if (slot.score < MIN_CATCHUP_SCORE_THRESHOLD) continue;
+        // Local duplicate guard
+        if (picked.some((p) => p.hour === slot.hour && p.minute === slot.minute)) continue;
+        if (await this.scheduledManager.isSlotNearScheduledNotification(slot.hour, slot.minute, 30))
+          continue;
+
+        picked.push({ ...slot, isCatchup: true });
+        catchupAddedCount++;
+      }
+
+      if (catchupAddedCount < catchupLimit) {
+        await this.storageService.insertBackgroundLogAsync(
+          'reminder',
+          `Limited slots: Only planned ${catchupAddedCount}/${catchupLimit} catchup reminders for ${date.toDateString()}`
         );
-
-        let catchupAdded = 0;
-        for (const slot of scores) {
-          if (catchupAdded >= catchupLimit) break;
-          if (slot.score < 0.2) continue; // Lower threshold for catchup slots
-          if (
-            await this.scheduledManager.isSlotNearScheduledNotification(slot.hour, slot.minute, 30)
-          )
-            continue;
-
-          picked.push({ ...slot, isCatchup: true });
-          catchupAdded++;
-        }
       }
     }
 
-    return picked.sort((a, b) => a.hour * 60 + a.minute - (b.hour * 60 + b.minute));
+    // Return ONLY the newly planned slots (filter out initialSlots)
+    const newlyPlanned = picked.filter(
+      (p) => !initialSlots.some((init) => init.hour === p.hour && init.minute === p.minute)
+    );
+
+    return newlyPlanned.sort((a, b) => a.hour * 60 + a.minute - (b.hour * 60 + b.minute));
   }
 
   private slotToDate(baseDate: Date, slot: { hour: number; minute: number }): Date {
