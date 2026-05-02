@@ -607,7 +607,6 @@ export class SmartReminderScheduler implements ISmartReminderScheduler {
       );
 
       let catchupAddedCount = 0;
-      const initialCatchup = initialSlots.filter((s) => s.isCatchup).length;
       for (const slot of scores) {
         if (picked.filter((p) => p.isCatchup).length >= catchupLimit) break;
         if (slot.score < MIN_CATCHUP_SCORE_THRESHOLD) continue;
