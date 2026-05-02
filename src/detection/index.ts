@@ -9,6 +9,7 @@ import { verifyHealthConnectPermissions } from './healthConnectIntent';
 import { startGeofenceTracking, stopGeofenceTracking } from './gpsDetection';
 import { getSettingAsync, setSettingAsync } from '../storage';
 import { PermissionService } from './PermissionService';
+import { ActivityTransitionModule } from '../modules/ActivityTransitionModule';
 import { clampRadiusMeters, computeDwellClusters, autoDetectLocations } from './GeofenceManager';
 
 // Setting keys for the user's explicit intent (independent of OS permission state)
