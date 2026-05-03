@@ -6,6 +6,8 @@ import { StorageService } from '../storage/StorageService';
 import { createContainer } from '../core/container';
 import { getSmartReminderScheduler, CHANNEL_ID } from '../notifications/notificationManager';
 import { colors } from '../utils/theme';
+import { DWELL_NOTIFICATION_ID, DWELL_NOTIFICATION_DELAY_SECONDS } from '../detection/constants';
+import { t } from '../i18n';
 
 interface HeadlessData {
   type: string;
@@ -80,10 +82,44 @@ export const handleSmartReminder = async (data: HeadlessData) => {
         `Motion: ${activity} | State: ${transition}`
       );
 
-      // Simple logic: If WALKING/RUNNING/BICYCLE, we might want to ensure GPS is active
-      // If STILL or IN_VEHICLE, we might want to pause GPS to save battery.
-      // However, for this first iteration, we just log it for transparency as requested.
-      // We will also use this to trigger a foreground catch-up if needed.
+      // --- DWELL TIME LOGIC ---
+      // We only care about ENTER transitions (becoming STILL, becoming WALKING, etc.)
+      if (transition === 'ENTER') {
+        if (activity === 'STILL') {
+          const isOutside = (await storageService.getSettingAsync('gps_last_outside', '0')) === '1';
+
+          if (isOutside) {
+            console.log('[SR_HEADLESS] User is STILL and OUTSIDE. Scheduling dwell-time prompt.');
+            await Notifications.scheduleNotificationAsync({
+              identifier: DWELL_NOTIFICATION_ID,
+              content: {
+                title: t('dwell_prompt_title'),
+                body: t('dwell_prompt_body'),
+                data: { type: 'dwell_prompt' },
+                color: colors.grass,
+              },
+              trigger: {
+                seconds: DWELL_NOTIFICATION_DELAY_SECONDS,
+                channelId: CHANNEL_ID,
+              } as Notifications.NotificationTriggerInput,
+            });
+          } else {
+            console.log('[SR_HEADLESS] User is STILL but INSIDE. Ignoring dwell-time logic.');
+          }
+        } else if (
+          activity === 'WALKING' ||
+          activity === 'RUNNING' ||
+          activity === 'ON_BICYCLE' ||
+          activity === 'IN_VEHICLE'
+        ) {
+          console.log(`[SR_HEADLESS] User is moving (${activity}). Canceling dwell-time prompt.`);
+          await Notifications.cancelScheduledNotificationAsync(DWELL_NOTIFICATION_ID);
+        }
+      } else if (transition === 'EXIT' && activity === 'STILL') {
+        // If they stop being STILL, cancel the timer
+        await Notifications.cancelScheduledNotificationAsync(DWELL_NOTIFICATION_ID);
+      }
+
       return;
     }
 

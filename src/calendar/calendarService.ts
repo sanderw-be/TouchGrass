@@ -1,5 +1,4 @@
 import * as Calendar from 'expo-calendar';
-import { AppState } from 'react-native';
 import { getSettingAsync, setSettingAsync } from '../storage';
 import { t } from '../i18n';
 

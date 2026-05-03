@@ -12,6 +12,7 @@ import { emitSessionsChanged } from '../utils/sessionsChangedEmitter';
 import { haversineDistance } from './utils';
 import {
   LOCATION_TRACK_TASK,
+  GEOFENCE_TASK,
   PROFILE_LOW_ACCURACY,
   PROFILE_HIGH_ACCURACY,
   BURST_DURATION_MS,
@@ -113,6 +114,37 @@ export class LocationTracker {
     const isTracking = await Location.hasStartedLocationUpdatesAsync(LOCATION_TRACK_TASK);
     if (isTracking) {
       await Location.stopLocationUpdatesAsync(LOCATION_TRACK_TASK);
+    }
+  }
+
+  public async startGeofencing(): Promise<void> {
+    const { status: fg } = await Location.getForegroundPermissionsAsync();
+    const { status: bg } = await Location.getBackgroundPermissionsAsync();
+
+    if (fg !== 'granted' || bg !== 'granted') return;
+
+    const locations = await getKnownLocationsAsync();
+    const indoorLocations = locations.filter((l) => l.isIndoor);
+    if (indoorLocations.length === 0) return;
+
+    const regions: Location.LocationRegion[] = indoorLocations.map((l) => ({
+      identifier: l.label || `loc_${l.id}`,
+      latitude: l.latitude,
+      longitude: l.longitude,
+      radius: l.radiusMeters,
+      notifyOnEnter: true,
+      notifyOnExit: true,
+    }));
+
+    await Location.startGeofencingAsync(GEOFENCE_TASK, regions);
+    await insertBackgroundLogAsync('gps', `Started geofencing with ${regions.length} regions`);
+  }
+
+  public async stopGeofencing(): Promise<void> {
+    const isRunning = await TaskManager.isTaskRegisteredAsync(GEOFENCE_TASK);
+    if (isRunning) {
+      await Location.stopGeofencingAsync(GEOFENCE_TASK);
+      await insertBackgroundLogAsync('gps', 'Stopped geofencing');
     }
   }
 

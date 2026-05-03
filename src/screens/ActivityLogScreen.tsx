@@ -117,31 +117,30 @@ export default function ActivityLogScreen() {
     () => [
       {
         id: 'health_connect' as SectionKey,
-        title: t('activity_log_section_hc'),
+        title: t('activity_log_section_hc', { locale }),
         icon: 'fitness-outline' as const,
         data: hcLogs,
       },
       {
         id: 'gps' as SectionKey,
-        title: t('activity_log_section_gps'),
+        title: t('activity_log_section_gps', { locale }),
         icon: 'location-outline' as const,
         data: gpsLogs,
       },
       {
         id: 'activity_recognition' as SectionKey,
-        title: t('settings_activity_recognition'),
+        title: t('settings_activity_recognition', { locale }),
         icon: 'battery-charging-outline' as const,
         data: arLogs,
       },
       {
         id: 'reminder' as SectionKey,
-        title: t('activity_log_section_reminders'),
+        title: t('activity_log_section_reminders', { locale }),
         icon: 'notifications-outline' as const,
         data: reminderLogs,
       },
     ],
     // locale is included to ensure titles refresh when language changes
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [hcLogs, gpsLogs, arLogs, reminderLogs, locale]
   );
 

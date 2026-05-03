@@ -633,6 +633,12 @@ const en = {
   session_notes_gps_returned:
     'GPS detection, returned to {{end}} for {{dist}} {{distUnit}} at {{speed}} {{speedUnit}}.',
   session_notes_gps_no_location: 'GPS detection, {{dist}} {{distUnit}} at {{speed}} {{speedUnit}}.',
+  location_unknown: 'Unknown location',
+  location_somewhere: 'somewhere',
+  gps_session_notes_template:
+    'Outdoor session: Left {{startLabel}} and returned to {{regionName}}.',
+  dwell_prompt_title: "You've been here a while",
+  dwell_prompt_body: 'Want to save this location?',
   // Health Connect descriptions — {{steps}} = formatted number, {{speed}} = numeric speed, {{speedUnit}} = "km/h" or "mph"
   session_notes_hc_steps: 'Health Connect, {{steps}} steps at {{speed}} {{speedUnit}}.',
   session_notes_hc_exercise: 'Health Connect, {{exerciseName}}.',

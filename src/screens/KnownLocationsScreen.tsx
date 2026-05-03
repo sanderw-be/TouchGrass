@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useLayoutEffect, useMemo, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Switch, Alert } from 'react-native';
 import { ResponsiveGridList } from '../components/ResponsiveGridList';
-import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Location from 'expo-location';
@@ -12,7 +12,7 @@ import {
   getSettingAsync,
   setSettingAsync,
 } from '../storage';
-import { getDetectionStatus } from '../detection/index';
+import { getDetectionStatus, refreshDetectionSync } from '../detection/index';
 import { spacing, radius, ThemeColors, Shadows } from '../utils/theme';
 import { useAppStore } from '../store/useAppStore';
 import { t } from '../i18n';
@@ -25,6 +25,7 @@ export default function KnownLocationsScreen() {
   const locale = useAppStore((state) => state.locale);
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const navigation = useNavigation<StackNavigationProp<SettingsStackParamList>>();
+  const route = useRoute<RouteProp<SettingsStackParamList, 'KnownLocations'>>();
   const insets = useSafeAreaInsets();
   const [suggestionsEnabled, setSuggestionsEnabled] = useState(true);
   const [gpsActive, setGpsActive] = useState(false);
@@ -56,12 +57,6 @@ export default function KnownLocationsScreen() {
     }
   }, []);
 
-  useFocusEffect(
-    useCallback(() => {
-      loadData();
-    }, [loadData])
-  );
-
   const handleAddLocation = useCallback(async () => {
     try {
       // Try last known position first (instant), fall back to a fresh fix
@@ -78,6 +73,18 @@ export default function KnownLocationsScreen() {
       Alert.alert(t('location_position_error_title'), t('location_position_error_body'));
     }
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+
+      if (route.params?.action === 'create') {
+        handleAddLocation();
+        // Clear params so it doesn't open again on re-focus
+        navigation.setParams({ action: undefined });
+      }
+    }, [loadData, handleAddLocation, route.params, navigation])
+  );
 
   // Add "+" button to the stack navigator header
   useLayoutEffect(() => {
@@ -104,6 +111,8 @@ export default function KnownLocationsScreen() {
   const afterSave = useCallback(() => {
     loadData();
     closeSheet();
+    // Refresh geofencing so the new/updated location is registered with the OS
+    refreshDetectionSync();
   }, [loadData, closeSheet]);
 
   const toggleSuggestions = async (value: boolean) => {

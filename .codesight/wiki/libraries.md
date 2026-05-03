@@ -2,13 +2,13 @@
 
 > **Navigation aid.** Library inventory extracted via AST. Read the source files listed here before modifying exported functions.
 
-**57 library files** across 12 modules
+**58 library files** across 13 modules
 
 ## Detection (13 files)
 
 - `src\detection\index.ts` — initDetection, checkWeatherLocationPermissions, requestWeatherLocationPermissions, checkGPSPermissions, requestGPSPermissions, refreshDetectionSync, …
 - `src\detection\GeofenceManager.ts` — isAtKnownIndoorLocation, wasDefinitelyAtKnownIndoorLocationSync, shouldTriggerBurst, computeMinActiveRadius, clampRadiusMeters, createClusterObject, …
-- `src\detection\gpsDetection.ts` — loadGPSState, requestLocationPermissions, computeMinActiveRadius, startLocationTracking, stopLocationTracking, switchLocationProfile, …
+- `src\detection\gpsDetection.ts` — loadGPSState, requestLocationPermissions, computeMinActiveRadius, startLocationTracking, stopLocationTracking, startGeofenceTracking, …
 - `src\detection\sessionConfidence.ts` — loadTimeSlotProbabilities, getTimeSlotProbability, updateTimeSlotProbability, scoreDuration, computeSessionScore, computeSessionScoreFromProbs
 - `src\detection\healthConnect.ts` — isHealthConnectAvailable, requestHealthPermissions, openHealthConnectForManagement, syncHealthConnect
 - `src\detection\manualCheckin.ts` — logManualSession, logManualSessionAsync, startManualSession
@@ -96,6 +96,10 @@
 ## I18n (1 files)
 
 - `src\i18n\index.ts` — resolveSupportedLocale, getDeviceSupportedLocale, t, localeTag, formatLocalDate, formatLocalTime, …
+
+## Navigation (1 files)
+
+- `src\navigation\navigationRef.ts` — navigate, navigationRef
 
 ---
 

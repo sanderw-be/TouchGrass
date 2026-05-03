@@ -2,9 +2,9 @@
 
 > **Stack:** raw-http | none | react | typescript
 
-> 0 routes | 0 models | 39 components | 57 lib files | 3 env vars | 1 middleware | 0% test coverage
-> **Token savings:** this file is ~6.300 tokens. Without it, AI exploration would cost ~37.200 tokens. **Saves ~31.000 tokens per conversation.**
-> **Last scanned:** 2026-05-02 08:27 — re-run after significant changes
+> 0 routes | 0 models | 39 components | 58 lib files | 3 env vars | 1 middleware | 0% test coverage
+> **Token savings:** this file is ~6.300 tokens. Without it, AI exploration would cost ~37.500 tokens. **Saves ~31.200 tokens per conversation.**
+> **Last scanned:** 2026-05-03 05:45 — re-run after significant changes
 
 ---
 
@@ -85,8 +85,8 @@
   - function computeMinActiveRadius: (locations) => number
   - function startLocationTracking: (profile, minRadiusMeters) => Promise<void>
   - function stopLocationTracking: () => Promise<void>
-  - function switchLocationProfile: (profile, minRadiusMeters) => Promise<void>
-  - _...2 more_
+  - function startGeofenceTracking: () => Promise<void>
+  - _...4 more_
 - `src\detection\GpsSessionBuilder.ts` — function buildGpsNotes: (startLocationLabel, endLocationLabel, distanceMeters, averageSpeedKmh) => string
 - `src\detection\healthConnect.ts`
   - function isHealthConnectAvailable: () => Promise<boolean>
@@ -157,6 +157,7 @@
   - function formatLocalDate: (ms, options?) => string
   - function formatLocalTime: (ms) => string
   - _...2 more_
+- `src\navigation\navigationRef.ts` — function navigate: (name, params?) => void, const navigationRef
 - `src\notifications\notificationManager.ts`
   - function getNotificationInfrastructureService
   - function getSmartReminderScheduler
@@ -327,16 +328,16 @@
 - `src\storage\StorageService.ts` — imported by **10** files
 - `src\utils\helpers.ts` — imported by **10** files
 - `src\storage\db.ts` — imported by **10** files
+- `src\utils\sessionsChangedEmitter.ts` — imported by **9** files
 - `src\storage\types.ts` — imported by **9** files
 - `src\detection\index.ts` — imported by **8** files
 - `src\detection\manualCheckin.ts` — imported by **8** files
-- `src\utils\sessionsChangedEmitter.ts` — imported by **8** files
 - `src\i18n\en.ts` — imported by **8** files
 - `src\utils\widgetHelper.ts` — imported by **7** files
+- `src\detection\sessionMerger.ts` — imported by **7** files
 - `src\weather\weatherService.ts` — imported by **7** files
 - `src\hooks\useTheme.ts` — imported by **6** files
 - `src\detection\PermissionService.ts` — imported by **6** files
-- `src\detection\sessionMerger.ts` — imported by **6** files
 - `src\calendar\calendarService.ts` — imported by **6** files
 - `src\utils\constants.ts` — imported by **6** files
 - `src\navigation\AppNavigator.tsx` — imported by **5** files
@@ -350,9 +351,9 @@
 - `src\storage\StorageService.ts` ← `src\background\smartReminderTask.ts`, `src\core\container.ts`, `src\notifications\services\NotificationResponseHandler.ts`, `src\notifications\services\ReminderMessageBuilder.ts`, `src\notifications\services\ReminderQueueManager.ts` +5 more
 - `src\utils\helpers.ts` ← `src\components\EditSessionSheet.tsx`, `src\components\ManualSessionSheet.tsx`, `src\components\ProgressRing.tsx`, `src\components\ReminderFeedbackModal.tsx`, `src\i18n\index.ts` +5 more
 - `src\storage\db.ts` ← `src\storage\index.ts`, `src\storage\repositories\GoalRepository.ts`, `src\storage\repositories\LocationRepository.ts`, `src\storage\repositories\LogRepository.ts`, `src\storage\repositories\NotificationRepository.ts` +5 more
+- `src\utils\sessionsChangedEmitter.ts` ← `src\background\geofenceTask.ts`, `src\detection\HealthSessionBuilder.ts`, `src\detection\LocationTracker.ts`, `src\navigation\AppNavigator.tsx`, `src\screens\EventsScreen.tsx` +4 more
 - `src\storage\types.ts` ← `src\domain\SessionDomain.ts`, `src\storage\index.ts`, `src\storage\repositories\GoalRepository.ts`, `src\storage\repositories\LocationRepository.ts`, `src\storage\repositories\LogRepository.ts` +4 more
 - `src\detection\index.ts` ← `appBootstrap.ts`, `src\screens\HealthConnectRationaleScreen.tsx`, `src\screens\KnownLocationsScreen.tsx`, `src\__tests__\detectionBackgroundTask.test.ts`, `src\__tests__\IntroScreen.test.tsx` +3 more
-- `src\detection\manualCheckin.ts` ← `src\components\ManualSessionSheet.tsx`, `src\screens\HomeScreen.tsx`, `src\widget\widget-task-handler.tsx`, `src\__tests__\ManualSessionSheet.test.tsx`, `src\__tests__\ManualSessionSheet.test.tsx` +3 more
 
 ---
 

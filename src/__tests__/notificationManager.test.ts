@@ -1022,7 +1022,6 @@ describe('notificationManager', () => {
         for (const call of scoreCalls) {
           const baseDateMs = call[5];
           if (baseDateMs !== undefined) {
-            const baseDate = new Date(baseDateMs);
             // We now ALLOW calling for today (14) to fill gaps
           }
         }
