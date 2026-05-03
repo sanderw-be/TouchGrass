@@ -8,6 +8,7 @@ import { getSmartReminderScheduler, CHANNEL_ID } from '../notifications/notifica
 import { colors } from '../utils/theme';
 import { DWELL_NOTIFICATION_ID, DWELL_NOTIFICATION_DELAY_SECONDS } from '../detection/constants';
 import { t } from '../i18n';
+import { requestWidgetRefresh } from '../utils/widgetHelper';
 
 interface HeadlessData {
   type: string;
@@ -61,6 +62,17 @@ export const handleSmartReminder = async (data: HeadlessData) => {
 
     const smartRemindersCount =
       parseInt(await storageService.getSettingAsync('smart_reminders_count', '2'), 10) || 2;
+
+    if (data.type === 'widget_reset') {
+      console.log('[SR_HEADLESS] Widget reset triggered.');
+      await storageService.insertBackgroundLogAsync('widget', 'Midnight widget reset triggered');
+      try {
+        await requestWidgetRefresh();
+      } catch (e) {
+        console.error('[SR_HEADLESS] Failed to refresh widget:', e);
+      }
+      return;
+    }
 
     if (data.type === 'boot_replan') {
       console.log('[SR_HEADLESS] Chain broken detected on boot. Replanning.');
