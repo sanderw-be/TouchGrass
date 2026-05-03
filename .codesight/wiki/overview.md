@@ -19,9 +19,9 @@ Changes to these files have the widest blast radius across the codebase:
 - `src\utils\theme.ts` — imported by **37** files
 - `src\store\useAppStore.ts` — imported by **33** files
 - `src\notifications\notificationManager.ts` — imported by **13** files
+- `src\detection\PermissionService.ts` — imported by **13** files
 - `src\storage\StorageService.ts` — imported by **11** files
 - `src\components\ResponsiveGridList.tsx` — imported by **11** files
-- `src\utils\helpers.ts` — imported by **10** files
 
 ## Required Environment Variables
 
