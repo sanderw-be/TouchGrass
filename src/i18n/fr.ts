@@ -609,8 +609,8 @@ const fr: TranslationType = {
   location_somewhere: 'quelque part',
   gps_session_notes_template:
     'Session en extérieur : Départ de {{startLabel}} et retour à {{regionName}}.',
-  dwell_prompt_title: 'Toujours dehors ? 🌿',
-  dwell_prompt_body: 'Appuyez pour enregistrer votre position actuelle en tant que session.',
+  dwell_prompt_title: 'Vous êtes ici depuis un moment',
+  dwell_prompt_body: 'Voulez-vous enregistrer ce lieu ?',
   // Health Connect descriptions — {{steps}} = formatted number, {{speed}} = numeric speed, {{speedUnit}} = "km/h" or "mph"
   session_notes_hc_steps: 'Santé : {{steps}} pas ({{speed}} {{speedUnit}}).',
   session_notes_hc_exercise: 'Santé : {{exerciseName}}.',

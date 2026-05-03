@@ -601,8 +601,8 @@ const ptBR: TranslationType = {
   location_somewhere: 'algum lugar',
   gps_session_notes_template:
     'Sessão ao ar livre: Saiu de {{startLabel}} e voltou para {{regionName}}.',
-  dwell_prompt_title: 'Ainda na rua? 🌿',
-  dwell_prompt_body: 'Toque para salvar sua localização atual como uma sessão.',
+  dwell_prompt_title: 'Você está aqui há um tempo',
+  dwell_prompt_body: 'Quer salvar este local?',
   session_notes_hc_steps: 'Health: {{steps}} passos ({{speed}} {{speedUnit}}).',
   session_notes_hc_exercise: 'Health: {{exerciseName}}.',
   unit_speed_metric: 'km/h',

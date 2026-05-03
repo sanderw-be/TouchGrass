@@ -605,8 +605,8 @@ const ja: TranslationType = {
   location_somewhere: 'どこか',
   gps_session_notes_template:
     '屋外セッション：{{startLabel}}を出発し、{{regionName}}に戻りました。',
-  dwell_prompt_title: 'まだ外にいますか？ 🌿',
-  dwell_prompt_body: 'タップして現在の場所をセッションとして保存します。',
+  dwell_prompt_title: 'ここにしばらく滞在していますね',
+  dwell_prompt_body: 'この場所を保存しますか？',
   // Health Connect descriptions — {{steps}} = formatted number, {{speed}} = numeric speed, {{speedUnit}} = "km/h" or "mph"
   session_notes_hc_steps: 'Health: {{steps}}歩 ({{speed}}{{speedUnit}})。',
   session_notes_hc_exercise: 'Health: {{exerciseName}}。',
