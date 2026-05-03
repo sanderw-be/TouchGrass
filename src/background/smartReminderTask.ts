@@ -62,6 +62,18 @@ export const handleSmartReminder = async (data: HeadlessData) => {
     const smartRemindersCount =
       parseInt(await storageService.getSettingAsync('smart_reminders_count', '2'), 10) || 2;
 
+    if (data.type === 'widget_reset') {
+      console.log('[SR_HEADLESS] Widget reset triggered.');
+      await storageService.insertBackgroundLogAsync('widget', 'Midnight widget reset triggered');
+      try {
+        const { requestWidgetRefresh } = require('../utils/widgetHelper');
+        await requestWidgetRefresh();
+      } catch (e) {
+        console.error('[SR_HEADLESS] Failed to refresh widget:', e);
+      }
+      return;
+    }
+
     if (data.type === 'boot_replan') {
       console.log('[SR_HEADLESS] Chain broken detected on boot. Replanning.');
       await storageService.insertBackgroundLogAsync(

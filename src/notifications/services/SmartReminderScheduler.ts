@@ -450,6 +450,24 @@ export class SmartReminderScheduler implements ISmartReminderScheduler {
         }
       }
 
+      // 4.5 Schedule Widget Resets at Midnight (Next 48h)
+      // This ensures the widget UI is refreshed at the start of every new day.
+      const nextMidnight = new Date(now);
+      nextMidnight.setHours(24, 0, 0, 0);
+
+      const midnights = [nextMidnight];
+      const secondMidnight = new Date(nextMidnight);
+      secondMidnight.setDate(secondMidnight.getDate() + 1);
+      midnights.push(secondMidnight);
+
+      for (const m of midnights) {
+        allPlannedItems.push({
+          timestamp: m.getTime(),
+          type: 'widget_reset',
+          goalThreshold: 0,
+        });
+      }
+
       // 5. Sync with Native Module
       // We sort all planned items by timestamp before scheduling to ensure chronological order
       allPlannedItems.sort((a, b) => a.timestamp - b.timestamp);
