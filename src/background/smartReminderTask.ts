@@ -86,20 +86,26 @@ export const handleSmartReminder = async (data: HeadlessData) => {
       // We only care about ENTER transitions (becoming STILL, becoming WALKING, etc.)
       if (transition === 'ENTER') {
         if (activity === 'STILL') {
-          console.log('[SR_HEADLESS] User is STILL. Scheduling dwell-time prompt for 2 hours.');
-          await Notifications.scheduleNotificationAsync({
-            identifier: DWELL_NOTIFICATION_ID,
-            content: {
-              title: t('dwell_prompt_title'),
-              body: t('dwell_prompt_body'),
-              data: { type: 'dwell_prompt' },
-              color: colors.grass,
-            },
-            trigger: {
-              seconds: DWELL_NOTIFICATION_DELAY_SECONDS,
-              channelId: CHANNEL_ID,
-            } as Notifications.NotificationTriggerInput,
-          });
+          const isOutside = (await storageService.getSettingAsync('gps_last_outside', '0')) === '1';
+
+          if (isOutside) {
+            console.log('[SR_HEADLESS] User is STILL and OUTSIDE. Scheduling dwell-time prompt.');
+            await Notifications.scheduleNotificationAsync({
+              identifier: DWELL_NOTIFICATION_ID,
+              content: {
+                title: t('dwell_prompt_title'),
+                body: t('dwell_prompt_body'),
+                data: { type: 'dwell_prompt' },
+                color: colors.grass,
+              },
+              trigger: {
+                seconds: DWELL_NOTIFICATION_DELAY_SECONDS,
+                channelId: CHANNEL_ID,
+              } as Notifications.NotificationTriggerInput,
+            });
+          } else {
+            console.log('[SR_HEADLESS] User is STILL but INSIDE. Ignoring dwell-time logic.');
+          }
         } else if (
           activity === 'WALKING' ||
           activity === 'RUNNING' ||
