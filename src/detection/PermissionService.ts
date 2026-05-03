@@ -1,6 +1,6 @@
 import * as Location from 'expo-location';
 import { initialize, requestPermission } from 'react-native-health-connect';
-import { PermissionsAndroid } from 'react-native';
+import { PermissionsAndroid, Permission, Platform } from 'react-native';
 import { setSettingAsync } from '../storage';
 import {
   openHealthConnectPermissionsViaIntent,
@@ -17,9 +17,23 @@ export class PermissionService {
     granted: boolean;
     canAskAgain: boolean;
   }> {
-    const { status: fg, canAskAgain: fgCanAsk } =
-      await Location.requestForegroundPermissionsAsync();
-    if (fg !== 'granted') return { granted: false, canAskAgain: fgCanAsk };
+    // 1. Check Foreground
+    const { status: currentFg } = await Location.getForegroundPermissionsAsync();
+
+    if (currentFg !== 'granted') {
+      const { status: fg, canAskAgain: fgCanAsk } =
+        await Location.requestForegroundPermissionsAsync();
+      if (fg !== 'granted') return { granted: false, canAskAgain: fgCanAsk };
+    }
+
+    // 2. Check Background
+    const { status: currentBg, canAskAgain: bgCanAskAgain } =
+      await Location.getBackgroundPermissionsAsync();
+    if (currentBg === 'granted') {
+      return { granted: true, canAskAgain: bgCanAskAgain };
+    }
+
+    // 3. Request Background (sequentially as required by Android 11+)
     const { status: bg, canAskAgain: bgCanAsk } =
       await Location.requestBackgroundPermissionsAsync();
     return { granted: bg === 'granted', canAskAgain: bgCanAsk };
@@ -84,6 +98,9 @@ export class PermissionService {
    */
   public static async requestWeatherLocationPermissions(): Promise<boolean> {
     try {
+      const { status: current } = await Location.getForegroundPermissionsAsync();
+      if (current === 'granted') return true;
+
       const { status } = await Location.requestForegroundPermissionsAsync();
       return status === 'granted';
     } catch (e) {
@@ -101,8 +118,16 @@ export class PermissionService {
   }
 
   public static async checkActivityRecognitionPermissions(): Promise<boolean> {
+    if (Platform.OS !== 'android') return true;
     try {
-      return await PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.ACTIVITY_RECOGNITION);
+      const apiLevel =
+        typeof Platform.Version === 'number' ? Platform.Version : parseInt(Platform.Version, 10);
+      if (apiLevel < 29) return true; // Granted at install time before Android 10
+
+      const permissionsMap = PermissionsAndroid.PERMISSIONS as Record<string, string>;
+      const perm = (permissionsMap.ACTIVITY_RECOGNITION ||
+        'android.permission.ACTIVITY_RECOGNITION') as Permission;
+      return await PermissionsAndroid.check(perm);
     } catch (e) {
       console.warn('Activity Recognition permission check error:', e);
       return false;
@@ -113,10 +138,21 @@ export class PermissionService {
     granted: boolean;
     canAskAgain: boolean;
   }> {
+    if (Platform.OS !== 'android') return { granted: true, canAskAgain: true };
+
     try {
-      const result = await PermissionsAndroid.request(
-        PermissionsAndroid.PERMISSIONS.ACTIVITY_RECOGNITION
-      );
+      const apiLevel =
+        typeof Platform.Version === 'number' ? Platform.Version : parseInt(Platform.Version, 10);
+      if (apiLevel < 29) return { granted: true, canAskAgain: true };
+
+      const permissionsMap = PermissionsAndroid.PERMISSIONS as Record<string, string>;
+      const perm = (permissionsMap.ACTIVITY_RECOGNITION ||
+        'android.permission.ACTIVITY_RECOGNITION') as Permission;
+
+      const isGranted = await PermissionsAndroid.check(perm);
+      if (isGranted) return { granted: true, canAskAgain: true };
+
+      const result = await PermissionsAndroid.request(perm);
       const granted = result === PermissionsAndroid.RESULTS.GRANTED;
       const canAskAgain = result !== PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN;
       return { granted, canAskAgain };

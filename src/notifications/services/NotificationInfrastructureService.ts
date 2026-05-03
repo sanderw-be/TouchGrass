@@ -152,6 +152,12 @@ export class NotificationInfrastructureService implements INotificationInfrastru
     granted: boolean;
     canAskAgain: boolean;
   }> {
+    const { status: currentStatus, canAskAgain: currentCanAsk } =
+      await Notifications.getPermissionsAsync();
+    if (currentStatus === 'granted') {
+      return { granted: true, canAskAgain: currentCanAsk };
+    }
+
     const { status, canAskAgain } = await Notifications.requestPermissionsAsync();
     if (status !== 'granted') {
       console.log('TouchGrass: Notification permissions not granted');
