@@ -16,7 +16,6 @@ import {
 } from '../storage';
 import { submitSession, buildSession } from '../detection/sessionMerger';
 import { emitSessionsChanged } from '../utils/sessionsChangedEmitter';
-import { colors } from '../utils/theme';
 import { t } from '../i18n';
 
 /**

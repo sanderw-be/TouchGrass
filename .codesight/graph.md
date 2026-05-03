@@ -2,7 +2,7 @@
 
 ## Most Imported Files (change these carefully)
 
-- `src\utils\theme.ts` — imported by **38** files
+- `src\utils\theme.ts` — imported by **37** files
 - `src\store\useAppStore.ts` — imported by **33** files
 - `src\notifications\notificationManager.ts` — imported by **12** files
 - `src\components\ResponsiveGridList.tsx` — imported by **11** files
@@ -25,7 +25,7 @@
 
 ## Import Map (who imports what)
 
-- `src\utils\theme.ts` ← `src\background\geofenceTask.ts`, `src\background\smartReminderTask.ts`, `src\components\DiagnosticSheet.tsx`, `src\components\EditLocationSheet.tsx`, `src\components\EditSessionSheet.tsx` +33 more
+- `src\utils\theme.ts` ← `src\background\smartReminderTask.ts`, `src\components\DiagnosticSheet.tsx`, `src\components\EditLocationSheet.tsx`, `src\components\EditSessionSheet.tsx`, `src\components\ErrorBoundary.tsx` +32 more
 - `src\store\useAppStore.ts` ← `App.tsx`, `src\components\DiagnosticSheet.tsx`, `src\components\EditLocationSheet.tsx`, `src\components\EditSessionSheet.tsx`, `src\components\ErrorBoundary.tsx` +28 more
 - `src\notifications\notificationManager.ts` ← `src\background\smartReminderTask.ts`, `src\hooks\useForegroundSync.ts`, `src\hooks\useGoalIntegrations.ts`, `src\notifications\services\ReminderQueueManager.ts`, `src\notifications\services\SmartReminderScheduler.ts` +7 more
 - `src\components\ResponsiveGridList.tsx` ← `src\screens\AboutAppScreen.tsx`, `src\screens\ActivityLogScreen.tsx`, `src\screens\EventsScreen.tsx`, `src\screens\FeedbackSupportScreen.tsx`, `src\screens\GoalsScreen.tsx` +6 more

@@ -53,7 +53,7 @@ export class NotificationResponseHandler implements INotificationResponseHandler
         await Notifications.dismissNotificationAsync(notificationId);
         const { DWELL_NOTIFICATION_ID } = await import('../../detection/constants');
         await Notifications.dismissNotificationAsync(DWELL_NOTIFICATION_ID);
-      } catch (e) {
+      } catch {
         // Best effort
       }
 
