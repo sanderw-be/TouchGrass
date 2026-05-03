@@ -46,6 +46,17 @@ export class NotificationResponseHandler implements INotificationResponseHandler
     const notifData = response.notification?.request?.content?.data;
     if (notifData?.type === 'dwell_prompt') {
       const { navigate } = await import('../../navigation/navigationRef');
+
+      // Explicitly dismiss this notification just in case the top-level dismiss didn't catch it
+      // or if it was using the constant ID instead of the dynamic instance ID.
+      try {
+        await Notifications.dismissNotificationAsync(notificationId);
+        const { DWELL_NOTIFICATION_ID } = await import('../../detection/constants');
+        await Notifications.dismissNotificationAsync(DWELL_NOTIFICATION_ID);
+      } catch (e) {
+        // Best effort
+      }
+
       // Navigate to Settings tab -> KnownLocations screen with create action
       navigate('Settings', {
         screen: 'KnownLocations',
