@@ -464,7 +464,7 @@ export class SmartReminderScheduler implements ISmartReminderScheduler {
         allPlannedItems.push({
           timestamp: m.getTime(),
           type: 'widget_reset',
-          goalThreshold: 0,
+          goalThreshold: 9999,
         });
       }
 

@@ -69,4 +69,18 @@ describe('handleSmartReminder - Widget Reset', () => {
       isHeadlessReplan: true,
     });
   });
+
+  it('should handle errors during widget refresh gracefully', async () => {
+    const error = new Error('Widget refresh failed');
+    (requestWidgetRefresh as jest.Mock).mockRejectedValueOnce(error);
+    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
+    await handleSmartReminder({ type: 'widget_reset' });
+
+    expect(requestWidgetRefresh).toHaveBeenCalled();
+    expect(consoleSpy).toHaveBeenCalledWith('[SR_HEADLESS] Failed to refresh widget:', error);
+    expect(mockScheduler.scheduleUpcomingReminders).toHaveBeenCalled();
+
+    consoleSpy.mockRestore();
+  });
 });

@@ -421,7 +421,7 @@ describe('notificationManager', () => {
       expect(SmartReminderModule.scheduleReminders).toHaveBeenCalledTimes(1);
       const scheduledItems = (
         SmartReminderModule.scheduleReminders as jest.Mock
-      ).mock.calls[0][0].filter((item: any) => item.type !== 'widget_reset');
+      ).mock.calls[0][0].filter((item: { type: string }) => item.type !== 'widget_reset');
       expect(scheduledItems).toHaveLength(2); // 2 smart (default catchup is 0)
 
       // Should preserve scheduled (user-configured) notifications
@@ -486,7 +486,7 @@ describe('notificationManager', () => {
       expect(SmartReminderModule.scheduleReminders).toHaveBeenCalledTimes(1);
       const scheduledItems = (
         SmartReminderModule.scheduleReminders as jest.Mock
-      ).mock.calls[0][0].filter((item: any) => item.type !== 'widget_reset');
+      ).mock.calls[0][0].filter((item: { type: string }) => item.type !== 'widget_reset');
       expect(scheduledItems).toHaveLength(4); // (2 smart + 2 catchup) for tomorrow
 
       jest.useRealTimers();
@@ -573,7 +573,7 @@ describe('notificationManager', () => {
       expect(SmartReminderModule.scheduleReminders).toHaveBeenCalledTimes(1);
       const scheduledItems = (
         SmartReminderModule.scheduleReminders as jest.Mock
-      ).mock.calls[0][0].filter((item: any) => item.type !== 'widget_reset');
+      ).mock.calls[0][0].filter((item: { type: string }) => item.type !== 'widget_reset');
       // 2 smart today + 2 catchup today + 2 smart tomorrow + 2 catchup tomorrow = 8 total
       expect(scheduledItems).toHaveLength(8);
 
@@ -703,7 +703,7 @@ describe('notificationManager', () => {
       expect(SmartReminderModule.scheduleReminders).toHaveBeenCalledTimes(1);
       const scheduledItems = (
         SmartReminderModule.scheduleReminders as jest.Mock
-      ).mock.calls[0][0].filter((item: any) => item.type !== 'widget_reset');
+      ).mock.calls[0][0].filter((item: { type: string }) => item.type !== 'widget_reset');
       const expectedDate = new Date('2026-03-14T14:30:00');
       expect(scheduledItems[0].timestamp).toBe(expectedDate.getTime());
 
@@ -758,7 +758,7 @@ describe('notificationManager', () => {
       expect(SmartReminderModule.scheduleReminders).toHaveBeenCalledTimes(1);
       const scheduledItems = (
         SmartReminderModule.scheduleReminders as jest.Mock
-      ).mock.calls[0][0].filter((item: any) => item.type !== 'widget_reset');
+      ).mock.calls[0][0].filter((item: { type: string }) => item.type !== 'widget_reset');
       // Expected: Today 17:30, 19:00, Tomorrow 09:00 = 3 total
       expect(scheduledItems).toHaveLength(3);
 
@@ -961,7 +961,7 @@ describe('notificationManager', () => {
       expect(SmartReminderModule.scheduleReminders).toHaveBeenCalledTimes(1);
       const scheduledItems = (
         SmartReminderModule.scheduleReminders as jest.Mock
-      ).mock.calls[0][0].filter((item: any) => item.type !== 'widget_reset');
+      ).mock.calls[0][0].filter((item: { type: string }) => item.type !== 'widget_reset');
       // 1 smart + 1 catchup today, 1 smart + 1 catchup tomorrow. Mock has 4 slots.
       expect(scheduledItems).toHaveLength(4);
 
@@ -1010,7 +1010,7 @@ describe('notificationManager', () => {
         expect(SmartReminderModule.scheduleReminders).toHaveBeenCalledTimes(1);
         const scheduledItems = (
           SmartReminderModule.scheduleReminders as jest.Mock
-        ).mock.calls[0][0].filter((item: any) => item.type !== 'widget_reset');
+        ).mock.calls[0][0].filter((item: { type: string }) => item.type !== 'widget_reset');
         expect(scheduledItems).toHaveLength(8);
 
         // Verify today's slots are the ORIGINAL ones, not re-scored
@@ -1080,7 +1080,7 @@ describe('notificationManager', () => {
         expect(SmartReminderModule.scheduleReminders).toHaveBeenCalledTimes(1);
         const scheduledItems = (
           SmartReminderModule.scheduleReminders as jest.Mock
-        ).mock.calls[0][0].filter((item: any) => item.type !== 'widget_reset');
+        ).mock.calls[0][0].filter((item: { type: string }) => item.type !== 'widget_reset');
         expect(scheduledItems).toHaveLength(4); // (2 smart + 2 catchup) for tomorrow
 
         jest.useRealTimers();
