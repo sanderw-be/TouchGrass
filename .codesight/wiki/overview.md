@@ -6,11 +6,11 @@
 
 ## Scale
 
-39 UI components · 57 library files · 1 middleware layers · 3 environment variables
+39 UI components · 58 library files · 1 middleware layers · 3 environment variables
 
 **UI:** 39 components (react) — see [ui.md](./ui.md)
 
-**Libraries:** 57 files — see [libraries.md](./libraries.md)
+**Libraries:** 58 files — see [libraries.md](./libraries.md)
 
 ## High-Impact Files
 
@@ -31,4 +31,4 @@ Changes to these files have the widest blast radius across the codebase:
 
 ---
 
-_Back to [index.md](./index.md) · Generated 2026-05-02_
+_Back to [index.md](./index.md) · Generated 2026-05-03_

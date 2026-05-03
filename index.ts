@@ -6,6 +6,7 @@ import { registerWidgetTaskHandler } from 'react-native-android-widget';
 import App from './App';
 import { widgetTaskHandler } from './src/widget/widget-task-handler';
 import { handleSmartReminder } from './src/background/smartReminderTask';
+import './src/background/geofenceTask';
 
 // Register the Android widget task handler as the very first executable
 // statement — before registerRootComponent so the headless JS boot path is

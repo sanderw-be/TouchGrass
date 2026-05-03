@@ -600,7 +600,13 @@ const ja: TranslationType = {
     'GPS: {{start}}〜{{end}}、{{dist}}{{distUnit}} ({{speed}}{{speedUnit}})。',
   session_notes_gps_left: 'GPS: {{start}}出発、{{dist}}{{distUnit}} ({{speed}}{{speedUnit}})。',
   session_notes_gps_returned: 'GPS: {{end}}到着、{{dist}}{{distUnit}} ({{speed}}{{speedUnit}})。',
-  session_notes_gps_no_location: 'GPS: {{dist}}{{distUnit}} ({{speed}}{{speedUnit}})。',
+  session_notes_gps_no_location: 'GPS検知、{{dist}} {{distUnit}}、時速 {{speed}} {{speedUnit}}。',
+  location_unknown: '不明な場所',
+  location_somewhere: 'どこか',
+  gps_session_notes_template:
+    '屋外セッション：{{startLabel}}を出発し、{{regionName}}に戻りました。',
+  dwell_prompt_title: 'ここにしばらく滞在していますね',
+  dwell_prompt_body: 'この場所を保存しますか？',
   // Health Connect descriptions — {{steps}} = formatted number, {{speed}} = numeric speed, {{speedUnit}} = "km/h" or "mph"
   session_notes_hc_steps: 'Health: {{steps}}歩 ({{speed}}{{speedUnit}})。',
   session_notes_hc_exercise: 'Health: {{exerciseName}}。',

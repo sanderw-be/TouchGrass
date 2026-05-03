@@ -31,8 +31,8 @@
   - function computeMinActiveRadius: (locations) => number
   - function startLocationTracking: (profile, minRadiusMeters) => Promise<void>
   - function stopLocationTracking: () => Promise<void>
-  - function switchLocationProfile: (profile, minRadiusMeters) => Promise<void>
-  - _...2 more_
+  - function startGeofenceTracking: () => Promise<void>
+  - _...4 more_
 - `src\detection\GpsSessionBuilder.ts` — function buildGpsNotes: (startLocationLabel, endLocationLabel, distanceMeters, averageSpeedKmh) => string
 - `src\detection\healthConnect.ts`
   - function isHealthConnectAvailable: () => Promise<boolean>
@@ -103,6 +103,7 @@
   - function formatLocalDate: (ms, options?) => string
   - function formatLocalTime: (ms) => string
   - _...2 more_
+- `src\navigation\navigationRef.ts` — function navigate: (name, params?) => void, const navigationRef
 - `src\notifications\notificationManager.ts`
   - function getNotificationInfrastructureService
   - function getSmartReminderScheduler

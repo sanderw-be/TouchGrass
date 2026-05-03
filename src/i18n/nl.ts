@@ -617,6 +617,11 @@ const nl: TranslationType = {
   session_notes_gps_returned:
     'Lokaal GPS: Terug bij {{end}} na {{dist}} {{distUnit}} ({{speed}} {{speedUnit}}).',
   session_notes_gps_no_location: 'Lokaal GPS: {{dist}} {{distUnit}} ({{speed}} {{speedUnit}}).',
+  location_unknown: 'Onbekende locatie',
+  location_somewhere: 'ergens',
+  gps_session_notes_template: 'Lokaal GPS: Vertrek {{startLabel}}, naar {{regionName}}.',
+  dwell_prompt_title: 'Je bent hier al een tijdje',
+  dwell_prompt_body: 'Wil je deze locatie opslaan?',
   // Health Connect-omschrijvingen — {{steps}} = opgemaakt getal, {{speed}} = numerieke snelheid, {{speedUnit}} = "km/u" of "mph"
   session_notes_hc_steps: 'Health Connect: {{steps}} stappen ({{speed}} {{speedUnit}}).',
   session_notes_hc_exercise: 'Health Connect: {{exerciseName}}.',

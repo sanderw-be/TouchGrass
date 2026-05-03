@@ -605,7 +605,13 @@ const es: TranslationType = {
   session_notes_gps_left: 'GPS: Salida {{start}}, {{dist}} {{distUnit}} ({{speed}} {{speedUnit}}).',
   session_notes_gps_returned:
     'GPS: Retorno {{end}}, {{dist}} {{distUnit}} ({{speed}} {{speedUnit}}).',
-  session_notes_gps_no_location: 'GPS: {{dist}} {{distUnit}} ({{speed}} {{speedUnit}}).',
+  session_notes_gps_no_location: 'Detección GPS: {{dist}} {{distUnit}} a {{speed}} {{speedUnit}}.',
+  location_unknown: 'Ubicación desconocida',
+  location_somewhere: 'algún lugar',
+  gps_session_notes_template:
+    'Sesión al aire libre: Salió de {{startLabel}} y regresó a {{regionName}}.',
+  dwell_prompt_title: 'Llevas un tiempo aquí',
+  dwell_prompt_body: '¿Quieres guardar esta ubicación?',
   // Health Connect descriptions — {{steps}} = formatted number, {{speed}} = numeric speed, {{speedUnit}} = "km/h" or "mph"
   session_notes_hc_steps: 'Health: {{steps}} pasos ({{speed}} {{speedUnit}}).',
   session_notes_hc_exercise: 'Health: {{exerciseName}}.',

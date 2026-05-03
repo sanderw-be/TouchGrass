@@ -35,6 +35,14 @@ export async function stopLocationTracking(): Promise<void> {
   await LocationTracker.getInstance().stopTracking();
 }
 
+export async function startGeofenceTracking(): Promise<void> {
+  await LocationTracker.getInstance().startGeofencing();
+}
+
+export async function stopGeofenceTracking(): Promise<void> {
+  await LocationTracker.getInstance().stopGeofencing();
+}
+
 export async function switchLocationProfile(
   profile: 'low' | 'high',
   minRadiusMeters: number

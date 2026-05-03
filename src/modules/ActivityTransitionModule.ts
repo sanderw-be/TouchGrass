@@ -1,7 +1,13 @@
 import { NativeModules } from 'react-native';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const { BackgroundFeaturesNative } = NativeModules as any;
+interface ActivityTransitionNativeInterface {
+  startActivityTransitionTracking(): Promise<void>;
+  stopActivityTransitionTracking(): Promise<void>;
+}
+
+const BackgroundFeaturesNative = NativeModules.BackgroundFeaturesNative as
+  | ActivityTransitionNativeInterface
+  | undefined;
 
 export const ActivityTransitionModule = {
   startTracking: async (): Promise<void> => {
