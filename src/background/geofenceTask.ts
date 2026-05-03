@@ -67,7 +67,11 @@ TaskManager.defineTask(
 
       // 1. Stop monitoring activity
       await ActivityTransitionModule.stopTracking();
-      await getDwellService().cancelDwellPrompt();
+      try {
+        await getDwellService().cancelDwellPrompt();
+      } catch (e) {
+        console.warn('[GEOFENCE_TASK] Failed to cancel dwell prompt:', e);
+      }
 
       // 2. Finalize session
       const startRaw = await getSettingAsync('gps_session_start', '0');

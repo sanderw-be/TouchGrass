@@ -258,7 +258,11 @@ export default function EditLocationSheet({
         status: 'active',
       });
       // Cancel any pending dwell prompts now that a location has been added/updated
-      await getDwellService().cancelDwellPrompt();
+      try {
+        await getDwellService().cancelDwellPrompt();
+      } catch (e) {
+        console.warn('Failed to cancel dwell prompt after location save:', e);
+      }
       onSave();
       onClose();
     } catch (error) {
