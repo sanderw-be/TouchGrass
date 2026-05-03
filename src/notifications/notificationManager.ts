@@ -28,3 +28,4 @@ export const getScheduledNotificationManager = () => getContainer().scheduledNot
 export const getNotificationResponseHandler = () => getContainer().notificationResponseHandler;
 export const getReminderQueueManager = () => getContainer().reminderQueueManager;
 export const getReminderMessageBuilder = () => getContainer().reminderMessageBuilder;
+export const getDwellService = () => getContainer().dwellService;

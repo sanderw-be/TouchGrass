@@ -1,9 +1,7 @@
 import * as TaskManager from 'expo-task-manager';
 import * as Location from 'expo-location';
-import * as Notifications from 'expo-notifications';
 import {
   GEOFENCE_TASK,
-  DWELL_NOTIFICATION_ID,
   MIN_OUTSIDE_DURATION_MS,
   CONFIDENCE_GPS_ONLY,
 } from '../detection/constants';
@@ -17,6 +15,7 @@ import {
 import { submitSession, buildSession } from '../detection/sessionMerger';
 import { emitSessionsChanged } from '../utils/sessionsChangedEmitter';
 import { t } from '../i18n';
+import { getDwellService } from '../notifications/notificationManager';
 
 /**
  * Task handler for Geofence events.
@@ -68,7 +67,11 @@ TaskManager.defineTask(
 
       // 1. Stop monitoring activity
       await ActivityTransitionModule.stopTracking();
-      await Notifications.cancelScheduledNotificationAsync(DWELL_NOTIFICATION_ID);
+      try {
+        await getDwellService().cancelDwellPrompt();
+      } catch (e) {
+        console.warn('[GEOFENCE_TASK] Failed to cancel dwell prompt:', e);
+      }
 
       // 2. Finalize session
       const startRaw = await getSettingAsync('gps_session_start', '0');
