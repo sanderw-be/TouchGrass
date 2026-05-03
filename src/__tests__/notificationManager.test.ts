@@ -1250,7 +1250,7 @@ describe('notificationManager', () => {
       };
       (Database.getSettingAsync as jest.Mock).mockImplementation(
         async (key: string, fallback: string) => {
-          return key in store ? store[key] : fallback;
+          return key in settingsStore ? settingsStore[key] : fallback;
         }
       );
       (Database.setSettingAsync as jest.Mock).mockImplementation(
@@ -1324,7 +1324,7 @@ describe('notificationManager', () => {
       };
       (Database.getSettingAsync as jest.Mock).mockImplementation(
         async (key: string, fallback: string) => {
-          return key in store ? store[key] : fallback;
+          return key in settingsStore ? settingsStore[key] : fallback;
         }
       );
       (Database.setSettingAsync as jest.Mock).mockImplementation(
