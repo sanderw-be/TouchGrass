@@ -46,8 +46,11 @@ export class NotificationResponseHandler implements INotificationResponseHandler
     const notifData = response.notification?.request?.content?.data;
     if (notifData?.type === 'dwell_prompt') {
       const { navigate } = await import('../../navigation/navigationRef');
-      // Navigate to Settings tab -> KnownLocations screen
-      navigate('Settings', { screen: 'KnownLocations' });
+      // Navigate to Settings tab -> KnownLocations screen with create action
+      navigate('Settings', {
+        screen: 'KnownLocations',
+        params: { action: 'create' },
+      });
       return;
     }
 

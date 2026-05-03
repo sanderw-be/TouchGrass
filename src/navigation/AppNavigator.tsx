@@ -37,7 +37,7 @@ export type GoalsStackParamList = {
 
 export type SettingsStackParamList = {
   SettingsMain: undefined;
-  KnownLocations: undefined;
+  KnownLocations: { action?: 'create' } | undefined;
   FeedbackSupport: undefined;
   ActivityLog: undefined;
   AboutApp: undefined;
