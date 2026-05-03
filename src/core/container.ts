@@ -24,6 +24,7 @@ import {
   ISmartReminderScheduler,
   SmartReminderScheduler,
 } from '../notifications/services/SmartReminderScheduler';
+import { IDwellService, DwellService } from '../notifications/services/DwellService';
 
 import {
   hasUpcomingEvent,
@@ -42,6 +43,7 @@ export interface IAppContainer {
   scheduledNotificationManager: IScheduledNotificationManager;
   notificationResponseHandler: INotificationResponseHandler;
   smartReminderScheduler: ISmartReminderScheduler;
+  dwellService: IDwellService;
 }
 
 let container: IAppContainer;
@@ -61,6 +63,7 @@ export function createContainer(db: SQLiteDatabase): IAppContainer {
     storageService,
     reminderMessageBuilder
   );
+  const dwellService = new DwellService();
 
   const smartReminderScheduler = new SmartReminderScheduler(
     storageService,
@@ -92,6 +95,7 @@ export function createContainer(db: SQLiteDatabase): IAppContainer {
     scheduledNotificationManager,
     notificationResponseHandler,
     smartReminderScheduler,
+    dwellService,
   };
 
   return container;

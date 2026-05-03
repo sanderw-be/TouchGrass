@@ -17,6 +17,7 @@ import {
 import * as Location from 'expo-location';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { upsertKnownLocationAsync, deleteKnownLocationAsync, KnownLocation } from '../storage';
+import { getDwellService } from '../notifications/notificationManager';
 import { spacing, radius, ThemeColors, Shadows } from '../utils/theme';
 import { useAppStore } from '../store/useAppStore';
 import { t } from '../i18n';
@@ -256,6 +257,8 @@ export default function EditLocationSheet({
         isIndoor,
         status: 'active',
       });
+      // Cancel any pending dwell prompts now that a location has been added/updated
+      await getDwellService().cancelDwellPrompt();
       onSave();
       onClose();
     } catch (error) {
