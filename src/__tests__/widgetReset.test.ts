@@ -63,7 +63,7 @@ describe('handleSmartReminder - Widget Reset', () => {
     );
     expect(requestWidgetRefresh).toHaveBeenCalled();
     expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
-    
+
     // Should still trigger replan in finally block
     expect(mockScheduler.scheduleUpcomingReminders).toHaveBeenCalledWith({
       isHeadlessReplan: true,
