@@ -1,11 +1,22 @@
-import { createNavigationContainerRef } from '@react-navigation/native';
+import {
+  createNavigationContainerRef,
+  ParamListBase,
+  CommonActions,
+} from '@react-navigation/native';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const navigationRef = createNavigationContainerRef<any>();
+// Combine stack param lists for global navigation if needed, or use ParamListBase
+export const navigationRef = createNavigationContainerRef<ParamListBase>();
 
-export function navigate(name: string, params?: object) {
+/**
+ * Navigate to a route from outside a React component.
+ * @param name The name of the route.
+ * @param params Optional parameters for the route.
+ */
+export function navigate<RouteName extends keyof ParamListBase>(
+  name: RouteName,
+  params?: ParamListBase[RouteName]
+) {
   if (navigationRef.isReady()) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    navigationRef.navigate(name as any, params as any);
+    navigationRef.dispatch(CommonActions.navigate({ name, params }));
   }
 }
