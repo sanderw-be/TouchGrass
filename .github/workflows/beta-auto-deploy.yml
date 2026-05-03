@@ -19,11 +19,16 @@ jobs:
       native: ${{ steps.native_check.outputs.native }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2 # Ensures HEAD~1 is available locally
       
       - name: Check paths
         id: native_check
         uses: dorny/paths-filter@v3
         with:
+          # If it's a push, use the commit before the push. 
+          # If it's a manual run (workflow_dispatch), use the previous commit (HEAD~1)
+          base: ${{ github.event_name == 'push' && github.event.before || 'HEAD~1' }}
           filters: |
             native:
               - 'package.json'
@@ -33,7 +38,6 @@ jobs:
               - 'android/**'
               - 'eas.json'
               - 'withBackgroundFeaturesPlugin.js'
-              - 'withAlarmBridgePlugin.js'
 
   # 2. Run Semantic Versioning ONLY if native changes exist
   version-bump:
