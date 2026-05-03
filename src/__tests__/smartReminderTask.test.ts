@@ -3,7 +3,7 @@ import { getTodayMinutesAsync, getCurrentDailyGoalAsync } from '../storage';
 import { fetchWeatherForecast } from '../weather/weatherService';
 import { ReminderMessageBuilder } from '../notifications/services/ReminderMessageBuilder';
 import { StorageService } from '../storage/StorageService';
-import { getSmartReminderScheduler } from '../notifications/notificationManager';
+import { getSmartReminderScheduler, getDwellService } from '../notifications/notificationManager';
 import { handleSmartReminder } from '../background/smartReminderTask';
 
 jest.mock('expo-notifications');
@@ -11,6 +11,8 @@ jest.mock('../storage', () => ({
   getTodayMinutesAsync: jest.fn(),
   getCurrentDailyGoalAsync: jest.fn(),
   initDatabaseAsync: jest.fn(),
+  getSettingAsync: jest.fn(),
+  setSettingAsync: jest.fn(),
   db: {},
 }));
 jest.mock('../weather/weatherService', () => ({
@@ -23,12 +25,14 @@ jest.mock('../core/container', () => ({
 }));
 jest.mock('../notifications/notificationManager', () => ({
   getSmartReminderScheduler: jest.fn(),
+  getDwellService: jest.fn(),
 }));
 
 describe('handleSmartReminder', () => {
   let mockScheduler: any;
   let mockStorage: any;
   let mockMessageBuilder: any;
+  let mockDwellService: any;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -53,6 +57,12 @@ describe('handleSmartReminder', () => {
     (getTodayMinutesAsync as jest.Mock).mockResolvedValue(10);
     (getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
     (fetchWeatherForecast as jest.Mock).mockResolvedValue({ success: true });
+
+    mockDwellService = {
+      scheduleDwellPrompt: jest.fn().mockResolvedValue(undefined),
+      cancelDwellPrompt: jest.fn().mockResolvedValue(undefined),
+    };
+    (getDwellService as jest.Mock).mockReturnValue(mockDwellService);
 
     mockStorage.getSettingAsync.mockImplementation((key: string, defaultVal: string) => defaultVal);
   });
@@ -182,5 +192,57 @@ describe('handleSmartReminder', () => {
 
     // Notification will fail or just fail the try block
     expect(mockScheduler.scheduleUpcomingReminders).toHaveBeenCalled();
+  });
+
+  describe('dwell-time logic', () => {
+    it('should schedule dwell prompt when STILL and OUTSIDE', async () => {
+      mockStorage.getSettingAsync.mockImplementation(async (key: string) => {
+        if (key === 'gps_last_outside') return '1';
+        return '0';
+      });
+
+      await handleSmartReminder({
+        type: 'activity_transition',
+        activityType: 'STILL',
+        transitionType: 'ENTER',
+      });
+
+      expect(mockDwellService.scheduleDwellPrompt).toHaveBeenCalled();
+    });
+
+    it('should NOT schedule dwell prompt when STILL but INSIDE', async () => {
+      mockStorage.getSettingAsync.mockImplementation(async (key: string) => {
+        if (key === 'gps_last_outside') return '0';
+        return '0';
+      });
+
+      await handleSmartReminder({
+        type: 'activity_transition',
+        activityType: 'STILL',
+        transitionType: 'ENTER',
+      });
+
+      expect(mockDwellService.scheduleDwellPrompt).not.toHaveBeenCalled();
+    });
+
+    it('should cancel dwell prompt when WALKING', async () => {
+      await handleSmartReminder({
+        type: 'activity_transition',
+        activityType: 'WALKING',
+        transitionType: 'ENTER',
+      });
+
+      expect(mockDwellService.cancelDwellPrompt).toHaveBeenCalled();
+    });
+
+    it('should cancel dwell prompt when EXITING STILL state', async () => {
+      await handleSmartReminder({
+        type: 'activity_transition',
+        activityType: 'STILL',
+        transitionType: 'EXIT',
+      });
+
+      expect(mockDwellService.cancelDwellPrompt).toHaveBeenCalled();
+    });
   });
 });

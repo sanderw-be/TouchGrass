@@ -111,12 +111,13 @@
   - function getNotificationResponseHandler
   - function getReminderQueueManager
   - function getReminderMessageBuilder
-  - _...1 more_
+  - _...2 more_
 - `src\notifications\reminderAlgorithm.ts`
   - function scoreReminderHours: (todayMinutes, dailyTargetMinutes, currentHour, currentMinute, plannedSlots, baseDateMs) => void
   - function shouldRemindNow: (todayMinutes, dailyTargetMinutes, lastReminderMs, isCurrentlyOutside) => Promise<
   - interface ScoreContributor
   - interface HourScore
+- `src\notifications\services\DwellService.ts` — class DwellService, interface IDwellService
 - `src\notifications\services\NotificationInfrastructureService.ts`
   - class NotificationInfrastructureService
   - interface INotificationInfrastructureService

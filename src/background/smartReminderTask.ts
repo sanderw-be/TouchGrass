@@ -4,9 +4,12 @@ import { fetchWeatherForecast } from '../weather/weatherService';
 import { ReminderMessageBuilder } from '../notifications/services/ReminderMessageBuilder';
 import { StorageService } from '../storage/StorageService';
 import { createContainer } from '../core/container';
-import { getSmartReminderScheduler, CHANNEL_ID } from '../notifications/notificationManager';
+import {
+  getSmartReminderScheduler,
+  CHANNEL_ID,
+  getDwellService,
+} from '../notifications/notificationManager';
 import { colors } from '../utils/theme';
-import { DWELL_NOTIFICATION_ID, DWELL_NOTIFICATION_DELAY_SECONDS } from '../detection/constants';
 import { t } from '../i18n';
 import { requestWidgetRefresh } from '../utils/widgetHelper';
 
@@ -102,19 +105,7 @@ export const handleSmartReminder = async (data: HeadlessData) => {
 
           if (isOutside) {
             console.log('[SR_HEADLESS] User is STILL and OUTSIDE. Scheduling dwell-time prompt.');
-            await Notifications.scheduleNotificationAsync({
-              identifier: DWELL_NOTIFICATION_ID,
-              content: {
-                title: t('dwell_prompt_title'),
-                body: t('dwell_prompt_body'),
-                data: { type: 'dwell_prompt' },
-                color: colors.grass,
-              },
-              trigger: {
-                seconds: DWELL_NOTIFICATION_DELAY_SECONDS,
-                channelId: CHANNEL_ID,
-              } as Notifications.NotificationTriggerInput,
-            });
+            await getDwellService().scheduleDwellPrompt();
           } else {
             console.log('[SR_HEADLESS] User is STILL but INSIDE. Ignoring dwell-time logic.');
           }
@@ -125,11 +116,11 @@ export const handleSmartReminder = async (data: HeadlessData) => {
           activity === 'IN_VEHICLE'
         ) {
           console.log(`[SR_HEADLESS] User is moving (${activity}). Canceling dwell-time prompt.`);
-          await Notifications.cancelScheduledNotificationAsync(DWELL_NOTIFICATION_ID);
+          await getDwellService().cancelDwellPrompt();
         }
       } else if (transition === 'EXIT' && activity === 'STILL') {
         // If they stop being STILL, cancel the timer
-        await Notifications.cancelScheduledNotificationAsync(DWELL_NOTIFICATION_ID);
+        await getDwellService().cancelDwellPrompt();
       }
 
       return;

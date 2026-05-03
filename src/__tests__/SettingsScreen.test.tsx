@@ -29,6 +29,11 @@ jest.mock('expo-location', () => ({
   getBackgroundPermissionsAsync: jest.fn(() =>
     Promise.resolve({ status: 'granted', canAskAgain: true })
   ),
+  Accuracy: {
+    Balanced: 3,
+    High: 4,
+    Lowest: 1,
+  },
 }));
 
 // Mock detection

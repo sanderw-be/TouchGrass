@@ -75,7 +75,11 @@ jest.mock('expo-location', () => ({
     Promise.resolve({ coords: { latitude: 0, longitude: 0 } })
   ),
   reverseGeocodeAsync: jest.fn(() => Promise.resolve([])),
-  Accuracy: { Balanced: 3 },
+  Accuracy: {
+    Balanced: 3,
+    High: 4,
+    Lowest: 1,
+  },
 }));
 
 const mockNavigate = jest.fn();
