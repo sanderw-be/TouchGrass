@@ -120,7 +120,7 @@ jobs:
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
           COMMIT_MESSAGE: ${{ github.event.head_commit.message || github.event.workflow_run.head_commit.message || github.event.pull_request.title || github.sha }}
-        run: npx --yes eas-cli update --branch preview --platform android --message "$COMMIT_MESSAGE"
+        run: npx --yes eas-cli update --profile preview-emulator --branch preview --platform android --message "$COMMIT_MESSAGE"
       
       # --- Native changes detected ---
       - name: Configure Gradle for CI
