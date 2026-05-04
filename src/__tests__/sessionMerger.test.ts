@@ -697,10 +697,12 @@ describe('submitSession', () => {
       return [...dbState]; // Return a copy
     });
 
-    (Database.insertSessionsBatchAsync as jest.Mock).mockImplementation(async (sessions) => {
-      dbState.push(...sessions);
-      return sessions.map((_, i) => i);
-    });
+    (Database.insertSessionsBatchAsync as jest.Mock).mockImplementation(
+      async (sessions: OutsideSession[]) => {
+        dbState.push(...sessions);
+        return sessions.map((_: OutsideSession, i: number) => i);
+      }
+    );
 
     // Trigger two overlapping submissions concurrently
     const s1 = makeSession({ startTime: BASE_TIME, endTime: BASE_TIME + 10 * 60 * 1000 });
