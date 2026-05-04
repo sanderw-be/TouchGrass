@@ -1,0 +1,5 @@
+# .fingerprintignore
+android/
+ios/
+node_modules/
+*.log
