@@ -187,6 +187,7 @@
   - function getWeatherCacheAsync: () => Promise<WeatherCache | null>
   - function clearExpiredWeatherDataAsync: (now) => Promise<void>
 - `src\storage\StorageService.ts` — class StorageService, interface IStorageService
+- `src\utils\AsyncLock.ts` — class AsyncLock, const sessionMergeLock
 - `src\utils\batteryOptimization.ts`
   - function isBatteryOptimizationDisabled
   - function refreshBatteryOptimizationSetting

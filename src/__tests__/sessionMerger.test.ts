@@ -427,6 +427,7 @@ describe('submitSession', () => {
       userConfirmed: 1,
       startTime: BASE_TIME,
       endTime: BASE_TIME + 20 * 60 * 1000,
+      averageSpeedKmh: 4.0,
     });
     (Database.getSessionsForRangeAsync as jest.Mock).mockResolvedValue([manual]);
 
@@ -687,5 +688,87 @@ describe('submitSession', () => {
     expect(Database.insertSessionAsync).toHaveBeenCalledWith(candidate);
     const inserted = (Database.insertSessionAsync as jest.Mock).mock.calls[0][0];
     expect(inserted.discarded).toBe(0);
+  });
+
+  it('serializes concurrent calls to submitSession using AsyncLock', async () => {
+    const dbState: OutsideSession[] = [];
+    (Database.getSessionsForRangeAsync as jest.Mock).mockImplementation(async () => {
+      // Simulate delay to encourage race conditions
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      return [...dbState]; // Return a copy
+    });
+
+    (Database.insertSessionsBatchAsync as jest.Mock).mockImplementation(
+      async (sessions: OutsideSession[]) => {
+        dbState.push(...sessions);
+        return sessions.map((_: OutsideSession, i: number) => i);
+      }
+    );
+
+    // Trigger two overlapping submissions concurrently
+    const s1 = makeSession({ startTime: BASE_TIME, endTime: BASE_TIME + 10 * 60 * 1000 });
+    const s2 = makeSession({
+      startTime: BASE_TIME + 5 * 60 * 1000,
+      endTime: BASE_TIME + 15 * 60 * 1000,
+    });
+
+    await Promise.all([submitSession(s1), submitSession(s2)]);
+
+    // If locking works:
+    // 1. First call inserts session [T0, T10].
+    // 2. Second call finds [T0, T10], merges it with [T5, T15] -> [T0, T15].
+    // 3. Final state should have ONLY ONE session (the merged one).
+    // Note: Our mock dbState doesn't handle deletes, but we can check insert calls.
+
+    // Total sessions in "db" should be 2 (one from first call, one from second call merging first)
+    // Actually, in a real DB, the first one would be deleted.
+    expect(Database.deleteSessionsByIdsAsync).toHaveBeenCalledTimes(2);
+    // The second call MUST have found the first session
+    const secondCallExisting = (Database.getSessionsForRangeAsync as jest.Mock).mock.results[1]
+      .value;
+    const result = await secondCallExisting;
+    expect(result).toHaveLength(1); // Second call saw the session from the first call
+  });
+
+  it('handles cleanup/log errors gracefully in submitSession', async () => {
+    (Database.deleteSessionsByIdsAsync as jest.Mock).mockRejectedValueOnce(new Error('DB Error'));
+    (Database.getSessionsForRangeAsync as jest.Mock).mockResolvedValueOnce([]);
+
+    const candidate = makeSession();
+    // Should not throw
+    await expect(submitSession(candidate)).resolves.not.toThrow();
+
+    expect(Database.insertSessionsBatchAsync).toHaveBeenCalled();
+  });
+
+  it('covers HC notes branch when stepsTotal is 0', async () => {
+    const existing = makeSession({
+      id: 1,
+      source: 'health_connect',
+      steps: 0,
+      notes: 'HC Note',
+    });
+    (Database.getSessionsForRangeAsync as jest.Mock).mockResolvedValueOnce([existing]);
+
+    const candidate = makeSession({ source: 'gps' });
+    await submitSession(candidate);
+
+    const inserted = (Database.insertSessionsBatchAsync as jest.Mock).mock.calls[0][0][0];
+    expect(inserted.notes).toContain('HC Note');
+  });
+
+  it('covers notes from other sources', async () => {
+    const existing = makeSession({
+      id: 1,
+      source: 'unknown' as any,
+      notes: 'Other Note',
+    });
+    (Database.getSessionsForRangeAsync as jest.Mock).mockResolvedValueOnce([existing]);
+
+    const candidate = makeSession({ source: 'gps' });
+    await submitSession(candidate);
+
+    const inserted = (Database.insertSessionsBatchAsync as jest.Mock).mock.calls[0][0][0];
+    expect(inserted.notes).toContain('Other Note');
   });
 });

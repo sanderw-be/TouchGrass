@@ -138,10 +138,15 @@ export class HealthSessionBuilder {
         stepRecordCount++;
       }
 
-      await insertBackgroundLogAsync(
-        'health_connect',
-        `Synced ${stepRecordCount} step records and ${exerciseCount} exercise records`
-      );
+      if (stepRecordCount > 0 || exerciseCount > 0) {
+        console.log(
+          `[HealthSessionBuilder] Synced ${stepRecordCount} steps and ${exerciseCount} exercises.`
+        );
+        await insertBackgroundLogAsync(
+          'health_connect',
+          `Synced ${stepRecordCount} step records and ${exerciseCount} exercise records`
+        );
+      }
 
       await pruneShortDiscardedHealthConnectSessionsAsync(
         syncTime - MIN_DURATION_MS,
