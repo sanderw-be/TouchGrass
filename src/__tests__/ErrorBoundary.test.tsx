@@ -138,7 +138,7 @@ describe('ErrorBoundary', () => {
     expect(calledUrl).toContain('usp=pp_url');
     expect(calledUrl).toContain('entry.1795846861');
     expect(calledUrl).toContain('entry.411078901');
-    expect(calledUrl).toContain(encodeURIComponent('App: 1.0.0'));
+    expect(calledUrl).toContain(encodeURIComponent('App: 1.2.0'));
     expect(calledUrl).toContain(encodeURIComponent('Device: Test Device'));
   });
 

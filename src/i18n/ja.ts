@@ -659,6 +659,7 @@ const ja: TranslationType = {
   diagnostic_environment: '環境',
   diagnostic_native_version: 'バージョン',
   diagnostic_launch_type: '起動タイプ',
+  diagnostic_runtime_version: 'ランタイム・フィンガープリント',
   diagnostic_update_id: 'Update ID',
   diagnostic_launch_embedded: '組み込み',
   diagnostic_launch_ota: 'OTA',

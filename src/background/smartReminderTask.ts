@@ -10,7 +10,6 @@ import {
   getDwellService,
 } from '../notifications/notificationManager';
 import { colors } from '../utils/theme';
-import { t } from '../i18n';
 import { requestWidgetRefresh } from '../utils/widgetHelper';
 
 interface HeadlessData {

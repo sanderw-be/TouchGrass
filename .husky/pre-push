@@ -1,3 +1,6 @@
+echo "Linting..."
+npm run lint
+
 echo "Verifying types..."
 npm run type-check
 

@@ -653,6 +653,7 @@ const ptBR: TranslationType = {
   diagnostic_environment: 'Ambiente',
   diagnostic_native_version: 'Versão',
   diagnostic_launch_type: 'Tipo',
+  diagnostic_runtime_version: 'Impressão digital do runtime',
   diagnostic_update_id: 'Update ID',
   diagnostic_launch_embedded: 'Embutido',
   diagnostic_launch_ota: 'OTA',

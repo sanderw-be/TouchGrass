@@ -663,6 +663,7 @@ const fr: TranslationType = {
   diagnostic_environment: 'Env.',
   diagnostic_native_version: 'Version',
   diagnostic_launch_type: 'Boot',
+  diagnostic_runtime_version: 'Empreinte runtime',
   diagnostic_update_id: 'Update',
   diagnostic_launch_embedded: 'Interne',
   diagnostic_launch_ota: 'OTA',

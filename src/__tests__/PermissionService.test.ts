@@ -1,8 +1,6 @@
 import * as Location from 'expo-location';
-import { PermissionsAndroid, Platform } from 'react-native';
+import { Platform } from 'react-native';
 import { PermissionService } from '../detection/PermissionService';
-import * as healthConnect from 'react-native-health-connect';
-import * as healthIntent from '../detection/healthConnectIntent';
 
 // Unmock the service that was globally mocked in jest.setup.js
 jest.unmock('../detection/PermissionService');
@@ -163,8 +161,6 @@ describe('PermissionService', () => {
   });
 
   describe('Activity Recognition', () => {
-    const ACTIVITY_RECOGNITION_PERMISSION = 'android.permission.ACTIVITY_RECOGNITION';
-
     describe('checkActivityRecognitionPermissions', () => {
       it('returns true on non-Android platforms', async () => {
         jest.isolateModules(async () => {
