@@ -67,7 +67,7 @@ const nl: TranslationType = {
   weekly_goal: 'Weekdoel',
 
   // Navigatie
-  nav_home: 'Home',
+  nav_home: 'Thuis',
   nav_history: 'Geschiedenis',
   nav_events: 'Sessies',
   nav_goals: 'Doelen',
