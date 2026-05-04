@@ -2,9 +2,9 @@
 
 > **Stack:** raw-http | none | react | typescript
 
-> 0 routes | 0 models | 39 components | 59 lib files | 3 env vars | 1 middleware | 0% test coverage
-> **Token savings:** this file is ~6.300 tokens. Without it, AI exploration would cost ~37.800 tokens. **Saves ~31.400 tokens per conversation.**
-> **Last scanned:** 2026-05-03 12:32 — re-run after significant changes
+> 0 routes | 0 models | 39 components | 60 lib files | 3 env vars | 1 middleware | 0% test coverage
+> **Token savings:** this file is ~6.300 tokens. Without it, AI exploration would cost ~38.000 tokens. **Saves ~31.700 tokens per conversation.**
+> **Last scanned:** 2026-05-04 10:30 — re-run after significant changes
 
 ---
 
@@ -241,6 +241,7 @@
   - function getWeatherCacheAsync: () => Promise<WeatherCache | null>
   - function clearExpiredWeatherDataAsync: (now) => Promise<void>
 - `src\storage\StorageService.ts` — class StorageService, interface IStorageService
+- `src\utils\AsyncLock.ts` — class AsyncLock, const sessionMergeLock
 - `src\utils\batteryOptimization.ts`
   - function isBatteryOptimizationDisabled
   - function refreshBatteryOptimizationSetting

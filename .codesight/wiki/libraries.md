@@ -2,7 +2,7 @@
 
 > **Navigation aid.** Library inventory extracted via AST. Read the source files listed here before modifying exported functions.
 
-**59 library files** across 13 modules
+**60 library files** across 13 modules
 
 ## Detection (13 files)
 
@@ -33,6 +33,19 @@
 - `src\storage\repositories\SettingRepository.ts` — getSettingAsync, setSettingAsync
 - `src\storage\StorageService.ts` — StorageService, IStorageService
 
+## Utils (10 files)
+
+- `src\utils\theme.ts` — makeShadows, progressColor, ThemeColors, Shadows, colors, darkColors, …
+- `src\utils\helpers.ts` — uses24HourClock, formatMinutes, normalizeAmPm, formatTime, formatDate, formatTimer
+- `src\utils\units.ts` — isImperialUnits, metersToYards, yardsToMeters, kmToMiles, kmhToMph
+- `src\utils\batteryOptimization.ts` — isBatteryOptimizationDisabled, refreshBatteryOptimizationSetting, openBatteryOptimizationSettings, BATTERY_OPTIMIZATION_SETTING_KEY
+- `src\utils\temperature.ts` — isFahrenheit, celsiusToFahrenheit, formatTemperature
+- `src\utils\widgetHelper.ts` — isWidgetTimerRunning, requestWidgetRefresh, WIDGET_TIMER_KEY
+- `src\utils\AsyncLock.ts` — AsyncLock, sessionMergeLock
+- `src\utils\permissionIssuesChangedEmitter.ts` — emitPermissionIssuesChanged, onPermissionIssuesChanged
+- `src\utils\sessionsChangedEmitter.ts` — emitSessionsChanged, onSessionsChanged
+- `src\utils\permissionIssues.ts` — countPermissionIssues
+
 ## Notifications (9 files)
 
 - `src\notifications\services\NotificationInfrastructureService.ts` — NotificationInfrastructureService, INotificationInfrastructureService, ACTION_WENT_OUTSIDE, ACTION_SNOOZE, ACTION_LESS_OFTEN, CHANNEL_ID, …
@@ -44,18 +57,6 @@
 - `src\notifications\services\NotificationResponseHandler.ts` — NotificationResponseHandler, INotificationResponseHandler
 - `src\notifications\services\ReminderMessageBuilder.ts` — ReminderMessageBuilder, IReminderMessageBuilder
 - `src\notifications\services\ReminderQueueManager.ts` — ReminderQueueManager, IReminderQueueManager
-
-## Utils (9 files)
-
-- `src\utils\theme.ts` — makeShadows, progressColor, ThemeColors, Shadows, colors, darkColors, …
-- `src\utils\helpers.ts` — uses24HourClock, formatMinutes, normalizeAmPm, formatTime, formatDate, formatTimer
-- `src\utils\units.ts` — isImperialUnits, metersToYards, yardsToMeters, kmToMiles, kmhToMph
-- `src\utils\batteryOptimization.ts` — isBatteryOptimizationDisabled, refreshBatteryOptimizationSetting, openBatteryOptimizationSettings, BATTERY_OPTIMIZATION_SETTING_KEY
-- `src\utils\temperature.ts` — isFahrenheit, celsiusToFahrenheit, formatTemperature
-- `src\utils\widgetHelper.ts` — isWidgetTimerRunning, requestWidgetRefresh, WIDGET_TIMER_KEY
-- `src\utils\permissionIssuesChangedEmitter.ts` — emitPermissionIssuesChanged, onPermissionIssuesChanged
-- `src\utils\sessionsChangedEmitter.ts` — emitSessionsChanged, onSessionsChanged
-- `src\utils\permissionIssues.ts` — countPermissionIssues
 
 ## Hooks (6 files)
 

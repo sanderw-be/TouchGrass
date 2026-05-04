@@ -688,4 +688,42 @@ describe('submitSession', () => {
     const inserted = (Database.insertSessionAsync as jest.Mock).mock.calls[0][0];
     expect(inserted.discarded).toBe(0);
   });
+
+  it('serializes concurrent calls to submitSession using AsyncLock', async () => {
+    const dbState: OutsideSession[] = [];
+    (Database.getSessionsForRangeAsync as jest.Mock).mockImplementation(async () => {
+      // Simulate delay to encourage race conditions
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      return [...dbState]; // Return a copy
+    });
+
+    (Database.insertSessionsBatchAsync as jest.Mock).mockImplementation(async (sessions) => {
+      dbState.push(...sessions);
+      return sessions.map((_, i) => i);
+    });
+
+    // Trigger two overlapping submissions concurrently
+    const s1 = makeSession({ startTime: BASE_TIME, endTime: BASE_TIME + 10 * 60 * 1000 });
+    const s2 = makeSession({
+      startTime: BASE_TIME + 5 * 60 * 1000,
+      endTime: BASE_TIME + 15 * 60 * 1000,
+    });
+
+    await Promise.all([submitSession(s1), submitSession(s2)]);
+
+    // If locking works:
+    // 1. First call inserts session [T0, T10].
+    // 2. Second call finds [T0, T10], merges it with [T5, T15] -> [T0, T15].
+    // 3. Final state should have ONLY ONE session (the merged one).
+    // Note: Our mock dbState doesn't handle deletes, but we can check insert calls.
+
+    // Total sessions in "db" should be 2 (one from first call, one from second call merging first)
+    // Actually, in a real DB, the first one would be deleted.
+    expect(Database.deleteSessionsByIdsAsync).toHaveBeenCalledTimes(2);
+    // The second call MUST have found the first session
+    const secondCallExisting = (Database.getSessionsForRangeAsync as jest.Mock).mock.results[1]
+      .value;
+    const result = await secondCallExisting;
+    expect(result).toHaveLength(1); // Second call saw the session from the first call
+  });
 });

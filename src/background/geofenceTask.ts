@@ -43,7 +43,13 @@ TaskManager.defineTask(
 
     await initDatabaseAsync();
 
+    const lastOutside = await getSettingAsync('gps_last_outside', '0');
+
     if (eventType === Location.GeofencingEventType.Exit) {
+      if (lastOutside === '1') {
+        console.log(`[GEOFENCE_TASK] Already outside ${regionName}. Skipping.`);
+        return;
+      }
       await insertBackgroundLogAsync(
         'gps',
         `Geofence EXIT: ${regionName}. Starting session and AR.`
@@ -59,6 +65,11 @@ TaskManager.defineTask(
       // 2. Start monitoring activity transitions
       await ActivityTransitionModule.startTracking();
     } else if (eventType === Location.GeofencingEventType.Enter) {
+      if (lastOutside === '0') {
+        console.log(`[GEOFENCE_TASK] Already inside ${regionName}. Skipping.`);
+        return;
+      }
+
       await insertBackgroundLogAsync(
         'gps',
         `Geofence ENTER: ${regionName}. Stopping AR and recording session.`
