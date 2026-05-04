@@ -4,7 +4,7 @@
 
 > 0 routes | 0 models | 39 components | 60 lib files | 3 env vars | 1 middleware | 0% test coverage
 > **Token savings:** this file is ~6.300 tokens. Without it, AI exploration would cost ~38.000 tokens. **Saves ~31.700 tokens per conversation.**
-> **Last scanned:** 2026-05-04 10:36 — re-run after significant changes
+> **Last scanned:** 2026-05-04 11:14 — re-run after significant changes
 
 ---
 
@@ -335,9 +335,9 @@
 - `src\utils\sessionsChangedEmitter.ts` — imported by **9** files
 - `src\storage\types.ts` — imported by **9** files
 - `src\detection\index.ts` — imported by **8** files
+- `src\detection\sessionMerger.ts` — imported by **8** files
 - `src\detection\manualCheckin.ts` — imported by **8** files
 - `src\i18n\en.ts` — imported by **8** files
-- `src\detection\sessionMerger.ts` — imported by **7** files
 - `src\weather\weatherService.ts` — imported by **7** files
 - `src\hooks\useTheme.ts` — imported by **6** files
 - `src\detection\constants.ts` — imported by **6** files

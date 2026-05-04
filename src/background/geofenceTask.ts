@@ -35,6 +35,9 @@ TaskManager.defineTask(
   }>) => {
     if (error) {
       console.error(`[GEOFENCE_TASK] Error: ${error.message}`);
+    }
+
+    if (!data) {
       return;
     }
 

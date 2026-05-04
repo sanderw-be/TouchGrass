@@ -29,7 +29,9 @@ const MERGE_GAP_MS = 5 * 60 * 1000;
 export async function submitSession(candidate: OutsideSession): Promise<void> {
   await sessionMergeLock.runExclusive(async () => {
     console.log(
-      `[SessionMerger] Processing candidate from ${candidate.source}: ${new Date(candidate.startTime).toLocaleTimeString()} - ${new Date(candidate.endTime).toLocaleTimeString()}`
+      `[SessionMerger] Processing candidate from ${candidate.source}: ${new Date(
+        candidate.startTime
+      ).toISOString()} - ${new Date(candidate.endTime).toISOString()}`
     );
 
     if (candidate.source === 'manual') {
@@ -63,7 +65,7 @@ export async function submitSession(candidate: OutsideSession): Promise<void> {
     // Use domain logic for speed calculation
     const mergedSpeed = calculateMergedSpeed(mergedDurationMs, distanceTotal, stepsTotal);
 
-    // Note building (still somewhat integrated with i18n, but logic is consolidated)
+    // Note building
     const uniqueGpsNotes = [
       ...new Set(
         allUnconfirmed.filter((s) => s.source === 'gps' && s.notes).map((s) => s.notes as string)
@@ -74,7 +76,7 @@ export async function submitSession(candidate: OutsideSession): Promise<void> {
     if (stepsTotal > 0 && mergedDurationMs > 0) {
       const durationMin = mergedDurationMs / 60_000;
       const stepsPerMin = stepsTotal / durationMin;
-      const speedKmh = (stepsPerMin / 110) * 5; // Using constants directly or from domain
+      const speedKmh = (stepsPerMin / 110) * 5;
       const imperial = isImperialUnits();
       const speed = imperial ? kmhToMph(speedKmh).toFixed(1) : speedKmh.toFixed(1);
       const speedUnit = imperial ? t('unit_speed_imperial') : t('unit_speed_metric');
@@ -108,9 +110,7 @@ export async function submitSession(candidate: OutsideSession): Promise<void> {
     const mergedNotes = allParts.length > 0 ? allParts.join(' ') : undefined;
 
     const deniedSession = unconfirmedSessions.find((s) => s.userConfirmed === 0);
-
     const idsToDelete = unconfirmedSessions.filter((s) => s.id != null).map((s) => s.id as number);
-    await deleteSessionsByIdsAsync(idsToDelete);
 
     // Use domain logic for splitting
     const segments = splitRangeAroundConfirmed(
@@ -153,12 +153,21 @@ export async function submitSession(candidate: OutsideSession): Promise<void> {
       });
     }
 
+    // 1. Critical insert first (ensures at-least-once)
     await insertSessionsBatchAsync(sessionsToInsert);
-    if (unconfirmedSessions.length > 0) {
-      await insertBackgroundLogAsync(
-        'gps',
-        `Merged candidate with ${unconfirmedSessions.length} existing sessions.`
-      );
+
+    // 2. Non-critical cleanup/logging in try-catch
+    try {
+      await deleteSessionsByIdsAsync(idsToDelete);
+
+      if (unconfirmedSessions.length > 0) {
+        await insertBackgroundLogAsync(
+          'gps',
+          `Merged candidate with ${unconfirmedSessions.length} existing sessions.`
+        );
+      }
+    } catch (err) {
+      console.warn('[SessionMerger] Cleanup/Log failed:', err);
     }
   });
 }

@@ -427,6 +427,7 @@ describe('submitSession', () => {
       userConfirmed: 1,
       startTime: BASE_TIME,
       endTime: BASE_TIME + 20 * 60 * 1000,
+      averageSpeedKmh: 4.0,
     });
     (Database.getSessionsForRangeAsync as jest.Mock).mockResolvedValue([manual]);
 
@@ -727,5 +728,47 @@ describe('submitSession', () => {
       .value;
     const result = await secondCallExisting;
     expect(result).toHaveLength(1); // Second call saw the session from the first call
+  });
+
+  it('handles cleanup/log errors gracefully in submitSession', async () => {
+    (Database.deleteSessionsByIdsAsync as jest.Mock).mockRejectedValueOnce(new Error('DB Error'));
+    (Database.getSessionsForRangeAsync as jest.Mock).mockResolvedValueOnce([]);
+
+    const candidate = makeSession();
+    // Should not throw
+    await expect(submitSession(candidate)).resolves.not.toThrow();
+
+    expect(Database.insertSessionsBatchAsync).toHaveBeenCalled();
+  });
+
+  it('covers HC notes branch when stepsTotal is 0', async () => {
+    const existing = makeSession({
+      id: 1,
+      source: 'health_connect',
+      steps: 0,
+      notes: 'HC Note',
+    });
+    (Database.getSessionsForRangeAsync as jest.Mock).mockResolvedValueOnce([existing]);
+
+    const candidate = makeSession({ source: 'gps' });
+    await submitSession(candidate);
+
+    const inserted = (Database.insertSessionsBatchAsync as jest.Mock).mock.calls[0][0][0];
+    expect(inserted.notes).toContain('HC Note');
+  });
+
+  it('covers notes from other sources', async () => {
+    const existing = makeSession({
+      id: 1,
+      source: 'unknown' as any,
+      notes: 'Other Note',
+    });
+    (Database.getSessionsForRangeAsync as jest.Mock).mockResolvedValueOnce([existing]);
+
+    const candidate = makeSession({ source: 'gps' });
+    await submitSession(candidate);
+
+    const inserted = (Database.insertSessionsBatchAsync as jest.Mock).mock.calls[0][0][0];
+    expect(inserted.notes).toContain('Other Note');
   });
 });
