@@ -9,6 +9,7 @@ import {
   Platform,
   Image,
 } from 'react-native';
+import * as Application from 'expo-application';
 import Constants from 'expo-constants';
 import { t } from '../i18n';
 import { spacing, radius, ThemeColors, Shadows } from '../utils/theme';
@@ -26,7 +27,7 @@ function buildFeedbackUrl(error: Error): string {
   const deviceInfo = [
     `Device: ${Constants.deviceName ?? 'unknown'}`,
     `OS: ${Platform.OS} ${Platform.Version}`,
-    `App: ${Constants.expoConfig?.version ?? 'unknown'}`,
+    `App: ${Application.nativeApplicationVersion ?? 'unknown'}`,
   ].join('\n');
 
   const description = error.message ?? 'unknown error';

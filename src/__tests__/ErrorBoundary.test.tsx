@@ -18,6 +18,12 @@ jest.mock('expo-constants', () => ({
   },
 }));
 
+// Mock expo-application
+jest.mock('expo-application', () => ({
+  __esModule: true,
+  nativeApplicationVersion: '1.0.0',
+}));
+
 import ErrorBoundary from '../components/ErrorBoundary';
 
 // A component that unconditionally throws to trigger the error boundary

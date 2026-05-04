@@ -664,6 +664,7 @@ const es: TranslationType = {
   diagnostic_environment: 'Entorno',
   diagnostic_native_version: 'Versión',
   diagnostic_launch_type: 'Inicio',
+  diagnostic_runtime_version: 'Huella de runtime',
   diagnostic_update_id: 'Update ID',
   diagnostic_launch_embedded: 'Integrada',
   diagnostic_launch_ota: 'OTA',

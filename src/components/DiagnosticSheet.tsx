@@ -68,6 +68,7 @@ export default function DiagnosticSheet({ visible, onClose }: Props) {
   const launchType = Updates.isEmbeddedLaunch
     ? t('diagnostic_launch_embedded')
     : t('diagnostic_launch_ota');
+  const runtimeVersion = Updates.runtimeVersion ?? t('diagnostic_unknown');
   const updateId = Updates.updateId ?? t('diagnostic_none');
 
   type CheckState = 'idle' | 'checking' | 'done';
@@ -94,6 +95,7 @@ export default function DiagnosticSheet({ visible, onClose }: Props) {
       '--- App Diagnostics ---',
       `${t('diagnostic_environment')}: ${channel}`,
       `${t('diagnostic_native_version')}: ${nativeVersion} (${nativeBuildVersion})`,
+      `${t('diagnostic_runtime_version')}: ${runtimeVersion}`,
       `${t('diagnostic_launch_type')}: ${launchType}`,
       `${t('diagnostic_update_id')}: ${updateId}`,
     ].join('\n');
@@ -138,6 +140,12 @@ export default function DiagnosticSheet({ visible, onClose }: Props) {
           <DiagnosticRow
             label={t('diagnostic_native_version')}
             value={`${nativeVersion} (${nativeBuildVersion})`}
+            styles={styles}
+          />
+          <DiagnosticRow
+            label={t('diagnostic_runtime_version')}
+            value={runtimeVersion}
+            mono
             styles={styles}
           />
           <DiagnosticRow label={t('diagnostic_launch_type')} value={launchType} styles={styles} />

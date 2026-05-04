@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop } from '@gorhom/bottom-sheet';
 import Constants from 'expo-constants';
+import * as Application from 'expo-application';
 
 import { clearAllDataAsync, getSettingAsync, setSettingAsync } from '../storage';
 import PermissionExplainerSheet from '../components/PermissionExplainerSheet';
@@ -423,14 +424,14 @@ export default function SettingsScreen() {
                     sublabel={t('settings_app_sublabel')}
                     right={
                       <View style={styles.rowRightInline}>
-                        {Constants.expoConfig?.version ? (
+                        {Application.nativeApplicationVersion ? (
                           <TouchableOpacity
                             onPress={() => setShowDiagnosticSheet(true)}
                             testID="version-badge"
                           >
                             <Text
                               style={styles.versionBadge}
-                            >{`v${Constants.expoConfig.version}`}</Text>
+                            >{`v${Application.nativeApplicationVersion}`}</Text>
                           </TouchableOpacity>
                         ) : null}
                         <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
