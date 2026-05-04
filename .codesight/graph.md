@@ -14,9 +14,9 @@
 - `src\utils\sessionsChangedEmitter.ts` — imported by **9** files
 - `src\storage\types.ts` — imported by **9** files
 - `src\detection\index.ts` — imported by **8** files
+- `src\detection\sessionMerger.ts` — imported by **8** files
 - `src\detection\manualCheckin.ts` — imported by **8** files
 - `src\i18n\en.ts` — imported by **8** files
-- `src\detection\sessionMerger.ts` — imported by **7** files
 - `src\weather\weatherService.ts` — imported by **7** files
 - `src\hooks\useTheme.ts` — imported by **6** files
 - `src\detection\constants.ts` — imported by **6** files
