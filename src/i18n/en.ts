@@ -691,6 +691,7 @@ const en = {
   diagnostic_environment: 'Environment',
   diagnostic_native_version: 'Native Version',
   diagnostic_launch_type: 'Launch Type',
+  diagnostic_runtime_version: 'Runtime Fingerprint',
   diagnostic_update_id: 'Update ID',
   diagnostic_launch_embedded: 'Embedded',
   diagnostic_launch_ota: 'OTA Update',

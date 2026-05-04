@@ -674,6 +674,7 @@ const nl: TranslationType = {
   diagnostic_environment: 'Omgeving',
   diagnostic_native_version: 'Versie',
   diagnostic_launch_type: 'Starttype',
+  diagnostic_runtime_version: 'Runtime Vingerafdruk',
   diagnostic_update_id: 'Update ID',
   diagnostic_launch_embedded: 'Ingebouwd',
   diagnostic_launch_ota: 'OTA',
