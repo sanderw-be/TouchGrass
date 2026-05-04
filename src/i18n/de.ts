@@ -668,7 +668,7 @@ const de: TranslationType = {
   diagnostic_environment: 'Umgebung',
   diagnostic_native_version: 'Version',
   diagnostic_launch_type: 'Start-Typ',
-  diagnostic_runtime_version: 'Runtime-Fingerabdruk',
+  diagnostic_runtime_version: 'Runtime-Fingerabdruck',
   diagnostic_update_id: 'Update ID',
   diagnostic_launch_embedded: 'Eingebettet',
   diagnostic_launch_ota: 'OTA',
