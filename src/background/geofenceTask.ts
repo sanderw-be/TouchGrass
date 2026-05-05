@@ -37,57 +37,101 @@ TaskManager.defineTask(
       console.error(`[GEOFENCE_TASK] Error: ${error.message}`);
     }
 
-    if (!data) {
+    if (!data || !data.region.identifier) {
       return;
     }
 
     const { eventType, region } = data;
-    const regionName = region.identifier || t('location_unknown');
+    const regionId = region.identifier!; // Guarded above
+    const regionName = regionId || t('location_unknown');
 
     await initDatabaseAsync();
+
+    // Track active geofences to handle overlapping regions correctly
+    const activeRaw = await getSettingAsync('active_geofences', '[]');
+    let activeRegions: string[] = [];
+    try {
+      activeRegions = JSON.parse(activeRaw);
+      if (!Array.isArray(activeRegions)) {
+        activeRegions = [];
+      }
+    } catch {
+      activeRegions = [];
+    }
 
     const lastOutside = await getSettingAsync('gps_last_outside', '0');
 
     if (eventType === Location.GeofencingEventType.Exit) {
-      if (lastOutside === '1') {
-        console.log(`[GEOFENCE_TASK] Already outside ${regionName}. Skipping.`);
-        return;
+      // 1. Update active regions set
+      activeRegions = activeRegions.filter((id) => id !== regionId);
+      await setSettingAsync('active_geofences', JSON.stringify(activeRegions));
+
+      // 2. Only mark as outside if NO regions remain active
+      if (activeRegions.length === 0) {
+        if (lastOutside === '1') {
+          console.log(`[GEOFENCE_TASK] Already outside all regions. Skipping log/AR start.`);
+        } else {
+          await insertBackgroundLogAsync(
+            'gps',
+            `Geofence EXIT: ${regionName}. No active regions remain — starting session and AR.`
+          );
+          console.log(`[GEOFENCE_TASK] Exited ${regionName}. No active regions remain.`);
+
+          const now = Date.now();
+          await setSettingAsync('gps_session_start', String(now));
+          await setSettingAsync('gps_last_outside', '1');
+          await setSettingAsync('gps_session_start_label', regionName);
+
+          // Start monitoring activity transitions
+          await ActivityTransitionModule.startTracking();
+        }
+      } else {
+        await insertBackgroundLogAsync(
+          'gps',
+          `Geofence EXIT: ${regionName}. Still inside ${activeRegions.length} other region(s).`
+        );
+        console.log(
+          `[GEOFENCE_TASK] Exited ${regionName}, but still inside ${activeRegions.join(', ')}.`
+        );
       }
-      await insertBackgroundLogAsync(
-        'gps',
-        `Geofence EXIT: ${regionName}. Starting session and AR.`
-      );
-      console.log(`[GEOFENCE_TASK] Exited ${regionName}.`);
 
-      // 1. Mark session start
-      const now = Date.now();
-      await setSettingAsync('gps_session_start', String(now));
-      await setSettingAsync('gps_last_outside', '1');
-      await setSettingAsync('gps_session_start_label', regionName);
-
-      // 2. Start monitoring activity transitions
-      await ActivityTransitionModule.startTracking();
-    } else if (eventType === Location.GeofencingEventType.Enter) {
-      if (lastOutside === '0') {
-        console.log(`[GEOFENCE_TASK] Already inside ${regionName}. Skipping.`);
-        return;
-      }
-
-      await insertBackgroundLogAsync(
-        'gps',
-        `Geofence ENTER: ${regionName}. Stopping AR and recording session.`
-      );
-      console.log(`[GEOFENCE_TASK] Entered ${regionName}.`);
-
-      // 1. Stop monitoring activity
-      await ActivityTransitionModule.stopTracking();
+      // 3. ALWAYS cancel any pending dwell prompt on EXIT (because we are moving)
       try {
         await getDwellService().cancelDwellPrompt();
       } catch (e) {
-        console.warn('[GEOFENCE_TASK] Failed to cancel dwell prompt:', e);
+        console.warn('[GEOFENCE_TASK] Failed to cancel dwell prompt on EXIT:', e);
+      }
+    } else if (eventType === Location.GeofencingEventType.Enter) {
+      // 1. Update active regions set
+      if (!activeRegions.includes(regionId)) {
+        activeRegions.push(regionId);
+        await setSettingAsync('active_geofences', JSON.stringify(activeRegions));
       }
 
-      // 2. Finalize session
+      // 2. Mark as inside
+      if (lastOutside === '0') {
+        console.log(`[GEOFENCE_TASK] Already inside (at least one region). Skipping log/AR stop.`);
+      } else {
+        await insertBackgroundLogAsync(
+          'gps',
+          `Geofence ENTER: ${regionName}. Stopping AR and recording session.`
+        );
+        console.log(`[GEOFENCE_TASK] Entered ${regionName}.`);
+
+        // Stop monitoring activity
+        await ActivityTransitionModule.stopTracking();
+        await setSettingAsync('gps_last_outside', '0');
+      }
+
+      // 3. ALWAYS cancel any pending dwell prompt on ENTER (we are now in a known location)
+      try {
+        await getDwellService().cancelDwellPrompt();
+      } catch (e) {
+        console.warn('[GEOFENCE_TASK] Failed to cancel dwell prompt on ENTER:', e);
+      }
+
+      // 4. Finalize session (only if it was the FIRST enter after being outside)
+      // Note: we only finalize if we were outside. If we move from A to B, we stay "inside".
       const startRaw = await getSettingAsync('gps_session_start', '0');
       const startTime = parseInt(startRaw, 10);
       const now = Date.now();
@@ -102,15 +146,7 @@ TaskManager.defineTask(
           regionName,
         });
 
-        await submitSession(
-          buildSession(
-            startTime,
-            now,
-            'gps',
-            CONFIDENCE_GPS_ONLY, // Geofence confidence
-            notes
-          )
-        );
+        await submitSession(buildSession(startTime, now, 'gps', CONFIDENCE_GPS_ONLY, notes));
         emitSessionsChanged();
         await insertBackgroundLogAsync(
           'gps',
@@ -119,7 +155,6 @@ TaskManager.defineTask(
       }
 
       await setSettingAsync('gps_session_start', '0');
-      await setSettingAsync('gps_last_outside', '0');
     }
   }
 );

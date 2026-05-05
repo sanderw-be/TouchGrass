@@ -1,4 +1,5 @@
 import * as Notifications from 'expo-notifications';
+import * as Location from 'expo-location';
 import { getTodayMinutesAsync, getCurrentDailyGoalAsync, initDatabaseAsync, db } from '../storage';
 import { fetchWeatherForecast } from '../weather/weatherService';
 import { ReminderMessageBuilder } from '../notifications/services/ReminderMessageBuilder';
@@ -11,6 +12,7 @@ import {
 } from '../notifications/notificationManager';
 import { colors } from '../utils/theme';
 import { requestWidgetRefresh } from '../utils/widgetHelper';
+import { isAtAnyKnownLocation } from '../detection/GeofenceManager';
 
 interface HeadlessData {
   type: string;
@@ -96,29 +98,59 @@ export const handleSmartReminder = async (data: HeadlessData) => {
         `Motion: ${activity} | State: ${transition}`
       );
 
-      // --- DWELL TIME LOGIC ---
-      // We only care about ENTER transitions (becoming STILL, becoming WALKING, etc.)
-      if (transition === 'ENTER') {
-        if (activity === 'STILL') {
-          const isOutside = (await storageService.getSettingAsync('gps_last_outside', '0')) === '1';
+      // --- DWELL TIME LOGIC (REFINED) ---
+      // Requirement:
+      // 1. STILL and not in geofence: plan notification for in 2 hours
+      // 2. MOVING: unplan
+      // 3. Geofence EXIT: unplan (handled in geofenceTask.ts)
+      // 4. Location saved: unplan (handled in EditLocationSheet.tsx)
 
-          if (isOutside) {
-            console.log('[SR_HEADLESS] User is STILL and OUTSIDE. Scheduling dwell-time prompt.');
-            await getDwellService().scheduleDwellPrompt();
-          } else {
-            console.log('[SR_HEADLESS] User is STILL but INSIDE. Ignoring dwell-time logic.');
+      if (transition === 'ENTER' && activity === 'STILL') {
+        const isOutside = (await storageService.getSettingAsync('gps_last_outside', '0')) === '1';
+
+        if (isOutside) {
+          // Double check: are we actually inside a known location that was just added?
+          // This handles the "Location saved" case if it wasn't caught by the UI or if gps_last_outside is stale.
+          try {
+            const lastPos = await Location.getLastKnownPositionAsync();
+            if (lastPos) {
+              const knownLocations = await storageService.getAllKnownLocationsAsync();
+              if (
+                isAtAnyKnownLocation(
+                  lastPos.coords.latitude,
+                  lastPos.coords.longitude,
+                  knownLocations
+                )
+              ) {
+                console.log(
+                  '[SR_HEADLESS] User is STILL but inside a newly known location. Ignoring dwell-time logic.'
+                );
+                return;
+              }
+            }
+          } catch (e) {
+            console.warn('[SR_HEADLESS] Failed to double-check location during dwell logic:', e);
           }
-        } else if (
-          activity === 'WALKING' ||
+
+          console.log('[SR_HEADLESS] User is STILL and OUTSIDE. Scheduling dwell-time prompt.');
+          await getDwellService().scheduleDwellPrompt();
+        } else {
+          console.log('[SR_HEADLESS] User is STILL but INSIDE. Ignoring dwell-time logic.');
+        }
+      } else if (
+        transition === 'ENTER' &&
+        (activity === 'WALKING' ||
           activity === 'RUNNING' ||
           activity === 'ON_BICYCLE' ||
-          activity === 'IN_VEHICLE'
-        ) {
-          console.log(`[SR_HEADLESS] User is moving (${activity}). Canceling dwell-time prompt.`);
-          await getDwellService().cancelDwellPrompt();
-        }
+          activity === 'IN_VEHICLE' ||
+          activity === 'ON_FOOT')
+      ) {
+        console.log(
+          `[SR_HEADLESS] User started moving (${activity}). Canceling dwell-time prompt.`
+        );
+        await getDwellService().cancelDwellPrompt();
       } else if (transition === 'EXIT' && activity === 'STILL') {
-        // If they stop being STILL, cancel the timer
+        console.log('[SR_HEADLESS] User stopped being STILL. Canceling dwell-time prompt.');
         await getDwellService().cancelDwellPrompt();
       }
 

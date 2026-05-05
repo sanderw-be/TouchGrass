@@ -4,7 +4,7 @@
 
 > 0 routes | 0 models | 39 components | 60 lib files | 3 env vars | 1 middleware | 0% test coverage
 > **Token savings:** this file is ~6.300 tokens. Without it, AI exploration would cost ~38.000 tokens. **Saves ~31.700 tokens per conversation.**
-> **Last scanned:** 2026-05-04 15:47 — re-run after significant changes
+> **Last scanned:** 2026-05-05 06:00 — re-run after significant changes
 
 ---
 
@@ -73,12 +73,12 @@
   - interface IAppContainer
 - `src\detection\GeofenceManager.ts`
   - function isAtKnownIndoorLocation: (lat, lon, locations) => boolean
+  - function isAtAnyKnownLocation: (lat, lon, locations) => boolean
   - function wasDefinitelyAtKnownIndoorLocationSync: (startMs, endMs, allSamples, knownLocations) => boolean
   - function shouldTriggerBurst: (lat, lon, locations, now, lastBurstAtTimestamp, currentProfile, locationAccuracy?) => boolean
   - function computeMinActiveRadius: (locations) => number
   - function clampRadiusMeters: (radius) => number
-  - function createClusterObject: (samples) => LocationCluster
-  - _...4 more_
+  - _...5 more_
 - `src\detection\gpsDetection.ts`
   - function loadGPSState: () => Promise<void>
   - function requestLocationPermissions: () => Promise<
@@ -330,19 +330,19 @@
 - `src\storage\StorageService.ts` — imported by **11** files
 - `src\components\ResponsiveGridList.tsx` — imported by **11** files
 - `src\utils\helpers.ts` — imported by **10** files
+- `src\storage\types.ts` — imported by **10** files
 - `src\storage\db.ts` — imported by **10** files
 - `src\utils\widgetHelper.ts` — imported by **9** files
 - `src\utils\sessionsChangedEmitter.ts` — imported by **9** files
-- `src\storage\types.ts` — imported by **9** files
 - `src\detection\index.ts` — imported by **8** files
 - `src\detection\sessionMerger.ts` — imported by **8** files
 - `src\detection\manualCheckin.ts` — imported by **8** files
 - `src\i18n\en.ts` — imported by **8** files
 - `src\weather\weatherService.ts` — imported by **7** files
+- `src\detection\GeofenceManager.ts` — imported by **6** files
 - `src\hooks\useTheme.ts` — imported by **6** files
 - `src\detection\constants.ts` — imported by **6** files
 - `src\calendar\calendarService.ts` — imported by **6** files
-- `src\utils\constants.ts` — imported by **6** files
 
 ## Import Map (who imports what)
 
@@ -353,16 +353,16 @@
 - `src\storage\StorageService.ts` ← `src\background\smartReminderTask.ts`, `src\core\container.ts`, `src\notifications\services\NotificationResponseHandler.ts`, `src\notifications\services\ReminderMessageBuilder.ts`, `src\notifications\services\ReminderQueueManager.ts` +6 more
 - `src\components\ResponsiveGridList.tsx` ← `src\screens\AboutAppScreen.tsx`, `src\screens\ActivityLogScreen.tsx`, `src\screens\EventsScreen.tsx`, `src\screens\FeedbackSupportScreen.tsx`, `src\screens\GoalsScreen.tsx` +6 more
 - `src\utils\helpers.ts` ← `src\components\EditSessionSheet.tsx`, `src\components\ManualSessionSheet.tsx`, `src\components\ProgressRing.tsx`, `src\components\ReminderFeedbackModal.tsx`, `src\i18n\index.ts` +5 more
+- `src\storage\types.ts` ← `src\domain\SessionDomain.ts`, `src\storage\index.ts`, `src\storage\repositories\GoalRepository.ts`, `src\storage\repositories\LocationRepository.ts`, `src\storage\repositories\LogRepository.ts` +5 more
 - `src\storage\db.ts` ← `src\storage\index.ts`, `src\storage\repositories\GoalRepository.ts`, `src\storage\repositories\LocationRepository.ts`, `src\storage\repositories\LogRepository.ts`, `src\storage\repositories\NotificationRepository.ts` +5 more
 - `src\utils\widgetHelper.ts` ← `appBootstrap.ts`, `src\background\smartReminderTask.ts`, `src\hooks\useForegroundSync.ts`, `src\screens\EventsScreen.tsx`, `src\widget\widget-task-handler.tsx` +4 more
-- `src\utils\sessionsChangedEmitter.ts` ← `src\background\geofenceTask.ts`, `src\detection\HealthSessionBuilder.ts`, `src\detection\LocationTracker.ts`, `src\navigation\AppNavigator.tsx`, `src\screens\EventsScreen.tsx` +4 more
 
 ---
 
 # Test Coverage
 
 > **0%** of routes and models are covered by tests
-> 70 test files found
+> 71 test files found
 
 ---
 
