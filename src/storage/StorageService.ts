@@ -1,7 +1,17 @@
 import { SQLiteDatabase } from 'expo-sqlite';
+import { WeatherCondition, WeatherCache } from '../weather/types';
 import { initDatabaseAsync } from './db';
 import { OutsideSession, DailyGoal, KnownLocation } from './types';
-import { WeatherCondition, WeatherCache } from '../weather/types';
+
+interface KnownLocationRow {
+  id: number;
+  label: string;
+  latitude: number;
+  longitude: number;
+  radiusMeters: number;
+  isIndoor: number;
+  status: string;
+}
 
 export interface IStorageService {
   // Settings
@@ -117,38 +127,21 @@ export class StorageService implements IStorageService {
 
   async getAllKnownLocationsAsync(): Promise<KnownLocation[]> {
     await initDatabaseAsync();
-    const rows = await this.db.getAllAsync<{
-      id: number;
-      label: string;
-      latitude: number;
-      longitude: number;
-      radiusMeters: number;
-      isIndoor: number;
-      status: string;
-    }>('SELECT * FROM known_locations');
-    return rows.map((row) => ({
-      id: row.id,
-      label: row.label,
-      latitude: row.latitude,
-      longitude: row.longitude,
-      radiusMeters: row.radiusMeters,
-      isIndoor: row.isIndoor === 1,
-      status: row.status === 'suggested' ? 'suggested' : 'active',
-    }));
+    const rows = await this.db.getAllAsync<KnownLocationRow>('SELECT * FROM known_locations');
+    return rows.map((row) => this.mapKnownLocation(row));
   }
 
   async getKnownLocationsAsync(): Promise<KnownLocation[]> {
     await initDatabaseAsync();
-    const rows = await this.db.getAllAsync<{
-      id: number;
-      label: string;
-      latitude: number;
-      longitude: number;
-      radiusMeters: number;
-      isIndoor: number;
-      status: string;
-    }>('SELECT * FROM known_locations WHERE status = ?', ['active']);
-    return rows.map((row) => ({
+    const rows = await this.db.getAllAsync<KnownLocationRow>(
+      'SELECT * FROM known_locations WHERE status = ?',
+      ['active']
+    );
+    return rows.map((row) => this.mapKnownLocation(row));
+  }
+
+  private mapKnownLocation(row: KnownLocationRow): KnownLocation {
+    return {
       id: row.id,
       label: row.label,
       latitude: row.latitude,
@@ -156,7 +149,7 @@ export class StorageService implements IStorageService {
       radiusMeters: row.radiusMeters,
       isIndoor: row.isIndoor === 1,
       status: row.status === 'suggested' ? 'suggested' : 'active',
-    }));
+    };
   }
 
   async getSessionsForRangeAsync(fromMs: number, toMs: number): Promise<OutsideSession[]> {
