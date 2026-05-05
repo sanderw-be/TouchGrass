@@ -1,6 +1,6 @@
 import { SQLiteDatabase } from 'expo-sqlite';
 import { initDatabaseAsync } from './db';
-import { OutsideSession, DailyGoal } from './types';
+import { OutsideSession, DailyGoal, KnownLocation } from './types';
 import { WeatherCondition, WeatherCache } from '../weather/types';
 
 export interface IStorageService {
@@ -12,6 +12,8 @@ export interface IStorageService {
   insertSessionAsync(session: OutsideSession): Promise<number>;
   getTodayMinutesAsync(): Promise<number>;
   getCurrentDailyGoalAsync(): Promise<DailyGoal | null>;
+  getAllKnownLocationsAsync(): Promise<KnownLocation[]>;
+  getKnownLocationsAsync(): Promise<KnownLocation[]>;
   getSessionsForRangeAsync(fromMs: number, toMs: number): Promise<OutsideSession[]>;
   insertReminderFeedbackAsync(feedback: {
     timestamp: number;
@@ -111,6 +113,50 @@ export class StorageService implements IStorageService {
     return await this.db.getFirstAsync<DailyGoal>(
       'SELECT * FROM daily_goals ORDER BY createdAt DESC LIMIT 1'
     );
+  }
+
+  async getAllKnownLocationsAsync(): Promise<KnownLocation[]> {
+    await initDatabaseAsync();
+    const rows = await this.db.getAllAsync<{
+      id: number;
+      label: string;
+      latitude: number;
+      longitude: number;
+      radiusMeters: number;
+      isIndoor: number;
+      status: string;
+    }>('SELECT * FROM known_locations');
+    return rows.map((row) => ({
+      id: row.id,
+      label: row.label,
+      latitude: row.latitude,
+      longitude: row.longitude,
+      radiusMeters: row.radiusMeters,
+      isIndoor: row.isIndoor === 1,
+      status: row.status === 'suggested' ? 'suggested' : 'active',
+    }));
+  }
+
+  async getKnownLocationsAsync(): Promise<KnownLocation[]> {
+    await initDatabaseAsync();
+    const rows = await this.db.getAllAsync<{
+      id: number;
+      label: string;
+      latitude: number;
+      longitude: number;
+      radiusMeters: number;
+      isIndoor: number;
+      status: string;
+    }>('SELECT * FROM known_locations WHERE status = ?', ['active']);
+    return rows.map((row) => ({
+      id: row.id,
+      label: row.label,
+      latitude: row.latitude,
+      longitude: row.longitude,
+      radiusMeters: row.radiusMeters,
+      isIndoor: row.isIndoor === 1,
+      status: row.status === 'suggested' ? 'suggested' : 'active',
+    }));
   }
 
   async getSessionsForRangeAsync(fromMs: number, toMs: number): Promise<OutsideSession[]> {

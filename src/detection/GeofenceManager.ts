@@ -41,6 +41,20 @@ export function isAtKnownIndoorLocation(
 }
 
 /**
+ * Check if a coordinate is inside any known location (indoor or outdoor).
+ */
+export function isAtAnyKnownLocation(
+  lat: number,
+  lon: number,
+  locations: KnownLocation[]
+): boolean {
+  return locations.some((loc) => {
+    const dist = haversineDistance(lat, lon, loc.latitude, loc.longitude);
+    return dist <= loc.radiusMeters;
+  });
+}
+
+/**
  * Returns true if every GPS cluster sample within [startMs, endMs] falls inside
  * a known indoor location — meaning the user was definitely not outside.
  */

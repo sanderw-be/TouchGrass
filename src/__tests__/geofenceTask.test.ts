@@ -51,6 +51,12 @@ describe('GEOFENCE_TASK', () => {
       cancelDwellPrompt: jest.fn().mockResolvedValue(undefined),
     };
     (getDwellService as jest.Mock).mockReturnValue(mockDwellService);
+
+    (getSettingAsync as jest.Mock).mockImplementation((key: string, fallback: string) => {
+      if (key === 'active_geofences') return '[]';
+      if (key === 'gps_last_outside') return '0';
+      return fallback;
+    });
   });
 
   it('should be defined', () => {
@@ -63,10 +69,13 @@ describe('GEOFENCE_TASK', () => {
   });
 
   it('should handle Geofence Enter event', async () => {
-    (getSettingAsync as jest.Mock)
-      .mockResolvedValueOnce('1') // lastOutside (line 49)
-      .mockResolvedValueOnce(String(Date.now() - 10 * 60 * 1000)) // gps_session_start (line 91)
-      .mockResolvedValueOnce('Home'); // gps_session_start_label (line 98)
+    (getSettingAsync as jest.Mock).mockImplementation(async (key: string) => {
+      if (key === 'active_geofences') return '[]';
+      if (key === 'gps_last_outside') return '1';
+      if (key === 'gps_session_start') return String(Date.now() - 10 * 60 * 1000);
+      if (key === 'gps_session_start_label') return 'Home';
+      return null;
+    });
 
     const data = {
       eventType: Location.GeofencingEventType.Enter,
@@ -83,7 +92,11 @@ describe('GEOFENCE_TASK', () => {
   });
 
   it('should skip Geofence Enter event if already inside', async () => {
-    (getSettingAsync as jest.Mock).mockResolvedValueOnce('0'); // lastOutside = 0
+    (getSettingAsync as jest.Mock).mockImplementation(async (key: string) => {
+      if (key === 'active_geofences') return '["Home"]'; // Already inside Home
+      if (key === 'gps_last_outside') return '0';
+      return '0';
+    });
     const data = {
       eventType: Location.GeofencingEventType.Enter,
       region: { identifier: 'Home', latitude: 0, longitude: 0, radius: 100 },
@@ -91,12 +104,19 @@ describe('GEOFENCE_TASK', () => {
 
     await taskCallback({ data, error: null });
 
-    // Should return early
+    // Should return early (skip AR stop)
     expect(ActivityTransitionModule.stopTracking).not.toHaveBeenCalled();
+    // But it SHOULD still cancel dwell prompt!
+    expect(mockDwellService.cancelDwellPrompt).toHaveBeenCalled();
   });
 
-  it('should handle Geofence Exit event', async () => {
-    (getSettingAsync as jest.Mock).mockResolvedValueOnce('0'); // lastOutside = 0
+  it('should handle Geofence Exit event (no regions left)', async () => {
+    (getSettingAsync as jest.Mock).mockImplementation(async (key: string) => {
+      if (key === 'active_geofences') return '["Home"]'; // Inside Home before exit
+      if (key === 'gps_last_outside') return '0';
+      return '0';
+    });
+
     const data = {
       eventType: Location.GeofencingEventType.Exit,
       region: { identifier: 'Home', latitude: 0, longitude: 0, radius: 100 },
@@ -105,13 +125,59 @@ describe('GEOFENCE_TASK', () => {
     await taskCallback({ data, error: null });
 
     expect(initDatabaseAsync).toHaveBeenCalled();
+    expect(setSettingAsync).toHaveBeenCalledWith('active_geofences', '[]');
     expect(setSettingAsync).toHaveBeenCalledWith('gps_session_start', expect.any(String));
     expect(setSettingAsync).toHaveBeenCalledWith('gps_last_outside', '1');
     expect(ActivityTransitionModule.startTracking).toHaveBeenCalled();
+    expect(mockDwellService.cancelDwellPrompt).toHaveBeenCalled();
+  });
+
+  it('should handle Geofence Exit event (still inside another)', async () => {
+    (getSettingAsync as jest.Mock).mockImplementation(async (key: string) => {
+      if (key === 'active_geofences') return '["Home", "Work"]'; // Inside both
+      if (key === 'gps_last_outside') return '0';
+      return '0';
+    });
+
+    const data = {
+      eventType: Location.GeofencingEventType.Exit,
+      region: { identifier: 'Home', latitude: 0, longitude: 0, radius: 100 },
+    };
+
+    await taskCallback({ data, error: null });
+
+    expect(setSettingAsync).toHaveBeenCalledWith('active_geofences', '["Work"]');
+    expect(setSettingAsync).not.toHaveBeenCalledWith('gps_last_outside', '1');
+    expect(ActivityTransitionModule.startTracking).not.toHaveBeenCalled();
+    expect(mockDwellService.cancelDwellPrompt).toHaveBeenCalled();
+  });
+
+  it('should handle Geofence Enter event and update active regions', async () => {
+    (getSettingAsync as jest.Mock).mockImplementation(async (key: string) => {
+      if (key === 'active_geofences') return '["Work"]';
+      if (key === 'gps_last_outside') return '1';
+      return '0';
+    });
+
+    const data = {
+      eventType: Location.GeofencingEventType.Enter,
+      region: { identifier: 'Home', latitude: 0, longitude: 0, radius: 100 },
+    };
+
+    await taskCallback({ data, error: null });
+
+    expect(setSettingAsync).toHaveBeenCalledWith('active_geofences', '["Work","Home"]');
+    expect(setSettingAsync).toHaveBeenCalledWith('gps_last_outside', '0');
+    expect(ActivityTransitionModule.stopTracking).toHaveBeenCalled();
+    expect(mockDwellService.cancelDwellPrompt).toHaveBeenCalled();
   });
 
   it('should skip Geofence Exit event if already outside', async () => {
-    (getSettingAsync as jest.Mock).mockResolvedValueOnce('1'); // lastOutside = 1
+    (getSettingAsync as jest.Mock).mockImplementation(async (key: string) => {
+      if (key === 'active_geofences') return '[]';
+      if (key === 'gps_last_outside') return '1';
+      return '0';
+    });
     const data = {
       eventType: Location.GeofencingEventType.Exit,
       region: { identifier: 'Home', latitude: 0, longitude: 0, radius: 100 },
@@ -124,7 +190,11 @@ describe('GEOFENCE_TASK', () => {
   });
 
   it('should handle errors gracefully when cancelDwellPrompt fails', async () => {
-    (getSettingAsync as jest.Mock).mockResolvedValueOnce('1'); // lastOutside = 1
+    (getSettingAsync as jest.Mock).mockImplementation(async (key: string) => {
+      if (key === 'active_geofences') return '["Home"]';
+      if (key === 'gps_last_outside') return '1';
+      return '0';
+    });
     mockDwellService.cancelDwellPrompt.mockRejectedValue(new Error('Notification error'));
 
     const data = {
