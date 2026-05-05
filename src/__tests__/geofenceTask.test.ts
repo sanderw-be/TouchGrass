@@ -213,4 +213,48 @@ describe('GEOFENCE_TASK', () => {
     await taskCallback({ data: null, error });
     // This covers the error branch
   });
+  it('should handle invalid JSON in active_geofences gracefully', async () => {
+    (getSettingAsync as jest.Mock).mockImplementation(async (key: string) => {
+      if (key === 'active_geofences') return 'INVALID_JSON';
+      if (key === 'gps_last_outside') return '0';
+      return '0';
+    });
+
+    const data = {
+      eventType: Location.GeofencingEventType.Exit,
+      region: { identifier: 'Home', latitude: 0, longitude: 0, radius: 100 },
+    };
+
+    await taskCallback({ data, error: null });
+
+    expect(setSettingAsync).toHaveBeenCalledWith('gps_last_outside', '1');
+    expect(setSettingAsync).toHaveBeenCalledWith('active_geofences', '[]');
+  });
+  it('should handle non-array active_geofences gracefully', async () => {
+    (getSettingAsync as jest.Mock).mockImplementation(async (key: string) => {
+      if (key === 'active_geofences') return '"JUST_A_STRING"';
+      return '0';
+    });
+
+    const data = {
+      eventType: Location.GeofencingEventType.Exit,
+      region: { identifier: 'Home', latitude: 0, longitude: 0, radius: 100 },
+    };
+
+    await taskCallback({ data, error: null });
+
+    expect(setSettingAsync).toHaveBeenCalledWith('active_geofences', '[]');
+  });
+
+  it('should handle cancelDwellPrompt failure on EXIT gracefully', async () => {
+    (getSettingAsync as jest.Mock).mockReturnValue('0');
+    mockDwellService.cancelDwellPrompt.mockRejectedValue(new Error('Dwell error'));
+
+    const data = {
+      eventType: Location.GeofencingEventType.Exit,
+      region: { identifier: 'Home', latitude: 0, longitude: 0, radius: 100 },
+    };
+
+    await expect(taskCallback({ data, error: null })).resolves.not.toThrow();
+  });
 });

@@ -286,5 +286,22 @@ describe('handleSmartReminder', () => {
 
       expect(mockDwellService.cancelDwellPrompt).toHaveBeenCalled();
     });
+    it('should proceed with scheduling if double-check fails', async () => {
+      mockStorage.getSettingAsync.mockImplementation(async (key: string) => {
+        if (key === 'gps_last_outside') return '1';
+        return '0';
+      });
+
+      (Location.getLastKnownPositionAsync as jest.Mock).mockRejectedValue(new Error('GPS error'));
+
+      await handleSmartReminder({
+        type: 'activity_transition',
+        activityType: 'STILL',
+        transitionType: 'ENTER',
+      });
+
+      // Should still schedule if double-check fails (safe default)
+      expect(mockDwellService.scheduleDwellPrompt).toHaveBeenCalled();
+    });
   });
 });
