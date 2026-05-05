@@ -41,6 +41,8 @@ yarn-error.*
 /android
 .gradle/
 
+coverage/
+
 .idea/
 credentials.json
 google-service-account.json

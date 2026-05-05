@@ -19,12 +19,12 @@
   - interface IAppContainer
 - `src\detection\GeofenceManager.ts`
   - function isAtKnownIndoorLocation: (lat, lon, locations) => boolean
+  - function isAtAnyKnownLocation: (lat, lon, locations) => boolean
   - function wasDefinitelyAtKnownIndoorLocationSync: (startMs, endMs, allSamples, knownLocations) => boolean
   - function shouldTriggerBurst: (lat, lon, locations, now, lastBurstAtTimestamp, currentProfile, locationAccuracy?) => boolean
   - function computeMinActiveRadius: (locations) => number
   - function clampRadiusMeters: (radius) => number
-  - function createClusterObject: (samples) => LocationCluster
-  - _...4 more_
+  - _...5 more_
 - `src\detection\gpsDetection.ts`
   - function loadGPSState: () => Promise<void>
   - function requestLocationPermissions: () => Promise<

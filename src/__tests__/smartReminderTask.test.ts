@@ -1,4 +1,5 @@
 import * as Notifications from 'expo-notifications';
+import * as Location from 'expo-location';
 import { getTodayMinutesAsync, getCurrentDailyGoalAsync } from '../storage';
 import { fetchWeatherForecast } from '../weather/weatherService';
 import { ReminderMessageBuilder } from '../notifications/services/ReminderMessageBuilder';
@@ -27,6 +28,12 @@ jest.mock('../notifications/notificationManager', () => ({
   getSmartReminderScheduler: jest.fn(),
   getDwellService: jest.fn(),
 }));
+jest.mock('expo-location', () => ({
+  getLastKnownPositionAsync: jest.fn(),
+}));
+jest.mock('../detection/GeofenceManager', () => ({
+  isAtAnyKnownLocation: jest.fn(),
+}));
 
 describe('handleSmartReminder', () => {
   let mockScheduler: any;
@@ -46,6 +53,7 @@ describe('handleSmartReminder', () => {
       getSettingAsync: jest.fn(),
       setSettingAsync: jest.fn(),
       insertBackgroundLogAsync: jest.fn(),
+      getAllKnownLocationsAsync: jest.fn().mockResolvedValue([]),
     };
     (StorageService as jest.Mock).mockImplementation(() => mockStorage);
 
@@ -65,6 +73,9 @@ describe('handleSmartReminder', () => {
     (getDwellService as jest.Mock).mockReturnValue(mockDwellService);
 
     mockStorage.getSettingAsync.mockImplementation((key: string, defaultVal: string) => defaultVal);
+    (Location.getLastKnownPositionAsync as jest.Mock).mockResolvedValue(null);
+    const { isAtAnyKnownLocation } = require('../detection/GeofenceManager');
+    (isAtAnyKnownLocation as jest.Mock).mockReturnValue(false);
   });
 
   it('should replan and exit early for boot_replan', async () => {
@@ -243,6 +254,54 @@ describe('handleSmartReminder', () => {
       });
 
       expect(mockDwellService.cancelDwellPrompt).toHaveBeenCalled();
+    });
+
+    it('should NOT schedule if double-check reveals we are in a known location', async () => {
+      mockStorage.getSettingAsync.mockImplementation(async (key: string) => {
+        if (key === 'gps_last_outside') return '1';
+        return '0';
+      });
+
+      (Location.getLastKnownPositionAsync as jest.Mock).mockResolvedValue({
+        coords: { latitude: 52, longitude: 5 },
+      });
+      const { isAtAnyKnownLocation } = require('../detection/GeofenceManager');
+      (isAtAnyKnownLocation as jest.Mock).mockReturnValue(true);
+
+      await handleSmartReminder({
+        type: 'activity_transition',
+        activityType: 'STILL',
+        transitionType: 'ENTER',
+      });
+
+      expect(mockDwellService.scheduleDwellPrompt).not.toHaveBeenCalled();
+    });
+
+    it('should cancel dwell prompt when ON_BICYCLE', async () => {
+      await handleSmartReminder({
+        type: 'activity_transition',
+        activityType: 'ON_BICYCLE',
+        transitionType: 'ENTER',
+      });
+
+      expect(mockDwellService.cancelDwellPrompt).toHaveBeenCalled();
+    });
+    it('should proceed with scheduling if double-check fails', async () => {
+      mockStorage.getSettingAsync.mockImplementation(async (key: string) => {
+        if (key === 'gps_last_outside') return '1';
+        return '0';
+      });
+
+      (Location.getLastKnownPositionAsync as jest.Mock).mockRejectedValue(new Error('GPS error'));
+
+      await handleSmartReminder({
+        type: 'activity_transition',
+        activityType: 'STILL',
+        transitionType: 'ENTER',
+      });
+
+      // Should still schedule if double-check fails (safe default)
+      expect(mockDwellService.scheduleDwellPrompt).toHaveBeenCalled();
     });
   });
 });
