@@ -64,9 +64,11 @@ export const handleSmartReminder = async (data: HeadlessData) => {
       sentSmartReminders = 0;
     }
 
-    const lastCatchupDate = await storageService.getSettingAsync('sent_catchup_reminders_date', '');
-    let sentCatchupReminders =
-      parseInt(await storageService.getSettingAsync('sent_catchup_reminders_count', '0'), 10) || 0;
+    const [lastCatchupDate, catchupCountStr] = await Promise.all([
+      storageService.getSettingAsync('sent_catchup_reminders_date', ''),
+      storageService.getSettingAsync('sent_catchup_reminders_count', '0'),
+    ]);
+    let sentCatchupReminders = parseInt(catchupCountStr, 10) || 0;
 
     if (lastCatchupDate !== todayDateStr) {
       sentCatchupReminders = 0;
@@ -198,11 +200,17 @@ export const handleSmartReminder = async (data: HeadlessData) => {
         );
         // Increment catchup fired counter before sending
         sentCatchupReminders += 1;
-        await storageService.setSettingAsync('sent_catchup_reminders_date', todayDateStr);
-        await storageService.setSettingAsync(
-          'sent_catchup_reminders_count',
-          sentCatchupReminders.toString()
-        );
+        try {
+          await Promise.all([
+            storageService.setSettingAsync('sent_catchup_reminders_date', todayDateStr),
+            storageService.setSettingAsync(
+              'sent_catchup_reminders_count',
+              sentCatchupReminders.toString()
+            ),
+          ]);
+        } catch (error) {
+          console.warn('[SR_HEADLESS] Non-critical storage failure saving catchup count', error);
+        }
         shouldSend = true;
       } else {
         console.log(

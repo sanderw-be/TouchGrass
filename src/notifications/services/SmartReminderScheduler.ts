@@ -371,29 +371,19 @@ export class SmartReminderScheduler implements ISmartReminderScheduler {
         // Note: the headless task stores this date via new Date().toDateString() (e.g. "Sat Mar 14 2026"),
         // so we compare using the same format here.
         const todayDateStr = now.toDateString();
-        const lastFiredSmartDate = await this.storageService.getSettingAsync(
-          'sent_smart_reminders_date',
-          ''
-        );
-        const firedSmartToday =
-          lastFiredSmartDate === todayDateStr
-            ? parseInt(
-                await this.storageService.getSettingAsync('sent_smart_reminders_count', '0'),
-                10
-              ) || 0
-            : 0;
+        const [lastFiredSmartDate, lastFiredCatchupDate, firedSmartCountStr, firedCatchupCountStr] =
+          await Promise.all([
+            this.storageService.getSettingAsync('sent_smart_reminders_date', ''),
+            this.storageService.getSettingAsync('sent_catchup_reminders_date', ''),
+            this.storageService.getSettingAsync('sent_smart_reminders_count', '0'),
+            this.storageService.getSettingAsync('sent_catchup_reminders_count', '0'),
+          ]);
 
-        const lastFiredCatchupDate = await this.storageService.getSettingAsync(
-          'sent_catchup_reminders_date',
-          ''
-        );
+        const firedSmartToday =
+          lastFiredSmartDate === todayDateStr ? parseInt(firedSmartCountStr, 10) || 0 : 0;
+
         const firedCatchupToday =
-          lastFiredCatchupDate === todayDateStr
-            ? parseInt(
-                await this.storageService.getSettingAsync('sent_catchup_reminders_count', '0'),
-                10
-              ) || 0
-            : 0;
+          lastFiredCatchupDate === todayDateStr ? parseInt(firedCatchupCountStr, 10) || 0 : 0;
 
         // Effective count = future slots still in queue + already-fired today
         const effectiveSmartCount = carriedSmartCount + firedSmartToday;

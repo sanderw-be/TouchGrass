@@ -1385,6 +1385,74 @@ describe('notificationManager', () => {
         jest.useRealTimers();
         jest.restoreAllMocks();
       });
+
+      it('treats fired counts as 0 when tracked date is stale or value is invalid', async () => {
+        // Regression test for parsing robustness and stale date clearing
+        jest.useFakeTimers();
+        jest.setSystemTime(new Date('2026-03-14T10:05:00'));
+
+        const settingsStore: Record<string, string> = {
+          smart_reminder_queue: JSON.stringify([]),
+          smart_reminders_count: '1',
+          smart_catchup_reminders_count: '1',
+          sent_smart_reminders_date: 'Fri Mar 13 2026', // Stale date
+          sent_smart_reminders_count: '5', // Should be ignored due to stale date
+          sent_catchup_reminders_date: 'Sat Mar 14 2026', // Valid date
+          sent_catchup_reminders_count: 'NaN', // Invalid value, should fallback to 0
+        };
+        (Database.getTodayMinutesAsync as jest.Mock).mockResolvedValue(10);
+        (Database.getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
+        (Database.getSettingAsync as jest.Mock).mockImplementation(
+          async (key: string, fallback: string) =>
+            key in settingsStore ? settingsStore[key] : fallback
+        );
+        (Database.setSettingAsync as jest.Mock).mockImplementation(
+          async (key: string, value: string) => {
+            settingsStore[key] = value;
+          }
+        );
+        (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([]);
+        (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockImplementation(
+          async (
+            _todayMins: number,
+            _target: number,
+            _h: number,
+            _m: number,
+            plannedSlots: any[],
+            baseDateMs: number
+          ) => {
+            const baseDate = new Date(baseDateMs);
+            const filterPlanned = (slots: any[]) =>
+              slots.filter(
+                (s) => !plannedSlots.some((p: any) => p.hour === s.hour && p.minute === s.minute)
+              );
+            if (baseDate.getDate() === 14) {
+              return filterPlanned([
+                { hour: 15, minute: 0, score: 0.75, reason: 'afternoon' },
+                { hour: 18, minute: 0, score: 0.8, reason: 'evening' },
+              ]);
+            }
+            return filterPlanned([{ hour: 9, minute: 0, score: 0.85, reason: 'tomorrow' }]);
+          }
+        );
+
+        await getSmartReminderScheduler().scheduleUpcomingReminders({ isHeadlessReplan: true });
+
+        const scheduledItems = (
+          SmartReminderModule.scheduleReminders as jest.Mock
+        ).mock.calls[0][0].filter((item: { type: string; timestamp: number }) => {
+          const d = new Date(item.timestamp);
+          return d.getDate() === 14 && item.type !== 'widget_reset';
+        });
+
+        // Smart reminder fired count was ignored (stale) = 0
+        // Catchup reminder fired count was ignored (NaN) = 0
+        // So scheduler needs 1 smart + 1 catchup = 2
+        expect(scheduledItems).toHaveLength(2);
+
+        jest.useRealTimers();
+        jest.restoreAllMocks();
+      });
     });
   });
 
