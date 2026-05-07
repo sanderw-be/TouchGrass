@@ -64,6 +64,14 @@ export const handleSmartReminder = async (data: HeadlessData) => {
       sentSmartReminders = 0;
     }
 
+    const lastCatchupDate = await storageService.getSettingAsync('sent_catchup_reminders_date', '');
+    let sentCatchupReminders =
+      parseInt(await storageService.getSettingAsync('sent_catchup_reminders_count', '0'), 10) || 0;
+
+    if (lastCatchupDate !== todayDateStr) {
+      sentCatchupReminders = 0;
+    }
+
     const smartRemindersCount =
       parseInt(await storageService.getSettingAsync('smart_reminders_count', '2'), 10) || 2;
 
@@ -187,6 +195,13 @@ export const handleSmartReminder = async (data: HeadlessData) => {
       if (progressRatio <= expectedRatio && todayMinutes < targetMinutes) {
         console.log(
           `[SR_HEADLESS] Catchup triggered: activity progress (${progressRatio.toFixed(2)}) <= notification progress (${expectedRatio.toFixed(2)})`
+        );
+        // Increment catchup fired counter before sending
+        sentCatchupReminders += 1;
+        await storageService.setSettingAsync('sent_catchup_reminders_date', todayDateStr);
+        await storageService.setSettingAsync(
+          'sent_catchup_reminders_count',
+          sentCatchupReminders.toString()
         );
         shouldSend = true;
       } else {

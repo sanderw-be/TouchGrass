@@ -365,7 +365,41 @@ export class SmartReminderScheduler implements ISmartReminderScheduler {
           10
         );
 
-        if (carriedSmartCount < remindersCount || carriedCatchupCount < catchupLimit) {
+        // Account for reminders that already fired today (tracked by the headless task).
+        // This prevents the replanner from treating a just-fired slot as an unfilled gap
+        // and scheduling an extra reminder to compensate.
+        // Note: the headless task stores this date via new Date().toDateString() (e.g. "Sat Mar 14 2026"),
+        // so we compare using the same format here.
+        const todayDateStr = now.toDateString();
+        const lastFiredSmartDate = await this.storageService.getSettingAsync(
+          'sent_smart_reminders_date',
+          ''
+        );
+        const firedSmartToday =
+          lastFiredSmartDate === todayDateStr
+            ? parseInt(
+                await this.storageService.getSettingAsync('sent_smart_reminders_count', '0'),
+                10
+              ) || 0
+            : 0;
+
+        const lastFiredCatchupDate = await this.storageService.getSettingAsync(
+          'sent_catchup_reminders_date',
+          ''
+        );
+        const firedCatchupToday =
+          lastFiredCatchupDate === todayDateStr
+            ? parseInt(
+                await this.storageService.getSettingAsync('sent_catchup_reminders_count', '0'),
+                10
+              ) || 0
+            : 0;
+
+        // Effective count = future slots still in queue + already-fired today
+        const effectiveSmartCount = carriedSmartCount + firedSmartToday;
+        const effectiveCatchupCount = carriedCatchupCount + firedCatchupToday;
+
+        if (effectiveSmartCount < remindersCount || effectiveCatchupCount < catchupLimit) {
           const todaySlots = await this.planDaySlots(
             now,
             todayMinutes,
