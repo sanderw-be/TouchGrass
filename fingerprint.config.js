@@ -51,7 +51,7 @@ module.exports = {
           if (Array.isArray(plugin) && plugin[0] === 'expo-build-properties') {
             const [name, options] = plugin;
             const newOptions = JSON.parse(JSON.stringify(options || {}));
-            
+
             if (newOptions.android && newOptions.android.buildArchs) {
               delete newOptions.android.buildArchs;
             }
