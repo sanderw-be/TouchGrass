@@ -1,5 +1,7 @@
 # .fingerprintignore
-android/
-ios/
-node_modules/
-*.log
+# Uses minimatch patterns (NOT gitignore syntax)
+
+# These files can change for non-native reasons (e.g. adding coverage/ or .codesight/)
+# and should not affect the runtime version fingerprint.
+.gitignore
+.easignore

@@ -36,6 +36,52 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Check for Native Changes
+        id: native_check
+        env:
+          EAS_BUILD_PROFILE: development
+        run: |
+          if [ "${{ inputs.force_native_build }}" == "true" ]; then
+            echo "native=true" >> $GITHUB_OUTPUT
+            echo "🚨 Force Native Build selected via workflow_dispatch!"
+            exit 0
+          fi
+
+          # 1. Determine what we are comparing against
+          if [ "${{ github.event.action }}" == "synchronize" ]; then
+            BASE="${{ github.event.before }}"
+          else
+            BASE="${{ github.event.pull_request.base.sha }}"
+          fi
+          
+          # 2. Safety check: if BASE is all zeros (e.g. a force push) or empty (e.g. workflow_dispatch without PR), fallback gracefully
+          if [[ "$BASE" =~ ^0+$ ]] || [ -z "$BASE" ]; then
+            BASE="${{ github.event.pull_request.base.sha || github.event.before || github.sha }}"
+          fi
+          
+          echo "Comparing $BASE to HEAD..."
+          
+          # 3. Generate current fingerprint hash
+          CURRENT_HASH=$(npx @expo/fingerprint . | jq -r '.hash')
+          echo "Current hash: $CURRENT_HASH"
+
+          # 4. Checkout base commit and generate its fingerprint hash
+          git checkout --quiet $BASE
+          BASE_HASH=$(npx @expo/fingerprint . | jq -r '.hash')
+          echo "Base hash: $BASE_HASH"
+          
+          # 5. Checkout back to the original commit
+          git checkout --quiet -
+
+          # 6. Compare the two hashes
+          if [ "$CURRENT_HASH" != "$BASE_HASH" ]; then
+            echo "native=true" >> $GITHUB_OUTPUT
+            echo "🚨 Native changes detected in this push!"
+          else
+            echo "native=false" >> $GITHUB_OUTPUT
+            echo "✅ No native changes. Safe for OTA."
+          fi
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -60,37 +106,7 @@ jobs:
       - name: Run integration tests
         run: npx jest -c jest.integration.config.js
 
-      - name: Check for Native Changes
-        id: native_check
-        run: |
-          if [ "${{ inputs.force_native_build }}" == "true" ]; then
-            echo "native=true" >> $GITHUB_OUTPUT
-            echo "🚨 Force Native Build selected via workflow_dispatch!"
-            exit 0
-          fi
 
-          # 1. Determine what we are comparing against
-          if [ "${{ github.event.action }}" == "synchronize" ]; then
-            BASE="${{ github.event.before }}"
-          else
-            BASE="${{ github.event.pull_request.base.sha }}"
-          fi
-          
-          # 2. Safety check: if BASE is all zeros (e.g. a force push) or empty (e.g. workflow_dispatch without PR), fallback gracefully
-          if [[ "$BASE" =~ ^0+$ ]] || [ -z "$BASE" ]; then
-            BASE="${{ github.event.pull_request.base.sha || github.event.before || github.sha }}"
-          fi
-          
-          echo "Comparing $BASE to HEAD..."
-          
-          # 3. Use git diff to list changed files and grep for our native paths
-          if git diff --name-only $BASE ${{ github.sha }} | grep -qE '^package\.json$|^app\.json$|^app\.config\.js$|^ios/|^android/|^eas\.json$|^withBackgroundFeaturesPlugin\.js$'; then
-            echo "native=true" >> $GITHUB_OUTPUT
-            echo "🚨 Native changes detected in this push!"
-          else
-            echo "native=false" >> $GITHUB_OUTPUT
-            echo "✅ No native changes. Safe for OTA."
-          fi
 
       - name: ⚡️ Cache npx
         uses: actions/cache@v3
