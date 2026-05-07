@@ -196,6 +196,67 @@ describe('handleSmartReminder', () => {
     expect(mockScheduler.scheduleUpcomingReminders).toHaveBeenCalled();
   });
 
+  it('should increment sent_catchup_reminders_count when catchup reminder is sent', async () => {
+    (getTodayMinutesAsync as jest.Mock).mockResolvedValue(10);
+    (getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
+
+    const todayStr = new Date().toDateString();
+    const settingsStore: Record<string, string> = {
+      sent_smart_reminders_date: todayStr,
+      sent_smart_reminders_count: '1', // 1 smart already fired
+      sent_catchup_reminders_date: todayStr,
+      sent_catchup_reminders_count: '0', // no catchup fired yet
+      smart_reminders_count: '2',
+    };
+    mockStorage.getSettingAsync.mockImplementation((key: string, fallback: string) =>
+      key in settingsStore ? settingsStore[key] : fallback
+    );
+    mockStorage.setSettingAsync.mockImplementation((key: string, value: string) => {
+      settingsStore[key] = value;
+    });
+
+    // progressRatio = 10/30 ≈ 0.33, expectedRatio = 1/2 = 0.50 → catchup fires
+    await handleSmartReminder({ type: 'catchup_reminder' });
+
+    expect(Notifications.scheduleNotificationAsync).toHaveBeenCalled();
+    expect(mockStorage.setSettingAsync).toHaveBeenCalledWith(
+      'sent_catchup_reminders_date',
+      todayStr
+    );
+    expect(mockStorage.setSettingAsync).toHaveBeenCalledWith('sent_catchup_reminders_count', '1');
+  });
+
+  it('should treat sent_catchup_reminders_count as 0 when tracked date is a different day', async () => {
+    (getTodayMinutesAsync as jest.Mock).mockResolvedValue(10);
+    (getCurrentDailyGoalAsync as jest.Mock).mockResolvedValue({ targetMinutes: 30 });
+
+    const todayStr = new Date().toDateString();
+    const settingsStore: Record<string, string> = {
+      sent_smart_reminders_date: todayStr,
+      sent_smart_reminders_count: '1',
+      sent_catchup_reminders_date: 'Mon Jan 01 2000', // stale date from a previous day
+      sent_catchup_reminders_count: '99', // stale count — must be ignored
+      smart_reminders_count: '2',
+    };
+    mockStorage.getSettingAsync.mockImplementation((key: string, fallback: string) =>
+      key in settingsStore ? settingsStore[key] : fallback
+    );
+    mockStorage.setSettingAsync.mockImplementation((key: string, value: string) => {
+      settingsStore[key] = value;
+    });
+
+    // progressRatio = 10/30 ≈ 0.33, expectedRatio = 1/2 = 0.50 → catchup fires
+    await handleSmartReminder({ type: 'catchup_reminder' });
+
+    expect(Notifications.scheduleNotificationAsync).toHaveBeenCalled();
+    // Counter must start fresh from 1, not 100
+    expect(mockStorage.setSettingAsync).toHaveBeenCalledWith('sent_catchup_reminders_count', '1');
+    expect(mockStorage.setSettingAsync).toHaveBeenCalledWith(
+      'sent_catchup_reminders_date',
+      todayStr
+    );
+  });
+
   it('should execute finally block even if fetchWeatherForecast throws', async () => {
     (fetchWeatherForecast as jest.Mock).mockRejectedValue(new Error('Weather failed'));
 

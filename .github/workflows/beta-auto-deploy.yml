@@ -22,22 +22,38 @@ jobs:
         with:
           fetch-depth: 0
       
-      - name: Check paths
+      - name: Check for Native Changes
         id: native_check
-        uses: dorny/paths-filter@v3
-        with:
-          # If it's a push, use the commit before the push. 
-          # If it's a manual run (workflow_dispatch), use main)
-          base: ${{ github.event_name == 'push' && github.event.before || 'main' }}
-          filters: |
-            native:
-              - 'package.json'
-              - 'app.json'
-              - 'app.config.js'
-              - 'ios/**'
-              - 'android/**'
-              - 'eas.json'
-              - 'withBackgroundFeaturesPlugin.js'
+        env:
+          EAS_BUILD_PROFILE: preview-emulator
+        run: |
+          BASE="${{ github.event_name == 'push' && github.event.before || 'main' }}"
+          # Safety check for force pushes or empty bases
+          if [[ "$BASE" =~ ^0+$ ]] || [ -z "$BASE" ]; then
+            BASE="main"
+          fi
+          echo "Comparing $BASE to HEAD..."
+          
+          # Generate current fingerprint hash
+          CURRENT_HASH=$(npx @expo/fingerprint . | jq -r '.hash')
+          echo "Current hash: $CURRENT_HASH"
+
+          # Checkout base commit and generate its fingerprint hash
+          git checkout --quiet $BASE
+          BASE_HASH=$(npx @expo/fingerprint . | jq -r '.hash')
+          echo "Base hash: $BASE_HASH"
+          
+          # Checkout back to the original commit
+          git checkout --quiet -
+
+          # Compare the two hashes
+          if [ "$CURRENT_HASH" != "$BASE_HASH" ]; then
+            echo "native=true" >> $GITHUB_OUTPUT
+            echo "🚨 Native changes detected in this push!"
+          else
+            echo "native=false" >> $GITHUB_OUTPUT
+            echo "✅ No native changes. Safe for OTA."
+          fi
 
   # 2. Run Semantic Versioning ONLY if native changes exist
   version-bump:

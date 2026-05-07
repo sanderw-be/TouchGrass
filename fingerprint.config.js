@@ -1,6 +1,11 @@
 /** @type {import('@expo/fingerprint').Config} */
 module.exports = {
-  sourceSkips: ['ExpoConfigVersions'],
+  sourceSkips: [
+    'ExpoConfigVersions',
+    'GitIgnore',
+    'PackageJsonAndroidAndIosScriptsIfNotContainRun',
+  ],
+  ignorePaths: ['.easignore'],
   fileHookTransform: (source, chunk) => {
     if (!chunk) {
       return chunk;
