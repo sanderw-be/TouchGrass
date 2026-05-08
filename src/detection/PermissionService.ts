@@ -155,7 +155,15 @@ export class PermissionService {
       const isGranted = await PermissionsAndroid.check(ACTIVITY_RECOGNITION_PERMISSION);
       if (isGranted) return { granted: true, canAskAgain: true };
 
-      const result = await PermissionsAndroid.request(ACTIVITY_RECOGNITION_PERMISSION);
+      const timeoutPromise = new Promise<string>((_, reject) => {
+        setTimeout(() => reject(new Error('Permission request timeout')), 60000); // 60s timeout for user action
+      });
+
+      const result = await Promise.race([
+        PermissionsAndroid.request(ACTIVITY_RECOGNITION_PERMISSION),
+        timeoutPromise,
+      ]);
+
       const granted = result === PermissionsAndroid.RESULTS.GRANTED;
       const canAskAgain = result !== PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN;
       return { granted, canAskAgain };
