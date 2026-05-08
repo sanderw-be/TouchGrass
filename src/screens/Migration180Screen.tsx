@@ -99,11 +99,8 @@ export default function Migration180Screen({ onComplete }: Props) {
       <ScrollView style={styles.content} contentContainerStyle={styles.contentInner}>
         <View style={styles.stepContainer}>
           <Text style={styles.emoji}>🚀</Text>
-          <Text style={styles.title}>TouchGrass 1.8.0</Text>
-          <Text style={styles.body}>
-            We&apos;ve completely rebuilt how TouchGrass tracks your time outside. It&apos;s now
-            much more battery efficient and accurate!
-          </Text>
+          <Text style={styles.title}>{t('migration_180_title')}</Text>
+          <Text style={styles.body}>{t('migration_180_body')}</Text>
 
           {/* Activity Recognition Card */}
           <Card style={styles.card}>
@@ -133,14 +130,11 @@ export default function Migration180Screen({ onComplete }: Props) {
           {Platform.OS === 'android' && (
             <Card style={styles.card}>
               <Text style={styles.cardEmoji}>⚙️</Text>
-              <Text style={styles.cardTitle}>Re-enable Battery Optimization</Text>
-              <Text style={styles.cardBody}>
-                Because the new tracking is so efficient, you no longer need to disable battery
-                optimization for TouchGrass. You can safely turn it back on to save battery!
-              </Text>
+              <Text style={styles.cardTitle}>{t('migration_180_battery_title')}</Text>
+              <Text style={styles.cardBody}>{t('migration_180_battery_body')}</Text>
 
               <TouchableOpacity style={styles.outlineButton} onPress={handleOpenBatterySettings}>
-                <Text style={styles.outlineButtonText}>Open Battery Settings</Text>
+                <Text style={styles.outlineButtonText}>{t('migration_180_battery_button')}</Text>
               </TouchableOpacity>
             </Card>
           )}
@@ -149,7 +143,7 @@ export default function Migration180Screen({ onComplete }: Props) {
 
       <View style={styles.footer}>
         <TouchableOpacity style={styles.nextBtn} onPress={handleComplete}>
-          <Text style={styles.nextBtnText}>Continue</Text>
+          <Text style={styles.nextBtnText}>{t('migration_180_continue_button')}</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

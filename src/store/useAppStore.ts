@@ -146,8 +146,9 @@ export const useAppStore = create<AppState>((set, get) => ({
 
     const { deferredInitDone } = get();
     set({ showIntro: false });
-    // Also mark migration as seen so new users don't see both
-    setSettingAsync('hasSeenMigration180', '1').catch(() => {});
+    setSettingAsync('hasSeenMigration180', '1').catch((err) =>
+      console.error('[AppStore] Failed to save migration status for new user:', err)
+    );
 
     if (!deferredInitDone) {
       set({ deferredInitDone: true });
