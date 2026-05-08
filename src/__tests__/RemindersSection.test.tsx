@@ -1,6 +1,5 @@
 import React from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
-import { Platform } from 'react-native';
 
 jest.mock('../i18n', () => ({
   t: (key: string) => key,

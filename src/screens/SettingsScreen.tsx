@@ -597,6 +597,7 @@ export default function SettingsScreen() {
       styles,
       handleClearData,
       handleShowIntro,
+      handleResetMigration180,
       setThemePreference,
       themePreference,
     ]
