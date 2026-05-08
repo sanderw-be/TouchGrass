@@ -24,6 +24,11 @@ jest.mock('../calendar/calendarService', () => ({
   hasCalendarPermissions: jest.fn(() => Promise.resolve(true)),
 }));
 
+// Mock LocationRepository
+jest.mock('../storage/repositories/LocationRepository', () => ({
+  getSuggestedLocationsAsync: jest.fn(() => Promise.resolve([])),
+}));
+
 // expo-notifications is mocked globally in jest.setup.js
 
 import { countPermissionIssues } from '../utils/permissionIssues';
@@ -58,7 +63,7 @@ describe('countPermissionIssues', () => {
     });
 
     const result = await countPermissionIssues();
-    expect(result).toEqual({ goals: 0, settings: 0 });
+    expect(result).toEqual({ goals: 0, settings: 0, suggestedLocations: 0 });
   });
 
   it('counts GPS permission issue as settings issue', async () => {

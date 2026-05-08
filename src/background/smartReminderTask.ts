@@ -1,6 +1,7 @@
 import * as Notifications from 'expo-notifications';
 import * as Location from 'expo-location';
 import { getTodayMinutesAsync, getCurrentDailyGoalAsync, initDatabaseAsync, db } from '../storage';
+import { upsertKnownLocationAsync } from '../storage/repositories/LocationRepository';
 import { fetchWeatherForecast } from '../weather/weatherService';
 import { ReminderMessageBuilder } from '../notifications/services/ReminderMessageBuilder';
 import { StorageService } from '../storage/StorageService';
@@ -13,6 +14,7 @@ import {
 import { colors } from '../utils/theme';
 import { requestWidgetRefresh } from '../utils/widgetHelper';
 import { isAtAnyKnownLocation } from '../detection/GeofenceManager';
+import { emitPermissionIssuesChanged } from '../utils/permissionIssuesChangedEmitter';
 
 interface HeadlessData {
   type: string;
@@ -170,7 +172,44 @@ export const handleSmartReminder = async (data: HeadlessData) => {
     let shouldSend = true;
 
     // 1. Logic Guards
-    if (data.type === 'test_reminder') {
+    if (data.type === 'dwell_suggestion') {
+      console.log('[SR_HEADLESS] Dwell suggestion triggered. Saving suggested location.');
+
+      // Clear the planned timestamp so it doesn't get rescheduled
+      await storageService.setSettingAsync('dwell_suggestion_timestamp', '0');
+
+      try {
+        const lastPos = await Location.getLastKnownPositionAsync();
+        if (lastPos) {
+          const knownLocations = await storageService.getAllKnownLocationsAsync();
+          if (
+            !isAtAnyKnownLocation(lastPos.coords.latitude, lastPos.coords.longitude, knownLocations)
+          ) {
+            // Important: We need a translation here, but since we are headless, let's use a standard key or hardcode a fallback
+            const { t } = require('../i18n');
+
+            await upsertKnownLocationAsync({
+              label: t('location_suggested_label', { defaultValue: 'Suggested Location' }),
+              latitude: lastPos.coords.latitude,
+              longitude: lastPos.coords.longitude,
+              radiusMeters: 100,
+              isIndoor: true,
+              status: 'suggested',
+            });
+            console.log('[SR_HEADLESS] Suggested location saved.');
+
+            // Notify UI to update badges
+            emitPermissionIssuesChanged();
+          } else {
+            console.log('[SR_HEADLESS] Location is already known. Ignoring dwell suggestion.');
+          }
+        }
+      } catch (e) {
+        console.error('[SR_HEADLESS] Error processing dwell suggestion:', e);
+      }
+
+      return; // "Silent notification" - we don't proceed to send an Expo notification
+    } else if (data.type === 'test_reminder') {
       console.log('[SR_HEADLESS] Test reminder detected. Bypassing guards.');
       shouldSend = true;
     } else if (data.type === 'smart_reminder') {

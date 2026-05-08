@@ -18,7 +18,11 @@ import { hasCalendarPermissions } from '../calendar/calendarService';
  *
  * Used by AppNavigator to drive the red badge on the Goals and Settings tab icons.
  */
-export async function countPermissionIssues(): Promise<{ goals: number; settings: number }> {
+export async function countPermissionIssues(): Promise<{
+  goals: number;
+  settings: number;
+  suggestedLocations: number;
+}> {
   const detection = await getDetectionStatus();
 
   // Perform live OS permission checks so that badge counts reflect the real
@@ -57,5 +61,12 @@ export async function countPermissionIssues(): Promise<{ goals: number; settings
     if (status !== 'granted') goalsIssues++;
   }
 
-  return { goals: goalsIssues, settings: settingsIssues };
+  const { getSuggestedLocationsAsync } = require('../storage/repositories/LocationRepository');
+  const suggestedLocations = await getSuggestedLocationsAsync();
+
+  return {
+    goals: goalsIssues,
+    settings: settingsIssues,
+    suggestedLocations: suggestedLocations.length,
+  };
 }

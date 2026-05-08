@@ -749,7 +749,7 @@ function makeStyles(colors: ThemeColors, shadows: Shadows) {
       gap: spacing.xs,
     },
     badge: {
-      backgroundColor: colors.error,
+      backgroundColor: colors.grass,
       borderRadius: radius.full,
       minWidth: 20,
       height: 20,

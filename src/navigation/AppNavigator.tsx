@@ -201,10 +201,12 @@ const SettingsStackNavigator = React.memo(function SettingsStackNavigator() {
 const TabNavigator = React.memo(function TabNavigator({
   goalsBadge,
   settingsBadge,
+  settingsBadgeColor,
   eventsBadge,
 }: {
   goalsBadge?: number;
   settingsBadge?: number;
+  settingsBadgeColor?: string;
   eventsBadge?: number;
 }) {
   const insets = useSafeAreaInsets();
@@ -266,6 +268,9 @@ const TabNavigator = React.memo(function TabNavigator({
           title: t('nav_settings'),
           headerShown: false,
           tabBarBadge: settingsBadge,
+          tabBarBadgeStyle: settingsBadgeColor
+            ? { backgroundColor: settingsBadgeColor }
+            : undefined,
         }}
       />
     </Tab.Navigator>
@@ -283,6 +288,7 @@ const AppNavigator = React.memo(function AppNavigator({
   const appState = useRef(AppState.currentState);
   const [goalsBadge, setGoalsBadge] = useState<number | undefined>(undefined);
   const [settingsBadge, setSettingsBadge] = useState<number | undefined>(undefined);
+  const [settingsBadgeColor, setSettingsBadgeColor] = useState<string | undefined>(undefined);
   const [eventsBadge, setEventsBadge] = useState<number | undefined>(undefined);
 
   const refreshEventsBadge = useCallback(async () => {
@@ -296,16 +302,19 @@ const AppNavigator = React.memo(function AppNavigator({
 
   const refreshPermissionBadges = useCallback(async () => {
     try {
-      const { goals, settings } = await countPermissionIssues();
+      const { goals, settings, suggestedLocations } = await countPermissionIssues();
       setGoalsBadge(goals > 0 ? goals : undefined);
-      setSettingsBadge(settings > 0 ? settings : undefined);
+
+      const totalSettings = settings + suggestedLocations;
+      setSettingsBadge(totalSettings > 0 ? totalSettings : undefined);
+      setSettingsBadgeColor(settings > 0 ? colors.error : colors.grass);
     } catch (error) {
       // Permission checks are best-effort; never crash the navigator
       if (__DEV__) {
         console.warn('Permission badge refresh failed:', error);
       }
     }
-  }, []);
+  }, [colors.error, colors.grass]);
 
   useEffect(() => {
     // Initial badge check
@@ -362,6 +371,7 @@ const AppNavigator = React.memo(function AppNavigator({
       <TabNavigator
         goalsBadge={goalsBadge}
         settingsBadge={settingsBadge}
+        settingsBadgeColor={settingsBadgeColor}
         eventsBadge={eventsBadge}
       />
     </NavigationContainer>

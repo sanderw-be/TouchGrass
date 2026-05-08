@@ -1,6 +1,8 @@
 import * as Notifications from 'expo-notifications';
 import * as Location from 'expo-location';
 import { getTodayMinutesAsync, getCurrentDailyGoalAsync } from '../storage';
+import { upsertKnownLocationAsync } from '../storage/repositories/LocationRepository';
+import { emitPermissionIssuesChanged } from '../utils/permissionIssuesChangedEmitter';
 import { fetchWeatherForecast } from '../weather/weatherService';
 import { ReminderMessageBuilder } from '../notifications/services/ReminderMessageBuilder';
 import { StorageService } from '../storage/StorageService';
@@ -33,6 +35,15 @@ jest.mock('expo-location', () => ({
 }));
 jest.mock('../detection/GeofenceManager', () => ({
   isAtAnyKnownLocation: jest.fn(),
+}));
+jest.mock('../storage/repositories/LocationRepository', () => ({
+  upsertKnownLocationAsync: jest.fn(),
+}));
+jest.mock('../utils/permissionIssuesChangedEmitter', () => ({
+  emitPermissionIssuesChanged: jest.fn(),
+}));
+jest.mock('../i18n', () => ({
+  t: jest.fn((key) => key),
 }));
 
 describe('handleSmartReminder', () => {
@@ -363,6 +374,37 @@ describe('handleSmartReminder', () => {
 
       // Should still schedule if double-check fails (safe default)
       expect(mockDwellService.scheduleDwellPrompt).toHaveBeenCalled();
+    });
+
+    it('should process dwell_suggestion by saving suggested location and clearing timestamp', async () => {
+      const { upsertKnownLocationAsync } = require('../storage/repositories/LocationRepository');
+      const { isAtAnyKnownLocation } = require('../detection/GeofenceManager');
+      const { emitPermissionIssuesChanged } = require('../utils/permissionIssuesChangedEmitter');
+
+      mockStorage.getSettingAsync.mockImplementation(async (key: string) => {
+        if (key === 'dwell_suggestion_timestamp') return '1234567890';
+        return '0';
+      });
+
+      (Location.getLastKnownPositionAsync as jest.Mock).mockResolvedValue({
+        coords: { latitude: 52.3676, longitude: 4.9041 },
+      });
+      (isAtAnyKnownLocation as jest.Mock).mockReturnValue(false);
+
+      await handleSmartReminder({ type: 'dwell_suggestion' });
+
+      expect(mockStorage.setSettingAsync).toHaveBeenCalledWith('dwell_suggestion_timestamp', '0');
+      expect(upsertKnownLocationAsync).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: 'suggested',
+          latitude: 52.3676,
+          longitude: 4.9041,
+        })
+      );
+      expect(emitPermissionIssuesChanged).toHaveBeenCalled();
+      expect(mockScheduler.scheduleUpcomingReminders).toHaveBeenCalledWith({
+        isHeadlessReplan: true,
+      });
     });
   });
 });
