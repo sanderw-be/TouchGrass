@@ -406,5 +406,43 @@ describe('handleSmartReminder', () => {
         isHeadlessReplan: true,
       });
     });
+
+    it('should skip dwell_suggestion if last position is null', async () => {
+      const { isAtAnyKnownLocation } = require('../detection/GeofenceManager');
+      const { emitPermissionIssuesChanged } = require('../utils/permissionIssuesChangedEmitter');
+
+      mockStorage.getSettingAsync.mockImplementation(async (key: string) => {
+        if (key === 'dwell_suggestion_timestamp') return '1234567890';
+        return '0';
+      });
+
+      (Location.getLastKnownPositionAsync as jest.Mock).mockResolvedValue(null);
+
+      await handleSmartReminder({ type: 'dwell_suggestion' });
+
+      expect(mockStorage.setSettingAsync).toHaveBeenCalledWith('dwell_suggestion_timestamp', '0');
+      expect(isAtAnyKnownLocation).not.toHaveBeenCalled();
+      expect(emitPermissionIssuesChanged).not.toHaveBeenCalled();
+    });
+
+    it('should skip dwell_suggestion if location is already known', async () => {
+      const { isAtAnyKnownLocation } = require('../detection/GeofenceManager');
+      const { emitPermissionIssuesChanged } = require('../utils/permissionIssuesChangedEmitter');
+
+      mockStorage.getSettingAsync.mockImplementation(async (key: string) => {
+        if (key === 'dwell_suggestion_timestamp') return '1234567890';
+        return '0';
+      });
+
+      (Location.getLastKnownPositionAsync as jest.Mock).mockResolvedValue({
+        coords: { latitude: 52.3676, longitude: 4.9041 },
+      });
+      (isAtAnyKnownLocation as jest.Mock).mockReturnValue(true);
+
+      await handleSmartReminder({ type: 'dwell_suggestion' });
+
+      expect(mockStorage.setSettingAsync).toHaveBeenCalledWith('dwell_suggestion_timestamp', '0');
+      expect(emitPermissionIssuesChanged).not.toHaveBeenCalled();
+    });
   });
 });

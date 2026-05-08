@@ -8,6 +8,7 @@ import {
 } from '../detection';
 import { getSettingAsync } from '../storage';
 import { hasCalendarPermissions } from '../calendar/calendarService';
+import { getSuggestedLocationsAsync } from '../storage/repositories/LocationRepository';
 
 /**
  * Counts active permission issues across the app.
@@ -61,12 +62,29 @@ export async function countPermissionIssues(): Promise<{
     if (status !== 'granted') goalsIssues++;
   }
 
-  const { getSuggestedLocationsAsync } = require('../storage/repositories/LocationRepository');
   const suggestedLocations = await getSuggestedLocationsAsync();
 
   return {
     goals: goalsIssues,
     settings: settingsIssues,
     suggestedLocations: suggestedLocations.length,
+  };
+}
+
+/**
+ * Logic for determining the color and count for the Settings tab badge.
+ * Errors (red) take precedence over suggestions (green).
+ */
+export function getSettingsBadgeStyle(
+  settingsCount: number,
+  suggestedCount: number,
+  colors: { error: string; grass: string }
+): { count: number | undefined; color: string | undefined } {
+  const total = settingsCount + suggestedCount;
+  if (total === 0) return { count: undefined, color: undefined };
+
+  return {
+    count: total,
+    color: settingsCount > 0 ? colors.error : colors.grass,
   };
 }

@@ -4,7 +4,7 @@
 
 > 0 routes | 0 models | 40 components | 59 lib files | 3 env vars | 1 middleware | 0% test coverage
 > **Token savings:** this file is ~6.300 tokens. Without it, AI exploration would cost ~38.100 tokens. **Saves ~31.800 tokens per conversation.**
-> **Last scanned:** 2026-05-08 12:26 — re-run after significant changes
+> **Last scanned:** 2026-05-08 13:55 — re-run after significant changes
 
 ---
 
@@ -250,7 +250,7 @@
   - function formatTime: (ms) => string
   - function formatDate: (ms) => string
   - function formatTimer: (seconds) => string
-- `src\utils\permissionIssues.ts` — function countPermissionIssues: () => Promise<
+- `src\utils\permissionIssues.ts` — function countPermissionIssues: () => Promise<, function getSettingsBadgeStyle: (settingsCount, suggestedCount, colors) => void
 - `src\utils\permissionIssuesChangedEmitter.ts` — function emitPermissionIssuesChanged: () => void, function onPermissionIssuesChanged: (listener) => () => void
 - `src\utils\sessionsChangedEmitter.ts` — function emitSessionsChanged: () => void, function onSessionsChanged: (listener) => () => void
 - `src\utils\temperature.ts`
@@ -331,14 +331,14 @@
 - `src\detection\index.ts` — imported by **9** files
 - `src\utils\widgetHelper.ts` — imported by **9** files
 - `src\utils\sessionsChangedEmitter.ts` — imported by **9** files
+- `src\detection\GeofenceManager.ts` — imported by **9** files
 - `src\detection\sessionMerger.ts` — imported by **8** files
+- `src\utils\permissionIssuesChangedEmitter.ts` — imported by **8** files
 - `src\detection\manualCheckin.ts` — imported by **8** files
 - `src\i18n\en.ts` — imported by **8** files
 - `src\weather\weatherService.ts` — imported by **7** files
-- `src\detection\GeofenceManager.ts` — imported by **7** files
 - `src\modules\ActivityTransitionModule.ts` — imported by **6** files
-- `src\utils\permissionIssuesChangedEmitter.ts` — imported by **6** files
-- `src\hooks\useTheme.ts` — imported by **6** files
+- `src\storage\repositories\LocationRepository.ts` — imported by **6** files
 
 ## Import Map (who imports what)
 

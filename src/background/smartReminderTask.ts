@@ -15,6 +15,7 @@ import { colors } from '../utils/theme';
 import { requestWidgetRefresh } from '../utils/widgetHelper';
 import { isAtAnyKnownLocation } from '../detection/GeofenceManager';
 import { emitPermissionIssuesChanged } from '../utils/permissionIssuesChangedEmitter';
+import { t } from '../i18n';
 
 interface HeadlessData {
   type: string;
@@ -186,8 +187,6 @@ export const handleSmartReminder = async (data: HeadlessData) => {
             !isAtAnyKnownLocation(lastPos.coords.latitude, lastPos.coords.longitude, knownLocations)
           ) {
             // Important: We need a translation here, but since we are headless, let's use a standard key or hardcode a fallback
-            const { t } = require('../i18n');
-
             await upsertKnownLocationAsync({
               label: t('location_suggested_label', { defaultValue: 'Suggested Location' }),
               latitude: lastPos.coords.latitude,

@@ -14,7 +14,7 @@ import GoalsScreen from '../screens/GoalsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import { fetchWeatherForecast, isWeatherDataAvailable } from '../weather/weatherService';
 import { getSettingAsync, countProposedSessionsAsync } from '../storage';
-import { countPermissionIssues } from '../utils/permissionIssues';
+import { countPermissionIssues, getSettingsBadgeStyle } from '../utils/permissionIssues';
 import { spacing } from '../utils/theme';
 import { useAppStore } from '../store/useAppStore';
 import { t } from '../i18n';
@@ -305,9 +305,9 @@ const AppNavigator = React.memo(function AppNavigator({
       const { goals, settings, suggestedLocations } = await countPermissionIssues();
       setGoalsBadge(goals > 0 ? goals : undefined);
 
-      const totalSettings = settings + suggestedLocations;
-      setSettingsBadge(totalSettings > 0 ? totalSettings : undefined);
-      setSettingsBadgeColor(settings > 0 ? colors.error : colors.grass);
+      const badge = getSettingsBadgeStyle(settings, suggestedLocations, colors);
+      setSettingsBadge(badge.count);
+      setSettingsBadgeColor(badge.color);
     } catch (error) {
       // Permission checks are best-effort; never crash the navigator
       if (__DEV__) {

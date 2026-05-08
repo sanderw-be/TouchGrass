@@ -342,7 +342,7 @@ export default function SettingsScreen() {
                     right={
                       <View style={styles.locationRight}>
                         {suggestedCount > 0 && (
-                          <View style={styles.badge}>
+                          <View style={[styles.badge, { backgroundColor: colors.grass }]}>
                             <Text style={styles.badgeText}>{suggestedCount}</Text>
                           </View>
                         )}
@@ -749,7 +749,7 @@ function makeStyles(colors: ThemeColors, shadows: Shadows) {
       gap: spacing.xs,
     },
     badge: {
-      backgroundColor: colors.grass,
+      backgroundColor: colors.error,
       borderRadius: radius.full,
       minWidth: 20,
       height: 20,
