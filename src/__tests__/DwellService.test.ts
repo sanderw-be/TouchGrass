@@ -14,6 +14,21 @@ jest.mock('../i18n', () => ({
   t: (key: string) => key,
 }));
 
+jest.mock('../storage', () => ({
+  setSettingAsync: jest.fn(),
+}));
+
+const mockScheduler = {
+  scheduleUpcomingReminders: jest.fn(),
+};
+
+jest.mock('../notifications/notificationManager', () => ({
+  getSmartReminderScheduler: jest.fn(() => mockScheduler),
+}));
+
+import { setSettingAsync } from '../storage';
+import { getSmartReminderScheduler } from '../notifications/notificationManager';
+
 describe('DwellService', () => {
   let dwellService: DwellService;
 
@@ -23,32 +38,23 @@ describe('DwellService', () => {
   });
 
   describe('scheduleDwellPrompt', () => {
-    it('should schedule a notification with correct parameters', async () => {
+    it('should set timestamp and trigger replan', async () => {
       await dwellService.scheduleDwellPrompt();
 
-      expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledWith({
-        identifier: DWELL_NOTIFICATION_ID,
-        content: {
-          title: t('dwell_prompt_title'),
-          body: t('dwell_prompt_body'),
-          data: { type: 'dwell_prompt' },
-          color: colors.grass,
-        },
-        trigger: {
-          seconds: DWELL_NOTIFICATION_DELAY_SECONDS,
-          channelId: CHANNEL_ID,
-        },
-      });
+      expect(setSettingAsync).toHaveBeenCalledWith(
+        'dwell_suggestion_timestamp',
+        expect.any(String)
+      );
+      expect(mockScheduler.scheduleUpcomingReminders).toHaveBeenCalled();
     });
   });
 
   describe('cancelDwellPrompt', () => {
-    it('should cancel the correct notification', async () => {
+    it('should clear timestamp and trigger replan', async () => {
       await dwellService.cancelDwellPrompt();
 
-      expect(Notifications.cancelScheduledNotificationAsync).toHaveBeenCalledWith(
-        DWELL_NOTIFICATION_ID
-      );
+      expect(setSettingAsync).toHaveBeenCalledWith('dwell_suggestion_timestamp', '0');
+      expect(mockScheduler.scheduleUpcomingReminders).toHaveBeenCalled();
     });
   });
 });
