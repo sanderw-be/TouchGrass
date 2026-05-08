@@ -8,7 +8,7 @@
 - **ErrorBoundary** — `src\components\ErrorBoundary.tsx`
 - **CalendarSection** — props: calendarEnabled, calendarPermissionGranted, calendarBuffer, calendarDuration, calendarSelectedId, calendarOptions, onToggleCalendar, onCycleCalendarBuffer, onCycleCalendarDuration, onSelectCalendar — `src\components\goals\CalendarSection.tsx`
 - **CATCHUP_REMINDERS_OPTIONS** — `src\components\goals\GoalsShared.tsx`
-- **RemindersSection** — props: smartRemindersCount, catchupRemindersCount, notificationPermissionGranted, batteryOptimizationGranted, onCycleSmartReminders, onCycleCatchupReminders, onNavigateScheduledNotifications, onShowNotificationPermissionSheet, onShowBatteryPermissionSheet — `src\components\goals\RemindersSection.tsx`
+- **RemindersSection** — props: smartRemindersCount, catchupRemindersCount, notificationPermissionGranted, onCycleSmartReminders, onCycleCatchupReminders, onNavigateScheduledNotifications, onShowNotificationPermissionSheet — `src\components\goals\RemindersSection.tsx`
 - **WeatherSection** — props: weatherEnabled, weatherLocationGranted, onToggleWeather, onShowWeatherPermissionSheet, onNavigateWeatherSettings — `src\components\goals\WeatherSection.tsx`
 - **ManualSessionSheet** — props: visible, onClose, onSessionLogged — `src\components\ManualSessionSheet.tsx`
 - **PermissionExplainerSheet** — props: visible, onClose, onOpenSettings, title, body, openSettingsLabel, onDisable, disableLabel, onCancel — `src\components\PermissionExplainerSheet.tsx`

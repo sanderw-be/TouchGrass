@@ -15,11 +15,6 @@ import {
   requestCalendarPermissions,
 } from '../calendar/calendarService';
 import { checkWeatherLocationPermissions, requestWeatherLocationPermissions } from '../detection';
-import {
-  BATTERY_OPTIMIZATION_SETTING_KEY,
-  refreshBatteryOptimizationSetting,
-  openBatteryOptimizationSettings,
-} from '../utils/batteryOptimization';
 import { emitPermissionIssuesChanged } from '../utils/permissionIssuesChangedEmitter';
 import { t } from '../i18n';
 import { PermissionSheetConfig } from '../components/PermissionExplainerSheet';
@@ -36,7 +31,6 @@ export function useGoalIntegrations() {
   const [smartRemindersCount, setSmartRemindersCount] = useState(2);
   const [catchupRemindersCount, setCatchupRemindersCount] = useState(2);
   const [notificationPermissionGranted, setNotificationPermissionGranted] = useState(false);
-  const [batteryOptimizationGranted, setBatteryOptimizationGranted] = useState(false);
 
   // Weather state
   const [weatherEnabled, setWeatherEnabled] = useState(true);
@@ -63,7 +57,7 @@ export function useGoalIntegrations() {
     if (isFetchingRef.current) return;
     isFetchingRef.current = true;
     try {
-      const [smartCount, catchupCount, weatherEn, calEn, calBuf, calDur, selCal, battOpt] =
+      const [smartCount, catchupCount, weatherEn, calEn, calBuf, calDur, selCal] =
         await Promise.all([
           getSettingAsync('smart_reminders_count', '2'),
           getSettingAsync('smart_catchup_reminders_count', '2'),
@@ -72,7 +66,6 @@ export function useGoalIntegrations() {
           getSettingAsync('calendar_buffer_minutes', '30'),
           getSettingAsync('calendar_default_duration', '0'),
           getSelectedCalendarId(),
-          getSettingAsync(BATTERY_OPTIMIZATION_SETTING_KEY, '0'),
         ]);
       setSmartRemindersCount(parseInt(smartCount, 10));
       setCatchupRemindersCount(parseInt(catchupCount, 10));
@@ -80,19 +73,12 @@ export function useGoalIntegrations() {
       setCalendarEnabled(calEn === '1');
       setCalendarBuffer(parseInt(calBuf, 10));
       setCalendarDuration(parseInt(calDur, 10));
-      setCalendarSelectedIdState(selCal);
-      setBatteryOptimizationGranted(battOpt === '1');
+      setCalendarSelectedIdState(selCal ?? '');
     } catch (error) {
       console.error('[useGoalIntegrations.loadIntegrationSettings] Error:', error);
     } finally {
       isFetchingRef.current = false;
     }
-  }, []);
-
-  const refreshBatteryOptimizationStatus = useCallback(async () => {
-    if (Platform.OS !== 'android') return;
-    const granted = await refreshBatteryOptimizationSetting();
-    setBatteryOptimizationGranted(granted);
   }, []);
 
   const checkWeatherPermissions = useCallback(async () => {
@@ -139,14 +125,12 @@ export function useGoalIntegrations() {
       checkCalendarPermissions();
       checkWeatherPermissions();
       checkNotificationPermissions();
-      refreshBatteryOptimizationStatus();
 
       const sub = AppState.addEventListener('change', (state: AppStateStatus) => {
         if (state === 'active') {
           checkCalendarPermissions();
           checkWeatherPermissions();
           checkNotificationPermissions();
-          refreshBatteryOptimizationStatus();
         }
       });
       return () => sub.remove();
@@ -155,7 +139,6 @@ export function useGoalIntegrations() {
       checkCalendarPermissions,
       checkWeatherPermissions,
       checkNotificationPermissions,
-      refreshBatteryOptimizationStatus,
     ])
   );
 
@@ -296,20 +279,6 @@ export function useGoalIntegrations() {
             '[useGoalIntegrations.showNotificationPermissionSheet.onDisable] Error:',
             error
           );
-        }
-      },
-    });
-  }, []);
-
-  const showBatteryPermissionSheet = useCallback(() => {
-    setPermissionSheet({
-      title: t('settings_battery_optimization'),
-      body: t('settings_battery_optimization_sublabel'),
-      onOpen: async () => {
-        const opened = await openBatteryOptimizationSettings();
-        if (opened) {
-          setBatteryOptimizationGranted(true);
-          await setSettingAsync(BATTERY_OPTIMIZATION_SETTING_KEY, '1');
         }
       },
     });
@@ -456,7 +425,6 @@ export function useGoalIntegrations() {
     smartRemindersCount,
     catchupRemindersCount,
     notificationPermissionGranted,
-    batteryOptimizationGranted,
     weatherEnabled,
     weatherLocationGranted,
     calendarEnabled,
@@ -478,7 +446,6 @@ export function useGoalIntegrations() {
     cycleCalendarDuration,
     handleSelectCalendar,
     showNotificationPermissionSheet,
-    showBatteryPermissionSheet,
     loadIntegrationSettings,
   };
 }

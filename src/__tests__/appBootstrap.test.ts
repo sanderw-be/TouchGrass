@@ -51,7 +51,7 @@ jest.mock('expo-constants', () => ({
 
 // Mock all deferred tasks
 jest.mock('expo-battery');
-jest.mock('../utils/batteryOptimization');
+
 const mockNotificationInfrastructureService = { setupNotificationInfrastructure: jest.fn() };
 const mockSmartReminderScheduler = { scheduleUpcomingReminders: jest.fn() };
 const mockScheduledNotificationManager = { scheduleAllScheduledNotifications: jest.fn() };
@@ -75,7 +75,6 @@ jest.mock('../core/container', () => ({
   createContainer: jest.fn(),
 }));
 
-import { refreshBatteryOptimizationSetting } from '../utils/batteryOptimization';
 import { initDetection } from '../detection';
 import { requestWidgetRefresh } from '../utils/widgetHelper';
 
@@ -142,7 +141,6 @@ describe('services/appBootstrap', () => {
       });
 
       expect(InteractionManager.runAfterInteractions).toHaveBeenCalledTimes(1);
-      expect(refreshBatteryOptimizationSetting).toHaveBeenCalledTimes(1);
       expect(
         mockNotificationInfrastructureService.setupNotificationInfrastructure
       ).toHaveBeenCalledTimes(1);

@@ -3,7 +3,6 @@ import { AppState, InteractionManager } from 'react-native';
 import { useForegroundSync } from '../hooks/useForegroundSync';
 import { getSettingAsync } from '../storage';
 import { cleanupTouchGrassCalendars } from '../calendar/calendarService';
-import { refreshBatteryOptimizationSetting } from '../utils/batteryOptimization';
 import { requestWidgetRefresh } from '../utils/widgetHelper';
 
 // Mock React Native APIs
@@ -39,9 +38,7 @@ jest.mock('../background/unifiedBackgroundTask', () => ({
     scheduleNextAlarmPulse: jest.fn().mockResolvedValue(undefined),
   },
 }));
-jest.mock('../utils/batteryOptimization', () => ({
-  refreshBatteryOptimizationSetting: jest.fn().mockResolvedValue(undefined),
-}));
+
 jest.mock('../utils/widgetHelper', () => ({
   requestWidgetRefresh: jest.fn().mockResolvedValue(undefined),
 }));
@@ -80,7 +77,6 @@ describe('useForegroundSync', () => {
     });
 
     expect(getSettingAsync).not.toHaveBeenCalled();
-    expect(refreshBatteryOptimizationSetting).not.toHaveBeenCalled();
   });
 
   it('should not run sync functions if intro is not completed', async () => {
@@ -92,7 +88,6 @@ describe('useForegroundSync', () => {
     });
 
     expect(getSettingAsync).toHaveBeenCalledWith('hasCompletedIntro', '0');
-    expect(refreshBatteryOptimizationSetting).not.toHaveBeenCalled();
     expect(mockSmartReminderScheduler.scheduleUpcomingReminders).not.toHaveBeenCalled();
   });
 
@@ -104,7 +99,6 @@ describe('useForegroundSync', () => {
       appStateChangeHandler('active');
     });
 
-    expect(refreshBatteryOptimizationSetting).toHaveBeenCalled();
     expect(InteractionManager.runAfterInteractions).toHaveBeenCalled();
     expect(mockSmartReminderScheduler.scheduleUpcomingReminders).toHaveBeenCalled();
     expect(mockSmartReminderScheduler.processReminderQueue).toHaveBeenCalled();
