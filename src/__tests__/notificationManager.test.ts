@@ -1385,7 +1385,6 @@ describe('notificationManager', () => {
         jest.useRealTimers();
         jest.restoreAllMocks();
       });
-
       it('treats fired counts as 0 when tracked date is stale or value is invalid', async () => {
         // Regression test for parsing robustness and stale date clearing
         jest.useFakeTimers();

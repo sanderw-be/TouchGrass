@@ -1,6 +1,6 @@
 # touchgrass — Wiki
 
-_Generated 2026-05-07 — re-run `npx codesight --wiki` if the codebase has changed._
+_Generated 2026-05-08 — re-run `npx codesight --wiki` if the codebase has changed._
 
 Structural map compiled from source code via AST. No LLM — deterministic, 200ms.
 
@@ -16,7 +16,7 @@ Structural map compiled from source code via AST. No LLM — deterministic, 200m
 
 - Routes: **0**
 - Models: **0**
-- Components: **39**
+- Components: **40**
 - Env vars: **3** required, **0** with defaults
 
 ## How to Use
@@ -45,4 +45,4 @@ When in doubt, search the source. The wiki is a starting point, not a complete i
 
 ---
 
-_Last compiled: 2026-05-07 · 4 articles · [codesight](https://github.com/Houseofmvps/codesight)_
+_Last compiled: 2026-05-08 · 4 articles · [codesight](https://github.com/Houseofmvps/codesight)_

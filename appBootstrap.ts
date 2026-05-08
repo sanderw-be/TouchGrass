@@ -10,10 +10,10 @@ import {
 } from './src/notifications/notificationManager';
 import { initDetection } from './src/detection/index';
 import { requestWidgetRefresh } from './src/utils/widgetHelper';
-import { refreshBatteryOptimizationSetting } from './src/utils/batteryOptimization';
 
 export interface CriticalAppState {
   showIntro: boolean;
+  showMigration180: boolean;
   initialLocale: string;
 }
 
@@ -45,9 +45,11 @@ export async function performCriticalInitializationAsync(): Promise<CriticalAppS
 
   // Check if user has completed intro
   const hasCompletedIntro = (await getSettingAsync('hasCompletedIntro', '0')) === '1';
+  const hasSeenMigration180 = (await getSettingAsync('hasSeenMigration180', '0')) === '1';
 
   return {
     showIntro: !hasCompletedIntro,
+    showMigration180: hasCompletedIntro && !hasSeenMigration180,
     initialLocale,
   };
 }
@@ -61,13 +63,6 @@ export function performDeferredInitialization(): void {
     console.log('TouchGrass: Starting deferred initialization...');
 
     const deferredTasks = async () => {
-      // This was a separate useEffect, but it can be part of the deferred group.
-      try {
-        await refreshBatteryOptimizationSetting();
-      } catch (e) {
-        console.warn('Battery optimization status check error:', e);
-      }
-
       // Grouped async calls
       const tasks = [
         {

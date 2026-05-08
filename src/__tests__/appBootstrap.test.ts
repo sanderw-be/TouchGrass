@@ -51,7 +51,7 @@ jest.mock('expo-constants', () => ({
 
 // Mock all deferred tasks
 jest.mock('expo-battery');
-jest.mock('../utils/batteryOptimization');
+
 const mockNotificationInfrastructureService = { setupNotificationInfrastructure: jest.fn() };
 const mockSmartReminderScheduler = { scheduleUpcomingReminders: jest.fn() };
 const mockScheduledNotificationManager = { scheduleAllScheduledNotifications: jest.fn() };
@@ -75,7 +75,6 @@ jest.mock('../core/container', () => ({
   createContainer: jest.fn(),
 }));
 
-import { refreshBatteryOptimizationSetting } from '../utils/batteryOptimization';
 import { initDetection } from '../detection';
 import { requestWidgetRefresh } from '../utils/widgetHelper';
 
@@ -99,6 +98,7 @@ describe('services/appBootstrap', () => {
       expect(i18n.locale).toBe('nl');
       expect(result).toEqual({
         showIntro: false,
+        showMigration180: true,
         initialLocale: 'nl',
       });
     });
@@ -116,6 +116,7 @@ describe('services/appBootstrap', () => {
 
       expect(i18n.locale).toBe('nl');
       expect(result.initialLocale).toBe('system');
+      expect(result.showMigration180).toBe(false);
     });
 
     it('handles invalid language asynchronously', async () => {
@@ -132,6 +133,7 @@ describe('services/appBootstrap', () => {
       expect(i18n.locale).toBe('en');
       expect(setSettingAsync).toHaveBeenCalledWith('language', 'en');
       expect(result.initialLocale).toBe('en');
+      expect(result.showMigration180).toBe(true);
     });
   });
 
@@ -142,7 +144,6 @@ describe('services/appBootstrap', () => {
       });
 
       expect(InteractionManager.runAfterInteractions).toHaveBeenCalledTimes(1);
-      expect(refreshBatteryOptimizationSetting).toHaveBeenCalledTimes(1);
       expect(
         mockNotificationInfrastructureService.setupNotificationInfrastructure
       ).toHaveBeenCalledTimes(1);

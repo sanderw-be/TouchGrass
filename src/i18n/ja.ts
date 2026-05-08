@@ -285,6 +285,16 @@ const ja: TranslationType = {
   manual_invalid_title: '無効',
   manual_invalid_body: '最大12時間まで記録できます。',
 
+  // Migration 1.8.0
+  migration_180_title: 'TouchGrass 1.8.0',
+  migration_180_body:
+    'TouchGrassの屋外での時間のトラッキング方法を完全に再構築しました。これにより、バッテリー効率と精度が大幅に向上しました！',
+  migration_180_battery_title: 'バッテリー最適化を再有効化',
+  migration_180_battery_body:
+    '新しいトラッキングは非常に効率的であるため、TouchGrassのバッテリー最適化を無効にする必要はもうありません。安全に元に戻してバッテリーを節約できます！',
+  migration_180_battery_button: 'バッテリー設定を開く',
+  migration_180_continue_button: '次へ',
+
   // Intro/Onboarding
   intro_skip: 'スキップ',
   intro_next: '次へ',

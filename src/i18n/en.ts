@@ -293,6 +293,16 @@ const en = {
   manual_invalid_body:
     'Please make sure the end time is after the start time and the session is under 12 hours.',
 
+  // Migration 1.8.0
+  migration_180_title: 'TouchGrass 1.8.0',
+  migration_180_body:
+    "We've completely rebuilt how TouchGrass tracks your time outside. It's now much more battery efficient and accurate!",
+  migration_180_battery_title: 'Re-enable Battery Optimization',
+  migration_180_battery_body:
+    'Because the new tracking is so efficient, you no longer need to disable battery optimization for TouchGrass. You can safely turn it back on to save battery!',
+  migration_180_battery_button: 'Open Battery Settings',
+  migration_180_continue_button: 'Continue',
+
   // Intro/Onboarding
   intro_skip: 'Skip',
   intro_next: 'Next',

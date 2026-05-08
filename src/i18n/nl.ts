@@ -288,6 +288,16 @@ const nl: TranslationType = {
   manual_invalid_title: 'Ongeldige tijd',
   manual_invalid_body: 'Zorg dat de sessie korter dan 12 uur is.',
 
+  // Migration 1.8.0
+  migration_180_title: 'TouchGrass 1.8.0',
+  migration_180_body:
+    'We hebben de manier waarop TouchGrass je tijd buiten bijhoudt volledig opnieuw gebouwd. Het is nu veel batterijvriendelijker en nauwkeuriger!',
+  migration_180_battery_title: 'Batterij-optimalisatie opnieuw inschakelen',
+  migration_180_battery_body:
+    'Omdat de nieuwe manier van bijhouden zo efficiënt is, hoef je de batterij-optimalisatie voor TouchGrass niet meer uit te schakelen. Je kunt deze veilig weer aanzetten om batterij te besparen!',
+  migration_180_battery_button: 'Open Batterij-instellingen',
+  migration_180_continue_button: 'Doorgaan',
+
   // Intro/Onboarding
   intro_skip: 'Overslaan',
   intro_next: 'Volgende',

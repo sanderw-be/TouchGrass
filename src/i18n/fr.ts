@@ -287,6 +287,16 @@ const fr: TranslationType = {
   manual_invalid_title: 'Invalide',
   manual_invalid_body: 'Maximum 12 heures.',
 
+  // Migration 1.8.0
+  migration_180_title: 'TouchGrass 1.8.0',
+  migration_180_body:
+    "Nous avons complètement reconstruit la façon dont TouchGrass suit votre temps passé dehors. C'est maintenant beaucoup plus économe en batterie et précis !",
+  migration_180_battery_title: "Réactiver l'optimisation de la batterie",
+  migration_180_battery_body:
+    "Comme le nouveau suivi est très efficace, vous n'avez plus besoin de désactiver l'optimisation de la batterie pour TouchGrass. Vous pouvez la réactiver en toute sécurité pour économiser votre batterie !",
+  migration_180_battery_button: 'Ouvrir les paramètres de la batterie',
+  migration_180_continue_button: 'Continuer',
+
   // Intro/Onboarding
   intro_skip: 'Passer',
   intro_next: 'Suivant',

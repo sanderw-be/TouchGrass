@@ -168,6 +168,12 @@ export default function SettingsScreen() {
     Alert.alert('Dev Menu', 'dayPlanLastDate cleared. Reminders will re-plan on next trigger.');
   }, []);
 
+  const handleResetMigration180 = useCallback(async () => {
+    await setSettingAsync('hasSeenMigration180', '0');
+    useAppStore.setState({ showMigration180: true });
+    Alert.alert('Developer Mode', 'Migration 180 state reset. You will see the tutorial again.');
+  }, []);
+
   const handleToggleDevForceHalfHour = useCallback(async () => {
     const newValue = !devForceHalfHour;
     setDevForceHalfHour(newValue);
@@ -527,6 +533,16 @@ export default function SettingsScreen() {
                   />
                 </TouchableOpacity>
                 <Divider />
+                <TouchableOpacity onPress={handleResetMigration180}>
+                  <SettingRow
+                    icon={
+                      <Ionicons name="refresh-outline" size={20} color={colors.textSecondary} />
+                    }
+                    label="Reset Migration 1.8.0 Tutorial"
+                    sublabel="Show the 1.8.0 migration screen again"
+                  />
+                </TouchableOpacity>
+                <Divider />
                 <SettingRow
                   icon={<Ionicons name="time-outline" size={20} color={colors.textSecondary} />}
                   label="Force half-hour reminders"
@@ -581,6 +597,7 @@ export default function SettingsScreen() {
       styles,
       handleClearData,
       handleShowIntro,
+      handleResetMigration180,
       setThemePreference,
       themePreference,
     ]
