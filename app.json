@@ -33,7 +33,6 @@
         "android.permission.RECEIVE_BOOT_COMPLETED",
         "android.permission.VIBRATE",
         "android.permission.USE_EXACT_ALARM",
-        "android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS",
         "android.permission.health.READ_EXERCISE",
         "android.permission.health.READ_STEPS",
         "android.permission.READ_CALENDAR",

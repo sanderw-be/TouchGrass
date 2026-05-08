@@ -2,9 +2,9 @@
 
 > **Stack:** raw-http | none | react | typescript
 
-> 0 routes | 0 models | 39 components | 60 lib files | 3 env vars | 1 middleware | 0% test coverage
-> **Token savings:** this file is ~6.300 tokens. Without it, AI exploration would cost ~38.000 tokens. **Saves ~31.700 tokens per conversation.**
-> **Last scanned:** 2026-05-07 19:49 — re-run after significant changes
+> 0 routes | 0 models | 39 components | 59 lib files | 3 env vars | 1 middleware | 0% test coverage
+> **Token savings:** this file is ~6.300 tokens. Without it, AI exploration would cost ~37.800 tokens. **Saves ~31.500 tokens per conversation.**
+> **Last scanned:** 2026-05-08 05:52 — re-run after significant changes
 
 ---
 
@@ -18,7 +18,7 @@
 - **ErrorBoundary** — `src\components\ErrorBoundary.tsx`
 - **CalendarSection** — props: calendarEnabled, calendarPermissionGranted, calendarBuffer, calendarDuration, calendarSelectedId, calendarOptions, onToggleCalendar, onCycleCalendarBuffer, onCycleCalendarDuration, onSelectCalendar — `src\components\goals\CalendarSection.tsx`
 - **CATCHUP_REMINDERS_OPTIONS** — `src\components\goals\GoalsShared.tsx`
-- **RemindersSection** — props: smartRemindersCount, catchupRemindersCount, notificationPermissionGranted, batteryOptimizationGranted, onCycleSmartReminders, onCycleCatchupReminders, onNavigateScheduledNotifications, onShowNotificationPermissionSheet, onShowBatteryPermissionSheet — `src\components\goals\RemindersSection.tsx`
+- **RemindersSection** — props: smartRemindersCount, catchupRemindersCount, notificationPermissionGranted, onCycleSmartReminders, onCycleCatchupReminders, onNavigateScheduledNotifications, onShowNotificationPermissionSheet — `src\components\goals\RemindersSection.tsx`
 - **WeatherSection** — props: weatherEnabled, weatherLocationGranted, onToggleWeather, onShowWeatherPermissionSheet, onNavigateWeatherSettings — `src\components\goals\WeatherSection.tsx`
 - **ManualSessionSheet** — props: visible, onClose, onSessionLogged — `src\components\ManualSessionSheet.tsx`
 - **PermissionExplainerSheet** — props: visible, onClose, onOpenSettings, title, body, openSettingsLabel, onDisable, disableLabel, onCancel — `src\components\PermissionExplainerSheet.tsx`
@@ -242,11 +242,6 @@
   - function clearExpiredWeatherDataAsync: (now) => Promise<void>
 - `src\storage\StorageService.ts` — class StorageService, interface IStorageService
 - `src\utils\AsyncLock.ts` — class AsyncLock, const sessionMergeLock
-- `src\utils\batteryOptimization.ts`
-  - function isBatteryOptimizationDisabled
-  - function refreshBatteryOptimizationSetting
-  - function openBatteryOptimizationSettings
-  - const BATTERY_OPTIMIZATION_SETTING_KEY
 - `src\utils\helpers.ts`
   - function uses24HourClock: () => boolean
   - function formatMinutes: (minutes) => string
@@ -362,7 +357,7 @@
 # Test Coverage
 
 > **0%** of routes and models are covered by tests
-> 71 test files found
+> 70 test files found
 
 ---
 

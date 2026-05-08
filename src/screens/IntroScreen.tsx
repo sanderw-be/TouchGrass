@@ -28,10 +28,6 @@ import {
   hasCalendarPermissions,
 } from '../calendar/calendarService';
 import {
-  BATTERY_OPTIMIZATION_SETTING_KEY,
-  openBatteryOptimizationSettings,
-} from '../utils/batteryOptimization';
-import {
   toggleHealthConnect,
   toggleGPS,
   toggleAR,
@@ -60,7 +56,6 @@ type Step =
   | 'activity-recognition'
   | 'location'
   | 'notifications'
-  | 'battery'
   | 'calendar'
   | 'ready';
 
@@ -74,7 +69,6 @@ export default function IntroScreen({ onComplete }: Props) {
   const [activityRecognitionGranted, setActivityRecognitionGranted] = useState(false);
   const [locationGranted, setLocationGranted] = useState(false);
   const [notificationsGranted, setNotificationsGranted] = useState(false);
-  const [batteryVisited, setBatteryVisited] = useState(false);
   const [calendarGranted, setCalendarGranted] = useState(false);
   const [calendarBuffer, setCalendarBuffer] = useState(30);
   const [calendarDuration, setCalendarDuration] = useState(0);
@@ -97,20 +91,12 @@ export default function IntroScreen({ onComplete }: Props) {
           'activity-recognition',
           'location',
           'notifications',
-          'battery',
           'calendar',
           'ready',
         ]
       : ['welcome', 'health-connect', 'location', 'notifications', 'calendar', 'ready'];
   const currentIndex = steps.indexOf(currentStep);
   const progress = ((currentIndex + 1) / steps.length) * 100;
-
-  // Load battery optimization setting on mount
-  useEffect(() => {
-    getSettingAsync(BATTERY_OPTIMIZATION_SETTING_KEY, '0').then((v) =>
-      setBatteryVisited(v === '1')
-    );
-  }, []);
 
   // Load saved calendar settings on mount
   useEffect(() => {
@@ -144,8 +130,6 @@ export default function IntroScreen({ onComplete }: Props) {
       // Check notification permissions
       const { status } = await Notifications.getPermissionsAsync();
       setNotificationsGranted(status === 'granted');
-    } else if (currentStep === 'battery') {
-      // Battery optimization cannot be detected programmatically — no-op.
     } else if (currentStep === 'calendar') {
       const calGranted = await hasCalendarPermissions();
       setCalendarGranted(calGranted);
@@ -190,7 +174,6 @@ export default function IntroScreen({ onComplete }: Props) {
       currentStep === 'activity-recognition' ||
       currentStep === 'location' ||
       currentStep === 'notifications' ||
-      currentStep === 'battery' ||
       currentStep === 'calendar' ||
       currentStep === 'ready'
     ) {
@@ -480,16 +463,6 @@ export default function IntroScreen({ onComplete }: Props) {
               styles={styles}
             />
           )}
-          {currentStep === 'battery' && (
-            <BatteryStep
-              visited={batteryVisited}
-              onOpen={() => {
-                setBatteryVisited(true);
-                setSettingAsync(BATTERY_OPTIMIZATION_SETTING_KEY, '1');
-              }}
-              styles={styles}
-            />
-          )}
           {currentStep === 'calendar' && (
             <CalendarStep
               onRequest={handleRequestCalendar}
@@ -509,7 +482,6 @@ export default function IntroScreen({ onComplete }: Props) {
               activityRecognitionGranted={activityRecognitionGranted}
               locationGranted={locationGranted}
               notificationsGranted={notificationsGranted}
-              batteryVisited={batteryVisited}
               calendarGranted={calendarGranted}
               colors={colors}
               styles={styles}
@@ -795,51 +767,11 @@ function NotificationsStep({
   );
 }
 
-function BatteryStep({
-  visited,
-  onOpen,
-  styles,
-}: {
-  visited: boolean;
-  onOpen: () => void;
-  styles: Styles;
-}) {
-  const handleOpenBatterySettings = async () => {
-    const opened = await openBatteryOptimizationSettings();
-    if (opened) {
-      onOpen();
-    }
-  };
-
-  return (
-    <View style={styles.stepContainer}>
-      <Text style={styles.emoji}>🔋</Text>
-      <Text style={styles.title}>{t('intro_battery_title')}</Text>
-      <Text style={styles.body}>{t('intro_battery_body')}</Text>
-      <Card variant="tip" style={styles.permissionCard}>
-        <Text style={styles.permissionTitle}>{t('intro_battery_why_title')}</Text>
-        <Text style={styles.permissionBody}>{t('intro_battery_why_body')}</Text>
-      </Card>
-      <TouchableOpacity
-        style={[styles.permissionButton, visited && styles.permissionButtonGranted]}
-        onPress={handleOpenBatterySettings}
-        disabled={visited}
-      >
-        <Text style={styles.permissionButtonText}>
-          {visited ? t('intro_battery_button_done') : t('intro_battery_button')}
-        </Text>
-      </TouchableOpacity>
-      <Text style={styles.hint}>{t('intro_battery_hint')}</Text>
-    </View>
-  );
-}
-
 function ReadyStep({
   healthConnectGranted,
   activityRecognitionGranted,
   locationGranted,
   notificationsGranted,
-  batteryVisited,
   calendarGranted,
   colors,
   styles,
@@ -848,7 +780,6 @@ function ReadyStep({
   activityRecognitionGranted: boolean;
   locationGranted: boolean;
   notificationsGranted: boolean;
-  batteryVisited: boolean;
   calendarGranted: boolean;
   colors: ThemeColors;
   styles: Styles;
@@ -899,14 +830,7 @@ function ReadyStep({
           </Text>
           <Text style={styles.checklistText}>{t('intro_ready_checklist_item_notifications')}</Text>
         </View>
-        {Platform.OS === 'android' && (
-          <View style={styles.checklistItem}>
-            <Text style={[styles.checklistBullet, { color: getStatusColor(batteryVisited) }]}>
-              {getStatusSymbol(batteryVisited)}
-            </Text>
-            <Text style={styles.checklistText}>{t('intro_ready_checklist_item_battery')}</Text>
-          </View>
-        )}
+
         <View style={styles.checklistItem}>
           <Text style={[styles.checklistBullet, { color: getStatusColor(calendarGranted) }]}>
             {getStatusSymbol(calendarGranted)}
