@@ -34,6 +34,7 @@
 - **HomeScreen** — `src\screens\HomeScreen.tsx`
 - **IntroScreen** — props: onComplete — `src\screens\IntroScreen.tsx`
 - **KnownLocationsScreen** — `src\screens\KnownLocationsScreen.tsx`
+- **Migration180Screen** — props: onComplete — `src\screens\Migration180Screen.tsx`
 - **ScheduledNotificationsScreen** — `src\screens\ScheduledNotificationsScreen.tsx`
 - **SettingsScreen** — `src\screens\SettingsScreen.tsx`
 - **WeatherSettingsScreen** — `src\screens\WeatherSettingsScreen.tsx`

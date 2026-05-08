@@ -33,8 +33,9 @@ export interface AppState {
   // Language
   locale: string;
 
-  // Intro
+  // Intro & Migration
   showIntro: boolean;
+  showMigration180: boolean;
 
   // Theme
   themePreference: ThemePreference;
@@ -52,6 +53,7 @@ export interface AppState {
   setLocale: (code: string) => void;
   handleShowIntro: () => void;
   handleIntroComplete: () => void;
+  handleMigration180Complete: () => void;
   setThemePreference: (pref: ThemePreference) => void;
   setSystemColorScheme: (scheme: ColorSchemeName) => void;
   dismissFeedback: () => void;
@@ -71,6 +73,7 @@ const initialState = {
   deferredInitDone: false,
   locale: 'system',
   showIntro: true,
+  showMigration180: false,
   themePreference: 'system' as ThemePreference,
   systemColorScheme: 'light' as ColorSchemeName,
   colors: lightColors,
@@ -85,8 +88,11 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   initialize: async (systemScheme: ColorSchemeName) => {
     try {
-      const { showIntro: initialShowIntro, initialLocale } =
-        await performCriticalInitializationAsync();
+      const {
+        showIntro: initialShowIntro,
+        showMigration180: initialShowMigration180,
+        initialLocale,
+      } = await performCriticalInitializationAsync();
 
       const storedTheme = await getSettingAsync('theme_preference', 'system');
       const themePref =
@@ -99,6 +105,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       set({
         isReady: true,
         showIntro: initialShowIntro,
+        showMigration180: initialShowMigration180,
         locale: initialLocale,
         themePreference: themePref,
         systemColorScheme: systemScheme,
@@ -106,7 +113,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       });
 
       // Trigger deferred init if not showing intro
-      if (!initialShowIntro) {
+      if (!initialShowIntro && !initialShowMigration180) {
         set({ deferredInitDone: true });
         performDeferredInitialization();
       }
@@ -139,6 +146,22 @@ export const useAppStore = create<AppState>((set, get) => ({
 
     const { deferredInitDone } = get();
     set({ showIntro: false });
+    // Also mark migration as seen so new users don't see both
+    setSettingAsync('hasSeenMigration180', '1').catch(() => {});
+
+    if (!deferredInitDone) {
+      set({ deferredInitDone: true });
+      performDeferredInitialization();
+    }
+  },
+
+  handleMigration180Complete: () => {
+    setSettingAsync('hasSeenMigration180', '1').catch((err) =>
+      console.error('[AppStore] Failed to save migration completion:', err)
+    );
+
+    const { deferredInitDone } = get();
+    set({ showMigration180: false });
 
     if (!deferredInitDone) {
       set({ deferredInitDone: true });

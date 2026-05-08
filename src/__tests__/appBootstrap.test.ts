@@ -98,6 +98,7 @@ describe('services/appBootstrap', () => {
       expect(i18n.locale).toBe('nl');
       expect(result).toEqual({
         showIntro: false,
+        showMigration180: true,
         initialLocale: 'nl',
       });
     });
@@ -115,6 +116,7 @@ describe('services/appBootstrap', () => {
 
       expect(i18n.locale).toBe('nl');
       expect(result.initialLocale).toBe('system');
+      expect(result.showMigration180).toBe(false);
     });
 
     it('handles invalid language asynchronously', async () => {
@@ -131,6 +133,7 @@ describe('services/appBootstrap', () => {
       expect(i18n.locale).toBe('en');
       expect(setSettingAsync).toHaveBeenCalledWith('language', 'en');
       expect(result.initialLocale).toBe('en');
+      expect(result.showMigration180).toBe(true);
     });
   });
 

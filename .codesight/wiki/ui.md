@@ -2,7 +2,7 @@
 
 > **Navigation aid.** Component inventory and prop signatures extracted via AST. Read the source files before adding props or modifying component logic.
 
-**39 components** (react)
+**40 components** (react)
 
 ## Components
 
@@ -40,6 +40,7 @@
 - **HomeScreen** — `src\screens\HomeScreen.tsx`
 - **IntroScreen** — props: onComplete — `src\screens\IntroScreen.tsx`
 - **KnownLocationsScreen** — `src\screens\KnownLocationsScreen.tsx`
+- **Migration180Screen** — props: onComplete — `src\screens\Migration180Screen.tsx`
 - **ScheduledNotificationsScreen** — `src\screens\ScheduledNotificationsScreen.tsx`
 - **SettingsScreen** — `src\screens\SettingsScreen.tsx`
 - **WeatherSettingsScreen** — `src\screens\WeatherSettingsScreen.tsx`
