@@ -2,10 +2,10 @@
 
 ## Most Imported Files (change these carefully)
 
-- `src\utils\theme.ts` — imported by **40** files
+- `src\utils\theme.ts` — imported by **39** files
 - `src\store\useAppStore.ts` — imported by **34** files
+- `src\notifications\notificationManager.ts` — imported by **17** files
 - `src\detection\PermissionService.ts` — imported by **17** files
-- `src\notifications\notificationManager.ts` — imported by **15** files
 - `src\storage\StorageService.ts` — imported by **11** files
 - `src\components\ResponsiveGridList.tsx` — imported by **11** files
 - `src\utils\helpers.ts` — imported by **10** files
@@ -14,21 +14,21 @@
 - `src\detection\index.ts` — imported by **9** files
 - `src\utils\widgetHelper.ts` — imported by **9** files
 - `src\utils\sessionsChangedEmitter.ts` — imported by **9** files
+- `src\detection\GeofenceManager.ts` — imported by **9** files
 - `src\detection\sessionMerger.ts` — imported by **8** files
+- `src\utils\permissionIssuesChangedEmitter.ts` — imported by **8** files
 - `src\detection\manualCheckin.ts` — imported by **8** files
 - `src\i18n\en.ts` — imported by **8** files
 - `src\weather\weatherService.ts` — imported by **7** files
 - `src\modules\ActivityTransitionModule.ts` — imported by **6** files
-- `src\detection\GeofenceManager.ts` — imported by **6** files
-- `src\hooks\useTheme.ts` — imported by **6** files
-- `src\detection\constants.ts` — imported by **6** files
+- `src\storage\repositories\LocationRepository.ts` — imported by **6** files
 
 ## Import Map (who imports what)
 
-- `src\utils\theme.ts` ← `src\background\smartReminderTask.ts`, `src\components\DiagnosticSheet.tsx`, `src\components\EditLocationSheet.tsx`, `src\components\EditSessionSheet.tsx`, `src\components\ErrorBoundary.tsx` +35 more
+- `src\utils\theme.ts` ← `src\background\smartReminderTask.ts`, `src\components\DiagnosticSheet.tsx`, `src\components\EditLocationSheet.tsx`, `src\components\EditSessionSheet.tsx`, `src\components\ErrorBoundary.tsx` +34 more
 - `src\store\useAppStore.ts` ← `App.tsx`, `src\components\DiagnosticSheet.tsx`, `src\components\EditLocationSheet.tsx`, `src\components\EditSessionSheet.tsx`, `src\components\ErrorBoundary.tsx` +29 more
+- `src\notifications\notificationManager.ts` ← `src\background\geofenceTask.ts`, `src\components\EditLocationSheet.tsx`, `src\hooks\useForegroundSync.ts`, `src\hooks\useGoalIntegrations.ts`, `src\notifications\services\DwellService.ts` +12 more
 - `src\detection\PermissionService.ts` ← `src\detection\gpsDetection.ts`, `src\detection\healthConnect.ts`, `src\detection\index.ts`, `src\hooks\useDetectionSettings.ts`, `src\screens\IntroScreen.tsx` +12 more
-- `src\notifications\notificationManager.ts` ← `src\background\geofenceTask.ts`, `src\components\EditLocationSheet.tsx`, `src\hooks\useForegroundSync.ts`, `src\hooks\useGoalIntegrations.ts`, `src\notifications\services\ReminderQueueManager.ts` +10 more
 - `src\storage\StorageService.ts` ← `src\background\smartReminderTask.ts`, `src\core\container.ts`, `src\notifications\services\NotificationResponseHandler.ts`, `src\notifications\services\ReminderMessageBuilder.ts`, `src\notifications\services\ReminderQueueManager.ts` +6 more
 - `src\components\ResponsiveGridList.tsx` ← `src\screens\AboutAppScreen.tsx`, `src\screens\ActivityLogScreen.tsx`, `src\screens\EventsScreen.tsx`, `src\screens\FeedbackSupportScreen.tsx`, `src\screens\GoalsScreen.tsx` +6 more
 - `src\utils\helpers.ts` ← `src\components\EditSessionSheet.tsx`, `src\components\ManualSessionSheet.tsx`, `src\components\ProgressRing.tsx`, `src\components\ReminderFeedbackModal.tsx`, `src\i18n\index.ts` +5 more

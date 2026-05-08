@@ -1,8 +1,6 @@
-import * as Notifications from 'expo-notifications';
-import { DWELL_NOTIFICATION_ID, DWELL_NOTIFICATION_DELAY_SECONDS } from '../../detection/constants';
-import { CHANNEL_ID } from './NotificationInfrastructureService';
-import { t } from '../../i18n';
-import { colors } from '../../utils/theme';
+import { DWELL_NOTIFICATION_DELAY_SECONDS } from '../../detection/constants';
+import { getSmartReminderScheduler } from '../notificationManager';
+import { setSettingAsync } from '../../storage';
 
 export interface IDwellService {
   scheduleDwellPrompt(): Promise<void>;
@@ -11,22 +9,19 @@ export interface IDwellService {
 
 export class DwellService implements IDwellService {
   public async scheduleDwellPrompt(): Promise<void> {
-    await Notifications.scheduleNotificationAsync({
-      identifier: DWELL_NOTIFICATION_ID,
-      content: {
-        title: t('dwell_prompt_title'),
-        body: t('dwell_prompt_body'),
-        data: { type: 'dwell_prompt' },
-        color: colors.grass,
-      },
-      trigger: {
-        seconds: DWELL_NOTIFICATION_DELAY_SECONDS,
-        channelId: CHANNEL_ID,
-      } as Notifications.NotificationTriggerInput,
-    });
+    const timestamp = Date.now() + DWELL_NOTIFICATION_DELAY_SECONDS * 1000;
+    await setSettingAsync('dwell_suggestion_timestamp', timestamp.toString());
+    const scheduler = getSmartReminderScheduler();
+    if (scheduler) {
+      await scheduler.scheduleUpcomingReminders();
+    }
   }
 
   public async cancelDwellPrompt(): Promise<void> {
-    await Notifications.cancelScheduledNotificationAsync(DWELL_NOTIFICATION_ID);
+    await setSettingAsync('dwell_suggestion_timestamp', '0');
+    const scheduler = getSmartReminderScheduler();
+    if (scheduler) {
+      await scheduler.scheduleUpcomingReminders();
+    }
   }
 }

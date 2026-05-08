@@ -53,9 +53,9 @@
 - `src\utils\temperature.ts` — isFahrenheit, celsiusToFahrenheit, formatTemperature
 - `src\utils\widgetHelper.ts` — isWidgetTimerRunning, requestWidgetRefresh, WIDGET_TIMER_KEY
 - `src\utils\AsyncLock.ts` — AsyncLock, sessionMergeLock
+- `src\utils\permissionIssues.ts` — countPermissionIssues, getSettingsBadgeStyle
 - `src\utils\permissionIssuesChangedEmitter.ts` — emitPermissionIssuesChanged, onPermissionIssuesChanged
 - `src\utils\sessionsChangedEmitter.ts` — emitSessionsChanged, onSessionsChanged
-- `src\utils\permissionIssues.ts` — countPermissionIssues
 
 ## Hooks (6 files)
 

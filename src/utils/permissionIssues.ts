@@ -8,6 +8,7 @@ import {
 } from '../detection';
 import { getSettingAsync } from '../storage';
 import { hasCalendarPermissions } from '../calendar/calendarService';
+import { getSuggestedLocationsAsync } from '../storage/repositories/LocationRepository';
 
 /**
  * Counts active permission issues across the app.
@@ -18,7 +19,11 @@ import { hasCalendarPermissions } from '../calendar/calendarService';
  *
  * Used by AppNavigator to drive the red badge on the Goals and Settings tab icons.
  */
-export async function countPermissionIssues(): Promise<{ goals: number; settings: number }> {
+export async function countPermissionIssues(): Promise<{
+  goals: number;
+  settings: number;
+  suggestedLocations: number;
+}> {
   const detection = await getDetectionStatus();
 
   // Perform live OS permission checks so that badge counts reflect the real
@@ -57,5 +62,29 @@ export async function countPermissionIssues(): Promise<{ goals: number; settings
     if (status !== 'granted') goalsIssues++;
   }
 
-  return { goals: goalsIssues, settings: settingsIssues };
+  const suggestedLocations = await getSuggestedLocationsAsync();
+
+  return {
+    goals: goalsIssues,
+    settings: settingsIssues,
+    suggestedLocations: suggestedLocations.length,
+  };
+}
+
+/**
+ * Logic for determining the color and count for the Settings tab badge.
+ * Errors (red) take precedence over suggestions (green).
+ */
+export function getSettingsBadgeStyle(
+  settingsCount: number,
+  suggestedCount: number,
+  colors: { error: string; grass: string }
+): { count: number | undefined; color: string | undefined } {
+  const total = settingsCount + suggestedCount;
+  if (total === 0) return { count: undefined, color: undefined };
+
+  return {
+    count: total,
+    color: settingsCount > 0 ? colors.error : colors.grass,
+  };
 }

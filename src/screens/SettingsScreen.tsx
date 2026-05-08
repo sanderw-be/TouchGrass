@@ -342,7 +342,7 @@ export default function SettingsScreen() {
                     right={
                       <View style={styles.locationRight}>
                         {suggestedCount > 0 && (
-                          <View style={styles.badge}>
+                          <View style={[styles.badge, { backgroundColor: colors.grass }]}>
                             <Text style={styles.badgeText}>{suggestedCount}</Text>
                           </View>
                         )}

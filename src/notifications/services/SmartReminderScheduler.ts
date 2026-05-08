@@ -492,6 +492,20 @@ export class SmartReminderScheduler implements ISmartReminderScheduler {
         });
       }
 
+      // 4.6 Schedule Dwell Suggestion
+      const dwellTimestampStr = await this.storageService.getSettingAsync(
+        'dwell_suggestion_timestamp',
+        '0'
+      );
+      const dwellTimestamp = parseInt(dwellTimestampStr, 10);
+      if (dwellTimestamp > now.getTime()) {
+        allPlannedItems.push({
+          timestamp: dwellTimestamp,
+          type: 'dwell_suggestion',
+          goalThreshold: 0,
+        });
+      }
+
       // 5. Sync with Native Module
       // We sort all planned items by timestamp before scheduling to ensure chronological order
       allPlannedItems.sort((a, b) => a.timestamp - b.timestamp);

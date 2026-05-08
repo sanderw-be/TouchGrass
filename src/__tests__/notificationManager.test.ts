@@ -1453,6 +1453,37 @@ describe('notificationManager', () => {
         jest.restoreAllMocks();
       });
     });
+
+    it('includes dwell_suggestion in native schedule when timestamp is set', async () => {
+      jest.useFakeTimers();
+      const now = new Date('2026-03-14T10:00:00');
+      jest.setSystemTime(now);
+
+      const dwellTimestamp = now.getTime() + 7200000; // 2 hours later
+      (Database.getSettingAsync as jest.Mock).mockImplementation(
+        async (key: string, fallback: string) => {
+          if (key === 'dwell_suggestion_timestamp') return String(dwellTimestamp);
+          if (key === 'smart_reminders_count') return '1'; // must be > 0
+          return fallback;
+        }
+      );
+
+      // Mock scores to return empty to isolate dwell_suggestion
+      (ReminderAlgorithm.scoreReminderHours as jest.Mock).mockResolvedValue([]);
+
+      await getSmartReminderScheduler().scheduleUpcomingReminders();
+
+      expect(SmartReminderModule.scheduleReminders).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({
+            type: 'dwell_suggestion',
+            timestamp: dwellTimestamp,
+          }),
+        ])
+      );
+
+      jest.useRealTimers();
+    });
   });
 
   describe('cancelRemindersIfGoalReached', () => {

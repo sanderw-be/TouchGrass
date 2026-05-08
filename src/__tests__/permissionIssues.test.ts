@@ -24,6 +24,11 @@ jest.mock('../calendar/calendarService', () => ({
   hasCalendarPermissions: jest.fn(() => Promise.resolve(true)),
 }));
 
+// Mock LocationRepository
+jest.mock('../storage/repositories/LocationRepository', () => ({
+  getSuggestedLocationsAsync: jest.fn(() => Promise.resolve([])),
+}));
+
 // expo-notifications is mocked globally in jest.setup.js
 
 import { countPermissionIssues } from '../utils/permissionIssues';
@@ -58,7 +63,7 @@ describe('countPermissionIssues', () => {
     });
 
     const result = await countPermissionIssues();
-    expect(result).toEqual({ goals: 0, settings: 0 });
+    expect(result).toEqual({ goals: 0, settings: 0, suggestedLocations: 0 });
   });
 
   it('counts GPS permission issue as settings issue', async () => {
@@ -164,5 +169,49 @@ describe('countPermissionIssues', () => {
 
     const result = await countPermissionIssues();
     expect(result.goals).toBe(0);
+  });
+
+  it('counts suggested locations from repository', async () => {
+    const { getSuggestedLocationsAsync } = require('../storage/repositories/LocationRepository');
+    (getSuggestedLocationsAsync as jest.Mock).mockResolvedValue([
+      { id: 1, label: 'S1' },
+      { id: 2, label: 'S2' },
+    ]);
+
+    const result = await countPermissionIssues();
+    expect(result.suggestedLocations).toBe(2);
+  });
+
+  describe('getSettingsBadgeStyle', () => {
+    const { getSettingsBadgeStyle } = require('../utils/permissionIssues');
+    const colors = { error: 'red', grass: 'green' };
+
+    it('returns undefined when no issues or suggestions', () => {
+      expect(getSettingsBadgeStyle(0, 0, colors)).toEqual({
+        count: undefined,
+        color: undefined,
+      });
+    });
+
+    it('returns green badge when only suggestions exist', () => {
+      expect(getSettingsBadgeStyle(0, 3, colors)).toEqual({
+        count: 3,
+        color: 'green',
+      });
+    });
+
+    it('returns red badge when both errors and suggestions exist', () => {
+      expect(getSettingsBadgeStyle(1, 3, colors)).toEqual({
+        count: 4,
+        color: 'red',
+      });
+    });
+
+    it('returns red badge when only errors exist', () => {
+      expect(getSettingsBadgeStyle(2, 0, colors)).toEqual({
+        count: 2,
+        color: 'red',
+      });
+    });
   });
 });
