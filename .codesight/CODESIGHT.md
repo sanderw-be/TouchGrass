@@ -4,7 +4,7 @@
 
 > 0 routes | 0 models | 40 components | 59 lib files | 3 env vars | 1 middleware | 0% test coverage
 > **Token savings:** this file is ~6.300 tokens. Without it, AI exploration would cost ~38.100 tokens. **Saves ~31.800 tokens per conversation.**
-> **Last scanned:** 2026-05-08 07:45 — re-run after significant changes
+> **Last scanned:** 2026-05-08 08:04 — re-run after significant changes
 
 ---
 
@@ -321,8 +321,8 @@
 
 - `src\utils\theme.ts` — imported by **40** files
 - `src\store\useAppStore.ts` — imported by **34** files
+- `src\detection\PermissionService.ts` — imported by **17** files
 - `src\notifications\notificationManager.ts` — imported by **15** files
-- `src\detection\PermissionService.ts` — imported by **14** files
 - `src\storage\StorageService.ts` — imported by **11** files
 - `src\components\ResponsiveGridList.tsx` — imported by **11** files
 - `src\utils\helpers.ts` — imported by **10** files
@@ -335,17 +335,17 @@
 - `src\detection\manualCheckin.ts` — imported by **8** files
 - `src\i18n\en.ts` — imported by **8** files
 - `src\weather\weatherService.ts` — imported by **7** files
+- `src\modules\ActivityTransitionModule.ts` — imported by **6** files
 - `src\detection\GeofenceManager.ts` — imported by **6** files
 - `src\hooks\useTheme.ts` — imported by **6** files
 - `src\detection\constants.ts` — imported by **6** files
-- `src\calendar\calendarService.ts` — imported by **6** files
 
 ## Import Map (who imports what)
 
 - `src\utils\theme.ts` ← `src\background\smartReminderTask.ts`, `src\components\DiagnosticSheet.tsx`, `src\components\EditLocationSheet.tsx`, `src\components\EditSessionSheet.tsx`, `src\components\ErrorBoundary.tsx` +35 more
 - `src\store\useAppStore.ts` ← `App.tsx`, `src\components\DiagnosticSheet.tsx`, `src\components\EditLocationSheet.tsx`, `src\components\EditSessionSheet.tsx`, `src\components\ErrorBoundary.tsx` +29 more
+- `src\detection\PermissionService.ts` ← `src\detection\gpsDetection.ts`, `src\detection\healthConnect.ts`, `src\detection\index.ts`, `src\hooks\useDetectionSettings.ts`, `src\screens\IntroScreen.tsx` +12 more
 - `src\notifications\notificationManager.ts` ← `src\background\geofenceTask.ts`, `src\components\EditLocationSheet.tsx`, `src\hooks\useForegroundSync.ts`, `src\hooks\useGoalIntegrations.ts`, `src\notifications\services\ReminderQueueManager.ts` +10 more
-- `src\detection\PermissionService.ts` ← `src\detection\gpsDetection.ts`, `src\detection\healthConnect.ts`, `src\detection\index.ts`, `src\hooks\useDetectionSettings.ts`, `src\screens\IntroScreen.tsx` +9 more
 - `src\storage\StorageService.ts` ← `src\background\smartReminderTask.ts`, `src\core\container.ts`, `src\notifications\services\NotificationResponseHandler.ts`, `src\notifications\services\ReminderMessageBuilder.ts`, `src\notifications\services\ReminderQueueManager.ts` +6 more
 - `src\components\ResponsiveGridList.tsx` ← `src\screens\AboutAppScreen.tsx`, `src\screens\ActivityLogScreen.tsx`, `src\screens\EventsScreen.tsx`, `src\screens\FeedbackSupportScreen.tsx`, `src\screens\GoalsScreen.tsx` +6 more
 - `src\utils\helpers.ts` ← `src\components\EditSessionSheet.tsx`, `src\components\ManualSessionSheet.tsx`, `src\components\ProgressRing.tsx`, `src\components\ReminderFeedbackModal.tsx`, `src\i18n\index.ts` +5 more
@@ -358,7 +358,7 @@
 # Test Coverage
 
 > **0%** of routes and models are covered by tests
-> 70 test files found
+> 72 test files found
 
 ---
 
