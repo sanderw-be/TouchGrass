@@ -286,6 +286,16 @@ const de: TranslationType = {
   manual_invalid_title: 'Ungültige Zeit',
   manual_invalid_body: 'Maximal 12 Stunden erlaubt.',
 
+  // Migration 1.8.0
+  migration_180_title: 'TouchGrass 1.8.0',
+  migration_180_body:
+    'Wir haben komplett neu entwickelt, wie TouchGrass deine Zeit im Freien aufzeichnet. Es ist jetzt viel akkuschonender und genauer!',
+  migration_180_battery_title: 'Akku-Optimierung wieder aktivieren',
+  migration_180_battery_body:
+    'Da das neue Tracking so effizient ist, musst du die Akku-Optimierung für TouchGrass nicht mehr deaktivieren. Du kannst sie sicher wieder einschalten, um Akku zu sparen!',
+  migration_180_battery_button: 'Akku-Einstellungen öffnen',
+  migration_180_continue_button: 'Weiter',
+
   // Intro/Onboarding
   intro_skip: 'Überspringen',
   intro_next: 'Weiter',

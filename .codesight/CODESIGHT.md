@@ -2,9 +2,9 @@
 
 > **Stack:** raw-http | none | react | typescript
 
-> 0 routes | 0 models | 39 components | 60 lib files | 3 env vars | 1 middleware | 0% test coverage
-> **Token savings:** this file is ~6.300 tokens. Without it, AI exploration would cost ~38.000 tokens. **Saves ~31.700 tokens per conversation.**
-> **Last scanned:** 2026-05-07 19:49 — re-run after significant changes
+> 0 routes | 0 models | 40 components | 59 lib files | 3 env vars | 1 middleware | 0% test coverage
+> **Token savings:** this file is ~6.300 tokens. Without it, AI exploration would cost ~38.100 tokens. **Saves ~31.800 tokens per conversation.**
+> **Last scanned:** 2026-05-08 08:04 — re-run after significant changes
 
 ---
 
@@ -18,7 +18,7 @@
 - **ErrorBoundary** — `src\components\ErrorBoundary.tsx`
 - **CalendarSection** — props: calendarEnabled, calendarPermissionGranted, calendarBuffer, calendarDuration, calendarSelectedId, calendarOptions, onToggleCalendar, onCycleCalendarBuffer, onCycleCalendarDuration, onSelectCalendar — `src\components\goals\CalendarSection.tsx`
 - **CATCHUP_REMINDERS_OPTIONS** — `src\components\goals\GoalsShared.tsx`
-- **RemindersSection** — props: smartRemindersCount, catchupRemindersCount, notificationPermissionGranted, batteryOptimizationGranted, onCycleSmartReminders, onCycleCatchupReminders, onNavigateScheduledNotifications, onShowNotificationPermissionSheet, onShowBatteryPermissionSheet — `src\components\goals\RemindersSection.tsx`
+- **RemindersSection** — props: smartRemindersCount, catchupRemindersCount, notificationPermissionGranted, onCycleSmartReminders, onCycleCatchupReminders, onNavigateScheduledNotifications, onShowNotificationPermissionSheet — `src\components\goals\RemindersSection.tsx`
 - **WeatherSection** — props: weatherEnabled, weatherLocationGranted, onToggleWeather, onShowWeatherPermissionSheet, onNavigateWeatherSettings — `src\components\goals\WeatherSection.tsx`
 - **ManualSessionSheet** — props: visible, onClose, onSessionLogged — `src\components\ManualSessionSheet.tsx`
 - **PermissionExplainerSheet** — props: visible, onClose, onOpenSettings, title, body, openSettingsLabel, onDisable, disableLabel, onCancel — `src\components\PermissionExplainerSheet.tsx`
@@ -44,6 +44,7 @@
 - **HomeScreen** — `src\screens\HomeScreen.tsx`
 - **IntroScreen** — props: onComplete — `src\screens\IntroScreen.tsx`
 - **KnownLocationsScreen** — `src\screens\KnownLocationsScreen.tsx`
+- **Migration180Screen** — props: onComplete — `src\screens\Migration180Screen.tsx`
 - **ScheduledNotificationsScreen** — `src\screens\ScheduledNotificationsScreen.tsx`
 - **SettingsScreen** — `src\screens\SettingsScreen.tsx`
 - **WeatherSettingsScreen** — `src\screens\WeatherSettingsScreen.tsx`
@@ -242,11 +243,6 @@
   - function clearExpiredWeatherDataAsync: (now) => Promise<void>
 - `src\storage\StorageService.ts` — class StorageService, interface IStorageService
 - `src\utils\AsyncLock.ts` — class AsyncLock, const sessionMergeLock
-- `src\utils\batteryOptimization.ts`
-  - function isBatteryOptimizationDisabled
-  - function refreshBatteryOptimizationSetting
-  - function openBatteryOptimizationSettings
-  - const BATTERY_OPTIMIZATION_SETTING_KEY
 - `src\utils\helpers.ts`
   - function uses24HourClock: () => boolean
   - function formatMinutes: (minutes) => string
@@ -323,46 +319,46 @@
 
 ## Most Imported Files (change these carefully)
 
-- `src\utils\theme.ts` — imported by **39** files
-- `src\store\useAppStore.ts` — imported by **33** files
+- `src\utils\theme.ts` — imported by **40** files
+- `src\store\useAppStore.ts` — imported by **34** files
+- `src\detection\PermissionService.ts` — imported by **17** files
 - `src\notifications\notificationManager.ts` — imported by **15** files
-- `src\detection\PermissionService.ts` — imported by **13** files
 - `src\storage\StorageService.ts` — imported by **11** files
 - `src\components\ResponsiveGridList.tsx` — imported by **11** files
 - `src\utils\helpers.ts` — imported by **10** files
 - `src\storage\types.ts` — imported by **10** files
 - `src\storage\db.ts` — imported by **10** files
+- `src\detection\index.ts` — imported by **9** files
 - `src\utils\widgetHelper.ts` — imported by **9** files
 - `src\utils\sessionsChangedEmitter.ts` — imported by **9** files
-- `src\detection\index.ts` — imported by **8** files
 - `src\detection\sessionMerger.ts` — imported by **8** files
 - `src\detection\manualCheckin.ts` — imported by **8** files
 - `src\i18n\en.ts` — imported by **8** files
 - `src\weather\weatherService.ts` — imported by **7** files
+- `src\modules\ActivityTransitionModule.ts` — imported by **6** files
 - `src\detection\GeofenceManager.ts` — imported by **6** files
 - `src\hooks\useTheme.ts` — imported by **6** files
 - `src\detection\constants.ts` — imported by **6** files
-- `src\calendar\calendarService.ts` — imported by **6** files
 
 ## Import Map (who imports what)
 
-- `src\utils\theme.ts` ← `src\background\smartReminderTask.ts`, `src\components\DiagnosticSheet.tsx`, `src\components\EditLocationSheet.tsx`, `src\components\EditSessionSheet.tsx`, `src\components\ErrorBoundary.tsx` +34 more
-- `src\store\useAppStore.ts` ← `App.tsx`, `src\components\DiagnosticSheet.tsx`, `src\components\EditLocationSheet.tsx`, `src\components\EditSessionSheet.tsx`, `src\components\ErrorBoundary.tsx` +28 more
+- `src\utils\theme.ts` ← `src\background\smartReminderTask.ts`, `src\components\DiagnosticSheet.tsx`, `src\components\EditLocationSheet.tsx`, `src\components\EditSessionSheet.tsx`, `src\components\ErrorBoundary.tsx` +35 more
+- `src\store\useAppStore.ts` ← `App.tsx`, `src\components\DiagnosticSheet.tsx`, `src\components\EditLocationSheet.tsx`, `src\components\EditSessionSheet.tsx`, `src\components\ErrorBoundary.tsx` +29 more
+- `src\detection\PermissionService.ts` ← `src\detection\gpsDetection.ts`, `src\detection\healthConnect.ts`, `src\detection\index.ts`, `src\hooks\useDetectionSettings.ts`, `src\screens\IntroScreen.tsx` +12 more
 - `src\notifications\notificationManager.ts` ← `src\background\geofenceTask.ts`, `src\components\EditLocationSheet.tsx`, `src\hooks\useForegroundSync.ts`, `src\hooks\useGoalIntegrations.ts`, `src\notifications\services\ReminderQueueManager.ts` +10 more
-- `src\detection\PermissionService.ts` ← `src\detection\gpsDetection.ts`, `src\detection\healthConnect.ts`, `src\detection\index.ts`, `src\hooks\useDetectionSettings.ts`, `src\screens\IntroScreen.tsx` +8 more
 - `src\storage\StorageService.ts` ← `src\background\smartReminderTask.ts`, `src\core\container.ts`, `src\notifications\services\NotificationResponseHandler.ts`, `src\notifications\services\ReminderMessageBuilder.ts`, `src\notifications\services\ReminderQueueManager.ts` +6 more
 - `src\components\ResponsiveGridList.tsx` ← `src\screens\AboutAppScreen.tsx`, `src\screens\ActivityLogScreen.tsx`, `src\screens\EventsScreen.tsx`, `src\screens\FeedbackSupportScreen.tsx`, `src\screens\GoalsScreen.tsx` +6 more
 - `src\utils\helpers.ts` ← `src\components\EditSessionSheet.tsx`, `src\components\ManualSessionSheet.tsx`, `src\components\ProgressRing.tsx`, `src\components\ReminderFeedbackModal.tsx`, `src\i18n\index.ts` +5 more
 - `src\storage\types.ts` ← `src\domain\SessionDomain.ts`, `src\storage\index.ts`, `src\storage\repositories\GoalRepository.ts`, `src\storage\repositories\LocationRepository.ts`, `src\storage\repositories\LogRepository.ts` +5 more
 - `src\storage\db.ts` ← `src\storage\index.ts`, `src\storage\repositories\GoalRepository.ts`, `src\storage\repositories\LocationRepository.ts`, `src\storage\repositories\LogRepository.ts`, `src\storage\repositories\NotificationRepository.ts` +5 more
-- `src\utils\widgetHelper.ts` ← `appBootstrap.ts`, `src\background\smartReminderTask.ts`, `src\hooks\useForegroundSync.ts`, `src\screens\EventsScreen.tsx`, `src\widget\widget-task-handler.tsx` +4 more
+- `src\detection\index.ts` ← `appBootstrap.ts`, `src\screens\HealthConnectRationaleScreen.tsx`, `src\screens\KnownLocationsScreen.tsx`, `src\screens\Migration180Screen.tsx`, `src\__tests__\detectionBackgroundTask.test.ts` +4 more
 
 ---
 
 # Test Coverage
 
 > **0%** of routes and models are covered by tests
-> 71 test files found
+> 72 test files found
 
 ---
 

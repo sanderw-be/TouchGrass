@@ -61,7 +61,6 @@ export default function GoalsScreen() {
     smartRemindersCount,
     catchupRemindersCount,
     notificationPermissionGranted,
-    batteryOptimizationGranted,
     weatherEnabled,
     weatherLocationGranted,
     calendarEnabled,
@@ -83,7 +82,6 @@ export default function GoalsScreen() {
     cycleCalendarDuration,
     handleSelectCalendar,
     showNotificationPermissionSheet,
-    showBatteryPermissionSheet,
   } = useGoalIntegrations();
 
   useFocusEffect(
@@ -260,12 +258,10 @@ export default function GoalsScreen() {
             smartRemindersCount={smartRemindersCount}
             catchupRemindersCount={catchupRemindersCount}
             notificationPermissionGranted={notificationPermissionGranted}
-            batteryOptimizationGranted={batteryOptimizationGranted}
             onCycleSmartReminders={cycleSmartRemindersCount}
             onCycleCatchupReminders={cycleCatchupRemindersCount}
             onNavigateScheduledNotifications={() => navigation.navigate('ScheduledNotifications')}
             onShowNotificationPermissionSheet={showNotificationPermissionSheet}
-            onShowBatteryPermissionSheet={showBatteryPermissionSheet}
           />
         );
       case 'weather':

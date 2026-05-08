@@ -81,12 +81,6 @@ jest.mock('../detection', () => ({
   requestWeatherLocationPermissions: jest.fn(() => Promise.resolve(false)),
 }));
 
-jest.mock('../utils/batteryOptimization', () => ({
-  BATTERY_OPTIMIZATION_SETTING_KEY: 'battery_optimization_granted',
-  openBatteryOptimizationSettings: jest.fn(() => Promise.resolve(true)),
-  refreshBatteryOptimizationSetting: jest.fn(() => Promise.resolve(false)),
-}));
-
 jest.mock('expo-intent-launcher', () => ({
   startActivityAsync: jest.fn(() => Promise.resolve()),
 }));

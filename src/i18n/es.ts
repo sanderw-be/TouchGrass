@@ -285,6 +285,16 @@ const es: TranslationType = {
   manual_invalid_title: 'Hora inválida',
   manual_invalid_body: 'Máximo 12 horas permitidas.',
 
+  // Migration 1.8.0
+  migration_180_title: 'TouchGrass 1.8.0',
+  migration_180_body:
+    'Hemos reconstruido por completo cómo TouchGrass rastrea tu tiempo al aire libre. ¡Ahora es mucho más eficiente con la batería y preciso!',
+  migration_180_battery_title: 'Reactivar la optimización de batería',
+  migration_180_battery_body:
+    'Debido a que el nuevo rastreo es tan eficiente, ya no necesitas desactivar la optimización de batería para TouchGrass. ¡Puedes volver a activarla de forma segura para ahorrar batería!',
+  migration_180_battery_button: 'Abrir configuración de batería',
+  migration_180_continue_button: 'Continuar',
+
   // Intro/Onboarding
   intro_skip: 'Omitir',
   intro_next: 'Siguiente',

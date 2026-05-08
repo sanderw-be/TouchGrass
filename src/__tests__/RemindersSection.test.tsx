@@ -1,6 +1,5 @@
 import React from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
-import { Platform } from 'react-native';
 
 jest.mock('../i18n', () => ({
   t: (key: string) => key,
@@ -36,12 +35,10 @@ const defaultProps = {
   smartRemindersCount: 2,
   catchupRemindersCount: 2,
   notificationPermissionGranted: true,
-  batteryOptimizationGranted: false,
   onCycleSmartReminders: jest.fn(),
   onCycleCatchupReminders: jest.fn(),
   onNavigateScheduledNotifications: jest.fn(),
   onShowNotificationPermissionSheet: jest.fn(),
-  onShowBatteryPermissionSheet: jest.fn(),
 };
 
 describe('RemindersSection', () => {
@@ -137,47 +134,5 @@ describe('RemindersSection', () => {
     );
     fireEvent.press(getByText('settings_scheduled_reminders'));
     expect(onNavigateScheduledNotifications).toHaveBeenCalled();
-  });
-
-  describe('battery optimization row (Android)', () => {
-    const originalOS = Platform.OS;
-
-    afterEach(() => {
-      (Platform as any).OS = originalOS;
-    });
-
-    it('shows battery optimization row on Android', () => {
-      (Platform as any).OS = 'android';
-      const { getByText } = render(<RemindersSection {...defaultProps} />);
-      expect(getByText('settings_battery_optimization')).toBeTruthy();
-    });
-
-    it('does not show battery optimization row on iOS', () => {
-      (Platform as any).OS = 'ios';
-      const { queryByText } = render(<RemindersSection {...defaultProps} />);
-      expect(queryByText('settings_battery_optimization')).toBeNull();
-    });
-
-    it('calls onShowBatteryPermissionSheet when battery row is tapped', () => {
-      (Platform as any).OS = 'android';
-      const onShowBatteryPermissionSheet = jest.fn();
-      const { getByTestId } = render(
-        <RemindersSection
-          {...defaultProps}
-          batteryOptimizationGranted={false}
-          onShowBatteryPermissionSheet={onShowBatteryPermissionSheet}
-        />
-      );
-      fireEvent.press(getByTestId('battery-optimization-row'));
-      expect(onShowBatteryPermissionSheet).toHaveBeenCalled();
-    });
-
-    it('disables battery row when optimization is already granted', () => {
-      (Platform as any).OS = 'android';
-      const { getByTestId } = render(
-        <RemindersSection {...defaultProps} batteryOptimizationGranted={true} />
-      );
-      expect(getByTestId('battery-optimization-row').props.accessibilityState?.disabled).toBe(true);
-    });
   });
 });

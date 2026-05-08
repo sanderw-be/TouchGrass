@@ -85,6 +85,7 @@ describe('useAppStore', () => {
 
     expect(useAppStore.getState().showIntro).toBe(false);
     expect(setSettingAsync).toHaveBeenCalledWith('hasCompletedIntro', '1');
+    expect(setSettingAsync).toHaveBeenCalledWith('hasSeenMigration180', '1');
     expect(performDeferredInitialization).toHaveBeenCalled();
   });
 
@@ -102,5 +103,24 @@ describe('useAppStore', () => {
 
     useAppStore.getState().dismissFeedback();
     expect(useAppStore.getState().feedbackVisible).toBe(false);
+  });
+
+  it('should handle show intro', () => {
+    (setSettingAsync as jest.Mock).mockResolvedValue(undefined);
+
+    useAppStore.getState().handleShowIntro();
+
+    expect(useAppStore.getState().showIntro).toBe(true);
+    expect(setSettingAsync).toHaveBeenCalledWith('hasCompletedIntro', '0');
+  });
+
+  it('should handle migration 180 complete', () => {
+    (setSettingAsync as jest.Mock).mockResolvedValue(undefined);
+
+    useAppStore.getState().handleMigration180Complete();
+
+    expect(useAppStore.getState().showMigration180).toBe(false);
+    expect(setSettingAsync).toHaveBeenCalledWith('hasSeenMigration180', '1');
+    expect(performDeferredInitialization).toHaveBeenCalled();
   });
 });

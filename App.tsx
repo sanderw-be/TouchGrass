@@ -12,6 +12,7 @@ import 'expo-dev-client';
 import AppNavigator from './src/navigation/AppNavigator';
 import { useForegroundSync } from './src/hooks/useForegroundSync';
 import IntroScreen from './src/screens/IntroScreen';
+import Migration180Screen from './src/screens/Migration180Screen';
 import UpdateSplashScreen from './src/components/UpdateSplashScreen';
 import { useOTAUpdates } from './src/hooks/useOTAUpdates';
 import { AppProviders } from './src/components/AppProviders';
@@ -23,7 +24,9 @@ function AppContent() {
   const colors = useAppStore((state) => state.colors);
   const isReady = useAppStore((state) => state.isReady);
   const showIntro = useAppStore((state) => state.showIntro);
+  const showMigration180 = useAppStore((state) => state.showMigration180);
   const handleIntroComplete = useAppStore((state) => state.handleIntroComplete);
+  const handleMigration180Complete = useAppStore((state) => state.handleMigration180Complete);
   const initialize = useAppStore((state) => state.initialize);
   const setSystemColorScheme = useAppStore((state) => state.setSystemColorScheme);
 
@@ -68,6 +71,10 @@ function AppContent() {
 
   if (showIntro) {
     return <IntroScreen onComplete={handleIntroComplete} />;
+  }
+
+  if (showMigration180) {
+    return <Migration180Screen onComplete={handleMigration180Complete} />;
   }
 
   return <AppNavigator initialState={savedNavState.current} onStateChange={handleStateChange} />;

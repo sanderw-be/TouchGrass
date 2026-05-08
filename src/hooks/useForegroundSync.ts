@@ -3,7 +3,6 @@ import { AppState, AppStateStatus, InteractionManager } from 'react-native';
 import { getSettingAsync } from '../storage';
 import { getSmartReminderScheduler } from '../notifications/notificationManager';
 import { cleanupTouchGrassCalendars } from '../calendar/calendarService';
-import { refreshBatteryOptimizationSetting } from '../utils/batteryOptimization';
 import { requestWidgetRefresh } from '../utils/widgetHelper';
 
 export function useForegroundSync() {
@@ -20,9 +19,6 @@ export function useForegroundSync() {
           try {
             const hasCompletedIntro = (await getSettingAsync('hasCompletedIntro', '0')) === '1';
             if (hasCompletedIntro) {
-              refreshBatteryOptimizationSetting().catch((e) =>
-                console.warn('Battery optimization status check error:', e)
-              );
               InteractionManager.runAfterInteractions(() => {
                 getSmartReminderScheduler()
                   .scheduleUpcomingReminders()

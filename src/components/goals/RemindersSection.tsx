@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Text, TouchableOpacity, Platform } from 'react-native';
+import { Text, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppStore } from '../../store/useAppStore';
 import { t } from '../../i18n';
@@ -9,24 +9,20 @@ interface RemindersSectionProps {
   smartRemindersCount: number;
   catchupRemindersCount: number;
   notificationPermissionGranted: boolean;
-  batteryOptimizationGranted: boolean;
   onCycleSmartReminders: () => void;
   onCycleCatchupReminders: () => void;
   onNavigateScheduledNotifications: () => void;
   onShowNotificationPermissionSheet: () => void;
-  onShowBatteryPermissionSheet: () => void;
 }
 
 export default function RemindersSection({
   smartRemindersCount,
   catchupRemindersCount,
   notificationPermissionGranted,
-  batteryOptimizationGranted,
   onCycleSmartReminders,
   onCycleCatchupReminders,
   onNavigateScheduledNotifications,
   onShowNotificationPermissionSheet,
-  onShowBatteryPermissionSheet,
 }: RemindersSectionProps) {
   const colors = useAppStore((state) => state.colors);
   const shadows = useAppStore((state) => state.shadows);
@@ -97,36 +93,6 @@ export default function RemindersSection({
             right={<Ionicons name="chevron-forward" size={20} color={colors.textMuted} />}
           />
         </TouchableOpacity>
-        {Platform.OS === 'android' && (
-          <>
-            <Divider />
-            <TouchableOpacity
-              onPress={onShowBatteryPermissionSheet}
-              disabled={batteryOptimizationGranted}
-              testID="battery-optimization-row"
-              style={batteryOptimizationGranted && styles.disabledRow}
-            >
-              <SettingRow
-                icon={
-                  <Ionicons
-                    name="battery-charging-outline"
-                    size={20}
-                    color={colors.textSecondary}
-                  />
-                }
-                label={t('settings_battery_optimization')}
-                sublabel={t('settings_battery_optimization_sublabel')}
-                right={
-                  batteryOptimizationGranted ? (
-                    <Ionicons name="checkmark-circle" size={20} color={colors.grass} />
-                  ) : (
-                    <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
-                  )
-                }
-              />
-            </TouchableOpacity>
-          </>
-        )}
       </Card>
     </>
   );

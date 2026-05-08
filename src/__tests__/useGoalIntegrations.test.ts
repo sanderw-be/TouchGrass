@@ -21,11 +21,7 @@ jest.mock('../detection', () => ({
   checkWeatherLocationPermissions: jest.fn(),
   requestWeatherLocationPermissions: jest.fn(),
 }));
-jest.mock('../utils/batteryOptimization', () => ({
-  BATTERY_OPTIMIZATION_SETTING_KEY: 'battery_optimization_enabled',
-  refreshBatteryOptimizationSetting: jest.fn(),
-  openBatteryOptimizationSettings: jest.fn(),
-}));
+
 jest.mock('../notifications/notificationManager', () => ({
   notificationInfrastructureService: {
     requestNotificationPermissions: jest.fn(() =>
@@ -77,7 +73,6 @@ describe('useGoalIntegrations', () => {
     expect(result.current.calendarEnabled).toBe(false); // fallback '0'
     expect(result.current.calendarBuffer).toBe(30); // fallback '30'
     expect(result.current.calendarDuration).toBe(0); // fallback '0'
-    expect(result.current.batteryOptimizationGranted).toBe(false); // fallback '0'
   });
 
   it('cycles smart reminders count', async () => {
