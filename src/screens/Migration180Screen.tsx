@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   AppState,
   AppStateStatus,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAppStore } from '../store/useAppStore';
@@ -83,6 +84,7 @@ export default function Migration180Screen({ onComplete }: Props) {
         );
       } catch (e) {
         console.warn('Could not open battery optimization settings', e);
+        Alert.alert(t('settings_error_title'), t('settings_error_open_settings_failed'));
       }
     }
   };
