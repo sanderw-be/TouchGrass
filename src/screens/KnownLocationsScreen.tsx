@@ -13,6 +13,7 @@ import {
   setSettingAsync,
 } from '../storage';
 import { getDetectionStatus, refreshDetectionSync } from '../detection/index';
+import { emitPermissionIssuesChanged } from '../utils/permissionIssuesChangedEmitter';
 import { spacing, radius, ThemeColors, Shadows } from '../utils/theme';
 import { useAppStore } from '../store/useAppStore';
 import { t } from '../i18n';
@@ -113,6 +114,8 @@ export default function KnownLocationsScreen() {
     closeSheet();
     // Refresh geofencing so the new/updated location is registered with the OS
     refreshDetectionSync();
+    // Update settings tab badges (suggestions count changed)
+    emitPermissionIssuesChanged();
   }, [loadData, closeSheet]);
 
   const toggleSuggestions = async (value: boolean) => {
@@ -135,6 +138,8 @@ export default function KnownLocationsScreen() {
           try {
             await denyKnownLocationAsync(loc.id!);
             loadData();
+            // Update settings tab badges (suggestions count changed)
+            emitPermissionIssuesChanged();
           } catch (error) {
             console.error('[KnownLocationsScreen.handleDeny] Error:', error);
           }

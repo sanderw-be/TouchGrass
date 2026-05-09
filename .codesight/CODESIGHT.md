@@ -4,7 +4,7 @@
 
 > 0 routes | 0 models | 40 components | 59 lib files | 3 env vars | 1 middleware | 0% test coverage
 > **Token savings:** this file is ~6.300 tokens. Without it, AI exploration would cost ~38.100 tokens. **Saves ~31.800 tokens per conversation.**
-> **Last scanned:** 2026-05-09 12:29 — re-run after significant changes
+> **Last scanned:** 2026-05-09 12:46 — re-run after significant changes
 
 ---
 
@@ -332,9 +332,9 @@
 - `src\utils\widgetHelper.ts` — imported by **9** files
 - `src\utils\sessionsChangedEmitter.ts` — imported by **9** files
 - `src\detection\GeofenceManager.ts` — imported by **9** files
+- `src\utils\permissionIssuesChangedEmitter.ts` — imported by **9** files
 - `src\modules\ActivityTransitionModule.ts` — imported by **8** files
 - `src\detection\sessionMerger.ts` — imported by **8** files
-- `src\utils\permissionIssuesChangedEmitter.ts` — imported by **8** files
 - `src\detection\manualCheckin.ts` — imported by **8** files
 - `src\i18n\en.ts` — imported by **8** files
 - `src\weather\weatherService.ts` — imported by **7** files
@@ -358,7 +358,7 @@
 # Test Coverage
 
 > **0%** of routes and models are covered by tests
-> 72 test files found
+> 73 test files found
 
 ---
 

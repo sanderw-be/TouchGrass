@@ -15,9 +15,9 @@
 - `src\utils\widgetHelper.ts` — imported by **9** files
 - `src\utils\sessionsChangedEmitter.ts` — imported by **9** files
 - `src\detection\GeofenceManager.ts` — imported by **9** files
+- `src\utils\permissionIssuesChangedEmitter.ts` — imported by **9** files
 - `src\modules\ActivityTransitionModule.ts` — imported by **8** files
 - `src\detection\sessionMerger.ts` — imported by **8** files
-- `src\utils\permissionIssuesChangedEmitter.ts` — imported by **8** files
 - `src\detection\manualCheckin.ts` — imported by **8** files
 - `src\i18n\en.ts` — imported by **8** files
 - `src\weather\weatherService.ts` — imported by **7** files

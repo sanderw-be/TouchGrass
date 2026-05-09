@@ -60,7 +60,6 @@ export function useOTAUpdates() {
     // 4. Check for and apply updates
     (async () => {
       try {
-        const currentUpdateId = Updates.updateId;
         const lastFailedId = await getSettingAsync(LAST_FAILED_UPDATE_KEY, '');
 
         const result = await Updates.checkForUpdateAsync();
