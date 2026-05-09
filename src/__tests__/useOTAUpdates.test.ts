@@ -36,6 +36,7 @@ jest.mock('../modules/ActivityTransitionModule', () => ({
 // Mock console to prevent polluting test output
 jest.spyOn(console, 'warn').mockImplementation(() => {});
 jest.spyOn(console, 'log').mockImplementation(() => {});
+jest.spyOn(console, 'error').mockImplementation(() => {});
 
 describe('useOTAUpdates', () => {
   beforeEach(() => {
@@ -112,6 +113,23 @@ describe('useOTAUpdates', () => {
     await waitFor(() => expect(Updates.reloadAsync).toHaveBeenCalledTimes(1));
   });
 
+  it('should log a warning if stopping background tasks fails during reload', async () => {
+    (Updates.checkForUpdateAsync as jest.Mock).mockResolvedValue({
+      isAvailable: true,
+      manifest: { id: 'new-update-id' },
+    });
+    (Updates.fetchUpdateAsync as jest.Mock).mockResolvedValue(undefined);
+    (stopGeofenceTracking as jest.Mock).mockRejectedValue(new Error('Task stop error'));
+
+    renderHook(() => useOTAUpdates());
+
+    await waitFor(() => expect(Updates.reloadAsync).toHaveBeenCalled());
+    expect(console.warn).toHaveBeenCalledWith(
+      expect.stringContaining('Failed to stop background tasks before reload'),
+      expect.any(Error)
+    );
+  });
+
   it('should clear the failure guard if the current update matches the last failed ID after 30s', async () => {
     jest.useFakeTimers();
     (Updates as any).updateId = 'previously-failed-id';
@@ -130,6 +148,27 @@ describe('useOTAUpdates', () => {
 
     await waitFor(() =>
       expect(setSettingAsync).toHaveBeenCalledWith('OTA_LAST_FAILED_UPDATE_ID', '')
+    );
+    jest.useRealTimers();
+  });
+
+  it('should log an error if clearing the failure guard fails', async () => {
+    jest.useFakeTimers();
+    (Updates as any).updateId = 'previously-failed-id';
+    (getSettingAsync as jest.Mock).mockResolvedValue('previously-failed-id');
+    (setSettingAsync as jest.Mock).mockRejectedValueOnce(new Error('Storage error'));
+
+    renderHook(() => useOTAUpdates());
+
+    await act(async () => {
+      jest.advanceTimersByTime(30000);
+    });
+
+    await waitFor(() =>
+      expect(console.error).toHaveBeenCalledWith(
+        expect.stringContaining('Failed to clear failure guard'),
+        expect.any(Error)
+      )
     );
     jest.useRealTimers();
   });
@@ -161,6 +200,22 @@ describe('useOTAUpdates', () => {
 
     await waitFor(() => expect(result.current.updateStatus).toBe('ready'));
     expect(console.warn).toHaveBeenCalledWith('Failed to apply OTA update:', error);
+  });
+
+  it('should fallback to "unknown" as the update ID if manifest ID is missing', async () => {
+    (getSettingAsync as jest.Mock).mockResolvedValue('unknown'); // previously marked unknown as failed
+    (Updates.checkForUpdateAsync as jest.Mock).mockResolvedValue({
+      isAvailable: true,
+      manifest: {}, // Missing id
+    });
+
+    const { result } = renderHook(() => useOTAUpdates());
+
+    await waitFor(() => expect(result.current.updateStatus).toBe('ready'));
+    expect(Updates.fetchUpdateAsync).not.toHaveBeenCalled();
+    expect(console.warn).toHaveBeenCalledWith(
+      expect.stringContaining('Available update (unknown) was previously marked as failed')
+    );
   });
 
   it('should fall back to "ready" after the 10-second timeout', async () => {
