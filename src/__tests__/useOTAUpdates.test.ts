@@ -112,16 +112,26 @@ describe('useOTAUpdates', () => {
     await waitFor(() => expect(Updates.reloadAsync).toHaveBeenCalledTimes(1));
   });
 
-  it('should clear the failure guard if the current update matches the last failed ID', async () => {
+  it('should clear the failure guard if the current update matches the last failed ID after 30s', async () => {
+    jest.useFakeTimers();
     (Updates as any).updateId = 'previously-failed-id';
     (getSettingAsync as jest.Mock).mockResolvedValue('previously-failed-id');
     (Updates.checkForUpdateAsync as jest.Mock).mockResolvedValue({ isAvailable: false });
 
     renderHook(() => useOTAUpdates());
 
+    // Should not be called immediately
+    expect(setSettingAsync).not.toHaveBeenCalledWith('OTA_LAST_FAILED_UPDATE_ID', '');
+
+    // Advance 30s
+    await act(async () => {
+      jest.advanceTimersByTime(30000);
+    });
+
     await waitFor(() =>
       expect(setSettingAsync).toHaveBeenCalledWith('OTA_LAST_FAILED_UPDATE_ID', '')
     );
+    jest.useRealTimers();
   });
 
   it('should skip the update if the available update ID matches the last failed ID', async () => {

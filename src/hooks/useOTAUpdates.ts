@@ -60,26 +60,17 @@ export function useOTAUpdates() {
     // 4. Check for and apply updates
     (async () => {
       try {
-        // A. Recovery: If we are currently running the ID that previously "failed",
-        // it means it actually succeeded (or we rolled back to it and it's stable).
-        // Either way, we clear the guard.
         const currentUpdateId = Updates.updateId;
         const lastFailedId = await getSettingAsync(LAST_FAILED_UPDATE_KEY, '');
-
-        if (currentUpdateId && currentUpdateId === lastFailedId) {
-          console.log('[useOTAUpdates] Current update is stable — clearing failure guard.');
-          await setSettingAsync(LAST_FAILED_UPDATE_KEY, '');
-        }
 
         const result = await Updates.checkForUpdateAsync();
 
         if (cancelled) return;
 
         if (result.isAvailable) {
-          const availableUpdateId = result.manifest?.id;
-
           // B. Retry Guard: If the available update matches the last failed ID, skip it.
-          if (availableUpdateId && availableUpdateId === lastFailedId) {
+          const availableUpdateId = result.manifest?.id || 'unknown';
+          if (availableUpdateId === lastFailedId) {
             console.warn(
               `[useOTAUpdates] Available update (${availableUpdateId}) was previously marked as failed. Skipping to prevent bootloop.`
             );
@@ -108,10 +99,27 @@ export function useOTAUpdates() {
       }
     })();
 
+    // 5. Failure Guard Cleanup: If the app survives for 30s, clear the failure record
+    const stabilityTimer = setTimeout(async () => {
+      if (cancelled) return;
+      try {
+        const currentUpdateId = Updates.updateId;
+        const lastFailedId = await getSettingAsync(LAST_FAILED_UPDATE_KEY, '');
+
+        if (currentUpdateId && currentUpdateId === lastFailedId) {
+          console.log('[useOTAUpdates] App stable for 30s. Clearing failure guard.');
+          await setSettingAsync(LAST_FAILED_UPDATE_KEY, '');
+        }
+      } catch (e) {
+        console.error('[useOTAUpdates] Failed to clear failure guard:', e);
+      }
+    }, 30000);
+
     // Cleanup function to prevent state updates if unmounted
     return () => {
       cancelled = true;
       clearTimeout(timeout);
+      clearTimeout(stabilityTimer);
     };
   }, [handleReload]);
 
