@@ -583,7 +583,7 @@ const pt: TranslationType = {
   activity_log_section_reminders: 'Avisos',
 
   // Battery optimization (Android intro)
-  intro_battery_title: 'Batería',
+  intro_battery_title: 'Bateria',
   intro_battery_body: 'Para não perderes avisos, o sistema não deve bloquear a app.',
   intro_battery_why_title: 'Porquê?',
   intro_battery_why_body: 'O Android pode encerrar apps em segundo plano.',
