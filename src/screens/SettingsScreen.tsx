@@ -80,6 +80,7 @@ export default function SettingsScreen() {
     showHCPermissionSheet,
     showGPSPermissionSheet,
     showARPermissionSheet,
+    togglingAR,
   } = useDetectionSettings();
 
   // Update navigation header title reactively
@@ -307,7 +308,7 @@ export default function SettingsScreen() {
                       desc={t('settings_activity_recognition_desc')}
                       permissionMissingLabel={t('settings_activity_recognition_permission_missing')}
                       onToggle={handleToggleAR}
-                      isLoading={false}
+                      isLoading={togglingAR}
                       isInitializing={isInitializing}
                       onPermissionFix={showARPermissionSheet}
                       testID="ar-toggle"
@@ -594,6 +595,7 @@ export default function SettingsScreen() {
       systemLocale,
       togglingGPS,
       togglingHC,
+      togglingAR,
       styles,
       handleClearData,
       handleShowIntro,

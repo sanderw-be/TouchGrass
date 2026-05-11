@@ -856,6 +856,9 @@ describe('GoalsScreen permission warning banner', () => {
     mockCheckWeatherLocation.mockResolvedValue(true);
 
     const { queryByText } = render(<GoalsScreen />);
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
     await waitFor(() => {
       expect(queryByText(/permission_issues_banner/)).toBeNull();
     });

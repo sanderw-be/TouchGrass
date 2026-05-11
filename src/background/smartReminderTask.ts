@@ -119,32 +119,28 @@ export const handleSmartReminder = async (data: HeadlessData) => {
       // 4. Location saved: unplan (handled in EditLocationSheet.tsx)
 
       if (transition === 'ENTER' && activity === 'STILL') {
-        const isOutside = (await storageService.getSettingAsync('gps_last_outside', '0')) === '1';
+        let isOutside = (await storageService.getSettingAsync('gps_last_outside', '0')) === '1';
+
+        // Always try to verify with actual location data
+        try {
+          const lastPos = await Location.getLastKnownPositionAsync();
+          if (lastPos) {
+            const knownLocations = await storageService.getAllKnownLocationsAsync();
+            if (knownLocations.length === 0) {
+              isOutside = true; // No known locations to be inside of
+            } else {
+              isOutside = !isAtAnyKnownLocation(
+                lastPos.coords.latitude,
+                lastPos.coords.longitude,
+                knownLocations
+              );
+            }
+          }
+        } catch (e) {
+          console.warn('[SR_HEADLESS] Failed to double-check location during dwell logic:', e);
+        }
 
         if (isOutside) {
-          // Double check: are we actually inside a known location that was just added?
-          // This handles the "Location saved" case if it wasn't caught by the UI or if gps_last_outside is stale.
-          try {
-            const lastPos = await Location.getLastKnownPositionAsync();
-            if (lastPos) {
-              const knownLocations = await storageService.getAllKnownLocationsAsync();
-              if (
-                isAtAnyKnownLocation(
-                  lastPos.coords.latitude,
-                  lastPos.coords.longitude,
-                  knownLocations
-                )
-              ) {
-                console.log(
-                  '[SR_HEADLESS] User is STILL but inside a newly known location. Ignoring dwell-time logic.'
-                );
-                return;
-              }
-            }
-          } catch (e) {
-            console.warn('[SR_HEADLESS] Failed to double-check location during dwell logic:', e);
-          }
-
           console.log('[SR_HEADLESS] User is STILL and OUTSIDE. Scheduling dwell-time prompt.');
           await getDwellService().scheduleDwellPrompt();
         } else {

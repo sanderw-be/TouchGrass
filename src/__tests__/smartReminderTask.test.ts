@@ -334,6 +334,8 @@ describe('handleSmartReminder', () => {
         return '0';
       });
 
+      mockStorage.getAllKnownLocationsAsync.mockResolvedValue([{ id: 1 }]);
+
       (Location.getLastKnownPositionAsync as jest.Mock).mockResolvedValue({
         coords: { latitude: 52, longitude: 5 },
       });

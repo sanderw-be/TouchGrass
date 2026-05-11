@@ -217,7 +217,6 @@ describe('useOTAUpdates', () => {
       expect.stringContaining('Available update (unknown) was previously marked as failed')
     );
   });
-
   it('should fall back to "ready" after the 10-second timeout', async () => {
     jest.useFakeTimers();
     // Mock a check that never resolves
