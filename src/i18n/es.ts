@@ -115,7 +115,7 @@ const es: TranslationType = {
 
   // History screen
   history_period_week: 'Semana',
-  history_period_month: 'Mois',
+  history_period_month: 'Mes',
   history_stat_total: 'Total',
   history_stat_avg: 'Media diaria',
   history_stat_goals_met: 'Metas logradas',
