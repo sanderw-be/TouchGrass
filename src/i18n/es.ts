@@ -577,7 +577,7 @@ const es: TranslationType = {
   // Activity Log screen
   nav_activity_log: 'Registro',
   settings_section_activity_log: 'Transparence',
-  settings_activity_log: 'Log de actividad',
+  settings_section_activity_log: 'Transparencia',
   settings_activity_log_sublabel: 'Lo que pasa a nivel interno',
   activity_log_empty: 'Vacío.',
   activity_log_section_hc: 'Health',
