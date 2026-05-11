@@ -315,7 +315,7 @@ const de: TranslationType = {
     'Viele Schritte an einem Ort bedeuten meist, dass du draußen unterwegs warst. Aktivitäten wie Laufen oder Radfahren werden ebenfalls als Außenzeit gewertet. Mit GPS aktiviert können Heimtrainersessions herausgefiltert werden.',
   intro_hc_hint: 'Kann später aktiviert werden.',
   intro_hc_button: 'Health Connect verbinden',
-  intro_hc_button_granted: 'Connected ✓',
+  intro_hc_button_granted: 'Verbunden ✓',
   intro_ar_title: 'Akku-Schoner',
   intro_ar_body:
     'Um den Akku zu schonen, prüft TouchGrass deinen Standort nur, wenn du dich tatsächlich bewegst.',
