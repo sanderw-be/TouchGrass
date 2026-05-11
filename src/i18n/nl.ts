@@ -317,7 +317,7 @@ const nl: TranslationType = {
     'Veel stappen op een locatie betekent meestal dat je buiten hebt gelopen. Sporten als hardlopen of fietsen tellen ook als buitenactiviteit. Met GPS ingeschakeld kunnen hometrainersessies worden uitgesloten.',
   intro_hc_hint: 'Kan later ingesteld worden.',
   intro_hc_button: 'Verbind Health Connect',
-  intro_hc_button_granted: 'Connected ✓',
+  intro_hc_button_granted: 'Verbonden ✓',
   intro_ar_title: 'Bespaar batterij',
   intro_ar_body:
     'Om je batterij te sparen, controleert TouchGrass je locatie alleen als je daadwerkelijk beweegt.',
