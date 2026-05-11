@@ -205,7 +205,7 @@ export default function KnownLocationsScreen() {
                       <Text style={styles.rowIcon}>🔍</Text>
                       <View style={styles.rowContent}>
                         <Text style={styles.rowLabel}>
-                          {loc.label || 'location_suggestion_default_label'}
+                          {loc.label || t('location_suggested_label')}
                         </Text>
                         <Text style={styles.rowSublabel}>
                           {t('settings_location_radius', {
