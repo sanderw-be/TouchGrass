@@ -148,7 +148,7 @@ const pt: TranslationType = {
   hc_rationale_steps_title: 'Passos (Acesso de leitura)',
   hc_rationale_steps_body:
     'Ao ler a sua contagem de passos, o TouchGrass pode identificar automaticamente caminhadas ao ar livre sem que tenha de iniciar manualmente um temporizador. Isto garante que todo o seu movimento é captado com precisão, mantendo a sua privacidade.',
-  hc_rationale_exercise_title: 'Sesiones de ejercicio (Acceso de lectura)',
+  hc_rationale_exercise_title: 'Sessões de exercício (Acesso de leitura)',
   hc_rationale_exercise_body:
     'Atividades ao ar livre, como corrida, ciclismo ou caminhada de outras aplicações, são sincronizadas diretamente como "tempo de relva". Isto proporciona uma visão completa e precisa da sua atividade ao ar livre sem qualquer esforço manual.',
   hc_rationale_privacy:
